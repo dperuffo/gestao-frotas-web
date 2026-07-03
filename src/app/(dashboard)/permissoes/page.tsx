@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { PERFIS, PERFIL_LABEL } from "@/lib/constants";
+import { PERFIS, PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TogglePermissao } from "./_components/TogglePermissao";
 
 // Deixa "aba_dashboard" -> "Aba: Dashboard" e "func_exportar" -> "Função: Exportar",
@@ -24,6 +24,29 @@ function humanizar(texto: string) {
 export default async function PermissoesPage() {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Fase 27 — trava de segurança: descobre o perfil de quem está olhando a
+  // tela pra decidir quais colunas mostrar. PERFIS já vem ordenado do mais
+  // pro menos privilegiado (admin, gestor_frota, analista, posto), então
+  // "meu nível ou abaixo" é simplesmente o array a partir do meu índice.
+  // A trava de verdade é a RLS de permissoes_perfil (nivel_perfil()), que já
+  // bloqueia a leitura/escrita da linha "admin" para quem não é admin — o
+  // filtro aqui é só pra não desenhar uma coluna "Administrador" vazia (tudo
+  // desligado) pra quem não tem esse dado liberado, o que seria enganoso.
+  const { data: perfilUsuario } = await supabase
+    .from("usuarios_app")
+    .select("perfil")
+    .eq("email", user?.email ?? "")
+    .maybeSingle();
+
+  const meuPerfil = perfilUsuario?.perfil as Perfil | undefined;
+  const meuIndice = meuPerfil ? PERFIS.indexOf(meuPerfil) : 0;
+  const perfisVisiveis = meuIndice >= 0 ? PERFIS.slice(meuIndice) : PERFIS;
+  const souAdmin = meuPerfil === "admin";
+
   const { data: linhas, error } = await supabase
     .from("permissoes_perfil")
     .select("funcionalidade, perfil, permitido")
@@ -46,6 +69,12 @@ export default async function PermissoesPage() {
           Controla o que cada perfil de usuário pode ver e fazer no sistema. Clique no
           interruptor para permitir ou negar o acesso de um perfil a uma funcionalidade.
         </p>
+        {!souAdmin && (
+          <p className="mt-2 text-sm text-frota-700">
+            Você está vendo apenas os perfis do seu nível de gestão ou abaixo. Permissões do
+            Administrador não ficam visíveis nem editáveis por outros perfis.
+          </p>
+        )}
       </div>
 
       <div className="card overflow-x-auto">
@@ -56,7 +85,7 @@ export default async function PermissoesPage() {
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3">Funcionalidade</th>
-              {PERFIS.map((perfil) => (
+              {perfisVisiveis.map((perfil) => (
                 <th key={perfil} className="px-4 py-3 text-center">
                   {PERFIL_LABEL[perfil]}
                 </th>
@@ -69,7 +98,7 @@ export default async function PermissoesPage() {
               return (
                 <tr key={funcionalidade} className="hover:bg-slate-50">
                   <td className="px-4 py-3 text-slate-700">{formatarFuncionalidade(funcionalidade)}</td>
-                  {PERFIS.map((perfil) => (
+                  {perfisVisiveis.map((perfil) => (
                     <td key={perfil} className="px-4 py-3 text-center">
                       <TogglePermissao
                         funcionalidade={funcionalidade}
@@ -83,7 +112,7 @@ export default async function PermissoesPage() {
             })}
             {funcionalidades.length === 0 && (
               <tr>
-                <td colSpan={PERFIS.length + 1} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={perfisVisiveis.length + 1} className="px-4 py-8 text-center text-slate-400">
                   Nenhuma permissão cadastrada ainda.
                 </td>
               </tr>
