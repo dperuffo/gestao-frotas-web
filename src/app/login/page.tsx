@@ -101,7 +101,12 @@ function LoginCard() {
             <input name="email" type="email" required autoComplete="email" className="input-dark" placeholder="voce@empresa.com" />
           </div>
           <div>
-            <label className="label-dark">Senha</label>
+            <div className="flex items-center justify-between">
+              <label className="label-dark">Senha</label>
+              <a href="/esqueci-senha" className="text-xs font-medium text-frota-400 hover:underline">
+                Esqueci minha senha
+              </a>
+            </div>
             <input name="senha" type="password" required autoComplete="current-password" className="input-dark" />
           </div>
           <button type="submit" disabled={isPending} className="btn-primary w-full justify-center">

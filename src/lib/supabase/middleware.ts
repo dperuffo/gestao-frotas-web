@@ -49,6 +49,8 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/login") ||
     path.startsWith("/auth/callback") ||
     path.startsWith("/cadastro") ||
+    path.startsWith("/esqueci-senha") ||
+    path.startsWith("/redefinir-senha") ||
     rotasLandingPublicas.has(path);
 
   if (!user && !isRotaPublica) {
