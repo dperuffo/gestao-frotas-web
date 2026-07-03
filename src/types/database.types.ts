@@ -132,6 +132,7 @@ export interface Database {
           funcionalidade: string;
           perfil: string;
           permitido: boolean | null;
+          empresa_id: string;
           atualizado_em: string | null;
           atualizado_por: string | null;
         };

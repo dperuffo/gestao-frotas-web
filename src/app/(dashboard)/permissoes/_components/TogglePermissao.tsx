@@ -7,16 +7,18 @@ export function TogglePermissao({
   funcionalidade,
   perfil,
   permitido,
+  empresaId,
 }: {
   funcionalidade: string;
   perfil: string;
   permitido: boolean;
+  empresaId: string;
 }) {
   const [isPending, startTransition] = useTransition();
 
   function handleClick() {
     startTransition(async () => {
-      await alternarPermissao(funcionalidade, perfil, !permitido);
+      await alternarPermissao(funcionalidade, perfil, !permitido, empresaId);
     });
   }
 

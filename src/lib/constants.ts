@@ -64,6 +64,10 @@ export const CICLOS_COMBUSTIVEL = [
 export const PERFIS = ["admin", "gestor_frota", "analista", "posto"] as const;
 export type Perfil = (typeof PERFIS)[number];
 
+// Sentinela usado em permissoes_perfil.empresa_id pra representar "padrão
+// global" (gerenciado só pelo admin), nunca uma empresa real — ver Fase 27.1.
+export const EMPRESA_ID_GLOBAL = "00000000-0000-0000-0000-000000000000";
+
 export const PERFIL_LABEL: Record<Perfil, string> = {
   admin: "Administrador",
   gestor_frota: "Gestor de Frota",

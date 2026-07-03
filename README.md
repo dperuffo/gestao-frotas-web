@@ -2479,3 +2479,64 @@ precisam ser rodados pelo próprio Daniel no Terminal do Mac dele — documentad
 Validado com `npx tsc --noEmit` e `npx eslint .` (projeto inteiro, ambos limpos). `next build` de produção
 completo não coube no limite de tempo do sandbox usado pra essa validação (~45s por comando, insuficiente pra
 esse projeto) — o build real vai rodar no próprio Railway durante o deploy, que é a confirmação definitiva.
+
+
+## Fase 27 — Permissões por Perfil: trava de segurança (admin oculto para não-admins)
+
+Achado real, reportado pelo Daniel: qualquer usuário autenticado (gestor_frota, analista, posto)
+conseguia ver a tela `/permissoes` inteira, incluindo a coluna do Administrador — a leitura da
+tabela `permissoes_perfil` estava com uma policy de SELECT totalmente aberta (`qual = true`). A
+escrita já era protegida (só admin conseguia alterar), mas a visualização não.
+
+Correção (via Supabase MCP, `project_id nedthbeekvwzcjrhsghp`):
+
+- Criada `nivel_perfil(perfil text) returns int` — mapeia cada perfil pra um peso (admin=4,
+  gestor_frota=3, analista=2, posto=1).
+- Policies de SELECT e escrita da tabela `permissoes_perfil` passaram a exigir
+  `nivel_perfil(perfil) <= nivel_perfil(perfil_usuario_atual())` — cada perfil só enxerga (e edita)
+  perfis do próprio nível pra baixo, nunca acima. Um gestor_frota nunca mais vê nem altera a linha
+  do Administrador.
+- `src/app/(dashboard)/permissoes/page.tsx` — só desenha as colunas que o usuário logado tem
+  direito de ver (reflexo em tela da mesma regra do banco), com aviso explicando a restrição pra
+  quem não é admin.
+
+## Fase 27.1 — Permissões por Perfil: escopo por cliente (empresa)
+
+Extensão da Fase 27: além de travar por nível de perfil, as permissões passam a ser por cliente
+(empresa) em vez de um único conjunto global pra todo o sistema — pedido do Daniel: um
+gestor_frota só deve gerenciar permissões relevantes ao próprio cliente, nunca as de outra
+empresa.
+
+Modelo escolhido — **padrão + override**, em vez de duplicar linhas em toda empresa existente:
+
+- `permissoes_perfil` ganhou a coluna `empresa_id uuid not null default '00000000-0000-0000-0000-000000000000'`
+  (constante `EMPRESA_ID_GLOBAL` em `src/lib/constants.ts`). O valor sentinela representa o
+  **padrão global** do sistema, gerenciado só pelo admin — todas as 104 linhas existentes
+  migraram automaticamente pra esse valor (nenhum dado mudou de comportamento).
+- Sentinela em vez de `NULL` foi escolha deliberada: `UNIQUE` com `NULL` permite múltiplas linhas
+  "iguais" (Postgres trata `NULL` como distinto de si mesmo), o que quebraria o `upsert`
+  (`ON CONFLICT`) do Supabase JS — ele não suporta index parcial como alvo de conflito. Com um
+  valor fixo não nulo, um único `UNIQUE (funcionalidade, perfil, empresa_id)` resolve tudo de
+  forma simples e compatível com upsert (testado ao vivo: insert de uma linha da empresa seed,
+  sem colidir com a linha global equivalente, depois removida — ver regressão abaixo).
+- Policies de SELECT/escrita: admin continua vendo/editando tudo; os demais perfis só enxergam e
+  só escrevem em linhas onde `empresa_id` é o padrão global (somente leitura) ou é uma das
+  empresas do próprio usuário (`empresas_do_usuario`, mesma função já usada em `veiculos`,
+  `motoristas`, `centros_custo`) — nunca a linha global, que continua exclusiva do admin.
+- `src/app/(dashboard)/permissoes/page.tsx` — passou a usar `resolverEmpresaAtual` (mesmo helper
+  de `/postos` e do dashboard) pra descobrir a empresa do usuário (com seletor de cliente só
+  quando ele está vinculado a mais de uma, ex.: grupo econômico). A matriz exibida mescla o
+  padrão global com a customização da empresa selecionada (quando existir), com uma etiqueta
+  "Personalizado" indicando que aquela célula tem override próprio. O admin continua editando
+  exclusivamente o padrão global nesta tela (sem seletor de cliente pra ele).
+- `src/app/(dashboard)/permissoes/actions.ts` e `_components/TogglePermissao.tsx` — passaram a
+  receber/enviar `empresaId` explicitamente no upsert (`ON CONFLICT (funcionalidade,perfil,empresa_id)`).
+- `src/types/database.types.ts` — campo `empresa_id` adicionado ao tipo de `permissoes_perfil`
+  (ajuste manual, mais rápido que regenerar o arquivo inteiro pelo MCP nesse caso).
+
+Regressão testada ao vivo: insert de uma linha `(aba_dashboard, analista, empresa seed)`, confirmado
+que não colide com a linha global equivalente (upsert funcionou sem erro), depois removida — a
+linha global ficou intacta o tempo todo.
+
+Validado com `npx tsc --noEmit` e `npx eslint .`, ambos limpos, e `get_advisors` (security) sem
+nenhum alerta novo relacionado a essa mudança.
