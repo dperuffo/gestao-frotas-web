@@ -55,6 +55,22 @@ export function prioridadeLabel(p: TicketPrioridade): string {
 // caminho de cada objeto segue o padrão "{ticket_id}/{timestamp}_{nome}".
 export const BUCKET_ANEXOS = "ticket-anexos";
 
+// Fase 27.22 — achado real: o crash genérico "Application error" ao anexar
+// arquivo num chamado (visto de novo depois da Fase 27.18) não vinha de um
+// erro tratável dentro da Server Action — as duas (criarChamadoAcao e
+// enviarAnexoAcao) já tinham try/catch em volta do upload. O problema é
+// anterior a isso: quando o arquivo passa do limite de corpo configurado
+// pra Server Actions (25mb, ver next.config.mjs) — ou de qualquer limite
+// imposto por um proxy no meio do caminho —, a própria chamada de rede da
+// Server Action falha ANTES de a função no servidor rodar, e essa falha de
+// transporte não é um "erro" normal devolvido pela action: ela escapa como
+// exceção não tratada no componente cliente (ChamadoForm/ThreadChamado),
+// que o Next só sabe mostrar como página de erro genérica. Por isso, além
+// do try/catch em volta da chamada no cliente (defesa em profundidade),
+// valida o tamanho ANTES de enviar — com folga em relação ao limite real,
+// pra sobrar espaço pros outros campos do formulário multipart.
+export const TAMANHO_MAX_ANEXO_BYTES = 20 * 1024 * 1024;
+
 // Notificação visual: um chamado tem atualização "não vista" pra um papel
 // (usuário do cliente ou admin da FNI) se foi atualizado depois da última
 // vez que aquele papel visualizou/comentou nele. Ver colunas

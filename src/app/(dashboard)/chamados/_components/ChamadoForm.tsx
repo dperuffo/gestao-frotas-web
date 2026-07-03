@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { criarChamadoAcao } from "../actions";
-import { PRIORIDADES_TICKET, TIPOS_TICKET } from "@/lib/chamados";
+import { PRIORIDADES_TICKET, TIPOS_TICKET, TAMANHO_MAX_ANEXO_BYTES, formatarTamanho } from "@/lib/chamados";
 import type { EmpresaOpcao } from "@/lib/empresaAtual";
 
 export function ChamadoForm({
@@ -19,9 +19,28 @@ export function ChamadoForm({
     e.preventDefault();
     setErro(undefined);
     const formData = new FormData(e.currentTarget);
+
+    // Fase 27.22 — valida o tamanho do anexo ANTES de enviar. Sem isso, um
+    // arquivo grande demais faz a própria chamada de rede da Server Action
+    // falhar (corpo excede o limite configurado), o que derruba a página
+    // inteira com um erro genérico em vez de mostrar uma mensagem aqui.
+    const arquivo = formData.get("arquivo");
+    if (arquivo instanceof File && arquivo.size > TAMANHO_MAX_ANEXO_BYTES) {
+      setErro(`O anexo (${formatarTamanho(arquivo.size)}) passa do limite de ${formatarTamanho(TAMANHO_MAX_ANEXO_BYTES)}. Envie um arquivo menor, ou abra o chamado sem anexo e adicione depois pela tela do chamado.`);
+      return;
+    }
+
     startTransition(async () => {
-      const resultado = await criarChamadoAcao(undefined, formData);
-      if (resultado?.erro) setErro(resultado.erro);
+      try {
+        const resultado = await criarChamadoAcao(undefined, formData);
+        if (resultado?.erro) setErro(resultado.erro);
+      } catch (e) {
+        // Fase 27.22 — defesa em profundidade: se mesmo assim a chamada de
+        // rede falhar (proxy, timeout etc.), mostra uma mensagem aqui em vez
+        // de deixar a exceção escapar e derrubar a página inteira.
+        setErro("Não foi possível abrir o chamado. Verifique sua conexão e tente novamente.");
+        console.error("[ChamadoForm] falha ao enviar:", e instanceof Error ? e.message : e);
+      }
     });
   }
 

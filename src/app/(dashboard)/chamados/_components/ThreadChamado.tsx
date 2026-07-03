@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import { comentarAcao, enviarAnexoAcao } from "../actions";
-import { formatarTamanho, type AutorTipo } from "@/lib/chamados";
+import { formatarTamanho, TAMANHO_MAX_ANEXO_BYTES, type AutorTipo } from "@/lib/chamados";
 
 type Comentario = { id: string; autor_email: string; autor_tipo: string; texto: string; criado_em: string };
 type Anexo = {
@@ -53,10 +53,26 @@ export function ThreadChamado({
     e.preventDefault();
     setErroAnexo(undefined);
     const formData = new FormData(e.currentTarget);
+
+    // Fase 27.22 — mesmo raciocínio do ChamadoForm: valida o tamanho antes
+    // de enviar, pra não deixar a Server Action falhar no nível de rede (o
+    // que derrubaria a página com um erro genérico) e envolve a chamada em
+    // try/catch como defesa extra caso mesmo assim algo escape.
+    const arquivo = formData.get("arquivo");
+    if (arquivo instanceof File && arquivo.size > TAMANHO_MAX_ANEXO_BYTES) {
+      setErroAnexo(`O anexo (${formatarTamanho(arquivo.size)}) passa do limite de ${formatarTamanho(TAMANHO_MAX_ANEXO_BYTES)}. Envie um arquivo menor.`);
+      return;
+    }
+
     startTransitionAnexo(async () => {
-      const resultado = await enviarAnexoAcao(ticketId, formData);
-      if (resultado?.erro) setErroAnexo(resultado.erro);
-      else formAnexoRef.current?.reset();
+      try {
+        const resultado = await enviarAnexoAcao(ticketId, formData);
+        if (resultado?.erro) setErroAnexo(resultado.erro);
+        else formAnexoRef.current?.reset();
+      } catch (e) {
+        setErroAnexo("Não foi possível enviar o anexo. Verifique sua conexão e tente novamente.");
+        console.error("[ThreadChamado] falha ao enviar anexo:", e instanceof Error ? e.message : e);
+      }
     });
   }
 

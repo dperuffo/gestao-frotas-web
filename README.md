@@ -2886,3 +2886,40 @@ comportamento não muda (um pedaço só, igual ao box único de antes); pra rota
 fica pequeno o bastante pra nunca perder candidatos reais por causa do limit.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.22 — Crash genérico ao anexar arquivo em chamado (voltou depois da Fase 27.18) + error boundary no dashboard
+
+O Daniel reportou que o crash genérico ("Application error: a server-side exception has occurred...
+Digest: 682703709") ao anexar um arquivo num chamado tinha voltado, mesmo depois da Fase 27.18 já
+ter corrigido um crash parecido.
+
+Investigação: a Fase 27.18 protegeu só o CONTEÚDO da Server Action — tanto `criarChamadoAcao`
+quanto `enviarAnexoAcao` (`chamados/actions.ts`) já tinham (e continuam tendo) try/catch em volta
+do upload em si. O problema é anterior a isso, no transporte: quando o arquivo passa do limite de
+corpo configurado pras Server Actions (`bodySizeLimit: "25mb"` em `next.config.mjs`) — ou de
+qualquer limite imposto por um proxy no meio do caminho —, a própria chamada de rede da Server
+Action falha ANTES de a função no servidor chegar a rodar. Essa falha de transporte não é um "erro"
+normal devolvido pela action (que o try/catch interno trataria); ela escapa como exceção não tratada
+dentro do `startTransition` no componente cliente (`ChamadoForm.tsx`/`ThreadChamado.tsx`), que não
+tinha nenhum try/catch em volta da chamada — e, como o app não tinha NENHUM error boundary
+(`error.tsx`) em lugar nenhum, o Next só sabia mostrar a página de erro genérica, sem contexto e sem
+caminho de volta.
+
+Correção em duas frentes:
+
+- `src/lib/chamados.ts` — nova constante `TAMANHO_MAX_ANEXO_BYTES` (20 MB, com folga em relação ao
+  limite real de 25 MB, já que o corpo multipart tem overhead de outros campos do formulário).
+- `ChamadoForm.tsx` (abertura de chamado) e `ThreadChamado.tsx` (anexo numa resposta) — validam o
+  tamanho do arquivo ANTES de chamar a Server Action, mostrando uma mensagem amigável se passar do
+  limite (evita a falha de transporte na maioria dos casos reais); e agora envolvem a própria
+  chamada (`await criarChamadoAcao(...)` / `await enviarAnexoAcao(...)`) em try/catch no cliente —
+  defesa em profundidade pra qualquer outra falha de rede (proxy, timeout) virar uma mensagem
+  amigável em vez de derrubar a página.
+- `src/app/(dashboard)/error.tsx` (novo) — primeiro error boundary do app. Intercepta qualquer erro
+  não tratado em qualquer página dentro do dashboard e mostra uma tela com explicação simples,
+  código do erro (digest, útil se o cliente abrir um chamado sobre isso) e dois caminhos: "Tentar
+  novamente" (`reset()`, sem recarregar a página) ou "Voltar ao Dashboard". O menu lateral continua
+  visível normalmente, porque o erro só derruba o conteúdo da página — `(dashboard)/layout.tsx`
+  (onde vive o menu) fica fora do que quebrou.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
