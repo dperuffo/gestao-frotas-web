@@ -9,13 +9,19 @@ import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
 
+// Fase 27.15 — o ícone da "Assistente FNI" é a logo (imagem), bem mais larga
+// que um emoji, então o texto de cada item desalinhava em relação aos
+// demais (que usavam emoji direto dentro da string do label). Separado
+// `icone`/`label` pra todo mundo nesta lista renderizar o ícone dentro da
+// mesma coluna de largura fixa (ver render abaixo) — a logo entra no lugar
+// do emoji só pro item "/assistente" (icone: null sinaliza isso).
 const menuVisaoGeral = [
-  { href: "/dashboard", label: "📊 Dashboard" },
-  { href: "/assistente", label: "Assistente FNI" },
-  { href: "/assinatura", label: "💳 Minha Assinatura" },
-  { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
-  { href: "/financeiro", label: "💰 Painel Financeiro" },
-  { href: "/lgpd", label: "🔒 Privacidade (LGPD)" },
+  { href: "/dashboard", icone: "📊", label: "Dashboard" },
+  { href: "/assistente", icone: null, label: "Assistente FNI" },
+  { href: "/assinatura", icone: "💳", label: "Minha Assinatura" },
+  { href: "/avaliar", icone: "⭐", label: "Avaliar Plataforma" },
+  { href: "/financeiro", icone: "💰", label: "Painel Financeiro" },
+  { href: "/lgpd", icone: "🔒", label: "Privacidade (LGPD)" },
 ];
 
 const menuCadastros = [
@@ -136,11 +142,13 @@ export default async function DashboardLayout({
                 <Link
                   href={item.href}
                   data-tour={TOUR_POR_HREF[item.href]}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
-                  {item.href === "/assistente" && (
-                    <Image src="/logo-fni.png" alt="" width={51} height={20} className="h-4 w-auto" />
-                  )}
+                  <span className="flex w-6 shrink-0 items-center justify-center" aria-hidden>
+                    {item.icone ?? (
+                      <Image src="/logo-fni.png" alt="" width={24} height={9} className="h-auto w-6 object-contain" />
+                    )}
+                  </span>
                   {item.label}
                 </Link>
               </li>
@@ -150,7 +158,12 @@ export default async function DashboardLayout({
                 href="/chamados"
                 className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
               >
-                <span>🎫 Chamados</span>
+                <span className="flex items-center gap-2">
+                  <span className="flex w-6 shrink-0 items-center justify-center" aria-hidden>
+                    🎫
+                  </span>
+                  Chamados
+                </span>
                 {chamadosNaoVistos > 0 && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                     {chamadosNaoVistos}

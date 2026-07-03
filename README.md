@@ -2653,3 +2653,19 @@ Financeiro, Privacidade e Chamados já tinham emoji desde antes).
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
 
+## Fase 27.15 — Alinhamento dos ícones no menu "Visão Geral"
+
+Pedido do Daniel: o texto de "Assistente FNI" estava desalinhado em relação aos outros itens do
+menu (Dashboard, Painel Financeiro, Privacidade, Chamados) — a logo da FNI usada como ícone desse
+item é bem mais larga que um emoji, então o texto começava mais à direita que os demais.
+
+- `src/app/(dashboard)/layout.tsx` — `menuVisaoGeral` passou a separar `icone`/`label` em vez de
+  emoji embutido na string (só esta lista; Cadastros/Operação/Administração não têm esse problema,
+  porque não misturam imagem com emoji). No render, todo item (incluindo a logo da Assistente FNI
+  e o 🎫 de Chamados, que é renderizado à parte) usa a mesma coluna de largura fixa (`w-6`) antes
+  do texto — é essa largura fixa, não o tamanho do ícone em si, que garante que o texto de todo
+  mundo comece exatamente no mesmo x. A logo ficou um pouco menor (24×9, hoje ainda reconhecível)
+  pra caber bem centralizada nessa coluna.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
