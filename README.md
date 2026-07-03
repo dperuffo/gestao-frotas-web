@@ -2626,3 +2626,22 @@ Validado com `npx tsc --noEmit` e `npx eslint` nos arquivos novos/tocados, ambos
 `get_advisors` (security) confirmando que as duas tabelas saíram da lista de "RLS enabled, no
 policy".
 
+## Fase 27.14 — Ícones sugestivos nos itens de menu sem ícone
+
+Pedido do Daniel: colocar ícones sugestivos nas abas do menu lateral, só onde ainda não tinha
+(Assistente FNI já usa a logo da FNI como ícone; Minha Assinatura, Avaliar Plataforma, Painel
+Financeiro, Privacidade e Chamados já tinham emoji desde antes).
+
+- `src/app/(dashboard)/layout.tsx` — emoji adicionado no início do `label` de cada item que
+  ainda estava só com texto: Dashboard 📊; Clientes 🏢; Grupo Econômico 🔗; Usuários 👥;
+  Motoristas 🪪; Veículos 🚗; Centros de Custo 🧾; Postos Revendedores ⛽; Abastecimentos 🛢️;
+  Roteirização 🗺️; Rotograma 🛡️; Manutenção Preditiva 🔧; Relatórios 📈; Integrações 🔌;
+  Permissões por Perfil 🔑; Inteligência de Rede 🌐; Assinaturas (todos os clientes) 💳 (mesmo
+  ícone de "Minha Assinatura" — mesmo conceito, visão admin); Avaliações dos Clientes ⭐ (mesmo
+  ícone de "Avaliar Plataforma", pelo mesmo motivo).
+- Só o `label` de cada item mudou (usado apenas no menu lateral — os `<h1>` de cada página são
+  strings independentes, não derivadas desse array) — nenhuma rota, ordem ou lógica de exibição
+  foi alterada.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+

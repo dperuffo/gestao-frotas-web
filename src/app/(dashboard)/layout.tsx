@@ -10,7 +10,7 @@ import { TourProvider } from "@/components/ajuda/TourProvider";
 import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
 
 const menuVisaoGeral = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard", label: "📊 Dashboard" },
   { href: "/assistente", label: "Assistente FNI" },
   { href: "/assinatura", label: "💳 Minha Assinatura" },
   { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
@@ -19,29 +19,29 @@ const menuVisaoGeral = [
 ];
 
 const menuCadastros = [
-  { href: "/clientes", label: "Clientes" },
-  { href: "/grupo-economico", label: "Grupo Econômico" },
-  { href: "/usuarios", label: "Usuários" },
-  { href: "/motoristas", label: "Motoristas" },
-  { href: "/veiculos", label: "Veículos" },
-  { href: "/centros-custo", label: "Centros de Custo" },
-  { href: "/postos", label: "Postos Revendedores" },
+  { href: "/clientes", label: "🏢 Clientes" },
+  { href: "/grupo-economico", label: "🔗 Grupo Econômico" },
+  { href: "/usuarios", label: "👥 Usuários" },
+  { href: "/motoristas", label: "🪪 Motoristas" },
+  { href: "/veiculos", label: "🚗 Veículos" },
+  { href: "/centros-custo", label: "🧾 Centros de Custo" },
+  { href: "/postos", label: "⛽ Postos Revendedores" },
 ];
 
 const menuOperacao = [
-  { href: "/abastecimentos", label: "Abastecimentos" },
-  { href: "/roteirizacao", label: "Roteirização" },
-  { href: "/rotograma", label: "Rotograma" },
-  { href: "/manutencao-preditiva", label: "Manutenção Preditiva" },
-  { href: "/relatorios", label: "Relatórios" },
-  { href: "/integracoes", label: "Integrações" },
+  { href: "/abastecimentos", label: "🛢️ Abastecimentos" },
+  { href: "/roteirizacao", label: "🗺️ Roteirização" },
+  { href: "/rotograma", label: "🛡️ Rotograma" },
+  { href: "/manutencao-preditiva", label: "🔧 Manutenção Preditiva" },
+  { href: "/relatorios", label: "📈 Relatórios" },
+  { href: "/integracoes", label: "🔌 Integrações" },
 ];
 
 const menuAdministracao = [
-  { href: "/permissoes", label: "Permissões por Perfil" },
-  { href: "/inteligencia-rede", label: "Inteligência de Rede" },
-  { href: "/assinaturas", label: "Assinaturas (todos os clientes)" },
-  { href: "/avaliacoes", label: "Avaliações dos Clientes" },
+  { href: "/permissoes", label: "🔑 Permissões por Perfil" },
+  { href: "/inteligencia-rede", label: "🌐 Inteligência de Rede" },
+  { href: "/assinaturas", label: "💳 Assinaturas (todos os clientes)" },
+  { href: "/avaliacoes", label: "⭐ Avaliações dos Clientes" },
 ];
 
 // Alvos do tour de boas-vindas (Fase 24) — só os 3 itens de menu citados no
