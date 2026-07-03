@@ -10,6 +10,11 @@ export type ItemAjuda = { titulo: string; texto: string };
 // Convenção de chave: "<tela>.<indicador_ou_painel>" em minúsculo/snake_case
 // (mesmo nome usado nas colunas/RPCs sempre que possível, pra achar rápido).
 export const AJUDA: Record<string, ItemAjuda> = {
+  // ── Privacidade / LGPD ────────────────────────────────────────────
+  "privacidade.pagina": {
+    titulo: "Privacidade e LGPD",
+    texto: "Seus dados cadastrais, histórico de consentimento e os mecanismos de revogação de consentimento e solicitação de exclusão de dados previstos na Lei Geral de Proteção de Dados.",
+  },
   // ── Dashboard ──────────────────────────────────────────────────────
   "dashboard.clientes_ativos": {
     titulo: "Clientes ativos",

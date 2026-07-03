@@ -511,6 +511,44 @@ export interface Database {
           },
         ];
       };
+      // lgpd_consents e lgpd_exclusoes já existiam no banco compartilhado
+      // (RLS ligado, sem nenhuma policy — só service_role acessava) sem
+      // nenhuma tela usando elas até a Fase 27.13. Sem FK declarada pra
+      // empresas (por isso Relationships vazio) — o nome do cliente é
+      // resolvido em memória, comparando empresa_id com a lista de
+      // `empresas` já carregada na página.
+      lgpd_consents: {
+        Row: {
+          id: string;
+          email: string;
+          empresa_id: string | null;
+          tipo: string;
+          ip: string | null;
+          user_agent: string | null;
+          timestamp: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["lgpd_consents"]["Row"]> & {
+          email: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["lgpd_consents"]["Row"]>;
+        Relationships: [];
+      };
+      lgpd_exclusoes: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          email: string;
+          status: string;
+          solicitado_em: string | null;
+          executado_em: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["lgpd_exclusoes"]["Row"]> & {
+          empresa_id: string;
+          email: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["lgpd_exclusoes"]["Row"]>;
+        Relationships: [];
+      };
       // Histórico de manutenções por veículo — tabela que já existia no
       // banco compartilhado (comentário original: "alimenta a análise
       // preditiva"), sem nenhuma tela usando ela até a Fase 8.

@@ -2590,3 +2590,39 @@ Motoristas, Chamados) ganharam paginação em vez de mostrar a lista inteira num
 
 Validado com `npx tsc --noEmit` e `npx eslint` nos arquivos tocados, ambos limpos.
 
+## Fase 27.13 — Tela de Privacidade / LGPD (revogação de consentimento e exclusão de dados)
+
+Pedido do Daniel: ler as tabelas de LGPD já existentes no banco e criar uma tela com o mecanismo
+de revogação de consentimento pelo usuário e o tratamento de dados conforme a LGPD.
+
+- `lgpd_consents` e `lgpd_exclusoes` — igual a `termos_aceite` (Fase 23) e `manutencoes_realizadas`
+  (Fase 8), já existiam no banco compartilhado com RLS **ligado mas sem nenhuma policy** (só
+  `service_role` conseguia ler/escrever) e nenhuma tela usando elas. Adicionadas as policies
+  (migração `rls_lgpd_consents_e_exclusoes`): cada usuário só enxerga e só cria registros com o
+  próprio e-mail (do JWT); marcar uma exclusão como "executada" é ação exclusiva do admin.
+- `src/app/(dashboard)/privacidade/page.tsx` (nova tela, menu "🔒 Privacidade (LGPD)", visível pra
+  todos os perfis) — pra usuários comuns, mostra: **dados cadastrais** (nome, e-mail, CPF, telefone,
+  cliente vinculado, MFA — direito de acesso, art. 18 I), **histórico de consentimento**
+  (`lgpd_consents`, mais recente primeiro), **revogar consentimento** (botão que insere um novo
+  registro em `lgpd_consents` com `tipo: "revogacao"` — art. 8º §5º) e **solicitar exclusão dos
+  meus dados** (formulário que insere em `lgpd_exclusoes` com `status: "pendente"` — direito ao
+  esquecimento, art. 18 VI). Pro admin (time interno FNI, que não é um cliente/tenant), a tela
+  mostra em vez disso um painel com as solicitações de exclusão de **todos** os clientes, com botão
+  "Marcar como executada".
+- **Por que a exclusão não é automática**: uma solicitação de exclusão fica com `status: "pendente"`
+  até um admin revisar e executar manualmente — não existe uma rotina que apague dados sozinha.
+  Decisão deliberada: um SaaS multi-tenant de frotas tem obrigações contratuais e legais de retenção
+  (nota fiscal, faturamento, prazo mínimo de guarda de log) que precisam ser conferidas antes de
+  apagar qualquer coisa, e um clique indevido não pode apagar dados de um cliente inteiro sem
+  revisão humana. `solicitarExclusaoDados` também bloqueia solicitações duplicadas (já existe uma
+  pendente pro mesmo e-mail/empresa).
+- `src/types/database.types.ts` — `lgpd_consents` e `lgpd_exclusoes` adicionadas manualmente ao tipo
+  (mesma abordagem já usada antes nesse arquivo, mais rápida que regenerar tudo pelo MCP).
+- Texto e direitos citados na tela seguem a Cláusula 10ª do Termo de Adesão
+  (`src/lib/termoAdesao.ts`), que já prometia acesso, correção, eliminação, portabilidade e
+  revogação — esta tela é o que efetivamente entrega esses mecanismos pro usuário.
+
+Validado com `npx tsc --noEmit` e `npx eslint` nos arquivos novos/tocados, ambos limpos, e
+`get_advisors` (security) confirmando que as duas tabelas saíram da lista de "RLS enabled, no
+policy".
+
