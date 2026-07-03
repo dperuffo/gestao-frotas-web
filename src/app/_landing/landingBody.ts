@@ -1,0 +1,751 @@
+// Fase 26 — conteúdo da landing pública (fxgestaodefrotasonline.com), portado
+// do repositório dperuffo/estudo-de-rede (diretório landing/index.html) pra
+// virar a rota "/" deste app. Mantido como HTML bruto (em vez de reescrever
+// tudo em JSX) porque a página tem CSS e JS inline entrelaçados (troca de
+// idioma PT/EN via localStorage, tabs do demo animado) — reescrever cada
+// atributo style="" em objeto JSX seria um retrabalho enorme e arriscado sem
+// ganho real, já que essa página não tem nenhuma interatividade React (não
+// usa useState/props daqui). Renderizado via dangerouslySetInnerHTML em
+// src/app/page.tsx; os <script> ficam dentro desse HTML e executam
+// normalmente no carregamento inicial (a ressalva de "innerHTML não executa
+// <script>" vale só para innerHTML setado via JS depois do load, não para
+// HTML que já vem embutido na resposta do servidor, que é o caso aqui).
+//
+// Ajustes feitos ao portar (ver README Fase 26):
+// - Links que apontavam pra https://app.fxgestaodefrotasonline.com viraram
+//   /login (Acessar Plataforma) ou /cadastro (todos os CTAs de "começar").
+// - Links de termos.html/privacidade.html/sobre.html viraram rotas do Next
+//   (/termos, /privacidade, /sobre, com variante -en).
+// - Preços da seção de planos atualizados pra bater com o Stripe real
+//   (Básico R9, Profissional R9, Enterprise R29 — Fase 23.3), inclusive
+//   os textos de fallback do dicionário de i18n (senão o script de troca de
+//   idioma sobrescrevia o texto certo pelo antigo "Sob consulta"/"Falar com
+//   vendas"). O card "Gratuito" foi mantido de propósito — ele reflete o
+//   plano "gratuito" real do trial self-service (1 usuário, 10 veículos,
+//   ver LIMITES_PLANO em src/lib/constants.ts), não é um valor inventado.
+export const LANDING_BODY_HTML = `
+<nav>
+  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgNjQiIHdpZHRoPSIyMjAiIGhlaWdodD0iNDQiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQsNCkiPjxsaW5lIHgxPSIyNCIgeTE9IjI0IiB4Mj0iOCIgeTI9IjEyIiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMjQiIHkxPSIyNCIgeDI9IjUiIHkyPSIzMCIgc3Ryb2tlPSIjMDBiNGQ4IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjI0IiB5MT0iMjQiIHgyPSIxMCIgeTI9IjQ0IiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMjQiIHkxPSIyNCIgeDI9IjM2IiB5Mj0iOCIgc3Ryb2tlPSIjMDBiNGQ4IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjI0IiB5MT0iMjQiIHgyPSI0MCIgeTI9IjM4IiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjQgNSBDMTYgNSAxMCAxMSAxMCAxOCBDMTAgMjcgMjQgNDIgMjQgNDIgQzI0IDQyIDM4IDI3IDM4IDE4IEMzOCAxMSAzMiA1IDI0IDVaIiBmaWxsPSIjMDBiNGQ4Ii8+PGNpcmNsZSBjeD0iMjQiIGN5PSIxOCIgcj0iNiIgZmlsbD0iIzA0MTEyZSIvPjxjaXJjbGUgY3g9IjgiIGN5PSIxMiIgcj0iNCIgZmlsbD0iIzAwYjRkOCIvPjxjaXJjbGUgY3g9IjUiIGN5PSIzMCIgcj0iNCIgZmlsbD0iIzAwYjRkOCIvPjxjaXJjbGUgY3g9IjEwIiBjeT0iNDQiIHI9IjQiIGZpbGw9IiMwMGI0ZDgiLz48Y2lyY2xlIGN4PSIzNiIgY3k9IjgiIHI9IjQiIGZpbGw9IiMwMGI0ZDgiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjM4IiByPSI0IiBmaWxsPSIjMDBiNGQ4Ii8+PC9nPjx0ZXh0IHg9IjYyIiB5PSIyNiIgZm9udC1mYW1pbHk9Ik91dGZpdCxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNzAwIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmZmZmZmIiBsZXR0ZXItc3BhY2luZz0iMC4zIj5GbGVldCBOZXR3b3JrIEludGVsbGlnZW5jZTwvdGV4dD48dGV4dCB4PSI2MiIgeT0iNDQiIGZvbnQtZmFtaWx5PSJPdXRmaXQsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjUwMCIgZm9udC1zaXplPSIxMC41IiBmaWxsPSIjMDBiNGQ4IiBsZXR0ZXItc3BhY2luZz0iMiI+R0VTVMODTyBERSBGUk9UQVM8L3RleHQ+PC9zdmc+" alt="FNI Fleet Network Intelligence" height="38">
+  <ul class="nav-links">
+    <li><a href="#func" data-i18n="nav_func">Funcionalidades</a></li>
+    <li><a href="#como" data-i18n="nav_como">Como funciona</a></li>
+    <li><a href="#precos" data-i18n="nav_precos">Preços</a></li>
+  </ul>
+  <div class="lang-switcher"><button id="btn-pt" class="lang-btn lang-active" onclick="setLang('pt')">🇧🇷 PT</button><button id="btn-en" class="lang-btn" onclick="setLang('en')">🇺🇸 EN</button></div>
+  <a href="/login" style="color:var(--white);text-decoration:none;font-size:0.88rem;font-weight:600;padding:9px 20px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.35);margin-right:8px;transition:all 0.2s;background:rgba(255,255,255,0.06);" onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.borderColor='rgba(255,255,255,0.6)'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='rgba(255,255,255,0.35)'" data-i18n="nav_acessar">🔐 Acessar Plataforma</a><a href="/cadastro" class="nav-cta" data-i18n="nav_comecar">Começar grátis →</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div style="margin-bottom:36px;animation:fadeUp 0.6s ease both;">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MjAgMTQwIiB3aWR0aD0iNDgwIiBoZWlnaHQ9IjEzMCI+PGRlZnM+PGZpbHRlciBpZD0iZ2xvdyI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMyIgcmVzdWx0PSJibHVyIi8+PGZlTWVyZ2U+PGZlTWVyZ2VOb2RlIGluPSJibHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjxsaW5lYXJHcmFkaWVudCBpZD0icGciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwMGMyZmYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwMGI0ZDgiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMCwxMCkiIGZpbHRlcj0idXJsKCNnbG93KSI+PGxpbmUgeDE9IjU1IiB5MT0iNTUiIHgyPSIxOCIgeTI9IjI2IiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjgiLz48bGluZSB4MT0iNTUiIHkxPSI1NSIgeDI9IjEwIiB5Mj0iNjIiIHN0cm9rZT0iIzAwYjRkOCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuOCIvPjxsaW5lIHgxPSI1NSIgeTE9IjU1IiB4Mj0iMjIiIHkyPSI5NSIgc3Ryb2tlPSIjMDBiNGQ4IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iMC44Ii8+PGxpbmUgeDE9IjU1IiB5MT0iNTUiIHgyPSI4OCIgeTI9IjE4IiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjgiLz48bGluZSB4MT0iNTUiIHkxPSI1NSIgeDI9Ijk1IiB5Mj0iODIiIHN0cm9rZT0iIzAwYjRkOCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuOCIvPjxwYXRoIGQ9Ik01NSAxNCBDMzggMTQgMjQgMjggMjQgNDQgQzI0IDYyIDU1IDkwIDU1IDkwIEM1NSA5MCA4NiA2MiA4NiA0NCBDODYgMjggNzIgMTQgNTUgMTRaIiBmaWxsPSJ1cmwoI3BnKSIvPjxjaXJjbGUgY3g9IjU1IiBjeT0iNDQiIHI9IjE0IiBmaWxsPSIjMDQxMTJlIi8+PGNpcmNsZSBjeD0iNTUiIGN5PSI0NCIgcj0iNyIgZmlsbD0iIzAwYjRkOCIgb3BhY2l0eT0iMC42Ii8+PGNpcmNsZSBjeD0iMTgiIGN5PSIyNiIgcj0iOSIgZmlsbD0iIzAwYjRkOCIgb3BhY2l0eT0iMC45Ii8+PGNpcmNsZSBjeD0iMTAiIGN5PSI2MiIgcj0iOSIgZmlsbD0iIzAwYjRkOCIgb3BhY2l0eT0iMC45Ii8+PGNpcmNsZSBjeD0iMjIiIGN5PSI5NSIgcj0iOSIgZmlsbD0iIzAwYjRkOCIgb3BhY2l0eT0iMC45Ii8+PGNpcmNsZSBjeD0iODgiIGN5PSIxOCIgcj0iOSIgZmlsbD0iIzAwYjRkOCIgb3BhY2l0eT0iMC45Ii8+PGNpcmNsZSBjeD0iOTUiIGN5PSI4MiIgcj0iOSIgZmlsbD0iIzAwYjRkOCIgb3BhY2l0eT0iMC45Ii8+PC9nPjx0ZXh0IHg9IjEyOCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJPdXRmaXQsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjgwMCIgZm9udC1zaXplPSIzNCIgZmlsbD0iI2ZmZmZmZiIgbGV0dGVyLXNwYWNpbmc9Ii0wLjUiPkZsZWV0IE5ldHdvcms8L3RleHQ+PHRleHQgeD0iMTI4IiB5PSI4OCIgZm9udC1mYW1pbHk9Ik91dGZpdCxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iODAwIiBmb250LXNpemU9IjM0IiBmaWxsPSIjZmZmZmZmIiBsZXR0ZXItc3BhY2luZz0iLTAuNSI+SW50ZWxsaWdlbmNlPC90ZXh0PjxyZWN0IHg9IjEyOCIgeT0iMTAwIiB3aWR0aD0iNDgiIGhlaWdodD0iMiIgZmlsbD0iIzAwYjRkOCIgcng9IjEiLz48dGV4dCB4PSIxMjgiIHk9IjEyMiIgZm9udC1mYW1pbHk9Ik91dGZpdCxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNTAwIiBmb250LXNpemU9IjEzIiBmaWxsPSIjMDBiNGQ4IiBsZXR0ZXItc3BhY2luZz0iMyI+R0VTVMODTyBERSBGUk9UQVM8L3RleHQ+PC9zdmc+" alt="Fleet Network Intelligence" style="max-width:100%;height:auto;">
+    </div>
+    <div class="hero-badge"><div class="dot"></div><span data-i18n="hero_badge">Plataforma SaaS para frotas brasileiras</span></div>
+    <h1><span data-i18n="hero_h1a">Inteligência de rede para</span> <em data-i18n="hero_h1b">decisões que economizam</em></h1>
+    <p class="sub" data-i18n="hero_sub">Compare preços ANP em tempo real, monitore o consumo da sua frota e identifique os melhores postos credenciados — tudo em uma plataforma integrada e segura.</p>
+    <div class="actions">
+      <a href="/cadastro" class="btn-p" data-i18n="hero_btn_p">Teste grátis por 14 dias →</a>
+      <a href="#func" class="btn-s" data-i18n="hero_btn_s">Ver funcionalidades</a>
+    </div>
+    <div class="stats">
+      <div><div class="sn">2.9<span>k+</span></div><div class="sl" data-i18n="stat1_l">Postos monitorados</div></div>
+      <div><div class="sn">14<span>dias</span></div><div class="sl" data-i18n="stat2_l">Trial gratuito</div></div>
+      <div><div class="sn">ANP<span>✓</span></div><div class="sl" data-i18n="stat3_l">Dados oficiais</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="strip-lbl" data-i18n="strip_lbl">Compatível com os principais sistemas do mercado</div>
+  <div class="logos">
+    <div class="logo-i">TOTVS</div><div class="logo-i">SAP</div>
+    <div class="logo-i">SEFAZ</div><div class="logo-i">ANTT</div>
+    <div class="logo-i">ANP</div><div class="logo-i">SASCAR</div>
+  </div>
+</div>
+
+
+<style>
+/* ── Demo Section ── */
+.demo-section { padding: 80px 0; }
+.section-label { color: #00e5ff; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+.section-title { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; color: #fff; margin-bottom: 12px; }
+.section-sub { color: #a0aec0; font-size: 15px; margin-bottom: 40px; }
+
+/* Tabs */
+.demo-tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px; }
+.demo-tab { padding: 10px 20px; border-radius: 24px; border: 1px solid rgba(0,229,255,0.25); background: rgba(0,229,255,0.05); color: #a0aec0; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
+.demo-tab:hover { border-color: #00e5ff; color: #00e5ff; }
+.demo-tab.active { background: rgba(0,229,255,0.15); border-color: #00e5ff; color: #00e5ff; }
+
+/* Frame */
+.demo-frame { position: relative; }
+.demo-panel { display: none; animation: fadeIn .3s ease; }
+.demo-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Mock Browser */
+.mock-browser { border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 60px rgba(0,0,0,0.5); margin-bottom: 16px; }
+.mock-bar { background: #1a1f2e; padding: 10px 16px; display: flex; align-items: center; gap: 6px; }
+.mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+.mock-dot.red { background: #ff5f57; }
+.mock-dot.yellow { background: #febc2e; }
+.mock-dot.green { background: #28c840; }
+.mock-url { margin-left: 12px; font-size: 11px; color: #4a5568; font-family: monospace; }
+.mock-content { background: #0d1117; min-height: 340px; }
+
+/* Dashboard */
+.mock-content.dash { display: flex; }
+.mock-sidebar { width: 160px; background: #111827; padding: 16px 10px; flex-shrink: 0; }
+.mock-logo-sm { color: #00e5ff; font-weight: 900; font-size: 16px; margin-bottom: 20px; padding: 0 4px; }
+.mock-nav-item { padding: 7px 8px; border-radius: 6px; font-size: 11px; color: #4a5568; margin-bottom: 4px; cursor: default; }
+.mock-nav-item.active-nav { background: rgba(0,229,255,0.1); color: #00e5ff; }
+.mock-main { flex: 1; padding: 16px; }
+.mock-header-bar { margin-bottom: 16px; }
+.mock-title-text { font-size: 13px; font-weight: 700; color: #e2e8f0; }
+.mock-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 16px; }
+.mock-kpi { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 10px 8px; text-align: center; }
+.mock-kpi-val { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+.mock-kpi-val.cyan { color: #00e5ff; }
+.mock-kpi-val.green { color: #48bb78; }
+.mock-kpi-val.yellow { color: #ffd600; }
+.mock-kpi-val.blue { color: #63b3ed; }
+.mock-kpi-lbl { font-size: 9px; color: #4a5568; }
+.mock-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mock-chart { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px; }
+.mock-chart-title { font-size: 10px; color: #718096; margin-bottom: 8px; }
+.bar-wrap { display: flex; flex-direction: column; gap: 6px; }
+.bar-row { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #718096; }
+.bar-fill { height: 8px; border-radius: 4px; transition: width .3s; }
+.line-svg { width: 100%; height: 60px; }
+
+/* Rota */
+.mock-content.rota { position: relative; display: flex; flex-direction: column; }
+.mock-map-bg { position: relative; background: linear-gradient(135deg, #0a1628 0%, #0d1f3c 100%); height: 240px; overflow: hidden; }
+.map-svg { width: 100%; height: 100%; }
+.map-labels { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 6px; }
+.map-badge { background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 10px; font-size: 11px; color: #e2e8f0; backdrop-filter: blur(4px); }
+.map-info { background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); border-radius: 20px; padding: 4px 10px; font-size: 11px; color: #00e5ff; }
+.mock-posto-list { padding: 12px 16px; background: #111827; }
+.mock-posto-title { font-size: 11px; color: #718096; margin-bottom: 8px; font-weight: 600; }
+.mock-posto { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; }
+.posto-rank { font-weight: 800; font-size: 11px; width: 24px; }
+.posto-rank.gold { color: #ffd600; }
+.posto-rank.silver { color: #a0aec0; }
+.posto-rank.bronze { color: #ed8936; }
+.posto-nome { flex: 1; color: #e2e8f0; }
+.posto-preco { font-weight: 700; color: #718096; }
+.posto-preco.cyan { color: #00e5ff; }
+
+/* IA */
+.mock-content.ia { padding: 16px; }
+.ia-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 12px 16px; background: linear-gradient(135deg, #1a1040, #0d1a3a); border: 1px solid rgba(127,119,221,0.3); border-radius: 12px; }
+.ia-logo-circle { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #534AB7, #7F77DD); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; flex-shrink: 0; }
+.ia-title { font-size: 13px; font-weight: 700; color: #e2e8f0; }
+.ia-sub { font-size: 10px; color: #7F77DD; }
+.ia-chat { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.ia-msg { padding: 8px 12px; border-radius: 10px; font-size: 12px; max-width: 85%; line-height: 1.5; }
+.ia-msg.user { background: rgba(127,119,221,0.15); color: #c4b5fd; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
+.ia-msg.bot { background: rgba(255,255,255,0.05); color: #e2e8f0; align-self: flex-start; border-radius: 10px 10px 10px 2px; }
+.ia-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 700; background: #1a4731; color: #48bb78; margin-right: 6px; }
+.ia-badge.alert { background: #4a1a1a; color: #fc8181; }
+.ia-cursor { animation: blink 1s infinite; color: #00e5ff; }
+@keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
+.ia-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.ia-chip { padding: 5px 12px; border-radius: 16px; border: 1px solid rgba(127,119,221,0.3); font-size: 11px; color: #a0aec0; cursor: pointer; }
+
+/* Rotograma */
+.mock-content.rg { padding: 16px; }
+.rg-header { font-size: 14px; font-weight: 700; color: #00e5ff; margin-bottom: 14px; }
+.rg-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.rg-section-title { font-size: 11px; font-weight: 700; color: #718096; margin-bottom: 8px; }
+.rg-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; font-size: 11px; }
+.rg-item.danger { background: rgba(231,76,60,0.1); border-left: 3px solid #E74C3C; }
+.rg-item.crime { background: rgba(192,57,43,0.1); border-left: 3px solid #C0392B; }
+.rg-item.warn { background: rgba(230,126,34,0.1); border-left: 3px solid #E67E22; }
+.rg-item.stop { background: rgba(0,229,255,0.05); border-left: 3px solid #00e5ff44; }
+.rg-icon { font-size: 14px; flex-shrink: 0; }
+.rg-loc { color: #e2e8f0; font-weight: 600; margin-bottom: 2px; }
+.rg-detail { color: #718096; }
+.rg-emergency { margin-top: 12px; padding: 8px 10px; background: rgba(0,229,255,0.08); border-radius: 8px; font-size: 11px; color: #00e5ff; font-weight: 600; }
+
+/* Caption */
+.demo-caption { text-align: center; color: #718096; font-size: 14px; padding: 0 20px; }
+.demo-caption strong { color: #e2e8f0; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .mock-content.dash { flex-direction: column; }
+  .mock-sidebar { width: 100%; display: flex; gap: 8px; overflow-x: auto; padding: 8px; }
+  .mock-kpis { grid-template-columns: repeat(2,1fr); }
+  .mock-charts { grid-template-columns: 1fr; }
+  .rg-body { grid-template-columns: 1fr; }
+  .demo-tab { font-size: 11px; padding: 8px 12px; }
+}
+</style>
+
+<script>
+function showDemo(idx) {
+  document.querySelectorAll('.demo-panel').forEach((p,i) => {
+    p.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.demo-tab').forEach((t,i) => {
+    t.classList.toggle('active', i === idx);
+  });
+}
+
+// Auto-rotação a cada 5 segundos
+let _demoIdx = 0;
+let _demoTimer = setInterval(() => {
+  _demoIdx = (_demoIdx + 1) % 4;
+  showDemo(_demoIdx);
+}, 5000);
+
+// Para auto-rotação ao clicar
+document.querySelectorAll('.demo-tab').forEach(t => {
+  t.addEventListener('click', () => clearInterval(_demoTimer));
+});
+</script>
+
+
+<style>
+.dtab2{padding:9px 18px;border-radius:24px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#718096;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.dtab2:hover{border-color:#00e5ff;color:#00e5ff}
+.dtab2.dtab-on{background:rgba(0,229,255,0.12);border-color:#00e5ff;color:#00e5ff}
+.dp2{animation:fadeUp2 .3s ease}
+@keyframes fadeUp2{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink2{0%,49%{opacity:1}50%,100%{opacity:0}}
+</style>
+
+<script>
+var _urls=['fxgestaodefrotasonline.com · Dashboard Analítico','fxgestaodefrotasonline.com · Consulta por Rota','fxgestaodefrotasonline.com · Assistente IA','fxgestaodefrotasonline.com · Rotograma de Segurança'];
+var _captions=[
+  '<strong style="color:#e2e8f0">Dashboard Analítico</strong> — Visão consolidada de abastecimentos reais, cobertura por UF e comparativo ANP em tempo real.',
+  '<strong style="color:#e2e8f0">Consulta por Rota</strong> — Mapa interativo com os melhores postos ANP ao longo da rota, com animação da rota e economia calculada automaticamente.',
+  '<strong style="color:#e2e8f0">Assistente IA</strong> — Converse em linguagem natural com IA especializada em frotas. Powered by Claude AI, com dados reais da sua empresa.',
+  '<strong style="color:#e2e8f0">Rotograma de Segurança</strong> — Mapeie riscos, paradas e contatos de emergência. Exporte em PDF para o motorista carregar na viagem.'
+];
+var _cur2=0,_timer2;
+function sd(i){
+  clearInterval(_timer2);
+  _cur2=i;
+  ['dp0','dp1','dp2','dp3'].forEach(function(id,j){
+    var el=document.getElementById(id);
+    if(el){el.style.display=(j===i?(id==='dp2'?'flex':'block'):'none');}
+  });
+  document.querySelectorAll('.dtab2').forEach(function(t,j){t.classList.toggle('dtab-on',j===i);});
+  document.getElementById('demo-url2').textContent=_urls[i];
+  document.getElementById('demo-caption2').innerHTML=_captions[i];
+  _timer2=setInterval(function(){sd((_cur2+1)%4);},6000);
+}
+sd(0);
+</script>
+
+<section id="demo" style="padding:80px 0;background:rgba(0,0,0,0.2)">
+<div class="container">
+<div style="text-align:center;margin-bottom:40px">
+  <div style="color:#00e5ff;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px" data-i18n="demo_lbl">Plataforma em ação</div>
+  <h2 style="font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800;color:#fff;margin-bottom:12px" data-i18n="demo_title">Veja como funciona na prática</h2>
+  <p style="color:#a0aec0;font-size:15px" data-i18n="demo_sub">Explore as principais funcionalidades da FNI Gestão de Frotas</p>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:28px">
+  <button class="dtab2 dtab-on" onclick="sd(0)" data-i18n="demo_tab0">📈 Dashboard</button>
+  <button class="dtab2" onclick="sd(1)" data-i18n="demo_tab1">🗺️ Consulta por Rota</button>
+  <button class="dtab2" onclick="sd(2)" data-i18n="demo_tab2">🤖 Assistente IA</button>
+  <button class="dtab2" onclick="sd(3)" data-i18n="demo_tab3">🗺️ Rotograma</button>
+</div>
+<div style="border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 24px 64px rgba(0,0,0,0.6)">
+  <div style="background:#1a1f2e;padding:10px 16px;display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.08)">
+    <span style="width:10px;height:10px;border-radius:50%;background:#ff5f57;display:inline-block"></span>
+    <span style="width:10px;height:10px;border-radius:50%;background:#febc2e;display:inline-block"></span>
+    <span style="width:10px;height:10px;border-radius:50%;background:#28c840;display:inline-block"></span>
+    <span id="demo-url2" style="margin-left:12px;font-size:11px;color:#4a5568;font-family:monospace">fxgestaodefrotasonline.com</span>
+  </div>
+  <div id="dp0" style="background:#0d1117;display:flex;min-height:360px">
+    <div style="width:155px;background:#111827;padding:14px 10px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06)">
+      <div style="color:#00e5ff;font-weight:900;font-size:16px;margin-bottom:20px;padding:0 4px">FNI</div>
+      <div style="padding:7px 8px;border-radius:6px;background:rgba(0,229,255,0.1);color:#00e5ff;font-size:11px;font-weight:600;margin-bottom:4px">📈 Dashboard</div>
+      <div style="padding:7px 8px;font-size:11px;color:#4a5568;margin-bottom:3px">🗺️ Por Rota</div>
+      <div style="padding:7px 8px;font-size:11px;color:#4a5568;margin-bottom:3px">👥 Análise</div>
+      <div style="padding:7px 8px;font-size:11px;color:#4a5568;margin-bottom:3px">📑 Relatórios</div>
+      <div style="padding:7px 8px;font-size:11px;color:#4a5568;margin-bottom:3px">🤖 IA</div>
+      <div style="padding:7px 8px;font-size:11px;color:#4a5568">🗺️ Rotograma</div>
+    </div>
+    <div style="flex:1;padding:16px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#00e5ff;margin-bottom:4px">2.960</div><div style="font-size:9px;color:#4a5568">Postos ANP</div></div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#48bb78;margin-bottom:4px">1.284</div><div style="font-size:9px;color:#4a5568">Abastecimentos</div></div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#ffd600;margin-bottom:4px">R$6,42</div><div style="font-size:9px;color:#4a5568">Preço médio/L</div></div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#9f7aea;margin-bottom:4px">18 UFs</div><div style="font-size:9px;color:#4a5568">Cobertura</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:#718096;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Penetração por UF</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#718096"><span style="width:22px">SP</span><div style="height:9px;border-radius:5px;background:#00e5ff;width:85%"></div><span>85%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#718096"><span style="width:22px">MG</span><div style="height:9px;border-radius:5px;background:rgba(0,229,255,0.8);width:72%"></div><span>72%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#718096"><span style="width:22px">RS</span><div style="height:9px;border-radius:5px;background:rgba(0,229,255,0.6);width:61%"></div><span>61%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#718096"><span style="width:22px">PR</span><div style="height:9px;border-radius:5px;background:rgba(0,229,255,0.4);width:54%"></div><span>54%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#718096"><span style="width:22px">BA</span><div style="height:9px;border-radius:5px;background:rgba(0,229,255,0.25);width:43%"></div><span>43%</span></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:#718096;margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Evolução Diesel S-10</div>
+          <svg viewBox="0 0 180 80" style="width:100%;height:70px">
+            <defs><linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5ff" stop-opacity=".25"/><stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0,62 L30,58 L60,61 L90,50 L120,44 L150,40 L180,35" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M0,62 L30,58 L60,61 L90,50 L120,44 L150,40 L180,35 L180,80 L0,80Z" fill="url(#lg2)"/>
+            <text x="0" y="78" font-size="8" fill="#4a5568">Jan</text>
+            <text x="55" y="78" font-size="8" fill="#4a5568">Mar</text>
+            <text x="110" y="78" font-size="8" fill="#4a5568">Mai</text>
+            <text x="148" y="33" font-size="9" fill="#00e5ff" font-weight="600">R$6,05</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="dp1" style="display:none;background:#0d1117">
+    <div style="background:#111827;padding:10px 14px;display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;border-bottom:1px solid rgba(255,255,255,0.06)">
+      <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:7px 10px;font-size:12px;color:#e2e8f0">🟢 São Paulo, SP</div>
+      <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:7px 10px;font-size:12px;color:#e2e8f0">🔴 Curitiba, PR</div>
+      <div style="background:#00e5ff;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:700;color:#0d1117;text-align:center">Buscar</div>
+    </div>
+    <div style="position:relative;height:240px;overflow:hidden;background:#1a2744">
+      <svg viewBox="0 0 600 240" style="width:100%;height:100%" preserveAspectRatio="xMidYMid slice">
+        <rect width="600" height="240" fill="#1a2744"/>
+        <line x1="0" y1="60" x2="600" y2="60" stroke="#ffffff05" stroke-width="1"/>
+        <line x1="0" y1="120" x2="600" y2="120" stroke="#ffffff05" stroke-width="1"/>
+        <line x1="0" y1="180" x2="600" y2="180" stroke="#ffffff05" stroke-width="1"/>
+        <line x1="150" y1="0" x2="150" y2="240" stroke="#ffffff05" stroke-width="1"/>
+        <line x1="300" y1="0" x2="300" y2="240" stroke="#ffffff05" stroke-width="1"/>
+        <line x1="450" y1="0" x2="450" y2="240" stroke="#ffffff05" stroke-width="1"/>
+        <path d="M70,200 C130,175 200,150 270,122 C340,94 420,70 500,48 C530,40 550,36 570,32" fill="none" stroke="#00e5ff" stroke-width="9" opacity="0.1" stroke-linecap="round"/>
+        <path d="M70,200 C130,175 200,150 270,122 C340,94 420,70 500,48 C530,40 550,36 570,32" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1000" stroke-dashoffset="1000">
+          <animate attributeName="stroke-dashoffset" from="1000" to="0" dur="2s" fill="freeze"/>
+        </path>
+        <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur=".3s" begin="0.9s" fill="freeze"/>
+          <circle cx="180" cy="163" r="8" fill="#00e5ff"/>
+          <circle cx="180" cy="163" r="16" fill="none" stroke="#00e5ff" stroke-width="1.5"><animate attributeName="r" from="8" to="24" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" from="0.4" to="0" dur="2s" repeatCount="indefinite"/></circle>
+          <rect x="190" y="149" width="68" height="16" rx="8" fill="rgba(0,0,0,0.85)"/>
+          <text x="224" y="161" text-anchor="middle" font-size="9" fill="#00e5ff" font-weight="700">R$5,66/L</text>
+        </g>
+        <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur=".3s" begin="1.2s" fill="freeze"/>
+          <circle cx="290" cy="117" r="8" fill="#00e5ff"/>
+          <circle cx="290" cy="117" r="16" fill="none" stroke="#00e5ff" stroke-width="1.5"><animate attributeName="r" from="8" to="24" dur="2s" begin=".5s" repeatCount="indefinite"/><animate attributeName="opacity" from="0.4" to="0" dur="2s" begin=".5s" repeatCount="indefinite"/></circle>
+          <rect x="300" y="103" width="60" height="16" rx="8" fill="rgba(0,0,0,0.85)"/>
+          <text x="330" y="115" text-anchor="middle" font-size="9" fill="#00e5ff">R$5,90/L</text>
+        </g>
+        <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur=".3s" begin="1.5s" fill="freeze"/>
+          <circle cx="415" cy="72" r="8" fill="#ffd600"/>
+          <rect x="425" y="58" width="60" height="16" rx="8" fill="rgba(0,0,0,0.85)"/>
+          <text x="455" y="70" text-anchor="middle" font-size="9" fill="#ffd600">R$6,32/L</text>
+        </g>
+        <circle cx="70" cy="200" r="10" fill="#48bb78"/>
+        <text x="70" y="204" text-anchor="middle" font-size="8" fill="#fff" font-weight="bold">O</text>
+        <circle cx="570" cy="32" r="10" fill="#e74c3c"/>
+        <text x="570" y="36" text-anchor="middle" font-size="8" fill="#fff" font-weight="bold">D</text>
+      </svg>
+      <div style="position:absolute;bottom:10px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none">
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:5px 12px;font-size:11px;color:#fff">🟢 São Paulo, SP</div>
+          <div style="background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:5px 12px;font-size:11px;color:#fff">🔴 Curitiba, PR</div>
+        </div>
+        <div style="background:rgba(0,229,255,0.15);border:1px solid rgba(0,229,255,0.4);border-radius:20px;padding:5px 14px;font-size:11px;color:#00e5ff;font-weight:600">⛽ 12 postos · 408 km · 4h 20min</div>
+      </div>
+    </div>
+    <div style="padding:12px 16px;background:#111827">
+      <div style="font-size:11px;color:#718096;font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Melhores postos na rota — Diesel S-10</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px"><span style="color:#ffd600;font-weight:800;width:24px;flex-shrink:0">1</span><span style="flex:1;color:#e2e8f0">Posto Dallas — Registro/SP</span><span style="color:#4a5568;font-size:10px;width:40px">2,1 km</span><span style="color:#00e5ff;font-weight:700;margin-right:6px">R$5,66/L</span><span style="background:rgba(72,187,120,0.15);color:#48bb78;padding:2px 8px;border-radius:10px;font-size:10px">-12% ANP</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px"><span style="color:#a0aec0;font-weight:800;width:24px;flex-shrink:0">2</span><span style="flex:1;color:#e2e8f0">Auto Posto Kadoshi — Ponta Grossa/PR</span><span style="color:#4a5568;font-size:10px;width:40px">3,4 km</span><span style="color:#00e5ff;font-weight:700;margin-right:6px">R$5,90/L</span><span style="background:rgba(72,187,120,0.15);color:#48bb78;padding:2px 8px;border-radius:10px;font-size:10px">-8% ANP</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:12px"><span style="color:#cd7f32;font-weight:800;width:24px;flex-shrink:0">3</span><span style="flex:1;color:#e2e8f0">Posto Muquém — Curitiba/PR</span><span style="color:#4a5568;font-size:10px;width:40px">1,8 km</span><span style="color:#00e5ff;font-weight:700;margin-right:6px">R$5,98/L</span><span style="background:rgba(72,187,120,0.15);color:#48bb78;padding:2px 8px;border-radius:10px;font-size:10px">-7% ANP</span></div>
+    </div>
+  </div>
+  <div id="dp2" style="display:none;background:#0d1117;padding:16px;min-height:360px">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:linear-gradient(135deg,#1a1040,#0d1a3a);border:1px solid rgba(127,119,221,0.3);border-radius:12px;margin-bottom:16px">
+      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#534AB7,#7F77DD);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff;flex-shrink:0">FNI</div>
+      <div><div style="font-size:14px;font-weight:700;color:#e2e8f0">Assistente IA — FNI Insights</div><div style="font-size:11px;color:#7F77DD;margin-top:2px">Powered by Claude AI</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <div style="padding:10px 14px;background:rgba(127,119,221,0.15);color:#c4b5fd;border-radius:12px 12px 2px 12px;font-size:13px;align-self:flex-end;max-width:88%;line-height:1.55">Qual foi meu maior gasto com combustível este mês?</div>
+      <div style="padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;border-radius:12px 12px 12px 2px;font-size:13px;max-width:88%;line-height:1.6"><span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#1a4731;color:#48bb78;margin-right:5px">insight</span> Seu maior gasto foi com <strong style="color:#00e5ff">Diesel S-10</strong> — <strong style="color:#00e5ff">R$ 128.450</strong> em 847 abastecimentos em 3 estados. Oportunidade de <strong style="color:#48bb78">R$ 9.200/mês</strong> em economia.</div>
+      <div style="padding:10px 14px;background:rgba(127,119,221,0.15);color:#c4b5fd;border-radius:12px 12px 2px 12px;font-size:13px;align-self:flex-end;max-width:88%;line-height:1.55">Onde estou perdendo mais dinheiro?</div>
+      <div style="padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;border-radius:12px 12px 12px 2px;font-size:13px;max-width:88%;line-height:1.6"><span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#4a1a1a;color:#fc8181;margin-right:5px">alerta</span> 3 oportunidades: ES e GO pagam 9% acima da ANP, veículo PLB-3421 com consumo 22% abaixo da média, 47 abastecimentos fora do horário com preço 4% maior.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="padding:6px 14px;border-radius:20px;border:1px solid rgba(127,119,221,0.35);font-size:12px;color:#a0aec0">Quais veículos consomem mais?</div>
+      <div style="padding:6px 14px;border-radius:20px;border:1px solid rgba(127,119,221,0.35);font-size:12px;color:#a0aec0">Compare com mês passado</div>
+    </div>
+  </div>
+  <div id="dp3" style="display:none;background:#0d1117;padding:16px;min-height:360px">
+    <div style="font-size:15px;font-weight:700;color:#00e5ff;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08)">Rotograma — SP → BH <span style="font-size:11px;color:#4a5568;font-weight:400;margin-left:8px">João Silva · ABC-1234</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#718096;letter-spacing:.5px;margin-bottom:10px;text-transform:uppercase">Pontos de Risco (3)</div>
+        <div style="padding:10px;border-radius:8px;border-left:3px solid #e24b4a;background:rgba(231,76,60,0.08);margin-bottom:7px"><div style="font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:3px">BR-381 km 120 — Itatiaia/MG</div><div style="font-size:10px;color:#4a5568">Area de perigo · Vel. max 60 km/h</div></div>
+        <div style="padding:10px;border-radius:8px;border-left:3px solid #993556;background:rgba(153,53,86,0.08);margin-bottom:7px"><div style="font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:3px">BR-040 km 85 — Betim/MG</div><div style="font-size:10px;color:#4a5568">Zona de crime · Camera ativa</div></div>
+        <div style="padding:10px;border-radius:8px;border-left:3px solid #ef9f27;background:rgba(239,159,39,0.08)"><div style="font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:3px">SP-330 km 340 — Campinas/SP</div><div style="font-size:10px;color:#4a5568">Lombada/Radar · Vel. max 80 km/h</div></div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#718096;letter-spacing:.5px;margin-bottom:10px;text-transform:uppercase">Pontos de Parada (3)</div>
+        <div style="padding:10px;border-radius:8px;border-left:3px solid rgba(0,229,255,0.5);background:rgba(0,229,255,0.05);margin-bottom:7px"><div style="font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:3px">Posto Ipiranga — km 210</div><div style="font-size:10px;color:#4a5568">Abastecimento · R$6,05/L · 24h</div></div>
+        <div style="padding:10px;border-radius:8px;border-left:3px solid rgba(0,229,255,0.5);background:rgba(0,229,255,0.05);margin-bottom:7px"><div style="font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:3px">Restaurante Rotatoria — km 310</div><div style="font-size:10px;color:#4a5568">Alimentacao · Aberto 24h</div></div>
+        <div style="padding:10px;border-radius:8px;border-left:3px solid rgba(0,229,255,0.5);background:rgba(0,229,255,0.05)"><div style="font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:3px">Hotel Rodovario BH — km 490</div><div style="font-size:10px;color:#4a5568">Pernoite seguro · (31) 3333-4444</div></div>
+      </div>
+      <div style="grid-column:1/-1;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#00e5ff;font-weight:600;text-align:center">PRF 191 · SAMU 192 · Bombeiros 193 · PM 190 · ANTT 166</div>
+    </div>
+  </div>
+</div>
+<div id="demo-cap2" style="text-align:center;color:#a0aec0;font-size:14px;margin-top:20px;padding:0 20px;line-height:1.7"><strong style="color:#fff">Dashboard Analitico</strong> — Visao consolidada de abastecimentos reais, cobertura por UF e comparativo ANP em tempo real.</div>
+</div>
+</section>
+<style>
+.dtab2{padding:9px 20px;border-radius:24px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#718096;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;outline:none}
+.dtab2:hover{border-color:#00e5ff;color:#00e5ff}
+.dtab2.dtab-on{background:rgba(0,229,255,0.12);border-color:#00e5ff;color:#00e5ff}
+</style>
+<script>
+var _u2_pt=["fxgestaodefrotasonline.com - Dashboard Analítico","fxgestaodefrotasonline.com - Consulta por Rota","fxgestaodefrotasonline.com - Assistente IA","fxgestaodefrotasonline.com - Rotograma de Segurança"];var _u2_en=["fxgestaodefrotasonline.com - Analytics Dashboard","fxgestaodefrotasonline.com - Route Search","fxgestaodefrotasonline.com - AI Assistant","fxgestaodefrotasonline.com - Safety Map"];var _u2=_lang==="en"?_u2_en:_u2_pt;
+var _cp2_pt=["<strong style='color:#fff'>Dashboard Analitico</strong> — Visao consolidada de abastecimentos reais, cobertura por UF e evolucao de precos.","<strong style='color:#fff'>Consulta por Rota</strong> — Mapa interativo com os melhores postos ANP ao longo da rota, com precos e distancias.","<strong style='color:#fff'>Assistente IA</strong> — Converse em linguagem natural com IA especializada em frotas.","<strong style='color:#fff'>Rotograma de Seguranca</strong> — Mapeie riscos, paradas e contatos de emergencia."];var _cp2_en=["<strong style='color:#fff'>Analytics Dashboard</strong> — Consolidated view of real fueling data, coverage by state and real-time ANP price comparison.","<strong style='color:#fff'>Route Search</strong> — Interactive map with the best ANP stations along the route, with prices and distances.","<strong style='color:#fff'>AI Assistant</strong> — Chat in natural language with AI specialized in fleet management.","<strong style='color:#fff'>Safety Map</strong> — Map risks, stops and emergency contacts. Export as PDF."];var _cp2=_lang==="en"?_cp2_en:_cp2_pt;
+var _c2=0,_t2;
+function sd(i){
+  clearInterval(_t2);_c2=i;
+  ["dp0","dp1","dp2","dp3"].forEach(function(id,j){
+    var el=document.getElementById(id);
+    if(el)el.style.display=j===i?"block":"none";
+  });
+  document.querySelectorAll(".dtab2").forEach(function(t,j){t.classList.toggle("dtab-on",j===i);});
+  var u=document.getElementById("demo-url2");if(u)u.textContent=_u2[i];
+  var c=document.getElementById("demo-cap2");if(c)c.innerHTML=_cp2[i];
+  _t2=setInterval(function(){sd((_c2+1)%4);},7000);
+}
+document.addEventListener("DOMContentLoaded",function(){sd(0);});
+</script>
+
+<section class="section" id="func">
+  <div class="sec-lbl" data-i18n="func_lbl">Funcionalidades</div>
+  <div class="sec-title" data-i18n-html="func_title">Tudo que sua frota precisa,<br>em um só lugar</div>
+  <p class="sec-sub" data-i18n="func_sub">Da análise de preços à gestão completa — dados em tempo real para decisões melhores.</p>
+  <div class="grid">
+    <div class="card"><div class="icon">📊</div><div class="ct" data-i18n="card0_t">Preços ANP em Tempo Real</div><div class="cd" data-i18n="card0_d">Compare os preços praticados pelos postos com a tabela oficial da ANP por município e bandeira.</div></div>
+    <div class="card"><div class="icon">🗺️</div><div class="ct" data-i18n="card1_t">Mapa de Rede de Postos</div><div class="cd" data-i18n="card1_d">Visualize todos os postos credenciados na sua rota com scores de qualidade e preços negociados.</div></div>
+    <div class="card"><div class="icon">⛽</div><div class="ct" data-i18n="card2_t">Telemetria de Frota</div><div class="cd" data-i18n="card2_d">Monitore consumo real por veículo e detecte desvios com alertas automáticos.</div></div>
+    <div class="card"><div class="icon">💰</div><div class="ct" data-i18n="card3_t">Acordos de Preços</div><div class="cd" data-i18n="card3_d">Gerencie contratos com postos e valide automaticamente se os preços respeitam os acordos.</div></div>
+    <div class="card"><div class="icon">📈</div><div class="ct" data-i18n="card4_t">Relatórios Avançados</div><div class="cd" data-i18n="card4_d">Análises de consumo, custo por km e ranking de postos. Exporte para Excel ou integre via API.</div></div>
+    <div class="card"><div class="icon">🔌</div><div class="ct" data-i18n="card5_t">Integrações Nativas</div><div class="cd" data-i18n="card5_d">Conecte com TOTVS, SAP, rastreadores (Sascar, Onix, Autotrac) e valide NF-e pela SEFAZ.</div></div>
+  </div>
+</section>
+
+<section class="section" id="como" style="background:rgba(255,255,255,0.012)">
+  <div class="sec-lbl" data-i18n="como_lbl">Como funciona</div>
+  <div class="sec-title" data-i18n="como_title">Comece em minutos</div>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-t" data-i18n="step1_t">Cadastre sua empresa</div><div class="step-d" data-i18n="step1_d">14 dias grátis com acesso completo ao plano Profissional.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-t" data-i18n="step2_t">Importe sua frota</div><div class="step-d" data-i18n="step2_d">Cadastre veículos individualmente ou em lote via Excel.</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-t" data-i18n="step3_t">Conecte seus dados</div><div class="step-d" data-i18n="step3_d">Integre com seu sistema ou registre via API.</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-t" data-i18n="step4_t">Economize</div><div class="step-d" data-i18n="step4_d">Análises em tempo real para reduzir custos imediatamente.</div></div>
+  </div>
+</section>
+
+<section class="pricing" id="precos">
+  <div style="text-align:center">
+    <div class="sec-lbl" data-i18n="precos_lbl">Planos e Preços</div>
+    <div class="sec-title" data-i18n="precos_title">Comece grátis. Cresça quando precisar.</div>
+    <p class="sec-sub" style="margin:0 auto" data-i18n="precos_sub">Sem cartão de crédito. Cancele quando quiser.</p>
+  </div>
+  <div class="pgrid">
+    <div class="pc"><div class="pn" data-i18n="plan0_n">Gratuito</div><div class="pp"><sup>R$</sup>0<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan0_d">Para começar</div><ul class="pf"><li data-i18n="plan0_f1">1 usuário</li><li data-i18n="plan0_f2">10 veículos</li><li data-i18n="plan0_f3">2 postos</li><li class="off" data-i18n="plan_anp_hist">Histórico ANP</li><li class="off">Excel</li><li class="off">API</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan0_btn">Começar grátis</a></div>
+    <div class="pc"><div class="pn" data-i18n="plan1_n">Básico</div><div class="pp"><sup>R$</sup>49<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan1_d">Pequenas frotas</div><ul class="pf"><li data-i18n="plan1_f1">5 usuários</li><li data-i18n="plan1_f2">50 veículos</li><li data-i18n="plan1_f3">10 postos</li><li data-i18n="plan1_f4">ANP 30 dias</li><li data-i18n="plan1_f5">Exportação Excel</li><li class="off">API</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan1_btn">Assinar Básico</a></div>
+    <div class="pc feat"><div class="pbadge" data-i18n="plan_popular">Mais popular</div><div class="pn" data-i18n="plan2_n">Profissional</div><div class="pp"><sup>R$</sup>99<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan2_d">Frotas em crescimento</div><ul class="pf"><li data-i18n="plan2_f1">20 usuários</li><li data-i18n="plan2_f2">200 veículos</li><li data-i18n="plan2_f3">Postos ilimitados</li><li data-i18n="plan2_f4">ANP 365 dias</li><li data-i18n="plan2_f5">Relatórios avançados</li><li data-i18n="plan2_f6">API + Webhooks</li></ul><a href="/cadastro" class="pbtn p" data-i18n="plan2_btn">Trial grátis 14 dias</a></div>
+    <div class="pc"><div class="pn" data-i18n="plan3_n">Enterprise</div><div class="pp"><sup>R$</sup>129<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan3_d">Grandes operações</div><ul class="pf"><li data-i18n="plan3_f1">Ilimitado</li><li>SSO SAML</li><li>SLA 99,95%</li><li>TOTVS/SAP</li><li data-i18n="plan3_f5">Gerente dedicado</li><li data-i18n="plan3_f6">Suporte 24/7</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan3_btn">Assinar Enterprise</a></div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="cta-t" data-i18n-html="cta_title">Pronto para economizar<br>na sua frota?</div>
+  <p class="cta-s" data-i18n="cta_sub">14 dias grátis. Sem cartão. Sem burocracia.</p>
+  <div class="cta-a">
+    <a href="/cadastro" class="btn-p" data-i18n="cta_btn_p">Começar agora — é grátis →</a>
+    <a href="mailto:contato@fxgestaodefrotasonline.com" class="btn-s" data-i18n="cta_btn_s">💬 Falar com especialista</a>
+  </div>
+</section>
+
+<footer>
+  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgNjQiIHdpZHRoPSIyMjAiIGhlaWdodD0iNDQiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQsNCkiPjxsaW5lIHgxPSIyNCIgeTE9IjI0IiB4Mj0iOCIgeTI9IjEyIiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMjQiIHkxPSIyNCIgeDI9IjUiIHkyPSIzMCIgc3Ryb2tlPSIjMDBiNGQ4IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjI0IiB5MT0iMjQiIHgyPSIxMCIgeTI9IjQ0IiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMjQiIHkxPSIyNCIgeDI9IjM2IiB5Mj0iOCIgc3Ryb2tlPSIjMDBiNGQ4IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjI0IiB5MT0iMjQiIHgyPSI0MCIgeTI9IjM4IiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjQgNSBDMTYgNSAxMCAxMSAxMCAxOCBDMTAgMjcgMjQgNDIgMjQgNDIgQzI0IDQyIDM4IDI3IDM4IDE4IEMzOCAxMSAzMiA1IDI0IDVaIiBmaWxsPSIjMDBiNGQ4Ii8+PGNpcmNsZSBjeD0iMjQiIGN5PSIxOCIgcj0iNiIgZmlsbD0iIzA0MTEyZSIvPjxjaXJjbGUgY3g9IjgiIGN5PSIxMiIgcj0iNCIgZmlsbD0iIzAwYjRkOCIvPjxjaXJjbGUgY3g9IjUiIGN5PSIzMCIgcj0iNCIgZmlsbD0iIzAwYjRkOCIvPjxjaXJjbGUgY3g9IjEwIiBjeT0iNDQiIHI9IjQiIGZpbGw9IiMwMGI0ZDgiLz48Y2lyY2xlIGN4PSIzNiIgY3k9IjgiIHI9IjQiIGZpbGw9IiMwMGI0ZDgiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjM4IiByPSI0IiBmaWxsPSIjMDBiNGQ4Ii8+PC9nPjx0ZXh0IHg9IjYyIiB5PSIyNiIgZm9udC1mYW1pbHk9Ik91dGZpdCxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNzAwIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmZmZmZmIiBsZXR0ZXItc3BhY2luZz0iMC4zIj5GbGVldCBOZXR3b3JrIEludGVsbGlnZW5jZTwvdGV4dD48dGV4dCB4PSI2MiIgeT0iNDQiIGZvbnQtZmFtaWx5PSJPdXRmaXQsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjUwMCIgZm9udC1zaXplPSIxMC41IiBmaWxsPSIjMDBiNGQ4IiBsZXR0ZXItc3BhY2luZz0iMiI+R0VTVMODTyBERSBGUk9UQVM8L3RleHQ+PC9zdmc+" alt="FNI" height="30" style="opacity:0.4;">
+  <div class="flinks">
+    <a id="lnk_termos" href="/termos" data-i18n="footer_termos">Termos de Uso</a>
+    <a id="lnk_priv" href="/privacidade" data-i18n="footer_priv">Privacidade</a>
+    <a id="lnk_sobre" href="/sobre" data-i18n="footer_sobre">Sobre nós</a>
+    <a href="mailto:contato@fxgestaodefrotasonline.com" data-i18n="footer_contato">Contato</a>
+  </div>
+  <div class="fcopy" style="line-height:1.9">
+    &copy; 2026 <strong>Fleet Network Intelligence Ltda.</strong> &mdash; Plataforma SaaS B2B para Gest&atilde;o de Frotas<br>
+    <a href="mailto:contato@fxgestaodefrotasonline.com" style="color:#00b4d8">contato@fxgestaodefrotasonline.com</a>
+    &nbsp;&middot;&nbsp; Brasil &nbsp;&middot;&nbsp;
+    <a href="/privacidade" style="color:#00b4d8">LGPD</a>
+  </div>
+</footer>
+
+<script>
+var _i18n = {
+  pt: {
+    // Nav
+    nav_func: "Funcionalidades",
+    nav_como: "Como funciona",
+    nav_precos: "Preços",
+    nav_acessar: "🔐 Acessar Plataforma",
+    nav_comecar: "Começar grátis →",
+    // Hero
+    hero_badge: "Plataforma SaaS para frotas brasileiras",
+    hero_h1a: "Inteligência de rede para",
+    hero_h1b: "decisões que economizam",
+    hero_sub: "Compare preços ANP em tempo real, monitore o consumo da sua frota e identifique os melhores postos credenciados — tudo em uma plataforma integrada e segura.",
+    hero_btn_p: "Teste grátis por 14 dias →",
+    hero_btn_s: "Ver funcionalidades",
+    stat1_l: "Postos monitorados",
+    stat2_l: "Trial gratuito",
+    stat3_l: "Dados oficiais",
+    // Strip
+    strip_lbl: "Compatível com os principais sistemas do mercado",
+    // Demo
+    demo_lbl: "Plataforma em ação",
+    demo_title: "Veja como funciona na prática",
+    demo_sub: "Explore as principais funcionalidades da FNI Gestão de Frotas",
+    demo_tab0: "📈 Dashboard",
+    demo_tab1: "🗺️ Consulta por Rota",
+    demo_tab2: "🤖 Assistente IA",
+    demo_tab3: "🗺️ Rotograma",
+    demo_cap0: "<strong style='color:#e2e8f0'>Dashboard Analítico</strong> — Visão consolidada de abastecimentos reais, cobertura por UF e evolução de preços.",
+    demo_cap1: "<strong style='color:#e2e8f0'>Consulta por Rota</strong> — Mapa interativo com os melhores postos ANP ao longo da rota, com preços e distâncias.",
+    demo_cap2: "<strong style='color:#e2e8f0'>Assistente IA</strong> — Converse em linguagem natural com IA especializada em frotas.",
+    demo_cap3: "<strong style='color:#e2e8f0'>Rotograma de Segurança</strong> — Mapeie riscos, paradas e contatos de emergência.",
+    // Funcionalidades
+    func_lbl: "Funcionalidades",
+    func_title: "Tudo que sua frota precisa,<br>em um só lugar",
+    func_sub: "Da análise de preços à gestão completa — dados em tempo real para decisões melhores.",
+    card0_t: "Preços ANP em Tempo Real",
+    card0_d: "Compare os preços de combustíveis em todos os postos da sua região com dados oficiais da ANP atualizados semanalmente.",
+    card1_t: "Mapa de Rede de Postos",
+    card1_d: "Visualize todos os postos credenciados e ANP no mapa interativo. Filtre por bandeira, combustível e serviços.",
+    card2_t: "Telemetria de Frota",
+    card2_d: "Monitore consumo real, hodômetro e abastecimentos integrados via API Gestão de Frotas ou planilha modelo.",
+    card3_t: "Acordos de Preços",
+    card3_d: "Gerencie contratos com postos credenciados. Visualize economia real vs. preço de mercado.",
+    card4_t: "Relatórios Avançados",
+    card4_d: "Análises de consumo, custo por km, comparativos de preço e exportação em Excel/PDF.",
+    card5_t: "Integrações Nativas",
+    card5_d: "Conecte com TOTVS, SAP, SASCAR e APIs de gestão de frotas. Suporte a webhooks e REST API.",
+    // Como funciona
+    como_lbl: "Como funciona",
+    como_title: "Comece em minutos",
+    step1_t: "Cadastre sua empresa",
+    step1_d: "14 dias grátis, sem cartão de crédito.",
+    step2_t: "Importe sua frota",
+    step2_d: "Cadastre veículos e motoristas facilmente.",
+    step3_t: "Conecte seus dados",
+    step3_d: "Integre com API ou importe planilha modelo.",
+    step4_t: "Economize",
+    step4_d: "Análises em tempo real para decisões melhores.",
+    // Preços
+    precos_lbl: "Planos e Preços",
+    precos_title: "Comece grátis. Cresça quando precisar.",
+    precos_sub: "Sem cartão de crédito. Cancele quando quiser.",
+    plan_popular: "Mais popular",
+    // CTA
+    cta_title: "Pronto para economizar<br>na sua frota?",
+    cta_sub: "14 dias grátis. Sem cartão. Sem burocracia.",
+    cta_btn_p: "Começar agora — é grátis →",
+    cta_btn_s: "💬 Falar com especialista",
+    // Footer
+    footer_termos: "Termos de Uso",
+    footer_priv: "Privacidade",
+    footer_sobre: "Sobre nós",
+    footer_contato: "Contato",
+    // Planos PT
+    plan_mes: "/mês",
+    plan0_n: "Gratuito", plan0_d: "Para começar", plan0_btn: "Começar grátis",
+    plan0_f1: "1 usuário", plan0_f2: "10 veículos", plan0_f3: "2 postos",
+    plan_anp_hist: "Histórico ANP",
+    plan1_n: "Básico", plan1_d: "Pequenas frotas", plan1_btn: "Assinar Básico",
+    plan1_f1: "5 usuários", plan1_f2: "50 veículos", plan1_f3: "10 postos",
+    plan1_f4: "ANP 30 dias", plan1_f5: "Exportação Excel",
+    plan2_n: "Profissional", plan2_d: "Frotas em crescimento", plan2_btn: "Trial grátis 14 dias",
+    plan2_f1: "20 usuários", plan2_f2: "200 veículos", plan2_f3: "Postos ilimitados",
+    plan2_f4: "ANP 365 dias", plan2_f5: "Relatórios avançados", plan2_f6: "API + Webhooks",
+    plan3_n: "Enterprise", plan3_price: "Sob consulta", plan3_d: "Grandes operações",
+    plan3_btn: "Assinar Enterprise", plan3_f1: "Ilimitado", plan3_f5: "Gerente dedicado",
+    plan3_f6: "Suporte 24/7",
+    // Cards PT
+    card0_t: "Preços ANP em Tempo Real",
+    card0_d: "Compare os preços de combustíveis em todos os postos da sua região com dados oficiais da ANP atualizados semanalmente.",
+    card1_t: "Mapa de Rede de Postos",
+    card1_d: "Visualize todos os postos credenciados na sua rota com scores de qualidade e preços negociados.",
+    card2_t: "Telemetria de Frota",
+    card2_d: "Monitore consumo real por veículo e detecte desvios com alertas automáticos.",
+    card3_t: "Acordos de Preços",
+    card3_d: "Gerencie contratos com postos e valide automaticamente se os preços respeitam os acordos.",
+    card4_t: "Relatórios Avançados",
+    card4_d: "Análises de consumo, custo por km e ranking de postos. Exporte para Excel ou integre via API.",
+    card5_t: "Integrações Nativas",
+    card5_d: "Conecte com TOTVS, SAP, rastreadores (Sascar, Onix, Autotrac) e valide NF-e pela SEFAZ.",
+    // Steps PT
+    step1_t: "Cadastre sua empresa", step1_d: "14 dias grátis com acesso completo ao plano Profissional.",
+    step2_t: "Importe sua frota", step2_d: "Cadastre veículos individualmente ou em lote via Excel.",
+    step3_t: "Conecte seus dados", step3_d: "Integre com seu sistema ou registre via API.",
+    step4_t: "Economize", step4_d: "Análises em tempo real para reduzir custos imediatamente.",
+    // Demo PT
+    demo_lbl: "Plataforma em ação",
+    demo_title: "Veja como funciona na prática",
+    demo_sub: "Explore as principais funcionalidades da FNI Gestão de Frotas",
+  },
+  en: {
+    nav_func: "Features",
+    nav_como: "How it works",
+    nav_precos: "Pricing",
+    nav_acessar: "🔐 Access Platform",
+    nav_comecar: "Get started free →",
+    hero_badge: "SaaS Platform for Brazilian fleets",
+    hero_h1a: "Network intelligence for",
+    hero_h1b: "decisions that save money",
+    hero_sub: "Compare ANP fuel prices in real time, monitor your fleet consumption and identify the best accredited stations — all in one integrated and secure platform.",
+    hero_btn_p: "Try free for 14 days →",
+    hero_btn_s: "See features",
+    stat1_l: "Monitored stations",
+    stat2_l: "Free trial",
+    stat3_l: "Official data",
+    strip_lbl: "Compatible with major market systems",
+    demo_lbl: "Platform in action",
+    demo_title: "See how it works in practice",
+    demo_sub: "Explore the main features of FNI Fleet Management",
+    demo_cap0_en: "<strong style='color:#fff'>Analytics Dashboard</strong> — Consolidated view of real fueling data, coverage by state and real-time ANP price comparison.",
+    demo_cap1_en: "<strong style='color:#fff'>Route Search</strong> — Interactive map with the best ANP stations along the route, with prices and distances.",
+    demo_cap2_en: "<strong style='color:#fff'>AI Assistant</strong> — Chat in natural language with AI specialized in fleet management.",
+    demo_cap3_en: "<strong style='color:#fff'>Safety Map</strong> — Map risks, stops and emergency contacts. Export as PDF.",
+
+    demo_tab0: "📈 Dashboard",
+    demo_tab1: "🗺️ Route Search",
+    demo_tab2: "🤖 AI Assistant",
+    demo_tab3: "🗺️ Safety Map",
+    demo_cap0: "<strong style='color:#e2e8f0'>Analytics Dashboard</strong> — Consolidated view of real fueling data, coverage by state and price trends.",
+    demo_cap1: "<strong style='color:#e2e8f0'>Route Search</strong> — Interactive map with the best ANP stations along the route, with prices and distances.",
+    demo_cap2: "<strong style='color:#e2e8f0'>AI Assistant</strong> — Chat in natural language with AI specialized in fleet management.",
+    demo_cap3: "<strong style='color:#e2e8f0'>Safety Map</strong> — Map risks, stops and emergency contacts.",
+    func_lbl: "Features",
+    func_title: "Everything your fleet needs,<br>in one place",
+    func_sub: "From price analysis to full management — real-time data for better decisions.",
+    card0_t: "ANP Prices in Real Time",
+    card0_d: "Compare fuel prices at all stations in your region with official ANP data updated weekly.",
+    card1_t: "Station Network Map",
+    card1_d: "View all accredited and ANP stations on the interactive map. Filter by brand, fuel and services.",
+    card2_t: "Fleet Telematics",
+    card2_d: "Monitor real consumption, odometer and fueling integrated via Fleet Management API or template spreadsheet.",
+    card3_t: "Price Agreements",
+    card3_d: "Manage contracts with accredited stations. View real savings vs. market price.",
+    card4_t: "Advanced Reports",
+    card4_d: "Consumption analysis, cost per km, price comparisons and export in Excel/PDF.",
+    card5_t: "Native Integrations",
+    card5_d: "Connect with TOTVS, SAP, SASCAR and fleet management APIs. Support for webhooks and REST API.",
+    como_lbl: "How it works",
+    como_title: "Get started in minutes",
+    step1_t: "Register your company",
+    step1_d: "14 days free, no credit card required.",
+    step2_t: "Import your fleet",
+    step2_d: "Register vehicles and drivers easily.",
+    step3_t: "Connect your data",
+    step3_d: "Integrate with API or import template spreadsheet.",
+    step4_t: "Save money",
+    step4_d: "Real-time analytics for better decisions.",
+    precos_lbl: "Plans & Pricing",
+    precos_title: "Start free. Grow when you need.",
+    precos_sub: "No credit card. Cancel anytime.",
+    plan_popular: "Most popular",
+    cta_title: "Ready to save on your fleet?",
+    cta_sub: "14 days free. No card. No bureaucracy.",
+    cta_btn_p: "Start now — it\\'s free →",
+    cta_btn_s: "💬 Talk to a specialist",
+    footer_termos: "Terms of Use",
+    footer_priv: "Privacy",
+    footer_sobre: "About us",
+    footer_contato: "Contact",
+    // Planos
+    plan_mes: "/mo",
+    plan0_n: "Free", plan0_d: "To get started", plan0_btn: "Start free",
+    plan0_f1: "1 user", plan0_f2: "10 vehicles", plan0_f3: "2 stations",
+    plan_anp_hist: "ANP History",
+    plan1_n: "Basic", plan1_d: "Small fleets", plan1_btn: "Subscribe Basic",
+    plan1_f1: "5 users", plan1_f2: "50 vehicles", plan1_f3: "10 stations",
+    plan1_f4: "ANP 30 days", plan1_f5: "Excel Export",
+    plan2_n: "Professional", plan2_d: "Growing fleets", plan2_btn: "Free trial 14 days",
+    plan2_f1: "20 users", plan2_f2: "200 vehicles", plan2_f3: "Unlimited stations",
+    plan2_f4: "ANP 365 days", plan2_f5: "Advanced reports", plan2_f6: "API + Webhooks",
+    plan3_n: "Enterprise", plan3_price: "Custom pricing", plan3_d: "Large operations",
+    plan3_btn: "Subscribe Enterprise", plan3_f1: "Unlimited", plan3_f5: "Dedicated manager",
+    plan3_f6: "24/7 Support",
+  }
+};
+
+var _lang = localStorage.getItem("fni_lang") || "pt";
+
+function _t(k) { return (_i18n[_lang] && _i18n[_lang][k]) || _i18n["pt"][k] || k; }
+
+function _applyLang() {
+  // Atualiza links para versão EN/PT
+  var sfx = _lang === "en" ? "-en" : "";
+  var lnks = {
+    "lnk_termos": "/termos" + sfx,
+    "lnk_priv":   "/privacidade" + sfx,
+    "lnk_sobre":  "/sobre" + sfx
+  };
+  Object.keys(lnks).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.href = lnks[id];
+  });
+  // Nav
+  // data-i18n: troca textContent
+  document.querySelectorAll("[data-i18n]").forEach(function(el) {
+    var k = el.getAttribute("data-i18n");
+    el.textContent = _t(k);
+  });
+  // data-i18n-html: troca innerHTML
+  document.querySelectorAll("[data-i18n-html]").forEach(function(el) {
+    var k = el.getAttribute("data-i18n-html");
+    el.innerHTML = _t(k);
+  });
+  // Demo captions dinâmicos
+  if (typeof _cp2 !== "undefined") {
+    _cp2 = [_t("demo_cap0"), _t("demo_cap1"), _t("demo_cap2"), _t("demo_cap3")];
+    var c = document.getElementById("demo-cap2");
+    if (c) c.innerHTML = _cp2[typeof _c2 !== "undefined" ? _c2 : 0];
+  }
+  // Atualiza captions do demo
+  var _cp2_atual = _lang === "en" ? _cp2_en : _cp2_pt;
+  var _capEl = document.getElementById("demo-cap2");
+  if (_capEl) _capEl.innerHTML = _cp2_atual[typeof _c2 !== "undefined" ? _c2 : 0];
+  // Atualiza URLs do mock browser
+  var _urlEl = document.getElementById("demo-url2");
+  var _u2_atual = _lang === "en" ? _u2_en : _u2_pt;
+  if (_urlEl && typeof _c2 !== "undefined") _urlEl.textContent = _u2_atual[_c2];
+  // Botões de idioma
+  document.getElementById("btn-pt") && document.getElementById("btn-pt").classList.toggle("lang-active", _lang==="pt");
+  document.getElementById("btn-en") && document.getElementById("btn-en").classList.toggle("lang-active", _lang==="en");
+}
+
+function setLang(l) {
+  _lang = l;
+  localStorage.setItem("fni_lang", l);
+  _applyLang();
+}
+
+document.addEventListener("DOMContentLoaded", _applyLang);
+</script>
+<style>
+.lang-switcher { display:flex; align-items:center; gap:6px; margin-right:12px; }
+.lang-btn { background:none; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:5px 10px; cursor:pointer; font-size:0.82rem; color:var(--gray); transition:all 0.2s; display:flex; align-items:center; gap:4px; }
+.lang-btn:hover { border-color:rgba(255,255,255,0.4); color:var(--white); }
+.lang-btn.lang-active { border-color:var(--cyan); color:var(--cyan); background:rgba(0,180,216,0.08); }
+</style>
+
+<!-- deploy 2026-06-22T23:49:22.035829 -->
+<!-- redeploy 2026-06-24T13:30:53.745311 -->
+`;

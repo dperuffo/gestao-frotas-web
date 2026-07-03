@@ -1,0 +1,149 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { CLASSIFICACAO, type Classificacao } from "@/lib/constants";
+import { alocarVeiculoCentroCusto } from "@/lib/centroCusto";
+
+export type VeiculoFormState = { erro?: string } | undefined;
+
+function numeroOuNull(valor: FormDataEntryValue | null) {
+  const texto = String(valor ?? "").trim();
+  if (!texto) return null;
+  const numero = Number(texto);
+  return Number.isFinite(numero) ? numero : null;
+}
+
+function montarPayloadBase(formData: FormData) {
+  const classificacaoBruta = String(formData.get("classificacao") ?? "Próprio");
+  const classificacao: Classificacao = CLASSIFICACAO.includes(classificacaoBruta as Classificacao)
+    ? (classificacaoBruta as Classificacao)
+    : "Próprio";
+
+  return {
+    placa: String(formData.get("placa") ?? "").trim().toUpperCase(),
+    marca: String(formData.get("marca") ?? "").trim() || null,
+    modelo: String(formData.get("modelo") ?? "").trim() || null,
+    motor: String(formData.get("motor") ?? "").trim() || null,
+    ano_modelo: numeroOuNull(formData.get("ano_modelo")),
+    ano_fabricacao: numeroOuNull(formData.get("ano_fabricacao")),
+    hodometro_atual: numeroOuNull(formData.get("hodometro_atual")),
+    combustivel: String(formData.get("combustivel") ?? "").trim() || null,
+    tanque: numeroOuNull(formData.get("tanque")),
+    autonomia: numeroOuNull(formData.get("autonomia")),
+    cor: String(formData.get("cor") ?? "").trim() || null,
+    chassi: String(formData.get("chassi") ?? "").trim() || null,
+    renavam: String(formData.get("renavam") ?? "").trim() || null,
+    municipio: String(formData.get("municipio") ?? "").trim() || null,
+    tipo_veiculo: String(formData.get("tipo_veiculo") ?? "").trim() || null,
+    uf_veiculo: String(formData.get("uf_veiculo") ?? "").trim() || null,
+    numero_eixos: numeroOuNull(formData.get("numero_eixos")),
+    classificacao,
+  };
+}
+
+export async function criarVeiculo(_prev: VeiculoFormState, formData: FormData): Promise<VeiculoFormState> {
+  const supabase = await createClient();
+  const empresaId = String(formData.get("empresa_id") ?? "");
+  const centroCustoId = String(formData.get("centro_custo_id") ?? "") || null;
+  const payload = montarPayloadBase(formData);
+
+  if (!payload.placa || !empresaId) {
+    return { erro: "Placa e cliente são obrigatórios." };
+  }
+
+  const { data: empresa, error: empresaError } = await supabase
+    .from("empresas")
+    .select("cnpj")
+    .eq("id", empresaId)
+    .maybeSingle();
+  if (empresaError || !empresa?.cnpj) {
+    return { erro: "Não foi possível identificar o CNPJ do cliente selecionado." };
+  }
+
+  const { data, error } = await supabase
+    .from("cadastro_veiculos")
+    .insert({
+      ...payload,
+      cnpj_frota: empresa.cnpj,
+      ativo: true,
+    })
+    .select("id")
+    .single();
+
+  if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+
+  // Aloca o veículo ao centro de custo escolhido (se houver), já registrando
+  // o início da alocação no histórico (centros_custo_veiculos).
+  if (centroCustoId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const resultadoAlocacao = await alocarVeiculoCentroCusto(supabase, {
+      placa: payload.placa,
+      centroCustoId,
+      empresaId,
+      criadoPor: user?.email ?? undefined,
+    });
+    if (resultadoAlocacao.erro) return { erro: resultadoAlocacao.erro };
+  }
+
+  revalidatePath("/veiculos");
+  redirect(`/veiculos/${data.id}`);
+}
+
+export async function atualizarVeiculo(
+  id: string,
+  _prev: VeiculoFormState,
+  formData: FormData
+): Promise<VeiculoFormState> {
+  const supabase = await createClient();
+  const centroCustoId = String(formData.get("centro_custo_id") ?? "") || null;
+  const ativo = formData.get("ativo") === "on";
+  const payload = montarPayloadBase(formData);
+
+  if (!payload.placa) {
+    return { erro: "Placa é obrigatória." };
+  }
+
+  const { data: existente } = await supabase
+    .from("cadastro_veiculos")
+    .select("cnpj_frota")
+    .eq("id", id)
+    .maybeSingle();
+
+  const { error } = await supabase.from("cadastro_veiculos").update({ ...payload, ativo }).eq("id", id);
+
+  if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+
+  // Realoca (ou desaloca, se centroCustoId for null) o veículo, preservando
+  // o histórico em centros_custo_veiculos em vez de sobrescrever a alocação.
+  if (existente?.cnpj_frota) {
+    const { data: empresa } = await supabase
+      .from("empresas")
+      .select("id")
+      .eq("cnpj", existente.cnpj_frota)
+      .maybeSingle();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const resultadoAlocacao = await alocarVeiculoCentroCusto(supabase, {
+      placa: payload.placa,
+      centroCustoId,
+      empresaId: empresa?.id ?? null,
+      criadoPor: user?.email ?? undefined,
+    });
+    if (resultadoAlocacao.erro) return { erro: resultadoAlocacao.erro };
+  }
+
+  revalidatePath("/veiculos");
+  revalidatePath(`/veiculos/${id}`);
+  return { erro: undefined };
+}
+
+export async function alternarAtivoVeiculo(id: string, ativo: boolean) {
+  const supabase = await createClient();
+  await supabase.from("cadastro_veiculos").update({ ativo }).eq("id", id);
+  revalidatePath("/veiculos");
+}

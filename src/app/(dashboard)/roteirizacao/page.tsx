@@ -1,0 +1,203 @@
+import { createClient } from "@/lib/supabase/server";
+import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { UFS } from "@/lib/constants";
+import { corPorBandeira } from "@/lib/coresBandeira";
+import { formatCNPJ } from "@/lib/utils";
+import { buscarPostosPorUfAcao } from "./actions";
+import { AbasRoteirizacao } from "./_components/AbasRoteirizacao";
+import { ScoreBadge } from "./_components/ScoreBadge";
+import { PrecosChips } from "./_components/PrecosChips";
+import MapaRotaLazy from "./_components/MapaRotaLazy";
+import { SalvarConsultaForm } from "./_components/SalvarConsultaForm";
+import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+
+type SearchParams = { empresa?: string; uf?: string; municipio?: string };
+
+export default async function RoteirizacaoUfPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const { empresa: empresaParam, uf, municipio } = await searchParams;
+  const supabase = await createClient();
+  const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+
+  const postos =
+    empresaSelecionada && uf ? await buscarPostosPorUfAcao({ empresaId: empresaSelecionada, uf, municipio }) : [];
+
+  const topPorCombustivel = new Map<string, typeof postos>();
+  for (const posto of postos) {
+    for (const p of posto.precos) {
+      const lista = topPorCombustivel.get(p.combustivel) ?? [];
+      lista.push(posto);
+      topPorCombustivel.set(p.combustivel, lista);
+    }
+  }
+  const ranking = Array.from(topPorCombustivel.entries()).map(([combustivel, lista]) => ({
+    combustivel,
+    top5: [...lista]
+      .sort((a, b) => {
+        const pa = a.precos.find((x) => x.combustivel === combustivel)?.preco ?? Infinity;
+        const pb = b.precos.find((x) => x.combustivel === combustivel)?.preco ?? Infinity;
+        return pa - pb;
+      })
+      .slice(0, 5),
+  }));
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-slate-900">Roteirização</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Consulte a rede de postos, planeje rotas e paradas de abastecimento.
+        </p>
+      </div>
+
+      <AbasRoteirizacao ativo="uf" />
+
+      <form className="mb-4 flex flex-wrap items-end gap-3">
+        {empresas.length > 1 && (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
+              <option value="">Nenhum selecionado</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500">UF</label>
+          <select name="uf" defaultValue={uf ?? ""} className="input">
+            <option value="">Selecione...</option>
+            {UFS.map((sigla) => (
+              <option key={sigla} value={sigla}>
+                {sigla}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1">
+          <label className="mb-1 block text-xs font-medium text-slate-500">Município</label>
+          <input type="text" name="municipio" defaultValue={municipio ?? ""} placeholder="Opcional" className="input" />
+        </div>
+        <button type="submit" className="btn-primary">
+          Buscar
+        </button>
+      </form>
+
+      {!empresaSelecionada && (
+        <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Selecione um cliente para consultar a rede de postos dele.
+        </p>
+      )}
+
+      {empresaSelecionada && !uf && (
+        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">Escolha uma UF para começar.</p>
+      )}
+
+      {empresaSelecionada && uf && postos.length === 0 && (
+        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+          Nenhum posto ativo com coordenadas encontrado para esse filtro.
+        </p>
+      )}
+
+      {postos.length > 0 && (
+        <>
+          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Postos encontrados</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">{postos.length}</p>
+            </div>
+            <div className="card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Combustíveis com preço</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">{ranking.length}</p>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <MapaRotaLazy
+              marcadores={postos.map((p) => ({
+                lat: p.lat,
+                lon: p.lon,
+                label: p.razaoSocial ?? formatCNPJ(p.cnpj),
+                cnpj: p.cnpj,
+                cor: corPorBandeira(p.bandeira),
+                legendaLabel: p.bandeira ?? "Sem bandeira",
+              }))}
+            />
+          </div>
+
+          {ranking.length > 0 && (
+            <div className="mb-6 card p-4">
+              <h2 className="mb-3 text-sm font-semibold text-slate-900">Top 5 mais baratos por combustível</h2>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {ranking.map(({ combustivel, top5 }) => (
+                  <div key={combustivel} className="rounded-lg border border-slate-100 p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{combustivel}</p>
+                    <ol className="space-y-1.5">
+                      {top5.map((p, i) => (
+                        <li key={p.cnpj} className="flex items-center gap-2 text-sm">
+                          <span className="w-4 shrink-0 text-xs font-semibold text-slate-400">{i + 1}</span>
+                          <span className="min-w-0 flex-1 truncate text-slate-700">
+                            {p.razaoSocial ?? formatCNPJ(p.cnpj)}
+                          </span>
+                          <span className="shrink-0 font-medium tabular-nums text-status-ativo">
+                            R$ {p.precos.find((x) => x.combustivel === combustivel)?.preco.toFixed(3)}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="card overflow-x-auto p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">Postos ({postos.length})</h2>
+              <SalvarConsultaForm
+                tipo="estado"
+                empresaId={empresaSelecionada}
+                dados={{ uf, municipio: municipio ?? "" }}
+                nomeSugerido={`Postos em ${municipio ? `${municipio} - ` : ""}${uf}`}
+              />
+            </div>
+            <table className="w-full border-separate border-spacing-0 text-left text-sm">
+              <thead className="text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="whitespace-nowrap py-2 pr-4"><span className="inline-flex items-center gap-1">Score <AjudaIcon chave="roteirizacao.score_posto" /></span></th>
+                  <th className="py-2 pr-4">Razão social</th>
+                  <th className="whitespace-nowrap py-2 pr-4">Bandeira</th>
+                  <th className="whitespace-nowrap py-2 pr-4">Município</th>
+                  <th className="py-2">Preços registrados</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {postos.map((p) => (
+                  <tr key={p.cnpj}>
+                    <td className="py-2.5 pr-4 align-top">
+                      <ScoreBadge score={p.score} />
+                    </td>
+                    <td className="py-2.5 pr-4 align-top text-slate-700">{p.razaoSocial ?? formatCNPJ(p.cnpj)}</td>
+                    <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">{p.bandeira ?? "—"}</td>
+                    <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                      {p.municipio ?? "—"} - {p.uf ?? "—"}
+                    </td>
+                    <td className="py-2.5 align-top">
+                      <PrecosChips precos={p.precos} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

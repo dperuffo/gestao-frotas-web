@@ -1,0 +1,45 @@
+{
+  "name": "gestao-frotas-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma web de Gestão de Frotas (Next.js) — Fase 0: fundação, autenticação e design system, sobre o banco Supabase já existente.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "gen:types": "supabase gen types typescript --project-id nedthbeekvwzcjrhsghp --schema public > src/types/database.types.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
+    "@hookform/resolvers": "^3.9.0",
+    "@react-pdf/renderer": "^4.5.1",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.110.0",
+    "@types/leaflet": "^1.9.21",
+    "clsx": "^2.1.1",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.446.0",
+    "next": "15.0.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-hook-form": "^7.53.0",
+    "react-leaflet": "^4.2.1",
+    "recharts": "^2.12.7",
+    "tailwind-merge": "^2.5.2",
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8",
+    "eslint-config-next": "15.0.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.2"
+  }
+}

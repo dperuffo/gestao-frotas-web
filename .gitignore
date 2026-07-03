@@ -1,0 +1,21 @@
+node_modules
+.next
+.env.local
+.env*.local
+.DS_Store
+npm-debug.log*
+next-env.d.ts
+
+# Fase 26 — arquivos soltos na raiz que não são código do app (não fazem
+# parte do deploy): referência de estudo (repo git próprio, não deve virar
+# submódulo/nested repo aqui), scripts de teste avulsos e documentos de
+# negócio que vivem na pasta mas não no repositório do código.
+referencia-backend-estudo-de-rede/
+.scratch-pdftest/
+check_xlsx.js
+_check_xlsx2.js
+teste_xlsx_temp.mjs
+diag.ts
+tsconfig.tsbuildinfo
+Logo plataforma FNI.png
+Termo_Adesao_FNI_Gestao_Frotas.docx

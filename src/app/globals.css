@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --frota-950: #0b1220;
+  --frota-900: #0f2a4a;
+  --frota-600: #0e7490;
+  --frota-500: #0ea5e9;
+  --status-ativo: #16a34a;
+  --status-atencao: #f59e0b;
+  --status-inativo: #dc2626;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* Componentes utilitários usados nas telas de Cadastros */
+.card {
+  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-lg bg-frota-500 px-4 py-2
+    text-sm font-medium text-white transition hover:bg-frota-600
+    disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center rounded-lg border border-slate-300
+    bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50;
+}
+
+.input {
+  @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+    focus:border-frota-500 focus:outline-none focus:ring-2 focus:ring-frota-100;
+}
+
+.badge-ativo {
+  @apply rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700;
+}
+.badge-inativo {
+  @apply rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700;
+}
+.badge-atencao {
+  @apply rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700;
+}
+
+/* Variante escura dos inputs/labels, usada só nas 3 telas públicas de
+   autenticação (login, MFA, cadastro) — o .input padrão pressupõe fundo
+   branco, e essas telas agora usam o cartão escuro (AuthCard) pra seguir
+   o mesmo visual da landing page. */
+.input-dark {
+  @apply w-full rounded-lg border border-white/10 bg-frota-950/60 px-3 py-2 text-sm text-white
+    placeholder:text-slate-500
+    focus:border-frota-500 focus:outline-none focus:ring-2 focus:ring-frota-500/30;
+}
+
+.label-dark {
+  @apply mb-1 block text-sm font-medium text-slate-300;
+}
