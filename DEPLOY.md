@@ -58,6 +58,12 @@ Depois de salvar as variáveis, o Railway re-builda automaticamente. Acompanhe e
 
 Nota: as chaves do **Stripe** não entram aqui — elas já estão configuradas como *secrets* das Edge Functions do Supabase (`stripe-webhook`, `create-checkout-session`, `planos-precos`), não no Next.js. Não precisa mexer nelas.
 
+
+
+
+
+
+
 ## 4. Domínio customizado (Cloudflare → Railway) 🔒
 
 1. No Railway, dentro do serviço, vá em **Settings → Networking → Custom Domain** → digite `fxgestaodefrotasonline.com` → o Railway mostra um registro DNS pra criar (geralmente um `CNAME` apontando pra algo tipo `xxxxx.up.railway.app`, ou um `A`/`AAAA` — o Railway mostra exatamente o que criar).
