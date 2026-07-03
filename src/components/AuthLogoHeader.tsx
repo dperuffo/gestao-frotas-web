@@ -36,7 +36,7 @@ export function AuthLogoHeader({ variant = "full" }: { variant?: "full" | "compa
 
       <h1 className="mt-5 text-2xl font-bold text-white sm:text-3xl">Fleet Network Intelligence</h1>
 
-      <span className="mt-3 inline-flex items-center rounded-full border border-frota-600/40 bg-frota-800/60 px-4 py-1.5 text-xs font-semibold text-frota-300 sm:text-sm">
+      <span className="mt-3 inline-flex items-center rounded-full border border-frota-500/50 bg-frota-800/60 px-4 py-1.5 text-xs font-semibold text-frota-100 sm:text-sm">
         Plataforma estratégica de inteligência de rede
       </span>
 
