@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TIPO_CUSTO_FIXO_LABEL } from "@/lib/financeiro";
+import BotaoBaixarPdfPersonalizadoLazy from "./BotaoBaixarPdfPersonalizadoLazy";
 
 export type AbastecimentoBruto = {
   placa: string | null;
@@ -41,6 +42,8 @@ type Formato = "int" | "dec" | "money" | "money3";
 type Metrica = { id: string; label: string; formato: Formato; calcular: (linhas: LinhaBase[]) => number };
 
 const CORES = ["#1565C0", "#E65100", "#2E7D32", "#6A1B9A", "#B71C1C", "#00838F", "#F9A825", "#4527A0"];
+
+const FONTE_LABEL: Record<Fonte, string> = { abastecimentos: "Abastecimentos", manutencao: "Manutenção", custos_fixos: "Custos Fixos" };
 
 function mesRef(data: string | null) {
   if (!data) return "—";
@@ -216,7 +219,7 @@ function SeletorMetricas({
 // (barras/linhas agrupadas, com legenda). Pizza sempre usa só a 1ª métrica
 // selecionada, porque "fatia de um todo" só faz sentido pra uma métrica por
 // vez — as demais continuam disponíveis na tabela e no CSV.
-export function RelatoriosPersonalizados({ abastecimentos, manutencoes, custosFixos }: { abastecimentos: AbastecimentoBruto[]; manutencoes: ManutencaoBruto[]; custosFixos: CustoFixoBruto[] }) {
+export function RelatoriosPersonalizados({ abastecimentos, manutencoes, custosFixos, nomeEmpresa }: { abastecimentos: AbastecimentoBruto[]; manutencoes: ManutencaoBruto[]; custosFixos: CustoFixoBruto[]; nomeEmpresa: string }) {
   const [fonte, setFonte] = useState<Fonte>("abastecimentos");
   const [dimensaoId, setDimensaoId] = useState(DIMENSOES.abastecimentos[0].id);
   const [metricaIds, setMetricaIds] = useState<string[]>([METRICAS.abastecimentos[0].id]);
@@ -339,6 +342,19 @@ export function RelatoriosPersonalizados({ abastecimentos, manutencoes, custosFi
             >
               ⬇️ Exportar CSV
             </button>
+            <BotaoBaixarPdfPersonalizadoLazy
+              nomeArquivo={`relatorio_personalizado_${fonte}_${dimensaoAtual.id}_${metricasAtuais.map((m) => m.id).join("-")}.pdf`}
+              nomeEmpresa={nomeEmpresa}
+              titulo={`${metricasAtuais.map((m) => m.label).join(", ")} por ${dimensaoAtual.label}`}
+              subtitulo={`Fonte: ${FONTE_LABEL[fonte]} · Agrupado por ${dimensaoAtual.label.toLowerCase()} · ${resultado.length} grupo(s)`}
+              colunaChave={dimensaoAtual.label}
+              colunas={metricasAtuais.map((m) => ({ id: m.id, label: m.label }))}
+              linhas={resultado.map((r) => ({
+                chave: r.chave,
+                valores: metricasAtuais.map((m) => formatarValor(r.valores[m.id] ?? 0, m.formato)),
+                registros: String(r.qtdLinhas),
+              }))}
+            />
           </div>
 
           {tipoGrafico === "pie" && metricasAtuais.length > 1 && (

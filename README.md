@@ -2540,3 +2540,25 @@ linha global ficou intacta o tempo todo.
 
 Validado com `npx tsc --noEmit` e `npx eslint .`, ambos limpos, e `get_advisors` (security) sem
 nenhum alerta novo relacionado a essa mudança.
+
+## Fase 27.11 — Relatórios Personalizados: exportar em PDF
+
+Pedido do Daniel: além do CSV, a tela "monte o seu relatório" (aba Relatórios Personalizados,
+em `/relatorios`) passou a permitir exportar o resultado atual (fonte + dimensão + métrica(s)
+escolhidas) em PDF, igual ao Relatório Executivo já fazia.
+
+- `RelatorioPersonalizadoPdf.tsx` (novo) — documento `@react-pdf/renderer` com tabela dinâmica:
+  1ª coluna é sempre a dimensão selecionada, as colunas seguintes são as métricas marcadas
+  (já formatadas em texto pela tela — mesma formatação usada no CSV) e a última é o total de
+  registros por grupo. Não tenta reproduzir o gráfico (recharts não renderiza dentro do
+  `@react-pdf/renderer`) — só a tabela, mesmo escopo que já vale pro CSV.
+- `BotaoBaixarPdfPersonalizado.tsx` + `BotaoBaixarPdfPersonalizadoLazy.tsx` (novos) — mesmo padrão
+  de `BotaoBaixarPdfExecutivo(Lazy).tsx`: o botão real usa `PDFDownloadLink`, que só funciona no
+  client (Canvas/Blob do navegador), então é carregado via `next/dynamic` com `ssr: false`.
+- `RelatoriosPersonalizados.tsx` — ganhou a prop `nomeEmpresa` (repassada de `nomeEmpresaSelecionada`
+  em `page.tsx`) e o botão "📄 Exportar PDF" ao lado do "⬇️ Exportar CSV", montando as colunas/linhas
+  do PDF a partir do mesmo `resultado` já calculado pra tela e pro CSV — não há uma segunda consulta
+  nem lógica de agregação duplicada.
+
+Validado com `npx tsc --noEmit` e `npx eslint` nos arquivos tocados, ambos limpos.
+

@@ -206,7 +206,14 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
           {
             id: "personalizados",
             label: "🗂️ Relatórios Personalizados",
-            conteudo: <RelatoriosPersonalizados abastecimentos={abastecimentos} manutencoes={manutencoes} custosFixos={custosFixos} />,
+            conteudo: (
+              <RelatoriosPersonalizados
+                abastecimentos={abastecimentos}
+                manutencoes={manutencoes}
+                custosFixos={custosFixos}
+                nomeEmpresa={nomeEmpresaSelecionada}
+              />
+            ),
             ajudaChave: "relatorios.personalizados",
           },
         ]}
