@@ -11,7 +11,7 @@ export type ItemAjuda = { titulo: string; texto: string };
 // (mesmo nome usado nas colunas/RPCs sempre que possível, pra achar rápido).
 export const AJUDA: Record<string, ItemAjuda> = {
   // ── Privacidade / LGPD ────────────────────────────────────────────
-  "privacidade.pagina": {
+  "lgpd.pagina": {
     titulo: "Privacidade e LGPD",
     texto: "Seus dados cadastrais, histórico de consentimento e os mecanismos de revogação de consentimento e solicitação de exclusão de dados previstos na Lei Geral de Proteção de Dados.",
   },

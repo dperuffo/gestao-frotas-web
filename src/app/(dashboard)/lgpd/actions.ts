@@ -34,7 +34,7 @@ export async function registrarRevogacaoConsentimento(): Promise<LgpdFormState> 
   });
   if (error) return { erro: `Não foi possível registrar a revogação: ${error.message}` };
 
-  revalidatePath("/privacidade");
+  revalidatePath("/lgpd");
   return { sucesso: "Revogação de consentimento registrada com sucesso." };
 }
 
@@ -71,7 +71,7 @@ export async function solicitarExclusaoDados(_prev: LgpdFormState, formData: For
   });
   if (error) return { erro: `Não foi possível registrar a solicitação: ${error.message}` };
 
-  revalidatePath("/privacidade");
+  revalidatePath("/lgpd");
   return { sucesso: "Solicitação de exclusão registrada. A equipe FNI vai analisar e retornar por e-mail." };
 }
 
@@ -87,6 +87,6 @@ export async function marcarExclusaoExecutada(id: string): Promise<LgpdFormState
     .eq("id", id);
   if (error) return { erro: `Não foi possível atualizar a solicitação: ${error.message}` };
 
-  revalidatePath("/privacidade");
+  revalidatePath("/lgpd");
   return { sucesso: "Solicitação marcada como executada." };
 }

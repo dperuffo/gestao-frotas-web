@@ -27,7 +27,7 @@ const STATUS_EXCLUSAO_LABEL: Record<string, { texto: string; classe: string }> =
 // de consentimento e eliminação (solicitação de exclusão, revisada pela
 // equipe FNI antes de executar — ver comentário em actions.ts sobre por que
 // não é uma exclusão automática).
-export default async function PrivacidadePage() {
+export default async function LgpdPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -74,7 +74,7 @@ export default async function PrivacidadePage() {
     <div>
       <div className="mb-6">
         <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
-          🔒 Privacidade e Proteção de Dados (LGPD) <AjudaIcon chave="privacidade.pagina" />
+          🔒 Privacidade e Proteção de Dados (LGPD) <AjudaIcon chave="lgpd.pagina" />
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           Seus dados, seu histórico de consentimento e os mecanismos de revogação e exclusão previstos na

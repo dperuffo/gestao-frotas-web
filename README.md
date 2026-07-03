@@ -2600,7 +2600,7 @@ de revogação de consentimento pelo usuário e o tratamento de dados conforme a
   `service_role` conseguia ler/escrever) e nenhuma tela usando elas. Adicionadas as policies
   (migração `rls_lgpd_consents_e_exclusoes`): cada usuário só enxerga e só cria registros com o
   próprio e-mail (do JWT); marcar uma exclusão como "executada" é ação exclusiva do admin.
-- `src/app/(dashboard)/privacidade/page.tsx` (nova tela, menu "🔒 Privacidade (LGPD)", visível pra
+- `src/app/(dashboard)/lgpd/page.tsx` (nova tela, rota `/lgpd`, menu "🔒 Privacidade (LGPD)", visível pra
   todos os perfis) — pra usuários comuns, mostra: **dados cadastrais** (nome, e-mail, CPF, telefone,
   cliente vinculado, MFA — direito de acesso, art. 18 I), **histórico de consentimento**
   (`lgpd_consents`, mais recente primeiro), **revogar consentimento** (botão que insere um novo
@@ -2625,6 +2625,14 @@ de revogação de consentimento pelo usuário e o tratamento de dados conforme a
 Validado com `npx tsc --noEmit` e `npx eslint` nos arquivos novos/tocados, ambos limpos, e
 `get_advisors` (security) confirmando que as duas tabelas saíram da lista de "RLS enabled, no
 policy".
+
+**Correção (mesma fase)**: o diretório inicial da tela era `src/app/(dashboard)/privacidade/`, o
+que colidia com a página pública já existente em `src/app/privacidade/page.tsx` (Política de
+Privacidade, linkada no rodapé da landing) — `(dashboard)` é um route group e não soma segmento
+de URL, então as duas resolviam para `/privacidade` e o build falhava. Renomeado pra
+`src/app/(dashboard)/lgpd/` (rota `/lgpd`); `revalidatePath`, o `href` no menu e a chave de ajuda
+(`lgpd.pagina`) foram atualizados junto. A página pública de Política de Privacidade não foi
+tocada.
 
 ## Fase 27.14 — Ícones sugestivos nos itens de menu sem ícone
 

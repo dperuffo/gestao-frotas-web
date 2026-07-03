@@ -15,7 +15,7 @@ const menuVisaoGeral = [
   { href: "/assinatura", label: "💳 Minha Assinatura" },
   { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
   { href: "/financeiro", label: "💰 Painel Financeiro" },
-  { href: "/privacidade", label: "🔒 Privacidade (LGPD)" },
+  { href: "/lgpd", label: "🔒 Privacidade (LGPD)" },
 ];
 
 const menuCadastros = [
