@@ -70,8 +70,12 @@ export function ThreadChamado({
         if (resultado?.erro) setErroAnexo(resultado.erro);
         else formAnexoRef.current?.reset();
       } catch (e) {
-        setErroAnexo("Não foi possível enviar o anexo. Verifique sua conexão e tente novamente.");
-        console.error("[ThreadChamado] falha ao enviar anexo:", e instanceof Error ? e.message : e);
+        // Fase 27.24 — mostra o motivo real (ex.: "Failed to fetch") em vez
+        // de só uma mensagem genérica, pra dar pra diagnosticar sem precisar
+        // de acesso ao console do navegador na próxima vez que isso acontecer.
+        const motivo = e instanceof Error ? e.message : "erro desconhecido";
+        setErroAnexo(`Não foi possível enviar o anexo (${motivo}). Verifique sua conexão e tente novamente.`);
+        console.error("[ThreadChamado] falha ao enviar anexo:", e);
       }
     });
   }

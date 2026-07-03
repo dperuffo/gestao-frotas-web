@@ -35,11 +35,13 @@ export function ChamadoForm({
         const resultado = await criarChamadoAcao(undefined, formData);
         if (resultado?.erro) setErro(resultado.erro);
       } catch (e) {
-        // Fase 27.22 — defesa em profundidade: se mesmo assim a chamada de
-        // rede falhar (proxy, timeout etc.), mostra uma mensagem aqui em vez
-        // de deixar a exceção escapar e derrubar a página inteira.
-        setErro("Não foi possível abrir o chamado. Verifique sua conexão e tente novamente.");
-        console.error("[ChamadoForm] falha ao enviar:", e instanceof Error ? e.message : e);
+        // Fase 27.22/27.24 — defesa em profundidade: se mesmo assim a
+        // chamada de rede falhar (proxy, timeout etc.), mostra uma mensagem
+        // aqui (com o motivo real, quando disponível) em vez de deixar a
+        // exceção escapar e derrubar a página inteira.
+        const motivo = e instanceof Error ? e.message : "erro desconhecido";
+        setErro(`Não foi possível abrir o chamado (${motivo}). Verifique sua conexão e tente novamente.`);
+        console.error("[ChamadoForm] falha ao enviar:", e);
       }
     });
   }

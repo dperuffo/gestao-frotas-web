@@ -2956,3 +2956,32 @@ uma estimativa mais alinhada ao padrão histórico da empresa.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos, e com um teste manual reproduzindo os
 números reais do caso encontrado (script descartável, não faz parte do repositório).
+
+## Fase 27.24 — Anexo de chamado ainda falhando (agora sem derrubar a página) + diagnóstico melhor
+
+Depois da Fase 27.22 (que evitou o crash de página inteira), o Daniel testou anexar um arquivo
+("olho na senha.png") numa resposta de chamado e recebeu a mensagem amigável "Não foi possível
+enviar o anexo. Verifique sua conexão e tente novamente." — ou seja, o crash não voltou (a correção
+anterior funcionou), mas o anexo continuava não sendo enviado, e ele confirmou que não era problema
+de conexão.
+
+Essa mensagem só aparece quando a própria chamada de rede da Server Action falha (não quando o
+Supabase devolve um erro tratável — esse caso já tem sua própria mensagem específica, vinda direto
+de `enviarAnexoAcao`). Isso apontava pra uma falha "silenciosa" no transporte, sem detalhe do motivo
+real (só logado no console do navegador, que eu não tenho acesso).
+
+Duas correções:
+
+- `src/app/(dashboard)/chamados/actions.ts` — nova função `sanitizarNomeParaStorage`: o nome
+  original do arquivo (com espaços, acentos, parênteses etc. — muito comum em screenshots, como
+  "olho na senha.png") ia direto pro CAMINHO do objeto no Supabase Storage
+  (`${ticketId}/${timestamp}_${nome}`). Esse tipo de caractere no caminho é uma causa plausível de
+  falha silenciosa na chamada de upload. Agora o caminho no Storage usa uma versão sanitizada
+  (sem acentos, só `a-z A-Z 0-9 . _ -`), enquanto o nome original continua intacto na coluna `nome`
+  de `ticket_anexos` — o que aparece pro usuário pra visualizar/baixar não muda.
+- `ChamadoForm.tsx` e `ThreadChamado.tsx` — o catch de "defesa em profundidade" da Fase 27.22 agora
+  mostra o motivo real do erro (ex.: "Failed to fetch") junto da mensagem, em vez de um texto
+  genérico fixo — da próxima vez que algo assim acontecer, a mensagem na tela já basta pra
+  diagnosticar, sem precisar pedir print do console do navegador.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.

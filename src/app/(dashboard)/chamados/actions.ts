@@ -82,13 +82,28 @@ export async function criarChamadoAcao(_prev: ChamadoFormState, formData: FormDa
   redirect(`/chamados/${data.id}${anexoFalhou ? "?anexoErro=1" : ""}`);
 }
 
+// Fase 27.24 — achado real: o nome original do arquivo (com espaços,
+// acentos, parênteses etc. — bem comum em screenshots, ex.: "captura de
+// tela (2).png") ia direto pro caminho do objeto no Supabase Storage. Isso
+// nunca deu erro tratável (a Storage API não devolve um `error` claro pra
+// esse caso) — a chamada da Server Action simplesmente falhava no nível de
+// rede, sem nenhuma mensagem específica, só "Failed to fetch" genérico.
+// Sanitiza só o CAMINHO no Storage (nunca visível pro usuário); o nome
+// original continua guardado sem alteração na coluna `nome` de
+// ticket_anexos, usado pra exibir/baixar o arquivo com o nome certo.
+function sanitizarNomeParaStorage(nomeOriginal: string): string {
+  const semAcentos = nomeOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const seguro = semAcentos.replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return seguro.slice(-150) || "arquivo";
+}
+
 async function enviarAnexo(
   supabase: Awaited<ReturnType<typeof createClient>>,
   ticketId: string,
   arquivo: File,
   autorEmail: string
 ) {
-  const caminho = `${ticketId}/${Date.now()}_${arquivo.name}`;
+  const caminho = `${ticketId}/${Date.now()}_${sanitizarNomeParaStorage(arquivo.name)}`;
   const { error: erroUpload } = await supabase.storage.from(BUCKET_ANEXOS).upload(caminho, arquivo, {
     contentType: arquivo.type || undefined,
   });
