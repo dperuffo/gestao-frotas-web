@@ -2669,3 +2669,114 @@ item é bem mais larga que um emoji, então o texto começava mais à direita qu
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
 
+## Fase 27.16 — Link de confirmação de cadastro caía num erro enganoso de "login com Google"
+
+Achado real: um cliente novo se cadastrou (e-mail/senha), recebeu o e-mail de confirmação, clicou
+no link e caiu direto numa tela de erro dizendo "Não foi possível concluir o login com Google.
+Verifique se as chaves do Supabase em .env.local estão corretas" — mensagem completamente errada,
+já que ele nunca usou Google.
+
+**Causa raiz**: o link de confirmação de cadastro (e o de "esqueci minha senha") apontava pro mesmo
+`/auth/callback` que o login com Google usa, que troca um `code` por sessão via
+`exchangeCodeForSession` — método PKCE que exige um cookie `code_verifier` salvo no MESMO navegador
+que iniciou o pedido. Cliente comum normalmente abre o e-mail de confirmação em outro
+navegador/aba/dispositivo (cadastrou no notebook, confirmou pelo Gmail no celular) — o cookie não
+existe aí, a troca falha, e o app mostrava o erro genérico de OAuth por engano (as duas coisas
+caíam no mesmo `erro=oauth`).
+
+- `src/app/auth/confirm/route.ts` (nova rota) — usa `verifyOtp({ type, token_hash })` em vez de
+  `exchangeCodeForSession`. Esse método não depende de cookie nenhum, funciona em qualquer
+  navegador/dispositivo — é o padrão recomendado pela própria Supabase pra link de e-mail
+  (cadastro/recuperação), reservando o fluxo PKCE de `/auth/callback` só pro OAuth do Google (onde
+  o navegador nunca troca, então não tem esse problema).
+- `src/lib/supabase/middleware.ts` — `/auth/confirm` adicionada à lista de rotas públicas.
+- `src/app/login/page.tsx` — mensagem de erro `erro=oauth` reescrita (sem mencionar `.env.local`,
+  que expunha detalhe de implementação pro cliente final) e criado um código novo,
+  `erro=confirmacao` ("link expirou ou já foi utilizado"), específico pra falha de
+  `/auth/confirm` — antes as duas situações usavam o mesmo texto sobre Google.
+- `src/app/esqueci-senha/actions.ts` — `redirectTo` do `resetPasswordForEmail` trocado de
+  `/auth/callback?next=/redefinir-senha` pra `/auth/confirm?type=recovery&next=/redefinir-senha`
+  (mesmo problema de cross-device se aplica à recuperação de senha).
+
+**Ação manual pendente do Daniel** (Supabase Dashboard → Authentication → Email Templates — não dá
+pra editar isso por SQL/MCP): em cada um dos dois templates abaixo, trocar o link
+`{{ .ConfirmationURL }}` pelo link explícito indicado. Sem essa troca, o Supabase continua mandando
+o link antigo (que ainda passa por `/auth/callback` e tem o bug de cross-device) — o código novo
+só entra em uso depois dessa configuração.
+
+- **Confirm signup**: trocar `href="{{ .ConfirmationURL }}"` por
+  `href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/dashboard"`.
+- **Reset Password**: trocar `href="{{ .ConfirmationURL }}"` por
+  `href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/redefinir-senha"`.
+
+`/auth/callback` não foi alterado nem removido — continua sendo o caminho correto pro login com
+Google (`signInWithOAuth`), que não sofre desse problema.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.17 — Roteirização utilizável para cliente novo (fallback pra base pública ANP)
+
+Achado real (mesmo cliente novo da Fase 27.16): depois de conseguir entrar, ao tentar usar
+Roteirização (planejamento de rota com veículo), o sistema informava "Nenhum posto da rede tem
+preço registrado... cadastre preços em Postos Revendedores" — travando a feature por completo.
+Investigando: `postos_gf` (a tabela de "postos da rede" de cada cliente) tinha apenas 2.971
+linhas, **todas de uma única empresa** (a conta demo/seed) — ou seja, nenhum outro cliente,
+incluindo qualquer cliente novo, tinha um único posto próprio cadastrado. Pedido do Daniel: um
+cliente novo deveria conseguir rotear usando postos e preços públicos da ANP, sem precisar
+primeiro importar a própria rede de relacionamento.
+
+- `src/app/(dashboard)/roteirizacao/actions.ts` (`calcularRoteirizacaoAcao`) — quando a busca em
+  `postos_gf` (rede própria do cliente) não encontra NENHUM candidato com preço registrado pro
+  combustível escolhido nesse corredor de 5 km, cai automaticamente pra `anp_postos` (base pública
+  da ANP, ~35 mil postos com coordenadas, sem `empresa_id` — não é dado de nenhum cliente
+  específico) + a estimativa oficial de preço da ANP, resolvida em cascata (município → estado →
+  Brasil) da mesma forma que `resolverPrecosVigentes` já faz pra um posto só — só que aqui em lote
+  (3 consultas fixas no total, não uma por posto candidato, pra não virar uma consulta por posto
+  quando há dezenas/centenas deles no corredor). Cobertura real verificada: nível método só ~7% dos
+  municípios, mas nível estado cobre 26-27 dos 27 estados+DF pra quase todos os produtos (GNV é
+  exceção, só existe em 17), e nível Brasil sempre tem 1 linha por produto — então a cascata quase
+  sempre resolve um preço.
+- `ResultadoRoteirizacao` ganhou o campo `usouFallbackAnp: boolean`.
+- `FormRoteirizacao.tsx` — quando `usouFallbackAnp` é true, mostra um aviso azul (informativo, não
+  de erro — o resultado é válido) explicando que os preços vieram da estimativa ANP, não de um
+  preço negociado, e convida a cadastrar os postos do relacionamento em Postos Revendedores pra
+  ficar mais preciso da próxima vez. O aviso âmbar de "nenhum candidato encontrado" só aparece
+  agora se nem a rede própria NEM a base ANP tiverem candidato — cenário residual.
+- Escopo desta correção: só o modo "Roteirização" (planejamento com veículo), que foi o relatado.
+  Os modos "Por Rota" e "Por UF/Município" (`calcularRotaEPostosAcao`,
+  `buscarPostosPorUfAcao`/`buscarPostoPorTermoAcao`) têm a mesma limitação de dependerem só de
+  `postos_gf` e não foram alterados nesta fase.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos, e consulta direta às tabelas
+`anp_postos`/`anp_precos_referencia` confirmando cobertura de dados e RLS de leitura pública
+(`using (true)`, já existente, não alterado).
+
+## Fase 27.18 — Erro genérico de servidor ao abrir chamado com anexo
+
+Achado real (screenshot: "Application error: a server-side exception has occurred", digest
+2760074794), reportado pelo mesmo cliente novo das Fases 27.16/27.17, ao abrir um chamado.
+
+**Causa raiz**: `criarChamadoAcao` (`src/app/(dashboard)/chamados/actions.ts`) já insere o ticket
+com sucesso primeiro; só DEPOIS, se um anexo foi selecionado, chama `enviarAnexo` (upload no
+Storage + insert em `ticket_anexos`) — mas essa chamada não tinha nenhum `try/catch`. Qualquer
+falha nessa etapa opcional (rede, tamanho/tipo de arquivo, o que for) subia como exceção não
+tratada e derrubava a Server Action inteira com o erro genérico do Next.js — mesmo o chamado já
+tendo sido criado e commitado no banco. O cliente ficava numa tela de erro sem saber se o chamado
+existia ou não.
+
+- `criarChamadoAcao` — envio do anexo agora é *best-effort*: envolvido em `try/catch`; se falhar,
+  loga o motivo real no servidor e segue o fluxo normalmente (o chamado já existe, isso não muda),
+  só acrescentando `?anexoErro=1` no redirect final.
+- `src/app/(dashboard)/chamados/[id]/page.tsx` — lê esse parâmetro e mostra um aviso âmbar
+  explicando que o chamado foi aberto normalmente mas o anexo não foi salvo, convidando a tentar de
+  novo ali mesmo (a tela já tem upload de anexo avulso via `ThreadChamado`/`enviarAnexoAcao`, não
+  precisou de nada novo pra isso).
+- Verificado também: bucket `ticket-anexos` não tem `file_size_limit`/`allowed_mime_types`
+  configurados (sem restrição própria) e as políticas de RLS do Storage pra esse bucket exigem que
+  o ticket já exista com o `empresa_id` do usuário — consistente com a policy de `tickets`, sem
+  contradição encontrada aí. Não foi possível confirmar a causa exata da falha pontual (sem acesso
+  a log de produção), mas o bug real e corrigido é a ausência de tratamento de erro — reproduzível
+  com qualquer falha de upload, não só a que esse cliente teve.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+

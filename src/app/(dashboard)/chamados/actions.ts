@@ -58,12 +58,28 @@ export async function criarChamadoAcao(_prev: ChamadoFormState, formData: FormDa
 
   if (error) return { erro: `Não foi possível abrir o chamado: ${error.message}` };
 
+  // Fase 27.18 — achado real: quando o upload do anexo falhava (rede,
+  // política de storage, tipo de arquivo etc.), a exceção de enviarAnexo
+  // subia sem tratamento e derrubava a Server Action inteira com um erro
+  // genérico de servidor — mesmo o CHAMADO já tendo sido criado com sucesso
+  // (o insert acima já tinha comitado). Cliente ficava sem saber se o
+  // chamado existia ou não, numa tela de "Application error" sem contexto
+  // nenhum. Agora o anexo é best-effort: falha nele não derruba a abertura
+  // do chamado, só sinaliza via query param pra tela de detalhe avisar o
+  // usuário e oferecer o upload de novo por lá (ThreadChamado já tem esse
+  // recurso via enviarAnexoAcao).
+  let anexoFalhou = false;
   if (arquivo instanceof File && arquivo.size > 0) {
-    await enviarAnexo(supabase, data.id, arquivo, user.email);
+    try {
+      await enviarAnexo(supabase, data.id, arquivo, user.email);
+    } catch (e) {
+      anexoFalhou = true;
+      console.error("[chamados] falha ao enviar anexo na abertura do chamado:", e instanceof Error ? e.message : e);
+    }
   }
 
   revalidatePath("/chamados");
-  redirect(`/chamados/${data.id}`);
+  redirect(`/chamados/${data.id}${anexoFalhou ? "?anexoErro=1" : ""}`);
 }
 
 async function enviarAnexo(

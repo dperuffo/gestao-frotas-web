@@ -132,7 +132,15 @@ function LoginCard() {
 function mensagemDeErro(codigo: string | null): string | null {
   if (!codigo) return null;
   if (codigo === "oauth") {
-    return "Não foi possível concluir o login com Google. Verifique se as chaves do Supabase em .env.local estão corretas e tente novamente.";
+    return "Não foi possível concluir o login com Google. Tente novamente ou entre com e-mail e senha.";
+  }
+  // Fase 27.16 — link de confirmação de cadastro (ou de "esqueci minha
+  // senha") expirado, já usado, ou aberto num navegador diferente do que
+  // originou o pedido. Mensagem própria, separada da de OAuth — antes as
+  // duas caíam no mesmo "erro=oauth" e mostravam um texto sobre Google que
+  // não tinha nada a ver com o problema real de quem só usa e-mail/senha.
+  if (codigo === "confirmacao") {
+    return "Este link expirou ou já foi utilizado. Solicite um novo e-mail e tente novamente.";
   }
   return "Ocorreu um erro ao entrar. Tente novamente.";
 }

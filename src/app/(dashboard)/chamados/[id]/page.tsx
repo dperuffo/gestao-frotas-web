@@ -8,8 +8,15 @@ import { ThreadChamado } from "../_components/ThreadChamado";
 import { ControlesAdminChamado } from "../_components/ControlesAdminChamado";
 import { BotaoResolverChamado } from "../_components/BotaoResolverChamado";
 
-export default async function ChamadoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ChamadoDetalhePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ anexoErro?: string }>;
+}) {
   const { id } = await params;
+  const { anexoErro } = await searchParams;
   const supabase = await createClient();
 
   const { data: ticket } = await supabase.from("tickets").select("*, empresas(nome)").eq("id", id).maybeSingle();
@@ -79,6 +86,13 @@ export default async function ChamadoDetalhePage({ params }: { params: Promise<{
         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Descrição</p>
         <p className="whitespace-pre-wrap text-sm text-slate-700">{ticket.descricao}</p>
       </div>
+
+      {anexoErro === "1" && (
+        <p className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          O chamado foi aberto normalmente, mas o anexo enviado junto não pôde ser salvo. Você pode tentar
+          anexá-lo de novo logo abaixo.
+        </p>
+      )}
 
       {ticket.resposta_admin && (
         <div className="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4">

@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
   const isRotaPublica =
     path.startsWith("/login") ||
     path.startsWith("/auth/callback") ||
+    path.startsWith("/auth/confirm") ||
     path.startsWith("/cadastro") ||
     path.startsWith("/esqueci-senha") ||
     path.startsWith("/redefinir-senha") ||

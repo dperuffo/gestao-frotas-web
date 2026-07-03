@@ -15,6 +15,7 @@ import { calcularScorePosto, PERFIS_PESO, type ScorePosto } from "@/lib/roteiriz
 import { otimizarAbastecimento, type ParadaSugerida } from "@/lib/roteirizacaoAlgoritmo";
 import { resolverPrecosVigentes, type PrecoResolvido } from "@/lib/precoVigente";
 import { PRODUTO_PARA_CATEGORIA_ANP, UF_PARA_ESTADO_ANP } from "@/lib/constants";
+import { normalizarTexto } from "@/lib/utils";
 
 // Os 10 campos booleanos de serviço que existem em postos_gf — usados como
 // denominador fixo do score (mesma contagem do Streamlit: n_servicos_max).
@@ -308,6 +309,12 @@ export type ResultadoRoteirizacao = {
   precoMedioGf: number | null;
   precoReferenciaAnp: number | null;
   ufReferencia: string | null;
+  // Fase 27.17 — true quando a empresa não tem postos próprios (postos_gf)
+  // com preço pro combustível escolhido nesse corredor, e os candidatos
+  // vieram da base pública anp_postos + estimativa oficial ANP em vez da
+  // rede própria do cliente (ver comentário mais abaixo em
+  // calcularRoteirizacaoAcao).
+  usouFallbackAnp: boolean;
 };
 
 // ── Modo "Roteirização" (planejamento com veículo) ────────────────────
@@ -369,7 +376,7 @@ export async function calcularRoteirizacaoAcao(params: {
   // Só entram no algoritmo os postos que têm preço registrado para o
   // combustível escolhido do veículo — sem preço, não dá para pontuar nem
   // decidir se compensa parar ali.
-  const candidatos = candidatosBrutos
+  let candidatos = candidatosBrutos
     .map((p) => {
       const precoRegistrado = (precosPorCnpj.get(p.cnpj) ?? []).find(
         (x) => x.combustivel.toLowerCase() === params.veiculo.combustivel.toLowerCase()
@@ -395,6 +402,127 @@ export async function calcularRoteirizacaoAcao(params: {
       };
     })
     .filter((c): c is NonNullable<typeof c> => c !== null);
+
+  // Fase 27.17 — achado real: cliente novo (sem nenhum posto próprio
+  // cadastrado em postos_gf — só 1 empresa no banco tinha postos_gf
+  // preenchido) não conseguia usar a Roteirização de jeito nenhum, mesmo
+  // sendo uma feature que não deveria depender de onboarding prévio. Quando
+  // a rede própria não tem NENHUM candidato com preço nesse corredor,
+  // busca no cadastro público da ANP (anp_postos, ~35 mil postos com
+  // coordenadas, sem vínculo de empresa) + a estimativa oficial de preço da
+  // ANP (município → estado → Brasil, mesma cascata de resolverPrecosVigentes
+  // — só que em lote aqui, porque são dezenas/centenas de candidatos de uma
+  // vez, não um posto só).
+  let usouFallbackAnp = false;
+  if (candidatos.length === 0) {
+    const categoriaAnp = PRODUTO_PARA_CATEGORIA_ANP[params.veiculo.combustivel];
+    if (categoriaAnp) {
+      const { data: anpPostosBrutos } = await supabase
+        .from("anp_postos")
+        .select("cnpj, razao_social, municipio, uf, bandeira, latitude, longitude")
+        .not("latitude", "is", null)
+        .not("longitude", "is", null)
+        .gte("latitude", minLat)
+        .lte("latitude", maxLat)
+        .gte("longitude", minLon)
+        .lte("longitude", maxLon)
+        .limit(3000);
+
+      const candidatosAnpBrutos = (anpPostosBrutos ?? [])
+        .map((p) => {
+          const { km, desvioKm } = posicaoNaRotaKm(
+            { lat: Number(p.latitude), lon: Number(p.longitude) },
+            rota.coordenadas,
+            acumuladas
+          );
+          return { ...p, km, desvioKm };
+        })
+        .filter((p) => p.desvioKm <= RAIO_CORREDOR_KM);
+
+      const estadosNoCorredor = Array.from(
+        new Set(
+          candidatosAnpBrutos
+            .map((p) => (p.uf ? UF_PARA_ESTADO_ANP[p.uf.toUpperCase()] : undefined))
+            .filter((x): x is string => !!x)
+        )
+      );
+
+      const precoPorMunicipio = new Map<string, number>();
+      const precoPorEstado = new Map<string, number>();
+      let precoBrasil: number | null = null;
+
+      if (estadosNoCorredor.length > 0) {
+        const { data: municData } = await supabase
+          .from("anp_precos_referencia")
+          .select("municipio, estado, preco_medio, data_final")
+          .eq("nivel", "municipio")
+          .eq("produto", categoriaAnp)
+          .in("estado", estadosNoCorredor)
+          .order("data_final", { ascending: false });
+        for (const l of municData ?? []) {
+          const chave = `${l.municipio}__${l.estado}`;
+          if (!precoPorMunicipio.has(chave) && l.preco_medio != null) precoPorMunicipio.set(chave, l.preco_medio);
+        }
+
+        const { data: estData } = await supabase
+          .from("anp_precos_referencia")
+          .select("estado, preco_medio, data_final")
+          .eq("nivel", "estado")
+          .eq("produto", categoriaAnp)
+          .in("estado", estadosNoCorredor)
+          .order("data_final", { ascending: false });
+        for (const l of estData ?? []) {
+          if (!precoPorEstado.has(l.estado) && l.preco_medio != null) precoPorEstado.set(l.estado, l.preco_medio);
+        }
+      }
+
+      const { data: brasilData } = await supabase
+        .from("anp_precos_referencia")
+        .select("preco_medio")
+        .eq("nivel", "brasil")
+        .eq("produto", categoriaAnp)
+        .order("data_final", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      precoBrasil = brasilData?.preco_medio ?? null;
+
+      candidatos = candidatosAnpBrutos
+        .map((p) => {
+          const estadoAnp = p.uf ? UF_PARA_ESTADO_ANP[p.uf.toUpperCase()] : undefined;
+          const municipioNorm = p.municipio ? normalizarTexto(p.municipio) : "";
+          const preco =
+            (estadoAnp ? precoPorMunicipio.get(`${municipioNorm}__${estadoAnp}`) : undefined) ??
+            (estadoAnp ? precoPorEstado.get(estadoAnp) : undefined) ??
+            precoBrasil ??
+            null;
+          // anp_postos.cnpj é opcional na base pública (alguns registros
+          // antigos não têm) — sem cnpj não dá pra usar como identificador
+          // único do candidato, então descarta junto com quem não achou preço.
+          if (preco == null || !p.cnpj) return null;
+          const score = calcularScorePosto({
+            precoPosto: preco,
+            precoReferenciaAnp: null,
+            servicosAtivos: 0,
+            servicosTotal: CAMPOS_SERVICO.length,
+          });
+          return {
+            cnpj: p.cnpj,
+            km: p.km,
+            desvioKm: p.desvioKm,
+            preco,
+            grade: score.grade,
+            label: p.razao_social ?? p.cnpj,
+            lat: Number(p.latitude),
+            lon: Number(p.longitude),
+            bandeira: p.bandeira,
+            uf: p.uf as string | null,
+          };
+        })
+        .filter((c): c is NonNullable<typeof c> => c !== null);
+
+      usouFallbackAnp = candidatos.length > 0;
+    }
+  }
 
   const paradas = otimizarAbastecimento({
     candidatos,
@@ -495,6 +623,7 @@ export async function calcularRoteirizacaoAcao(params: {
     precoMedioGf,
     precoReferenciaAnp,
     ufReferencia,
+    usouFallbackAnp,
   };
 }
 

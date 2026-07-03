@@ -13,9 +13,15 @@ async function origemAtual(): Promise<string> {
 }
 
 // Fase 27.9 — recuperação de senha, complementar ao login por e-mail/senha
-// (Fase 27.7). Reaproveita o mesmo /auth/callback já usado no login com
-// Google (troca o "code" do link por uma sessão válida) — só muda o "next"
-// pra cair em /redefinir-senha em vez de /dashboard.
+// (Fase 27.7).
+//
+// Fase 27.16 — trocado de /auth/callback pra /auth/confirm: o link de
+// recuperação também sofria do mesmo problema do link de confirmação de
+// cadastro (aberto num navegador/dispositivo diferente do que fez o pedido,
+// quebrando a troca de "code" via PKCE — ver auth/confirm/route.ts pro
+// motivo completo). `redirectTo` aqui só serve de fallback padrão: o link
+// que realmente sai no e-mail depende do template "Reset Password"
+// configurado no Supabase Dashboard (ver README, Fase 27.16).
 export async function solicitarRecuperacaoSenha(
   _prev: EsqueciSenhaState,
   formData: FormData
@@ -29,7 +35,7 @@ export async function solicitarRecuperacaoSenha(
   const origin = await origemAtual();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=/redefinir-senha`,
+    redirectTo: `${origin}/auth/confirm?type=recovery&next=/redefinir-senha`,
   });
 
   // Não revela se o e-mail existe ou não na base (evita enumeração de

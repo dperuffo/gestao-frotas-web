@@ -306,8 +306,24 @@ export function FormRoteirizacao({
 
           {resultado.candidatosEncontrados === 0 && (
             <p className="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Nenhum posto da rede tem preço registrado para &quot;{combustivel}&quot; dentro do corredor de 5 km da
-              rota — cadastre preços em Postos Revendedores para essa rota ficar completa.
+              Nenhum posto da rede — nem da base pública ANP — tem preço registrado para &quot;{combustivel}
+              &quot; dentro do corredor de 5 km da rota.
+            </p>
+          )}
+
+          {/* Fase 27.17 — cliente sem postos próprios (postos_gf) cadastrados
+              ainda consegue uma roteirização utilizável: os candidatos vieram
+              da base pública da ANP (~35 mil postos) em vez da rede própria.
+              Mensagem informativa, não de erro, porque o resultado É válido —
+              só explica a origem dos dados e sugere o próximo passo. */}
+          {resultado.usouFallbackAnp && (
+            <p className="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
+              Sua empresa ainda não tem postos próprios cadastrados nesse corredor — os preços abaixo são a
+              estimativa oficial da ANP (não um preço negociado). Cadastre os postos do seu relacionamento em{" "}
+              <Link href="/postos" className="font-medium underline">
+                Postos Revendedores
+              </Link>{" "}
+              para ter preços reais e comparativos mais precisos nas próximas rotas.
             </p>
           )}
 
