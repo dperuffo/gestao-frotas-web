@@ -51,7 +51,7 @@ export function AuthLogoHeader({ variant = "full" }: { variant?: "full" | "compa
             {FEATURES.map(({ icon: Icon, label }) => (
               <div key={label} className="flex flex-col items-center gap-2">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-frota-800/50">
-                  <Icon className="h-5 w-5 text-frota-400" strokeWidth={1.75} />
+                  <Icon className="h-5 w-5 text-white" strokeWidth={1.75} />
                 </div>
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   {label}

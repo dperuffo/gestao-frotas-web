@@ -103,7 +103,7 @@ function LoginCard() {
           <div>
             <div className="flex items-center justify-between">
               <label className="label-dark">Senha</label>
-              <a href="/esqueci-senha" className="text-xs font-medium text-frota-400 hover:underline">
+              <a href="/esqueci-senha" className="text-xs font-medium text-frota-500 hover:underline">
                 Esqueci minha senha
               </a>
             </div>
@@ -121,7 +121,7 @@ function LoginCard() {
 
       <p className="mt-6 text-center text-xs text-slate-500">
         Ainda não tem conta?{" "}
-        <a href="/cadastro" className="font-medium text-frota-400 hover:underline">
+        <a href="/cadastro" className="font-medium text-frota-500 hover:underline">
           Comece seu teste grátis de 14 dias
         </a>
       </p>

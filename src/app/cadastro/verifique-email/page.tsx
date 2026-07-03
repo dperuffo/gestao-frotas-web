@@ -16,7 +16,7 @@ export default function VerifiqueEmailPage() {
           </p>
           <p className="mt-4 text-xs text-slate-500">
             Não recebeu? Confira a caixa de spam ou{" "}
-            <Link href="/login" className="font-medium text-frota-400 hover:underline">
+            <Link href="/login" className="font-medium text-frota-500 hover:underline">
               volte para o login
             </Link>{" "}
             para reenviar.
