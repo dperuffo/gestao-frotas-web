@@ -72,6 +72,10 @@ Nota: as chaves do **Stripe** não entram aqui — elas já estão configuradas 
 3. Quer `www.fxgestaodefrotasonline.com` também redirecionando? Repita o passo 1 no Railway pra esse subdomínio, ou crie uma regra de redirect na Cloudflare de `www` → domínio raiz.
 4. Propagação de DNS costuma levar de alguns minutos a ~1h. O Railway mostra "Verified" no domínio quando reconhece o DNS certo.
 
+
+
+
+
 ## 5. Ajustar o Supabase Auth pro novo domínio 🔒
 
 Sem isso, os e-mails de confirmação de cadastro e recuperação de senha vão gerar link quebrado.
@@ -79,6 +83,9 @@ Sem isso, os e-mails de confirmação de cadastro e recuperação de senha vão 
 Painel Supabase → **Authentication → URL Configuration**:
 - **Site URL**: `https://fxgestaodefrotasonline.com`
 - **Redirect URLs**: adicione `https://fxgestaodefrotasonline.com/**` (o `/**` libera qualquer subrota, inclusive `/auth/callback`)
+
+
+
 
 ## 6. Sincronização automática da PróFrotas (cron)
 
