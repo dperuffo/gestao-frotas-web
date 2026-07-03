@@ -140,8 +140,22 @@ async function enviarAnexo(
   await supabase.from("tickets").update({ atualizado_em: new Date().toISOString() }).eq("id", ticketId);
 }
 
-export async function enviarAnexoAcao(ticketId: string, formData: FormData): Promise<{ erro?: string }> {
+// Fase 27.27 — achado real: essa action recebia (ticketId: string, formData:
+// FormData) — dois argumentos separados, um deles carregando um File — e
+// continuava travando com o erro genérico mascarado de produção do Next
+// mesmo com TODO o corpo da função protegido por try/catch (Fase 27.25) e
+// ZERO rastro de execução (nenhum log no Storage, nada). Isso indica que a
+// falha acontecia antes mesmo do nosso código rodar — na camada do Next que
+// decodifica os argumentos da Server Action a partir da requisição. A
+// diferença pro fluxo que FUNCIONA (criarChamadoAcao, que usa o mesmo
+// enviarAnexo() por baixo): lá o primeiro argumento é sempre `undefined`
+// (padrão de action state), nunca uma string populada. Agora o ticketId vai
+// embutido como campo oculto dentro do próprio FormData — um único
+// argumento, no mesmo formato que já funciona.
+export async function enviarAnexoAcao(formData: FormData): Promise<{ erro?: string }> {
+  const ticketId = String(formData.get("ticket_id") ?? "").trim();
   const arquivo = formData.get("arquivo");
+  if (!ticketId) return { erro: "Chamado não identificado." };
   if (!(arquivo instanceof File) || arquivo.size === 0) return { erro: "Selecione um arquivo." };
 
   // Fase 27.25 — try/catch em volta de TUDO (não só do upload em si), pra

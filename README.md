@@ -3040,3 +3040,30 @@ verdade e reverter esse try/catch pra voltar a usar o error boundary padrão (`(
 da Fase 27.22).
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.27 — Anexo na resposta do chamado: assinatura da Server Action mudada (ticketId embutido no FormData)
+
+Depois de 27.22/27.24/27.25 sem sucesso, o Daniel colou o corpo bruto da resposta de rede da Server
+Action (aba Network do navegador):
+```
+0:{"a":"$@1","f":"","b":"xRb0e2zGmKQ0ZVkPWsDR1"}
+1:E{"digest":"4260541496"}
+```
+Isso confirma que o SERVIDOR recebeu a requisição e devolveu, dentro do protocolo de resposta do
+Next (RSC), um objeto de erro (`E{"digest":...}`) — ou seja, a falha acontece dentro da camada do
+Next que decodifica/despacha a Server Action, não numa falha de rede/timeout como se pensava antes.
+
+A pista concreta: `enviarAnexoAcao` tinha assinatura `(ticketId: string, formData: FormData)` — dois
+argumentos, um deles carregando um `File` — e continuava travando mesmo com TODO o corpo da função
+protegido por try/catch (Fase 27.25) e zero rastro de execução (nenhum log no Storage). Isso só faz
+sentido se o problema for anterior ao nosso código rodar. Comparando com o fluxo que SEMPRE funcionou
+(`criarChamadoAcao(_prev, formData)`, que usa o mesmo `enviarAnexo()` por baixo): lá o primeiro
+argumento é sempre `undefined` (padrão de action state), nunca uma string populada.
+
+Correção — `enviarAnexoAcao` agora recebe um único argumento (`formData: FormData`), com o
+`ticketId` embutido como campo oculto (`<input type="hidden" name="ticket_id" />`) dentro do próprio
+formulário de anexo em `ThreadChamado.tsx`, replicando exatamente o padrão de argumento único que já
+funciona em `criarChamadoAcao`.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Ainda precisa de confirmação do
+Daniel/cliente testando de novo pra saber se essa era de fato a causa.

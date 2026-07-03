@@ -66,7 +66,11 @@ export function ThreadChamado({
 
     startTransitionAnexo(async () => {
       try {
-        const resultado = await enviarAnexoAcao(ticketId, formData);
+        // Fase 27.27 — ticketId agora vai embutido no próprio formData (ver
+        // input hidden "ticket_id" no form abaixo), a action passou a
+        // receber um único argumento — mesmo padrão que já funciona em
+        // criarChamadoAcao.
+        const resultado = await enviarAnexoAcao(formData);
         if (resultado?.erro) setErroAnexo(resultado.erro);
         else formAnexoRef.current?.reset();
       } catch (e) {
@@ -157,6 +161,7 @@ export function ThreadChamado({
           )}
 
           <form ref={formAnexoRef} onSubmit={enviarAnexo} className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
+            <input type="hidden" name="ticket_id" value={ticketId} />
             <input type="file" name="arquivo" required className="input text-sm" disabled={pendingAnexo} />
             <button type="submit" className="btn-secondary shrink-0 text-sm" disabled={pendingAnexo}>
               {pendingAnexo ? "Enviando..." : "Enviar anexo"}
