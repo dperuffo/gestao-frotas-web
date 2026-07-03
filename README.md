@@ -2712,6 +2712,17 @@ só entra em uso depois dessa configuração.
 `/auth/callback` não foi alterado nem removido — continua sendo o caminho correto pro login com
 Google (`signInWithOAuth`), que não sofre desse problema.
 
+**Templates com a marca FNI** (pedido do Daniel, mesma fase): os e-mails de "Confirm signup" e
+"Reset Password" vinham no template genérico em inglês do Supabase, sem logo nem cor nenhuma da
+FNI. `email-templates/confirm-signup.html` e `email-templates/reset-password.html` (novos, na raiz
+do repo — não fazem parte do build do Next, são só HTML pra colar no Dashboard) já têm o link
+correto de `/auth/confirm` acima embutido, header com a logo (`https://fxgestaodefrotasonline.com/logo-fni.png`
+— arquivo estático público, fora do middleware de auth) e a paleta navy/cyan da landing page
+(`#04112e`/`#00b4d8`, mesma de `landingBody.ts`, e não a paleta `frota` do dashboard interno — essa
+troca é a peça pública/cliente final, então usa a identidade da landing). Basta colar o conteúdo de
+cada arquivo no campo de corpo do template correspondente no Dashboard (Subject sugerido: "Confirme
+seu e-mail — FNI Gestão de Frotas" e "Redefinir sua senha — FNI Gestão de Frotas").
+
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
 
 ## Fase 27.17 — Roteirização utilizável para cliente novo (fallback pra base pública ANP)
@@ -2777,6 +2788,20 @@ existia ou não.
   contradição encontrada aí. Não foi possível confirmar a causa exata da falha pontual (sem acesso
   a log de produção), mas o bug real e corrigido é a ausência de tratamento de erro — reproduzível
   com qualquer falha de upload, não só a que esse cliente teve.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.19 — Botão de mostrar/ocultar senha nos campos de senha
+
+Pedido do Daniel: colocar o ícone de "olho" nos campos de senha pra dar pra ver o que foi digitado.
+
+- `src/components/InputSenha.tsx` (novo) — substitui o `<input type="password">` puro por um campo
+  com botão de olho (`Eye`/`EyeOff` do `lucide-react`, já usado em `AuthLogoHeader.tsx`) que alterna
+  o `type` entre `password` e `text`. Botão com `tabIndex={-1}` pra não interromper a navegação por
+  Tab entre os campos do formulário.
+- Aplicado nos 5 campos de senha que existem no app — todos em telas de autenticação:
+  `login/page.tsx` (senha), `cadastro/page.tsx` (senha e confirmar senha) e
+  `redefinir-senha/page.tsx` (nova senha e confirmar nova senha).
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
 

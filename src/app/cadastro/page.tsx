@@ -5,6 +5,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { criarContaTrial } from "./actions";
 import { DIAS_TRIAL } from "@/lib/constants";
 import { AuthShell, AuthCard } from "@/components/AuthShell";
+import { InputSenha } from "@/components/InputSenha";
 
 // Cadastro self-service — prospect vindo da landing pública
 // (fxgestaodefrotasonline.com) cria a própria conta e já entra em trial,
@@ -78,16 +79,10 @@ export default function CadastroPage() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Campo label="Senha" required>
-              <input name="senha" type="password" required minLength={8} className="input-dark" />
+              <InputSenha name="senha" required minLength={8} />
             </Campo>
             <Campo label="Confirmar senha" required>
-              <input
-                name="confirmar_senha"
-                type="password"
-                required
-                minLength={8}
-                className="input-dark"
-              />
+              <InputSenha name="confirmar_senha" required minLength={8} />
             </Campo>
           </div>
 

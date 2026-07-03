@@ -4,6 +4,7 @@ import { Suspense, useState, useTransition, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell, AuthCard } from "@/components/AuthShell";
+import { InputSenha } from "@/components/InputSenha";
 import { entrarComSenha } from "./actions";
 
 // Login via Supabase Auth nativo. Duas formas de entrar:
@@ -107,7 +108,7 @@ function LoginCard() {
                 Esqueci minha senha
               </a>
             </div>
-            <input name="senha" type="password" required autoComplete="current-password" className="input-dark" />
+            <InputSenha name="senha" required autoComplete="current-password" />
           </div>
           <button type="submit" disabled={isPending} className="btn-primary w-full justify-center">
             {isPending ? "Entrando..." : "Entrar com e-mail e senha"}

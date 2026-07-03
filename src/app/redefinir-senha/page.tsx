@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { AuthShell, AuthCard } from "@/components/AuthShell";
+import { InputSenha } from "@/components/InputSenha";
 import { redefinirSenha } from "./actions";
 
 export default function RedefinirSenhaPage() {
@@ -31,11 +32,11 @@ export default function RedefinirSenhaPage() {
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="label-dark">Nova senha</label>
-            <input name="senha" type="password" required minLength={8} autoComplete="new-password" className="input-dark" />
+            <InputSenha name="senha" required minLength={8} autoComplete="new-password" />
           </div>
           <div>
             <label className="label-dark">Confirmar nova senha</label>
-            <input name="confirmar_senha" type="password" required minLength={8} autoComplete="new-password" className="input-dark" />
+            <InputSenha name="confirmar_senha" required minLength={8} autoComplete="new-password" />
           </div>
           <button type="submit" disabled={isPending} className="btn-primary w-full justify-center">
             {isPending ? "Salvando..." : "Salvar nova senha"}
