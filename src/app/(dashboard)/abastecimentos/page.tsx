@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
 
 function formatarMoeda(valor: number) {
@@ -15,10 +16,15 @@ function statusBadge(estornado: number | null, autorizacao: number | null) {
 export default async function AbastecimentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; de?: string; ate?: string }>;
+  searchParams: Promise<{ q?: string; de?: string; ate?: string; empresa?: string }>;
 }) {
-  const { q, de, ate } = await searchParams;
+  const { q, de, ate, empresa: empresaParam } = await searchParams;
   const supabase = await createClient();
+
+  // Fase 27.8 — mesmo seletor de cliente já usado em Postos, Relatórios,
+  // Veículos e Motoristas, agora também em Abastecimentos.
+  const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+  const semClienteEscolhido = empresas.length > 1 && !empresaSelecionada;
 
   let query = supabase
     .from("profrotas_abastecimentos")
@@ -32,8 +38,9 @@ export default async function AbastecimentosPage({
   }
   if (de) query = query.gte("data_abastecimento", de);
   if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
+  if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
 
-  const { data: registros, error } = await query.limit(500);
+  const { data: registros, error } = semClienteEscolhido ? { data: [], error: null } : await query.limit(500);
 
   const litrosTotais = registros?.reduce((soma, r) => soma + (r.item_quantidade ?? 0), 0) ?? 0;
   const valorTotal = registros?.reduce((soma, r) => soma + (r.item_valor_total ?? 0), 0) ?? 0;
@@ -45,8 +52,10 @@ export default async function AbastecimentosPage({
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Abastecimentos</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Alimentado automaticamente pela integração com o meio de pagamento (ex: PróFrotas).
-            Lançamento manual e importação em lote disponíveis para clientes sem integração.
+            Alimentado automaticamente pelas integrações com meios de pagamento (PróFrotas e outros
+            provedores conectados via Hub de Integrações). Lançamento manual e importação em lote
+            também disponíveis para clientes sem integração
+            {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
           </p>
         </div>
         <div className="flex gap-2">
@@ -59,6 +68,31 @@ export default async function AbastecimentosPage({
         </div>
       </div>
 
+      {empresas.length > 1 && (
+        <form className="mb-4 flex items-end gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">Selecione um cliente...</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn-secondary text-sm">
+            Filtrar
+          </button>
+        </form>
+      )}
+
+      {semClienteEscolhido && (
+        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver os abastecimentos dele.</p>
+      )}
+
+      {!semClienteEscolhido && (
+      <>
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Indicador label="Registros" valor={String(registros?.length ?? 0)} />
         <Indicador label="Litros abastecidos" valor={litrosTotais.toLocaleString("pt-BR")} />
@@ -132,6 +166,8 @@ export default async function AbastecimentosPage({
           </tbody>
         </table>
       </div>
+      </>
+      )}
     </div>
   );
 }

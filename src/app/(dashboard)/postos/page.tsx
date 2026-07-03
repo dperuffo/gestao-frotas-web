@@ -34,13 +34,20 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
 
   // Quem pode ver mais de um cliente (admin, ou usuário vinculado a várias
   // empresas) escolhe o cliente pelo seletor; quem só tem um, usa direto.
+  // Fase 27.2 — achado real: um usuário vinculado a mais de uma empresa (ex.:
+  // grupo econômico) caía na MESMA condição do admin e recebia a base de
+  // clientes inteira sem filtro nenhum. RLS de "empresas" já bloqueava o
+  // vazamento de dado (só retorna linhas de empresas_do_usuario), mas o
+  // código não devia depender só disso — corrigido pra filtrar
+  // explicitamente por minhasEmpresasIds, que já cobre o próprio cliente e
+  // as empresas "irmãs" do mesmo grupo econômico.
   let empresas: { id: string; nome: string }[] = [];
-  if (perfil === "admin" || (minhasEmpresasIds?.length ?? 0) > 1) {
+  if (perfil === "admin") {
     const { data } = await supabase.from("empresas").select("id, nome").order("nome");
     empresas = data ?? [];
-  } else if (minhasEmpresasIds && minhasEmpresasIds.length === 1) {
-    const { data } = await supabase.from("empresas").select("id, nome").eq("id", minhasEmpresasIds[0]).maybeSingle();
-    empresas = data ? [data] : [];
+  } else if (minhasEmpresasIds && minhasEmpresasIds.length > 0) {
+    const { data } = await supabase.from("empresas").select("id, nome").in("id", minhasEmpresasIds).order("nome");
+    empresas = data ?? [];
   }
 
   const empresaSelecionada =

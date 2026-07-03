@@ -1024,6 +1024,17 @@ export interface Database {
         Args: { p_cnpj: string };
         Returns: string | null;
       };
+      // Fase 27.3 — checagem de duplicidade normalizada, chamada pelo app
+      // antes de gravar veiculos/motoristas (índices únicos funcionais são a
+      // trava definitiva no banco; isso só existe pra dar mensagem amigável).
+      veiculo_duplicado: {
+        Args: { p_cnpj_frota: string; p_placa: string; p_excluir_id?: string | null };
+        Returns: boolean;
+      };
+      motorista_duplicado: {
+        Args: { p_empresa_id: string; p_cpf: string; p_excluir_id?: string | null };
+        Returns: boolean;
+      };
       // Resolve o vínculo de cadastro_veiculos com uma empresa via cnpj_frota,
       // usando a mesma normalização de empresa_id_do_cnpj (só alfanuméricos,
       // maiúsculo) -- comparar cnpj_frota direto com empresas.cnpj falha

@@ -11,7 +11,7 @@ import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
 
 const menuVisaoGeral = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/assistente", label: "🤖 Assistente FNI" },
+  { href: "/assistente", label: "Assistente FNI" },
   { href: "/assinatura", label: "💳 Minha Assinatura" },
   { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
   { href: "/financeiro", label: "💰 Painel Financeiro" },
@@ -135,8 +135,11 @@ export default async function DashboardLayout({
                 <Link
                   href={item.href}
                   data-tour={TOUR_POR_HREF[item.href]}
-                  className="block rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
+                  {item.href === "/assistente" && (
+                    <Image src="/logo-fni.png" alt="" width={51} height={20} className="h-4 w-auto" />
+                  )}
                   {item.label}
                 </Link>
               </li>

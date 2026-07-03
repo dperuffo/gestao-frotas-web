@@ -62,6 +62,19 @@ export async function criarVeiculo(_prev: VeiculoFormState, formData: FormData):
     return { erro: "Não foi possível identificar o CNPJ do cliente selecionado." };
   }
 
+  // Fase 27.3 — achado real: a mesma placa conseguia ser cadastrada mais de
+  // uma vez (a comparação crua de cnpj_frota não pegava formatos diferentes
+  // do mesmo CNPJ). Checa aqui ANTES de tentar o insert pra dar uma mensagem
+  // clara; o índice único normalizado no banco é a trava definitiva caso
+  // essa checagem seja contornada (ex.: duas requisições simultâneas).
+  const { data: duplicado } = await supabase.rpc("veiculo_duplicado", {
+    p_cnpj_frota: empresa.cnpj,
+    p_placa: payload.placa,
+  });
+  if (duplicado) {
+    return { erro: `Já existe um veículo cadastrado com a placa ${payload.placa} para este cliente.` };
+  }
+
   const { data, error } = await supabase
     .from("cadastro_veiculos")
     .insert({
@@ -72,7 +85,12 @@ export async function criarVeiculo(_prev: VeiculoFormState, formData: FormData):
     .select("id")
     .single();
 
-  if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+  if (error) {
+    if (error.code === "23505") {
+      return { erro: `Já existe um veículo cadastrado com a placa ${payload.placa} para este cliente.` };
+    }
+    return { erro: `Não foi possível salvar: ${error.message}` };
+  }
 
   // Aloca o veículo ao centro de custo escolhido (se houver), já registrando
   // o início da alocação no histórico (centros_custo_veiculos).
@@ -113,9 +131,25 @@ export async function atualizarVeiculo(
     .eq("id", id)
     .maybeSingle();
 
+  if (existente?.cnpj_frota) {
+    const { data: duplicado } = await supabase.rpc("veiculo_duplicado", {
+      p_cnpj_frota: existente.cnpj_frota,
+      p_placa: payload.placa,
+      p_excluir_id: id,
+    });
+    if (duplicado) {
+      return { erro: `Já existe outro veículo cadastrado com a placa ${payload.placa} para este cliente.` };
+    }
+  }
+
   const { error } = await supabase.from("cadastro_veiculos").update({ ...payload, ativo }).eq("id", id);
 
-  if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+  if (error) {
+    if (error.code === "23505") {
+      return { erro: `Já existe outro veículo cadastrado com a placa ${payload.placa} para este cliente.` };
+    }
+    return { erro: `Não foi possível salvar: ${error.message}` };
+  }
 
   // Realoca (ou desaloca, se centroCustoId for null) o veículo, preservando
   // o histórico em centros_custo_veiculos em vez de sobrescrever a alocação.

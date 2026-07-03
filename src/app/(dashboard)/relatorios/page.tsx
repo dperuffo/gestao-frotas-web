@@ -23,20 +23,29 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
 
+  // Fase 27.2 — achado real: um usuário vinculado a mais de uma empresa (ex.:
+  // grupo econômico) caía na MESMA condição do admin e recebia a base de
+  // clientes inteira sem filtro nenhum. RLS de "empresas" já bloqueava o
+  // vazamento de dado (só retorna linhas de empresas_do_usuario), mas o
+  // código não devia depender só disso — corrigido pra filtrar
+  // explicitamente por minhasEmpresasIds, que já cobre o próprio cliente e
+  // as empresas "irmãs" do mesmo grupo econômico.
   let empresas: { id: string; nome: string }[] = [];
-  if (perfil === "admin" || (minhasEmpresasIds?.length ?? 0) > 1) {
+  if (perfil === "admin") {
     const { data } = await supabase.from("empresas").select("id, nome").order("nome");
     empresas = data ?? [];
-  } else if (minhasEmpresasIds && minhasEmpresasIds.length === 1) {
-    const { data } = await supabase.from("empresas").select("id, nome").eq("id", minhasEmpresasIds[0]).maybeSingle();
-    empresas = data ? [data] : [];
+  } else if (minhasEmpresasIds && minhasEmpresasIds.length > 0) {
+    const { data } = await supabase.from("empresas").select("id, nome").in("id", minhasEmpresasIds).order("nome");
+    empresas = data ?? [];
   }
 
   const empresaSelecionada =
     (empresaParam && empresas.some((e) => e.id === empresaParam) ? empresaParam : null) ??
     (empresas.length === 1 ? empresas[0].id : null);
 
-  const nomeEmpresaSelecionada = empresas.find((e) => e.id === empresaSelecionada)?.nome ?? "Rede FNI (todos os clientes)";
+  const nomeEmpresaSelecionada =
+    empresas.find((e) => e.id === empresaSelecionada)?.nome ??
+    (perfil === "admin" ? "Rede FNI (todos os clientes)" : "todas as empresas do meu grupo");
 
   // Janela padrão dos dados "brutos" de Relatórios Personalizados — últimos
   // 365 dias, mesma janela usada em outros pontos do app pra esse tipo de
@@ -145,7 +154,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
           <h1 className="text-2xl font-semibold text-slate-900">Relatórios</h1>
           <p className="text-sm text-slate-500">
             Relatório executivo, performance por posto, score × utilização, anomalias e relatórios
-            personalizados{empresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : " — rede inteira"}.
+            personalizados — {nomeEmpresaSelecionada}.
           </p>
         </div>
         {empresas.length > 1 && (
@@ -153,7 +162,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
               <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
-                <option value="">Rede inteira (todos os clientes)</option>
+                <option value="">{perfil === "admin" ? "Rede inteira (todos os clientes)" : "Todas as empresas do meu grupo"}</option>
                 {empresas.map((e) => (
                   <option key={e.id} value={e.id}>
                     {e.nome}
