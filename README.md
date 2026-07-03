@@ -2985,3 +2985,36 @@ Duas correções:
   diagnosticar, sem precisar pedir print do console do navegador.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.25 — Anexo continuava falhando (crash mascarado de produção) — proteção completa das actions de chamado
+
+Depois da Fase 27.24 (sanitização do nome do arquivo), o anexo continuava falhando — agora com a
+mensagem "An error occurred in the Server Components render. The specific message is omitted in
+production builds...", o texto genérico que o Next usa em produção pra esconder o erro real. O
+Daniel confirmou que não era problema de conexão.
+
+Investigação: consultei os logs do Storage do Supabase (`get_logs`, serviço `storage`) das últimas
+24h e não encontrei NENHUM registro de tentativa de upload correspondente a esse anexo — ou seja, a
+falha acontecia ANTES da chamada de upload em si, não durante ou depois dela. Isso apontou pra
+`resolverPapelAtual` (`chamados/actions.ts`) — chamada por `enviarAnexoAcao`, `comentarAcao` e
+`marcarVistoAcao`, faz duas chamadas de rede (`auth.getUser()` e `rpc("perfil_usuario_atual")`) sem
+nenhuma proteção. Qualquer falha ali (ex.: uma forma de token/sessão problemática que o cliente
+Supabase não devolve como `{error}` normal) escapava sem tratamento, e como isso acontece antes do
+`try/catch` que já existia dentro de `enviarAnexoAcao` (que só envolvia o upload em si), a exceção
+subia sem ser capturada.
+
+Correção — endurecimento em profundidade, não um ponto único:
+
+- `resolverPapelAtual` agora tem seu próprio try/catch interno — se `getUser()` ou o `rpc()` falhar
+  por qualquer motivo, devolve um resultado seguro (`{ email: "", papel: "usuario" }`) em vez de
+  propagar a exceção. Como é usada em várias actions e na página do chamado, protege todo mundo de
+  uma vez.
+- `enviarAnexoAcao` e `comentarAcao` — o try/catch, que antes só envolvia uma parte do corpo (só o
+  upload, ou nada), agora envolve a função inteira (criar client, resolver papel, gravar no banco,
+  revalidar), convertendo qualquer falha em qualquer etapa numa mensagem normal (`{ erro: ... }`)
+  em vez de deixar escapar.
+- `ChamadoForm.tsx`/`ThreadChamado.tsx` — a mensagem de erro mostrada agora inclui também o
+  "digest" do erro, quando presente (é o único dado que o Next expõe pra um erro mascarado em
+  produção) — útil pra correlacionar com os logs do Railway numa próxima ocorrência.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.

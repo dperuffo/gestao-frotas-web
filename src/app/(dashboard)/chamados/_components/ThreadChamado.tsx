@@ -70,11 +70,15 @@ export function ThreadChamado({
         if (resultado?.erro) setErroAnexo(resultado.erro);
         else formAnexoRef.current?.reset();
       } catch (e) {
-        // Fase 27.24 — mostra o motivo real (ex.: "Failed to fetch") em vez
-        // de só uma mensagem genérica, pra dar pra diagnosticar sem precisar
-        // de acesso ao console do navegador na próxima vez que isso acontecer.
+        // Fase 27.24/27.25 — mostra o motivo real (e o "digest", quando o
+        // Next mascara a mensagem em produção) em vez de um texto genérico,
+        // pra dar pra diagnosticar sem precisar de acesso ao console do
+        // navegador na próxima vez que isso acontecer.
         const motivo = e instanceof Error ? e.message : "erro desconhecido";
-        setErroAnexo(`Não foi possível enviar o anexo (${motivo}). Verifique sua conexão e tente novamente.`);
+        const digest = (e as { digest?: string })?.digest;
+        setErroAnexo(
+          `Não foi possível enviar o anexo (${motivo}${digest ? ` — código ${digest}` : ""}). Tente novamente.`
+        );
         console.error("[ThreadChamado] falha ao enviar anexo:", e);
       }
     });

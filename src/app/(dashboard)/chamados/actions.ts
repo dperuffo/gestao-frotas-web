@@ -13,13 +13,29 @@ export type ChamadoFormState = { erro?: string } | undefined;
 // usada nas policies de RLS (perfil admin OU o e-mail fixo), calculada aqui
 // pra rotular corretamente o autor de cada comentário/anexo.
 export async function resolverPapelAtual(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{ email: string; papel: AutorTipo }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const email = user?.email ?? "";
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
-  const papel: AutorTipo = perfil === "admin" || email === "d.peruffo@gmail.com" ? "admin" : "usuario";
-  return { email, papel };
+  // Fase 27.25 — achado real: um anexo enviado numa resposta de chamado
+  // (ThreadChamado) derrubava a página com o erro genérico de produção do
+  // Next ("An error occurred in the Server Components render..."), sem
+  // NENHUM registro de upload no Storage — ou seja, a falha acontecia antes
+  // mesmo de chegar no upload. resolverPapelAtual (chamada por
+  // enviarAnexoAcao, comentarAcao, marcarVistoAcao e pela própria página do
+  // chamado) fazia duas chamadas de rede (getUser + rpc) sem nenhuma
+  // proteção — qualquer falha ali (ex.: token expirado de um jeito que o
+  // Supabase client não trata como erro normal) escapava sem tratamento.
+  // Try/catch aqui protege todos os usos de uma vez, sem precisar mexer em
+  // cada função que chama isso.
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const email = user?.email ?? "";
+    const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+    const papel: AutorTipo = perfil === "admin" || email === "d.peruffo@gmail.com" ? "admin" : "usuario";
+    return { email, papel };
+  } catch (e) {
+    console.error("[chamados] resolverPapelAtual falhou:", e instanceof Error ? e.message : e);
+    return { email: "", papel: "usuario" };
+  }
 }
 
 export async function criarChamadoAcao(_prev: ChamadoFormState, formData: FormData): Promise<ChamadoFormState> {
@@ -128,43 +144,54 @@ export async function enviarAnexoAcao(ticketId: string, formData: FormData): Pro
   const arquivo = formData.get("arquivo");
   if (!(arquivo instanceof File) || arquivo.size === 0) return { erro: "Selecione um arquivo." };
 
-  const supabase = await createClient();
-  const { email } = await resolverPapelAtual(supabase);
-  if (!email) return { erro: "Sessão expirada, faça login novamente." };
-
+  // Fase 27.25 — try/catch em volta de TUDO (não só do upload em si), pra
+  // nenhuma etapa (criar client, resolver papel, revalidatePath) escapar
+  // sem tratamento e virar o erro genérico de produção do Next.
   try {
+    const supabase = await createClient();
+    const { email } = await resolverPapelAtual(supabase);
+    if (!email) return { erro: "Sessão expirada, faça login novamente." };
+
     await enviarAnexo(supabase, ticketId, arquivo, email);
+
+    revalidatePath(`/chamados/${ticketId}`);
+    revalidatePath("/chamados");
+    return {};
   } catch (e) {
+    console.error("[chamados] enviarAnexoAcao falhou:", e instanceof Error ? e.message : e);
     return { erro: e instanceof Error ? e.message : "Erro ao enviar anexo." };
   }
-
-  revalidatePath(`/chamados/${ticketId}`);
-  revalidatePath("/chamados");
-  return {};
 }
 
 export async function comentarAcao(ticketId: string, texto: string): Promise<{ erro?: string }> {
   const textoLimpo = texto.trim();
   if (!textoLimpo) return { erro: "Escreva uma mensagem." };
 
-  const supabase = await createClient();
-  const { email, papel } = await resolverPapelAtual(supabase);
-  if (!email) return { erro: "Sessão expirada, faça login novamente." };
+  // Fase 27.25 — mesmo raciocínio de enviarAnexoAcao: todo o corpo (não só
+  // uma parte) protegido, pra nenhuma etapa escapar sem tratamento.
+  try {
+    const supabase = await createClient();
+    const { email, papel } = await resolverPapelAtual(supabase);
+    if (!email) return { erro: "Sessão expirada, faça login novamente." };
 
-  const { error } = await supabase.from("ticket_comentarios").insert({
-    ticket_id: ticketId,
-    autor_email: email,
-    autor_tipo: papel,
-    texto: textoLimpo,
-  });
-  if (error) return { erro: error.message };
+    const { error } = await supabase.from("ticket_comentarios").insert({
+      ticket_id: ticketId,
+      autor_email: email,
+      autor_tipo: papel,
+      texto: textoLimpo,
+    });
+    if (error) return { erro: error.message };
 
-  // O próprio autor já "viu" a atualização que acabou de criar.
-  await marcarComoVisto(supabase, ticketId, papel);
+    // O próprio autor já "viu" a atualização que acabou de criar.
+    await marcarComoVisto(supabase, ticketId, papel);
 
-  revalidatePath(`/chamados/${ticketId}`);
-  revalidatePath("/chamados");
-  return {};
+    revalidatePath(`/chamados/${ticketId}`);
+    revalidatePath("/chamados");
+    return {};
+  } catch (e) {
+    console.error("[chamados] comentarAcao falhou:", e instanceof Error ? e.message : e);
+    return { erro: e instanceof Error ? e.message : "Erro ao enviar mensagem." };
+  }
 }
 
 // Grava a marca de "visto" — separado em função própria (em vez de um
