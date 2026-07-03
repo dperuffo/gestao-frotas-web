@@ -3018,3 +3018,25 @@ Correção — endurecimento em profundidade, não um ponto único:
   produção) — útil pra correlacionar com os logs do Railway numa próxima ocorrência.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.26 — Crash não diagnosticado em /chamados/novo (medida temporária de diagnóstico)
+
+Um cliente novo (perfil não-admin, 1 empresa vinculada) trava consistentemente em `/chamados/novo`
+com o erro genérico mascarado de produção do Next — reproduzível depois de reload, com outro
+usuário, e através de vários deploys com código bem diferente entre si (o "digest" do erro se
+manteve o mesmo em todas as tentativas, o que sugere que o problema está numa parte do código que
+não mudou hoje — `chamados/novo/page.tsx` e `src/lib/empresaAtual.ts` não foram tocados em nenhuma
+das Fases anteriores). Verifiquei os logs do Supabase (storage, auth, postgres) das últimas 24h e
+não encontrei nenhum registro de erro correspondente, e os dados da cliente de teste (empresa,
+vínculo, perfil, fator MFA verificado) estão todos normais via consulta SQL direta — nada aponta
+pra uma causa no banco/RLS.
+
+Como a mensagem mascarada da Next não estava ajudando a diagnosticar (e não tenho acesso aos logs
+de runtime do Railway), `chamados/novo/page.tsx` agora envolve a busca de dados em try/catch e
+mostra o erro REAL (mensagem + stack) numa tela amigável em vez de deixar escapar pro crash
+genérico. **Isso é uma medida temporária de diagnóstico, não a correção do bug** — assim que a
+próxima ocorrência acontecer, a mensagem vai trazer a causa real, e aí sim dá pra corrigir de
+verdade e reverter esse try/catch pra voltar a usar o error boundary padrão (`(dashboard)/error.tsx`
+da Fase 27.22).
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
