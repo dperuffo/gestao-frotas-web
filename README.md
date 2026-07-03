@@ -2805,3 +2805,84 @@ Pedido do Daniel: colocar o ícone de "olho" nos campos de senha pra dar pra ver
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
 
+## Fase 27.20 — Notificar admin quando um cliente acessa a plataforma (mesmo trial/gratuito)
+
+Pedido do Daniel: "quero que o admin seja notificado quando um cliente entrar na plataforma, mesmo
+em período trial/gratuito", depois esclarecido: a notificação deve aparecer como um badge na aba
+"Clientes" do menu (mesmo padrão visual já usado em Chamados e Avaliações), não por e-mail.
+
+Investigação inicial: existiam duas tabelas candidatas no banco compartilhado — `logs_acesso` (403
+linhas, escritas até 2026-07-02) e `security_logs` (eventos MFA_OK/MFA_FAIL) — mas nenhuma das duas
+é escrita por este app (Next.js): são alimentadas pelo sistema Streamlit legado que compartilha o
+mesmo banco Supabase (`grep -rn` em `src/` não encontrou nenhuma referência a nenhuma das duas).
+Reaproveitar uma tabela escrita por outro sistema, sem controle sobre o formato/consistência dos
+dados, seria frágil — por isso optei por uma tabela nova, exclusiva deste app.
+
+- Migração `criar_acessos_clientes` — nova tabela `acessos_clientes` (id, empresa_id FK pra
+  `empresas`, user_email, criado_em default `now()`, admin_visto_em nullable — mesmo padrão de
+  "visto" já usado em `tickets.admin_visto_em`/`avaliacoes.resposta_admin`). RLS habilitado com 3
+  policies: `acessos_clientes_insert_proprio` (insert restrito à própria empresa via
+  `empresas_do_usuario`), `acessos_clientes_select_admin` e `acessos_clientes_update_admin` (só
+  admin ou o e-mail do Daniel).
+- `src/types/database.types.ts` — bloco `acessos_clientes` adicionado manualmente (mesmo estilo já
+  usado para `lgpd_consents`/`lgpd_exclusoes`/`termos_aceite`), com Relationships apontando pra
+  `empresas`.
+- `src/lib/acessosClientes.ts` (novo) — `registrarAcessoCliente(supabase, email)`: resolve o perfil
+  do usuário e as empresas dele (`empresas_do_usuario`), e se não for time interno FNI (perfil admin
+  ou o e-mail do Daniel) insere uma linha em `acessos_clientes` por empresa vinculada. É
+  propositalmente best-effort — qualquer erro (RLS, RPC fora do ar etc.) só é logado no servidor e
+  nunca interrompe o login, mesmo raciocínio já aplicado ao envio de anexo na abertura de chamado
+  (Fase 27.18).
+- Chamada nos dois pontos de entrada de sessão: `src/app/auth/callback/route.ts` (login Google, logo
+  após `exchangeCodeForSession` ter sucesso) e `src/app/login/actions.ts`'s `entrarComSenha` (login
+  e-mail/senha, logo após `signInWithPassword` ter sucesso).
+- `src/app/(dashboard)/clientes/actions.ts` — `contarAcessosClientesNaoVistosAcao()` (conta linhas
+  com `admin_visto_em is null`, só retorna algo pra admin — mesmo padrão de
+  `contarAvaliacoesPendentesAcao`) e `marcarAcessosClientesVistosAcao()` (marca todas como vistas,
+  chamada quando o admin abre `/clientes`).
+- `src/app/(dashboard)/layout.tsx` — badge vermelho na aba "Clientes" do menu "Cadastros" quando
+  `acessosClientesNaoVistos > 0` — precisou reestruturar o render de `menuCadastros` (que só tinha
+  `<Link>{label}</Link>` sem suporte a badge) pro mesmo formato já usado em `menuAdministracao`
+  (que já suporta o badge de `/avaliacoes`).
+- `src/app/(dashboard)/clientes/page.tsx` — painel "Últimos acessos" (admin-only), lista os 20
+  logins mais recentes de clientes (empresa, e-mail, data/hora) abaixo da tabela de clientes. Marca
+  tudo como visto (zera o badge) assim que a página é aberta, chamando
+  `marcarAcessosClientesVistosAcao()` em paralelo com o carregamento da lista.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.21 — Corrigir bounding box da Roteirização em rotas longas
+
+Depois da Fase 27.17 (fallback ANP pra cliente sem postos próprios), o Daniel reportou que um
+cliente novo, mesmo com o fallback ativo (o aviso azul "sua empresa ainda não tem postos próprios"
+aparecia normalmente), continuava sem conseguir uma roteirização utilizável — o mapa mostrava a rota
+traçada, mas nenhuma parada de abastecimento era sugerida. A hipótese inicial do Daniel foi que o
+mecanismo de "Ativar +" da tela `/postos` → "Explorar universo ANP" (que copia um posto ANP pra
+`postos_gf` do cliente) estivesse de alguma forma bloqueando o fallback.
+
+Investigação confirmou que essa hipótese **não** era a causa: "Ativar +" só grava em `postos_gf` (a
+rede própria do cliente) e não tem nenhuma relação com o fallback ANP, que consulta `anp_postos`
+diretamente, sem depender de nenhum vínculo prévio com a empresa — por isso não é a causa e não
+precisou de nenhuma mudança para "vir ativo" pra clientes novos (já funcionava assim).
+
+A causa raiz real: `calcularRoteirizacaoAcao` (`roteirizacao/actions.ts`) montava **um único
+bounding box**, a partir do menor/maior lat/lon de toda a rota, tanto pra consultar `postos_gf`
+quanto (no fallback) `anp_postos` — com `.limit(3000)` e **sem `.order()`**. Numa rota curta isso é
+inofensivo, mas na rota de teste do Daniel (norte do Pará até a divisa Tocantins/Bahia, mais de
+1.500 km cruzando vários estados) o box vira um retângulo enorme cobrindo boa parte do Brasil — e
+sem ordenação por proximidade, o `.limit(3000)` descarta arbitrariamente uma fatia de até 3.000
+linhas dentre milhares de candidatos possíveis, sem nenhuma garantia de que os postos realmente
+próximos ao corredor da rota (o filtro de `desvioKm <= 5km`, aplicado depois, em memória) estejam
+nessa fatia. Resultado: candidatos reais e próximos da rota podiam simplesmente não vir na consulta.
+
+Correção — `src/lib/geo.ts`, nova função `construirBoundingBoxesDaRota(rota, distanciasAcumuladasKm,
+margemGraus, passoKm=150, maxSegmentos=20)`: em vez de um box único, divide a polyline da rota em
+pedaços de até 150 km (capado a no máximo 20 pedaços, mesmo em rotas gigantes) e devolve um
+bounding box por pedaço — cada um naturalmente pequeno, sem risco de esbarrar no limit. Em
+`roteirizacao/actions.ts`, tanto a consulta de `postos_gf` quanto a de `anp_postos` (fallback) agora
+disparam uma consulta por box (`Promise.all`) e mesclam/deduplicam os resultados por `cnpj` (pedaços
+vizinhos podem se sobrepor e retornar o mesmo posto mais de uma vez). Pra rotas curtas o
+comportamento não muda (um pedaço só, igual ao box único de antes); pra rotas longas, cada pedaço
+fica pequeno o bastante pra nunca perder candidatos reais por causa do limit.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.

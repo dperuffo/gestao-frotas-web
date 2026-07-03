@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { registrarAcessoCliente } from "@/lib/acessosClientes";
 
 export type LoginFormState = { erro?: string } | undefined;
 
@@ -33,5 +34,6 @@ export async function entrarComSenha(_prev: LoginFormState, formData: FormData):
     return { erro: "Não foi possível entrar. Tente novamente em instantes." };
   }
 
+  await registrarAcessoCliente(supabase, email);
   redirect("/dashboard");
 }

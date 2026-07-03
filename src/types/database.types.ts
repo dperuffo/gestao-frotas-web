@@ -549,6 +549,35 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["lgpd_exclusoes"]["Row"]>;
         Relationships: [];
       };
+      // Registro de login de clientes (Fase 27.20) — tabela nova, criada só
+      // pra este app (nada de legado). Cada linha é um evento de login
+      // bem-sucedido de um usuário não-admin; alimenta o badge de
+      // notificação "Clientes" no menu e o painel "Últimos acessos" na tela
+      // /clientes. `admin_visto_em` segue o mesmo padrão de
+      // tickets.admin_visto_em / avaliacoes.resposta_admin (null = não visto).
+      acessos_clientes: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          user_email: string;
+          criado_em: string;
+          admin_visto_em: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["acessos_clientes"]["Row"]> & {
+          empresa_id: string;
+          user_email: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["acessos_clientes"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "acessos_clientes_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Histórico de manutenções por veículo — tabela que já existia no
       // banco compartilhado (comentário original: "alimenta a análise
       // preditiva"), sem nenhuma tela usando ela até a Fase 8.

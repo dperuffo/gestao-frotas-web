@@ -4,11 +4,19 @@ import { STATUS_EMPRESA_LABEL, type StatusEmpresa } from "@/lib/constants";
 import { formatCNPJ } from "@/lib/utils";
 import { ToggleAtivoCliente } from "./_components/ToggleAtivoCliente";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { marcarAcessosClientesVistosAcao } from "./actions";
 
 function badgeClasse(status: string) {
   if (status === "ativo" || status === "trial") return "badge-ativo";
   if (status === "suspenso") return "badge-atencao";
   return "badge-inativo";
+}
+
+// Data + hora (não só data, como formatDate) — pra distinguir logins no
+// mesmo dia no painel "Últimos acessos".
+function formatDataHora(value: string | null | undefined): string {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
 }
 
 export default async function ClientesPage({
@@ -18,6 +26,8 @@ export default async function ClientesPage({
 }) {
   const { q } = await searchParams;
   const supabase = await createClient();
+  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const ehAdmin = perfil === "admin";
 
   let query = supabase
     .from("empresas")
@@ -38,6 +48,23 @@ export default async function ClientesPage({
   const { count: totalGeral } = await supabase
     .from("empresas")
     .select("id", { count: "exact", head: true });
+
+  // Últimos acessos de clientes à plataforma (Fase 27.20) — admin-only,
+  // mesma lógica de "marcar como visto ao abrir a página" já usada em
+  // chamados/[id]/page.tsx, só que centralizada na action pra também zerar
+  // o badge do menu de uma vez.
+  let ultimosAcessos: { id: string; user_email: string; criado_em: string; empresas: { nome: string } | null }[] = [];
+  if (ehAdmin) {
+    const [{ data: acessos }] = await Promise.all([
+      supabase
+        .from("acessos_clientes")
+        .select("id, user_email, criado_em, empresas(nome)")
+        .order("criado_em", { ascending: false })
+        .limit(20),
+      marcarAcessosClientesVistosAcao(),
+    ]);
+    ultimosAcessos = acessos ?? [];
+  }
 
   return (
     <div>
@@ -117,6 +144,42 @@ export default async function ClientesPage({
           </tbody>
         </table>
       </div>
+
+      {ehAdmin && (
+        <div className="card mt-6 overflow-x-auto">
+          <div className="border-b border-slate-100 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-900">Últimos acessos</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Logins recentes de clientes na plataforma, inclusive em período trial/gratuito.
+            </p>
+          </div>
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Cliente</th>
+                <th className="px-4 py-3">E-mail</th>
+                <th className="px-4 py-3">Data/hora</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {ultimosAcessos.map((a) => (
+                <tr key={a.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 text-slate-700">{a.empresas?.nome ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">{a.user_email}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatDataHora(a.criado_em)}</td>
+                </tr>
+              ))}
+              {ultimosAcessos.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="px-4 py-8 text-center text-slate-400">
+                    Nenhum acesso registrado ainda.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
 import { contarChamadosNaoVistosAcao } from "./chamados/actions";
 import { contarAvaliacoesPendentesAcao } from "./avaliacoes/actions";
+import { contarAcessosClientesNaoVistosAcao } from "./clientes/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
@@ -89,6 +90,7 @@ export default async function DashboardLayout({
   // vermelho no item de menu (ver lib/chamados.ts para a regra de "visto").
   const chamadosNaoVistos = await contarChamadosNaoVistosAcao();
   const avaliacoesPendentes = await contarAvaliacoesPendentesAcao();
+  const acessosClientesNaoVistos = await contarAcessosClientesNaoVistosAcao();
 
   // Nome e cargo/função do usuário logado, pra mostrar no lugar do texto
   // fixo "Ambiente seguro FNI" abaixo da logo — vínculo é por e-mail (mesmo
@@ -181,9 +183,14 @@ export default async function DashboardLayout({
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="block rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.href === "/clientes" && acessosClientesNaoVistos > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                      {acessosClientesNaoVistos}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}

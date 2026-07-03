@@ -90,6 +90,54 @@ export function distanciasAcumuladas(rota: Ponto[]): number[] {
   return acc;
 }
 
+export type BoundingBox = { minLat: number; maxLat: number; minLon: number; maxLon: number };
+
+// Fase 27.21 — achado real: a Roteirização montava UM bounding box só, a
+// partir do menor/maior lat/lon de TODA a rota, e consultava postos_gf/
+// anp_postos com esse box + .limit(3000) sem .order(). Numa rota curta isso
+// é inofensivo, mas numa rota longa (centenas/milhares de km cruzando vários
+// estados) o box vira um retângulo enorme cobrindo boa parte do Brasil —
+// e o .limit(3000) sem ordenação por proximidade descartava arbitrariamente
+// candidatos reais bem próximos ao corredor da rota (resultado: cliente novo
+// sem NENHUMA parada de abastecimento sugerida numa rota longa, mesmo com o
+// fallback ANP ativo). Em vez de um box único, divide a polyline da rota em
+// pedaços de até `passoKm` (capado a `maxSegmentos` pedaços, pra rotas
+// gigantes não gerarem consultas demais) e devolve um box por pedaço — cada
+// consulta feita com esses boxes fica naturalmente pequena e não esbarra no
+// limit.
+export function construirBoundingBoxesDaRota(
+  rota: Ponto[],
+  distanciasAcumuladasKm: number[],
+  margemGraus: number,
+  passoKm = 150,
+  maxSegmentos = 20
+): BoundingBox[] {
+  if (rota.length === 0) return [];
+  const totalKm = distanciasAcumuladasKm[distanciasAcumuladasKm.length - 1] ?? 0;
+  const passoEfetivoKm = Math.max(passoKm, totalKm / maxSegmentos);
+
+  const boxes: BoundingBox[] = [];
+  let inicioIdx = 0;
+  let inicioKm = 0;
+  for (let i = 1; i < rota.length; i++) {
+    const ultimoPonto = i === rota.length - 1;
+    if (distanciasAcumuladasKm[i] - inicioKm >= passoEfetivoKm || ultimoPonto) {
+      const fatia = rota.slice(inicioIdx, i + 1);
+      const lats = fatia.map((p) => p.lat);
+      const lons = fatia.map((p) => p.lon);
+      boxes.push({
+        minLat: Math.min(...lats) - margemGraus,
+        maxLat: Math.max(...lats) + margemGraus,
+        minLon: Math.min(...lons) - margemGraus,
+        maxLon: Math.max(...lons) + margemGraus,
+      });
+      inicioIdx = i;
+      inicioKm = distanciasAcumuladasKm[i];
+    }
+  }
+  return boxes;
+}
+
 export type SugestaoGeocoding = { label: string; lat: number; lon: number };
 
 // Busca de local por texto livre via Nominatim (OpenStreetMap) — mesmo

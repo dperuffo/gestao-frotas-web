@@ -8,6 +8,7 @@ import {
   calcularRotaOsrm,
   distanciasAcumuladas,
   posicaoNaRotaKm,
+  construirBoundingBoxesDaRota,
   type Ponto,
   type SugestaoGeocoding,
 } from "@/lib/geo";
@@ -338,30 +339,36 @@ export async function calcularRoteirizacaoAcao(params: {
   const rota = await calcularRotaOsrm(params.origem, params.destino, params.paradas ?? []);
   const acumuladas = distanciasAcumuladas(rota.coordenadas);
 
-  const lats = rota.coordenadas.map((p) => p.lat);
-  const lons = rota.coordenadas.map((p) => p.lon);
+  // Fase 27.21 — boxes por pedaço da rota (não mais um box único cobrindo
+  // do início ao fim), reaproveitados tanto na consulta de postos_gf quanto
+  // no fallback ANP mais abaixo. Ver comentário de construirBoundingBoxesDaRota.
   const margem = RAIO_CORREDOR_KM / 100;
-  const minLat = Math.min(...lats) - margem;
-  const maxLat = Math.max(...lats) + margem;
-  const minLon = Math.min(...lons) - margem;
-  const maxLon = Math.max(...lons) + margem;
+  const boxesRota = construirBoundingBoxesDaRota(rota.coordenadas, acumuladas, margem);
 
-  const { data: postosBrutos } = await supabase
-    .from("postos_gf")
-    .select(
-      "cnpj, razao_social, municipio, uf, bandeira, lat, lon, funciona_24h, pista_caminhao, arla, conveniencia, conveniencia_am_pm, possui_restaurante, possui_banheiro, possui_estacionamento, possui_troca_oleo, possui_internet"
+  const postosBrutosPorBox = await Promise.all(
+    boxesRota.map((box) =>
+      supabase
+        .from("postos_gf")
+        .select(
+          "cnpj, razao_social, municipio, uf, bandeira, lat, lon, funciona_24h, pista_caminhao, arla, conveniencia, conveniencia_am_pm, possui_restaurante, possui_banheiro, possui_estacionamento, possui_troca_oleo, possui_internet"
+        )
+        .eq("empresa_id", params.empresaId)
+        .eq("ativo", true)
+        .not("lat", "is", null)
+        .not("lon", "is", null)
+        .gte("lat", box.minLat)
+        .lte("lat", box.maxLat)
+        .gte("lon", box.minLon)
+        .lte("lon", box.maxLon)
+        .limit(3000)
     )
-    .eq("empresa_id", params.empresaId)
-    .eq("ativo", true)
-    .not("lat", "is", null)
-    .not("lon", "is", null)
-    .gte("lat", minLat)
-    .lte("lat", maxLat)
-    .gte("lon", minLon)
-    .lte("lon", maxLon)
-    .limit(3000);
+  );
+  // Pedaços vizinhos podem se sobrepor (mesmo posto cai em dois boxes) — dedup por cnpj.
+  const postosBrutos = Array.from(
+    new Map(postosBrutosPorBox.flatMap((r) => r.data ?? []).map((p) => [p.cnpj, p])).values()
+  );
 
-  const candidatosBrutos = (postosBrutos ?? [])
+  const candidatosBrutos = postosBrutos
     .map((p) => {
       const { km, desvioKm } = posicaoNaRotaKm({ lat: p.lat as number, lon: p.lon as number }, rota.coordenadas, acumuladas);
       return { ...p, km, desvioKm };
@@ -417,18 +424,27 @@ export async function calcularRoteirizacaoAcao(params: {
   if (candidatos.length === 0) {
     const categoriaAnp = PRODUTO_PARA_CATEGORIA_ANP[params.veiculo.combustivel];
     if (categoriaAnp) {
-      const { data: anpPostosBrutos } = await supabase
-        .from("anp_postos")
-        .select("cnpj, razao_social, municipio, uf, bandeira, latitude, longitude")
-        .not("latitude", "is", null)
-        .not("longitude", "is", null)
-        .gte("latitude", minLat)
-        .lte("latitude", maxLat)
-        .gte("longitude", minLon)
-        .lte("longitude", maxLon)
-        .limit(3000);
+      const anpPostosBrutosPorBox = await Promise.all(
+        boxesRota.map((box) =>
+          supabase
+            .from("anp_postos")
+            .select("cnpj, razao_social, municipio, uf, bandeira, latitude, longitude")
+            .not("latitude", "is", null)
+            .not("longitude", "is", null)
+            .gte("latitude", box.minLat)
+            .lte("latitude", box.maxLat)
+            .gte("longitude", box.minLon)
+            .lte("longitude", box.maxLon)
+            .limit(3000)
+        )
+      );
+      const anpPostosBrutos = Array.from(
+        new Map(
+          anpPostosBrutosPorBox.flatMap((r) => r.data ?? []).map((p) => [p.cnpj ?? `${p.latitude}_${p.longitude}`, p])
+        ).values()
+      );
 
-      const candidatosAnpBrutos = (anpPostosBrutos ?? [])
+      const candidatosAnpBrutos = anpPostosBrutos
         .map((p) => {
           const { km, desvioKm } = posicaoNaRotaKm(
             { lat: Number(p.latitude), lon: Number(p.longitude) },

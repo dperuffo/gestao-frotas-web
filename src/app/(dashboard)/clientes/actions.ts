@@ -86,3 +86,33 @@ export async function alternarAtivoCliente(id: string, ativo: boolean) {
     .eq("id", id);
   revalidatePath("/clientes");
 }
+
+// Conta acessos de clientes ainda não vistos pelo admin — usada pelo badge
+// de notificação no menu lateral (layout.tsx). Mesmo padrão de
+// contarAvaliacoesPendentesAcao/contarChamadosNaoVistosAcao: só retorna
+// algo pra admin (RLS já bloqueia não-admin de enxergar essa tabela, mas
+// evitamos a chamada à toa).
+export async function contarAcessosClientesNaoVistosAcao(): Promise<number> {
+  const supabase = await createClient();
+  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  if (perfil !== "admin") return 0;
+
+  const { count } = await supabase
+    .from("acessos_clientes")
+    .select("id", { count: "exact", head: true })
+    .is("admin_visto_em", null);
+
+  return count ?? 0;
+}
+
+// Marca todos os acessos pendentes como vistos — chamada quando o admin
+// abre a tela /clientes (mesma ideia de "marcar como visto ao abrir a
+// página" já usada em chamados/[id]/page.tsx).
+export async function marcarAcessosClientesVistosAcao(): Promise<void> {
+  const supabase = await createClient();
+  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  if (perfil !== "admin") return;
+
+  await supabase.from("acessos_clientes").update({ admin_visto_em: new Date().toISOString() }).is("admin_visto_em", null);
+  revalidatePath("/clientes");
+}
