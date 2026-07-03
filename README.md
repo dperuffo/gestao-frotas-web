@@ -2923,3 +2923,36 @@ Correção em duas frentes:
   (onde vive o menu) fica fora do que quebrou.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.23 — Previsão de consumo sensível demais a um único dia fora do padrão
+
+Pedido do Daniel: revisar o cálculo da "Previsão de consumo" no Dashboard (indicador 2), que soma o
+litros já realizado no mês com uma projeção dos dias restantes.
+
+A soma em si (realizado + projetado = total do mês) já estava correta. O problema encontrado foi na
+calibração da projeção: `calcularPrevisaoConsumo` (`src/lib/previsaoConsumo.ts`) calculava a
+"taxa-base" diária dividindo o total já realizado no mês pela soma dos fatores de sazonalidade (por
+dia da semana) desses mesmos dias — e aplicava essa taxa-base igual pra todos os dias restantes do
+mês. Isso funciona bem com uma amostra razoável de dias reais, mas no início do mês (poucos dias
+reais) fica extremamente sensível a UM dia fora do padrão.
+
+Caso real encontrado (empresa "Frotas & Frotas Ltda", só 3 dias decorridos de julho/2026): um
+abastecimento no dia 2 (quinta-feira) somou 376 L, mais de 6x a média histórica daquela
+quinta-feira (~60 L, calculada sobre os últimos 90 dias). Como esse dia sozinho domina a soma dos 3
+dias reais, a taxa-base calibrada saiu ~50% mais alta do que sairia sem esse dia — e, como a
+taxa-base é aplicada nos 28 dias restantes do mês inteiro, a projeção do mês inteiro (e o "Total
+estimado do mês") ficou inflada por causa de um único evento pontual.
+
+Correção — `src/lib/previsaoConsumo.ts`: a taxa-base agora é uma mistura (shrinkage) entre a taxa
+calibrada só com os dias já reais (`baselineReal`, cálculo antigo) e a média histórica geral (a
+mesma base de 90 dias já usada pelos fatores de sazonalidade), com peso crescente pros dias reais
+conforme mais dias do mês se acumulam: `peso = diaAtual / (diaAtual + K)`, com `K = 5` (constante
+de suavização, documentada e fácil de recalibrar no código se necessário). Na prática: no dia 1-2 do
+mês a projeção confia bastante no histórico; por volta do dia 5 real e histórico pesam quase igual;
+depois de ~15-20 dias reais, a projeção já reflete quase só a tendência real do mês — sem nunca
+ignorar completamente o histórico, o que amortece qualquer dia isolado fora do padrão. No caso real
+acima, a projeção do mês caiu de 4.630 L para ~2.494 L (total do mês de 5.293 L para ~3.156 L) —
+uma estimativa mais alinhada ao padrão histórico da empresa.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos, e com um teste manual reproduzindo os
+números reais do caso encontrado (script descartável, não faz parte do repositório).
