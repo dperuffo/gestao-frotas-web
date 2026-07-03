@@ -26,11 +26,20 @@ export default async function AbastecimentosPage({
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
   const semClienteEscolhido = empresas.length > 1 && !empresaSelecionada;
 
+  // Fase 27.10 — achado real: abastecimentos com status_autorizacao = 0
+  // (pendente, ainda não confirmado pela operadora) apareciam na lista junto
+  // com os confirmados. A integração continua salvando tudo (ver
+  // sincronizarProfrotas em src/lib/profrotas.ts — não descartamos o
+  // registro, só deixamos de exibi-lo enquanto não for confirmado); quando a
+  // operadora confirma, o próximo sync atualiza a mesma linha e ela passa a
+  // aparecer normalmente. Lançamento manual e importação em planilha já
+  // sempre gravam status_autorizacao = 1, então não são afetados.
   let query = supabase
     .from("profrotas_abastecimentos")
     .select(
       "id, data_abastecimento, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_unitario, item_valor_total, pv_razao_social, pv_municipio, pv_uf, abastecimento_estornado, status_autorizacao, identificador"
     )
+    .eq("status_autorizacao", 1)
     .order("data_abastecimento", { ascending: false });
 
   if (q) {
