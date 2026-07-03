@@ -17,8 +17,11 @@ import {
   type TicketTipo,
 } from "@/lib/chamados";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
 
-type SearchParams = { empresa?: string; status?: string; tipo?: string; prioridade?: string };
+const POR_PAGINA = 30;
+
+type SearchParams = { empresa?: string; status?: string; tipo?: string; prioridade?: string; page?: string };
 
 // Página de Gestão de Chamados: indicadores + listagem. Admin vê os
 // chamados de todos os clientes por padrão (com filtro opcional pra um
@@ -26,7 +29,7 @@ type SearchParams = { empresa?: string; status?: string; tipo?: string; priorida
 // nos dois casos o RLS já garante isso, o filtro aqui é só uma conveniência
 // de navegação, igual ao padrão já usado em /relatorios.
 export default async function ChamadosPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { empresa: empresaParam, status: statusParam, tipo: tipoParam, prioridade: prioridadeParam } = await searchParams;
+  const { empresa: empresaParam, status: statusParam, tipo: tipoParam, prioridade: prioridadeParam, page: pageParam } = await searchParams;
   const supabase = await createClient();
 
   const { papel } = await resolverPapelAtual(supabase);
@@ -71,6 +74,13 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
   const totalEmAnalise = chamados.filter((c) => c.status === "em_analise").length;
   const totalResolvidos = chamados.filter((c) => c.status === "resolvido" || c.status === "fechado").length;
   const totalNaoVistos = chamados.filter((c) => temAtualizacaoNaoVista(c, papel)).length;
+
+  // Fase 27.12 — os indicadores acima continuam olhando pra TODOS os
+  // chamados do filtro atual (não só a página visível); só a tabela abaixo é
+  // paginada (30 por página), em memória — igual ao padrão de /veiculos,
+  // já que a lista de chamados costuma ser bem menor que abastecimentos.
+  const { paginaAtual, totalPaginas } = calcularPaginacao(chamados.length, POR_PAGINA, pageParam);
+  const chamadosDaPagina = chamados.slice((paginaAtual - 1) * POR_PAGINA, paginaAtual * POR_PAGINA);
 
   return (
     <div>
@@ -162,7 +172,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {chamados.map((c) => {
+            {chamadosDaPagina.map((c) => {
               const naoVisto = temAtualizacaoNaoVista(c, papel);
               const corStatus = CORES_STATUS[c.status as TicketStatus] ?? CORES_STATUS.aberto;
               const corPrioridade = CORES_PRIORIDADE[(c.prioridade as TicketPrioridade) ?? "media"] ?? CORES_PRIORIDADE.media;
@@ -200,6 +210,16 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
             )}
           </tbody>
         </table>
+        <div className="px-4">
+          <Paginacao
+            paginaAtual={paginaAtual}
+            totalPaginas={totalPaginas}
+            totalRegistros={chamados.length}
+            porPagina={POR_PAGINA}
+            basePath="/chamados"
+            paramsAtuais={{ empresa: empresaParam, status: statusParam, tipo: tipoParam, prioridade: prioridadeParam }}
+          />
+        </div>
       </div>
     </div>
   );

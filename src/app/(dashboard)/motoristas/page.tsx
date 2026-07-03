@@ -4,13 +4,27 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
 import { ToggleAtivoMotorista } from "./_components/ToggleAtivoMotorista";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
+
+const POR_PAGINA = 30;
+
+type Motorista = {
+  id: string;
+  nome_completo: string;
+  cpf: string;
+  telefone: string | null;
+  classificacao: string;
+  status: string;
+  cnh_vencimento: string;
+  empresas: { nome: string } | null;
+};
 
 export default async function MotoristasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; empresa?: string }>;
+  searchParams: Promise<{ q?: string; empresa?: string; page?: string }>;
 }) {
-  const { q, empresa: empresaParam } = await searchParams;
+  const { q, empresa: empresaParam, page: pageParam } = await searchParams;
   const supabase = await createClient();
 
   // Fase 27.5 — mesmo ajuste de /veiculos: a visão do admin não tinha
@@ -19,22 +33,35 @@ export default async function MotoristasPage({
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
   const semClienteEscolhido = empresas.length > 1 && !empresaSelecionada;
 
-  let query = supabase
+  // Fase 27.12 — lista paginada (30 por página) via .range() no banco, em
+  // vez de trazer todos os motoristas do cliente de uma vez. A contagem
+  // usada no paginador é a do resultado JÁ filtrado por busca (q) — diferente
+  // de totalGeral/totalAtivos abaixo, que são os totais da empresa (sem
+  // filtro de busca), usados só nos cards de indicador.
+  const offset = offsetDaPagina(POR_PAGINA, pageParam);
+
+  let queryPagina = supabase
     .from("motoristas")
     .select("id, nome_completo, cpf, telefone, classificacao, status, cnh_vencimento, empresas(nome)")
     .order("nome_completo");
+  let queryContagemFiltrada = supabase.from("motoristas").select("id", { count: "exact", head: true });
 
   if (q) {
-    query = query.or(`nome_completo.ilike.%${q}%,cpf.ilike.%${q}%`);
+    queryPagina = queryPagina.or(`nome_completo.ilike.%${q}%,cpf.ilike.%${q}%`);
+    queryContagemFiltrada = queryContagemFiltrada.or(`nome_completo.ilike.%${q}%,cpf.ilike.%${q}%`);
   }
   if (empresaSelecionada) {
-    query = query.eq("empresa_id", empresaSelecionada);
+    queryPagina = queryPagina.eq("empresa_id", empresaSelecionada);
+    queryContagemFiltrada = queryContagemFiltrada.eq("empresa_id", empresaSelecionada);
   }
-
-  const { data: motoristas, error } = semClienteEscolhido ? { data: [], error: null } : await query;
+  queryPagina = queryPagina.range(offset, offset + POR_PAGINA - 1);
 
   let totalAtivos = 0;
   let totalGeral = 0;
+  let motoristas: Motorista[] = [];
+  let error: { message: string } | null = null;
+  let totalFiltrado = 0;
+
   if (!semClienteEscolhido) {
     let queryAtivos = supabase.from("motoristas").select("id", { count: "exact", head: true }).eq("status", "Ativo");
     let queryGeral = supabase.from("motoristas").select("id", { count: "exact", head: true });
@@ -42,10 +69,20 @@ export default async function MotoristasPage({
       queryAtivos = queryAtivos.eq("empresa_id", empresaSelecionada);
       queryGeral = queryGeral.eq("empresa_id", empresaSelecionada);
     }
-    const [{ count: ativos }, { count: geral }] = await Promise.all([queryAtivos, queryGeral]);
+    const [{ count: ativos }, { count: geral }, { count: filtrado }, { data, error: queryError }] = await Promise.all([
+      queryAtivos,
+      queryGeral,
+      queryContagemFiltrada,
+      queryPagina,
+    ]);
     totalAtivos = ativos ?? 0;
     totalGeral = geral ?? 0;
+    totalFiltrado = filtrado ?? 0;
+    motoristas = (data ?? []) as unknown as Motorista[];
+    error = queryError;
   }
+
+  const { paginaAtual, totalPaginas } = calcularPaginacao(totalFiltrado, POR_PAGINA, pageParam);
 
   return (
     <div>
@@ -124,7 +161,7 @@ export default async function MotoristasPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {motoristas?.map((m) => (
+                {motoristas.map((m) => (
                   <tr key={m.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <Link href={`/motoristas/${m.id}`} className="font-medium text-frota-600 hover:underline">
@@ -144,7 +181,7 @@ export default async function MotoristasPage({
                     </td>
                   </tr>
                 ))}
-                {motoristas?.length === 0 && (
+                {motoristas.length === 0 && (
                   <tr>
                     <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
                       Nenhum motorista encontrado.
@@ -153,6 +190,16 @@ export default async function MotoristasPage({
                 )}
               </tbody>
             </table>
+            <div className="px-4">
+              <Paginacao
+                paginaAtual={paginaAtual}
+                totalPaginas={totalPaginas}
+                totalRegistros={totalFiltrado}
+                porPagina={POR_PAGINA}
+                basePath="/motoristas"
+                paramsAtuais={{ q, empresa: empresaParam }}
+              />
+            </div>
           </div>
         </>
       )}

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
+import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
+
+const POR_PAGINA = 30;
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -13,12 +16,29 @@ function statusBadge(estornado: number | null, autorizacao: number | null) {
   return { texto: `Status ${autorizacao ?? "?"}`, classe: "badge-atencao" };
 }
 
+type RegistroAbastecimento = {
+  id: string;
+  data_abastecimento: string | null;
+  veiculo_placa: string | null;
+  motorista_nome: string | null;
+  item_nome: string | null;
+  item_quantidade: number | null;
+  item_valor_unitario: number | null;
+  item_valor_total: number | null;
+  pv_razao_social: string | null;
+  pv_municipio: string | null;
+  pv_uf: string | null;
+  abastecimento_estornado: number | null;
+  status_autorizacao: number | null;
+  identificador: string | null;
+};
+
 export default async function AbastecimentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; de?: string; ate?: string; empresa?: string }>;
+  searchParams: Promise<{ q?: string; de?: string; ate?: string; empresa?: string; page?: string }>;
 }) {
-  const { q, de, ate, empresa: empresaParam } = await searchParams;
+  const { q, de, ate, empresa: empresaParam, page: pageParam } = await searchParams;
   const supabase = await createClient();
 
   // Fase 27.8 — mesmo seletor de cliente já usado em Postos, Relatórios,
@@ -34,25 +54,50 @@ export default async function AbastecimentosPage({
   // operadora confirma, o próximo sync atualiza a mesma linha e ela passa a
   // aparecer normalmente. Lançamento manual e importação em planilha já
   // sempre gravam status_autorizacao = 1, então não são afetados.
-  let query = supabase
-    .from("profrotas_abastecimentos")
-    .select(
-      "id, data_abastecimento, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_unitario, item_valor_total, pv_razao_social, pv_municipio, pv_uf, abastecimento_estornado, status_autorizacao, identificador"
-    )
-    .eq("status_autorizacao", 1)
-    .order("data_abastecimento", { ascending: false });
-
-  if (q) {
-    query = query.or(`veiculo_placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,pv_razao_social.ilike.%${q}%`);
+  //
+  // Fase 27.12 — a lista podia chegar a 500 linhas numa tela só (limit fixo,
+  // sem paginação). Agora a tabela busca só a "página" atual (POR_PAGINA=30)
+  // via .range() no banco; os KPIs (litros/valor/custo médio), porém,
+  // continuam refletindo TODO o resultado filtrado — não só a página visível
+  // — por isso rodam numa consulta de agregação separada (só as 2 colunas
+  // numéricas necessárias, sem os demais campos da tabela).
+  // Builder genérico do supabase-js — usado pras 3 consultas (contagem,
+  // agregados e página) com os mesmos filtros, por isso não dá pra tipar
+  // exatamente igual ao retorno específico de cada .select() diferente.
+  function comFiltros(builder: any) {
+    let query = builder.eq("status_autorizacao", 1);
+    if (q) query = query.or(`veiculo_placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,pv_razao_social.ilike.%${q}%`);
+    if (de) query = query.gte("data_abastecimento", de);
+    if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
+    if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
+    return query;
   }
-  if (de) query = query.gte("data_abastecimento", de);
-  if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
-  if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
 
-  const { data: registros, error } = semClienteEscolhido ? { data: [], error: null } : await query.limit(500);
+  const offset = offsetDaPagina(POR_PAGINA, pageParam);
 
-  const litrosTotais = registros?.reduce((soma, r) => soma + (r.item_quantidade ?? 0), 0) ?? 0;
-  const valorTotal = registros?.reduce((soma, r) => soma + (r.item_valor_total ?? 0), 0) ?? 0;
+  const queryContagem = comFiltros(supabase.from("profrotas_abastecimentos").select("id", { count: "exact", head: true }));
+  const queryAgregados = comFiltros(supabase.from("profrotas_abastecimentos").select("item_quantidade, item_valor_total")).limit(50000);
+  const queryPagina = comFiltros(
+    supabase
+      .from("profrotas_abastecimentos")
+      .select(
+        "id, data_abastecimento, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_unitario, item_valor_total, pv_razao_social, pv_municipio, pv_uf, abastecimento_estornado, status_autorizacao, identificador"
+      )
+  )
+    .order("data_abastecimento", { ascending: false })
+    .range(offset, offset + POR_PAGINA - 1);
+
+  const [{ count }, { data: agregadosRaw }, { data: registros, error }] = semClienteEscolhido
+    ? [{ count: 0 }, { data: [] as { item_quantidade: number | null; item_valor_total: number | null }[] }, { data: [], error: null }]
+    : await Promise.all([queryContagem, queryAgregados, queryPagina]);
+
+  const totalRegistros = count ?? 0;
+  const linhas = (registros ?? []) as RegistroAbastecimento[];
+  const { paginaAtual, totalPaginas } = calcularPaginacao(totalRegistros, POR_PAGINA, pageParam);
+
+  const agregados = (agregadosRaw ?? []) as { item_quantidade: number | null; item_valor_total: number | null }[];
+  const litrosTotais = agregados.reduce((soma: number, r) => soma + (r.item_quantidade ?? 0), 0);
+  const valorTotal = agregados.reduce((soma: number, r) => soma + (r.item_valor_total ?? 0), 0);
   const custoMedioLitro = litrosTotais > 0 ? valorTotal / litrosTotais : 0;
 
   return (
@@ -103,7 +148,7 @@ export default async function AbastecimentosPage({
       {!semClienteEscolhido && (
       <>
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Indicador label="Registros" valor={String(registros?.length ?? 0)} />
+        <Indicador label="Registros" valor={String(totalRegistros)} />
         <Indicador label="Litros abastecidos" valor={litrosTotais.toLocaleString("pt-BR")} />
         <Indicador label="Valor total" valor={formatarMoeda(valorTotal)} />
         <Indicador label="Custo médio por litro" valor={formatarMoeda(custoMedioLitro)} />
@@ -140,7 +185,7 @@ export default async function AbastecimentosPage({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {registros?.map((r) => {
+            {linhas.map((r) => {
               const status = statusBadge(r.abastecimento_estornado, r.status_autorizacao);
               return (
                 <tr key={r.id} className="hover:bg-slate-50">
@@ -165,7 +210,7 @@ export default async function AbastecimentosPage({
                 </tr>
               );
             })}
-            {registros?.length === 0 && (
+            {linhas.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
                   Nenhum abastecimento encontrado.
@@ -174,6 +219,16 @@ export default async function AbastecimentosPage({
             )}
           </tbody>
         </table>
+        <div className="px-4">
+          <Paginacao
+            paginaAtual={paginaAtual}
+            totalPaginas={totalPaginas}
+            totalRegistros={totalRegistros}
+            porPagina={POR_PAGINA}
+            basePath="/abastecimentos"
+            paramsAtuais={{ q, de, ate, empresa: empresaParam }}
+          />
+        </div>
       </div>
       </>
       )}

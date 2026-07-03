@@ -2562,3 +2562,31 @@ escolhidas) em PDF, igual ao Relatório Executivo já fazia.
 
 Validado com `npx tsc --noEmit` e `npx eslint` nos arquivos tocados, ambos limpos.
 
+## Fase 27.12 — Paginação nas telas com muitos registros
+
+Pedido do Daniel: telas de listagem que podem crescer muito (Abastecimentos, Veículos,
+Motoristas, Chamados) ganharam paginação em vez de mostrar a lista inteira numa página só.
+
+- `src/components/Paginacao.tsx` (novo) — componente compartilhado (Server Component, sem
+  estado/client): mostra "Mostrando X–Y de Z registros", botões Anterior/Próxima e os números de
+  página (1 … atual-1, atual, atual+1 … última), sempre preservando os filtros já ativos na URL
+  (busca, datas, cliente, status etc.). Junto vêm dois helpers: `calcularPaginacao` (decide a
+  página/offset finais já dentro dos limites, a partir do total de registros) e `offsetDaPagina`
+  (calcula só o offset, usado antes de saber o total — as consultas de contagem e de página rodam
+  em paralelo).
+- **Abastecimentos** e **Motoristas** — paginação de verdade no banco via `.range()`: a tabela só
+  busca os ~30 registros da página atual. Como os KPIs de topo (litros/valor/custo médio em
+  Abastecimentos; total/ativos/inativos em Motoristas) precisam refletir o resultado inteiro
+  filtrado — não só a página visível — eles continuam vindo de consultas de contagem/agregação à
+  parte (mesmo padrão que Motoristas já usava desde a Fase 27.5 pros totais gerais).
+- **Veículos** e **Chamados** — paginação em memória: as duas telas já buscavam a lista inteira de
+  uma vez (RPC sem range, no caso de Veículos; e a busca de Chamados é sobre uma base
+  tipicamente pequena), então a mudança foi só fatiar o array já carregado na hora de renderizar a
+  tabela, sem alterar as consultas existentes. Os indicadores de topo continuam somando sobre a
+  lista inteira filtrada, só a tabela é que mostra 30 por vez.
+- 30 registros por página em todas as quatro telas (`POR_PAGINA`, constante local em cada
+  arquivo — mesmo valor, mas duplicada por página, seguindo a convenção já usada no projeto de
+  não criar uma config global pra isso).
+
+Validado com `npx tsc --noEmit` e `npx eslint` nos arquivos tocados, ambos limpos.
+

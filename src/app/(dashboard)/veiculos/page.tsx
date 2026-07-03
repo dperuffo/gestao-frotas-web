@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ToggleAtivoVeiculo } from "./_components/ToggleAtivoVeiculo";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
+
+const POR_PAGINA = 30;
 
 type Veiculo = {
   id: string;
@@ -20,9 +23,9 @@ type Veiculo = {
 export default async function VeiculosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; empresa?: string }>;
+  searchParams: Promise<{ q?: string; empresa?: string; page?: string }>;
 }) {
-  const { q, empresa: empresaParam } = await searchParams;
+  const { q, empresa: empresaParam, page: pageParam } = await searchParams;
   const supabase = await createClient();
 
   // Fase 27.5 — achado real: a visão do admin não tinha seletor de cliente
@@ -73,6 +76,14 @@ export default async function VeiculosPage({
           v.modelo?.toLowerCase().includes(termoBusca)
       )
     : veiculos;
+
+  // Fase 27.12 — a frota já é buscada inteira nesta página (RPC/queries acima
+  // não têm range/offset — ver comentário da Fase 27.5), então a paginação
+  // aqui é feita em memória, só na hora de renderizar a tabela: mostra 30 por
+  // vez em vez da frota inteira numa lista só. O total do paginador é sobre
+  // o resultado JÁ filtrado pela busca (veiculosFiltrados).
+  const { paginaAtual, totalPaginas } = calcularPaginacao(veiculosFiltrados.length, POR_PAGINA, pageParam);
+  const veiculosDaPagina = veiculosFiltrados.slice((paginaAtual - 1) * POR_PAGINA, paginaAtual * POR_PAGINA);
 
   return (
     <div>
@@ -151,7 +162,7 @@ export default async function VeiculosPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {veiculosFiltrados.map((v) => (
+                {veiculosDaPagina.map((v) => (
                   <tr key={v.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <Link href={`/veiculos/${v.id}`} className="font-medium text-frota-600 hover:underline">
@@ -184,6 +195,16 @@ export default async function VeiculosPage({
                 )}
               </tbody>
             </table>
+            <div className="px-4">
+              <Paginacao
+                paginaAtual={paginaAtual}
+                totalPaginas={totalPaginas}
+                totalRegistros={veiculosFiltrados.length}
+                porPagina={POR_PAGINA}
+                basePath="/veiculos"
+                paramsAtuais={{ q, empresa: empresaParam }}
+              />
+            </div>
           </div>
         </>
       )}
