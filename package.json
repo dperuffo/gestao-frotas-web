@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Plataforma web de Gestão de Frotas (Next.js) — Fase 0: fundação, autenticação e design system, sobre o banco Supabase já existente.",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -32,7 +35,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.20",

@@ -3152,3 +3152,49 @@ Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Como esse layout �
 TODA a aplicação, essa correção tem chance real de resolver definitivamente o problema (e não seria
 surpresa se também explicasse o crash não relacionado de `/chamados/novo`, já que aquela tela
 também está dentro do mesmo layout).
+
+## Fase 27.30 — CAUSA RAIZ CONFIRMADA: Node.js 20 no Railway sem `File` global (SDK do Supabase quebra ao fazer upload)
+
+Depois de 4 rodadas de correção sem sucesso (27.22, 27.24, 27.25, 27.27, 27.28, 27.29), o Daniel
+conseguiu abrir os logs do Railway (aba "Logs" do serviço) no momento exato de uma nova tentativa, e
+o log trouxe o erro REAL, sem mascaramento:
+
+```
+⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of
+    @supabase/supabase-js. Please upgrade to Node.js 22 or later.
+(node:15) ExperimentalWarning: buffer.File is an experimental feature and might change at any time
+ ⨯ ReferenceError: File is not defined
+    at l (.next/server/chunks/7545.js:1:17432)
+    at async m (.next/server/app/(dashboard)/chamados/[id]/page.js:1:16356) {
+  digest: '1836595261'
+}
+```
+
+Isso explica por que o código do erro (`1836595261`) nunca mudava, mesmo depois de 3 correções
+reais em arquivos diferentes (`enviarAnexoAcao`, a página do chamado, o layout do dashboard): o
+problema NUNCA esteve no nosso código. É o próprio SDK (`@supabase/supabase-js`), ao montar a
+requisição de upload pro Storage, que referencia a classe global `File` — e no Node.js 20 (versão
+que o Railway estava usando, já que `package.json` não tinha nenhum `engines` declarado, então o
+Nixpacks escolheu um padrão antigo) essa classe só existe de forma experimental
+(`buffer.File`), não como global padrão do runtime — daí o `ReferenceError: File is not defined`,
+lançado de dentro da própria biblioteca, fora de qualquer try/catch nosso.
+
+Isso também finalmente explica a assimetria observada desde o início: abrir um chamado NOVO com
+anexo tem sua própria falha silenciosa e antiga (Fase 27.18, o `anexoFalhou` best-effort) que
+mascarava o mesmo erro sem o usuário perceber — o chamado era criado, só o anexo falhava
+silenciosamente. Responder/anexar num chamado existente não tem esse "abafador", então o mesmo erro
+aparecia cru, mascarado pela proteção padrão de produção do Next.
+
+Correção definitiva, em duas camadas:
+1. `package.json` ganhou `"engines": { "node": "22.x" }` — Node 22 tem `File` como global estável,
+   resolvendo o problema na raiz. O Railway (builder Nixpacks) lê esse campo pra escolher a versão
+   do Node a provisionar no próximo deploy. `@types/node` também foi atualizado de `^20` pra `^22`
+   pra manter a tipagem consistente com o runtime real.
+2. `src/instrumentation.ts` (novo arquivo, hook padrão do Next 15 que roda uma vez na inicialização
+   do servidor): garante `globalThis.File` mesmo que, por qualquer motivo, o ambiente ainda suba com
+   uma versão mais antiga do Node — segunda camada de segurança, não depende só do Railway respeitar
+   o `engines`.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Esta é a primeira correção, das 6
+tentativas, apoiada em evidência direta do log real do servidor (não em suspeita) — alta confiança
+de que resolve definitivamente o problema do anexo em resposta de chamado.
