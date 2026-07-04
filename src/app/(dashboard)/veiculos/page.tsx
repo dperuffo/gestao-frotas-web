@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { ToggleAtivoVeiculo } from "./_components/ToggleAtivoVeiculo";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
@@ -43,9 +44,12 @@ export default async function VeiculosPage({
   let totalAtivos = 0;
 
   if (empresaSelecionada) {
-    const { data, error: rpcError } = await supabase.rpc("veiculos_da_empresa", { p_empresa_id: empresaSelecionada });
-    error = rpcError;
-    veiculos = data ?? [];
+    // Fase 27.38 — buscarTodosVeiculosDaEmpresa pagina a RPC em lotes de
+    // 1000 (limite padrão de resposta do Supabase/PostgREST) — sem isso,
+    // clientes com mais de 1000 veículos só viam parte da frota aqui.
+    const { data, error: rpcErro } = await buscarTodosVeiculosDaEmpresa(supabase, empresaSelecionada);
+    error = rpcErro ? { message: rpcErro } : null;
+    veiculos = data;
     totalGeral = veiculos.length;
     totalAtivos = veiculos.filter((v) => v.ativo).length;
   } else if (empresas.length === 0) {

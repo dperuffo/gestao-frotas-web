@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { CentroCustoForm } from "../_components/CentroCustoForm";
 import { AlocarVeiculoForm } from "../_components/AlocarVeiculoForm";
 import { AlocarMotoristaForm } from "../_components/AlocarMotoristaForm";
@@ -15,22 +16,18 @@ export default async function EditarCentroCustoPage({
   const { data: centro } = await supabase.from("centros_custo").select("*").eq("id", id).single();
   if (!centro) notFound();
 
-  let cnpjFrota: string | null = null;
-  if (centro.empresa_id) {
-    const { data: empresa } = await supabase
-      .from("empresas")
-      .select("cnpj")
-      .eq("id", centro.empresa_id)
-      .maybeSingle();
-    cnpjFrota = empresa?.cnpj ?? null;
-  }
-
-  const { data: veiculosDaEmpresa } = cnpjFrota
-    ? await supabase
-        .from("cadastro_veiculos")
-        .select("placa, marca, modelo, centro_custo_id, centro_custo_nome")
-        .eq("cnpj_frota", cnpjFrota)
-        .order("placa")
+  // Fase 27.38 — achado real (reportado pelo Daniel, frota de teste com mais
+  // de 2000 veículos): esta consulta buscava cadastro_veiculos direto por
+  // cnpj_frota sem nenhum range/limit, então caía no limite padrão de 1000
+  // linhas por resposta do Supabase/PostgREST (db-max-rows) — a lista de
+  // "Disponíveis" aqui já vinha cortada em 1000 veículos, então mesmo
+  // "selecionar todos os filtrados" na alocação em massa não conseguia
+  // mover o resto da frota. buscarTodosVeiculosDaEmpresa pagina em lotes de
+  // 1000 até esgotar os resultados, e já resolve a normalização de CNPJ
+  // pela RPC veiculos_da_empresa (sem precisar buscar o cnpj da empresa à
+  // parte, como antes).
+  const { data: veiculosDaEmpresa } = centro.empresa_id
+    ? await buscarTodosVeiculosDaEmpresa(supabase, centro.empresa_id)
     : { data: [] };
 
   const veiculosAlocados = (veiculosDaEmpresa ?? []).filter((v) => v.centro_custo_id === id);

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { AbasRoteirizacao } from "../_components/AbasRoteirizacao";
 import { FormRoteirizacao } from "../_components/FormRoteirizacao";
 
@@ -19,9 +20,13 @@ export default async function RoteirizacaoPlanejarPage({
   // normalizado de formas diferentes — ver Fase 27.5/14 no README), por
   // isso o filtro correto é via a RPC `veiculos_da_empresa`, mesmo padrão já
   // usado em /veiculos e no Dashboard.
+  // Fase 27.38 — buscarTodosVeiculosDaEmpresa pagina essa RPC em lotes de
+  // 1000 (limite padrão de resposta do Supabase/PostgREST) — sem isso,
+  // clientes com mais de 1000 veículos não viam a frota inteira no
+  // seletor de placa.
   const { data: veiculosDaEmpresaRaw } = empresaSelecionada
-    ? await supabase.rpc("veiculos_da_empresa", { p_empresa_id: empresaSelecionada })
-    : { data: null };
+    ? await buscarTodosVeiculosDaEmpresa(supabase, empresaSelecionada)
+    : { data: [] };
   const veiculos = (veiculosDaEmpresaRaw ?? [])
     .filter((v) => v.ativo)
     .map((v) => ({

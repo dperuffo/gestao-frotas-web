@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import type { Json } from "@/types/database.types";
 import type { RotogramaParada, RotogramaRisco } from "./tipos";
 
@@ -128,6 +129,9 @@ export async function listarMotoristasEVeiculosAcao(empresaId: string): Promise<
   if (!empresaId) return { motoristas: [], veiculos: [] };
   const supabase = await createClient();
 
+  // Fase 27.38 — buscarTodosVeiculosDaEmpresa pagina a RPC em lotes de 1000
+  // (limite padrão de resposta do Supabase/PostgREST) — sem isso, clientes
+  // com mais de 1000 veículos só viam parte da frota neste select.
   const [{ data: motoristas }, { data: veiculos }] = await Promise.all([
     supabase
       .from("motoristas")
@@ -135,7 +139,7 @@ export async function listarMotoristasEVeiculosAcao(empresaId: string): Promise<
       .eq("empresa_id", empresaId)
       .eq("status", "Ativo")
       .order("nome_completo"),
-    supabase.rpc("veiculos_da_empresa", { p_empresa_id: empresaId }),
+    buscarTodosVeiculosDaEmpresa(supabase, empresaId),
   ]);
 
   const veiculosAtivosOrdenados = (veiculos ?? [])

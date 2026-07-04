@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { autenticarRequisicaoApi, marcarUsoChaveApi } from "@/lib/apiAuth";
 import { ESCOPO_VEICULOS_READ } from "@/lib/apiKeys";
 import { lerPaginacao } from "@/lib/apiPaginacao";
+import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 
 // API de leitura da frota cadastrada (Fase 25 — Hub de Integrações), pra um
 // ERP, sistema de telemetria ou de RH do cliente consumir sem precisar de
@@ -19,9 +20,15 @@ export async function GET(request: Request) {
 
   const { limit, offset } = lerPaginacao(new URL(request.url));
 
-  const { data, error } = await supabase.rpc("veiculos_da_empresa", { p_empresa_id: chave.empresaId });
-  if (error) {
-    return NextResponse.json({ erro: `Erro ao consultar veículos: ${error.message}` }, { status: 500 });
+  // Fase 27.38 — a RPC veiculos_da_empresa sozinha cai no limite padrão de
+  // 1000 linhas por resposta do Supabase/PostgREST (db-max-rows): clientes
+  // com mais de 1000 veículos recebiam um `total` errado e a página pedida
+  // podia vir vazia/incompleta. buscarTodosVeiculosDaEmpresa pagina em lotes
+  // de 1000 até esgotar os resultados antes de aplicar o limit/offset
+  // próprios desta API.
+  const { data, error: erroBusca } = await buscarTodosVeiculosDaEmpresa(supabase, chave.empresaId);
+  if (erroBusca) {
+    return NextResponse.json({ erro: `Erro ao consultar veículos: ${erroBusca}` }, { status: 500 });
   }
 
   const pagina = (data ?? []).slice(offset, offset + limit).map((v) => ({

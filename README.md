@@ -3362,3 +3362,35 @@ Dashboard, que resolve corretamente a normalização de CNPJ entre `cadastro_vei
 cliente selecionado (sem cliente, a tela já nem mostra o formulário).
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.38 — Limite de 1000 linhas do Supabase/PostgREST na busca de frota por empresa
+
+Achado real (reportado pelo Daniel): a frota de teste "Transportes de Cargas Testes Ltda" tem
+2357 veículos. Ao selecionar todos os registros sem centro de custo e alocá-los em massa para
+"Matriz - SP" (Fase 27.36), só 1000 foram movidos. Confirmado via SQL direto no banco: empresa com
+2357 veículos, 1357 ainda sem centro de custo no momento do relato, e exatamente 1000 alocados em
+"Matriz - SP".
+
+Causa raiz: o Supabase/PostgREST aplica um limite PADRÃO de 1000 linhas por resposta
+(configuração `db-max-rows` da API), silenciosamente, em QUALQUER consulta ou chamada de RPC que
+devolve um conjunto de linhas sem paginação explícita (`.range()`/`.limit()`) — sem erro nenhum, a
+resposta vem cortada em 1000. Isso incluía a RPC `veiculos_da_empresa`, usada em vários pontos do
+sistema pra listar a frota inteira de um cliente. Ou seja: qualquer cliente com mais de 1000
+veículos ativos era afetado não só na alocação de centro de custo, mas em TODOS os lugares que
+listam a frota completa.
+
+Corrigido criando `src/lib/veiculos.ts` com `buscarTodosVeiculosDaEmpresa(supabase, empresaId)`,
+que pagina a RPC em lotes de 1000 via `.range()` num loop, até um lote vir com menos de 1000
+linhas (sinal de que acabou). Substituído em todo lugar que buscava a frota completa de uma
+empresa via `veiculos_da_empresa` ou consulta direta em `cadastro_veiculos` por CNPJ:
+
+- `dashboard/page.tsx` (contagem de veículos do Dashboard/checklist "Primeiros passos")
+- `veiculos/page.tsx` (listagem de Veículos)
+- `rotograma/actions.ts` (select de placa no formulário de Rotograma)
+- `roteirizacao/planejar/page.tsx` (seletor de placa do Roteirizador Inteligente)
+- `centros-custo/[id]/page.tsx` (lista de Disponíveis/Alocados na alocação em massa — o local
+  onde o Daniel reportou o problema; esta era a única consulta direta em `cadastro_veiculos`, as
+  demais já usavam a RPC)
+- `app/api/cadastros/veiculos/route.ts` (API de integração de frota, Hub de Integrações Fase 25)
+
+Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos alterados, ambos limpos.

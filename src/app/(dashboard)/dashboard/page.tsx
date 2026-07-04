@@ -12,6 +12,7 @@ import { GraficoTopPostos } from "./_components/GraficoTopPostos";
 import { RankingGasto, type ItemRankingGasto } from "./_components/RankingGasto";
 import { GraficoEficienciaVeiculos, type ItemEficienciaVeiculo } from "./_components/GraficoEficienciaVeiculos";
 import { PrimeirosPassos } from "./_components/PrimeirosPassos";
+import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 function formatarMoeda(valor: number) {
@@ -117,8 +118,12 @@ export default async function DashboardPage({
     // registros pontuados e não pontuados misturados) — por isso usamos a
     // RPC `veiculos_da_empresa`, que resolve isso no banco com a mesma
     // normalização já usada pela RLS via `empresa_id_do_cnpj`.
+    // Fase 27.38 — buscarTodosVeiculosDaEmpresa pagina essa RPC em lotes de
+    // 1000 (limite padrão do Supabase/PostgREST por resposta) — sem isso,
+    // clientes com mais de 1000 veículos tinham a contagem "Veículos
+    // ativos"/"de X" subestimada aqui no Dashboard.
     empresaSelecionada
-      ? supabase.rpc("veiculos_da_empresa", { p_empresa_id: empresaSelecionada })
+      ? buscarTodosVeiculosDaEmpresa(supabase, empresaSelecionada)
       : Promise.resolve({ data: null }),
   ]);
 
