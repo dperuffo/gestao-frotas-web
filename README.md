@@ -3571,3 +3571,44 @@ partir de uma Server Action de verdade, disparada por um clique/form, que é o u
 outros usos em `criarCliente`/`atualizarCliente`/`alternarAtivoCliente` continuam intactos).
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.45 — Login com Google sem passar pelo domínio do Supabase
+
+Pedido do Daniel: na tela de consentimento do Google, o texto "Continuar para
+nedthbeekvwzcjrhsghp.supabase.co" aparecia em vez de fxgestaodefrotasonline.com. Causa: o login
+usava `supabase.auth.signInWithOAuth`, que redireciona pro fluxo hospedado do Supabase (GoTrue) —
+e o `redirect_uri` registrado no Google Cloud pra esse fluxo é o domínio do próprio projeto
+Supabase, não o domínio do app. Corrigir isso por dentro do app não era possível; as opções reais
+eram (a) comprar o add-on de Custom Domain do Supabase, (b) reescrever o login usando o Google
+Identity Services (GIS) direto no domínio do app, sem custo, ou (c) deixar como está. Daniel
+escolheu a opção (b).
+
+Implementado em `src/app/login/page.tsx` + `src/app/login/actions.ts`:
+
+- O app carrega o script do Google Identity Services (`accounts.google.com/gsi/client`) e renderiza
+  o botão oficial do Google direto na origem do app (fxgestaodefrotasonline.com) — o popup de conta
+  que o Google abre passa a mostrar esse domínio, não mais o do Supabase.
+- Ao escolher a conta, o Google devolve um ID token pro navegador (não sai do domínio do app). Esse
+  token é enviado a uma nova Server Action, `entrarComGoogle`, que valida o token com
+  `supabase.auth.signInWithIdToken({ provider: "google", token, nonce })` — o Supabase confere a
+  assinatura do token direto com o Google por trás, sem precisar do redirect antigo.
+- Nonce anti-replay: gerado no client (`crypto.randomUUID` x2), só o hash SHA-256 dele vai pro
+  Google; o valor cru é conferido pelo Supabase contra o hash embutido no ID token.
+- Fallback automático: se a env var `NEXT_PUBLIC_GOOGLE_CLIENT_ID` não estiver configurada, ou o
+  script do Google falhar/demorar mais de 6s pra carregar, a tela cai sozinha no botão antigo
+  (`signInWithOAuth` via redirect do Supabase) — o login nunca fica quebrado por causa disso.
+- `registrarAcessoCliente` (badge de "últimos acessos" em /clientes) continua sendo chamado,
+  agora dentro de `entrarComGoogle`, mesmo padrão já usado em `entrarComSenha`.
+
+**Pendente de configuração fora do código (o Daniel precisa fazer, não tenho acesso aos painéis):**
+
+1. Em `.env.local` (e nas env vars de produção, ex. Railway/Vercel), definir
+   `NEXT_PUBLIC_GOOGLE_CLIENT_ID` com o MESMO Client ID que já está em Authentication > Providers >
+   Google no painel do Supabase (não é segredo — só o Client Secret é sensível).
+2. No Google Cloud Console (APIs & Services > Credentials), abrir esse mesmo OAuth Client e
+   adicionar `https://fxgestaodefrotasonline.com` em "Authorized JavaScript origins" (e o domínio
+   de testes/preview, se usar algum). O redirect URI do Supabase que já existe lá não precisa mudar
+   nem ser removido — essa é só uma adição.
+
+Sem o passo 1, o app continua funcionando normalmente com o botão antigo. Validado com
+`npx tsc --noEmit` e `npx eslint`, ambos limpos.
