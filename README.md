@@ -3067,3 +3067,54 @@ funciona em `criarChamadoAcao`.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Ainda precisa de confirmação do
 Daniel/cliente testando de novo pra saber se essa era de fato a causa.
+
+## Fase 27.28 — Anexo na resposta do chamado: confirmado que 27.27 não resolveu; nova suspeita (re-render implícito de Server Action) + diagnóstico em `/chamados/[id]`
+
+Daniel confirmou no dia seguinte, após o deploy da Fase 27.27, que o erro persiste ao anexar arquivo
+numa resposta de chamado — mesma mensagem mascarada, digest novo (`1836595261`, diferente do
+`4260541496` anterior). Os logs de Storage/Postgres do Supabase continuam sem NENHUM registro,
+inclusive checando o horário exato informado ("08:47 de 04/07/2026").
+
+Isso descarta (ou pelo menos torna muito improvável) que o problema esteja dentro do corpo de
+`enviarAnexoAcao` em si — a função inteira já está protegida por try/catch desde a Fase 27.25, e um
+try/catch completo não deixa escapar uma exceção JS como um erro mascarado do Next; ele vira um
+retorno normal `{ erro: "..." }`. O fato de a resposta trazer um nó de erro (`E{"digest":...}`) no
+protocolo RSC, e não um valor de retorno normal, indica que a exceção não-tratada está acontecendo em
+outro lugar do ciclo de vida da requisição.
+
+Nova suspeita: o Next.js, sempre que uma Server Action atualiza cookies (o que acontece
+silenciosamente sempre que o Supabase renova o token de sessão dentro de `getUser()`/chamadas RPC),
+**re-renderiza automaticamente a rota atual** como parte da própria resposta da action — isso é
+documentado e serve pra manter o cache do client em dia. Ou seja: mesmo que `enviarAnexoAcao` termine
+sem lançar nada, o Next pode tentar re-renderizar `/chamados/[id]/page.tsx` (a página de onde a ação
+foi disparada) por trás dos panos pra montar a resposta — e se ESSA renderização quebrar, o erro
+aparece encaixado na resposta da action, não seria fácil de distinguir do erro genérico do
+try/catch.
+
+Essa página tinha dois pontos frágeis que nunca tinham sido blindados, porque a suspeita até agora
+sempre recaía sobre a própria action:
+- Uma ESCRITA no banco (marcar o chamado como "visto") direto no corpo do Server Component, sem
+  try/catch — um padrão incomum, já que renderização geralmente deveria ser livre de efeitos
+  colaterais, e mais arriscado ainda se essa mesma renderização pode ser disparada mais de uma vez
+  (nesse cenário de re-render implícito).
+- Um loop de `createSignedUrl` (um por anexo) sem proteção — qualquer anexo com objeto ausente ou
+  corrompido no Storage derrubaria a tela inteira.
+
+Correção nesta fase, em `chamados/[id]/page.tsx`:
+1. A escrita de "visto" e o loop de `createSignedUrl` agora estão isolados em try/catch próprios —
+   uma falha ali vira um log e segue em frente, nunca derruba a tela.
+2. A função inteira ganhou a mesma camada de diagnóstico da Fase 27.26: se mesmo assim algo quebrar,
+   a tela mostra o erro real (mensagem + stack) em vez do genérico mascarado do Next — com cuidado
+   pra deixar o fluxo interno do `notFound()` passar direto (ele lança `NEXT_NOT_FOUND`
+   propositalmente, não é um erro de verdade).
+
+**Isso ainda não é a confirmação da causa raiz** — é a mesma estratégia que já funcionou pra dar
+visibilidade em `/chamados/novo` (Fase 27.26): tornar o próximo erro visível, já que os logs do
+Supabase não ajudam e a mensagem de produção do Next é mascarada. Se a causa for de fato o re-render
+implícito quebrando em algum desses dois pontos agora blindados, o problema já deve estar resolvido;
+se for outra coisa, a próxima tentativa de anexar um arquivo numa resposta de chamado deve finalmente
+mostrar o erro real na tela (ou, se o erro insistir em não aparecer nem aqui, é sinal de que o
+re-render implícito acontece numa página diferente da que imaginávamos, e o próximo passo seria
+aplicar o mesmo diagnóstico em `/chamados` (a listagem) também).
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
