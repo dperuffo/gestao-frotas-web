@@ -2,11 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import { AbasRoteirizacao } from "../_components/AbasRoteirizacao";
 import { ExcluirRotaButton } from "../_components/ExcluirRotaButton";
 
+// Fase 27.34 — "rota" continua no mapa (rótulo de exibição) mesmo com a aba
+// retirada da navegação, porque consultas desse tipo salvas antes da
+// mudança continuam aparecendo aqui, em "Rotas Salvas".
 const TIPO_LABEL: Record<string, string> = {
   estado: "📍 Por UF/Município",
   rota: "🗺️ Por Rota",
   busca: "🔍 Consulta por Posto",
-  roteirizacao: "🧭 Roteirização",
+  roteirizacao: "🧭 Roteirizador Inteligente",
 };
 
 function montarLink(tipo: string, id: string, empresaId: string | null, dados: Record<string, unknown>) {

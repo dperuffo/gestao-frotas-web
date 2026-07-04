@@ -18,6 +18,7 @@ export default function BotaoBaixarPdfPersonalizadoLazy(props: {
   metricasLabels: string[];
   nomeUsuario: string;
   cargoUsuario: string | null;
+  capturarGrafico: () => Promise<string | null>;
   colunaChave: string;
   colunas: ColunaPdf[];
   linhas: LinhaPdf[];

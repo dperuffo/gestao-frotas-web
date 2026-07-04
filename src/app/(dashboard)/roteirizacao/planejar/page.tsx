@@ -41,7 +41,7 @@ export default async function RoteirizacaoPlanejarPage({
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Roteirização</h1>
+        <h1 className="text-xl font-semibold text-slate-900">Roteirizador Inteligente</h1>
         <p className="mt-1 text-sm text-slate-500">
           Planeje onde abastecer numa viagem, com base no tanque e na autonomia do veículo.
         </p>

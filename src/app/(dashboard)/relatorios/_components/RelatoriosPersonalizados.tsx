@@ -238,6 +238,7 @@ export function RelatoriosPersonalizados({
   const [dimensaoId, setDimensaoId] = useState(DIMENSOES.abastecimentos[0].id);
   const [metricaIds, setMetricaIds] = useState<string[]>([METRICAS.abastecimentos[0].id]);
   const [tipoGrafico, setTipoGrafico] = useState<"bar" | "bar_h" | "line" | "pie" | "table">("bar");
+  const chartWrapRef = useRef<HTMLDivElement>(null);
 
   const dimensoesDisponiveis = DIMENSOES[fonte];
   const metricasDisponiveis = METRICAS[fonte];
@@ -286,6 +287,56 @@ export function RelatoriosPersonalizados({
     const m = metricasAtuais.find((x) => x.label === name) ?? metricaOrdenacao;
     return [formatarValor(value, m.formato), m.label];
   };
+
+  // Fase 27.33 — achado real: o PDF exportado só trazia a tabela de
+  // resultados, nunca o gráfico (o comentário original do componente do PDF
+  // dizia "recharts não renderiza dentro do @react-pdf/renderer" — verdade,
+  // mas dá pra CAPTURAR o gráfico já desenhado na tela como imagem e
+  // embutir essa imagem no PDF). O Recharts desenha em SVG puro dentro do
+  // container (ver ref abaixo); no momento do clique em "Exportar PDF",
+  // serializamos esse <svg>, desenhamos num <canvas> em memória (com fator
+  // de escala pra ficar nítido) e convertemos pra PNG. Quando o tipo de
+  // gráfico é "Tabela" não existe SVG pra capturar — a função simplesmente
+  // devolve null e o PDF sai só com a tabela, como já acontecia antes.
+  // Observação: a legenda do Recharts (usada quando 2+ métricas estão
+  // selecionadas) é desenhada como HTML fora do <svg>, então não entra
+  // nessa captura — os nomes das métricas continuam visíveis na tabela do
+  // PDF logo abaixo do gráfico.
+  async function capturarGraficoComoImagem(): Promise<string | null> {
+    const svg = chartWrapRef.current?.querySelector("svg");
+    if (!svg) return null;
+    try {
+      const { width, height } = svg.getBoundingClientRect();
+      if (!width || !height) return null;
+      const clone = svg.cloneNode(true) as SVGSVGElement;
+      clone.setAttribute("width", String(width));
+      clone.setAttribute("height", String(height));
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      const svgString = new XMLSerializer().serializeToString(clone);
+      const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
+
+      const ESCALA = 2; // desenha em 2x pra não sair borrado no PDF
+      return await new Promise<string | null>((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = width * ESCALA;
+          canvas.height = height * ESCALA;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(null);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/png"));
+        };
+        img.onerror = () => resolve(null);
+        img.src = svgDataUrl;
+      });
+    } catch (e) {
+      console.error("[RelatoriosPersonalizados] falha ao capturar gráfico para o PDF:", e);
+      return null;
+    }
+  }
 
   return (
     <div>
@@ -366,6 +417,7 @@ export function RelatoriosPersonalizados({
               metricasLabels={metricasAtuais.map((m) => m.label)}
               nomeUsuario={nomeUsuario}
               cargoUsuario={cargoUsuario}
+              capturarGrafico={capturarGraficoComoImagem}
               colunaChave={dimensaoAtual.label}
               colunas={metricasAtuais.map((m) => ({ id: m.id, label: m.label }))}
               linhas={resultado.map((r) => ({
@@ -384,6 +436,7 @@ export function RelatoriosPersonalizados({
           )}
 
           {tipoGrafico === "table" ? null : (
+            <div ref={chartWrapRef}>
             <ResponsiveContainer width="100%" height={tipoGrafico === "bar_h" ? Math.max(220, dadosGrafico.length * 28) : 320}>
               {tipoGrafico === "pie" ? (
                 <PieChart>
@@ -442,6 +495,7 @@ export function RelatoriosPersonalizados({
                 </BarChart>
               )}
             </ResponsiveContainer>
+            </div>
           )}
 
           <div className="mt-4 max-h-96 overflow-y-auto overflow-x-auto">

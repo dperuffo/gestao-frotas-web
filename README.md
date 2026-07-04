@@ -3239,3 +3239,49 @@ Mudanças:
   encontrados). O rodapé com "Gerado em..." continua, como reforço.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.33 — PDF de Relatórios Personalizados agora traz o gráfico da consulta
+
+Pedido do Daniel: o PDF exportado só trazia a tabela de resultados, nunca o gráfico visto na tela.
+
+Como o gráfico é desenhado pelo Recharts (SVG no navegador) e o `@react-pdf/renderer` roda seu
+próprio motor de layout (não consegue renderizar componentes React/Recharts dentro do PDF), a saída
+encontrada foi CAPTURAR o gráfico já desenhado na tela como imagem, no momento do clique em
+"Exportar PDF":
+
+1. `RelatoriosPersonalizados.tsx` — o container do gráfico ganhou uma ref; `capturarGraficoComoImagem()`
+   localiza o `<svg>` gerado pelo Recharts, clona, serializa via `XMLSerializer`, desenha num
+   `<canvas>` em memória (escala 2x pra não sair borrado) e converte pra PNG (data URL). Quando o
+   tipo de gráfico é "Tabela", não há `<svg>` — a função devolve `null` e o PDF sai só com a tabela,
+   como antes.
+2. Como a captura é assíncrona, o botão de exportar deixou de usar `PDFDownloadLink` (que monta o
+   documento de forma síncrona) — `BotaoBaixarPdfPersonalizado.tsx` agora é um botão comum que, ao
+   clicar, aguarda a captura, gera o PDF via `pdf(...).toBlob()` e dispara o download manualmente
+   (mesmo padrão já usado pro CSV).
+3. `RelatorioPersonalizadoPdf.tsx` ganhou a prop `imagemGraficoUrl`; quando presente, mostra a
+   imagem numa moldura logo antes da tabela.
+
+Observação registrada em comentário no código: a legenda do Recharts (aparece com 2+ métricas
+selecionadas) é desenhada em HTML fora do `<svg>`, então não entra nessa captura — os nomes das
+métricas continuam visíveis na tabela do PDF logo abaixo do gráfico.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.34 — Roteirização: aba "Por Rota" removida da navegação; aba de planejamento renomeada para "Roteirizador Inteligente"
+
+Pedido do Daniel: retirar a consulta "Por Rota" da visão de todos os perfis (admin e clientes), e
+renomear a aba de planejamento de rota otimizada (que dividia o nome "Roteirização" com a seção
+inteira no menu lateral, o que confundia) para "Roteirizador Inteligente".
+
+- `AbasRoteirizacao.tsx`: a aba "Por Rota" (`/roteirizacao/rota`) saiu da lista de abas exibidas,
+  pra todos os perfis. A aba antes chamada "Roteirização" (`/roteirizacao/planejar`) passou a se
+  chamar "Roteirizador Inteligente".
+- A página `/roteirizacao/rota` em si NÃO foi apagada (só ficou fora da navegação): consultas desse
+  tipo salvas antes desta mudança continuam acessíveis a partir de "Rotas Salvas", que ainda tem
+  link direto pra ela. O tipo `AbaRoteirizacaoAtiva` continua aceitando `"rota"` por causa disso.
+- `salvas/page.tsx`: rótulo de exibição do tipo "roteirizacao" atualizado de "🧭 Roteirização" para
+  "🧭 Roteirizador Inteligente", pra ficar consistente com o novo nome da aba.
+- `planejar/page.tsx`: título da página (`<h1>`) atualizado de "Roteirização" para "Roteirizador
+  Inteligente".
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.

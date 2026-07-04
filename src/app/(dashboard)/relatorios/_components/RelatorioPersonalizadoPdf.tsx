@@ -1,4 +1,4 @@
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 export type ColunaPdf = { id: string; label: string };
 export type LinhaPdf = { chave: string; valores: string[]; registros: string };
@@ -33,6 +33,18 @@ const styles = StyleSheet.create({
   celula: { flex: 1, padding: 5, fontSize: 9, textAlign: "right" },
   semDados: { fontSize: 9, color: "#94a3b8", fontStyle: "italic" },
   rodape: { position: "absolute", bottom: 24, left: 32, right: 32, fontSize: 8, color: "#94a3b8", textAlign: "center" },
+  // Fase 27.33 — imagem do gráfico (capturada da tela, ver
+  // BotaoBaixarPdfPersonalizado.tsx), centralizada e com moldura leve.
+  graficoWrap: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderStyle: "solid",
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  grafico: { maxWidth: "100%", maxHeight: 260 },
 });
 
 // Documento PDF do "monte o seu relatório" (Relatórios Personalizados) —
@@ -50,6 +62,12 @@ const styles = StyleSheet.create({
 // e o próprio `titulo` (que já continha a combinação dimensão+métricas)
 // nem chegava a ser renderizado. Corrigido com uma caixa de emissão logo no
 // topo, reunindo tudo o que precisa acompanhar o relatório fora da tela.
+//
+// Fase 27.33 — achado real: o PDF nunca trazia o gráfico da consulta, só a
+// tabela. `imagemGraficoUrl` é um PNG (data URL) capturado do gráfico já
+// desenhado na tela no momento da exportação (ver capturarGrafico em
+// RelatoriosPersonalizados.tsx) — null quando o tipo de gráfico escolhido é
+// "Tabela" (não existe gráfico pra capturar nesse caso).
 export function RelatorioPersonalizadoPdf({
   nomeEmpresa,
   titulo,
@@ -59,6 +77,7 @@ export function RelatorioPersonalizadoPdf({
   metricasLabels,
   nomeUsuario,
   cargoUsuario,
+  imagemGraficoUrl,
   colunaChave,
   colunas,
   linhas,
@@ -72,6 +91,7 @@ export function RelatorioPersonalizadoPdf({
   metricasLabels: string[];
   nomeUsuario: string;
   cargoUsuario: string | null;
+  imagemGraficoUrl: string | null;
   colunaChave: string;
   colunas: ColunaPdf[];
   linhas: LinhaPdf[];
@@ -114,6 +134,13 @@ export function RelatorioPersonalizadoPdf({
             <Text style={styles.valorEmissao}>{subtitulo}</Text>
           </View>
         </View>
+
+        {imagemGraficoUrl && (
+          <View style={styles.graficoWrap}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- Image aqui é o componente do @react-pdf/renderer (documento PDF), não uma <img> HTML; não aceita prop "alt". */}
+            <Image src={imagemGraficoUrl} style={styles.grafico} />
+          </View>
+        )}
 
         {linhas.length === 0 ? (
           <Text style={styles.semDados}>Nenhum dado encontrado para essa combinação de fonte/dimensão/métrica.</Text>
