@@ -3426,3 +3426,46 @@ Investigando, o problema já existia em DUAS camadas:
   Frota nunca vê a coluna Posto, e quem é Posto só vê a própria coluna.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.40 — Performance: RLS reavaliando auth.jwt() por linha + falta de loading.tsx
+
+Investigando a lentidão de navegação reportada pelo Daniel, rodei o advisor de performance do
+Supabase e achei o maior contribuinte: praticamente toda tabela multi-tenant do sistema (~40
+tabelas, ~70 policies) tinha RLS que chama `auth.jwt()` DIRETO no corpo da policy, sem envolver
+num `select`. O Postgres reavalia essa chamada LINHA A LINHA da tabela em vez de computar uma vez
+só por consulta — e como toda tela do app faz pelo menos uma consulta numa tabela protegida por
+RLS, isso pesa em qualquer lista (veículos, abastecimentos, motoristas etc.), mais ainda em
+clientes com frota grande (2000+ veículos).
+
+Duas correções, ambas SEM MUDAR nenhuma regra de acesso (só a forma de avaliar):
+
+- `perfil_usuario_atual()` — chamada em quase toda policy do tipo "... OU admin" — fazia
+  `auth.jwt() ->> 'email'` sem `select`; corrigida direto na função (um só lugar, beneficia toda
+  policy que a chama).
+- As ~70 policies restantes que chamavam `auth.jwt()`/`auth.uid()` direto no corpo (geralmente como
+  argumento de `empresas_do_usuario(...)` ou em comparação direta de e-mail) foram corrigidas em
+  lote por um script que gera e aplica `ALTER POLICY` automaticamente — troca só
+  `auth.jwt()` por `(select auth.jwt())`, mesmo resultado lógico. Validado depois: `d.peruffo@gmail.com`
+  continua enxergando as mesmas 4 empresas e 2386 veículos de antes, RLS intacta.
+
+Também corrigidas 11 chaves estrangeiras sem índice (`unindexed_foreign_keys` no advisor),
+incluindo `cadastro_veiculos.centro_custo_id` e `motoristas.centro_custo_id` — exatamente as
+colunas usadas na alocação em massa por centro de custo (Fase 27.36), que antes fazia varredura
+completa da tabela a cada filtro/JOIN por essas colunas.
+
+Do lado do Next.js: nenhuma tela do dashboard tinha um `loading.tsx`. Sem esse arquivo, ao clicar
+num link do menu a tela ANTERIOR fica congelada (sem nenhum feedback visual) até a página de
+destino terminar de buscar os dados dela — dá sensação de trava mesmo quando a consulta em si é
+rápida. Criado `src/app/(dashboard)/loading.tsx` com um esqueleto simples, que aparece
+instantaneamente na troca de tela e é substituído pelo conteúdo real assim que a página termina de
+carregar (limitação do Next: isso cobre a página, não o próprio `layout.tsx` — que faz suas
+próprias checagens de autenticação/MFA em toda navegação e não pode ser coberto por um Suspense do
+mesmo segmento).
+
+Fica como próximo passo (não feito agora, por prudência): o advisor também aponta ~9 tabelas com
+"multiple_permissive_policies" (mais de uma policy permissiva pro mesmo papel/ação, todas avaliadas
+e somadas por OR a cada consulta) — dá pra consolidar, mas exige revisar cada par com calma pra não
+mudar acesso sem querer, então não entrou nesta fase.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. RLS validada por consulta direta
+(mesmo resultado antes/depois da otimização).
