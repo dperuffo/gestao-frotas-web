@@ -91,6 +91,21 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
         </div>
       </div>
 
+      {/* Fase 27.35 — achado real: cliente novo, ao ver "Rede do cliente"
+          vazia (nenhum posto próprio cadastrado ainda), podia achar que
+          precisava carregar postos antes de conseguir usar Roteirização/
+          consultar preços — não é verdade, a aba "Explorar universo ANP"
+          já cobre isso. Aviso informativo, só na visão "rede" (onde faz
+          sentido, é onde o cliente ainda não tem nada carregado). */}
+      {visao === "rede" && (
+        <p className="mb-4 rounded-lg bg-blue-50 px-4 py-2.5 text-xs text-blue-800">
+          💡 Ainda não carregou os postos do seu relacionamento? Sem problema: a Roteirização e a
+          aba &quot;Explorar universo ANP&quot; já funcionam com a base pública de preços ANP.
+          Carregar aqui a rede negociada é opcional e traz os preços realmente negociados com seus
+          postos.
+        </p>
+      )}
+
       {empresaSelecionada && (
         <div className="mb-4 flex gap-2 border-b border-slate-200">
           <AbaLink params={paramsBase} visao="rede" ativo={visao === "rede"}>

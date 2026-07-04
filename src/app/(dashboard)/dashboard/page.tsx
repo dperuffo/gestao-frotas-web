@@ -11,6 +11,7 @@ import { GraficoEvolutivoPostos, type PontoEvolutivoPostos } from "./_components
 import { GraficoTopPostos } from "./_components/GraficoTopPostos";
 import { RankingGasto, type ItemRankingGasto } from "./_components/RankingGasto";
 import { GraficoEficienciaVeiculos, type ItemEficienciaVeiculo } from "./_components/GraficoEficienciaVeiculos";
+import { PrimeirosPassos } from "./_components/PrimeirosPassos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 function formatarMoeda(valor: number) {
@@ -83,6 +84,7 @@ export default async function DashboardPage({
     { count: motoristasAtivos },
     { count: totalVeiculosGlobal },
     { count: veiculosAtivosGlobal },
+    { count: totalPostosProprios },
     { data: cnhVencendo },
     { data: abastecimentosRecentes },
     { data: veiculosDaEmpresa },
@@ -93,6 +95,14 @@ export default async function DashboardPage({
     queryMotoristasAtivos,
     supabase.from("cadastro_veiculos").select("id", { count: "exact", head: true }),
     supabase.from("cadastro_veiculos").select("id", { count: "exact", head: true }).eq("ativo", true),
+    // Fase 27.35 — usado só pelo card "Primeiros passos" (ver
+    // PrimeirosPassos.tsx): quantos postos revendedores PRÓPRIOS (postos_gf)
+    // o cliente já carregou. É informativo/opcional, não bloqueia nada — a
+    // Roteirização e a consulta de Postos já funcionam com a base ANP mesmo
+    // com esse número em zero.
+    empresaSelecionada
+      ? supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }).eq("empresa_id", empresaSelecionada)
+      : Promise.resolve({ count: 0 }),
     queryCnhVencendo,
     supabase
       .from("profrotas_abastecimentos")
@@ -396,6 +406,14 @@ export default async function DashboardPage({
           </form>
         </div>
       </div>
+
+      {empresaSelecionada && (
+        <PrimeirosPassos
+          totalVeiculos={totalVeiculos ?? 0}
+          totalMotoristas={totalMotoristas ?? 0}
+          totalPostosProprios={totalPostosProprios ?? 0}
+        />
+      )}
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <Indicador label="Clientes ativos" valor={String(clientesAtivos ?? 0)} sub={`de ${totalClientes ?? 0}`} ajudaChave="dashboard.clientes_ativos" />

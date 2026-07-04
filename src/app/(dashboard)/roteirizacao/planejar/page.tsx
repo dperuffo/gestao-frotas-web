@@ -47,6 +47,15 @@ export default async function RoteirizacaoPlanejarPage({
         </p>
       </div>
 
+      {/* Fase 27.35 — mesmo aviso da aba "Por UF/Município": a rota já é
+          traçada com preços da base pública ANP mesmo sem posto próprio
+          cadastrado; ver comentário lá para o achado completo. */}
+      <p className="mb-4 rounded-lg bg-blue-50 px-4 py-2.5 text-xs text-blue-800">
+        💡 O planejamento já funciona com a base pública de preços ANP, mesmo sem nenhum posto
+        próprio cadastrado. Carregar a rede negociada do cliente (em Postos Revendedores) é
+        opcional e traz os preços realmente negociados.
+      </p>
+
       <AbasRoteirizacao ativo="planejar" />
 
       {empresas.length > 1 && (

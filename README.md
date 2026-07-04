@@ -3285,3 +3285,32 @@ inteira no menu lateral, o que confundia) para "Roteirizador Inteligente".
   Inteligente".
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.35 — Onboarding de cliente novo: card "Primeiros passos" no Dashboard + avisos sobre ANP em Roteirização/Postos
+
+Pedido do Daniel: cliente novo não estava entendendo por onde começar — achava que precisava
+carregar os postos do seu relacionamento, cadastrar veículos e motoristas ANTES de conseguir usar a
+plataforma, quando na verdade Roteirização e consulta de Postos já funcionam com a base pública de
+preços ANP (por UF/município), sem cadastro nenhum. Só veículos e motoristas são de fato
+necessários pra operar (abastecimentos, manutenção, centro de custo).
+
+Solução escolhida (das opções apresentadas): checklist no Dashboard + avisos nas telas.
+
+1. **`dashboard/_components/PrimeirosPassos.tsx`** (novo componente): card exibido no topo do
+   Dashboard, só quando há um cliente selecionado, com uma lista de 3 passos — cadastrar veículos,
+   cadastrar motoristas (ambos com link direto pra tela de cadastro) e carregar postos revendedores
+   (marcado explicitamente como **opcional**, com o aviso de que a consulta já funciona com dados
+   ANP). Cada passo mostra ✅/⬜ e a contagem atual. O card inteiro some sozinho assim que veículos E
+   motoristas já estiverem cadastrados — não incomoda quem já está operando. Postos não entra nessa
+   condição de saída (é opcional, pode ficar marcado como pendente indefinidamente sem problema).
+2. **`dashboard/page.tsx`**: nova consulta (`postos_gf` contando por `empresa_id`) alimentando o
+   card; renderizado logo abaixo do seletor de cliente/período.
+3. **Avisos informativos** (não são erro, cor azul/neutra) adicionados no topo de:
+   - `/roteirizacao` (aba "Por UF/Município")
+   - `/roteirizacao/planejar` (aba "Roteirizador Inteligente")
+   - `/postos` (só na visão "Rede do cliente", onde o cliente ainda não tem nada carregado)
+
+   Todos deixando claro que a consulta já funciona com a base pública ANP, e que carregar a rede
+   própria é opcional.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.

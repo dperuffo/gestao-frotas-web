@@ -53,6 +53,17 @@ export default async function RoteirizacaoUfPage({
         </p>
       </div>
 
+      {/* Fase 27.35 — achado real: cliente novo achava que precisava
+          carregar a rede própria de postos ANTES de conseguir consultar
+          rota/posto. Não é verdade — a consulta já funciona com a base
+          pública de preços ANP por UF/município. Aviso informativo, sempre
+          visível (não é um erro nem bloqueia nada). */}
+      <p className="mb-4 rounded-lg bg-blue-50 px-4 py-2.5 text-xs text-blue-800">
+        💡 Esta consulta já funciona com a base pública de preços ANP, mesmo sem nenhum posto
+        próprio cadastrado. Carregar a rede negociada do cliente (em Postos Revendedores) é
+        opcional e traz os preços realmente negociados.
+      </p>
+
       <AbasRoteirizacao ativo="uf" />
 
       <form className="mb-4 flex flex-wrap items-end gap-3">
