@@ -121,11 +121,20 @@ export async function contarAcessosClientesNaoVistosAcao(): Promise<number> {
 // Marca todos os acessos pendentes como vistos — chamada quando o admin
 // abre a tela /clientes (mesma ideia de "marcar como visto ao abrir a
 // página" já usada em chamados/[id]/page.tsx).
+//
+// Fase 27.44 — achado real (crash em produção): esta função é chamada
+// direto dentro do render de clientes/page.tsx (Promise.all da própria
+// página), não a partir de um clique/form. O `revalidatePath("/clientes")`
+// que existia aqui tentava revalidar a MESMA rota que está sendo
+// renderizada — o Next.js passou a barrar isso com um erro fatal
+// ("used revalidatePath during render"), derrubando a tela inteira. Removido:
+// não fazia falta mesmo (a própria renderização em curso já reflete os
+// dados atualizados; revalidar a rota depois de já tê-la renderizado não
+// tem efeito útil aqui).
 export async function marcarAcessosClientesVistosAcao(): Promise<void> {
   const supabase = await createClient();
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   if (perfil !== "admin") return;
 
   await supabase.from("acessos_clientes").update({ admin_visto_em: new Date().toISOString() }).is("admin_visto_em", null);
-  revalidatePath("/clientes");
 }

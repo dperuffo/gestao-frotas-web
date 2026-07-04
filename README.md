@@ -3552,3 +3552,22 @@ com o que de fato é usado pra decidir se a frota estourou o limite do plano (an
 bloqueio podiam mostrar números bem diferentes pro mesmo cliente).
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.44 — Crash em produção: revalidatePath("/clientes") durante o próprio render
+
+Achado real (erro em produção, log completo do Daniel): a tela `/clientes` estava derrubando com
+`Error: Route /clientes used "revalidatePath /clientes" during render which is unsupported`.
+
+Causa raiz: `clientes/page.tsx` chama `marcarAcessosClientesVistosAcao()` direto dentro do
+`Promise.all` da própria página (pra marcar os acessos de cliente como vistos assim que o admin
+abre a tela — Fase 24/25) — e essa função fazia `revalidatePath("/clientes")` no final. Isso tenta
+revalidar a MESMA rota que está sendo renderizada NAQUELE EXATO MOMENTO, o que o Next.js passou a
+proibir com um erro fatal (antes era silenciosamente ignorado ou tolerado, dependendo da versão).
+
+Corrigido removendo o `revalidatePath` de dentro de `marcarAcessosClientesVistosAcao` — ele não
+fazia falta: a própria renderização em curso já busca os dados atualizados, revalidar a rota depois
+de já renderizá-la não tinha efeito útil aqui (diferente de quando `revalidatePath` é chamado a
+partir de uma Server Action de verdade, disparada por um clique/form, que é o uso correto — os
+outros usos em `criarCliente`/`atualizarCliente`/`alternarAtivoCliente` continuam intactos).
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
