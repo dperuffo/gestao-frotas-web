@@ -3314,3 +3314,36 @@ Solução escolhida (das opções apresentadas): checklist no Dashboard + avisos
    própria é opcional.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.36 — Alocação em massa de veículos e motoristas em Centro de Custo
+
+Pedido do Daniel (com print de uma frota grande): alocar veículo por veículo num centro de custo
+(um `<select>` + um clique em "Alocar" por vez) é inviável quando o cliente tem centenas de
+veículos. Pediu uma solução facilitada pra grandes volumes — e o mesmo tratamento pra motoristas.
+
+**`SeletorAlocacaoEmMassa.tsx`** (novo, genérico — usado tanto por veículos quanto motoristas):
+duas listas lado a lado (Disponíveis / Alocados), cada uma com busca própria (frotas grandes tornam
+as DUAS listas longas, não só a de disponíveis) e checkboxes de seleção múltipla, mais "selecionar
+todos os filtrados". Um único botão aloca todos os marcados de uma vez; o mesmo vale pra remover.
+Item individual na lista de alocados também mantém um "Remover" rápido, pra ajustes pontuais sem
+precisar marcar checkbox.
+
+**Ações de servidor em lote** (`centros-custo/actions.ts`):
+- `alocarVeiculosEmLoteAcao` / `desalocarVeiculosEmLoteAcao`: recebem uma lista de placas,
+  reaproveitam o helper `alocarVeiculoCentroCusto` (preserva o histórico por veículo) via
+  `Promise.all` — o ganho é menos cliques pro usuário, não menos chamadas ao banco (o histórico
+  continua sendo por veículo).
+- `alocarMotoristasEmLoteAcao` / `desalocarMotoristasEmLoteAcao`: motoristas NÃO têm tabela de
+  histórico de alocação (só a coluna `centro_custo_id` em `motoristas`) — por isso é um único
+  `UPDATE ... WHERE id IN (...)`, sem loop.
+
+**Motoristas em Centro de Custo é funcionalidade nova**: antes só dava pra vincular motorista a
+centro de custo editando o motorista individualmente. Agora `centros-custo/[id]/page.tsx` também
+busca os motoristas da empresa (com o nome do centro de custo atual via join, já que
+`motoristas` não tem coluna de cache pra isso) e renderiza `AlocarMotoristaForm.tsx`, mesma UX dos
+veículos, logo abaixo.
+
+`AlocarVeiculoForm.tsx` foi reescrito por cima do novo seletor genérico, mantendo o histórico de
+alocações (accordion "Ver histórico") como já existia.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.

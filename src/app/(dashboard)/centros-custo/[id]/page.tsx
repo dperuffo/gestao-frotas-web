@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CentroCustoForm } from "../_components/CentroCustoForm";
 import { AlocarVeiculoForm } from "../_components/AlocarVeiculoForm";
+import { AlocarMotoristaForm } from "../_components/AlocarMotoristaForm";
 
 export default async function EditarCentroCustoPage({
   params,
@@ -41,6 +42,29 @@ export default async function EditarCentroCustoPage({
     .eq("centro_custo_id", id)
     .order("data_inicio", { ascending: false });
 
+  // Fase 27.36 — mesma alocação em massa, agora pra motoristas. Motoristas
+  // já têm `empresa_id` direto (diferente de veículos, que usam
+  // cnpj_frota), e centro_custo_id/nome vêm via join com centros_custo (não
+  // existe coluna de cache "centro_custo_nome" na tabela, ao contrário de
+  // cadastro_veiculos).
+  const { data: motoristasDaEmpresaRaw } = centro.empresa_id
+    ? await supabase
+        .from("motoristas")
+        .select("id, nome_completo, cpf, centro_custo_id, centros_custo(nome)")
+        .eq("empresa_id", centro.empresa_id)
+        .order("nome_completo")
+    : { data: [] };
+
+  const motoristasDaEmpresa = (motoristasDaEmpresaRaw ?? []).map((m) => ({
+    id: m.id,
+    nome_completo: m.nome_completo,
+    cpf: m.cpf,
+    centro_custo_id: m.centro_custo_id,
+    centro_custo_nome: m.centros_custo?.nome ?? null,
+  }));
+  const motoristasAlocados = motoristasDaEmpresa.filter((m) => m.centro_custo_id === id);
+  const motoristasDisponiveis = motoristasDaEmpresa.filter((m) => m.centro_custo_id !== id);
+
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-slate-900">Editar Centro de Custo — {centro.nome}</h1>
@@ -51,6 +75,11 @@ export default async function EditarCentroCustoPage({
         veiculosAlocados={veiculosAlocados}
         veiculosDisponiveis={veiculosDisponiveis}
         historico={historicoRaw ?? []}
+      />
+      <AlocarMotoristaForm
+        centroCustoId={id}
+        motoristasAlocados={motoristasAlocados}
+        motoristasDisponiveis={motoristasDisponiveis}
       />
     </div>
   );

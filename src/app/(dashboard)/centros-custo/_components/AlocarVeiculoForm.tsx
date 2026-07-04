@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { alocarVeiculoAcao, desalocarVeiculoAcao } from "../actions";
+import { useState } from "react";
+import { alocarVeiculosEmLoteAcao, desalocarVeiculosEmLoteAcao } from "../actions";
+import { SeletorAlocacaoEmMassa, type ItemAlocavel } from "./SeletorAlocacaoEmMassa";
 
 type VeiculoOpcao = {
   placa: string;
@@ -24,6 +25,11 @@ function formatarData(data: string | null) {
   return new Date(`${data}T00:00:00`).toLocaleDateString("pt-BR");
 }
 
+// Fase 27.36 — achado real: cliente com frota grande tinha que alocar
+// veículo por veículo (um <select> + um clique em "Alocar" por operação) —
+// inviável em centenas de veículos. Trocado pelo seletor genérico de
+// alocação em massa (busca + seleção múltipla + ações em lote), ver
+// SeletorAlocacaoEmMassa.tsx.
 export function AlocarVeiculoForm({
   centroCustoId,
   empresaId,
@@ -37,81 +43,36 @@ export function AlocarVeiculoForm({
   veiculosDisponiveis: VeiculoOpcao[];
   historico: Alocacao[];
 }) {
-  const [placa, setPlaca] = useState("");
-  const [erro, setErro] = useState<string | undefined>();
-  const [isPending, startTransition] = useTransition();
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
 
-  function handleAlocar() {
-    if (!placa) return;
-    setErro(undefined);
-    startTransition(async () => {
-      try {
-        await alocarVeiculoAcao(centroCustoId, empresaId, placa);
-        setPlaca("");
-      } catch (e) {
-        setErro(e instanceof Error ? e.message : "Erro ao alocar veículo.");
-      }
-    });
-  }
-
-  function handleRemover(placaVeiculo: string) {
-    setErro(undefined);
-    startTransition(async () => {
-      try {
-        await desalocarVeiculoAcao(centroCustoId, empresaId, placaVeiculo);
-      } catch (e) {
-        setErro(e instanceof Error ? e.message : "Erro ao remover alocação.");
-      }
-    });
-  }
+  const itensDisponiveis: ItemAlocavel[] = veiculosDisponiveis.map((v) => ({
+    chave: v.placa,
+    label: v.placa,
+    subLabel: `${[v.marca, v.modelo].filter(Boolean).join(" ") || "sem marca/modelo"}${
+      v.centro_custo_nome ? ` · atualmente em ${v.centro_custo_nome}` : " · sem centro de custo"
+    }`,
+  }));
+  const itensAlocados: ItemAlocavel[] = veiculosAlocados.map((v) => ({
+    chave: v.placa,
+    label: v.placa,
+    subLabel: [v.marca, v.modelo].filter(Boolean).join(" ") || null,
+  }));
 
   return (
     <div className="card p-6">
-      <h2 className="mb-4 text-sm font-semibold text-slate-900">Veículos alocados a este centro de custo</h2>
-      {erro && <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
+      <h2 className="mb-1 text-sm font-semibold text-slate-900">Veículos alocados a este centro de custo</h2>
+      <p className="mb-4 text-xs text-slate-500">
+        Busque e marque quantos veículos precisar — dá pra alocar ou remover vários de uma vez.
+      </p>
 
-      <div className="mb-4 flex gap-2">
-        <select value={placa} onChange={(e) => setPlaca(e.target.value)} className="input">
-          <option value="">Selecione um veículo para alocar...</option>
-          {veiculosDisponiveis.map((v) => (
-            <option key={v.placa} value={v.placa}>
-              {v.placa} — {[v.marca, v.modelo].filter(Boolean).join(" ") || "sem marca/modelo"}
-              {v.centro_custo_nome ? ` (atualmente em ${v.centro_custo_nome})` : " (sem centro de custo)"}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={handleAlocar}
-          disabled={isPending || !placa}
-          className="btn-secondary whitespace-nowrap"
-        >
-          Alocar
-        </button>
-      </div>
-
-      <ul className="divide-y divide-slate-100">
-        {veiculosAlocados.map((v) => (
-          <li key={v.placa} className="flex items-center justify-between py-2 text-sm">
-            <span>
-              <span className="font-medium text-slate-700">{v.placa}</span>{" "}
-              <span className="text-slate-500">{[v.marca, v.modelo].filter(Boolean).join(" ")}</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => handleRemover(v.placa)}
-              disabled={isPending}
-              className="text-xs font-medium text-red-600 hover:underline"
-            >
-              Remover
-            </button>
-          </li>
-        ))}
-        {veiculosAlocados.length === 0 && (
-          <li className="py-4 text-center text-sm text-slate-400">Nenhum veículo alocado ainda.</li>
-        )}
-      </ul>
+      <SeletorAlocacaoEmMassa
+        itensDisponiveis={itensDisponiveis}
+        itensAlocados={itensAlocados}
+        labelPlural="veículo"
+        placeholderBusca="Buscar por placa, marca ou modelo..."
+        onAlocar={(placas) => alocarVeiculosEmLoteAcao(centroCustoId, empresaId, placas)}
+        onRemover={(placas) => desalocarVeiculosEmLoteAcao(centroCustoId, empresaId, placas)}
+      />
 
       {historico.length > 0 && (
         <div className="mt-4 border-t border-slate-100 pt-3">
