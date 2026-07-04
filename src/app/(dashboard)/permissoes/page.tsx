@@ -54,9 +54,23 @@ export default async function PermissoesPage({
     .maybeSingle();
 
   const meuPerfil = perfilUsuario?.perfil as Perfil | undefined;
-  const meuIndice = meuPerfil ? PERFIS.indexOf(meuPerfil) : -1;
-  const perfisVisiveis = meuIndice >= 0 ? PERFIS.slice(meuIndice) : PERFIS.slice(1);
   const souAdmin = meuPerfil === "admin";
+
+  // Fase 27.39 — achado real (reportado pelo Daniel): "posto" não é um degrau
+  // abaixo de "analista" na mesma hierarquia — é uma trilha separada (perfil
+  // do segmento Revenda), então a conta antiga "PERFIS.slice(meuIndice)"
+  // deixava um gestor_frota ou analista (lado Frota) enxergar e editar a
+  // coluna "Posto" na matriz, quando só o próprio Posto (ou o admin) deveria
+  // gerenciar essa permissão. A RLS tinha o mesmo furo (nivel_perfil no
+  // banco, ver migração da Fase 27.39) e foi corrigida junto. Aqui: quem é
+  // "posto" só vê a própria coluna; quem é do lado Frota (gestor_frota/
+  // analista) nunca vê "posto".
+  const HIERARQUIA_FROTA: Perfil[] = ["gestor_frota", "analista"];
+  const perfisVisiveis: Perfil[] = souAdmin
+    ? [...PERFIS]
+    : meuPerfil === "posto"
+      ? ["posto"]
+      : HIERARQUIA_FROTA.slice(Math.max(0, HIERARQUIA_FROTA.indexOf(meuPerfil ?? "analista")));
 
   // Admin gerencia o padrão global; os demais perfis customizam a própria
   // empresa (com seletor de cliente só quando o usuário está vinculado a

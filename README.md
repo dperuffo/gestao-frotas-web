@@ -3394,3 +3394,35 @@ empresa via `veiculos_da_empresa` ou consulta direta em `cadastro_veiculos` por 
 - `app/api/cadastros/veiculos/route.ts` (API de integração de frota, Hub de Integrações Fase 25)
 
 Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos alterados, ambos limpos.
+
+## Fase 27.39 — Limpeza da tela Permissões e furo Frota/Posto
+
+Achado real (reportado pelo Daniel): a tela `/permissoes` trazia 26 "funcionalidades" cadastradas
+em `permissoes_perfil`, importadas do sistema anterior em Streamlit. Comparando com as rotas e
+recursos que realmente existem neste app, 11 delas não correspondem a nada daqui: `aba_acordos`,
+`aba_analise_cliente`, `aba_comece_seu_dia`, `aba_configuracoes`, `aba_documentacao`,
+`aba_recomendador`, `aba_telemetria`, `aba_variacao_precos`, `func_editar_acordos`,
+`func_ver_telem_todos` e `func_ver_todos_cnpj` (este último citado pelo Daniel como exemplo).
+Removidas as 44 linhas correspondentes (padrão global + as customizações por empresa que existiam
+para `aba_configuracoes` e `func_ver_todos_cnpj`). Restaram as 15 funcionalidades que de fato
+mapeiam pra abas/ações deste app (`aba_dashboard`, `aba_financeiro`, `aba_roteirizacao`, etc.).
+
+Segundo achado, mais sério: o Daniel pediu pra também impedir que o perfil Posto fique visível/
+editável pro lado Frota (só usuários Posto — ou o admin — deveriam mexer nas permissões de Posto).
+Investigando, o problema já existia em DUAS camadas:
+
+- **RLS do banco**: a policy de `permissoes_perfil` usava só `nivel_perfil(perfil) <=
+  nivel_perfil(perfil_usuario_atual())`, com a escala `admin=4, gestor_frota=3, analista=2,
+  posto=1`. Como é uma comparação numérica única, um gestor_frota (3) ou analista (2) passava na
+  checagem pra qualquer linha com `perfil='posto'` (1 <= 3 e 1 <= 2) — ou seja, o lado Frota
+  conseguia ver E EDITAR as permissões do Posto, mesmo sem nenhuma tela permitir isso
+  explicitamente (dava pra fazer via API direto). Corrigido com uma migração (`alter policy`) que
+  isola `perfil='posto'` numa cláusula própria: só é visível/editável por quem é `admin` ou o
+  próprio `posto`, nunca mais por `nivel_perfil` sozinho.
+- **Tela `/permissoes`**: o cálculo de `perfisVisiveis` fazia `PERFIS.slice(meuIndice)`, tratando
+  "posto" como só mais um degrau abaixo de "analista" na mesma hierarquia — por isso a coluna
+  "Posto" aparecia (e era editável) pra quem logava como Gestor de Frota ou Analista. Corrigido
+  separando a "trilha Frota" (`gestor_frota`, `analista`) da trilha Posto: agora quem é do lado
+  Frota nunca vê a coluna Posto, e quem é Posto só vê a própria coluna.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
