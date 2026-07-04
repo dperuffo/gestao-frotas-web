@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CICLOS_COMBUSTIVEL } from "@/lib/constants";
+import type { Database } from "@/types/database.types";
+
+type EmpresaUpdate = Database["public"]["Tables"]["empresas"]["Update"];
 
 export type ClienteFormState = { erro?: string } | undefined;
 
@@ -61,10 +64,20 @@ export async function atualizarCliente(
   formData: FormData
 ): Promise<ClienteFormState> {
   const supabase = await createClient();
-  const payload = montarPayload(formData);
+  const payload: EmpresaUpdate = montarPayload(formData);
 
   if (!payload.nome) {
     return { erro: "Razão Social é obrigatória." };
+  }
+
+  // Fase 27.42 — o checkbox de bypass de limite de frota só é gravado se
+  // quem está chamando é admin — mesma checagem que já esconde o campo na
+  // tela (ClienteForm), repetida aqui pra não confiar só na UI: mesmo que
+  // alguém monte o FormData na mão, um não-admin não consegue ligar isso
+  // pra própria empresa.
+  const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
+  if (perfilAtual === "admin") {
+    payload.bypass_limite_frota = formData.get("bypass_limite_frota") === "on";
   }
 
   const { error } = await supabase.from("empresas").update(payload).eq("id", id);

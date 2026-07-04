@@ -7,7 +7,7 @@ import type { Database } from "@/types/database.types";
 
 type Empresa = Database["public"]["Tables"]["empresas"]["Row"];
 
-export function ClienteForm({ cliente }: { cliente?: Empresa }) {
+export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin?: boolean }) {
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const volumeAtual = (cliente?.volume_potencial as Record<string, number>) ?? {};
@@ -137,6 +137,27 @@ export function ClienteForm({ cliente }: { cliente?: Empresa }) {
             <div>Máx. veículos: <strong className="text-slate-900">{cliente.max_veiculos ?? "—"}</strong></div>
           </div>
           <p className="mt-2 text-xs text-slate-400">Gerido pela assinatura (Stripe) — não editável por aqui.</p>
+
+          {/* Fase 27.42 — só admin vê/edita: ignora o bloqueio de limite de
+              frota (Fase 27.41) pra empresas de teste, sem inflar
+              plano/max_veiculos (o que mascararia o comportamento real do
+              plano nos testes). A checagem de quem pode gravar isso também
+              é feita no servidor (atualizarCliente), não só aqui na tela. */}
+          {souAdmin && (
+            <label className="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <input
+                type="checkbox"
+                name="bypass_limite_frota"
+                defaultChecked={cliente.bypass_limite_frota}
+                className="mt-0.5"
+              />
+              <span>
+                <strong>Ignorar limite de veículos do plano</strong> — uso interno/teste. Libera a
+                sincronização mesmo com a frota acima do limite, sem mudar o plano nem os números
+                mostrados em Minha Assinatura.
+              </span>
+            </label>
+          )}
         </section>
       )}
 

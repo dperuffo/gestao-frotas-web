@@ -3511,3 +3511,25 @@ do limite real do gratuito. Deploy feito (`stripe-webhook` v10).
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Contagem real testada nas 4 empresas
 do banco: enterprise (ilimitado, ok), duas gratuito dentro do limite (ok), duas gratuito acima do
 limite (bloqueadas, como esperado).
+
+## Fase 27.42 — Bypass de limite de frota para clientes de teste (admin)
+
+Pedido do Daniel: "Frotas & Frotas Ltda" é cliente de teste dele mesmo (admin) e ficou bloqueada
+pela Fase 27.41 (29 veículos, plano gratuito, limite 10) — ele precisa continuar testando suas
+evoluções sem esse bloqueio.
+
+Em vez de inflar o plano/`max_veiculos` dela (o que mascararia o comportamento real do plano
+gratuito nos próprios testes), criada uma flag dedicada:
+
+- `empresas.bypass_limite_frota` (boolean, default `false`) — quando `true`,
+  `verificarLimiteFrota` (Fase 27.41) libera a sincronização mesmo com a frota acima do limite, sem
+  tocar em plano/max_veiculos/contagem exibida em Minha Assinatura.
+- Checkbox "Ignorar limite de veículos do plano" em `/clientes/[id]`, visível e editável **só para
+  admin** — checagem repetida nos dois lados (a tela só mostra o campo pra admin, e
+  `atualizarCliente` só grava o valor recebido se quem chamou é admin, mesmo que o campo seja
+  forjado no FormData).
+- Ativado imediatamente para "Frotas & Frotas Ltda", a pedido do Daniel.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Confirmado no banco: a flag está
+`true` pra essa empresa e `verificarLimiteFrota` já retorna liberado antes de qualquer comparação de
+limite.

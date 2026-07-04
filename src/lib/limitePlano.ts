@@ -22,11 +22,18 @@ export async function verificarLimiteFrota(
 ): Promise<LimiteFrotaResultado> {
   const { data: empresa, error: erroEmpresa } = await supabase
     .from("empresas")
-    .select("nome, plano, max_veiculos")
+    .select("nome, plano, max_veiculos, bypass_limite_frota")
     .eq("id", empresaId)
     .single();
 
   if (erroEmpresa || !empresa) return { ok: true }; // sem empresa resolvida, não bloqueia — outra camada já barra isso
+
+  // Fase 27.42 — flag de uso interno/teste (editável só por admin em
+  // /clientes/[id]) pra empresas de teste do próprio Daniel continuarem
+  // liberadas mesmo acima do limite do plano, sem precisar inflar
+  // plano/max_veiculos (o que mascararia o comportamento real do plano
+  // gratuito no teste).
+  if (empresa.bypass_limite_frota) return { ok: true };
 
   const limite = empresa.max_veiculos;
   if (limite === null || limite < 0) return { ok: true }; // ilimitado (enterprise) ou sem limite configurado

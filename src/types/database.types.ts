@@ -51,6 +51,10 @@ export interface Database {
           porte: string | null;
           segmento_transporte: string | null;
           volume_potencial: Json;
+          // Fase 27.42 — ignora o bloqueio de limite de veículos do plano
+          // (verificarLimiteFrota) pra esta empresa. Uso interno/teste,
+          // editável só por admin em /clientes/[id].
+          bypass_limite_frota: boolean;
           created_at: string | null;
           updated_at: string | null;
         };

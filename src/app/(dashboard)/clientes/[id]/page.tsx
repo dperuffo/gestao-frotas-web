@@ -13,10 +13,16 @@ export default async function EditarClientePage({
 
   if (!cliente) notFound();
 
+  // Fase 27.42 — o checkbox de bypass de limite de frota só aparece pro
+  // admin (mesma checagem que já protege o gravado no servidor, em
+  // atualizarCliente).
+  const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
+  const souAdmin = perfilAtual === "admin";
+
   return (
     <div>
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Cliente — {cliente.nome}</h1>
-      <ClienteForm cliente={cliente} />
+      <ClienteForm cliente={cliente} souAdmin={souAdmin} />
     </div>
   );
 }
