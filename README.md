@@ -3198,3 +3198,20 @@ Correção definitiva, em duas camadas:
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Esta é a primeira correção, das 6
 tentativas, apoiada em evidência direta do log real do servidor (não em suspeita) — alta confiança
 de que resolve definitivamente o problema do anexo em resposta de chamado.
+
+## Fase 27.31 — Botão "Filtrar" perdia o cliente selecionado (Abastecimentos, Veículos, Motoristas)
+
+Achado real: essas 3 telas têm DOIS `<form>` HTML separados — um só com o seletor "Cliente", e
+outro com a busca (texto/data). Cada `<form>` só envia os PRÓPRIOS campos ao ser submetido, mesmo
+estando na mesma página. Como o form de busca não incluía o cliente selecionado, clicar em
+"Filtrar" (ou até só apertar Enter no campo de busca) derrubava o `?empresa=` da URL, e a tela caía
+de volta na mensagem pedindo pra selecionar um cliente — mesmo já tendo um selecionado.
+
+Outras telas com padrão parecido (Postos, Centros de Custo, Manutenção Preditiva) não tinham esse
+problema porque usam um ÚNICO form com todos os campos juntos (cliente + busca).
+
+Correção: um campo oculto `<input type="hidden" name="empresa" value={empresaParam} />` foi
+adicionado ao form de busca dessas 3 telas, garantindo que o cliente selecionado viaje junto com o
+filtro de busca.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.

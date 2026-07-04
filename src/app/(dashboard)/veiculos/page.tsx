@@ -137,6 +137,13 @@ export default async function VeiculosPage({
           </div>
 
           <form className="mb-4">
+            {/* Fase 27.31 — achado real: este form é SEPARADO do form do
+                seletor de Cliente acima. Como cada <form> só envia os
+                próprios campos ao submeter (mesmo estando na mesma página),
+                buscar aqui derrubava o ?empresa= da URL e a tela voltava a
+                pedir a seleção do cliente. Mesmo bug corrigido em
+                /abastecimentos e /motoristas. */}
+            <input type="hidden" name="empresa" value={empresaParam ?? ""} />
             <input
               type="search"
               name="q"

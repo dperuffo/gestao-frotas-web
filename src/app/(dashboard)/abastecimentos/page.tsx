@@ -155,6 +155,14 @@ export default async function AbastecimentosPage({
       </div>
 
       <form className="mb-4 flex flex-wrap gap-3">
+        {/* Fase 27.31 — achado real: este form é SEPARADO do form do seletor
+            de Cliente acima. Sem o cliente embutido aqui, submeter esta busca
+            derrubava o parâmetro ?empresa= da URL (cada <form> só envia os
+            próprios campos ao submeter, mesmo estando na mesma página) —
+            fazendo a tela voltar a pedir a seleção do cliente logo depois de
+            clicar em "Filtrar". Mesmo bug corrigido em /veiculos e
+            /motoristas. */}
+        <input type="hidden" name="empresa" value={empresaParam ?? ""} />
         <input
           type="search"
           name="q"
