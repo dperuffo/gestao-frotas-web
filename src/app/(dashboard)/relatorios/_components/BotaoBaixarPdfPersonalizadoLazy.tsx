@@ -13,6 +13,11 @@ export default function BotaoBaixarPdfPersonalizadoLazy(props: {
   nomeEmpresa: string;
   titulo: string;
   subtitulo: string;
+  fonteLabel: string;
+  dimensaoLabel: string;
+  metricasLabels: string[];
+  nomeUsuario: string;
+  cargoUsuario: string | null;
   colunaChave: string;
   colunas: ColunaPdf[];
   linhas: LinhaPdf[];

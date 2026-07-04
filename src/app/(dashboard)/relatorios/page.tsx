@@ -5,6 +5,7 @@ import { PerformancePorPosto } from "./_components/PerformancePorPosto";
 import { ScorePerformance } from "./_components/ScorePerformance";
 import { RelatorioExecutivo } from "./_components/RelatorioExecutivo";
 import { RelatoriosPersonalizados } from "./_components/RelatoriosPersonalizados";
+import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 
 type SearchParams = { empresa?: string };
 
@@ -46,6 +47,20 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
   const nomeEmpresaSelecionada =
     empresas.find((e) => e.id === empresaSelecionada)?.nome ??
     (perfil === "admin" ? "Rede FNI (todos os clientes)" : "todas as empresas do meu grupo");
+
+  // Fase 27.32 — nome e cargo de quem está logado, pra exibir no cabeçalho do
+  // PDF de Relatórios Personalizados (mesma fonte/padrão usado no layout do
+  // dashboard, ver Fase 27.15): usuarios_app não tem FK pro auth.users, o
+  // vínculo é por e-mail.
+  const { data: perfilUsuarioApp } = await supabase
+    .from("usuarios_app")
+    .select("nome, perfil")
+    .eq("email", user?.email ?? "")
+    .maybeSingle();
+  const nomeUsuarioAtual = perfilUsuarioApp?.nome || user?.email || "—";
+  const cargoUsuarioAtual = perfilUsuarioApp?.perfil
+    ? PERFIL_LABEL[perfilUsuarioApp.perfil as Perfil] ?? perfilUsuarioApp.perfil
+    : null;
 
   // Janela padrão dos dados "brutos" de Relatórios Personalizados — últimos
   // 365 dias, mesma janela usada em outros pontos do app pra esse tipo de
@@ -212,6 +227,8 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
                 manutencoes={manutencoes}
                 custosFixos={custosFixos}
                 nomeEmpresa={nomeEmpresaSelecionada}
+                nomeUsuario={nomeUsuarioAtual}
+                cargoUsuario={cargoUsuarioAtual}
               />
             ),
             ajudaChave: "relatorios.personalizados",

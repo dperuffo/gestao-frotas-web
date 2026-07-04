@@ -3215,3 +3215,27 @@ adicionado ao form de busca dessas 3 telas, garantindo que o cliente selecionado
 filtro de busca.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.32 — Cabeçalho do PDF de Relatórios Personalizados: usuário, cargo, data/hora, dimensão e métricas
+
+Pedido do Daniel: o PDF exportado de "Relatórios Personalizados" precisava trazer no cabeçalho quem
+emitiu (usuário e cargo), quando (data e hora), e qual combinação de dimensão/métricas gerou aquele
+resultado — importante pra um relatório que pode circular fora da plataforma (impresso, anexado a
+e-mail) sem perder esse contexto.
+
+Achado ao revisar o componente: o próprio título do relatório (ex.: "Valor Total, Preço Médio por
+Combustível" — já continha a combinação de métricas + dimensão) nunca era exibido no PDF gerado, só
+existia como string interna; e a data de emissão só aparecia discreta no rodapé.
+
+Mudanças:
+- `relatorios/page.tsx` agora busca nome e perfil (`usuarios_app`) de quem está logado — mesmo
+  padrão já usado no layout do dashboard (Fase 27.15) — e resolve o rótulo do cargo via
+  `PERFIL_LABEL`.
+- Esses dados (nome + cargo) e os campos estruturados de fonte/dimensão/métricas passam por
+  `RelatoriosPersonalizados` → `BotaoBaixarPdfPersonalizadoLazy` → `BotaoBaixarPdfPersonalizado` até
+  o documento (`RelatorioPersonalizadoPdf`).
+- O PDF ganhou uma caixa de emissão no topo, logo abaixo do título do relatório, com: Emitido por
+  (nome — cargo), Data e hora, Fonte, Dimensão, Métricas e o resumo do resultado (grupos
+  encontrados). O rodapé com "Gerado em..." continua, como reforço.
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.

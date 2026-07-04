@@ -6,8 +6,24 @@ export type LinhaPdf = { chave: string; valores: string[]; registros: string };
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica", color: "#1e293b" },
   tituloPrincipal: { fontSize: 16, fontWeight: 700, marginBottom: 2, color: "#1A237E" },
-  subtitulo: { fontSize: 10, color: "#64748b", marginBottom: 4 },
-  meta: { fontSize: 9, color: "#64748b", marginBottom: 16 },
+  subtitulo: { fontSize: 10, color: "#64748b", marginBottom: 8 },
+  tituloRelatorio: { fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#1e293b" },
+  // Fase 27.32 — caixa de emissão: quem gerou (nome + cargo), quando, e a
+  // combinação exata de fonte/dimensão/métricas usada — importante pra um
+  // relatório que pode circular fora da plataforma (impresso, anexado a
+  // e-mail etc.) sem perder o contexto de como foi gerado.
+  caixaEmissao: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderStyle: "solid",
+    backgroundColor: "#f8fafc",
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 16,
+  },
+  linhaEmissao: { flexDirection: "row", marginBottom: 3 },
+  rotuloEmissao: { fontSize: 8, fontWeight: 700, color: "#64748b", width: 90 },
+  valorEmissao: { fontSize: 8, color: "#334155", flex: 1 },
   tabela: { borderWidth: 1, borderColor: "#cbd5e1", borderStyle: "solid" },
   linhaHeader: { flexDirection: "row", backgroundColor: "#f1f5f9", borderBottomWidth: 1, borderBottomColor: "#cbd5e1", borderStyle: "solid" },
   linha: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#e2e8f0", borderStyle: "solid" },
@@ -28,10 +44,21 @@ const styles = StyleSheet.create({
 // contagem de registros. Não tenta reproduzir o gráfico (recharts não
 // renderiza dentro do @react-pdf/renderer) — só a tabela de resultados,
 // igual ao que já acontece no CSV.
+//
+// Fase 27.32 — achado real: o cabeçalho não dizia QUEM emitiu o relatório
+// (nome/cargo), nem trazia data/hora em destaque (só no rodapé, discreto),
+// e o próprio `titulo` (que já continha a combinação dimensão+métricas)
+// nem chegava a ser renderizado. Corrigido com uma caixa de emissão logo no
+// topo, reunindo tudo o que precisa acompanhar o relatório fora da tela.
 export function RelatorioPersonalizadoPdf({
   nomeEmpresa,
   titulo,
   subtitulo,
+  fonteLabel,
+  dimensaoLabel,
+  metricasLabels,
+  nomeUsuario,
+  cargoUsuario,
   colunaChave,
   colunas,
   linhas,
@@ -40,6 +67,11 @@ export function RelatorioPersonalizadoPdf({
   nomeEmpresa: string;
   titulo: string;
   subtitulo: string;
+  fonteLabel: string;
+  dimensaoLabel: string;
+  metricasLabels: string[];
+  nomeUsuario: string;
+  cargoUsuario: string | null;
   colunaChave: string;
   colunas: ColunaPdf[];
   linhas: LinhaPdf[];
@@ -50,7 +82,38 @@ export function RelatorioPersonalizadoPdf({
       <Page size="A4" style={styles.page}>
         <Text style={styles.tituloPrincipal}>Relatório Personalizado</Text>
         <Text style={styles.subtitulo}>{nomeEmpresa} · Fleet Network Intelligence</Text>
-        <Text style={styles.meta}>{subtitulo}</Text>
+
+        <Text style={styles.tituloRelatorio}>{titulo}</Text>
+
+        <View style={styles.caixaEmissao}>
+          <View style={styles.linhaEmissao}>
+            <Text style={styles.rotuloEmissao}>Emitido por</Text>
+            <Text style={styles.valorEmissao}>
+              {nomeUsuario}
+              {cargoUsuario ? ` — ${cargoUsuario}` : ""}
+            </Text>
+          </View>
+          <View style={styles.linhaEmissao}>
+            <Text style={styles.rotuloEmissao}>Data e hora</Text>
+            <Text style={styles.valorEmissao}>{geradoEm}</Text>
+          </View>
+          <View style={styles.linhaEmissao}>
+            <Text style={styles.rotuloEmissao}>Fonte</Text>
+            <Text style={styles.valorEmissao}>{fonteLabel}</Text>
+          </View>
+          <View style={styles.linhaEmissao}>
+            <Text style={styles.rotuloEmissao}>Dimensão</Text>
+            <Text style={styles.valorEmissao}>{dimensaoLabel}</Text>
+          </View>
+          <View style={styles.linhaEmissao}>
+            <Text style={styles.rotuloEmissao}>Métricas</Text>
+            <Text style={styles.valorEmissao}>{metricasLabels.join(", ")}</Text>
+          </View>
+          <View style={styles.linhaEmissao}>
+            <Text style={styles.rotuloEmissao}>Resultado</Text>
+            <Text style={styles.valorEmissao}>{subtitulo}</Text>
+          </View>
+        </View>
 
         {linhas.length === 0 ? (
           <Text style={styles.semDados}>Nenhum dado encontrado para essa combinação de fonte/dimensão/métrica.</Text>

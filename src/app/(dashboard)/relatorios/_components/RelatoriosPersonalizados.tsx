@@ -219,7 +219,21 @@ function SeletorMetricas({
 // (barras/linhas agrupadas, com legenda). Pizza sempre usa só a 1ª métrica
 // selecionada, porque "fatia de um todo" só faz sentido pra uma métrica por
 // vez — as demais continuam disponíveis na tabela e no CSV.
-export function RelatoriosPersonalizados({ abastecimentos, manutencoes, custosFixos, nomeEmpresa }: { abastecimentos: AbastecimentoBruto[]; manutencoes: ManutencaoBruto[]; custosFixos: CustoFixoBruto[]; nomeEmpresa: string }) {
+export function RelatoriosPersonalizados({
+  abastecimentos,
+  manutencoes,
+  custosFixos,
+  nomeEmpresa,
+  nomeUsuario,
+  cargoUsuario,
+}: {
+  abastecimentos: AbastecimentoBruto[];
+  manutencoes: ManutencaoBruto[];
+  custosFixos: CustoFixoBruto[];
+  nomeEmpresa: string;
+  nomeUsuario: string;
+  cargoUsuario: string | null;
+}) {
   const [fonte, setFonte] = useState<Fonte>("abastecimentos");
   const [dimensaoId, setDimensaoId] = useState(DIMENSOES.abastecimentos[0].id);
   const [metricaIds, setMetricaIds] = useState<string[]>([METRICAS.abastecimentos[0].id]);
@@ -347,6 +361,11 @@ export function RelatoriosPersonalizados({ abastecimentos, manutencoes, custosFi
               nomeEmpresa={nomeEmpresa}
               titulo={`${metricasAtuais.map((m) => m.label).join(", ")} por ${dimensaoAtual.label}`}
               subtitulo={`Fonte: ${FONTE_LABEL[fonte]} · Agrupado por ${dimensaoAtual.label.toLowerCase()} · ${resultado.length} grupo(s)`}
+              fonteLabel={FONTE_LABEL[fonte]}
+              dimensaoLabel={dimensaoAtual.label}
+              metricasLabels={metricasAtuais.map((m) => m.label)}
+              nomeUsuario={nomeUsuario}
+              cargoUsuario={cargoUsuario}
               colunaChave={dimensaoAtual.label}
               colunas={metricasAtuais.map((m) => ({ id: m.id, label: m.label }))}
               linhas={resultado.map((r) => ({
