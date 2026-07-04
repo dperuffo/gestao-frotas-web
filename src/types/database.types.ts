@@ -1091,6 +1091,14 @@ export interface Database {
         Args: { p_cnpj: string };
         Returns: string | null;
       };
+      // Fase 27.41 — conta a frota REAL da empresa (cadastro_veiculos +
+      // placas distintas vistas nos abastecimentos da integração, mesmo sem
+      // cadastro formal) — usada por verificarLimiteFrota (src/lib/limitePlano.ts)
+      // pra bloquear sync/operação acima do limite do plano.
+      contar_veiculos_reais_empresa: {
+        Args: { p_empresa_id: string };
+        Returns: number;
+      };
       // Fase 27.3 — checagem de duplicidade normalizada, chamada pelo app
       // antes de gravar veiculos/motoristas (índices únicos funcionais são a
       // trava definitiva no banco; isso só existe pra dar mensagem amigável).

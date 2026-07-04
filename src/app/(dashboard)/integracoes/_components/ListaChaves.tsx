@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { alternarAtivoAcao, removerChaveAcao, sincronizarAgoraAcao } from "../actions";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
@@ -12,6 +13,10 @@ export type ChaveProfrotas = {
   ultimo_sync: string | null;
   registros_sync: number | null;
   data_inicio_sync: string;
+  // Fase 27.41 — quando preenchido, a frota real do cliente já ultrapassou
+  // o limite do plano atual; a sincronização fica bloqueada nas actions
+  // (ver integracoes/actions.ts) até o cliente fazer upgrade.
+  avisoLimite?: string;
 };
 
 // Mesma máscara de sempre (00.000.000/0001-00), mas usando [0-9A-Z] em vez
@@ -92,7 +97,17 @@ export function ListaChaves({ chaves }: { chaves: ChaveProfrotas[] }) {
         <tbody className="divide-y divide-slate-100">
           {chaves.map((c) => (
             <tr key={c.id} className="align-top hover:bg-slate-50">
-              <td className="px-4 py-3 font-medium text-slate-700">{c.nome_empresa}</td>
+              <td className="px-4 py-3 font-medium text-slate-700">
+                {c.nome_empresa}
+                {c.avisoLimite && (
+                  <p className="mt-1 max-w-xs text-xs font-normal text-red-700">
+                    ⚠️ {c.avisoLimite}{" "}
+                    <Link href="/assinatura" className="underline">
+                      Ver planos
+                    </Link>
+                  </p>
+                )}
+              </td>
               <td className="px-4 py-3 text-slate-600">{formatarCnpj(c.cnpj_frota)}</td>
               <td className="px-4 py-3 text-slate-600">
                 {formatarDataHora(c.ultimo_sync)}
@@ -101,6 +116,7 @@ export function ListaChaves({ chaves }: { chaves: ChaveProfrotas[] }) {
               <td className="px-4 py-3 text-slate-600">{(c.registros_sync ?? 0).toLocaleString("pt-BR")}</td>
               <td className="px-4 py-3">
                 <span className={c.ativo ? "badge-ativo" : "badge-inativo"}>{c.ativo ? "Ativo" : "Inativo"}</span>
+                {c.avisoLimite && <span className="ml-1 badge-inativo">Limite excedido</span>}
               </td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-3 text-xs font-medium">

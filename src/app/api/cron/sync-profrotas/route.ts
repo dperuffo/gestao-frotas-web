@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sincronizarProfrotas } from "@/lib/profrotas";
+import { verificarLimiteFrota, mensagemLimiteExcedido } from "@/lib/limitePlano";
 
 // Sincronização automática agendada de todos os clientes com integração
 // PróFrotas ativa — substitui o worker em background por cliente que o
@@ -59,6 +60,27 @@ async function executar(request: Request) {
   for (const chave of chaves ?? []) {
     const dataInicio = calcularDataInicio(chave.ultimo_sync);
     try {
+      // Fase 27.41 — mesma checagem do sync manual (ver integracoes/actions.ts):
+      // se a frota real da empresa já estiver acima do limite do plano
+      // atual, pula essa chave (sem derrubar o cron pras demais empresas) e
+      // registra o motivo no resultado, pra ficar visível em /integracoes.
+      const { data: empresaId } = await supabase.rpc("empresa_id_do_cnpj", { p_cnpj: chave.cnpj_frota });
+      if (empresaId) {
+        const limite = await verificarLimiteFrota(supabase, empresaId);
+        if (!limite.ok) {
+          resultados.push({
+            cnpj_frota: chave.cnpj_frota,
+            nome_empresa: chave.nome_empresa,
+            paginas: 0,
+            salvos: 0,
+            totalApi: 0,
+            novoToken: null,
+            erro: mensagemLimiteExcedido(limite),
+          });
+          continue;
+        }
+      }
+
       const resultado = await sincronizarProfrotas(supabase, {
         cnpjFrota: chave.cnpj_frota,
         token: chave.token,

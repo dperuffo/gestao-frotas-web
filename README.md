@@ -3469,3 +3469,45 @@ mudar acesso sem querer, então não entrou nesta fase.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. RLS validada por consulta direta
 (mesmo resultado antes/depois da otimização).
+
+## Fase 27.41 — Limite de veículos do plano nunca era verificado (bloqueio + upgrade)
+
+Pergunta do Daniel: quando um cliente novo integra via API e traz os abastecimentos do ERP dele,
+isso não deveria automaticamente exigir um plano pago se a frota for maior que o limite do
+gratuito (10 veículos)? Investigando, confirmei que a resposta era não — e por dois motivos:
+
+1. **O limite nunca era verificado em lugar nenhum.** `empresas.max_veiculos` só era exibido como
+   "X / Y" na tela de Minha Assinatura, sem bloquear nada em nenhum outro lugar do sistema — nem no
+   cadastro manual, nem na importação de planilha, nem na integração por API. Prova real: a empresa
+   de teste tem 2357 veículos cadastrados e segue no plano gratuito (limite 10) — e não é a única:
+   "Frotas & Frotas Ltda" também está com 29 veículos no plano gratuito, mesmo limite.
+2. **A integração PróFrotas nunca cadastra o veículo.** Ela só grava os abastecimentos em
+   `profrotas_abastecimentos`, guardando a placa como texto solto — nunca cria uma linha em
+   `cadastro_veiculos`. Ou seja, mesmo que o limite fosse checado contra `cadastro_veiculos`, a
+   integração jamais apareceria nessa contagem.
+
+Corrigido com o Daniel definindo as regras (contagem = veículos cadastrados + placas distintas
+vistas na integração; reação = bloquear e pedir upgrade):
+
+- `contar_veiculos_reais_empresa(empresa_id)` (RPC) — conta placas distintas normalizadas somando
+  `cadastro_veiculos` (por CNPJ) e as placas vistas em `profrotas_abastecimentos` +
+  `abastecimentos_externos`, mesmo sem cadastro formal do veículo.
+- `src/lib/limitePlano.ts` (`verificarLimiteFrota`) — compara essa contagem com
+  `empresas.max_veiculos` (mantido em dia pelo webhook do Stripe a cada upgrade/downgrade;
+  `-1` = ilimitado, plano enterprise).
+- Bloqueio aplicado em **dois pontos de entrada da integração**: `sincronizarAgoraAcao`
+  (integracoes/actions.ts, sync manual) e o cron `sync-profrotas` (sync automático agendado) — se a
+  frota real já estiver acima do limite, o sync nem roda; no cron, só aquele cliente é pulado, sem
+  derrubar os demais.
+- Tela `/integracoes` agora mostra um aviso "⚠️ Limite excedido" com link direto pra Minha
+  Assinatura pra cada cliente já acima do limite, mesmo antes de clicar em "Sincronizar agora".
+
+Também corrigido um problema adjacente encontrado na Edge Function `stripe-webhook`: ao cancelar
+uma assinatura (`customer.subscription.deleted`), o plano voltava pra "gratuito" mas
+`max_usuarios`/`max_veiculos` ficavam parados no valor do plano anterior (ex.: 200 veículos de um
+Profissional cancelado) — sem esse reset, o novo bloqueio nunca pegaria um cliente cancelado acima
+do limite real do gratuito. Deploy feito (`stripe-webhook` v10).
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Contagem real testada nas 4 empresas
+do banco: enterprise (ilimitado, ok), duas gratuito dentro do limite (ok), duas gratuito acima do
+limite (bloqueadas, como esperado).

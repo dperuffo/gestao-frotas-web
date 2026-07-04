@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { verificarLimiteFrota, mensagemLimiteExcedido } from "@/lib/limitePlano";
 import { NovaChaveForm } from "./_components/NovaChaveForm";
 import { ListaChaves } from "./_components/ListaChaves";
 import { FormularioNovaChaveCustosFixos } from "./_components/FormularioNovaChaveCustosFixos";
@@ -12,6 +13,19 @@ export default async function IntegracoesPage() {
     .from("profrotas_api_keys")
     .select("id, cnpj_frota, nome_empresa, ativo, ultimo_sync, registros_sync, data_inicio_sync")
     .order("nome_empresa");
+
+  // Fase 27.41 — mostra na hora, sem precisar clicar em "Sincronizar agora",
+  // se a frota real do cliente já estourou o limite do plano (o sync em si
+  // já é bloqueado nas actions — isto aqui é só pra dar visibilidade
+  // imediata na tela, com link direto pra Assinatura).
+  const chavesComAvisoLimite = await Promise.all(
+    (chaves ?? []).map(async (c) => {
+      const { data: empresaId } = await supabase.rpc("empresa_id_do_cnpj", { p_cnpj: c.cnpj_frota });
+      if (!empresaId) return { ...c, avisoLimite: undefined as string | undefined };
+      const limite = await verificarLimiteFrota(supabase, empresaId);
+      return { ...c, avisoLimite: limite.ok ? undefined : mensagemLimiteExcedido(limite) };
+    })
+  );
 
   const total = chaves?.length ?? 0;
   const totalAtivas = chaves?.filter((c) => c.ativo).length ?? 0;
@@ -50,7 +64,7 @@ export default async function IntegracoesPage() {
       </div>
 
       {error && <p className="mb-4 text-sm text-red-600">Erro ao carregar chaves: {error.message}</p>}
-      <ListaChaves chaves={chaves ?? []} />
+      <ListaChaves chaves={chavesComAvisoLimite} />
 
       <div className="mb-6 mt-10 border-t border-slate-200 pt-6">
         <h2 className="flex items-center gap-1.5 text-lg font-semibold text-slate-900">

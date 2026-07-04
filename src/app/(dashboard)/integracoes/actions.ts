@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { sincronizarProfrotas, validarTokenProfrotas, type ResultadoSync, type ResultadoValidacao } from "@/lib/profrotas";
 import { normalizarCNPJ } from "@/lib/utils";
+import { verificarLimiteFrota, mensagemLimiteExcedido } from "@/lib/limitePlano";
 
 export type ChaveFormState = { erro?: string; sucesso?: string } | undefined;
 
@@ -87,6 +88,17 @@ export async function sincronizarAgoraAcao(cnpjFrota: string, dataInicio?: strin
 
   if (error) throw new Error(error.message);
   if (!chave) throw new Error("Chave não encontrada (ou sem permissão para vê-la).");
+
+  // Fase 27.41 — achado real (levantado pelo Daniel): nada impedia um
+  // cliente no plano gratuito de sincronizar uma frota gigante via API sem
+  // nunca precisar assinar um plano compatível. Antes de rodar o sync,
+  // barra aqui se a frota REAL (cadastro + placas já vistas na integração)
+  // já estiver acima do limite do plano atual.
+  const { data: empresaId } = await supabase.rpc("empresa_id_do_cnpj", { p_cnpj: cnpj });
+  if (empresaId) {
+    const limite = await verificarLimiteFrota(supabase, empresaId);
+    if (!limite.ok) throw new Error(mensagemLimiteExcedido(limite));
+  }
 
   const inicio = dataInicio
     ? new Date(`${dataInicio}T00:00:00Z`).toISOString().slice(0, 19) + "Z"
