@@ -3347,3 +3347,18 @@ veículos, logo abaixo.
 alocações (accordion "Ver histórico") como já existia.
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.37 — Roteirizador Inteligente: seletor de placa trazia veículos de TODOS os clientes
+
+Achado real (reportado pelo Daniel): mesmo com um cliente selecionado, o seletor de veículo do
+Roteirizador Inteligente (`/roteirizacao/planejar`) mostrava placas de fora daquele cliente.
+Investigando: a consulta de veículos dessa tela nunca teve NENHUM filtro por empresa — buscava
+todos os veículos `ativo = true` do banco inteiro, de qualquer cliente da plataforma, não só do
+grupo econômico do cliente selecionado.
+
+Corrigido pra usar a RPC `veiculos_da_empresa` (mesmo padrão já usado em `/veiculos` e no
+Dashboard, que resolve corretamente a normalização de CNPJ entre `cadastro_veiculos.cnpj_frota` e
+`empresas.cnpj`), filtrando pela empresa selecionada — e só busca alguma coisa quando há de fato um
+cliente selecionado (sem cliente, a tela já nem mostra o formulário).
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.

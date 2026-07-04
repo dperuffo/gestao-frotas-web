@@ -12,12 +12,27 @@ export default async function RoteirizacaoPlanejarPage({
   const supabase = await createClient();
   const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
-  const { data: veiculosBrutos } = await supabase
-    .from("cadastro_veiculos")
-    .select("id, placa, modelo, tanque, autonomia, combustivel")
-    .eq("ativo", true)
-    .order("placa");
-  const veiculos = veiculosBrutos ?? [];
+  // Fase 27.37 — achado real: esta consulta não filtrava por empresa
+  // NENHUMA — trazia os veículos ATIVOS DE TODOS OS CLIENTES da plataforma
+  // no seletor de placa, não só do grupo econômico do cliente selecionado.
+  // cadastro_veiculos não tem empresa_id (vínculo é por cnpj_frota,
+  // normalizado de formas diferentes — ver Fase 27.5/14 no README), por
+  // isso o filtro correto é via a RPC `veiculos_da_empresa`, mesmo padrão já
+  // usado em /veiculos e no Dashboard.
+  const { data: veiculosDaEmpresaRaw } = empresaSelecionada
+    ? await supabase.rpc("veiculos_da_empresa", { p_empresa_id: empresaSelecionada })
+    : { data: null };
+  const veiculos = (veiculosDaEmpresaRaw ?? [])
+    .filter((v) => v.ativo)
+    .map((v) => ({
+      id: v.id,
+      placa: v.placa,
+      modelo: v.modelo,
+      tanque: v.tanque,
+      autonomia: v.autonomia,
+      combustivel: v.combustivel,
+    }))
+    .sort((a, b) => a.placa.localeCompare(b.placa));
 
   let estadoInicial = null;
   if (rotaId) {
