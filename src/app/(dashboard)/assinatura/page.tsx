@@ -35,30 +35,29 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
   let invoices: { id: string; valor_cents: number | null; status: string; criado_em: string; periodo_inicio: string | null; periodo_fim: string | null }[] = [];
 
   if (empresaSelecionada) {
-    // cadastro_veiculos não tem empresa_id — o vínculo é por CNPJ
-    // (cnpj_frota), então a empresa precisa ser buscada primeiro pra saber
-    // qual CNPJ usar no filtro (mesmo padrão observado em /veiculos, que
-    // normalmente conta só com a RLS pra escopar; aqui precisamos do
-    // filtro explícito porque o admin pode estar olhando a assinatura de
-    // OUTRO cliente, não a própria).
     const { data: empresaData } = await supabase
       .from("empresas")
       .select("id, nome, cnpj, plano, status, trial_ends_at, stripe_customer_id, max_usuarios, max_veiculos")
       .eq("id", empresaSelecionada)
       .single();
 
-    const [{ count: usuariosCount }, { count: veiculosCount }, { data: invoicesData }] = await Promise.all([
+    // Fase 27.43 — achado real (reportado pelo Daniel): este indicador
+    // contava veículos com `.eq("cnpj_frota", empresa.cnpj)`, comparação
+    // direta sem normalização — mesmo bug já corrigido em /veiculos e no
+    // Dashboard (Fase 27.5/14): cadastro_veiculos.cnpj_frota nem sempre vem
+    // gravado com a mesma pontuação de empresas.cnpj. Resultado real: a
+    // "Frotas & Frotas Ltda" tinha 29 veículos, mas o indicador mostrava só
+    // "2 / 10" (só os 2 que por acaso batiam com a formatação exata). Troca
+    // pela RPC `contar_veiculos_reais_empresa` (mesma usada no bloqueio de
+    // limite da Fase 27.41) — além de corrigir a contagem, deixa o número
+    // exibido aqui consistente com o que de fato é aplicado no bloqueio.
+    const [{ count: usuariosCount }, { data: veiculosCount }, { data: invoicesData }] = await Promise.all([
         supabase
           .from("usuarios_empresas")
           .select("user_email", { count: "exact", head: true })
           .eq("empresa_id", empresaSelecionada)
           .eq("ativo", true),
-        empresaData?.cnpj
-          ? supabase
-              .from("cadastro_veiculos")
-              .select("id", { count: "exact", head: true })
-              .eq("cnpj_frota", empresaData.cnpj)
-          : Promise.resolve({ count: 0 }),
+        supabase.rpc("contar_veiculos_reais_empresa", { p_empresa_id: empresaSelecionada }),
         supabase
           .from("invoices")
           .select("id, valor_cents, status, criado_em, periodo_inicio, periodo_fim")

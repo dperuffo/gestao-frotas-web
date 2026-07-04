@@ -3533,3 +3533,22 @@ gratuito nos próprios testes), criada uma flag dedicada:
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Confirmado no banco: a flag está
 `true` pra essa empresa e `verificarLimiteFrota` já retorna liberado antes de qualquer comparação de
 limite.
+
+## Fase 27.43 — Contador de veículos errado em Minha Assinatura
+
+Achado real (reportado pelo Daniel, com print): a tela Minha Assinatura mostrava "Veículos: 2 / 10"
+pra "Frotas & Frotas Ltda", mas essa empresa tem 29 veículos reais (confirmado na Fase 27.41/27.42).
+
+Causa raiz: o indicador contava com `.eq("cnpj_frota", empresa.cnpj)` — comparação direta de texto,
+sem normalização. Confirmado no banco: só 2 dos 29 veículos têm `cnpj_frota` gravado com a MESMA
+pontuação de `empresas.cnpj` (`25.265.787/0001-44`); os outros 27 estão gravados só com dígitos ou
+com outra formatação, e ficavam de fora da contagem. Mesmo bug de fundo já corrigido em `/veiculos`
+e no Dashboard (Fase 27.5/14) — cadastro_veiculos não tem `empresa_id`, e comparar `cnpj_frota` cru
+com `empresas.cnpj` falha sempre que a pontuação não bate.
+
+Corrigido trocando a contagem pela RPC `contar_veiculos_reais_empresa` (a mesma criada na Fase
+27.41 pro bloqueio de limite) — resolve a normalização E deixa o número exibido aqui consistente
+com o que de fato é usado pra decidir se a frota estourou o limite do plano (antes, o indicador e o
+bloqueio podiam mostrar números bem diferentes pro mesmo cliente).
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
