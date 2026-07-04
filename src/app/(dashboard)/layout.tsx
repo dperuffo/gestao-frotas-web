@@ -86,20 +86,51 @@ export default async function DashboardLayout({
     redirect("/mfa-setup");
   }
 
-  // Notificação visual de chamados com atualização não vista — badge
-  // vermelho no item de menu (ver lib/chamados.ts para a regra de "visto").
-  const chamadosNaoVistos = await contarChamadosNaoVistosAcao();
-  const avaliacoesPendentes = await contarAvaliacoesPendentesAcao();
-  const acessosClientesNaoVistos = await contarAcessosClientesNaoVistosAcao();
+  // Fase 27.29 — achado real: este layout envolve TODA página do dashboard e
+  // NÃO é coberto por nenhum error.tsx (limitação documentada do Next: um
+  // error boundary não pega erro lançado no layout do MESMO segmento, só em
+  // páginas/componentes filhos). As contagens de badge abaixo nunca tinham
+  // proteção nenhuma — qualquer falha ali (rede, RLS, timeout) derrubava o
+  // dashboard inteiro com o erro genérico mascarado de produção, sem passar
+  // por nenhuma das blindagens já feitas na Server Action ou na página do
+  // chamado. Isso também explica por que o bug só aparecia ao RESPONDER/
+  // anexar num chamado existente (que não redireciona, então o Next
+  // re-renderiza a rota atual + este layout por trás dos panos como parte da
+  // resposta da action) e nunca ao ABRIR um chamado novo (que termina em
+  // redirect(), navegação nova, sem precisar re-renderizar a tela atual).
+  // Cada contagem agora é best-effort: uma falha vira 0 (badge escondido) em
+  // vez de derrubar a aplicação inteira.
+  const [chamadosNaoVistos, avaliacoesPendentes, acessosClientesNaoVistos] = await Promise.all([
+    contarChamadosNaoVistosAcao().catch((e) => {
+      console.error("[dashboard/layout] falha ao contar chamados não vistos (ignorado):", e);
+      return 0;
+    }),
+    contarAvaliacoesPendentesAcao().catch((e) => {
+      console.error("[dashboard/layout] falha ao contar avaliações pendentes (ignorado):", e);
+      return 0;
+    }),
+    contarAcessosClientesNaoVistosAcao().catch((e) => {
+      console.error("[dashboard/layout] falha ao contar acessos de clientes não vistos (ignorado):", e);
+      return 0;
+    }),
+  ]);
 
   // Nome e cargo/função do usuário logado, pra mostrar no lugar do texto
   // fixo "Ambiente seguro FNI" abaixo da logo — vínculo é por e-mail (mesmo
   // padrão usado em /usuarios), já que usuarios_app não tem FK pro auth.users.
-  const { data: perfilUsuario } = await supabase
-    .from("usuarios_app")
-    .select("nome, perfil, tour_onboarding_visto")
-    .eq("email", user.email ?? "")
-    .maybeSingle();
+  // Fase 27.29 — também protegido: sem perfil, cai no e-mail puro (só perde
+  // o cargo/rótulo exibido, não derruba a tela).
+  let perfilUsuario: { nome: string | null; perfil: string | null; tour_onboarding_visto: boolean | null } | null = null;
+  try {
+    const { data } = await supabase
+      .from("usuarios_app")
+      .select("nome, perfil, tour_onboarding_visto")
+      .eq("email", user.email ?? "")
+      .maybeSingle();
+    perfilUsuario = data;
+  } catch (e) {
+    console.error("[dashboard/layout] falha ao buscar perfil do usuário (ignorado):", e);
+  }
   const nomeExibido = perfilUsuario?.nome || user.email;
   const cargoExibido = perfilUsuario?.perfil
     ? PERFIL_LABEL[perfilUsuario.perfil as Perfil] ?? perfilUsuario.perfil

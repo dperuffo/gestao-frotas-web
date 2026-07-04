@@ -3118,3 +3118,37 @@ re-render implícito acontece numa página diferente da que imaginávamos, e o p
 aplicar o mesmo diagnóstico em `/chamados` (a listagem) também).
 
 Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.29 — Causa raiz encontrada: `(dashboard)/layout.tsx` sem proteção nenhuma, envolve toda página e não é coberto por error.tsx
+
+Confirmado pelo Daniel: mesmo depois da Fase 27.28, o erro AINDA aparece com o texto genérico e
+mascarado do Next (não a tela de diagnóstico customizada que criamos). Isso foi a peça decisiva:
+como tanto `enviarAnexoAcao` (Fase 27.25) quanto `chamados/[id]/page.tsx` (Fase 27.28) já estavam
+100% protegidos por try/catch, um erro que ainda escapa como o genérico mascarado do Next SÓ pode
+estar acontecendo em algum lugar de fora dessas duas blindagens.
+
+Isso levou de volta a uma limitação do Next já documentada nesta mesma investigação (Fase 27.22):
+um `error.tsx` NÃO cobre erros lançados no `layout.tsx` do MESMO segmento — só em páginas/
+componentes filhos. E `(dashboard)/layout.tsx` — que roda em TODA página do dashboard — nunca teve
+nenhuma proteção: nem nas 3 contagens de badge (`contarChamadosNaoVistosAcao`,
+`contarAvaliacoesPendentesAcao`, `contarAcessosClientesNaoVistosAcao`), nem na busca do perfil do
+usuário (`usuarios_app`).
+
+Isso também explica, finalmente, a assimetria que persistia desde a Fase 27.22: abrir um chamado
+NOVO sempre funcionou porque termina em `redirect()` — uma navegação nova, que não precisa
+re-renderizar a tela atual. Responder ou anexar um arquivo numa resposta NÃO redireciona — então o
+Next precisa re-renderizar a rota atual (e o layout que a envolve) por trás dos panos, como parte da
+própria resposta da Server Action, pra manter o cache do cliente atualizado. Se qualquer coisa
+falhar nessa re-renderização do layout (uma instabilidade de rede, uma RPC lenta, qualquer coisa),
+o resultado é exatamente o erro genérico mascarado — sem nunca passar pelas blindagens da action ou
+da página, porque o problema nunca esteve ali.
+
+Correção: as 3 chamadas de contagem de badge agora rodam em paralelo (`Promise.all`) com
+`.catch()` individual — uma falha em qualquer uma delas vira `0` (o badge correspondente some) em
+vez de derrubar o dashboard inteiro. A busca do perfil do usuário também ganhou try/catch — sem
+perfil, a tela cai de volta pro e-mail puro (só perde o cargo exibido, não quebra).
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Como esse layout é compartilhado por
+TODA a aplicação, essa correção tem chance real de resolver definitivamente o problema (e não seria
+surpresa se também explicasse o crash não relacionado de `/chamados/novo`, já que aquela tela
+também está dentro do mesmo layout).
