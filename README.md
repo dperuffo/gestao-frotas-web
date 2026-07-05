@@ -4077,3 +4077,26 @@ por dia. O horário do abastecimento também passou a ser sorteado dentro do dia
 janela de 6h da execução), já que a lógica não é mais "gerar N agora" e sim "cobrir quem falta hoje".
 
 Validado com `select gerar_abastecimentos_postos_robo();` chamado duas vezes seguidas (2347, depois 0).
+
+## Fase 27.63 — Robô: garantia de 1 abastecimento/veículo/dia no nível do banco
+
+Daniel reportou que ainda via mais de 1 abastecimento do robô por veículo no mesmo dia. Investigação
+achou 26 linhas extras espalhadas em 14 veículos de um dos clientes, todas geradas hoje — causa real:
+chamadas manuais de teste da função (feitas durante a Fase 27.61) caíram na mesma transação/mesmo
+instante (`criado_em` idêntico entre linhas do mesmo veículo), e o `not exists` da versão anterior,
+sozinho, não é à prova de reentrância/corrida — só evita duplicata se a linha anterior já estiver
+commitada e visível na hora da checagem.
+
+Corrigido com uma constraint de banco de verdade em vez de confiar só na consulta: nova coluna
+`profrotas_abastecimentos.robo_dia_referencia` (date, gravada pelo próprio robô a cada insert como
+`current_date` — evitando um índice sobre `data_abastecimento::date`, que não é `IMMUTABLE` e não
+serve de índice) e um índice único parcial `uq_profrotas_abastecimentos_robo_um_por_dia` em
+`(cnpj_frota, veiculo_placa, robo_dia_referencia) where sync_key like 'robo-%'`. O insert do robô
+passou a usar `on conflict (...) where sync_key like 'robo-%' do nothing`, e a seleção de veículos
+ganhou `distinct on (placa)` como defesa extra contra placa duplicada em `cadastro_veiculos`. As 26
+linhas extras existentes foram removidas (mantida a mais antiga de cada veículo/dia) antes de criar o
+índice.
+
+Validado: `select gerar_abastecimentos_postos_robo();` chamado logo após a migração devolveu 0 (dia já
+coberto) e uma nova checagem de duplicatas por `(cnpj_frota, robo_dia_referencia, veiculo_placa)`
+não retornou nenhuma linha.
