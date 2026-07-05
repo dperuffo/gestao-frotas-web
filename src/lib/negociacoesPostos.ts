@@ -122,6 +122,7 @@ export async function criarNegociacao(
       status,
       rodada_atual: 1,
       criado_por: params.criadoPor,
+      atualizado_por: params.criadoPor,
       cliente_nome: clienteNome ?? null,
       posto_nome: postoNome ?? null,
     })
@@ -192,7 +193,7 @@ export async function adicionarContraproposta(
   const novoStatus: StatusNegociacao = params.autor === "cliente" ? "pendente_posto" : "pendente_cliente";
   const { error: erroAtualizaCabecalho } = await supabase
     .from("negociacoes_postos")
-    .update({ status: novoStatus, rodada_atual: novaRodada, atualizado_em: agora })
+    .update({ status: novoStatus, rodada_atual: novaRodada, atualizado_em: agora, atualizado_por: params.decididoPor })
     .eq("id", params.negociacaoId);
   if (erroAtualizaCabecalho) return { erro: erroAtualizaCabecalho.message };
 
@@ -241,6 +242,7 @@ export async function decidirNegociacao(
     .update({
       status: novoStatus,
       atualizado_em: agora,
+      atualizado_por: params.decididoPor,
       ...(novoStatus === "aceita" && rodadaDecidida
         ? {
             combustivel: rodadaDecidida.combustivel,
@@ -263,11 +265,12 @@ export async function decidirNegociacao(
 // enquanto não houver decisão final).
 export async function cancelarNegociacao(
   supabase: ClienteSupabase,
-  negociacaoId: string
+  negociacaoId: string,
+  canceladoPor: string | null
 ): Promise<{ ok: true } | { erro: string }> {
   const { error } = await supabase
     .from("negociacoes_postos")
-    .update({ status: "cancelada", atualizado_em: new Date().toISOString() })
+    .update({ status: "cancelada", atualizado_em: new Date().toISOString(), atualizado_por: canceladoPor })
     .eq("id", negociacaoId)
     .in("status", ["pendente_posto", "pendente_cliente"]);
   if (error) return { erro: error.message };

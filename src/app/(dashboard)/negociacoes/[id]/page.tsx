@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
-import { formatarDataBr } from "@/lib/utils";
+import { formatarDataBr, formatarDataHoraBr } from "@/lib/utils";
 import { formatarMoeda } from "@/lib/financeiro";
 import { FormularioContraproposta } from "../_components/FormularioContraproposta";
 import { BotaoCancelarNegociacao } from "../_components/BotaoCancelarNegociacao";
@@ -18,12 +18,25 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
   const { data: negociacao } = await supabase
     .from("negociacoes_postos")
     .select(
-      "id, empresa_cliente_id, empresa_posto_id, posto_cnpj, origem, status, rodada_atual, criado_em, atualizado_em, cliente_nome, posto_nome"
+      "id, empresa_cliente_id, empresa_posto_id, posto_cnpj, origem, status, rodada_atual, criado_em, atualizado_em, atualizado_por, cliente_nome, posto_nome"
     )
     .eq("id", id)
     .maybeSingle();
 
   if (!negociacao) notFound();
+
+  // Fase 27.62 — "atualizado_por" guarda só o e-mail; resolve o nome à
+  // parte via usuarios_app (mesmo padrão de dashboard/layout.tsx e da lista
+  // /negociacoes — sem FK entre as tabelas, e-mail é a chave de junção).
+  let nomeAtualizadoPor: string | null = null;
+  if (negociacao.atualizado_por) {
+    const { data: usuario } = await supabase
+      .from("usuarios_app")
+      .select("nome")
+      .eq("email", negociacao.atualizado_por)
+      .maybeSingle();
+    nomeAtualizadoPor = usuario?.nome || negociacao.atualizado_por;
+  }
 
   const { data: rodadas } = await supabase
     .from("negociacoes_postos_rodadas")
@@ -68,6 +81,18 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
               {STATUS_NEGOCIACAO_LABEL[statusAtual] ?? statusAtual}
             </span>{" "}
             · Rodada #{negociacao.rodada_atual}
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Atualizado em {formatarDataHoraBr(negociacao.atualizado_em)}
+            {nomeAtualizadoPor && (
+              <>
+                {" "}
+                por <span className="font-medium text-slate-500">{nomeAtualizadoPor}</span>
+                {negociacao.atualizado_por && negociacao.atualizado_por !== nomeAtualizadoPor && (
+                  <> ({negociacao.atualizado_por})</>
+                )}
+              </>
+            )}
           </p>
         </div>
         {emAndamento && <BotaoCancelarNegociacao id={negociacao.id} />}

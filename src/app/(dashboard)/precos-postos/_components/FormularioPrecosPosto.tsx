@@ -2,9 +2,16 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { PRODUTOS_POSTO } from "@/lib/constants";
+import { formatarDataHoraBr } from "@/lib/utils";
 import { salvarPrecosPostoAcao } from "../actions";
 
-type PrecoAtual = { combustivel: string; preco: number; atualizado_em: string };
+type PrecoAtual = {
+  combustivel: string;
+  preco: number;
+  atualizado_em: string;
+  atualizado_por: string | null;
+  atualizado_por_nome: string | null;
+};
 
 export function FormularioPrecosPosto({
   empresaPostoId,
@@ -18,6 +25,9 @@ export function FormularioPrecosPosto({
   const [isPending, startTransition] = useTransition();
 
   const mapaAtual = new Map(precosAtuais.map((p) => [p.combustivel, p.preco]));
+  // Fase 27.62 — data/hora + usuário (nome e e-mail) da última atualização
+  // de cada combustível, exibido como legenda abaixo de cada campo.
+  const mapaAuditoria = new Map(precosAtuais.map((p) => [p.combustivel, p]));
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -47,20 +57,37 @@ export function FormularioPrecosPosto({
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {PRODUTOS_POSTO.map((produto) => (
-          <label key={produto} className="text-sm">
-            <span className="mb-1 block text-xs font-medium text-slate-500">{produto} (R$/L)</span>
-            <input
-              type="number"
-              step="0.001"
-              min="0"
-              name={`preco_${produto}`}
-              defaultValue={mapaAtual.get(produto) ?? ""}
-              placeholder="—"
-              className="input"
-            />
-          </label>
-        ))}
+        {PRODUTOS_POSTO.map((produto) => {
+          const auditoria = mapaAuditoria.get(produto);
+          return (
+            <label key={produto} className="text-sm">
+              <span className="mb-1 block text-xs font-medium text-slate-500">{produto} (R$/L)</span>
+              <input
+                type="number"
+                step="0.001"
+                min="0"
+                name={`preco_${produto}`}
+                defaultValue={mapaAtual.get(produto) ?? ""}
+                placeholder="—"
+                className="input"
+              />
+              {auditoria && (
+                <span className="mt-1 block text-xs text-slate-400">
+                  Atualizado em {formatarDataHoraBr(auditoria.atualizado_em)}
+                  {auditoria.atualizado_por_nome && (
+                    <>
+                      {" "}
+                      por {auditoria.atualizado_por_nome}
+                      {auditoria.atualizado_por && auditoria.atualizado_por !== auditoria.atualizado_por_nome && (
+                        <> ({auditoria.atualizado_por})</>
+                      )}
+                    </>
+                  )}
+                </span>
+              )}
+            </label>
+          );
+        })}
       </div>
 
       <div className="mt-6 flex justify-end">

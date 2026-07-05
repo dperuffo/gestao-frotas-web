@@ -1,7 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
-import { formatarDataBr } from "@/lib/utils";
+import { formatarDataHoraBr } from "@/lib/utils";
 import { FormularioPrecosPosto } from "./_components/FormularioPrecosPosto";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database.types";
+
+// Fase 27.62 — "atualizado_por" guarda só o e-mail; resolve o nome à parte
+// via usuarios_app (mesmo padrão usado em /negociacoes e dashboard/layout.tsx
+// — sem FK entre as tabelas, o e-mail é a chave de junção universal).
+async function resolverNomesPorEmail(
+  supabase: SupabaseClient<Database>,
+  emails: (string | null)[]
+): Promise<Record<string, string>> {
+  const unicos = Array.from(new Set(emails.filter((e): e is string => !!e)));
+  if (unicos.length === 0) return {};
+  const { data } = await supabase.from("usuarios_app").select("nome, email").in("email", unicos);
+  return Object.fromEntries((data ?? []).map((u) => [u.email, u.nome || u.email]));
+}
 
 type SearchParams = { empresa?: string };
 
@@ -78,10 +93,16 @@ async function PainelPosto({ empresaPostoId }: { empresaPostoId: string }) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("precos_postos")
-    .select("combustivel, preco, atualizado_em")
+    .select("combustivel, preco, atualizado_em, atualizado_por")
     .eq("empresa_posto_id", empresaPostoId);
 
-  return <FormularioPrecosPosto empresaPostoId={empresaPostoId} precosAtuais={data ?? []} />;
+  const nomePorEmail = await resolverNomesPorEmail(supabase, (data ?? []).map((p) => p.atualizado_por));
+  const precosAtuais = (data ?? []).map((p) => ({
+    ...p,
+    atualizado_por_nome: p.atualizado_por ? (nomePorEmail[p.atualizado_por] ?? p.atualizado_por) : null,
+  }));
+
+  return <FormularioPrecosPosto empresaPostoId={empresaPostoId} precosAtuais={precosAtuais} />;
 }
 
 async function PainelCliente({
@@ -117,11 +138,16 @@ async function PainelCliente({
 
   const { data: precos, error } = await supabase
     .from("precos_postos")
-    .select("empresa_posto_id, combustivel, preco, atualizado_em")
+    .select("empresa_posto_id, combustivel, preco, atualizado_em, atualizado_por")
     .in("empresa_posto_id", idsPostos)
     .order("combustivel", { ascending: true });
 
-  const porPosto = new Map<string, { combustivel: string; preco: number; atualizado_em: string }[]>();
+  const nomePorEmail = await resolverNomesPorEmail(supabase, (precos ?? []).map((p) => p.atualizado_por));
+
+  const porPosto = new Map<
+    string,
+    { combustivel: string; preco: number; atualizado_em: string; atualizado_por: string | null }[]
+  >();
   for (const p of precos ?? []) {
     const lista = porPosto.get(p.empresa_posto_id) ?? [];
     lista.push(p);
@@ -144,6 +170,7 @@ async function PainelCliente({
                   <th className="px-4 py-3">Combustível</th>
                   <th className="px-4 py-3">Preço/L</th>
                   <th className="px-4 py-3">Atualizado em</th>
+                  <th className="px-4 py-3">Atualizado por</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -153,12 +180,23 @@ async function PainelCliente({
                     <td className="px-4 py-3 text-slate-700">
                       {p.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </td>
-                    <td className="px-4 py-3 text-slate-500">{formatarDataBr(p.atualizado_em.slice(0, 10))}</td>
+                    <td className="px-4 py-3 text-slate-500">{formatarDataHoraBr(p.atualizado_em)}</td>
+                    <td className="px-4 py-3 text-slate-500">
+                      {p.atualizado_por ? (
+                        <>
+                          <span className="text-slate-700">{nomePorEmail[p.atualizado_por] ?? p.atualizado_por}</span>
+                          <br />
+                          <span className="text-xs text-slate-400">{p.atualizado_por}</span>
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {lista.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-4 py-6 text-center text-slate-400">
+                    <td colSpan={4} className="px-4 py-6 text-center text-slate-400">
                       Este posto ainda não informou preços.
                     </td>
                   </tr>

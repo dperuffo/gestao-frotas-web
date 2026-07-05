@@ -77,6 +77,9 @@ export interface Database {
           criado_por: string | null;
           criado_em: string;
           atualizado_em: string;
+          // Fase 27.62 — quem fez a última mutação (criar/contrapropor/
+          // decidir/cancelar), pra exibir "atualizado por" na tela.
+          atualizado_por: string | null;
           // Fase 27.51 — retrato do nome de cada lado no momento da criação,
           // pra não depender de RLS cruzada em empresas (ver nome_empresa_publico).
           cliente_nome: string | null;

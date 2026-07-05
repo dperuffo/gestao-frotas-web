@@ -35,6 +35,23 @@ export function formatarDataCurta(value: string | null | undefined): string {
   return `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}`;
 }
 
+// Fase 27.62 — data/hora (não só data) pra colunas "atualizado em" de
+// auditoria (preços, negociações). Ao contrário de formatarDataBr, aqui
+// `new Date()` é correto: o valor é timestamptz (um instante de verdade),
+// não uma coluna `date` pura — o bug de fuso do formatDate só existe pra
+// datas sem horário, lidas como meia-noite UTC.
+export function formatarDataHoraBr(value: string | null | undefined): string {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date(value));
+}
+
 export function formatCNPJ(value: string | null | undefined): string {
   return value && value.trim().length > 0 ? value : "—";
 }

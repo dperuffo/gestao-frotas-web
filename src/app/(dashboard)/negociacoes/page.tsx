@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { STATUS_NEGOCIACAO, STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
-import { formatarDataBr } from "@/lib/utils";
+import { formatarDataBr, formatarDataHoraBr } from "@/lib/utils";
 
 type SearchParams = { empresa?: string; status?: string };
 
@@ -42,6 +42,7 @@ export default async function NegociacoesPage({
     rodada_atual: number;
     criado_em: string;
     atualizado_em: string;
+    atualizado_por: string | null;
     cliente_nome: string | null;
     posto_nome: string | null;
     vigencia_inicio: string | null;
@@ -49,6 +50,11 @@ export default async function NegociacoesPage({
   }[] = [];
   let erro: string | undefined;
   let totalVigentes = 0;
+  // Fase 27.62 — "atualizado_por" guarda só o e-mail; o nome exibido é
+  // resolvido à parte via usuarios_app, mesmo padrão de dashboard/layout.tsx
+  // (nomeExibido = perfilUsuario?.nome || email — sem FK entre as tabelas,
+  // o e-mail é a chave de junção universal).
+  let nomePorEmail: Record<string, string> = {};
 
   const hojeIso = new Date().toISOString().slice(0, 10);
 
@@ -62,7 +68,7 @@ export default async function NegociacoesPage({
     let query = supabase
       .from("negociacoes_postos")
       .select(
-        "id, posto_cnpj, status, rodada_atual, criado_em, atualizado_em, cliente_nome, posto_nome, vigencia_inicio, vigencia_fim"
+        "id, posto_cnpj, status, rodada_atual, criado_em, atualizado_em, atualizado_por, cliente_nome, posto_nome, vigencia_inicio, vigencia_fim"
       )
       .order("atualizado_em", { ascending: false })
       .limit(500);
@@ -78,6 +84,17 @@ export default async function NegociacoesPage({
     const resultado = await query;
     if (resultado.error) erro = resultado.error.message;
     negociacoes = (resultado.data ?? []) as typeof negociacoes;
+
+    const emailsAtualizadoPor = Array.from(
+      new Set(negociacoes.map((n) => n.atualizado_por).filter((e): e is string => !!e))
+    );
+    if (emailsAtualizadoPor.length > 0) {
+      const { data: usuarios } = await supabase
+        .from("usuarios_app")
+        .select("nome, email")
+        .in("email", emailsAtualizadoPor);
+      nomePorEmail = Object.fromEntries((usuarios ?? []).map((u) => [u.email, u.nome || u.email]));
+    }
 
     // Contagem de vigentes à parte (indicador do topo) — independente da
     // aba/filtro selecionado no momento, pra sempre mostrar o número certo.
@@ -185,6 +202,7 @@ export default async function NegociacoesPage({
                   <th className="px-4 py-3">Rodada</th>
                   <th className="px-4 py-3">Vigência</th>
                   <th className="px-4 py-3">Atualizado em</th>
+                  <th className="px-4 py-3">Atualizado por</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -217,7 +235,18 @@ export default async function NegociacoesPage({
                           ? `${formatarDataBr(n.vigencia_inicio)} – ${formatarDataBr(n.vigencia_fim)}`
                           : "—"}
                       </td>
-                      <td className="px-4 py-3 text-slate-500">{formatarDataBr(n.atualizado_em.slice(0, 10))}</td>
+                      <td className="px-4 py-3 text-slate-500">{formatarDataHoraBr(n.atualizado_em)}</td>
+                      <td className="px-4 py-3 text-slate-500">
+                        {n.atualizado_por ? (
+                          <>
+                            <span className="text-slate-700">{nomePorEmail[n.atualizado_por] ?? n.atualizado_por}</span>
+                            <br />
+                            <span className="text-xs text-slate-400">{n.atualizado_por}</span>
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <Link href={`/negociacoes/${n.id}`} className="text-frota-600 hover:underline">
                           Ver detalhes
@@ -228,7 +257,7 @@ export default async function NegociacoesPage({
                 })}
                 {negociacoes.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                    <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
                       Nenhuma negociação encontrada.
                     </td>
                   </tr>

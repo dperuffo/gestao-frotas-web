@@ -4100,3 +4100,35 @@ linhas extras existentes foram removidas (mantida a mais antiga de cada veículo
 Validado: `select gerar_abastecimentos_postos_robo();` chamado logo após a migração devolveu 0 (dia já
 coberto) e uma nova checagem de duplicatas por `(cnpj_frota, robo_dia_referencia, veiculo_placa)`
 não retornou nenhuma linha.
+
+## Fase 27.62 — Auditoria: data/hora e usuário nas telas de Preços e Negociações
+
+Pedido do Daniel: nas telas de Preços (ambas as visões) e Negociação (ambas as visões), mostrar a
+data/hora da última atualização e quem fez (nome e e-mail).
+
+`precos_postos` já tinha `atualizado_em`/`atualizado_por` (Fase 27.57) — faltava só exibir.
+`negociacoes_postos` não tinha usuário nenhum registrado nas mutações; ganhou a coluna
+`atualizado_por` (texto, e-mail de quem agiu), com backfill a partir de `criado_por` pras linhas já
+existentes. As 4 funções de `src/lib/negociacoesPostos.ts` que mudam o cabeçalho da negociação
+(`criarNegociacao`, `adicionarContraproposta`, `decidirNegociacao`, `cancelarNegociacao`) passaram a
+gravar `atualizado_por` a cada chamada — `cancelarNegociacao` ganhou um 3º parâmetro
+(`canceladoPor: string | null`) só pra isso; `negociacoes/actions.ts` resolve
+`supabase.auth.getUser()` em cada Server Action e repassa o e-mail pras funções da lib.
+
+Como nenhuma das duas tabelas guarda o nome de quem atualizou (só o e-mail, que é a chave de junção
+universal com `usuarios_app` — sem FK entre elas, mesmo padrão de `dashboard/layout.tsx`), toda tela
+resolve o nome à parte com uma consulta `usuarios_app.select("nome, email").in("email", [...])` e cai
+pro e-mail puro quando não há `nome` cadastrado ou a linha não existe.
+
+Nova função utilitária `formatarDataHoraBr` em `src/lib/utils.ts` — ao contrário de `formatarDataBr`
+(que evita `new Date()` de propósito, por lidar com colunas `date` puras), esta usa `new Date()` com
+`timeZone: "America/Sao_Paulo"` porque `atualizado_em` é `timestamptz`, um instante de verdade, não
+uma data solta.
+
+Telas ajustadas: `/negociacoes` (lista) ganhou a coluna "Atualizado por" (nome + e-mail) ao lado de
+"Atualizado em" (agora com hora); `/negociacoes/[id]` (detalhe) ganhou a mesma informação abaixo do
+status, no cabeçalho; `/precos-postos` do lado do posto (`FormularioPrecosPosto.tsx`) ganhou uma
+legenda "Atualizado em ... por ..." abaixo de cada campo de preço; `/precos-postos` do lado do cliente
+(`PainelCliente`) ganhou a coluna "Atualizado por" na tabela por posto.
+
+Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos tocados (limpos).

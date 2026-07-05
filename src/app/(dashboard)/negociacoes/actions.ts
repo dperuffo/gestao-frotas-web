@@ -129,7 +129,11 @@ export async function decidirNegociacaoAcao(
 
 export async function cancelarNegociacaoAcao(negociacaoId: string): Promise<{ erro?: string }> {
   const supabase = await createClient();
-  const resultado = await cancelarNegociacao(supabase, negociacaoId);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const resultado = await cancelarNegociacao(supabase, negociacaoId, user?.email ?? null);
   if ("erro" in resultado) return { erro: resultado.erro };
 
   revalidatePath(`/negociacoes/${negociacaoId}`);
