@@ -157,6 +157,89 @@ export interface Database {
           },
         ];
       };
+      // Fase 27.65 — solicitação de ajuste em abastecimentos, com aprovação
+      // da contraparte (cliente <-> posto). Mesmo espírito de
+      // negociacoes_postos: cabeçalho + rodadas (ver
+      // ajustes_abastecimentos_rodadas logo abaixo).
+      ajustes_abastecimentos: {
+        Row: {
+          id: string;
+          abastecimento_id: number;
+          empresa_cliente_id: string;
+          empresa_posto_id: string;
+          origem: string;
+          status: string;
+          rodada_atual: number;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["ajustes_abastecimentos"]["Row"]> & {
+          abastecimento_id: number;
+          empresa_cliente_id: string;
+          empresa_posto_id: string;
+          origem: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["ajustes_abastecimentos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "ajustes_abastecimentos_abastecimento_id_fkey";
+            columns: ["abastecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "profrotas_abastecimentos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ajustes_abastecimentos_empresa_cliente_id_fkey";
+            columns: ["empresa_cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ajustes_abastecimentos_empresa_posto_id_fkey";
+            columns: ["empresa_posto_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ajustes_abastecimentos_rodadas: {
+        Row: {
+          id: number;
+          ajuste_id: string;
+          numero_rodada: number;
+          autor: string;
+          data_abastecimento: string | null;
+          hodometro: number | null;
+          item_nome: string | null;
+          item_quantidade: number | null;
+          item_valor_unitario: number | null;
+          item_valor_total: number | null;
+          motivo: string | null;
+          decisao: string;
+          decidido_em: string | null;
+          decidido_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["ajustes_abastecimentos_rodadas"]["Row"]> & {
+          ajuste_id: string;
+          numero_rodada: number;
+          autor: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["ajustes_abastecimentos_rodadas"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "ajustes_abastecimentos_rodadas_ajuste_id_fkey";
+            columns: ["ajuste_id"];
+            isOneToOne: false;
+            referencedRelation: "ajustes_abastecimentos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       precos_postos: {
         Row: {
           id: string;
@@ -1451,6 +1534,15 @@ export interface Database {
       nome_empresa_publico: {
         Args: { p_empresa_id: string };
         Returns: string | null;
+      };
+      // Fase 27.65 — decide (aceita/recusa) um ajuste de abastecimento;
+      // SECURITY DEFINER porque aplica os campos aceitos em
+      // profrotas_abastecimentos independente de qual lado (cliente ou
+      // posto) está decidindo — a RLS comum de update dessa tabela não
+      // cobre os dois sentidos.
+      decidir_ajuste_abastecimento: {
+        Args: { p_ajuste_id: string; p_decisao: string; p_decidido_por: string | null };
+        Returns: undefined;
       };
       // Fase 27.41 — conta a frota REAL da empresa (cadastro_veiculos +
       // placas distintas vistas nos abastecimentos da integração, mesmo sem

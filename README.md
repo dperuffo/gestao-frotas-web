@@ -4196,3 +4196,69 @@ FormularioDespesaPosto, BotaoAcaoFinanceiraPosto}.tsx`. Menu do posto ganhou "�
 permissão `aba_financeiro_posto` (mesmo padrão de `aba_precos_postos`).
 
 Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos tocados (limpos).
+
+## Fase 27.65 — Filtros em Abastecimentos (visão posto) + solicitação de ajuste com aprovação
+
+Pedido do Daniel, em duas partes: (A) filtro de cliente/data inicial/data final/campo livre na tela
+de Abastecimentos, pro posto conseguir pesquisar; (B) um mecanismo pra cliente ou posto solicitarem
+ajuste num abastecimento — a outra parte precisa aprovar ou recusar antes da mudança valer, com
+notificação (bolinha vermelha) pros dois lados.
+
+**Parte A — filtros e paginação na visão do posto.** `AbastecimentosPosto.tsx` (visão do posto dentro
+de `/abastecimentos`, Fase 27.58) só tinha a pill de combustível e um `.limit(500)` sem paginação —
+diferente da visão Frota, que já tinha filtro completo desde a Fase 27.8/27.31 e paginação desde a
+Fase 27.12. Ganhou: seletor de cliente (lista só quem já abasteceu naquele posto, não a lista genérica
+de negociações), campo livre (`q`, ilike em placa/motorista/razão social do cliente), data
+inicial/final (`de`/`ate`, gte/lte em `data_abastecimento`) e paginação com o componente `Paginacao`
+já existente. Os filtros combinam com a pill de combustível (todos viram query string na URL) e os 4
+indicadores do topo (abastecimentos, volume, receita, preço médio) recalculam com base neles.
+
+**Parte B — solicitação de ajuste com aprovação.** Diferente da edição direta que já existia
+(`AbastecimentoForm.tsx`), aqui uma das partes propõe uma correção e a outra decide — mesmo espírito
+das rodadas de negociação (Fase 27.50), mas com uma diferença importante: negociação só "fotografa"
+os termos aceitos no cabeçalho; aqui, aceitar precisa de fato **aplicar** a mudança na linha real de
+`profrotas_abastecimentos`. Isso só é possível com uma função `SECURITY DEFINER`
+(`decidir_ajuste_abastecimento`), porque a RLS de `profrotas_abastecimentos` só libera update pro
+cliente dono da linha — o posto, que também pode aprovar, não teria permissão de escrita naquela
+tabela por conta própria.
+
+Esse mecanismo só existe quando o abastecimento tem uma **contraparte identificável**: o cliente
+precisa ser uma empresa cadastrada (`empresa_id`, já é FK) *e* o posto também (resolvido comparando o
+`pv_cnpj`, que é só texto solto vindo da integração, contra as empresas com `segmento = 'Revenda'`).
+Sem isso — posto avulso, não integrado à FNI — a edição continua exatamente como sempre foi, sem
+aprovação (não tem "outro lado" pra notificar).
+
+**Modelo de dados:** `ajustes_abastecimentos` (cabeçalho: abastecimento, empresa cliente, empresa
+posto, origem, `status` pendente_cliente/pendente_posto/aceito/recusado/cancelado, rodada atual) +
+`ajustes_abastecimentos_rodadas` (histórico: autor, os 6 campos ajustáveis — data/hora, hodômetro,
+combustível, litros, preço unitário, valor total, todos opcionais, decisão pendente/aceita/recusada/
+contraproposta). Índice único parcial garante só 1 ajuste em aberto por abastecimento
+(`uq_ajustes_abastecimentos_um_em_aberto`), mesma técnica da Fase 27.63.
+
+**Decisão importante do Daniel sobre RLS:** ao contrário de praticamente toda outra tabela do sistema,
+`ajustes_abastecimentos`/`_rodadas` **não têm bypass de admin nem do e-mail superusuário** — só quem
+literalmente é cliente ou posto daquele ajuste (via `empresas_do_usuario`) consegue ver ou responder,
+sem exceção de perfil. Por isso o contador do badge (`contarAjustesAbastecimentosPendentesAcao`) não
+tem branch de admin — a RLS já devolve 0 sozinha pra quem não é parte.
+
+**Fluxo:** quem detecta o erro abre "Solicitar ajuste" em `/abastecimentos/[id]`, preenche só os
+campos que quer corrigir (os demais ficam como estão) e um motivo opcional. A outra parte vê a
+proposta e escolhe Aprovar, Recusar ou enviar uma Contraproposta (mesma mecânica de rodadas
+alternadas da negociação). Aprovar dispara a RPC, que confere se quem está decidindo é realmente a
+vez daquele lado, aplica os campos propostos (via `coalesce`, só sobrescrevendo o que veio preenchido)
+em `profrotas_abastecimentos` e fecha o ajuste como `aceito`. Qualquer uma das partes pode cancelar
+uma solicitação em aberto a qualquer momento.
+
+Testado ponta a ponta simulando a sessão de `posto.teste@fni.test` (via `set local request.jwt.claims`)
+aceitando uma proposta do lado cliente: a RPC aplicou corretamente o novo valor na linha real, marcou
+a rodada como `aceita` e o cabeçalho como `aceito`. Dados de teste removidos depois da validação.
+
+Novos arquivos: `src/lib/ajustesAbastecimentos.ts` (tipos, rótulos, validação, CRUD do ajuste);
+`src/app/(dashboard)/abastecimentos/_components/{FormularioSolicitarAjuste,
+PainelAjusteAbastecimento}.tsx`. `abastecimentos/[id]/page.tsx` foi reescrita pra decidir, por
+abastecimento, entre a edição direta (sem contraparte) ou o painel de ajuste (com contraparte) — o
+botão de excluir também some quando há contraparte (exclusão ficou fora do escopo desta fase). Menu
+ganhou o badge de "ajustes aguardando resposta" ao lado de Abastecimentos, tanto pro posto quanto pra
+Frota, mesmo padrão visual das demais notificações (negociações, acessos de clientes etc.).
+
+Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos tocados (limpos).

@@ -3,6 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import {
+  criarSolicitacaoAjuste,
+  adicionarContrapropostaAjuste,
+  decidirAjuste,
+  cancelarAjuste,
+  type AutorAjuste,
+  type CamposAjuste,
+} from "@/lib/ajustesAbastecimentos";
 
 export type AbastecimentoFormState = { erro?: string } | undefined;
 
@@ -108,4 +116,141 @@ export async function excluirAbastecimento(id: number) {
   const supabase = await createClient();
   await supabase.from("profrotas_abastecimentos").delete().eq("id", id);
   revalidatePath("/abastecimentos");
+}
+
+// Fase 27.65 — solicitação de ajuste em abastecimentos, com aprovação da
+// contraparte (cliente <-> posto). Só existe quando o abastecimento TEM uma
+// contraparte identificada (cliente e posto cadastrados na plataforma) — ver
+// resolverContraparteAjuste em abastecimentos/[id]/page.tsx; sem isso, a
+// edição continua direta (atualizarAbastecimento acima), sem aprovação.
+
+export type AjusteFormState = { erro?: string } | undefined;
+
+function lerCamposAjuste(formData: FormData): CamposAjuste {
+  const dataHora = String(formData.get("data_abastecimento") ?? "").trim();
+  const hodometro = String(formData.get("hodometro") ?? "").trim();
+  const itemNome = String(formData.get("item_nome") ?? "").trim();
+  const quantidade = String(formData.get("item_quantidade") ?? "").trim();
+  const valorUnitario = String(formData.get("item_valor_unitario") ?? "").trim();
+  const valorTotal = String(formData.get("item_valor_total") ?? "").trim();
+
+  return {
+    data_abastecimento: dataHora ? new Date(dataHora).toISOString() : undefined,
+    hodometro: hodometro ? Number(hodometro) : undefined,
+    item_nome: itemNome || undefined,
+    item_quantidade: quantidade ? Number(quantidade) : undefined,
+    item_valor_unitario: valorUnitario ? Number(valorUnitario) : undefined,
+    item_valor_total: valorTotal ? Number(valorTotal) : undefined,
+  };
+}
+
+export async function solicitarAjusteAcao(
+  abastecimentoId: number,
+  empresaClienteId: string,
+  empresaPostoId: string,
+  autor: AutorAjuste,
+  _prev: AjusteFormState,
+  formData: FormData
+): Promise<AjusteFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const campos = lerCamposAjuste(formData);
+  const motivo = String(formData.get("motivo") ?? "").trim() || null;
+
+  const resultado = await criarSolicitacaoAjuste(supabase, {
+    abastecimentoId,
+    empresaClienteId,
+    empresaPostoId,
+    autor,
+    campos,
+    motivo,
+    criadoPor: user?.email ?? null,
+  });
+
+  if ("erro" in resultado) return { erro: resultado.erro };
+
+  revalidatePath(`/abastecimentos/${abastecimentoId}`);
+  return {};
+}
+
+export async function contrapropostaAjusteAcao(
+  ajusteId: string,
+  abastecimentoId: number,
+  autor: AutorAjuste,
+  _prev: AjusteFormState,
+  formData: FormData
+): Promise<AjusteFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const campos = lerCamposAjuste(formData);
+  const motivo = String(formData.get("motivo") ?? "").trim() || null;
+
+  const resultado = await adicionarContrapropostaAjuste(supabase, {
+    ajusteId,
+    autor,
+    campos,
+    motivo,
+    decididoPor: user?.email ?? null,
+  });
+
+  if ("erro" in resultado) return { erro: resultado.erro };
+
+  revalidatePath(`/abastecimentos/${abastecimentoId}`);
+  return {};
+}
+
+export async function decidirAjusteAcao(
+  ajusteId: string,
+  abastecimentoId: number,
+  decisao: "aceita" | "recusada"
+): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const resultado = await decidirAjuste(supabase, { ajusteId, decisao, decididoPor: user?.email ?? null });
+  if ("erro" in resultado) return { erro: resultado.erro };
+
+  revalidatePath("/abastecimentos");
+  revalidatePath(`/abastecimentos/${abastecimentoId}`);
+  return {};
+}
+
+export async function cancelarAjusteAcao(ajusteId: string, abastecimentoId: number): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const resultado = await cancelarAjuste(supabase, ajusteId, user?.email ?? null);
+  if ("erro" in resultado) return { erro: resultado.erro };
+
+  revalidatePath(`/abastecimentos/${abastecimentoId}`);
+  return {};
+}
+
+// Badge do menu (layout.tsx) — conta ajustes de abastecimento aguardando
+// resposta DESTE usuário. Mesmo espírito de contarNegociacoesPendentesAcao
+// (negociacoes/actions.ts), mas SEM branch de admin: a RLS de
+// ajustes_abastecimentos não dá bypass nenhum (decisão do Daniel — ajuste é
+// sempre só entre cliente e posto), então a contagem já sai certa sozinha —
+// quem não é parte de nenhum ajuste (inclusive admin) naturalmente vê 0.
+export async function contarAjustesAbastecimentosPendentesAcao(): Promise<number> {
+  const supabase = await createClient();
+  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const statusQueMeCabeResponder = perfil === "posto" ? "pendente_posto" : "pendente_cliente";
+
+  const { count } = await supabase
+    .from("ajustes_abastecimentos")
+    .select("id", { count: "exact", head: true })
+    .eq("status", statusQueMeCabeResponder);
+
+  return count ?? 0;
 }

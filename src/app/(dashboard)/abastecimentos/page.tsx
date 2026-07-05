@@ -37,9 +37,17 @@ type RegistroAbastecimento = {
 export default async function AbastecimentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; de?: string; ate?: string; empresa?: string; page?: string; combustivel?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    de?: string;
+    ate?: string;
+    empresa?: string;
+    page?: string;
+    combustivel?: string;
+    cliente?: string;
+  }>;
 }) {
-  const { q, de, ate, empresa: empresaParam, page: pageParam, combustivel } = await searchParams;
+  const { q, de, ate, empresa: empresaParam, page: pageParam, combustivel, cliente } = await searchParams;
   const supabase = await createClient();
 
   // Fase 27.8 — mesmo seletor de cliente já usado em Postos, Relatórios,
@@ -64,7 +72,7 @@ export default async function AbastecimentosPage({
         <AbastecimentosPosto
           empresaPostoId={empresaSelecionada}
           nomeEmpresaSelecionada={nomeEmpresaSelecionada}
-          searchParams={{ combustivel }}
+          searchParams={{ combustivel, cliente, q, de, ate, page: pageParam }}
         />
       );
     }
