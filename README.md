@@ -3845,3 +3845,32 @@ rodado direto no banco).
 
 Nenhuma mudança de schema além da denormalização (coluna nova + RPC). Validado com `npx tsc --noEmit`
 e `npx eslint` (limpos).
+
+## Fase 27.52 — Badge de Negociações nunca aparecia + título fixo na visão do posto
+
+Dois achados reais reportados pelo Daniel testando ao vivo.
+
+**1) Bolinha de notificação nunca aparecia, nem pro cliente nem pro posto.** Causa raiz:
+`contarNegociacoesPendentesAcao` fazia um SELECT explícito em `usuarios_empresas` pra montar a lista
+de `empresa_id` do usuário antes de contar — mas um usuário ADMIN normalmente só tem vínculo direto
+com a própria empresa "de casa", e enxerga as DEMAIS empresas só pela regra "perfil admin" da RLS
+(não por linha em `usuarios_empresas`). Resultado: pra admin (o próprio Daniel testando), a lista de
+empresas nunca incluía a empresa do cliente/posto sendo testado, e a contagem sempre vinha zero,
+mesmo com negociação pendente de verdade no banco.
+
+Corrigido pra seguir o mesmo padrão já usado em `contarAnomaliasNaoRevisadasAcao`/
+`contarChamadosNaoVistosAcao`: confiar inteiramente na RLS de `negociacoes_postos` pra decidir quais
+linhas aquela pessoa pode ver, sem nenhum SELECT prévio em `usuarios_empresas`. Pra saber SE é a vez
+daquele usuário responder, usa só o perfil: perfil "posto" só participa de uma negociação como
+`empresa_posto_id`; qualquer perfil de negócio do lado Frota (`gestor_frota`/`analista`) só participa
+como `empresa_cliente_id`. Pra admin (que não é parte em nenhuma negociação), a bolinha mostra o
+total de negociações em aberto no sistema — mesmo espírito de monitoramento das demais bolinhas
+administrativas.
+
+**2) Título da tela fixo.** `/negociacoes` sempre mostrava o título "Negociação com Postos
+Revendedores", inclusive pro próprio posto olhando a própria tela — não fazia sentido pra ele. Agora
+o título também muda conforme o segmento (`souPosto`): "Negociação com Clientes" pro posto,
+"Negociação com Postos Revendedores" pro cliente (o subtítulo logo abaixo já fazia essa distinção
+desde a Fase 27.50; só o `<h1>` tinha ficado de fora).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

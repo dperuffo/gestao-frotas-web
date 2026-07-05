@@ -138,35 +138,46 @@ export async function cancelarNegociacaoAcao(negociacaoId: string): Promise<{ er
 }
 
 // Badge do menu (layout.tsx) — conta negociações aguardando resposta DESTE
-// usuário, nos dois papéis possíveis (como cliente e como posto — um
-// mesmo usuário não costuma ser os dois, mas a consulta cobre ambos os
-// casos sem precisar saber de antemão qual é o perfil de quem está logado).
+// usuário.
+//
+// Fase 27.52 — achado real (reportado pelo Daniel): a bolinha nunca
+// aparecia, nem pro cliente nem pro posto. Causa: esta função pré-filtrava
+// via `usuarios_empresas` (SELECT explícito pra montar a lista de
+// empresa_id do usuário) — mas um usuário ADMIN normalmente só tem uma
+// linha própria em usuarios_empresas (a empresa "de casa" dele), e enxerga
+// as DEMAIS empresas só através da regra "perfil admin" da RLS, não por
+// vínculo em usuarios_empresas. Resultado: pra admin, `ids` nunca incluía a
+// empresa do cliente/posto sendo testado, e a contagem sempre vinha 0.
+//
+// Corrigido pra seguir o MESMO padrão já usado em
+// contarAnomaliasNaoRevisadasAcao/contarChamadosNaoVistosAcao: confia
+// inteiramente na RLS de negociacoes_postos pra decidir quais linhas essa
+// pessoa pode ver (as próprias, ou todas se for admin) — nada de montar
+// lista de empresa_id manualmente. A única informação que falta pra saber
+// SE é a vez desse usuário responder é o lado (cliente vs posto), que vem
+// direto do perfil: perfil "posto" só participa como empresa_posto_id;
+// qualquer outro perfil de negócio (gestor_frota/analista) só participa
+// como empresa_cliente_id. Admin não é parte em nenhum negócio — pra ele, a
+// bolinha mostra o total de negociações em aberto no sistema (mesmo
+// espírito de monitoramento das demais bolinhas administrativas).
 export async function contarNegociacoesPendentesAcao(): Promise<number> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email) return 0;
+  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
 
-  const { data: minhasEmpresas } = await supabase
-    .from("usuarios_empresas")
-    .select("empresa_id")
-    .eq("user_email", user.email);
-  const ids = (minhasEmpresas ?? []).map((e) => e.empresa_id);
-  if (ids.length === 0) return 0;
-
-  const [{ count: comoCliente }, { count: comoPosto }] = await Promise.all([
-    supabase
+  if (perfil === "admin") {
+    const { count } = await supabase
       .from("negociacoes_postos")
       .select("id", { count: "exact", head: true })
-      .eq("status", "pendente_cliente")
-      .in("empresa_cliente_id", ids),
-    supabase
-      .from("negociacoes_postos")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pendente_posto")
-      .in("empresa_posto_id", ids),
-  ]);
+      .in("status", ["pendente_cliente", "pendente_posto"]);
+    return count ?? 0;
+  }
 
-  return (comoCliente ?? 0) + (comoPosto ?? 0);
+  const statusQueMeCabeResponder = perfil === "posto" ? "pendente_posto" : "pendente_cliente";
+
+  const { count } = await supabase
+    .from("negociacoes_postos")
+    .select("id", { count: "exact", head: true })
+    .eq("status", statusQueMeCabeResponder);
+
+  return count ?? 0;
 }
