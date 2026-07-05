@@ -4019,3 +4019,20 @@ filtro por combustível, tabela com cliente/placa/motorista) — sem seletor de 
 sempre é uma única empresa. Item de menu "🛢️ Abastecimentos" adicionado no `menuPosto`.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.59 — Robô usa o preço que o próprio posto publicou
+
+Ajuste pontual: agora que existe `precos_postos` (Fase 27.57), o robô de abastecimentos simulados
+devia usar esse preço em vez de ignorá-lo e cair sempre na média da ANP.
+
+`gerar_abastecimentos_postos_robo()` passou a consultar `precos_postos` pelo combustível exato
+sorteado, pro posto em uso (negociado ou o "Posto Teste Ltda" padrão) — se o posto publicou preço
+daquele produto, usa ele como base (± 1%, variação pequena porque é um preço que o posto já fixou);
+só cai pra estimativa da média nacional da ANP (± 3%, com os adicionais de "Alta Octanagem"/"Aditivado")
+quando o posto não tem esse combustível específico cadastrado em `precos_postos`. Testado: com os 3
+preços semeados no Posto Teste Ltda (Gasolina Comum, Gasolina Aditivada, Etanol Comum), os novos
+abastecimentos saíram bem próximos do valor publicado; "Gasolina Alta Octanagem" (sem preço próprio
+cadastrado) continuou vindo da estimativa ANP, como esperado.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos) — mudança é só SQL, sem arquivo TypeScript
+alterado nesta fase.
