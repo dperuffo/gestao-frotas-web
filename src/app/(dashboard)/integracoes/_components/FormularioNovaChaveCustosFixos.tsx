@@ -10,9 +10,22 @@ import { CATALOGO_ESCOPOS } from "@/lib/apiKeys";
 // (Pagamentos: o sistema externo empurra dados pra dentro da FNI;
 // Cadastros: o sistema externo lê dados da FNI). Least privilege — uma
 // chave só pedida pro que de fato vai ser usada.
-const CATEGORIAS = Array.from(new Set(CATALOGO_ESCOPOS.map((e) => e.categoria)));
+const TODAS_CATEGORIAS = Array.from(new Set(CATALOGO_ESCOPOS.map((e) => e.categoria)));
 
-export function FormularioNovaChaveCustosFixos({ empresas }: { empresas: { id: string; nome: string }[] }) {
+export function FormularioNovaChaveCustosFixos({
+  empresas,
+  apenasCategorias,
+}: {
+  empresas: { id: string; nome: string }[];
+  // Fase 27.53 — um posto (segmento Revenda) só tem motivo pra gerar chave
+  // com escopo de Negociação; as demais categorias (Pagamentos, Cadastros)
+  // são do lado Frota e não fazem sentido pra ele. Quando informado, só
+  // essas categorias aparecem nos checkboxes.
+  apenasCategorias?: string[];
+}) {
+  const CATEGORIAS = apenasCategorias
+    ? TODAS_CATEGORIAS.filter((c) => apenasCategorias.includes(c))
+    : TODAS_CATEGORIAS;
   const [erro, setErro] = useState<string | undefined>();
   const [chaveGerada, setChaveGerada] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();

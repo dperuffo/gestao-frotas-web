@@ -221,17 +221,36 @@ export async function decidirNegociacao(
   }
 
   const agora = new Date().toISOString();
-  const { error: erroRodada } = await supabase
+  const { data: rodadaDecidida, error: erroRodada } = await supabase
     .from("negociacoes_postos_rodadas")
     .update({ decisao: params.decisao, decidido_em: agora, decidido_por: params.decididoPor })
     .eq("negociacao_id", params.negociacaoId)
-    .eq("numero_rodada", negociacao.rodada_atual);
+    .eq("numero_rodada", negociacao.rodada_atual)
+    .select("combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario")
+    .single();
   if (erroRodada) return { erro: erroRodada.message };
 
   const novoStatus: StatusNegociacao = params.decisao === "aceita" ? "aceita" : "recusada";
+
+  // Fase 27.54 — quando aceita, "fotografa" os termos da rodada vencedora
+  // no cabeçalho (vigência, combustível, volume, preço) — é isso que
+  // alimenta a aba "Vigentes" da tela /negociacoes, sem precisar de join
+  // com negociacoes_postos_rodadas toda vez que a lista é exibida.
   const { error: erroCabecalho } = await supabase
     .from("negociacoes_postos")
-    .update({ status: novoStatus, atualizado_em: agora })
+    .update({
+      status: novoStatus,
+      atualizado_em: agora,
+      ...(novoStatus === "aceita" && rodadaDecidida
+        ? {
+            combustivel: rodadaDecidida.combustivel,
+            vigencia_inicio: rodadaDecidida.vigencia_inicio,
+            vigencia_fim: rodadaDecidida.vigencia_fim,
+            volume_minimo_mensal: rodadaDecidida.volume_minimo_mensal,
+            preco_unitario: rodadaDecidida.preco_unitario,
+          }
+        : {}),
+    })
     .eq("id", params.negociacaoId);
   if (erroCabecalho) return { erro: erroCabecalho.message };
 

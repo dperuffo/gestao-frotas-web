@@ -81,6 +81,13 @@ export interface Database {
           // pra não depender de RLS cruzada em empresas (ver nome_empresa_publico).
           cliente_nome: string | null;
           posto_nome: string | null;
+          // Fase 27.54 — termos da rodada vencedora, "fotografados" só quando
+          // status = aceita (usados pela aba "Vigentes" de /negociacoes).
+          vigencia_inicio: string | null;
+          vigencia_fim: string | null;
+          combustivel: string | null;
+          volume_minimo_mensal: number | null;
+          preco_unitario: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["negociacoes_postos"]["Row"]> & {
           empresa_cliente_id: string;

@@ -101,7 +101,10 @@ export default async function IntegracoesPage() {
       </div>
 
       <div className="mb-4">
-        <FormularioNovaChaveCustosFixos empresas={empresas} />
+        <FormularioNovaChaveCustosFixos
+          empresas={empresas}
+          apenasCategorias={ehPosto ? ["Negociação com Cliente"] : undefined}
+        />
       </div>
 
       {erroChavesCustosFixos && (
@@ -209,10 +212,12 @@ export default async function IntegracoesPage() {
           todas as suas negociações.
         </p>
 
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Consultar cadastros (escopos *:read)
-        </p>
-        <pre className="overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+        {!ehPosto && (
+          <>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Consultar cadastros (escopos *:read)
+            </p>
+            <pre className="overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
 {`curl https://SEU-DOMINIO-FNI.com.br/api/cadastros/veiculos?limit=100&offset=0 \\
   -H "Authorization: Bearer fni_..."
 
@@ -221,11 +226,13 @@ export default async function IntegracoesPage() {
 # /api/cadastros/centros-custo
 # /api/cadastros/postos
 # /api/cadastros/usuarios`}
-        </pre>
-        <p className="mt-3 text-xs text-slate-400">
-          Todas as respostas GET vêm paginadas (<code>limit</code> padrão 100, máximo 500) e sempre
-          filtradas pela empresa dona da chave — a chave nunca enxerga dados de outro cliente.
-        </p>
+            </pre>
+            <p className="mt-3 text-xs text-slate-400">
+              Todas as respostas GET vêm paginadas (<code>limit</code> padrão 100, máximo 500) e sempre
+              filtradas pela empresa dona da chave — a chave nunca enxerga dados de outro cliente.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

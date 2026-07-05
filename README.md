@@ -3874,3 +3874,39 @@ o título também muda conforme o segmento (`souPosto`): "Negociação com Clien
 desde a Fase 27.50; só o `<h1>` tinha ficado de fora).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.53 — Tela de Integrações do posto: só a categoria e o exemplo de Negociação
+
+Dois vazamentos de UI que sobraram da Fase 27.51 (que já tinha escondido a maior parte do Hub pro
+posto): a lista de checkboxes "Permissões desta chave" ainda mostrava as categorias Pagamentos e
+Cadastros inteiras (irrelevantes pro posto, que só tem motivo pra marcar Negociação com Cliente), e o
+bloco de exemplo `curl` "Consultar cadastros (escopos *:read)" continuava visível pra todo mundo.
+
+Corrigido: `FormularioNovaChaveCustosFixos` ganhou uma prop opcional `apenasCategorias` — quando
+informada, só as categorias da lista aparecem nos checkboxes; `/integracoes` passa
+`apenasCategorias={["Negociação com Cliente"]}` só quando `ehPosto`. O bloco de "Consultar cadastros"
+também passou a ficar dentro do `{!ehPosto && (...)}`, junto dos outros três que já tinham sido
+escondidos.
+
+## Fase 27.54 — Aba "Vigentes" em Negociações (pedido do Daniel)
+
+Depois de aceita, uma negociação nem sempre está "em vigor" — a vigência pode ainda não ter começado
+ou já ter terminado. Pedido do Daniel: uma aba dentro de `/negociacoes` (nos dois lados, cliente e
+posto) mostrando só as negociações aceitas cuja vigência está em curso **hoje**.
+
+Os termos da rodada vencedora (vigência, combustível, volume mínimo, preço) viviam só em
+`negociacoes_postos_rodadas`, por rodada — sem estar "fotografados" em lugar nenhum do cabeçalho.
+Adicionadas 5 colunas em `negociacoes_postos` (`vigencia_inicio`, `vigencia_fim`, `combustivel`,
+`volume_minimo_mensal`, `preco_unitario`), preenchidas em `decidirNegociacao`
+(`src/lib/negociacoesPostos.ts`) no momento em que a decisão é "aceita" — copiando os valores da
+rodada que acabou de ser aceita. Backfill rodado pras 2 negociações já aceitas antes desta fase.
+
+Na tela: nova pill "Vigentes" (ao lado de "Todos" e dos status reais) que filtra
+`status = 'aceita' AND vigencia_inicio <= hoje AND vigencia_fim >= hoje` — não é um status de verdade
+no banco, é um filtro derivado (constante `FILTRO_VIGENTE` só na página, não em
+`STATUS_NEGOCIACAO`). Novo indicador "Vigentes agora" no topo (contagem sempre correta,
+independente da aba selecionada — consulta separada, não reaproveita a lista filtrada). Nova coluna
+"Vigência" na tabela, com um selo verde "Vigente" ao lado do status quando a linha está em vigor
+hoje.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

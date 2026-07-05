@@ -6,6 +6,13 @@ import { formatarDataBr } from "@/lib/utils";
 
 type SearchParams = { empresa?: string; status?: string };
 
+// Fase 27.54 — "Vigentes" não é um status de verdade (é sempre "aceita" no
+// banco); é um filtro derivado que também exige a vigência estar em curso
+// HOJE (uma negociação aceita pode ter vigência já encerrada ou ainda não
+// iniciada). Tratado como um valor sentinela separado de STATUS_NEGOCIACAO
+// pra reaproveitar o mesmo padrão de abas/pills já usado pros status reais.
+const FILTRO_VIGENTE = "vigente" as const;
+
 // Fase 27.50 — Negociação com Postos Revendedores. Uma única tela serve os
 // dois lados (cliente de frota e posto revendedor): o que muda é o "papel"
 // de quem está olhando, derivado do segmento da empresa selecionada
@@ -37,8 +44,13 @@ export default async function NegociacoesPage({
     atualizado_em: string;
     cliente_nome: string | null;
     posto_nome: string | null;
+    vigencia_inicio: string | null;
+    vigencia_fim: string | null;
   }[] = [];
   let erro: string | undefined;
+  let totalVigentes = 0;
+
+  const hojeIso = new Date().toISOString().slice(0, 10);
 
   if (empresaSelecionada) {
     // Fase 27.51 — achado real: o nome da CONTRAPARTE (cliente, do ponto de
@@ -49,19 +61,37 @@ export default async function NegociacoesPage({
     // denormalizadas cliente_nome/posto_nome (ver src/lib/negociacoesPostos.ts).
     let query = supabase
       .from("negociacoes_postos")
-      .select("id, posto_cnpj, status, rodada_atual, criado_em, atualizado_em, cliente_nome, posto_nome")
+      .select(
+        "id, posto_cnpj, status, rodada_atual, criado_em, atualizado_em, cliente_nome, posto_nome, vigencia_inicio, vigencia_fim"
+      )
       .order("atualizado_em", { ascending: false })
       .limit(500);
 
     query = souPosto ? query.eq("empresa_posto_id", empresaSelecionada) : query.eq("empresa_cliente_id", empresaSelecionada);
 
-    if (status && (STATUS_NEGOCIACAO as readonly string[]).includes(status)) {
+    if (status === FILTRO_VIGENTE) {
+      query = query.eq("status", "aceita").lte("vigencia_inicio", hojeIso).gte("vigencia_fim", hojeIso);
+    } else if (status && (STATUS_NEGOCIACAO as readonly string[]).includes(status)) {
       query = query.eq("status", status as StatusNegociacao);
     }
 
     const resultado = await query;
     if (resultado.error) erro = resultado.error.message;
     negociacoes = (resultado.data ?? []) as typeof negociacoes;
+
+    // Contagem de vigentes à parte (indicador do topo) — independente da
+    // aba/filtro selecionado no momento, pra sempre mostrar o número certo.
+    let queryVigentes = supabase
+      .from("negociacoes_postos")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "aceita")
+      .lte("vigencia_inicio", hojeIso)
+      .gte("vigencia_fim", hojeIso);
+    queryVigentes = souPosto
+      ? queryVigentes.eq("empresa_posto_id", empresaSelecionada)
+      : queryVigentes.eq("empresa_cliente_id", empresaSelecionada);
+    const { count } = await queryVigentes;
+    totalVigentes = count ?? 0;
   }
 
   const pendentesDoMeuLado = negociacoes.filter(
@@ -113,10 +143,11 @@ export default async function NegociacoesPage({
         </p>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Indicador label="Negociações" valor={negociacoes.length} />
             <Indicador label={`Aguardando ${souPosto ? "você" : "sua resposta"}`} valor={pendentesDoMeuLado} />
             <Indicador label="Aceitas" valor={negociacoes.filter((n) => n.status === "aceita").length} />
+            <Indicador label="Vigentes agora" valor={totalVigentes} />
           </div>
 
           <div className="mb-4 flex flex-wrap gap-2">
@@ -125,6 +156,12 @@ export default async function NegociacoesPage({
               className={`rounded-full px-3 py-1 text-xs font-medium ${!status ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
             >
               Todos
+            </Link>
+            <Link
+              href={`/negociacoes?empresa=${empresaSelecionada}&status=${FILTRO_VIGENTE}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${status === FILTRO_VIGENTE ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            >
+              Vigentes
             </Link>
             {STATUS_NEGOCIACAO.map((s) => (
               <Link
@@ -146,33 +183,52 @@ export default async function NegociacoesPage({
                   <th className="px-4 py-3">{souPosto ? "Cliente" : "Posto"}</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Rodada</th>
+                  <th className="px-4 py-3">Vigência</th>
                   <th className="px-4 py-3">Atualizado em</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {negociacoes.map((n) => (
-                  <tr key={n.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-slate-700">
-                      {souPosto ? (n.cliente_nome ?? "—") : (n.posto_nome ?? n.posto_cnpj)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                        {STATUS_NEGOCIACAO_LABEL[n.status as StatusNegociacao] ?? n.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">#{n.rodada_atual}</td>
-                    <td className="px-4 py-3 text-slate-500">{formatarDataBr(n.atualizado_em.slice(0, 10))}</td>
-                    <td className="px-4 py-3 text-right">
-                      <Link href={`/negociacoes/${n.id}`} className="text-frota-600 hover:underline">
-                        Ver detalhes
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {negociacoes.map((n) => {
+                  const hojeNaVigencia =
+                    n.status === "aceita" &&
+                    n.vigencia_inicio !== null &&
+                    n.vigencia_fim !== null &&
+                    n.vigencia_inicio <= hojeIso &&
+                    n.vigencia_fim >= hojeIso;
+                  return (
+                    <tr key={n.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 text-slate-700">
+                        {souPosto ? (n.cliente_nome ?? "—") : (n.posto_nome ?? n.posto_cnpj)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                          {STATUS_NEGOCIACAO_LABEL[n.status as StatusNegociacao] ?? n.status}
+                        </span>
+                        {hojeNaVigencia && (
+                          <span className="ml-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                            Vigente
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500">#{n.rodada_atual}</td>
+                      <td className="px-4 py-3 text-slate-500">
+                        {n.vigencia_inicio && n.vigencia_fim
+                          ? `${formatarDataBr(n.vigencia_inicio)} – ${formatarDataBr(n.vigencia_fim)}`
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500">{formatarDataBr(n.atualizado_em.slice(0, 10))}</td>
+                      <td className="px-4 py-3 text-right">
+                        <Link href={`/negociacoes/${n.id}`} className="text-frota-600 hover:underline">
+                          Ver detalhes
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {negociacoes.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                       Nenhuma negociação encontrada.
                     </td>
                   </tr>
