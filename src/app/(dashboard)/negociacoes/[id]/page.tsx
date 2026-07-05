@@ -11,10 +11,14 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
   const { id } = await params;
   const supabase = await createClient();
 
+  // Fase 27.51 — cliente_nome/posto_nome são colunas denormalizadas (não um
+  // join pra empresas): um join respeitaria a RLS de empresas, que só
+  // libera enxergar quem é membro daquela empresa, deixando o nome da
+  // contraparte sempre em branco pro outro lado da negociação.
   const { data: negociacao } = await supabase
     .from("negociacoes_postos")
     .select(
-      "id, empresa_cliente_id, empresa_posto_id, posto_cnpj, origem, status, rodada_atual, criado_em, atualizado_em, cliente:empresas!negociacoes_postos_empresa_cliente_id_fkey(nome), posto:empresas!negociacoes_postos_empresa_posto_id_fkey(nome)"
+      "id, empresa_cliente_id, empresa_posto_id, posto_cnpj, origem, status, rodada_atual, criado_em, atualizado_em, cliente_nome, posto_nome"
     )
     .eq("id", id)
     .maybeSingle();
@@ -56,7 +60,7 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
             ← Voltar
           </Link>
           <h1 className="mt-1 text-xl font-semibold text-slate-900">
-            Negociação com {souPosto ? (negociacao.cliente?.nome ?? "cliente") : (negociacao.posto?.nome ?? negociacao.posto_cnpj)}
+            Negociação com {souPosto ? (negociacao.cliente_nome ?? "cliente") : (negociacao.posto_nome ?? negociacao.posto_cnpj)}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             Status:{" "}

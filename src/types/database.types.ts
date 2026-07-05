@@ -77,6 +77,10 @@ export interface Database {
           criado_por: string | null;
           criado_em: string;
           atualizado_em: string;
+          // Fase 27.51 — retrato do nome de cada lado no momento da criação,
+          // pra não depender de RLS cruzada em empresas (ver nome_empresa_publico).
+          cliente_nome: string | null;
+          posto_nome: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["negociacoes_postos"]["Row"]> & {
           empresa_cliente_id: string;
@@ -1294,6 +1298,13 @@ export interface Database {
       };
       empresa_id_do_cnpj: {
         Args: { p_cnpj: string };
+        Returns: string | null;
+      };
+      // Fase 27.51 — devolve só o nome de uma empresa, sem checar RLS
+      // (SECURITY DEFINER) — usada só pra "fotografar" o nome da contraparte
+      // ao criar uma negociação (negociacoes_postos.cliente_nome/posto_nome).
+      nome_empresa_publico: {
+        Args: { p_empresa_id: string };
         Returns: string | null;
       };
       // Fase 27.41 — conta a frota REAL da empresa (cadastro_veiculos +

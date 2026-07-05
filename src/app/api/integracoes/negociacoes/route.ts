@@ -106,10 +106,9 @@ export async function GET(request: Request) {
     count,
   } = await supabase
     .from("negociacoes_postos")
-    .select(
-      "id, empresa_cliente_id, posto_cnpj, status, rodada_atual, criado_em, atualizado_em, empresas!negociacoes_postos_empresa_cliente_id_fkey(nome)",
-      { count: "exact" }
-    )
+    .select("id, empresa_cliente_id, posto_cnpj, status, rodada_atual, criado_em, atualizado_em, cliente_nome", {
+      count: "exact",
+    })
     .eq("empresa_posto_id", chave.empresaId)
     .order("atualizado_em", { ascending: false })
     .range(offset, offset + limit - 1);

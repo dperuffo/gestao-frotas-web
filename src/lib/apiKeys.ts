@@ -96,13 +96,16 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
   },
   {
     escopo: ESCOPO_NEGOCIACOES_WRITE,
-    categoria: "Negociação com Postos",
+    // Fase 27.51 — quem sempre gera essa chave é o POSTO (é ele quem tem o
+    // escopo negociacoes:*), então a categoria fala do ponto de vista dele:
+    // "negociação com o(s) cliente(s) dele", não "com postos".
+    categoria: "Negociação com Cliente",
     label: "Negociações (escrita)",
     descricao: "Enviar proposta/contraproposta de negociação a um cliente e responder (aceitar/recusar).",
   },
   {
     escopo: ESCOPO_NEGOCIACOES_READ,
-    categoria: "Negociação com Postos",
+    categoria: "Negociação com Cliente",
     label: "Negociações (leitura)",
     descricao: "Consultar o andamento das negociações enviadas por este posto.",
   },

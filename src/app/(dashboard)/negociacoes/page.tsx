@@ -35,17 +35,21 @@ export default async function NegociacoesPage({
     rodada_atual: number;
     criado_em: string;
     atualizado_em: string;
-    cliente: { nome: string } | null;
-    posto: { nome: string } | null;
+    cliente_nome: string | null;
+    posto_nome: string | null;
   }[] = [];
   let erro: string | undefined;
 
   if (empresaSelecionada) {
+    // Fase 27.51 — achado real: o nome da CONTRAPARTE (cliente, do ponto de
+    // vista do posto, ou vice-versa) vinha de um join do PostgREST pra
+    // empresas, que respeita a RLS daquela tabela — e um usuário só enxerga
+    // empresas das quais é membro. Isso deixava o nome sempre em branco pro
+    // lado de fora da negociação. Corrigido lendo direto as colunas
+    // denormalizadas cliente_nome/posto_nome (ver src/lib/negociacoesPostos.ts).
     let query = supabase
       .from("negociacoes_postos")
-      .select(
-        "id, posto_cnpj, status, rodada_atual, criado_em, atualizado_em, cliente:empresas!negociacoes_postos_empresa_cliente_id_fkey(nome), posto:empresas!negociacoes_postos_empresa_posto_id_fkey(nome)"
-      )
+      .select("id, posto_cnpj, status, rodada_atual, criado_em, atualizado_em, cliente_nome, posto_nome")
       .order("atualizado_em", { ascending: false })
       .limit(500);
 
@@ -148,7 +152,7 @@ export default async function NegociacoesPage({
                 {negociacoes.map((n) => (
                   <tr key={n.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 text-slate-700">
-                      {souPosto ? (n.cliente?.nome ?? "—") : (n.posto?.nome ?? n.posto_cnpj)}
+                      {souPosto ? (n.cliente_nome ?? "—") : (n.posto_nome ?? n.posto_cnpj)}
                     </td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">

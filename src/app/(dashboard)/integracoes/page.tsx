@@ -126,10 +126,12 @@ export default async function IntegracoesPage() {
           escopos marcados na hora que ela foi gerada.
         </p>
 
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Lançar custo fixo (escopo custos_fixos:write)
-        </p>
-        <pre className="mb-4 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+        {!ehPosto && (
+          <>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Lançar custo fixo (escopo custos_fixos:write)
+            </p>
+            <pre className="mb-4 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
 {`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/custos-fixos \\
   -H "Authorization: Bearer fni_..." \\
   -H "Content-Type: application/json" \\
@@ -140,15 +142,15 @@ export default async function IntegracoesPage() {
     "placa": "ABC1D23",
     "descricao": "Apólice frota - julho"
   }'`}
-        </pre>
-        <p className="mb-4 text-xs text-slate-400">
-          <code>tipo</code> aceita: seguro, ipva, licenciamento, rastreamento, multa, pedagio, outro.
-        </p>
+            </pre>
+            <p className="mb-4 text-xs text-slate-400">
+              <code>tipo</code> aceita: seguro, ipva, licenciamento, rastreamento, multa, pedagio, outro.
+            </p>
 
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Lançar abastecimento (escopo abastecimentos:write)
-        </p>
-        <pre className="mb-4 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Lançar abastecimento (escopo abastecimentos:write)
+            </p>
+            <pre className="mb-4 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
 {`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/abastecimentos \\
   -H "Authorization: Bearer fni_..." \\
   -H "Content-Type: application/json" \\
@@ -162,12 +164,12 @@ export default async function IntegracoesPage() {
     "posto_nome": "Posto Alvorada",
     "transacao_externa_id": "TL-998877"
   }'`}
-        </pre>
+            </pre>
 
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Lançar manutenção (escopo manutencoes:write)
-        </p>
-        <pre className="mb-4 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Lançar manutenção (escopo manutencoes:write)
+            </p>
+            <pre className="mb-4 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
 {`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/manutencoes \\
   -H "Authorization: Bearer fni_..." \\
   -H "Content-Type: application/json" \\
@@ -179,7 +181,9 @@ export default async function IntegracoesPage() {
     "valor": 340.00,
     "oficina": "Oficina Central"
   }'`}
-        </pre>
+            </pre>
+          </>
+        )}
 
         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
           Enviar proposta de negociação (escopo negociacoes:write)

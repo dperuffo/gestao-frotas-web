@@ -3814,3 +3814,34 @@ cadastrar depois, a negociação não é vinculada retroativamente de forma auto
 melhoria futura.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos) em todos os arquivos novos/alterados.
+
+## Fase 27.51 — Ajustes pós-teste da Negociação (nome da contraparte + tela de Integrações do posto)
+
+Achados reais do Daniel testando com um usuário posto de verdade (conta criada manualmente pra teste,
+`segmento = "Revenda"`).
+
+**1) Nome do cliente/posto em branco na lista.** A coluna "Cliente"/"Posto" de `/negociacoes` vinha
+de um JOIN do PostgREST pra `empresas` (`cliente:empresas!...fkey(nome)`), e esse join respeita a RLS
+de `empresas` — que só libera enxergar uma empresa pra quem é membro dela. Um usuário posto nunca é
+membro da empresa do cliente (tenants diferentes), então o nome do "outro lado" sempre voltava nulo,
+mesmo a negociação em si sendo visível (a RLS de `negociacoes_postos` já libera os dois lados).
+Corrigido denormalizando `cliente_nome`/`posto_nome` direto na tabela, "fotografados" no momento da
+criação da negociação via nova RPC `nome_empresa_publico` (SECURITY DEFINER, mesmo espírito de
+`empresa_id_do_cnpj` — devolve só o nome, sem checar RLS). Todas as leituras (`/negociacoes`,
+`/negociacoes/[id]`, `GET /api/integracoes/negociacoes`) passaram a ler essas colunas em vez de fazer
+o join. Registros já existentes foram atualizados via `update ... from empresas` (bypass de RLS,
+rodado direto no banco).
+
+**2) Tela de Integrações confusa pro posto.** Dois ajustes:
+
+- A categoria de escopo mostrada nos checkboxes de "Gerar chave de API" dizia "Negociação com
+  Postos" — só faz sentido do ponto de vista do cliente. Quem sempre gera essa chave é o POSTO (só
+  ele tem motivo pra habilitar `negociacoes:write`/`negociacoes:read`), então renomeado pra
+  "Negociação com Cliente" em `src/lib/apiKeys.ts` (`CATALOGO_ESCOPOS`).
+- A seção "Como usar as APIs do Hub" mostrava os 4 exemplos de `curl` (custos fixos, abastecimentos,
+  manutenções, cadastros) pra todo mundo, mesmo sendo 100% irrelevantes pro posto. Agora esses 4
+  blocos só aparecem pra quem não é posto (`!ehPosto`); o bloco de negociação continua visível pros
+  dois lados.
+
+Nenhuma mudança de schema além da denormalização (coluna nova + RPC). Validado com `npx tsc --noEmit`
+e `npx eslint` (limpos).

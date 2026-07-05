@@ -98,6 +98,20 @@ export async function criarNegociacao(
 
   const status: StatusNegociacao = params.autor === "cliente" ? "pendente_posto" : "pendente_cliente";
 
+  // Fase 27.51 — achado real: mostrar o nome da CONTRAPARTE via join do
+  // PostgREST pra empresas falha em silêncio pra quem está do outro lado
+  // (RLS de empresas só libera enxergar quem é membro daquela empresa).
+  // Por isso guardamos aqui um "retrato" do nome de cada lado, resolvido
+  // via RPC SECURITY DEFINER (nome_empresa_publico, bypassa RLS só pra
+  // devolver o nome, nada sensível) — nunca depende de quem está criando
+  // já enxergar a empresa do outro lado.
+  const [{ data: clienteNome }, { data: postoNome }] = await Promise.all([
+    supabase.rpc("nome_empresa_publico", { p_empresa_id: params.empresaClienteId }),
+    params.empresaPostoId
+      ? supabase.rpc("nome_empresa_publico", { p_empresa_id: params.empresaPostoId })
+      : Promise.resolve({ data: null as string | null }),
+  ]);
+
   const { data: negociacao, error } = await supabase
     .from("negociacoes_postos")
     .insert({
@@ -108,6 +122,8 @@ export async function criarNegociacao(
       status,
       rodada_atual: 1,
       criado_por: params.criadoPor,
+      cliente_nome: clienteNome ?? null,
+      posto_nome: postoNome ?? null,
     })
     .select("id")
     .single();
