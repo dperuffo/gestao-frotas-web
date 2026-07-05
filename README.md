@@ -3947,3 +3947,30 @@ Sem tabela nem permissão dedicadas: nada de `abastecimentos_postos` nem `aba_ab
 (ambas removidas). O robô é só uma fonte a mais de dados na tela `/abastecimentos` já existente.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.56 — Dashboard do posto + hodômetro progressivo no robô
+
+Duas melhorias pontuais depois de testar a Fase 27.55.
+
+**Dashboard do posto.** Achado real: todo usuário cai em `/dashboard` depois do login, mas essa página
+sempre foi 100% voltada pra Frota (veículos, motoristas, previsão de consumo) — um usuário posto nunca
+tinha nada relevante ali, e o item nem aparecia no `menuPosto`. `dashboard/page.tsx` agora resolve o
+segmento da empresa selecionada (mesmo padrão de `/negociacoes`) logo no início e, se for "Revenda",
+desvia pro novo componente `DashboardPosto` antes de rodar qualquer consulta de Frota. O dashboard do
+posto mostra: negociações aguardando resposta, negociações vigentes agora, clientes com negociação
+aceita, volume mínimo mensal contratado, e duas tabelas (vigentes / aguardando resposta) — tudo lido
+de `negociacoes_postos`, que o posto já enxerga integralmente via RLS (nenhuma política nova
+precisou ser criada). Item "🏠 Dashboard" adicionado no topo do `menuPosto`.
+
+**Hodômetro progressivo no robô.** Os abastecimentos simulados vinham sem hodômetro. Agora
+`gerar_abastecimentos_postos_robo()` busca o hodômetro do último abastecimento já registrado daquele
+veículo (por placa + `cnpj_frota`, em `profrotas_abastecimentos`, criado_em decrescente — não
+`data_abastecimento`, que é sorteada dentro da janela e não garante ordem real) e soma
+`volume_litros × autonomia` (km/L do veículo, coluna `cadastro_veiculos.autonomia`) pra chegar no novo
+hodômetro. Sem histórico, sorteia um hodômetro inicial (8.000–180.000 km) só na primeira vez — os
+próprios registros do robô já carregam esse estado dali em diante, sem precisar de tabela extra.
+
+**Cadência de volta pra 6 em 6 horas** (tinha sido reduzida pra 1h a pedido anterior do Daniel; ele
+pediu pra voltar). Job `robo_abastecimentos_postos` reagendado (`0 */6 * * *`).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

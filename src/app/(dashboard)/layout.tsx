@@ -51,11 +51,15 @@ const menuOperacao = [
 
 // Fase 27.50 — menu do posto revendedor (perfil "posto", tenant segmento
 // "Revenda"). É uma trilha própria, bem mais enxuta que o menu de Frota:
-// hoje o posto só tem Negociações (aceitar/recusar/contrapropor o que o
-// cliente enviou, ou enviar proposta via API), Integrações (gerar a própria
-// chave de API) e Usuários (gerenciar o próprio time). Mais telas devem
-// entrar aqui conforme a plataforma evoluir pro lado Revenda.
+// hoje o posto tem Dashboard, Negociações (aceitar/recusar/contrapropor o
+// que o cliente enviou, ou enviar proposta via API), Integrações (gerar a
+// própria chave de API) e Usuários (gerenciar o próprio time). Mais telas
+// devem entrar aqui conforme a plataforma evoluir pro lado Revenda.
+// Fase 27.56 — "Dashboard" entra aqui: todo mundo cai em /dashboard depois
+// do login, e antes disso o posto não tinha nenhum item de menu apontando
+// pra lá (a página é branch por segmento — ver dashboard/page.tsx).
 const menuPosto = [
+  { href: "/dashboard", label: "🏠 Dashboard" },
   { href: "/negociacoes", label: "🤝 Negociações" },
   { href: "/integracoes", label: "🔌 Integrações" },
   { href: "/usuarios", label: "👥 Usuários" },

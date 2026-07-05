@@ -12,6 +12,7 @@ import { GraficoTopPostos } from "./_components/GraficoTopPostos";
 import { RankingGasto, type ItemRankingGasto } from "./_components/RankingGasto";
 import { GraficoEficienciaVeiculos, type ItemEficienciaVeiculo } from "./_components/GraficoEficienciaVeiculos";
 import { PrimeirosPassos } from "./_components/PrimeirosPassos";
+import { DashboardPosto } from "./_components/DashboardPosto";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
@@ -57,6 +58,22 @@ export default async function DashboardPage({
   // nível de rede (comparam clientes entre si — não faz sentido escopar a
   // um só cliente).
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+
+  // Fase 27.56 — achado real: todo mundo cai aqui depois do login (ver
+  // src/app/login/actions.ts), mas esta página inteira é voltada pra Frota
+  // (veículos, motoristas, consumo) — um posto (segmento "Revenda") nunca
+  // teve nada relevante pra ver aqui. Resolve o segmento da empresa
+  // selecionada (mesmo padrão de /negociacoes e /abastecimentos-postos) e,
+  // se for posto, desvia pra um dashboard próprio antes de rodar qualquer
+  // consulta de Frota (evita até as queries desnecessárias abaixo).
+  let segmentoSelecionado: string | null = null;
+  if (empresaSelecionada) {
+    const { data } = await supabase.from("empresas").select("segmento").eq("id", empresaSelecionada).maybeSingle();
+    segmentoSelecionado = data?.segmento ?? null;
+  }
+  if (segmentoSelecionado === "Revenda" && empresaSelecionada) {
+    return <DashboardPosto empresaPostoId={empresaSelecionada} nomeEmpresaSelecionada={nomeEmpresaSelecionada} />;
+  }
 
   let queryMotoristasTotal = supabase.from("motoristas").select("id", { count: "exact", head: true });
   let queryMotoristasAtivos = supabase
