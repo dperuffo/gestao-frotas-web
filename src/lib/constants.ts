@@ -217,3 +217,15 @@ export const PRODUTOS_POR_TIPO_VEICULO: Record<string, string[]> = {
   flex: ["Gasolina Comum", "Gasolina Aditivada", "Etanol Comum", "Etanol Aditivado"],
 };
 
+// Fase 27.48 — Planos de Viagem.
+export const STATUS_PLANO_VIAGEM = ["rascunho", "planejado", "em_andamento", "concluido", "cancelado"] as const;
+export type StatusPlanoViagem = (typeof STATUS_PLANO_VIAGEM)[number];
+
+export const STATUS_PLANO_VIAGEM_LABEL: Record<StatusPlanoViagem, string> = {
+  rascunho: "Rascunho",
+  planejado: "Planejado",
+  em_andamento: "Em andamento",
+  concluido: "Concluído",
+  cancelado: "Cancelado",
+};
+

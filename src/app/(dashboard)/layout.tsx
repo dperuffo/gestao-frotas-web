@@ -41,6 +41,7 @@ const menuOperacao = [
   { href: "/anomalias", label: "🚨 Anomalias" },
   { href: "/roteirizacao", label: "🗺️ Roteirização" },
   { href: "/rotograma", label: "🛡️ Rotograma" },
+  { href: "/planos-viagem", label: "🧳 Planos de Viagem" },
   { href: "/manutencao-preditiva", label: "🔧 Manutenção Preditiva" },
   { href: "/relatorios", label: "📈 Relatórios" },
   { href: "/integracoes", label: "🔌 Integrações" },

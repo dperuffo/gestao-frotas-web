@@ -3679,3 +3679,45 @@ do print (Frotas & Frotas Ltda): `SSZ2C51` e `SUT8I32` agora aparecem uma única
 marca/modelo corretos.
 
 Fix só de banco (função SQL), sem mudança de código da aplicação.
+
+## Fase 27.48 — Módulo Planos de Viagem (custo, receita e margem por viagem)
+
+Segunda funcionalidade da frente "hub de meios de pagamento": orçamento de custo (combustível,
+pedágios, diárias, manutenção) e receita de cada viagem planejada, com margem/lucro calculado —
+primeira vez que o app rastreia receita, não só despesa. Baseado num mockup que o Daniel trouxe;
+por decisão dele, construído completo (não em MVP enxuto) e seguindo o design system já existente
+no app (não as cores do mockup).
+
+Novo módulo `/planos-viagem`, com duas tabelas novas (RLS por empresa, mesmo padrão de
+`tickets`/`anomalias_abastecimento`):
+
+- `planos_viagem` — cabeçalho (nome, status, placa, motorista, datas), vínculo **opcional** com
+  Rotograma OU com uma rota salva da Roteirização (o cliente escolhe qual, ou nenhuma — decisão do
+  Daniel), centro de custo, e todos os campos de custo/receita.
+- `planos_viagem_pedagios` — lista dinâmica de praças de pedágio por plano (RLS via `EXISTS` no
+  plano pai, mesmo padrão de `ticket_anexos`).
+
+Cálculos (recalculados no servidor a cada salvamento — nunca confia no total que veio do client):
+combustível estimado (km ÷ consumo × preço), diárias (nº dias × soma de refeição/pernoite/banho/
+lavagem), manutenção estimada (km × custo/km), pedágios (soma das praças), custo total estimado
+(soma de tudo acima), e margem = receita − custo (estimada e, se preenchido, real).
+
+Combustível real: botão "Revisar" chama a nova RPC `combustivel_real_periodo`, que soma litros/valor
+dos abastecimentos de verdade (view `abastecimentos_unificado`, já usada em outros indicadores) da
+placa do plano, entre a data de saída e o retorno previsto — mostra o gasto real sem precisar
+lançar nada manualmente, se o veículo já tiver abastecimentos sincronizados/lançados nesse período.
+
+Tela de listagem com KPIs (planos, orçamento total, custo médio por km, margem estimada), filtro por
+status/placa/cliente, tabela com margem colorida (verde/vermelho), e "Desempenho por Veículo"
+agrupado — tudo no estilo visual já usado no resto do app. Cross-link em Painel Financeiro.
+
+Duas adaptações deliberadas em relação ao mockup original: (1) a escolha de cliente acontece na
+tela de listagem (mesmo padrão de Abastecimentos/Anomalias), não dentro de um modal de criação —
+este app usa páginas dedicadas de cadastro, não modais; (2) sem paginação server-side na listagem
+(limite de 500 registros mais recentes) — volume esperado de planos de viagem é muito menor que
+Abastecimentos, não precisa da mesma infraestrutura de paginação.
+
+Testado direto no banco: inserido um plano de teste + pedágio, RPC `combustivel_real_periodo`
+confirmada batendo com os dados reais de abastecimento da placa, joins com `motoristas`/`empresas`
+confirmados, registro de teste removido em seguida. Validado com `npx tsc --noEmit` e `npx eslint`,
+ambos limpos.

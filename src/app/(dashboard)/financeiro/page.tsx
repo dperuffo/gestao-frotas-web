@@ -264,6 +264,19 @@ export default async function FinanceiroPage({
             <GraficoEvolucaoFinanceira dados={evolucao} />
           </div>
 
+          <div className="card mb-6 flex items-center justify-between p-6">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">Receita e custo por viagem planejada</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Orçamento (combustível, pedágios, diárias, manutenção) e receita de cada viagem, com margem
+                estimada — ver em Planos de Viagem.
+              </p>
+            </div>
+            <Link href={`/planos-viagem?empresa=${empresaSelecionada}`} className="btn-secondary shrink-0 text-sm">
+              Ver Planos de Viagem →
+            </Link>
+          </div>
+
           {orcamentosDoMes.length > 0 && (
             <div className="card mb-6 overflow-x-auto p-6">
               <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900">

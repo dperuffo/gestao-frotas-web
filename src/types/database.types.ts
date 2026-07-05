@@ -1016,6 +1016,90 @@ export interface Database {
           },
         ];
       };
+      // Fase 27.48 — Planos de Viagem: orçamento de custo (e receita/margem)
+      // por viagem planejada. Link opcional com Rotograma OU rota salva da
+      // Roteirização (rota_salva_id), veículo/motorista/centro de custo.
+      // pedagios_total/custo_total_estimado/custo_diarias/
+      // custo_manutencao_estimado/custo_combustivel_estimado são cache
+      // denormalizado, recalculado pela Server Action a cada salvamento
+      // (não são generated columns — pedagios_total depende da tabela filha
+      // planos_viagem_pedagios).
+      planos_viagem: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          nome: string;
+          status: "rascunho" | "planejado" | "em_andamento" | "concluido" | "cancelado";
+          placa: string | null;
+          motorista_id: string | null;
+          rotograma_id: string | null;
+          rota_salva_id: string | null;
+          centro_custo_id: string | null;
+          data_saida: string | null;
+          retorno_previsto: string | null;
+          km_estimado: number | null;
+          consumo_km_l: number | null;
+          preco_combustivel: number | null;
+          custo_combustivel_estimado: number;
+          custo_combustivel_real: number | null;
+          combustivel_real_litros: number | null;
+          combustivel_real_revisado_em: string | null;
+          n_diarias: number;
+          valor_refeicao_dia: number;
+          valor_pernoite_dia: number;
+          valor_banho_dia: number;
+          valor_lavagem_dia: number;
+          custo_diarias: number;
+          custo_manutencao_km: number;
+          custo_manutencao_estimado: number;
+          receita_viagem: number;
+          pedagios_total: number;
+          custo_total_estimado: number;
+          custo_total_real: number | null;
+          observacoes: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["planos_viagem"]["Row"]> & {
+          empresa_id: string;
+          nome: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["planos_viagem"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "planos_viagem_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      planos_viagem_pedagios: {
+        Row: {
+          id: number;
+          plano_viagem_id: string;
+          praca_nome: string;
+          valor: number;
+          ordem: number;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["planos_viagem_pedagios"]["Row"]> & {
+          plano_viagem_id: string;
+          praca_nome: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["planos_viagem_pedagios"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "planos_viagem_pedagios_plano_viagem_id_fkey";
+            columns: ["plano_viagem_id"];
+            isOneToOne: false;
+            referencedRelation: "planos_viagem";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Gestão de Chamados (tickets) — tabela que já existia no banco
       // compartilhado (usada por uma ferramenta anterior, com registros
       // reais), evoluída na Fase 19: comentarios/anexos (colunas antigas,
@@ -1154,6 +1238,13 @@ export interface Database {
       contar_anomalias_nao_revisadas: {
         Args: { p_empresa_id?: string | null };
         Returns: number;
+      };
+      // Fase 27.48 — soma litros/valor reais de abastecimentos de uma placa
+      // num período (usa a view abastecimentos_unificado por trás) — botão
+      // "Revisar" do combustível real em Planos de Viagem.
+      combustivel_real_periodo: {
+        Args: { p_empresa_id: string; p_placa: string; p_data_inicio: string; p_data_fim: string };
+        Returns: { litros: number; valor_total: number }[];
       };
       // Fase 27.3 — checagem de duplicidade normalizada, chamada pelo app
       // antes de gravar veiculos/motoristas (índices únicos funcionais são a
