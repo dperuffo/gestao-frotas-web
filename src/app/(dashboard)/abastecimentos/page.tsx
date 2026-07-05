@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
+import { AbastecimentosPosto } from "./_components/AbastecimentosPosto";
 
 const POR_PAGINA = 30;
 
@@ -36,15 +37,38 @@ type RegistroAbastecimento = {
 export default async function AbastecimentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; de?: string; ate?: string; empresa?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; de?: string; ate?: string; empresa?: string; page?: string; combustivel?: string }>;
 }) {
-  const { q, de, ate, empresa: empresaParam, page: pageParam } = await searchParams;
+  const { q, de, ate, empresa: empresaParam, page: pageParam, combustivel } = await searchParams;
   const supabase = await createClient();
 
   // Fase 27.8 — mesmo seletor de cliente já usado em Postos, Relatórios,
   // Veículos e Motoristas, agora também em Abastecimentos.
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
   const semClienteEscolhido = empresas.length > 1 && !empresaSelecionada;
+
+  // Fase 27.58 — achado real: o posto pediu pra ver, na mesma tela, os
+  // abastecimentos que FORNECEU (não os que consumiu — essa página inteira
+  // abaixo é do ponto de vista do cliente de frota). Resolve o segmento da
+  // empresa selecionada (mesmo padrão de /negociacoes, /precos-postos,
+  // /dashboard) e desvia pro painel do posto antes de rodar as consultas
+  // de Frota.
+  if (empresaSelecionada) {
+    const { data: empresaAtual } = await supabase
+      .from("empresas")
+      .select("segmento")
+      .eq("id", empresaSelecionada)
+      .maybeSingle();
+    if (empresaAtual?.segmento === "Revenda") {
+      return (
+        <AbastecimentosPosto
+          empresaPostoId={empresaSelecionada}
+          nomeEmpresaSelecionada={nomeEmpresaSelecionada}
+          searchParams={{ combustivel }}
+        />
+      );
+    }
+  }
 
   // Fase 27.10 — achado real: abastecimentos com status_autorizacao = 0
   // (pendente, ainda não confirmado pela operadora) apareciam na lista junto

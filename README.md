@@ -3998,3 +3998,24 @@ certo). Item de menu novo em `menuPosto` ("💲 Meus Preços") e em `menuOperaca
 Parceiros"). Permissão `aba_precos_postos` (todos os 4 perfis, mesmo padrão de `aba_negociacoes`).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.58 — Abastecimentos na visão do posto ("o que eu forneci")
+
+Pedido do Daniel: a tela `/abastecimentos` (hoje só do ponto de vista do cliente — "o que eu
+consumi") também precisava existir pro posto, mostrando o que ele forneceu.
+
+Faltava uma amarração: `profrotas_abastecimentos.pv_cnpj` nunca era preenchido pelo robô (só
+`pv_razao_social`, texto solto) — sem o CNPJ não dava pra filtrar por tenant nem escrever uma política
+de RLS. `gerar_abastecimentos_postos_robo()` passou a gravar `pv_cnpj` também (o CNPJ do posto
+negociado, quando existe uma negociação vigente; senão o CNPJ fixo do "Posto Teste Ltda"); backfill
+rodado nos 36 registros já gerados antes desta fase. Nova política `profrotas_abastecimentos_leitura_posto`:
+libera SELECT pra quem for dono (via `empresas_do_usuario`) de uma empresa cujo CNPJ normalizado bate
+com o `pv_cnpj` da linha — mexe só na leitura, a escrita continua restrita a quem já escrevia.
+
+`abastecimentos/page.tsx` ganhou o mesmo branch por segmento já usado em `/dashboard`,
+`/negociacoes` e `/precos-postos`: resolve o segmento da empresa selecionada logo no início e, se for
+"Revenda", desvia pro novo componente `AbastecimentosPosto` (KPIs de volume/receita/preço médio,
+filtro por combustível, tabela com cliente/placa/motorista) — sem seletor de cliente, já que o posto
+sempre é uma única empresa. Item de menu "🛢️ Abastecimentos" adicionado no `menuPosto`.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

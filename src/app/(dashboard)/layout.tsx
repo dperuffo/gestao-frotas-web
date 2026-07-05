@@ -62,6 +62,7 @@ const menuOperacao = [
 const menuPosto = [
   { href: "/dashboard", label: "🏠 Dashboard" },
   { href: "/negociacoes", label: "🤝 Negociações" },
+  { href: "/abastecimentos", label: "🛢️ Abastecimentos" },
   { href: "/precos-postos", label: "💲 Meus Preços" },
   { href: "/integracoes", label: "🔌 Integrações" },
   { href: "/usuarios", label: "👥 Usuários" },
