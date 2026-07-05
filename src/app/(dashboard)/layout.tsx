@@ -44,6 +44,7 @@ const menuOperacao = [
   { href: "/rotograma", label: "🛡️ Rotograma" },
   { href: "/planos-viagem", label: "🧳 Planos de Viagem" },
   { href: "/negociacoes", label: "🤝 Negociações com Postos" },
+  { href: "/precos-postos", label: "💲 Preços dos Postos Parceiros" },
   { href: "/manutencao-preditiva", label: "🔧 Manutenção Preditiva" },
   { href: "/relatorios", label: "📈 Relatórios" },
   { href: "/integracoes", label: "🔌 Integrações" },
@@ -61,6 +62,7 @@ const menuOperacao = [
 const menuPosto = [
   { href: "/dashboard", label: "🏠 Dashboard" },
   { href: "/negociacoes", label: "🤝 Negociações" },
+  { href: "/precos-postos", label: "💲 Meus Preços" },
   { href: "/integracoes", label: "🔌 Integrações" },
   { href: "/usuarios", label: "👥 Usuários" },
 ];

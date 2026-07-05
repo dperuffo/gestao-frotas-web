@@ -149,6 +149,31 @@ export interface Database {
           },
         ];
       };
+      precos_postos: {
+        Row: {
+          id: string;
+          empresa_posto_id: string;
+          combustivel: string;
+          preco: number;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["precos_postos"]["Row"]> & {
+          empresa_posto_id: string;
+          combustivel: string;
+          preco: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["precos_postos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "precos_postos_empresa_posto_id_fkey";
+            columns: ["empresa_posto_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       usuarios_app: {
         Row: {
           id: string;

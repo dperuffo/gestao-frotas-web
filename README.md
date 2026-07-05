@@ -3974,3 +3974,27 @@ próprios registros do robô já carregam esse estado dali em diante, sem precis
 pediu pra voltar). Job `robo_abastecimentos_postos` reagendado (`0 */6 * * *`).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.57 — Preços de combustíveis do posto
+
+Pedido do Daniel: uma tela de preços, pros dois lados — o posto cadastra o próprio preço por
+combustível, o cliente de frota vê os preços dos postos com quem já negocia.
+
+Nova tabela `precos_postos` (`empresa_posto_id`, `combustivel`, `preco`, `atualizado_em`,
+`atualizado_por`) — um preço "vigente" por combustível por posto (sem histórico por ora; `unique
+(empresa_posto_id, combustivel)` garante o upsert). RLS separada por operação, diferente do padrão
+"tenant_all" de uma coisa só usado em outras tabelas: leitura liberada pro próprio posto OU qualquer
+cliente que tenha ALGUMA negociação com aquele posto (pendente, aceita, recusada ou cancelada — ajuda
+a avaliar mesmo antes de fechar), via `exists (select 1 from negociacoes_postos ...)` (mesmo padrão
+de `negociacoes_postos_rodadas`); escrita (insert/update/delete) restrita só ao próprio posto — se
+fosse uma política "for all" só com a condição de leitura, um cliente em negociação também conseguiria
+editar o preço do posto, o que seria um problema real de permissão.
+
+Tela `/precos-postos`, compartilhada (mesmo espírito de `/negociacoes`): visão do posto mostra um
+formulário com um campo de preço por combustível de `PRODUTOS_POSTO` (11 produtos, deixa em branco o
+que não vende) e salva com upsert (`salvarPrecosPostoAcao`); visão do cliente lista, por posto com quem
+tem negociação, os preços que ele publicou (sem filtro adicional no código — a RLS já faz o recorte
+certo). Item de menu novo em `menuPosto` ("💲 Meus Preços") e em `menuOperacao` ("💲 Preços dos Postos
+Parceiros"). Permissão `aba_precos_postos` (todos os 4 perfis, mesmo padrão de `aba_negociacoes`).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
