@@ -3721,3 +3721,20 @@ Testado direto no banco: inserido um plano de teste + pedágio, RPC `combustivel
 confirmada batendo com os dados reais de abastecimento da placa, joins com `motoristas`/`empresas`
 confirmados, registro de teste removido em seguida. Validado com `npx tsc --noEmit` e `npx eslint`,
 ambos limpos.
+
+## Fase 27.49 — Anomalias e Planos de Viagem na matriz de Permissões por Perfil
+
+Pedido do Daniel: as duas telas novas (Anomalias, Fase 27.46; Planos de Viagem, Fase 27.48)
+precisavam aparecer na tela `/permissoes` como qualquer outra aba, pra dar pra liberar/bloquear por
+perfil.
+
+A tela de Permissões não tem uma lista fixa de abas no código — ela deriva tudo do que já existe em
+`permissoes_perfil` (ver `PermissoesPage`), então bastou inserir o padrão global (`empresa_id`
+sentinela) pras duas novas funcionalidades: `aba_anomalias` e `aba_planos_viagem`. Mesmo critério já
+usado pra abas operacionais equivalentes (`aba_frotas`/`aba_financeiro`/`aba_rotograma`):
+admin/gestor_frota/analista liberado por padrão, posto (perfil da trilha Revenda, separado da
+hierarquia Frota) bloqueado — nem detecção de fraude em abastecimento nem planejamento de viagem diz
+respeito a esse perfil.
+
+Fix só de dado no banco (migration de `insert`), sem mudança de código da aplicação — a tela já lê a
+lista dinamicamente.
