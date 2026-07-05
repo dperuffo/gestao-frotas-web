@@ -4036,3 +4036,21 @@ cadastrado) continuou vindo da estimativa ANP, como esperado.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos) — mudança é só SQL, sem arquivo TypeScript
 alterado nesta fase.
+
+## Fase 27.60 — Indicadores de desempenho no Dashboard do posto
+
+Pedido do Daniel: o dashboard do posto (Fase 27.56) tinha só indicadores de negociação — faltava
+desempenho de venda de verdade (por combustível, volume, preço médio, venda diária, ticket médio).
+
+Fonte: os mesmos abastecimentos fornecidos já usados em `AbastecimentosPosto` (Fase 27.58) —
+`profrotas_abastecimentos` filtrado por `pv_cnpj`, últimos 30 dias. `DashboardPosto.tsx` ganhou:
+5 indicadores no topo (abastecimentos, volume transacionado, receita total, preço médio praticado,
+ticket médio); uma tabela "Desempenho por combustível" (volume, preço médio, receita e % do volume
+total, ordenada do mais vendido pro menos); e um gráfico "Venda diária por combustível" dos últimos 14
+dias (1 linha por combustível) — reaproveitando `GraficoEvolutivoPostos`, o mesmo componente
+multi-série já usado no dashboard de Frota pra comparar postos ao longo do tempo (o componente é
+genérico o bastante: só espera `{diaLabel, [série]: valor}`, então funcionou sem nenhuma mudança nele).
+Os indicadores de negociação continuam na tela, agora numa seção "Negociações" abaixo do desempenho de
+vendas.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
