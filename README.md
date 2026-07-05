@@ -4054,3 +4054,21 @@ Os indicadores de negociação continuam na tela, agora numa seção "Negociaç�
 vendas.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.61 — Robô: 1 abastecimento por veículo por dia
+
+Ajuste pedido pelo Daniel: em vez de sortear 5-8 veículos aleatórios por execução (o que deixava boa
+parte da frota sem nenhum abastecimento em vários dias, e um mesmo veículo podendo repetir no mesmo
+dia), o robô passa a cobrir TODO veículo ativo de cada cliente, no máximo 1 abastecimento por dia
+por veículo.
+
+`gerar_abastecimentos_postos_robo()` trocou o sorteio por um `for ... loop` sobre todo veículo ativo
+do cliente que ainda **não** tem um abastecimento do robô (`sync_key like 'robo-%'`) com
+`data_abastecimento::date = current_date`. Como o job continua rodando a cada 6h (4x/dia), na prática
+a primeira execução do dia cobre a frota inteira (testado: 2.347 registros inseridos de uma vez,
+cobrindo os ~2.385 veículos ativos dos 2 clientes) e as 3 execuções seguintes do mesmo dia não geram
+nada de novo (testado: chamada imediatamente em seguida devolveu 0) — cada veículo, exatamente 1 vez
+por dia. O horário do abastecimento também passou a ser sorteado dentro do dia inteiro (não só na
+janela de 6h da execução), já que a lógica não é mais "gerar N agora" e sim "cobrir quem falta hoje".
+
+Validado com `select gerar_abastecimentos_postos_robo();` chamado duas vezes seguidas (2347, depois 0).
