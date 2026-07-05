@@ -6,6 +6,7 @@ import { BotaoSair } from "./_components/BotaoSair";
 import { contarChamadosNaoVistosAcao } from "./chamados/actions";
 import { contarAvaliacoesPendentesAcao } from "./avaliacoes/actions";
 import { contarAcessosClientesNaoVistosAcao } from "./clientes/actions";
+import { contarAnomaliasNaoRevisadasAcao } from "./anomalias/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
@@ -37,6 +38,7 @@ const menuCadastros = [
 
 const menuOperacao = [
   { href: "/abastecimentos", label: "🛢️ Abastecimentos" },
+  { href: "/anomalias", label: "🚨 Anomalias" },
   { href: "/roteirizacao", label: "🗺️ Roteirização" },
   { href: "/rotograma", label: "🛡️ Rotograma" },
   { href: "/manutencao-preditiva", label: "🔧 Manutenção Preditiva" },
@@ -100,7 +102,7 @@ export default async function DashboardLayout({
   // redirect(), navegação nova, sem precisar re-renderizar a tela atual).
   // Cada contagem agora é best-effort: uma falha vira 0 (badge escondido) em
   // vez de derrubar a aplicação inteira.
-  const [chamadosNaoVistos, avaliacoesPendentes, acessosClientesNaoVistos] = await Promise.all([
+  const [chamadosNaoVistos, avaliacoesPendentes, acessosClientesNaoVistos, anomaliasNaoRevisadas] = await Promise.all([
     contarChamadosNaoVistosAcao().catch((e) => {
       console.error("[dashboard/layout] falha ao contar chamados não vistos (ignorado):", e);
       return 0;
@@ -111,6 +113,10 @@ export default async function DashboardLayout({
     }),
     contarAcessosClientesNaoVistosAcao().catch((e) => {
       console.error("[dashboard/layout] falha ao contar acessos de clientes não vistos (ignorado):", e);
+      return 0;
+    }),
+    contarAnomaliasNaoRevisadasAcao().catch((e) => {
+      console.error("[dashboard/layout] falha ao contar anomalias não revisadas (ignorado):", e);
       return 0;
     }),
   ]);
@@ -235,9 +241,14 @@ export default async function DashboardLayout({
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="block rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.href === "/anomalias" && anomaliasNaoRevisadas > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                      {anomaliasNaoRevisadas}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}

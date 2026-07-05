@@ -582,6 +582,47 @@ export interface Database {
           },
         ];
       };
+      // Fase 27.46 — achados de detecção de anomalias em abastecimentos
+      // (volume acima do tanque, postos distantes no mesmo dia, hodômetro
+      // retrocedendo/parado, preço fora da média regional). Gravado pela
+      // função detectar_anomalias_abastecimento (ver Functions abaixo);
+      // `revisado_em` segue o mesmo padrão null=não visto já usado em
+      // acessos_clientes/tickets/avaliacoes.
+      anomalias_abastecimento: {
+        Row: {
+          id: number;
+          empresa_id: string;
+          tipo: "volume_tanque" | "geo_distancia" | "hodometro" | "preco_regiao";
+          severidade: "atencao" | "critica";
+          origem: "profrotas" | "externo";
+          referencia_id: number;
+          placa: string | null;
+          motorista_nome: string | null;
+          data_abastecimento: string | null;
+          descricao: string;
+          detalhes: Record<string, unknown>;
+          revisado_em: string | null;
+          revisado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["anomalias_abastecimento"]["Row"]> & {
+          empresa_id: string;
+          tipo: "volume_tanque" | "geo_distancia" | "hodometro" | "preco_regiao";
+          origem: "profrotas" | "externo";
+          referencia_id: number;
+          descricao: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["anomalias_abastecimento"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "anomalias_abastecimento_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Histórico de manutenções por veículo — tabela que já existia no
       // banco compartilhado (comentário original: "alimenta a análise
       // preditiva"), sem nenhuma tela usando ela até a Fase 8.
@@ -1101,6 +1142,17 @@ export interface Database {
       // pra bloquear sync/operação acima do limite do plano.
       contar_veiculos_reais_empresa: {
         Args: { p_empresa_id: string };
+        Returns: number;
+      };
+      // Fase 27.46 — roda as 4 regras de detecção de anomalias em
+      // abastecimentos e grava os achados novos (idempotente). p_empresa_id
+      // null só é permitido pra admin (roda pra todas as empresas).
+      detectar_anomalias_abastecimento: {
+        Args: { p_empresa_id?: string | null };
+        Returns: number;
+      };
+      contar_anomalias_nao_revisadas: {
+        Args: { p_empresa_id?: string | null };
         Returns: number;
       };
       // Fase 27.3 — checagem de duplicidade normalizada, chamada pelo app

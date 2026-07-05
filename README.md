@@ -3612,3 +3612,45 @@ Implementado em `src/app/login/page.tsx` + `src/app/login/actions.ts`:
 
 Sem o passo 1, o app continua funcionando normalmente com o botão antigo. Validado com
 `npx tsc --noEmit` e `npx eslint`, ambos limpos.
+
+## Fase 27.46 — Detecção de anomalias em abastecimentos
+
+Primeira funcionalidade da frente "hub de meios de pagamento": detectar fraude/erro de lançamento
+em abastecimentos usando dados que a plataforma já ingere, sem depender de nenhuma integração nova.
+
+Quatro regras, gravadas em `anomalias_abastecimento` (tabela nova, com RLS por empresa — cliente vê
+só a própria frota, admin vê todas, mesmo padrão de `tickets`/`profrotas_abastecimentos`):
+
+1. **Volume acima do tanque** — litros abastecidos maior que a capacidade cadastrada do veículo
+   (campo `tanque` de `cadastro_veiculos`), com 15% de margem de calibração. Severidade crítica.
+2. **Postos distantes no mesmo dia** — duas paradas da mesma placa, próximas no tempo, a uma
+   distância que exigiria uma velocidade média acima de 100 km/h. Só funciona pra abastecimentos do
+   ProFrotas (só lá temos latitude/longitude do posto). Severidade crítica.
+3. **Hodômetro retrocedendo ou parado** — km menor que o abastecimento anterior da mesma placa, ou
+   igual após mais de 2 dias — indício de adulteração ou troca de veículo não registrada. Severidade
+   atenção.
+4. **Preço fora da média regional** — valor por litro que destoa (mais de 2 desvios-padrão) da média
+   do município, usando a referência da ANP (`anp_precos_referencia`). Só ProFrotas, que tem
+   município/UF do posto; a normalização de nome de combustível (ex.: "Diesel S-10 Aditivado" →
+   "OLEO DIESEL S10") e o mapeamento UF→nome do estado (a base da ANP usa nome por extenso, o
+   ProFrotas usa sigla) são feitos dentro da função. Severidade atenção. Como a base ANP não é
+   atualizada com frequência garantida, a regra usa sempre o snapshot mais recente disponível por
+   município/produto, sem exigir data exata — é uma referência aproximada, não uma auditoria fina.
+
+A detecção roda via `detectar_anomalias_abastecimento(p_empresa_id)`, uma função SQL idempotente
+(reexecutar não duplica achado, graças a uma chave única) chamada sob demanda pelo botão "Detectar
+agora" na nova tela `/anomalias`. `p_empresa_id = null` (rodar pra todas as empresas de uma vez) só é
+aceito se quem chama for admin — checado dentro da própria função (`security definer`), não só na
+tela. Automatizar via cron (rodar sozinho após cada sincronização) fica como próximo passo natural.
+
+Tela `/anomalias`: KPIs de pendentes/críticas, filtro por tipo e status (pendente/revisada/todas),
+paginação, e marcar/desmarcar cada achado como revisado (ação por item — cada anomalia merece um
+olhar, não um "marcar tudo"). Badge de contagem no menu (Operação), mesmo padrão de Clientes/Chamados.
+
+Não é exclusiva do time FNI: qualquer cliente vê as anomalias da própria frota (é tão útil pro
+gestor de frota auditar os próprios motoristas quanto pro time interno auditar clientes).
+
+Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Testado manualmente rodando a função
+direto no banco contra dados reais (Frotas & Frotas Ltda): 23 achados de preço regional, 0 nos
+outros 3 tipos — consistente com a fase de investigação (tanque/hodômetro/geo presentes nos dados,
+mas sem casos reais de violação nesse cliente de teste).
