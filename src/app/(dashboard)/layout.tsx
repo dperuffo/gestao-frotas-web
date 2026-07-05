@@ -44,6 +44,7 @@ const menuOperacao = [
   { href: "/rotograma", label: "🛡️ Rotograma" },
   { href: "/planos-viagem", label: "🧳 Planos de Viagem" },
   { href: "/negociacoes", label: "🤝 Negociações com Postos" },
+  { href: "/abastecimentos-postos", label: "⛽ Abastecimentos por Posto" },
   { href: "/manutencao-preditiva", label: "🔧 Manutenção Preditiva" },
   { href: "/relatorios", label: "📈 Relatórios" },
   { href: "/integracoes", label: "🔌 Integrações" },
@@ -55,8 +56,11 @@ const menuOperacao = [
 // cliente enviou, ou enviar proposta via API), Integrações (gerar a própria
 // chave de API) e Usuários (gerenciar o próprio time). Mais telas devem
 // entrar aqui conforme a plataforma evoluir pro lado Revenda.
+// Fase 27.55 — "Abastecimentos" entra aqui também: os registros que o robô
+// (pg_cron) gera pras negociações vigentes do posto.
 const menuPosto = [
   { href: "/negociacoes", label: "🤝 Negociações" },
+  { href: "/abastecimentos-postos", label: "⛽ Abastecimentos" },
   { href: "/integracoes", label: "🔌 Integrações" },
   { href: "/usuarios", label: "👥 Usuários" },
 ];

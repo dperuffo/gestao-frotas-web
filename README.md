@@ -3910,3 +3910,37 @@ independente da aba selecionada — consulta separada, não reaproveita a lista 
 hoje.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.55 — Abastecimentos por Posto (robô automático)
+
+Pedido do Daniel: uma tela de abastecimentos alimentada pelas negociações com postos revendedores —
+sem integração real do lado do posto por enquanto, um robô simula o consumo dentro do volume mínimo
+mensal de cada negociação aceita e vigente.
+
+Nova tabela `abastecimentos_postos` (`negociacao_id`, `empresa_cliente_id`, `empresa_posto_id`,
+`data_abastecimento`, `combustivel`, `volume_litros`, `preco_unitario`, `valor_total`, `origem`) — RLS
+no mesmo padrão dual-tenant de `negociacoes_postos` (cliente ou posto da negociação, mais o bypass de
+admin). `origem` já vem preparada para os próximos passos (`'api'`, `'manual'`), mas por ora só
+`'robo'` é usado.
+
+O robô é a função SQL `gerar_abastecimentos_postos_robo()` (SECURITY DEFINER): para cada negociação
+com `status = 'aceita'` e vigência em curso hoje, gera um registro com volume aleatório em torno de
+1/4 do consumo diário médio (`volume_minimo_mensal / 30 / 4`, com variação de ±50%) e preço com
+variação de ±2% sobre o `preco_unitario` negociado. Agendado via `pg_cron`
+(`select cron.schedule('robo_abastecimentos_postos', '0 */6 * * *', ...)`) — roda a cada 6 horas,
+sem precisar de Edge Function nem rota Next.js (mesma extensão `pg_cron` já usada pelos jobs de
+e-mail de trial e sincronização PróFrotas, só que aqui é 100% SQL).
+
+Nova tela `/abastecimentos-postos`, compartilhada entre cliente e posto (mesmo espírito de
+`/negociacoes`: o "papel" de quem olha vem do segmento da empresa selecionada, não do perfil).
+Indicadores (total de abastecimentos, volume, receita/custo total, preço médio por litro), filtro por
+combustível, e tabela com o nome da contraparte (via join com `negociacoes_postos`, que já tem
+`cliente_nome`/`posto_nome` denormalizados — não precisou denormalizar de novo em
+`abastecimentos_postos`). Item de menu novo em `menuPosto` ("⛽ Abastecimentos") e em `menuOperacao`
+("⛽ Abastecimentos por Posto"), mais um botão de cross-link a partir da tela `/abastecimentos`
+(veicular) de cada cliente.
+
+Permissão `aba_abastecimentos_postos` adicionada em `permissoes_perfil` (todos os 4 perfis, mesmo
+padrão de `aba_negociacoes`, já que tanto cliente quanto posto usam a tela).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

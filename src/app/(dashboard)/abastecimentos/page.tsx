@@ -113,6 +113,12 @@ export default async function AbastecimentosPage({
           </p>
         </div>
         <div className="flex gap-2">
+          {/* Fase 27.55 — cross-link pra quem tem negociação vigente com
+              postos parceiros: os abastecimentos gerados pelo robô aparecem
+              numa tela separada (por negociação/posto, não por veículo). */}
+          <Link href="/abastecimentos-postos" className="btn-secondary">
+            ⛽ Abastecimentos por Posto
+          </Link>
           <Link href="/abastecimentos/importar" className="btn-secondary">
             Importar planilha
           </Link>
