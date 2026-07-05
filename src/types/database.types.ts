@@ -149,54 +149,6 @@ export interface Database {
           },
         ];
       };
-      abastecimentos_postos: {
-        Row: {
-          id: string;
-          negociacao_id: string;
-          empresa_cliente_id: string;
-          empresa_posto_id: string;
-          data_abastecimento: string;
-          combustivel: string;
-          volume_litros: number;
-          preco_unitario: number;
-          valor_total: number;
-          origem: string;
-          criado_em: string;
-        };
-        Insert: Partial<Database["public"]["Tables"]["abastecimentos_postos"]["Row"]> & {
-          negociacao_id: string;
-          empresa_cliente_id: string;
-          empresa_posto_id: string;
-          combustivel: string;
-          volume_litros: number;
-          preco_unitario: number;
-          valor_total: number;
-        };
-        Update: Partial<Database["public"]["Tables"]["abastecimentos_postos"]["Row"]>;
-        Relationships: [
-          {
-            foreignKeyName: "abastecimentos_postos_negociacao_id_fkey";
-            columns: ["negociacao_id"];
-            isOneToOne: false;
-            referencedRelation: "negociacoes_postos";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "abastecimentos_postos_empresa_cliente_id_fkey";
-            columns: ["empresa_cliente_id"];
-            isOneToOne: false;
-            referencedRelation: "empresas";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "abastecimentos_postos_empresa_posto_id_fkey";
-            columns: ["empresa_posto_id"];
-            isOneToOne: false;
-            referencedRelation: "empresas";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       usuarios_app: {
         Row: {
           id: string;

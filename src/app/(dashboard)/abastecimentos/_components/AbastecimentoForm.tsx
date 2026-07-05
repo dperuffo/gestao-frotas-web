@@ -150,7 +150,17 @@ export function AbastecimentoForm({
         {abastecimento && (
           <p className="mt-1 text-xs text-slate-500">
             Identificador: {abastecimento.identificador} · Origem:{" "}
-            {abastecimento.identificador < 0 ? "lançamento manual" : "integração automática"}
+            {
+              // Fase 27.55 — o robô de teste (negociação com postos) também
+              // grava aqui, usando o mesmo identificador negativo do
+              // lançamento manual (só pra não colidir com IDs reais da
+              // integração) — dá pra diferenciar pelo prefixo do sync_key.
+              abastecimento.sync_key?.startsWith("robo-")
+                ? "robô de teste (simulado)"
+                : abastecimento.identificador < 0
+                  ? "lançamento manual"
+                  : "integração automática"
+            }
           </p>
         )}
       </section>

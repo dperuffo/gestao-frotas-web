@@ -3911,36 +3911,39 @@ hoje.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
 
-## Fase 27.55 — Abastecimentos por Posto (robô automático)
+## Fase 27.55 — Robô de abastecimentos de teste (ciclo Otto, preço ANP, direto na tela existente)
 
-Pedido do Daniel: uma tela de abastecimentos alimentada pelas negociações com postos revendedores —
-sem integração real do lado do posto por enquanto, um robô simula o consumo dentro do volume mínimo
-mensal de cada negociação aceita e vigente.
+Pedido do Daniel: sem integração real do lado do posto ainda, um robô deveria popular abastecimentos
+de teste para os 2 clientes de frota reais desta instalação — Frotas & Frotas Ltda e Transportes de
+Cargas Testes Ltda — usando os veículos e motoristas já cadastrados de cada um, só com combustíveis do
+ciclo Otto (gasolina e etanol, nas variações vendidas no posto — a frota de teste é 100% Flex) e preço
+variando em torno da média nacional da ANP.
 
-Nova tabela `abastecimentos_postos` (`negociacao_id`, `empresa_cliente_id`, `empresa_posto_id`,
-`data_abastecimento`, `combustivel`, `volume_litros`, `preco_unitario`, `valor_total`, `origem`) — RLS
-no mesmo padrão dual-tenant de `negociacoes_postos` (cliente ou posto da negociação, mais o bypass de
-admin). `origem` já vem preparada para os próximos passos (`'api'`, `'manual'`), mas por ora só
-`'robo'` é usado.
+A primeira versão criou uma tabela e uma tela próprias (`abastecimentos_postos` /
+`/abastecimentos-postos`), ligadas a uma negociação vigente com posto. Depois de testar, o pedido
+mudou: nada de tela separada — os abastecimentos do robô deveriam aparecer junto com os demais
+(integração PróFrotas, importação em planilha, lançamento manual) na tela `/abastecimentos` que já
+existe, e precisavam continuar editáveis do mesmo jeito. A tabela e a tela próprias foram removidas; o
+robô passou a gravar direto em `profrotas_abastecimentos` — a mesma tabela usada por todas as outras
+origens (ver `src/app/(dashboard)/abastecimentos/actions.ts`) — então o registro abre no mesmo
+formulário de edição, sem tratamento especial. A rota `/abastecimentos-postos` ficou só como um
+redirect para `/abastecimentos` (não excluída, pra não deixar um link antigo quebrado).
 
-O robô é a função SQL `gerar_abastecimentos_postos_robo()` (SECURITY DEFINER): para cada negociação
-com `status = 'aceita'` e vigência em curso hoje, gera um registro com volume aleatório em torno de
-1/4 do consumo diário médio (`volume_minimo_mensal / 30 / 4`, com variação de ±50%) e preço com
-variação de ±2% sobre o `preco_unitario` negociado. Agendado via `pg_cron`
-(`select cron.schedule('robo_abastecimentos_postos', '0 */6 * * *', ...)`) — roda a cada 6 horas,
-sem precisar de Edge Function nem rota Next.js (mesma extensão `pg_cron` já usada pelos jobs de
-e-mail de trial e sincronização PróFrotas, só que aqui é 100% SQL).
+O robô é a função SQL `gerar_abastecimentos_postos_robo()` (SECURITY DEFINER): para cada um dos 2
+clientes, sorteia entre 5 e 8 (`veículo`, `motorista`) reais daquele cliente por execução — sem
+depender de negociação vigente (usa o nome do posto negociado quando existe uma, senão "Posto Teste
+Ltda" genérico) — sorteia um combustível do ciclo Otto, busca o preço médio mais recente da ANP
+(`anp_precos_referencia`, nível Brasil, mesmo de-para `PRODUTO_PARA_CATEGORIA_ANP` de
+`src/lib/constants.ts`: Gasolina Comum/Aditivada/Alta Octanagem → GASOLINA COMUM/ADITIVADA, Etanol
+Comum/Aditivado → ETANOL HIDRATADO), aplica uma variação de ±3% (mais um adicional pras variantes
+"Alta Octanagem"/"Aditivado" premium) e um volume proporcional ao tanque do veículo (30–70% da
+capacidade). Grava usando o mesmo identificador negativo do lançamento manual
+(`nextval_identificador_manual()`), com `sync_key` prefixado `robo-` — é assim que o formulário de
+edição reconhece e rotula a origem como "robô de teste (simulado)" em vez de "lançamento manual".
+Agendado via `pg_cron` (job `robo_abastecimentos_postos`) de hora em hora — cadência reduzida das 6h
+iniciais a pedido do Daniel, pra ter dados frescos com mais frequência nos testes.
 
-Nova tela `/abastecimentos-postos`, compartilhada entre cliente e posto (mesmo espírito de
-`/negociacoes`: o "papel" de quem olha vem do segmento da empresa selecionada, não do perfil).
-Indicadores (total de abastecimentos, volume, receita/custo total, preço médio por litro), filtro por
-combustível, e tabela com o nome da contraparte (via join com `negociacoes_postos`, que já tem
-`cliente_nome`/`posto_nome` denormalizados — não precisou denormalizar de novo em
-`abastecimentos_postos`). Item de menu novo em `menuPosto` ("⛽ Abastecimentos") e em `menuOperacao`
-("⛽ Abastecimentos por Posto"), mais um botão de cross-link a partir da tela `/abastecimentos`
-(veicular) de cada cliente.
-
-Permissão `aba_abastecimentos_postos` adicionada em `permissoes_perfil` (todos os 4 perfis, mesmo
-padrão de `aba_negociacoes`, já que tanto cliente quanto posto usam a tela).
+Sem tabela nem permissão dedicadas: nada de `abastecimentos_postos` nem `aba_abastecimentos_postos`
+(ambas removidas). O robô é só uma fonte a mais de dados na tela `/abastecimentos` já existente.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
