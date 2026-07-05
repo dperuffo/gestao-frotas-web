@@ -14,12 +14,44 @@ type ValoresAjuste = {
   item_valor_total: number | null;
 };
 
+// Converte um timestamptz (ISO, UTC) pro formato que o input datetime-local
+// espera (YYYY-MM-DDTHH:mm), já no fuso local do navegador.
+function paraDatetimeLocal(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function numeroParaCampo(valor: number | null): string {
+  return valor != null ? String(valor) : "";
+}
+
+// Compara o valor atual do campo (número) com o texto do input — usado só
+// pra saber se o usuário realmente MUDOU o campo (ver handleSubmit).
+function numeroMudou(atual: number | null, textoForm: string, casasTolerancia: number): boolean {
+  if (atual == null) return textoForm !== "";
+  if (textoForm === "") return true;
+  const numeroForm = Number(textoForm.replace(",", "."));
+  if (!Number.isFinite(numeroForm)) return true;
+  return Math.abs(atual - numeroForm) >= 1 / 10 ** (casasTolerancia + 1);
+}
+
 // Fase 27.65 — formulário de solicitação de ajuste (ou contraproposta,
-// quando `ajusteId` é passado). Todo campo vem em branco por padrão — o
-// solicitante só preenche o(s) campo(s) que quer corrigir; os demais ficam
-// como estão (ver validarCamposAjuste em ajustesAbastecimentos.ts: pelo
-// menos 1 precisa vir preenchido). Os valores ATUAIS aparecem como
-// placeholder/legenda, só pra referência de quem está preenchendo.
+// quando `ajusteId` é passado).
+//
+// Fase 27.67 — Daniel pediu pra inverter a lógica original: em vez de vir
+// tudo em branco (com o valor atual só como legenda ao lado), os campos
+// agora vêm PREENCHIDOS com o valor atual — o usuário edita só o que
+// precisa corrigir, em vez de redigitar tudo do zero. Litros e preço por
+// litro recalculam o valor total automaticamente (o usuário ainda pode
+// sobrescrever o total na mão, se quiser um valor diferente do produto
+// exato — útil pra taxas/arredondamentos). Como o formulário só ENVIA pro
+// servidor os campos que de fato mudaram em relação ao valor atual (ver
+// handleSubmit — compara e limpa quem ficou igual), o resto da lógica
+// (validarCamposAjuste, a rodada só grava o que foi alterado) continua
+// funcionando sem mudança nenhuma.
 export function FormularioSolicitarAjuste({
   abastecimentoId,
   empresaClienteId,
@@ -39,10 +71,48 @@ export function FormularioSolicitarAjuste({
   const [aberto, setAberto] = useState(!!ajusteIdParaContraproposta);
   const [isPending, startTransition] = useTransition();
 
+  const [dataHora, setDataHora] = useState(() => paraDatetimeLocal(valoresAtuais.data_abastecimento));
+  const [hodometro, setHodometro] = useState(() => numeroParaCampo(valoresAtuais.hodometro));
+  const [combustivel, setCombustivel] = useState(valoresAtuais.item_nome ?? "");
+  const [litros, setLitros] = useState(() => numeroParaCampo(valoresAtuais.item_quantidade));
+  const [precoUnitario, setPrecoUnitario] = useState(() => numeroParaCampo(valoresAtuais.item_valor_unitario));
+  const [valorTotal, setValorTotal] = useState(() => numeroParaCampo(valoresAtuais.item_valor_total));
+
+  // Recalcula o valor total sempre que litros ou preço por litro mudam —
+  // só quando os dois têm número válido preenchido.
+  function recalcularTotal(novosLitros: string, novoPreco: string) {
+    const l = Number(novosLitros.replace(",", "."));
+    const p = Number(novoPreco.replace(",", "."));
+    if (novosLitros !== "" && novoPreco !== "" && Number.isFinite(l) && Number.isFinite(p)) {
+      setValorTotal((l * p).toFixed(2));
+    }
+  }
+
+  function handleLitrosChange(valor: string) {
+    setLitros(valor);
+    recalcularTotal(valor, precoUnitario);
+  }
+
+  function handlePrecoChange(valor: string) {
+    setPrecoUnitario(valor);
+    recalcularTotal(litros, valor);
+  }
+
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErro(undefined);
     const formData = new FormData(e.currentTarget);
+
+    // Só propõe de fato o que MUDOU em relação ao valor atual — os campos
+    // vêm preenchidos só pra facilitar a edição, não pra "reafirmar" tudo
+    // que já estava certo (ver comentário da Fase 27.67 acima).
+    if (paraDatetimeLocal(valoresAtuais.data_abastecimento) === dataHora) formData.set("data_abastecimento", "");
+    if (!numeroMudou(valoresAtuais.hodometro, hodometro, 0)) formData.set("hodometro", "");
+    if ((valoresAtuais.item_nome ?? "") === combustivel) formData.set("item_nome", "");
+    if (!numeroMudou(valoresAtuais.item_quantidade, litros, 3)) formData.set("item_quantidade", "");
+    if (!numeroMudou(valoresAtuais.item_valor_unitario, precoUnitario, 4)) formData.set("item_valor_unitario", "");
+    if (!numeroMudou(valoresAtuais.item_valor_total, valorTotal, 2)) formData.set("item_valor_total", "");
+
     startTransition(async () => {
       const resultado = ajusteIdParaContraproposta
         ? await contrapropostaAjusteAcao(ajusteIdParaContraproposta, abastecimentoId, autor, undefined, formData)
@@ -66,19 +136,31 @@ export function FormularioSolicitarAjuste({
         {ajusteIdParaContraproposta ? "Enviar contraproposta" : "Solicitar ajuste"}
       </h2>
       <p className="text-xs text-slate-500">
-        Preencha só o(s) campo(s) que precisa corrigir — os demais continuam como estão. A outra parte
+        Os campos já vêm com os valores atuais — edite só o que precisa corrigir. A outra parte
         (cliente ou posto) vai receber uma notificação para aprovar ou recusar.
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Campo label="Data e hora" atual={valoresAtuais.data_abastecimento ? new Date(valoresAtuais.data_abastecimento).toLocaleString("pt-BR") : "—"}>
-          <input type="datetime-local" name="data_abastecimento" className="input" />
+        <Campo label="Data e hora">
+          <input
+            type="datetime-local"
+            name="data_abastecimento"
+            value={dataHora}
+            onChange={(e) => setDataHora(e.target.value)}
+            className="input"
+          />
         </Campo>
-        <Campo label="Hodômetro (km)" atual={valoresAtuais.hodometro?.toLocaleString("pt-BR") ?? "—"}>
-          <input type="number" name="hodometro" className="input" />
+        <Campo label="Hodômetro (km)">
+          <input
+            type="number"
+            name="hodometro"
+            value={hodometro}
+            onChange={(e) => setHodometro(e.target.value)}
+            className="input"
+          />
         </Campo>
-        <Campo label="Combustível" atual={valoresAtuais.item_nome ?? "—"}>
-          <select name="item_nome" defaultValue="" className="input">
+        <Campo label="Combustível">
+          <select name="item_nome" value={combustivel} onChange={(e) => setCombustivel(e.target.value)} className="input">
             <option value="">Sem alteração</option>
             {PRODUTOS_POSTO.map((p) => (
               <option key={p} value={p}>
@@ -87,20 +169,35 @@ export function FormularioSolicitarAjuste({
             ))}
           </select>
         </Campo>
-        <Campo label="Litros" atual={valoresAtuais.item_quantidade?.toLocaleString("pt-BR") ?? "—"}>
-          <input type="number" step="0.001" name="item_quantidade" className="input" />
+        <Campo label="Litros">
+          <input
+            type="number"
+            step="0.001"
+            name="item_quantidade"
+            value={litros}
+            onChange={(e) => handleLitrosChange(e.target.value)}
+            className="input"
+          />
         </Campo>
-        <Campo
-          label="Preço por litro (R$)"
-          atual={valoresAtuais.item_valor_unitario != null ? valoresAtuais.item_valor_unitario.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
-        >
-          <input type="number" step="0.01" name="item_valor_unitario" className="input" />
+        <Campo label="Preço por litro (R$)">
+          <input
+            type="number"
+            step="0.01"
+            name="item_valor_unitario"
+            value={precoUnitario}
+            onChange={(e) => handlePrecoChange(e.target.value)}
+            className="input"
+          />
         </Campo>
-        <Campo
-          label="Valor total (R$)"
-          atual={valoresAtuais.item_valor_total != null ? valoresAtuais.item_valor_total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
-        >
-          <input type="number" step="0.01" name="item_valor_total" className="input" />
+        <Campo label="Valor total (R$)">
+          <input
+            type="number"
+            step="0.01"
+            name="item_valor_total"
+            value={valorTotal}
+            onChange={(e) => setValorTotal(e.target.value)}
+            className="input"
+          />
         </Campo>
       </div>
 
@@ -125,12 +222,10 @@ export function FormularioSolicitarAjuste({
   );
 }
 
-function Campo({ label, atual, children }: { label: string; atual: string; children: React.ReactNode }) {
+function Campo({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-medium text-slate-500">
-        {label} <span className="text-slate-400">(atual: {atual})</span>
-      </label>
+      <label className="mb-1 block text-xs font-medium text-slate-500">{label}</label>
       {children}
     </div>
   );

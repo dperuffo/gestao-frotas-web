@@ -4262,3 +4262,33 @@ ganhou o badge de "ajustes aguardando resposta" ao lado de Abastecimentos, tanto
 Frota, mesmo padrão visual das demais notificações (negociações, acessos de clientes etc.).
 
 Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos tocados (limpos).
+
+## Fase 27.66 — Correções no fluxo de ajuste de abastecimentos
+
+Depois de publicado, o Daniel testou a Fase 27.65 de verdade e achou 2 problemas.
+
+**Link ausente pro detalhe na visão do posto:** `AbastecimentosPosto.tsx` nunca teve link da linha da
+tabela pro detalhe (`/abastecimentos/[id]`) — diferente da visão Frota, que sempre teve (achado real,
+existia desde a Fase 27.58, só ficou visível agora porque o posto passou a precisar abrir o registro
+pra responder um ajuste). Corrigido: mesma coluna Data agora é link, igual à visão Frota.
+
+**Formulário de ajuste agora vem preenchido:** o formulário (`FormularioSolicitarAjuste.tsx`) pedia
+pra digitar do zero só o(s) campo(s) alterado(s), com o valor atual só como legenda ao lado. O Daniel
+achou mais natural o campo já vir com o valor atual dentro — daí só edita o que precisa. Litros e
+Preço por litro agora recalculam o Valor total automaticamente (o usuário ainda pode sobrescrever o
+total na mão, se quiser um valor diferente do produto exato). Como o formulário só ENVIA pro servidor
+os campos que de fato mudaram em relação ao valor atual (comparação feita no submit, antes de montar o
+FormData), a regra de "a rodada só grava o que foi alterado" continua valendo sem precisar tocar em
+`ajustesAbastecimentos.ts` nem na RPC.
+
+**Investigação em andamento — solicitação de ajuste não aparece pro lado cliente/frota:** o Daniel
+relatou que, ao testar, a solicitação de ajuste "apareceu pro admin" mas não pro usuário frota/cliente.
+Testei a política de RLS de INSERT em `ajustes_abastecimentos` simulando o e-mail
+`daniel.peruffo.app@gmail.com` (vinculado de verdade, via `usuarios_empresas`, à Transportes de Cargas
+Testes Ltda — achado novo: ao contrário do que a sessão anterior registrou, esse e-mail TEM vínculo
+real, diferente do e-mail principal do Daniel, que só tem `cnpj_vinculado` solto em `usuarios_app`, sem
+linha em `usuarios_empresas`) — a inserção funcionou normalmente e o registro ficou visível. Isso indica
+que o problema é específico da conta/sessão usada no teste, não da regra de acesso. Aguardando o Daniel
+confirmar qual conta e qual abastecimento ele usou pra reproduzir com precisão.
+
+Validado com `npx tsc --noEmit` e `npx eslint` no `FormularioSolicitarAjuste.tsx` (limpo).
