@@ -212,7 +212,9 @@ export async function AbastecimentosPosto({
             {registros.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3 text-slate-600">
-                  {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
+                  <Link href={`/abastecimentos/${r.id}`} className="font-medium text-frota-600 hover:underline">
+                    {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
+                  </Link>
                 </td>
                 <td className="px-4 py-3 text-slate-700">{r.frota_razao_social ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-600">{r.veiculo_placa ?? "—"}</td>
