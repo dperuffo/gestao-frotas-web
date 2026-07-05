@@ -4053,6 +4053,11 @@ genérico o bastante: só espera `{diaLabel, [série]: valor}`, então funcionou
 Os indicadores de negociação continuam na tela, agora numa seção "Negociações" abaixo do desempenho de
 vendas.
 
+**Correção (mesma fase, reportada pelo Daniel):** o gráfico "Venda diária" vinha sempre zerado. Causa:
+a janela de dias ia de "hoje − 14" até "hoje − 14 + 13" — ou seja, terminava ONTEM, nunca incluindo o
+dia de hoje (onde o robô acabou de gerar os abastecimentos mais recentes). Corrigido pra terminar hoje
+(inclusive) e começar 13 dias atrás.
+
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
 
 ## Fase 27.61 — Robô: 1 abastecimento por veículo por dia

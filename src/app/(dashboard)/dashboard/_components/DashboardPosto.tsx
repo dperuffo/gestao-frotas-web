@@ -138,10 +138,15 @@ export async function DashboardPosto({
   // usado pra "evolução por posto" na tela do cliente (GraficoEvolutivoPostos
   // é genérico o bastante: só espera {diaLabel, [série]: valor}).
   const combustiveisNoPeriodo = Array.from(porCombustivel.keys());
-  const inicioGrafico = new Date(Date.now() - JANELA_GRAFICO_DIAS * 24 * 60 * 60 * 1000);
+  // Fase 27.62 — achado real (reportado pelo Daniel, gráfico sempre em
+  // zero): a janela ia de "hoje - 14 dias" até "hoje - 14 dias + 13", ou
+  // seja, terminava ONTEM — o dia de hoje (onde o robô acabou de gerar os
+  // abastecimentos) nunca entrava no gráfico. Corrigido pra terminar HOJE
+  // (inclusive) e começar 13 dias atrás — 14 dias no total, sempre com hoje
+  // como o último ponto.
   const diasGrafico: string[] = [];
-  for (let i = 0; i < JANELA_GRAFICO_DIAS; i++) {
-    const d = new Date(inicioGrafico.getTime() + i * 24 * 60 * 60 * 1000);
+  for (let i = JANELA_GRAFICO_DIAS - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
     diasGrafico.push(d.toISOString().slice(0, 10));
   }
   const volumePorDiaCombustivel = new Map<string, Map<string, number>>();
