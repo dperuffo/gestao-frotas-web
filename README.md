@@ -4132,3 +4132,67 @@ legenda "Atualizado em ... por ..." abaixo de cada campo de preço; `/precos-pos
 (`PainelCliente`) ganhou a coluna "Atualizado por" na tabela por posto.
 
 Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos tocados (limpos).
+
+## Fase 27.64 — Painel Financeiro do Posto (contas a receber e a pagar)
+
+Pedido do Daniel: uma tela financeira pro posto, com indicadores financeiros e contas a pagar/receber
+de clientes por período (dia, semana, quinzena, mês). Antes de programar, pesquisei ideias de outras
+soluções (ERPs, ferramentas de cobrança) e mapeei o que já existia (`/financeiro`, hoje só do lado da
+Frota — custos e orçamento, sem contas a receber) — depois confirmei com o Daniel 3 decisões de
+modelagem que não tinham resposta óbvia no sistema atual: como as faturas são geradas (agrupadas por
+cliente, conforme a vigência de cada negociação, não um ciclo universal fixo), como são disparadas
+(automaticamente por robô/cron, mesmo espírito do robô de abastecimentos) e o prazo de vencimento
+(configurável por negociação, não fixo pro sistema todo). As despesas do posto (contas a pagar) ficaram
+com lançamento manual, mesmo padrão de `custos_fixos` (Frota).
+
+**Modelo de dados:** `negociacoes_postos` ganhou `ciclo_faturamento_dias` e `prazo_vencimento_dias`
+(default 30, mas configurável por negociação). Nova tabela `faturas_postos` — 1 linha por período
+fechado de cada negociação (`negociacao_id`, `periodo_inicio`, `periodo_fim`, `vencimento`,
+`valor_total`, `volume_total`, `quantidade_abastecimentos`, `status` aberta/paga/cancelada,
+`cliente_nome` denormalizado — mesmo achado da Fase 27.51, join contra `empresas` falharia em silêncio
+pro lado de fora da negociação); `unique(negociacao_id, periodo_inicio, periodo_fim)` evita fatura
+duplicada do mesmo período. `profrotas_abastecimentos` ganhou `fatura_posto_id` (FK nullable) — quando
+um abastecimento é coberto por uma fatura, o vínculo é gravado, e a próxima geração de fatura só
+considera abastecimentos com `fatura_posto_id is null` (evita faturar o mesmo registro 2 vezes). Nova
+tabela `despesas_postos` (contas a pagar) — `tipo` (combustível/distribuidora, salários, manutenção,
+impostos, aluguel, energia, outro — lista confirmada com o Daniel), `valor`, `competencia`,
+`vencimento`, `recorrente`, `status`, lançamento manual do próprio posto.
+
+**RLS:** `faturas_postos` segue o padrão dual-tenant já usado em `precos_postos`/`negociacoes_postos`
+— leitura liberada tanto pro posto (dono) quanto pro cliente da fatura (precisa ver o que deve);
+escrita (marcar paga/cancelada) só pro posto. `despesas_postos` é single-tenant simples (só o posto,
+igual `custos_fixos`), já que é despesa própria, sem contraparte.
+
+**Robô `gerar_faturas_postos_robo()`** (novo, `pg_cron` diário às 03:00 UTC, job `faturas_postos_robo`):
+pra cada negociação `aceita`, mantém um "cursor" (`max(periodo_fim)` das faturas já geradas, ou
+`vigencia_inicio` se ainda não há nenhuma) e fecha, em sequência, todo período de `ciclo_faturamento_dias`
+que já tenha decorrido totalmente (não fatura hoje nem o futuro), somando os abastecimentos fornecidos
+naquela janela (`profrotas_abastecimentos` por `pv_cnpj`/`cnpj_frota`, ainda sem fatura) — vencimento =
+fim do período + `prazo_vencimento_dias`. Testado idempotente: rodou, gerou 6 faturas; rodou de novo,
+gerou 0.
+
+**Dado de demonstração:** como a lógica "1 abastecimento/veículo/dia" (Fase 27.61) só passou a valer
+nesta sessão, só havia abastecimento real pro dia de hoje — nenhum período fechado teria nada pra
+faturar. Semeei um histórico sintético de 44 dias pros 2 clientes de teste (claramente marcado
+`sync_key = 'seed-fase-27.64-...'`, mesmo espírito do seed de `precos_postos` da Fase 27.57) e ajustei
+o ciclo dessas 2 negociações pra quinzenal (15 dias) — só pra existir uma tela populada pra mostrar;
+o comportamento do robô em produção (ciclo/vencimento configurados por negociação real) não muda.
+
+**Tela `/financeiro-posto`** (exclusiva do segmento Revenda — quem acessa sendo Frota vê um aviso
+com link pro `/financeiro` de custos/orçamento): seletor de período (Hoje/7 dias/15 dias/Mês
+atual/Personalizado, por URL); 6 indicadores (a receber em aberto, vencido/inadimplência, recebido no
+período, a pagar em aberto, pago no período, saldo previsto do período); gráfico de fluxo de caixa
+previsto (barras "a receber" x "a pagar" por dia de vencimento, componente novo
+`GraficoFluxoCaixaPosto.tsx`, já que o `GraficoEvolutivoPostos` existente tem o tooltip fixo em litros);
+aging list das contas a receber vencidas (0-15/16-30/31-60/60+ dias, padrão citado nas ferramentas de
+cobrança pesquisadas); tabela de contas a receber (cliente, período, vencimento, valor, status, ação
+"marcar como paga"/"cancelar"); formulário de lançar despesa + tabela de contas a pagar (mesmas ações).
+Status "vencida" não é um valor gravado no banco — é derivado (`aberta` + vencimento no passado), mesmo
+espírito do filtro "Vigente" em `/negociacoes` (Fase 27.54).
+
+Novos arquivos: `src/lib/financeiroPostos.ts` (tipos, rótulos, seletor de período, aging);
+`src/app/(dashboard)/financeiro-posto/{page,actions}.tsx` e `_components/{GraficoFluxoCaixaPosto,
+FormularioDespesaPosto, BotaoAcaoFinanceiraPosto}.tsx`. Menu do posto ganhou "💰 Financeiro" e a
+permissão `aba_financeiro_posto` (mesmo padrão de `aba_precos_postos`).
+
+Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos tocados (limpos).

@@ -64,6 +64,7 @@ const menuPosto = [
   { href: "/negociacoes", label: "🤝 Negociações" },
   { href: "/abastecimentos", label: "🛢️ Abastecimentos" },
   { href: "/precos-postos", label: "💲 Meus Preços" },
+  { href: "/financeiro-posto", label: "💰 Financeiro" },
   { href: "/integracoes", label: "🔌 Integrações" },
   { href: "/usuarios", label: "👥 Usuários" },
 ];

@@ -91,6 +91,11 @@ export interface Database {
           combustivel: string | null;
           volume_minimo_mensal: number | null;
           preco_unitario: number | null;
+          // Fase 27.64 — ciclo de faturamento (dias por fatura) e prazo de
+          // vencimento (dias após o fechamento do período), configuráveis
+          // por negociação; usados pelo robô gerar_faturas_postos_robo().
+          ciclo_faturamento_dias: number;
+          prazo_vencimento_dias: number;
         };
         Insert: Partial<Database["public"]["Tables"]["negociacoes_postos"]["Row"]> & {
           empresa_cliente_id: string;
@@ -170,6 +175,101 @@ export interface Database {
         Relationships: [
           {
             foreignKeyName: "precos_postos_empresa_posto_id_fkey";
+            columns: ["empresa_posto_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase 27.64 — faturas (contas a receber) do posto: 1 linha por
+      // período fechado de cada negociação, agrupando os abastecimentos
+      // fornecidos naquela janela. Geradas pelo robô gerar_faturas_postos_robo().
+      faturas_postos: {
+        Row: {
+          id: string;
+          negociacao_id: string;
+          empresa_posto_id: string;
+          empresa_cliente_id: string;
+          // Fase 27.64 (ajuste) — mesmo achado da Fase 27.51: denormalizado
+          // pra não depender de RLS cruzada em empresas.
+          cliente_nome: string | null;
+          periodo_inicio: string;
+          periodo_fim: string;
+          vencimento: string;
+          valor_total: number;
+          volume_total: number;
+          quantidade_abastecimentos: number;
+          status: string;
+          pago_em: string | null;
+          observacoes: string | null;
+          criado_em: string;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["faturas_postos"]["Row"]> & {
+          negociacao_id: string;
+          empresa_posto_id: string;
+          empresa_cliente_id: string;
+          periodo_inicio: string;
+          periodo_fim: string;
+          vencimento: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["faturas_postos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "faturas_postos_negociacao_id_fkey";
+            columns: ["negociacao_id"];
+            isOneToOne: false;
+            referencedRelation: "negociacoes_postos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "faturas_postos_empresa_posto_id_fkey";
+            columns: ["empresa_posto_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "faturas_postos_empresa_cliente_id_fkey";
+            columns: ["empresa_cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase 27.64 — despesas (contas a pagar) do posto: lançamento manual,
+      // mesmo espírito de custos_fixos (Frota).
+      despesas_postos: {
+        Row: {
+          id: string;
+          empresa_posto_id: string;
+          tipo: string;
+          descricao: string | null;
+          valor: number;
+          competencia: string;
+          vencimento: string;
+          recorrente: boolean;
+          status: string;
+          pago_em: string | null;
+          criado_em: string;
+          criado_por: string | null;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["despesas_postos"]["Row"]> & {
+          empresa_posto_id: string;
+          tipo: string;
+          valor: number;
+          competencia: string;
+          vencimento: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["despesas_postos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "despesas_postos_empresa_posto_id_fkey";
             columns: ["empresa_posto_id"];
             isOneToOne: false;
             referencedRelation: "empresas";
@@ -903,6 +1003,9 @@ export interface Database {
           sync_key: string;
           criado_em: string | null;
           empresa_id: string | null;
+          // Fase 27.64 — vínculo com a fatura (conta a receber) do posto que
+          // já cobriu este abastecimento; evita faturar o mesmo registro 2x.
+          fatura_posto_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["profrotas_abastecimentos"]["Row"]> & {
           cnpj_frota: string;
@@ -916,6 +1019,13 @@ export interface Database {
             columns: ["empresa_id"];
             isOneToOne: false;
             referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "profrotas_abastecimentos_fatura_posto_id_fkey";
+            columns: ["fatura_posto_id"];
+            isOneToOne: false;
+            referencedRelation: "faturas_postos";
             referencedColumns: ["id"];
           },
         ];

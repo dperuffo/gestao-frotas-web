@@ -1,0 +1,114 @@
+// Fase 27.64 — Painel Financeiro do Posto: contas a receber (faturas, geradas
+// pelo robô a partir dos abastecimentos fornecidos, agrupados por negociação)
+// e contas a pagar (despesas, lançadas manualmente). Tipos e helpers
+// compartilhados entre a página, as Server Actions e os componentes.
+
+export const TIPOS_DESPESA_POSTO = [
+  "combustivel_distribuidora",
+  "salarios",
+  "manutencao",
+  "impostos",
+  "aluguel",
+  "energia",
+  "outro",
+] as const;
+export type TipoDespesaPosto = (typeof TIPOS_DESPESA_POSTO)[number];
+
+export const TIPO_DESPESA_POSTO_LABEL: Record<TipoDespesaPosto, string> = {
+  combustivel_distribuidora: "Combustível / Distribuidora",
+  salarios: "Salários",
+  manutencao: "Manutenção",
+  impostos: "Impostos",
+  aluguel: "Aluguel",
+  energia: "Energia",
+  outro: "Outro",
+};
+
+// Status "de verdade" gravado no banco. "Vencida" não é um valor de status —
+// é derivado (status = 'aberta' e vencimento < hoje), mesmo espírito de
+// "Vigente" em negociacoes_postos (Fase 27.54): evita ter que voltar toda
+// fatura já paga pra reabrir se o robô de virada de dia atrasar.
+export const STATUS_FATURA_POSTO = ["aberta", "paga", "cancelada"] as const;
+export type StatusFaturaPosto = (typeof STATUS_FATURA_POSTO)[number];
+
+export type StatusFaturaExibicao = StatusFaturaPosto | "vencida";
+
+export const STATUS_FATURA_LABEL: Record<StatusFaturaExibicao, string> = {
+  aberta: "Em aberto",
+  vencida: "Vencida",
+  paga: "Paga",
+  cancelada: "Cancelada",
+};
+
+export function statusFaturaExibicao(status: string, vencimento: string, hojeIso: string): StatusFaturaExibicao {
+  if (status === "aberta" && vencimento < hojeIso) return "vencida";
+  return status as StatusFaturaExibicao;
+}
+
+// Seletor de período — as opções rápidas pedidas (dia/semana/quinzena/mês) +
+// personalizado. Tudo resolvido a partir de searchParams no servidor, sem
+// estado de cliente: mesmo padrão de filtro por URL já usado em /negociacoes
+// e /abastecimentos.
+export const PERIODOS_FINANCEIRO = ["hoje", "7dias", "15dias", "mes", "personalizado"] as const;
+export type PeriodoFinanceiro = (typeof PERIODOS_FINANCEIRO)[number];
+
+export const PERIODO_FINANCEIRO_LABEL: Record<PeriodoFinanceiro, string> = {
+  hoje: "Hoje",
+  "7dias": "7 dias",
+  "15dias": "15 dias",
+  mes: "Mês atual",
+  personalizado: "Personalizado",
+};
+
+function paraIso(data: Date): string {
+  return data.toISOString().slice(0, 10);
+}
+
+// Resolve o intervalo [inicio, fim] (ambos incluídos, "YYYY-MM-DD") a partir
+// do período escolhido. "personalizado" usa inicio/fim vindos da URL, com
+// fallback pros últimos 30 dias se vierem vazios/ inválidos.
+export function resolverPeriodoFinanceiro(
+  periodo: string | undefined,
+  inicioParam: string | undefined,
+  fimParam: string | undefined
+): { periodo: PeriodoFinanceiro; inicio: string; fim: string } {
+  const hoje = new Date();
+  const periodoValido = (PERIODOS_FINANCEIRO as readonly string[]).includes(periodo ?? "")
+    ? (periodo as PeriodoFinanceiro)
+    : "15dias";
+
+  if (periodoValido === "personalizado" && inicioParam && fimParam && inicioParam <= fimParam) {
+    return { periodo: periodoValido, inicio: inicioParam, fim: fimParam };
+  }
+
+  const fim = paraIso(hoje);
+  let inicioData = new Date(hoje);
+  if (periodoValido === "hoje") {
+    // inicio = fim (já é o padrão)
+  } else if (periodoValido === "7dias") {
+    inicioData = new Date(hoje.getTime() - 6 * 24 * 60 * 60 * 1000);
+  } else if (periodoValido === "mes") {
+    inicioData = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  } else {
+    // "15dias" (padrão) e fallback de "personalizado" inválido
+    inicioData = new Date(hoje.getTime() - 14 * 24 * 60 * 60 * 1000);
+  }
+
+  return { periodo: periodoValido, inicio: paraIso(inicioData), fim };
+}
+
+// Faixas de atraso (aging list) — padrão de mercado citado em ferramentas de
+// cobrança/ERP (0-15, 16-30, 31-60, 61-90, 90+ dias).
+export const FAIXAS_AGING = [
+  { chave: "0-15", label: "0 a 15 dias", min: 0, max: 15 },
+  { chave: "16-30", label: "16 a 30 dias", min: 16, max: 30 },
+  { chave: "31-60", label: "31 a 60 dias", min: 31, max: 60 },
+  { chave: "60+", label: "Mais de 60 dias", min: 61, max: Infinity },
+] as const;
+
+export function diasEmAtraso(vencimento: string, hojeIso: string): number {
+  const msPorDia = 24 * 60 * 60 * 1000;
+  const dVenc = new Date(vencimento + "T00:00:00Z").getTime();
+  const dHoje = new Date(hojeIso + "T00:00:00Z").getTime();
+  return Math.max(0, Math.round((dHoje - dVenc) / msPorDia));
+}
