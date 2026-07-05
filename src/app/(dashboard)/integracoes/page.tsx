@@ -9,10 +9,28 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 export default async function IntegracoesPage() {
   const supabase = await createClient();
-  const { data: chaves, error } = await supabase
-    .from("profrotas_api_keys")
-    .select("id, cnpj_frota, nome_empresa, ativo, ultimo_sync, registros_sync, data_inicio_sync")
-    .order("nome_empresa");
+
+  // Fase 27.50 — um posto revendedor (perfil "posto") também acessa esta
+  // tela, mas só pra gerar/gerenciar a própria chave de Negociação — o sync
+  // ProFrotas e os demais escopos do Hub (custos fixos, abastecimentos,
+  // manutenções, cadastros) são específicos do lado Frota e ficam
+  // escondidos pra esse perfil.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: perfilUsuario } = await supabase
+    .from("usuarios_app")
+    .select("perfil")
+    .eq("email", user?.email ?? "")
+    .maybeSingle();
+  const ehPosto = perfilUsuario?.perfil === "posto";
+
+  const { data: chaves, error } = ehPosto
+    ? { data: [] as never[], error: null }
+    : await supabase
+        .from("profrotas_api_keys")
+        .select("id, cnpj_frota, nome_empresa, ativo, ultimo_sync, registros_sync, data_inicio_sync")
+        .order("nome_empresa");
 
   // Fase 27.41 — mostra na hora, sem precisar clicar em "Sincronizar agora",
   // se a frota real do cliente já estourou o limite do plano (o sync em si
@@ -48,33 +66,37 @@ export default async function IntegracoesPage() {
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Integrações</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Conecte a frota de um cliente à API da PróFrotas para que os abastecimentos cheguem
-          automaticamente, sem lançamento manual.
+          {ehPosto
+            ? "Gere uma chave de API pra enviar propostas de negociação aos seus clientes e acompanhar/responder o andamento, direto do sistema do seu posto."
+            : "Conecte a frota de um cliente à API da PróFrotas para que os abastecimentos cheguem automaticamente, sem lançamento manual."}
         </p>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Indicador label="Clientes conectados" valor={total} />
-        <Indicador label="Ativos" valor={totalAtivas} />
-        <Indicador label="Registros sincronizados" valor={totalRegistros} />
-      </div>
+      {!ehPosto && (
+        <>
+          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <Indicador label="Clientes conectados" valor={total} />
+            <Indicador label="Ativos" valor={totalAtivas} />
+            <Indicador label="Registros sincronizados" valor={totalRegistros} />
+          </div>
 
-      <div className="mb-6">
-        <NovaChaveForm />
-      </div>
+          <div className="mb-6">
+            <NovaChaveForm />
+          </div>
 
-      {error && <p className="mb-4 text-sm text-red-600">Erro ao carregar chaves: {error.message}</p>}
-      <ListaChaves chaves={chavesComAvisoLimite} />
+          {error && <p className="mb-4 text-sm text-red-600">Erro ao carregar chaves: {error.message}</p>}
+          <ListaChaves chaves={chavesComAvisoLimite} />
+        </>
+      )}
 
       <div className="mb-6 mt-10 border-t border-slate-200 pt-6">
         <h2 className="flex items-center gap-1.5 text-lg font-semibold text-slate-900">
           Hub de Integrações <AjudaIcon chave="integracoes.chave_api" />
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Gere uma chave de API pra um sistema externo do cliente (cartão combustível/pedágio, ERP
-          financeiro, oficina, corretora de seguro, rastreador) enviar dados pra dentro da FNI, ou pra
-          consultar os cadastros do cliente (veículos, motoristas, centros de custo, postos, usuários).
-          Cada chave carrega só as permissões marcadas abaixo.
+          {ehPosto
+            ? 'Gere uma chave marcando as permissões de "Negociação com Postos" abaixo — é ela que o sistema do seu posto vai usar pra chamar a API.'
+            : "Gere uma chave de API pra um sistema externo do cliente (cartão combustível/pedágio, ERP financeiro, oficina, corretora de seguro, rastreador) enviar dados pra dentro da FNI, ou pra consultar os cadastros do cliente (veículos, motoristas, centros de custo, postos, usuários). Cada chave carrega só as permissões marcadas abaixo."}
         </p>
       </div>
 
@@ -158,6 +180,30 @@ export default async function IntegracoesPage() {
     "oficina": "Oficina Central"
   }'`}
         </pre>
+
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Enviar proposta de negociação (escopo negociacoes:write)
+        </p>
+        <pre className="mb-4 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+{`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/negociacoes \\
+  -H "Authorization: Bearer fni_..." \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "cliente_cnpj": "12.345.678/0001-90",
+    "combustivel": "Diesel S-10 Comum",
+    "vigencia_inicio": "2026-08-01",
+    "vigencia_fim": "2027-01-31",
+    "volume_minimo_mensal": 5000,
+    "preco_unitario": 5.89
+  }'`}
+        </pre>
+        <p className="mb-4 text-xs text-slate-400">
+          Depois de enviada, use <code>POST .../negociacoes/&lt;id&gt;/rodadas</code> (mesmo corpo) pra
+          contrapropor, ou <code>POST .../negociacoes/&lt;id&gt;/decisao</code> com{" "}
+          <code>{`{"decisao": "aceita"}`}</code> ou <code>{`{"decisao": "recusada"}`}</code> pra responder
+          uma proposta do cliente. <code>GET /api/integracoes/negociacoes</code> lista o andamento de
+          todas as suas negociações.
+        </p>
 
         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
           Consultar cadastros (escopos *:read)

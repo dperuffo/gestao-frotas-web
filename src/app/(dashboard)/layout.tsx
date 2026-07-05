@@ -7,6 +7,7 @@ import { contarChamadosNaoVistosAcao } from "./chamados/actions";
 import { contarAvaliacoesPendentesAcao } from "./avaliacoes/actions";
 import { contarAcessosClientesNaoVistosAcao } from "./clientes/actions";
 import { contarAnomaliasNaoRevisadasAcao } from "./anomalias/actions";
+import { contarNegociacoesPendentesAcao } from "./negociacoes/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
@@ -42,9 +43,22 @@ const menuOperacao = [
   { href: "/roteirizacao", label: "🗺️ Roteirização" },
   { href: "/rotograma", label: "🛡️ Rotograma" },
   { href: "/planos-viagem", label: "🧳 Planos de Viagem" },
+  { href: "/negociacoes", label: "🤝 Negociações com Postos" },
   { href: "/manutencao-preditiva", label: "🔧 Manutenção Preditiva" },
   { href: "/relatorios", label: "📈 Relatórios" },
   { href: "/integracoes", label: "🔌 Integrações" },
+];
+
+// Fase 27.50 — menu do posto revendedor (perfil "posto", tenant segmento
+// "Revenda"). É uma trilha própria, bem mais enxuta que o menu de Frota:
+// hoje o posto só tem Negociações (aceitar/recusar/contrapropor o que o
+// cliente enviou, ou enviar proposta via API), Integrações (gerar a própria
+// chave de API) e Usuários (gerenciar o próprio time). Mais telas devem
+// entrar aqui conforme a plataforma evoluir pro lado Revenda.
+const menuPosto = [
+  { href: "/negociacoes", label: "🤝 Negociações" },
+  { href: "/integracoes", label: "🔌 Integrações" },
+  { href: "/usuarios", label: "👥 Usuários" },
 ];
 
 const menuAdministracao = [
@@ -103,24 +117,29 @@ export default async function DashboardLayout({
   // redirect(), navegação nova, sem precisar re-renderizar a tela atual).
   // Cada contagem agora é best-effort: uma falha vira 0 (badge escondido) em
   // vez de derrubar a aplicação inteira.
-  const [chamadosNaoVistos, avaliacoesPendentes, acessosClientesNaoVistos, anomaliasNaoRevisadas] = await Promise.all([
-    contarChamadosNaoVistosAcao().catch((e) => {
-      console.error("[dashboard/layout] falha ao contar chamados não vistos (ignorado):", e);
-      return 0;
-    }),
-    contarAvaliacoesPendentesAcao().catch((e) => {
-      console.error("[dashboard/layout] falha ao contar avaliações pendentes (ignorado):", e);
-      return 0;
-    }),
-    contarAcessosClientesNaoVistosAcao().catch((e) => {
-      console.error("[dashboard/layout] falha ao contar acessos de clientes não vistos (ignorado):", e);
-      return 0;
-    }),
-    contarAnomaliasNaoRevisadasAcao().catch((e) => {
-      console.error("[dashboard/layout] falha ao contar anomalias não revisadas (ignorado):", e);
-      return 0;
-    }),
-  ]);
+  const [chamadosNaoVistos, avaliacoesPendentes, acessosClientesNaoVistos, anomaliasNaoRevisadas, negociacoesPendentes] =
+    await Promise.all([
+      contarChamadosNaoVistosAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar chamados não vistos (ignorado):", e);
+        return 0;
+      }),
+      contarAvaliacoesPendentesAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar avaliações pendentes (ignorado):", e);
+        return 0;
+      }),
+      contarAcessosClientesNaoVistosAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar acessos de clientes não vistos (ignorado):", e);
+        return 0;
+      }),
+      contarAnomaliasNaoRevisadasAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar anomalias não revisadas (ignorado):", e);
+        return 0;
+      }),
+      contarNegociacoesPendentesAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar negociações pendentes (ignorado):", e);
+        return 0;
+      }),
+    ]);
 
   // Nome e cargo/função do usuário logado, pra mostrar no lugar do texto
   // fixo "Ambiente seguro FNI" abaixo da logo — vínculo é por e-mail (mesmo
@@ -153,6 +172,11 @@ export default async function DashboardLayout({
     ? menuVisaoGeral.filter((item) => item.href !== "/assinatura" && item.href !== "/avaliar")
     : menuVisaoGeral;
 
+  // Fase 27.50 — perfil "posto" é uma trilha própria (Revenda), separada da
+  // hierarquia de Frota (mesmo espírito da Fase 27.39 em /permissoes): vê um
+  // menu bem mais enxuto, sem nenhuma das telas de gestão de frota.
+  const ehPosto = perfilUsuario?.perfil === "posto";
+
   return (
     <TourProvider tourJaVisto={perfilUsuario?.tour_onboarding_visto ?? false}>
     <div className="flex min-h-screen">
@@ -176,6 +200,26 @@ export default async function DashboardLayout({
           )}
         </div>
         <nav className="flex-1 px-3 py-4">
+          {ehPosto ? (
+            <ul className="space-y-1">
+              {menuPosto.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                  >
+                    <span>{item.label}</span>
+                    {item.href === "/negociacoes" && negociacoesPendentes > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                        {negociacoesPendentes}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+          <>
           <ul className="space-y-1">
             {itensVisaoGeral.map((item) => (
               <li key={item.href}>
@@ -250,6 +294,11 @@ export default async function DashboardLayout({
                       {anomaliasNaoRevisadas}
                     </span>
                   )}
+                  {item.href === "/negociacoes" && negociacoesPendentes > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                      {negociacoesPendentes}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
@@ -275,6 +324,8 @@ export default async function DashboardLayout({
               </li>
             ))}
           </ul>
+          </>
+          )}
         </nav>
         <div className="border-t border-white/10 px-3 py-3 space-y-1">
           <CentralAjuda />

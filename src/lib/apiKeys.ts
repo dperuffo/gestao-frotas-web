@@ -33,6 +33,14 @@ export const ESCOPO_CENTROS_CUSTO_READ = "centros_custo:read";
 export const ESCOPO_POSTOS_READ = "postos:read";
 export const ESCOPO_USUARIOS_READ = "usuarios:read";
 
+// Fase 27.50 — Negociação com Postos Revendedores: o POSTO (não o cliente de
+// frota) é quem gera essa chave, na própria tela de Integrações dele, pro
+// sistema/ERP do posto enviar propostas e consultar/responder o andamento
+// sem precisar logar na plataforma. "write" cria propostas/contrapropostas
+// e responde (aceitar/recusar); "read" consulta o status das negociações.
+export const ESCOPO_NEGOCIACOES_WRITE = "negociacoes:write";
+export const ESCOPO_NEGOCIACOES_READ = "negociacoes:read";
+
 // Catálogo central dos escopos disponíveis — usado tanto pela UI de geração
 // de chave (/integracoes, pra montar os checkboxes) quanto pela documentação
 // da API. Adicionar um escopo novo aqui é o único lugar a mudar pra ele
@@ -85,5 +93,17 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
     categoria: "Cadastros",
     label: "Usuários (leitura)",
     descricao: "Consultar pessoas com acesso à plataforma (nome, e-mail, perfil — nunca dados de MFA).",
+  },
+  {
+    escopo: ESCOPO_NEGOCIACOES_WRITE,
+    categoria: "Negociação com Postos",
+    label: "Negociações (escrita)",
+    descricao: "Enviar proposta/contraproposta de negociação a um cliente e responder (aceitar/recusar).",
+  },
+  {
+    escopo: ESCOPO_NEGOCIACOES_READ,
+    categoria: "Negociação com Postos",
+    label: "Negociações (leitura)",
+    descricao: "Consultar o andamento das negociações enviadas por este posto.",
   },
 ];

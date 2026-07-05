@@ -3738,3 +3738,79 @@ respeito a esse perfil.
 
 Fix só de dado no banco (migration de `insert`), sem mudança de código da aplicação — a tela já lê a
 lista dinamicamente.
+
+## Fase 27.50 — Negociação com Postos Revendedores (posto vira tenant próprio)
+
+Terceira funcionalidade da frente "hub de meios de pagamento" (depois de Anomalias e Planos de
+Viagem): postos revendedores passam a negociar fornecimento de combustível (vigência, combustível,
+volume mínimo mensal, preço por litro) diretamente com os clientes de frota, com aprovação,
+contraproposta e aceite/recusa dos dois lados.
+
+Decisão de arquitetura mais importante desta fase: **o posto revendedor ganha conta própria na
+plataforma** (não é só um registro que o cliente cadastra em `/postos`). Até aqui, `perfil = "posto"`
+existia como valor válido desde o início do projeto mas nunca tinha sido usado de verdade (0 usuários
+com `segmento = "Revenda"` em produção) — não existia menu, tela, nem forma de um posto logar e fazer
+algo. Esta fase constrói essa trilha pela primeira vez, pensando em evoluir mais funcionalidades para
+o lado Revenda no futuro (pedido explícito do Daniel), não só a Negociação.
+
+**Banco (migração `negociacoes_postos`):**
+
+- `empresas.segmento` (`"Frota"` ou `"Revenda"`, default `"Frota"`) — o posto é uma linha de
+  `empresas` como qualquer cliente de frota, só que com `segmento = "Revenda"`. Reaproveita 100% da
+  infraestrutura de tenant já existente (login, RLS, `usuarios_empresas`, seletor de empresa) — não
+  foi preciso inventar um sistema de conta separado.
+- `negociacoes_postos` — cabeçalho da negociação: `empresa_cliente_id`, `empresa_posto_id` (pode
+  ficar nulo se o posto ainda não tiver conta cadastrada com aquele CNPJ), `posto_cnpj`, `origem`
+  (`cliente`/`posto`/`api`), `status` (`pendente_posto`/`pendente_cliente`/`aceita`/`recusada`/
+  `cancelada`), `rodada_atual`.
+- `negociacoes_postos_rodadas` — histórico completo de propostas/contrapropostas (nunca sobrescreve,
+  só insere rodada nova): combustível, vigência, volume mínimo, preço, decisão por rodada.
+- RLS padrão do projeto nos dois lados: visível pra quem pertence à `empresa_cliente_id` OU à
+  `empresa_posto_id` (`empresas_do_usuario`), mais admin/service role.
+
+**Máquina de estados centralizada** em `src/lib/negociacoesPostos.ts` (`criarNegociacao`,
+`adicionarContraproposta`, `decidirNegociacao`, `cancelarNegociacao`) — usada tanto pela API pública
+quanto pelas Server Actions da tela, pra nunca duplicar/divergir a lógica de transição de status
+entre os dois lugares que criam/alteram negociações.
+
+**API pública, dentro do Hub de Integrações** (pedido explícito do Daniel: "a API deve estar dentro
+do menu de integração"): reaproveita 100% o Hub já existente (Fase 25) — `api_keys`, escopos,
+`autenticarRequisicaoApi()` — só com dois escopos novos, `negociacoes:write` e `negociacoes:read`,
+adicionados ao catálogo central em `src/lib/apiKeys.ts` (nenhuma tabela de chave nova precisou ser
+criada). É o POSTO quem gera essa chave, na própria tela de Integrações dele:
+
+- `POST /api/integracoes/negociacoes` — cria uma proposta nova (`cliente_cnpj` no corpo).
+- `POST /api/integracoes/negociacoes/[id]/rodadas` — envia contraproposta (nova rodada).
+- `POST /api/integracoes/negociacoes/[id]/decisao` — aceita ou recusa a proposta pendente.
+- `GET /api/integracoes/negociacoes` — lista o andamento das negociações do posto, paginado.
+
+A tela `/integracoes` agora se adapta: um usuário posto vê só a seção do Hub (com a permissão
+"Negociação com Postos" pra marcar), sem o painel de sync ProFrotas (Frota-only).
+
+**Tela `/negociacoes`** — CRUD completo dos dois lados, uma única tela que se comporta diferente
+conforme o segmento da empresa selecionada (não o perfil do usuário, pra funcionar também com admin
+trocando de empresa no seletor): o **cliente** cria propostas pra um posto (CNPJ), acompanha status,
+aceita/recusa/contrapropõe; o **posto** (quando acessa pela UI, além da API) faz o mesmo do lado
+dele. Detalhe de uma negociação mostra o histórico completo de rodadas e, quando é a vez de quem
+está olhando responder, um formulário de decisão (aceitar / contrapropor com novos valores /
+recusar).
+
+**Notificação** — badge no menu (`contarNegociacoesPendentesAcao`, mesmo padrão de Chamados/Clientes/
+Anomalias, contando pendências nos dois papéis possíveis do usuário) **e** e-mail via nova Edge
+Function `negociacao-email` (Resend, mesmo padrão/secret já usado em `email-trials`): dispara pro
+lado que precisa responder numa proposta/contraproposta nova, e pros dois lados quando a negociação
+é aceita ou recusada — decisão do Daniel foi por e-mail com link (não formulário de resposta direto
+no e-mail).
+
+Menu (`layout.tsx`): perfil `"posto"` agora vê uma trilha própria e enxuta (`Negociações`,
+`Integrações`, `Usuários`), separada do menu de Frota — primeira vez que o app bifurca o menu inteiro
+por segmento, não só esconde um item pontual. `aba_negociacoes` adicionada à matriz de Permissões
+(liberada pra todos os perfis de negócio, diferente de Anomalias/Planos de Viagem que são
+Frota-only).
+
+Limitação conhecida (documentada, não resolvida nesta fase): se um cliente cria uma negociação com o
+CNPJ de um posto que ainda não tem conta na FNI, `empresa_posto_id` fica nulo — quando esse posto se
+cadastrar depois, a negociação não é vinculada retroativamente de forma automática. Fica como
+melhoria futura.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos) em todos os arquivos novos/alterados.

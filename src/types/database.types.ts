@@ -55,12 +55,88 @@ export interface Database {
           // (verificarLimiteFrota) pra esta empresa. Uso interno/teste,
           // editável só por admin em /clientes/[id].
           bypass_limite_frota: boolean;
+          // Fase 27.50 — "Frota" (cliente de gestão de frotas) ou "Revenda"
+          // (posto revendedor com conta própria, feature de Negociação).
+          segmento: string;
           created_at: string | null;
           updated_at: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["empresas"]["Row"]> & { nome: string };
         Update: Partial<Database["public"]["Tables"]["empresas"]["Row"]>;
         Relationships: [];
+      };
+      negociacoes_postos: {
+        Row: {
+          id: string;
+          empresa_cliente_id: string;
+          empresa_posto_id: string | null;
+          posto_cnpj: string;
+          origem: string;
+          status: string;
+          rodada_atual: number;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["negociacoes_postos"]["Row"]> & {
+          empresa_cliente_id: string;
+          posto_cnpj: string;
+          origem: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["negociacoes_postos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "negociacoes_postos_empresa_cliente_id_fkey";
+            columns: ["empresa_cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "negociacoes_postos_empresa_posto_id_fkey";
+            columns: ["empresa_posto_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      negociacoes_postos_rodadas: {
+        Row: {
+          id: number;
+          negociacao_id: string;
+          numero_rodada: number;
+          autor: string;
+          combustivel: string;
+          vigencia_inicio: string;
+          vigencia_fim: string;
+          volume_minimo_mensal: number;
+          preco_unitario: number;
+          decisao: string;
+          decidido_em: string | null;
+          decidido_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["negociacoes_postos_rodadas"]["Row"]> & {
+          negociacao_id: string;
+          numero_rodada: number;
+          autor: string;
+          combustivel: string;
+          vigencia_inicio: string;
+          vigencia_fim: string;
+          volume_minimo_mensal: number;
+          preco_unitario: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["negociacoes_postos_rodadas"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "negociacoes_postos_rodadas_negociacao_id_fkey";
+            columns: ["negociacao_id"];
+            isOneToOne: false;
+            referencedRelation: "negociacoes_postos";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       usuarios_app: {
         Row: {
