@@ -3654,3 +3654,28 @@ Validado com `npx tsc --noEmit` e `npx eslint`, ambos limpos. Testado manualment
 direto no banco contra dados reais (Frotas & Frotas Ltda): 23 achados de preço regional, 0 nos
 outros 3 tipos — consistente com a fase de investigação (tanque/hodômetro/geo presentes nos dados,
 mas sem casos reais de violação nesse cliente de teste).
+
+## Fase 27.47 — Placa duplicada no ranking de veículos do Dashboard
+
+Achado real (print do Daniel): o ranking "Top veículos por gasto" no Dashboard mostrava a mesma
+placa duas vezes — uma linha com marca/modelo preenchidos, outra em branco — com gasto/litros/
+abastecimentos idênticos nas duas.
+
+Causa raiz: `indicador_ranking_veiculos` (função SQL só de leitura) fazia
+`left join cadastro_veiculos v on v.placa = a.placa`, sem normalizar a placa e sem restringir por
+empresa. Conferido direto no banco: a placa `SSZ2C51` tem duas linhas em `cadastro_veiculos` — uma
+do CNPJ real da Frotas & Frotas (com marca/modelo) e outra de um CNPJ que não corresponde a nenhuma
+empresa cadastrada (registro órfão), sem marca/modelo. Sem a restrição por empresa nem uma trava
+contra múltiplas linhas por placa, o `LEFT JOIN` casava com as duas e duplicava a placa no
+resultado (mesmo problema de fundo, uma variação nova: aqui não era formatação de CNPJ/placa
+divergente entre os dois lados, e sim a ausência total de filtro por empresa combinada com dado
+duplicado já existente na tabela).
+
+Corrigido replicando o padrão já usado (corretamente) em `indicador_eficiencia_veiculos`: normaliza
+placa e `cnpj_frota`, restringe ao CNPJ da própria empresa, e agrega com `max(marca)`/`max(modelo)`
+— assim, mesmo que ainda exista mais de uma linha cadastrada pra mesma placa dentro da mesma
+empresa, o resultado nunca duplica a linha do ranking. Testado direto no banco contra os dados reais
+do print (Frotas & Frotas Ltda): `SSZ2C51` e `SUT8I32` agora aparecem uma única vez cada, com
+marca/modelo corretos.
+
+Fix só de banco (função SQL), sem mudança de código da aplicação.
