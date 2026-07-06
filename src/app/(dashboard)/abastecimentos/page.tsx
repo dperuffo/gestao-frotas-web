@@ -132,6 +132,20 @@ export default async function AbastecimentosPage({
   const valorTotal = agregados.reduce((soma: number, r) => soma + (r.item_valor_total ?? 0), 0);
   const custoMedioLitro = litrosTotais > 0 ? valorTotal / litrosTotais : 0;
 
+  // Fase 27.67 — mesmo indicador de "tem ajuste em aberto" da visão do posto,
+  // agora também do lado cliente/Frota: uma bolinha vermelha na própria linha
+  // do abastecimento (a RLS já limita o resultado aos ajustes que envolvem a
+  // empresa selecionada).
+  let idsComAjusteAberto = new Set<string>();
+  if (linhas.length > 0) {
+    const { data: ajustesAbertos } = await supabase
+      .from("ajustes_abastecimentos")
+      .select("abastecimento_id")
+      .in("abastecimento_id", linhas.map((r) => Number(r.id)))
+      .in("status", ["pendente_cliente", "pendente_posto"]);
+    idsComAjusteAberto = new Set((ajustesAbertos ?? []).map((a) => String(a.abastecimento_id)));
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -230,7 +244,13 @@ export default async function AbastecimentosPage({
               return (
                 <tr key={r.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
-                    <Link href={`/abastecimentos/${r.id}`} className="font-medium text-frota-600 hover:underline">
+                    <Link href={`/abastecimentos/${r.id}`} className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline">
+                      {idsComAjusteAberto.has(String(r.id)) && (
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full bg-red-500"
+                          title="Ajuste pendente neste abastecimento"
+                        />
+                      )}
                       {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
                     </Link>
                   </td>

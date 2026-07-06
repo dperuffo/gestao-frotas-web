@@ -61,6 +61,7 @@ export async function AbastecimentosPosto({
   let totalRegistros = 0;
   let volumeTotal = 0;
   let receitaTotal = 0;
+  let idsComAjusteAberto = new Set<number>();
 
   const offset = offsetDaPagina(POR_PAGINA, page);
 
@@ -117,6 +118,19 @@ export async function AbastecimentosPosto({
     const agregados = (agregadosRaw ?? []) as { item_quantidade: number | null; item_valor_total: number | null }[];
     volumeTotal = agregados.reduce((soma, r) => soma + (r.item_quantidade ?? 0), 0);
     receitaTotal = agregados.reduce((soma, r) => soma + (r.item_valor_total ?? 0), 0);
+
+    // Fase 27.67 — Daniel pediu um indicador na PRÓPRIA linha do registro (não
+    // só o badge agregado do menu), pros dois lados verem de cara qual
+    // abastecimento tem um ajuste em andamento. Consulta só os IDs da página
+    // atual (a RLS já limita a resultado a ajustes que envolvem este posto).
+    if (registros.length > 0) {
+      const { data: ajustesAbertos } = await supabase
+        .from("ajustes_abastecimentos")
+        .select("abastecimento_id")
+        .in("abastecimento_id", registros.map((r) => r.id))
+        .in("status", ["pendente_cliente", "pendente_posto"]);
+      idsComAjusteAberto = new Set((ajustesAbertos ?? []).map((a) => a.abastecimento_id));
+    }
   }
 
   const { paginaAtual, totalPaginas } = calcularPaginacao(totalRegistros, POR_PAGINA, page);
@@ -212,7 +226,13 @@ export async function AbastecimentosPosto({
             {registros.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3 text-slate-600">
-                  <Link href={`/abastecimentos/${r.id}`} className="font-medium text-frota-600 hover:underline">
+                  <Link href={`/abastecimentos/${r.id}`} className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline">
+                    {idsComAjusteAberto.has(r.id) && (
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full bg-red-500"
+                        title="Ajuste pendente neste abastecimento"
+                      />
+                    )}
                     {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
                   </Link>
                 </td>

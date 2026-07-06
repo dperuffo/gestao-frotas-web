@@ -4292,3 +4292,24 @@ que o problema é específico da conta/sessão usada no teste, não da regra de 
 confirmar qual conta e qual abastecimento ele usou pra reproduzir com precisão.
 
 Validado com `npx tsc --noEmit` e `npx eslint` no `FormularioSolicitarAjuste.tsx` (limpo).
+
+## Fase 27.67 — Bolinha vermelha na própria linha do abastecimento com ajuste pendente
+
+O Daniel esclareceu que o indicador de notificação precisa aparecer em 2 lugares: no menu (já existia,
+badge agregado ao lado de "Abastecimentos") e também na própria linha do registro na lista — pra dar
+pra identificar de cara QUAL abastecimento tem um ajuste em andamento, sem precisar abrir um por um.
+
+Adicionado nas duas visões (`AbastecimentosPosto.tsx` e `page.tsx`/visão Frota): depois de carregar a
+página atual da tabela, uma consulta extra busca em `ajustes_abastecimentos` quais desses IDs têm
+ajuste com status `pendente_cliente` ou `pendente_posto` (a RLS já limita o resultado aos ajustes que
+envolvem a empresa/posto selecionado — não precisa filtro adicional de tenant). Os IDs encontrados
+ganham uma bolinha vermelha ao lado da data, dentro do próprio link pro detalhe.
+
+Nesta fase também foi reportado, mas ainda não reproduzido, um problema mais sério: testando de ponta
+a ponta (cliente cria o ajuste, posto verifica), o posto não recebeu nem o badge do menu nem qualquer
+sinal de que existe uma solicitação pendente — o que sugere que a criação do ajuste não está se
+concretizando (ou não está sendo associada corretamente ao posto), não só um problema de visualização.
+A investigação ficou pendente de acesso ao banco de dados (indisponível nesta sessão) — ver próximos
+passos no início da conversa seguinte.
+
+Validado com `npx tsc --noEmit` e `npx eslint` nos arquivos tocados (limpos).
