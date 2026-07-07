@@ -7,6 +7,7 @@ import {
   PERIODOS_FINANCEIRO,
   PERIODO_FINANCEIRO_LABEL,
   resolverPeriodoFinanceiro,
+  resolverJanelaPrevista,
   STATUS_FATURA_LABEL,
   statusFaturaExibicao,
   TIPO_DESPESA_POSTO_LABEL,
@@ -82,6 +83,10 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
 
   const hojeIso = new Date().toISOString().slice(0, 10);
   const { periodo, inicio, fim } = resolverPeriodoFinanceiro(periodoParam, inicioParam, fimParam);
+  // Fase 27.81 — janela separada, pra frente a partir de hoje, só pros
+  // indicadores/gráfico PROSPECTIVOS (vencendo/previsto). Ver comentário em
+  // resolverJanelaPrevista (financeiroPostos.ts) pro achado real.
+  const { inicio: inicioPrevisto, fim: fimPrevisto } = resolverJanelaPrevista(periodo, inicio, fim, hojeIso);
 
   let faturas: FaturaRow[] = [];
   let despesas: DespesaRow[] = [];
@@ -137,10 +142,10 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
     .reduce((s, d) => s + d.valor, 0);
 
   const aReceberVencendoNoPeriodo = faturas
-    .filter((f) => f.status === "aberta" && f.vencimento >= inicio && f.vencimento <= fim)
+    .filter((f) => f.status === "aberta" && f.vencimento >= inicioPrevisto && f.vencimento <= fimPrevisto)
     .reduce((s, f) => s + f.valor_total, 0);
   const aPagarVencendoNoPeriodo = despesas
-    .filter((d) => d.status === "aberta" && d.vencimento >= inicio && d.vencimento <= fim)
+    .filter((d) => d.status === "aberta" && d.vencimento >= inicioPrevisto && d.vencimento <= fimPrevisto)
     .reduce((s, d) => s + d.valor, 0);
   const saldoPrevistoPeriodo = aReceberVencendoNoPeriodo - aPagarVencendoNoPeriodo;
 
@@ -154,10 +159,11 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
     return { ...faixa, valor: linhas.reduce((s, f) => s + f.valor_total, 0), quantidade: linhas.length };
   });
 
-  // Gráfico de fluxo de caixa: 1 barra por dia dentro do período selecionado.
+  // Gráfico de fluxo de caixa: 1 barra por dia, pra frente a partir de hoje
+  // (janela prevista, não a janela retrospectiva usada pra "recebido/pago").
   const dadosGrafico: PontoFluxoCaixaPosto[] = [];
-  const cursor = new Date(inicio + "T00:00:00Z");
-  const fimData = new Date(fim + "T00:00:00Z");
+  const cursor = new Date(inicioPrevisto + "T00:00:00Z");
+  const fimData = new Date(fimPrevisto + "T00:00:00Z");
   while (cursor <= fimData) {
     const diaIso = cursor.toISOString().slice(0, 10);
     const aReceberDia = faturas
@@ -256,7 +262,10 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
 
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="card p-4 lg:col-span-2">
-              <h2 className="mb-3 text-sm font-semibold text-slate-900">Fluxo de caixa previsto (vencimentos por dia)</h2>
+              <h2 className="text-sm font-semibold text-slate-900">Fluxo de caixa previsto (vencimentos por dia)</h2>
+              <p className="mb-3 text-xs text-slate-400">
+                Previsão: {formatarDataBr(inicioPrevisto)} – {formatarDataBr(fimPrevisto)}
+              </p>
               <GraficoFluxoCaixaPosto dados={dadosGrafico} />
             </div>
             <div className="card p-4">

@@ -97,6 +97,36 @@ export function resolverPeriodoFinanceiro(
   return { periodo: periodoValido, inicio: paraIso(inicioData), fim };
 }
 
+// Fase 27.81 — achado real (Daniel reportou "Fluxo de caixa previsto" sempre
+// vazio): resolverPeriodoFinanceiro() sempre devolve uma janela pra TRÁS
+// (fim = hoje) pras opções rápidas — faz sentido pra "Recebido no período"/
+// "Pago no período" (são retrospectivos, olham pago_em), mas o gráfico e os
+// indicadores "vencendo no período"/"saldo previsto" são PROSPECTIVOS (olham
+// vencimento futuro) e usavam a mesma janela por engano, então uma fatura
+// com vencimento amanhã nunca aparecia no "15 dias" default. Esta função
+// devolve uma janela separada, pra frente a partir de hoje, com a mesma
+// duração em dias da opção rápida escolhida ("mês atual" = resto do mês).
+// "Personalizado" continua igual (o usuário já escolhe a direção manualmente).
+export function resolverJanelaPrevista(
+  periodo: PeriodoFinanceiro,
+  inicio: string,
+  fim: string,
+  hojeIso: string
+): { inicio: string; fim: string } {
+  if (periodo === "personalizado") return { inicio, fim };
+
+  if (periodo === "mes") {
+    const hoje = new Date(hojeIso + "T00:00:00Z");
+    const fimMes = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth() + 1, 0));
+    return { inicio: hojeIso, fim: paraIso(fimMes) };
+  }
+
+  const msPorDia = 24 * 60 * 60 * 1000;
+  const qtdDias = Math.round((new Date(fim + "T00:00:00Z").getTime() - new Date(inicio + "T00:00:00Z").getTime()) / msPorDia);
+  const fimPrevisto = new Date(new Date(hojeIso + "T00:00:00Z").getTime() + qtdDias * msPorDia);
+  return { inicio: hojeIso, fim: paraIso(fimPrevisto) };
+}
+
 // Faixas de atraso (aging list) — padrão de mercado citado em ferramentas de
 // cobrança/ERP (0-15, 16-30, 31-60, 61-90, 90+ dias).
 export const FAIXAS_AGING = [
