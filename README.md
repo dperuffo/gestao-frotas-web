@@ -4628,3 +4628,30 @@ selecionado" quando é admin), continua vendo o painel de custo NORMAL daquele c
 quem já usava assim.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.79 — Extrato de fatura vazio (CNPJ do posto não normalizado)
+
+Achado real (reportado pelo Daniel, print do extrato vazio numa fatura PAGA e confirmado depois em faturas
+ABERTAS também): a Fase 27.76 resolvia o `pv_cnpj` do posto via `negociacoes_postos.posto_cnpj`, mas esse
+campo é preenchido de forma inconsistente — só é gravado quando a negociação nasce do lado do CLIENTE
+(ele digita o CNPJ do posto-alvo); quando nasce do lado do POSTO (`origem = 'posto'`, ex: via API
+`/api/integracoes/negociacoes`), o formulário só pede o CNPJ do CLIENTE-alvo, então `posto_cnpj` fica
+`""` (string vazia) — nunca o CNPJ de verdade do posto. Mesmo nos casos em que `posto_cnpj` vinha
+preenchido, o valor não tem pontuação (`normalizarCNPJ`), enquanto `profrotas_abastecimentos.pv_cnpj` vem
+formatado (com pontuação, do robô de teste) — uma comparação direta (`=`) sem normalizar também falhava
+nesses casos.
+
+**Fix real:** a RPC `abastecimentos_da_fatura` (Fase 27.76) foi reescrita pra resolver o CNPJ do posto via
+`empresas.cnpj`, usando `negociacoes_postos.empresa_posto_id` (sempre preenchido, ao contrário de
+`posto_cnpj`) — é a MESMA fonte que o robô usa pra gravar `pv_cnpj`, então os dois sempre batem depois de
+normalizados. Como isso exige ler `empresas` do lado do POSTO (RLS bloqueia isso pro cliente — mesmo
+problema da Fase 27.68), a função virou `SECURITY DEFINER` com guarda de autorização manual própria
+(`empresa_cliente_id` OU `empresa_posto_id` da fatura, ou admin/superuser) — sem essa guarda, qualquer
+usuário autenticado poderia pedir o extrato de qualquer fatura de qualquer empresa.
+
+Testado direto no banco, simulando a sessão do `daniel.peruffo.app@gmail.com`, nas 4 faturas reais:
+todas batem EXATAMENTE com `quantidade_abastecimentos` já gravado (38/38, 36/36, 35/35, 36/36) —
+incluindo faturas cujas negociações nasceram do lado do posto (`posto_cnpj = ""`), que antes sempre
+davam extrato vazio.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

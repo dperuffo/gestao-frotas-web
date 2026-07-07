@@ -1617,6 +1617,25 @@ export interface Database {
           ultima_atualizacao: string | null;
         }[];
       };
+      // Fase 27.79 — extrato de abastecimentos de uma fatura_posto, com CNPJ
+      // do posto normalizado (negociacoes_postos.posto_cnpj sem pontuação vs
+      // profrotas_abastecimentos.pv_cnpj formatado — comparação direta
+      // sempre falhava). NÃO é SECURITY DEFINER: reaproveita a mesma RLS já
+      // existente em profrotas_abastecimentos (cliente via empresa_id, posto
+      // via pv_cnpj normalizado).
+      abastecimentos_da_fatura: {
+        Args: { p_fatura_id: string };
+        Returns: {
+          id: number;
+          data_abastecimento: string | null;
+          motorista_nome: string | null;
+          veiculo_placa: string | null;
+          item_nome: string | null;
+          item_quantidade: number | null;
+          item_valor_unitario: number | null;
+          item_valor_total: number | null;
+        }[];
+      };
       // Fase 27.41 — conta a frota REAL da empresa (cadastro_veiculos +
       // placas distintas vistas nos abastecimentos da integração, mesmo sem
       // cadastro formal) — usada por verificarLimiteFrota (src/lib/limitePlano.ts)

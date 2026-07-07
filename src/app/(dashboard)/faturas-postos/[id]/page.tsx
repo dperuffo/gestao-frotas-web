@@ -7,15 +7,6 @@ import { STATUS_FATURA_LABEL, statusFaturaExibicao } from "@/lib/financeiroPosto
 import BotaoBaixarPdfFaturaLazy from "./_components/BotaoBaixarPdfFaturaLazy";
 import type { ItemExtratoFaturaPdf } from "./_components/FaturaPdf";
 
-// Soma 1 dia a uma data "YYYY-MM-DD" sem depender do fuso local do servidor
-// (mesmo cuidado da Fase 23.1 — new Date("YYYY-MM-DD") interpreta como
-// meia-noite UTC, então manipular em UTC evita "voltar" um dia).
-function proximoDiaIso(dataIso: string): string {
-  const [ano, mes, dia] = dataIso.slice(0, 10).split("-").map(Number);
-  const d = new Date(Date.UTC(ano, mes - 1, dia + 1));
-  return d.toISOString().slice(0, 10);
-}
-
 // Fase 27.76 — pedido do Daniel: cada fatura precisa trazer um extrato dos
 // abastecimentos incluídos no período, com botão pra gerar PDF (dados da
 // fatura + abastecimentos). Rota nova e compartilhada (não só dentro de
@@ -37,43 +28,28 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
 
   if (!fatura) notFound();
 
-  // posto_nome e posto_cnpj só existem denormalizados em negociacoes_postos
-  // (faturas_postos só denormaliza cliente_nome) — evita join cross-tenant
-  // direto em `empresas` (mesmo problema de RLS da Fase 27.68).
+  // posto_nome só existe denormalizado em negociacoes_postos (faturas_postos
+  // só denormaliza cliente_nome) — evita join cross-tenant direto em
+  // `empresas` (mesmo problema de RLS da Fase 27.68).
   const { data: negociacao } = await supabase
     .from("negociacoes_postos")
-    .select("posto_nome, posto_cnpj")
+    .select("posto_nome")
     .eq("id", fatura.negociacao_id)
     .maybeSingle();
 
   const postoNome = negociacao?.posto_nome ?? "Posto";
   const clienteNome = fatura.cliente_nome ?? "Cliente";
 
-  // Extrato: abastecimentos deste cliente, fornecidos por este posto
-  // (pv_cnpj), dentro do período exato da fatura.
-  let abastecimentos: {
-    id: number;
-    data_abastecimento: string | null;
-    motorista_nome: string | null;
-    veiculo_placa: string | null;
-    item_nome: string | null;
-    item_quantidade: number | null;
-    item_valor_unitario: number | null;
-    item_valor_total: number | null;
-  }[] = [];
-
-  if (negociacao?.posto_cnpj) {
-    const { data } = await supabase
-      .from("profrotas_abastecimentos")
-      .select("id, data_abastecimento, motorista_nome, veiculo_placa, item_nome, item_quantidade, item_valor_unitario, item_valor_total")
-      .eq("empresa_id", fatura.empresa_cliente_id)
-      .eq("pv_cnpj", negociacao.posto_cnpj)
-      .gte("data_abastecimento", `${fatura.periodo_inicio}T00:00:00Z`)
-      .lt("data_abastecimento", `${proximoDiaIso(fatura.periodo_fim)}T00:00:00Z`)
-      .order("data_abastecimento", { ascending: true })
-      .limit(1000);
-    abastecimentos = data ?? [];
-  }
+  // Fase 27.79 — achado real (reportado pelo Daniel, extrato sempre vazio):
+  // negociacoes_postos.posto_cnpj é gravado SEM formatação (normalizarCNPJ,
+  // só dígitos), mas profrotas_abastecimentos.pv_cnpj vem formatado (com
+  // pontuação, do robô de teste/integração) — uma comparação direta (=) sem
+  // normalizar sempre falhava. Corrigido delegando pra RPC
+  // abastecimentos_da_fatura, que normaliza os dois lados em SQL (mesma
+  // lógica já usada pela RLS da tabela — não é SECURITY DEFINER, só reaproveita
+  // a mesma comparação num único lugar).
+  const { data: abastecimentosData } = await supabase.rpc("abastecimentos_da_fatura", { p_fatura_id: fatura.id });
+  const abastecimentos = abastecimentosData ?? [];
 
   const hojeIso = new Date().toISOString().slice(0, 10);
   const statusExib = statusFaturaExibicao(fatura.status, fatura.vencimento, hojeIso);
