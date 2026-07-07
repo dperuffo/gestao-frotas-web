@@ -9,6 +9,7 @@ import {
 } from "@/lib/financeiro";
 import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
 import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
+import { CobrancaEmAberto, type FaturaCobranca } from "./_components/CobrancaEmAberto";
 import { GraficoEvolucaoFinanceira, type PontoFinanceiro } from "./_components/GraficoEvolucaoFinanceira";
 import { FormularioOrcamento } from "./_components/FormularioOrcamento";
 import { FormularioCustoFixo } from "./_components/FormularioCustoFixo";
@@ -51,6 +52,33 @@ export default async function FinanceiroPage({
         desde: desdeAjustesIso,
       })
     : null;
+
+  // Fase 27.75 — pedido do Daniel: painel financeiro do cliente precisa
+  // mostrar a "cobrança em aberto" — faturas emitidas pelos postos com quem
+  // negociou (faturas_postos.empresa_cliente_id), cruzando TODOS os postos.
+  // Nome do posto resolvido via negociacoes_postos (mesmo truque das Fases
+  // 27.71/27.72 — faturas_postos não denormaliza nome do posto, e um join
+  // direto em `empresas` esbarraria na mesma RLS cross-tenant da Fase 27.68).
+  let faturasCobranca: FaturaCobranca[] = [];
+  if (empresaSelecionada) {
+    const [{ data: negociacoesParaNome }, { data: faturasData }] = await Promise.all([
+      supabase
+        .from("negociacoes_postos")
+        .select("empresa_posto_id, posto_nome")
+        .eq("empresa_cliente_id", empresaSelecionada),
+      supabase
+        .from("faturas_postos")
+        .select("id, empresa_posto_id, periodo_inicio, periodo_fim, vencimento, valor_total, status")
+        .eq("empresa_cliente_id", empresaSelecionada)
+        .order("vencimento", { ascending: false })
+        .limit(200),
+    ]);
+    const nomePorPostoId = new Map((negociacoesParaNome ?? []).map((n) => [n.empresa_posto_id, n.posto_nome]));
+    faturasCobranca = (faturasData ?? []).map((f) => ({
+      ...f,
+      posto_nome: nomePorPostoId.get(f.empresa_posto_id) ?? null,
+    }));
+  }
 
   let indicadores: {
     custo_combustivel: number;
@@ -326,6 +354,8 @@ export default async function FinanceiroPage({
             </h2>
             <TabelaCustosFixos linhas={linhasCustosFixos} />
           </div>
+
+          <CobrancaEmAberto faturas={faturasCobranca} />
 
           {resumoAjustes && (
             <div className="mt-6">

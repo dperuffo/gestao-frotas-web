@@ -4531,3 +4531,22 @@ negociação, no mesmo nível de combustível/volume/preço/vigência:
   quebrar integrações existentes.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.75 — Cobrança em aberto no painel financeiro do cliente
+
+Pedido do Daniel (mesma mensagem da Fase 27.74): "o painel financeiro precisa mostrar a cobrança em
+aberto e o impacto financeiro". O impacto financeiro (dos ajustes) já tinha entrado em `/financeiro` na
+Fase 27.70 — o que faltava era a "cobrança em aberto": até aqui, ver faturas (`faturas_postos`) só era
+possível do lado do POSTO (`/financeiro-posto`, "A receber"); o cliente não tinha nenhuma visão do que
+ele DEVE aos postos com quem negociou.
+
+Novo componente `CobrancaEmAberto.tsx` (`src/app/(dashboard)/financeiro/_components/`) — espelho do
+"A receber" de `/financeiro-posto`, só que do lado do cliente: total em aberto, total vencido, contagem
+de faturas em aberto, aviso da próxima a vencer, e tabela com todas as faturas (todos os postos).
+Renderizado em `/financeiro/page.tsx` logo antes da seção de ajustes.
+
+Nome do posto em cada fatura resolvido pelo mesmo truque das Fases 27.71/27.72/27.73 (mapa
+`empresa_posto_id -> posto_nome` a partir de `negociacoes_postos`, que já denormaliza isso) — evita
+outro join cross-tenant em `empresas` (mesmo problema de RLS da Fase 27.68).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
