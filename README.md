@@ -4350,3 +4350,29 @@ Testado com a RPC simulando a sessão real do `daniel.peruffo.app@gmail.com`: an
 consulta direta a `empresas` vinha vazia; com a nova função, resolve corretamente o posto.
 
 Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos tocados (limpos).
+
+## Fase 27.69 — Gráfico "Venda diária" do Dashboard do posto zerando a partir de hoje
+
+Achado real (reportado pelo Daniel, print do gráfico com um pico e depois zerando a partir de hoje):
+mesmo bug de fundo já documentado nas Fases 8/27.38/27.43 — o PostgREST corta qualquer resposta em
+1.000 linhas por padrão, **mesmo quando o código pede `.limit(5000)`** (o limite do servidor não é
+sobreposto pelo `.limit()` do client). `DashboardPosto.tsx` buscava todos os abastecimentos brutos dos
+últimos 30 dias pra calcular os KPIs de venda E o gráfico diário em JavaScript — com o Posto Teste
+gerando ~2.385 abastecimentos/dia (1 por veículo/dia, frota de teste grande), o corte de 1.000 linhas
+acontecia no meio do dia mais antigo já teria — os dias mais recentes (inclusive hoje) ficavam de fora
+do gráfico, e os KPIs (abastecimentos, volume, receita, ticket médio) vinham subestimados também, não
+só o gráfico.
+
+Corrigido com nova função agregada `resumo_vendas_diarias_posto(p_pv_cnpj, p_desde)` — devolve
+`(dia, item_nome, quantidade, volume, receita)` já somado por dia+combustível direto no banco, no
+máximo dias×combustíveis linhas (bem longe do limite de 1.000, não importa quantos abastecimentos
+brutos existam por baixo). `DashboardPosto.tsx` passou a montar os KPIs e o gráfico a partir desse
+resumo agregado, em vez de reduzir linha por linha em JS.
+
+**Risco relacionado, ainda não corrigido:** o Dashboard geral (visão Frota/admin, `dashboard/page.tsx`)
+tem uma consulta parecida (`profrotas_abastecimentos` dos últimos 6 meses, `.limit(5000)`, sem filtro de
+empresa) que alimenta o mesmo `GraficoEvolutivoPostos` — provavelmente sofre do mesmo corte de 1.000
+linhas, numa escala ainda maior (todas as empresas juntas). Não mexi nisso ainda porque é uma tela
+diferente e o Daniel não relatou problema nela — fica registrado aqui pra não esquecer.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

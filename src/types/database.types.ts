@@ -1554,6 +1554,14 @@ export interface Database {
         Args: { p_cnpj: string; p_segmento: string };
         Returns: string;
       };
+      // Fase 27.69 — resumo agregado (dia, combustível, quantidade, volume,
+      // receita) dos abastecimentos fornecidos por um posto — devolve no
+      // máximo dias×combustíveis linhas, imune ao limite de 1000 linhas do
+      // PostgREST que afetava a busca de linhas brutas em DashboardPosto.tsx.
+      resumo_vendas_diarias_posto: {
+        Args: { p_pv_cnpj: string; p_desde: string };
+        Returns: { dia: string; item_nome: string; quantidade: number; volume: number; receita: number }[];
+      };
       // Fase 27.41 — conta a frota REAL da empresa (cadastro_veiculos +
       // placas distintas vistas nos abastecimentos da integração, mesmo sem
       // cadastro formal) — usada por verificarLimiteFrota (src/lib/limitePlano.ts)

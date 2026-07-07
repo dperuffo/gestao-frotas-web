@@ -87,41 +87,44 @@ export async function DashboardPosto({
   // abastecimentos que este posto forneceu (mesma fonte/filtro de
   // AbastecimentosPosto: profrotas_abastecimentos.pv_cnpj = CNPJ deste
   // posto — populado pelo robô e, no futuro, por uma integração real).
+  //
+  // Fase 27.69 — achado real (reportado pelo Daniel, print do gráfico
+  // "zerado" a partir de hoje): a busca antiga trazia TODAS as linhas
+  // brutas dos últimos 30 dias (`.limit(5000)`) e agregava em JS — mas o
+  // PostgREST corta em 1000 linhas por padrão, não importa o `.limit()`
+  // pedido (mesmo bug de fundo da Fase 27.38). Com ~2385 abastecimentos/dia
+  // neste posto de teste, o corte acontecia no meio do dia 05/07 — os dias
+  // seguintes (inclusive hoje) ficavam de fora do gráfico E os KPIs de venda
+  // vinham subestimados. Corrigido chamando a RPC `resumo_vendas_diarias_posto`,
+  // que agrega (dia, combustível) direto no banco — no máximo
+  // dias×combustíveis linhas, bem longe do limite de 1000.
   const { data: empresaPosto } = await supabase.from("empresas").select("cnpj").eq("id", empresaPostoId).maybeSingle();
   const desdeIso = new Date(Date.now() - JANELA_DESEMPENHO_DIAS * 24 * 60 * 60 * 1000).toISOString();
 
-  let vendas: {
-    item_nome: string | null;
-    item_quantidade: number | null;
-    item_valor_total: number | null;
-    data_abastecimento: string | null;
-  }[] = [];
+  let resumoDiario: { dia: string; item_nome: string; quantidade: number; volume: number; receita: number }[] = [];
 
   if (empresaPosto?.cnpj) {
-    const { data } = await supabase
-      .from("profrotas_abastecimentos")
-      .select("item_nome, item_quantidade, item_valor_total, data_abastecimento")
-      .eq("pv_cnpj", empresaPosto.cnpj)
-      .gte("data_abastecimento", desdeIso)
-      .order("data_abastecimento", { ascending: true })
-      .limit(5000);
-    vendas = data ?? [];
+    const { data } = await supabase.rpc("resumo_vendas_diarias_posto", {
+      p_pv_cnpj: empresaPosto.cnpj,
+      p_desde: desdeIso,
+    });
+    resumoDiario = data ?? [];
   }
 
-  const volumeVendido = vendas.reduce((soma, v) => soma + (v.item_quantidade ?? 0), 0);
-  const receitaVendida = vendas.reduce((soma, v) => soma + (v.item_valor_total ?? 0), 0);
+  const totalAbastecimentos = resumoDiario.reduce((soma, r) => soma + r.quantidade, 0);
+  const volumeVendido = resumoDiario.reduce((soma, r) => soma + r.volume, 0);
+  const receitaVendida = resumoDiario.reduce((soma, r) => soma + r.receita, 0);
   const precoMedioGeral = volumeVendido > 0 ? receitaVendida / volumeVendido : 0;
-  const ticketMedio = vendas.length > 0 ? receitaVendida / vendas.length : 0;
+  const ticketMedio = totalAbastecimentos > 0 ? receitaVendida / totalAbastecimentos : 0;
 
   // Desempenho por combustível: volume, receita, preço médio e % do
   // volume total — ordenado do combustível mais vendido pro menos.
   const porCombustivel = new Map<string, { volume: number; receita: number }>();
-  for (const v of vendas) {
-    const nome = v.item_nome ?? "—";
-    const acumulado = porCombustivel.get(nome) ?? { volume: 0, receita: 0 };
-    acumulado.volume += v.item_quantidade ?? 0;
-    acumulado.receita += v.item_valor_total ?? 0;
-    porCombustivel.set(nome, acumulado);
+  for (const r of resumoDiario) {
+    const acumulado = porCombustivel.get(r.item_nome) ?? { volume: 0, receita: 0 };
+    acumulado.volume += r.volume;
+    acumulado.receita += r.receita;
+    porCombustivel.set(r.item_nome, acumulado);
   }
   const desempenhoPorCombustivel = Array.from(porCombustivel.entries())
     .map(([combustivel, { volume, receita }]) => ({
@@ -150,13 +153,11 @@ export async function DashboardPosto({
     diasGrafico.push(d.toISOString().slice(0, 10));
   }
   const volumePorDiaCombustivel = new Map<string, Map<string, number>>();
-  for (const v of vendas) {
-    if (!v.data_abastecimento) continue;
-    const dia = v.data_abastecimento.slice(0, 10);
+  for (const r of resumoDiario) {
+    const dia = r.dia.slice(0, 10);
     if (dia < diasGrafico[0]) continue;
-    const nome = v.item_nome ?? "—";
     const porDia = volumePorDiaCombustivel.get(dia) ?? new Map<string, number>();
-    porDia.set(nome, (porDia.get(nome) ?? 0) + (v.item_quantidade ?? 0));
+    porDia.set(r.item_nome, (porDia.get(r.item_nome) ?? 0) + r.volume);
     volumePorDiaCombustivel.set(dia, porDia);
   }
   const dadosGraficoDiario: PontoEvolutivoPostos[] = diasGrafico.map((dia) => {
@@ -193,7 +194,7 @@ export async function DashboardPosto({
         Desempenho de vendas — últimos {JANELA_DESEMPENHO_DIAS} dias
       </p>
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <Indicador label="Abastecimentos" valor={vendas.length.toLocaleString("pt-BR")} />
+        <Indicador label="Abastecimentos" valor={totalAbastecimentos.toLocaleString("pt-BR")} />
         <Indicador label="Volume transacionado" valor={`${volumeVendido.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`} />
         <Indicador label="Receita total" valor={formatarMoeda(receitaVendida)} />
         <Indicador label="Preço médio praticado" valor={formatarMoeda(precoMedioGeral)} />
