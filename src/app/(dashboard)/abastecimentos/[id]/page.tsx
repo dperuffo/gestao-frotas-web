@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { normalizarCNPJ, formatarDataHoraBr } from "@/lib/utils";
+import { formatarDataHoraBr } from "@/lib/utils";
 import type { AutorAjuste } from "@/lib/ajustesAbastecimentos";
 import { AbastecimentoForm } from "../_components/AbastecimentoForm";
 import { ExcluirAbastecimento } from "../_components/ExcluirAbastecimento";
@@ -13,6 +13,19 @@ import { PainelAjusteAbastecimento } from "../_components/PainelAjusteAbastecime
 // bater com uma empresa segmento="Revenda" cadastrada). Sem isso (posto
 // avulso, não integrado à FNI), a edição continua direta, como sempre foi —
 // não tem "outro lado" pra notificar/aprovar.
+//
+// Fase 27.68 — achado real: a resolução do posto (por CNPJ) e o nome do
+// cliente eram lidos direto de `empresas` com o client do usuário logado,
+// sujeito à RLS `empresas_select_membro` (só libera ver empresas das quais
+// o usuário é membro, ou o e-mail superusuário/admin). Um cliente comum
+// NUNCA é "membro" do posto — a busca vinha vazia, `temContraparte` dava
+// falso, e a tela caía na edição direta escondendo o painel de ajuste,
+// mesmo com uma solicitação de verdade pendente. Corrigido: (1) o nome do
+// cliente agora vem do próprio `frota_razao_social` já denormalizado na
+// linha do abastecimento (não precisa de join, mesmo espírito da Fase
+// 27.51/27.64); (2) a resolução do posto por CNPJ agora usa a RPC
+// SECURITY DEFINER `resolver_empresa_por_cnpj_segmento`, que faz essa
+// checagem pontual sem depender da RLS de `empresas`.
 export default async function EditarAbastecimentoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -24,15 +37,15 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
     .maybeSingle();
   if (!abastecimento) notFound();
 
-  const { data: empresaCliente } = abastecimento.empresa_id
-    ? await supabase.from("empresas").select("nome").eq("id", abastecimento.empresa_id).maybeSingle()
-    : { data: null };
+  const nomeCliente = abastecimento.frota_razao_social ?? undefined;
 
   let empresaPostoId: string | null = null;
   if (abastecimento.pv_cnpj) {
-    const cnpjNormalizado = normalizarCNPJ(abastecimento.pv_cnpj);
-    const { data: candidatos } = await supabase.from("empresas").select("id, cnpj, segmento").eq("segmento", "Revenda");
-    empresaPostoId = (candidatos ?? []).find((e) => normalizarCNPJ(e.cnpj ?? "") === cnpjNormalizado)?.id ?? null;
+    const { data } = await supabase.rpc("resolver_empresa_por_cnpj_segmento", {
+      p_cnpj: abastecimento.pv_cnpj,
+      p_segmento: "Revenda",
+    });
+    empresaPostoId = data ?? null;
   }
 
   const temContraparte = !!(abastecimento.empresa_id && empresaPostoId);
@@ -44,7 +57,7 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
           <h1 className="text-xl font-semibold text-slate-900">Editar Abastecimento</h1>
           <ExcluirAbastecimento id={abastecimento.id} />
         </div>
-        <AbastecimentoForm abastecimento={abastecimento} empresas={[]} nomeEmpresaAtual={empresaCliente?.nome} />
+        <AbastecimentoForm abastecimento={abastecimento} empresas={[]} nomeEmpresaAtual={nomeCliente} />
       </div>
     );
   }
@@ -104,7 +117,7 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
             label="Valor total"
             valor={abastecimento.item_valor_total != null ? abastecimento.item_valor_total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
           />
-          <ValorAtual label="Cliente" valor={empresaCliente?.nome ?? "—"} />
+          <ValorAtual label="Cliente" valor={nomeCliente ?? "—"} />
           <ValorAtual label="Posto" valor={abastecimento.pv_razao_social ?? "—"} />
         </div>
       </div>

@@ -10,7 +10,15 @@ function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-type SearchParamsPosto = { combustivel?: string; cliente?: string; q?: string; de?: string; ate?: string; page?: string };
+type SearchParamsPosto = {
+  combustivel?: string;
+  cliente?: string;
+  q?: string;
+  de?: string;
+  ate?: string;
+  page?: string;
+  ajuste?: string;
+};
 
 // Fase 27.58 — visão do posto na mesma tela /abastecimentos: o que ele
 // FORNECEU (não o que consumiu — isso é o lado cliente, acima em
@@ -37,7 +45,7 @@ export async function AbastecimentosPosto({
   searchParams: SearchParamsPosto;
 }) {
   const supabase = await createClient();
-  const { combustivel, cliente, q, de, ate, page } = searchParams;
+  const { combustivel, cliente, q, de, ate, page, ajuste } = searchParams;
 
   const { data: empresa } = await supabase.from("empresas").select("cnpj").eq("id", empresaPostoId).maybeSingle();
   const meuCnpj = empresa?.cnpj;
@@ -83,7 +91,20 @@ export async function AbastecimentosPosto({
       a.nome.localeCompare(b.nome)
     );
 
-    function comFiltros<T extends { eq: (...args: [string, string]) => T; or: (arg: string) => T; gte: (...args: [string, string]) => T; lte: (...args: [string, string]) => T }>(
+    // Fase 27.68 — Daniel pediu um filtro pra ver só os abastecimentos com
+    // ajuste pendente ("melhor visualização"). Aproveitada a mesma consulta
+    // pra também pintar a bolinha vermelha na linha (Fase 27.67) — antes essa
+    // bolinha só olhava a página atual; agora é 1 consulta só, com todos os
+    // IDs em aberto pra este posto (a RLS já limita ao que envolve este
+    // posto), reaproveitada nos dois lugares.
+    const { data: ajustesAbertosTodos } = await supabase
+      .from("ajustes_abastecimentos")
+      .select("abastecimento_id")
+      .in("status", ["pendente_cliente", "pendente_posto"]);
+    idsComAjusteAberto = new Set((ajustesAbertosTodos ?? []).map((a) => a.abastecimento_id));
+    const idsFiltroAjuste = idsComAjusteAberto.size > 0 ? Array.from(idsComAjusteAberto) : [-1];
+
+    function comFiltros<T extends { eq: (...args: [string, string]) => T; or: (arg: string) => T; gte: (...args: [string, string]) => T; lte: (...args: [string, string]) => T; in: (coluna: string, valores: number[]) => T }>(
       builder: T
     ): T {
       let query = builder.eq("pv_cnpj", meuCnpj as string);
@@ -94,6 +115,7 @@ export async function AbastecimentosPosto({
       if (q) query = query.or(`veiculo_placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,frota_razao_social.ilike.%${q}%`);
       if (de) query = query.gte("data_abastecimento", de);
       if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
+      if (ajuste === "pendente") query = query.in("id", idsFiltroAjuste);
       return query;
     }
 
@@ -118,19 +140,6 @@ export async function AbastecimentosPosto({
     const agregados = (agregadosRaw ?? []) as { item_quantidade: number | null; item_valor_total: number | null }[];
     volumeTotal = agregados.reduce((soma, r) => soma + (r.item_quantidade ?? 0), 0);
     receitaTotal = agregados.reduce((soma, r) => soma + (r.item_valor_total ?? 0), 0);
-
-    // Fase 27.67 — Daniel pediu um indicador na PRÓPRIA linha do registro (não
-    // só o badge agregado do menu), pros dois lados verem de cara qual
-    // abastecimento tem um ajuste em andamento. Consulta só os IDs da página
-    // atual (a RLS já limita a resultado a ajustes que envolvem este posto).
-    if (registros.length > 0) {
-      const { data: ajustesAbertos } = await supabase
-        .from("ajustes_abastecimentos")
-        .select("abastecimento_id")
-        .in("abastecimento_id", registros.map((r) => r.id))
-        .in("status", ["pendente_cliente", "pendente_posto"]);
-      idsComAjusteAberto = new Set((ajustesAbertos ?? []).map((a) => a.abastecimento_id));
-    }
   }
 
   const { paginaAtual, totalPaginas } = calcularPaginacao(totalRegistros, POR_PAGINA, page);
@@ -138,7 +147,7 @@ export async function AbastecimentosPosto({
 
   function linkFiltro(extra: Record<string, string | undefined>) {
     const sp = new URLSearchParams();
-    const base = { cliente, q, de, ate, ...extra };
+    const base = { cliente, q, de, ate, ajuste, ...extra };
     for (const [chave, valor] of Object.entries(base)) {
       if (valor) sp.set(chave, valor);
     }
@@ -178,10 +187,19 @@ export async function AbastecimentosPosto({
             {p}
           </Link>
         ))}
+        {/* Fase 27.68 — filtro pra ver só quem tem ajuste pendente, pra não
+            precisar abrir registro por registro procurando a bolinha vermelha. */}
+        <Link
+          href={linkFiltro({ ajuste: ajuste === "pendente" ? undefined : "pendente" })}
+          className={`rounded-full px-3 py-1 text-xs font-medium ${ajuste === "pendente" ? "bg-red-500 text-white" : "bg-slate-100 text-slate-600"}`}
+        >
+          🔴 Pendente de ajuste
+        </Link>
       </div>
 
       <form className="mb-4 flex flex-wrap items-end gap-3">
         <input type="hidden" name="combustivel" value={combustivel ?? ""} />
+        <input type="hidden" name="ajuste" value={ajuste ?? ""} />
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
           <select name="cliente" defaultValue={cliente ?? ""} className="input text-sm">
@@ -262,7 +280,7 @@ export async function AbastecimentosPosto({
             totalRegistros={totalRegistros}
             porPagina={POR_PAGINA}
             basePath="/abastecimentos"
-            paramsAtuais={{ combustivel, cliente, q, de, ate }}
+            paramsAtuais={{ combustivel, cliente, q, de, ate, ajuste }}
           />
         </div>
       </div>

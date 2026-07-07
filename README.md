@@ -4313,3 +4313,40 @@ A investigação ficou pendente de acesso ao banco de dados (indisponível nesta
 passos no início da conversa seguinte.
 
 Validado com `npx tsc --noEmit` e `npx eslint` nos arquivos tocados (limpos).
+
+## Fase 27.68 — Causa raiz real do ajuste "sumido" + filtro de pendentes
+
+Com o acesso ao banco reconectado, confirmei que a criação do ajuste sempre funcionou (2 registros de
+teste reais existiam em `ajustes_abastecimentos`, com `status`/`empresa_cliente_id`/`empresa_posto_id`
+corretos) — o problema era só na exibição, mas de um jeito mais sério do que "falta um link": no
+`/abastecimentos/[id]`, quem NÃO fosse admin/superusuário via a tela de **edição direta de sempre**
+em vez do painel de ajuste, mesmo com uma solicitação de verdade pendente pra aquele registro.
+
+**Causa raiz:** a página resolvia o posto (pra decidir se o abastecimento "tem contraparte") consultando
+`empresas` filtrado por `segmento = 'Revenda'`, usando o client autenticado do próprio usuário — sujeito
+à RLS `empresas_select_membro`, que só libera ver empresas das quais o usuário é membro (com bypass só
+pro e-mail superusuário e pro perfil admin). Um cliente comum (ex: `daniel.peruffo.app@gmail.com`,
+perfil `gestor_frota`) nunca é "membro" do posto — a busca vinha sempre vazia, `empresaPostoId` ficava
+`null`, `temContraparte` dava falso, e a tela caía na edição direta, escondendo o painel de aprovação.
+A bolinha vermelha (Fase 27.67) não sofria desse problema por consultar `ajustes_abastecimentos`
+diretamente, sem depender de `empresas` — por isso ela aparecia normalmente enquanto a tela de detalhe
+não trazia as opções de aprovar/recusar/contrapor.
+
+**Correção:** nova função `resolver_empresa_por_cnpj_segmento(p_cnpj, p_segmento)`, `SECURITY DEFINER`,
+que resolve o id de uma empresa por CNPJ normalizado + segmento ignorando a RLS de `empresas` — expõe
+só o ID (nada mais da tabela), então não abre nenhum dado cross-tenant além do estritamente necessário
+pra esse fluxo. `abastecimentos/[id]/page.tsx` passou a usar essa RPC em vez da consulta direta; também
+aproveitado pra remover outra consulta que tinha o mesmo problema (nome do cliente, agora lido direto de
+`frota_razao_social`, já denormalizado na própria linha do abastecimento — sem precisar de join, mesmo
+achado já registrado nas Fases 27.51/27.64).
+
+**Filtro "Pendente de ajuste":** Daniel pediu um jeito melhor de visualizar quais abastecimentos têm
+ajuste em aberto, sem precisar abrir um por um. Adicionada uma pill de filtro (🔴 Pendente de ajuste) nas
+duas visões (`AbastecimentosPosto.tsx` e a visão Frota em `page.tsx`) — reaproveita a mesma consulta que
+já alimentava a bolinha da linha (Fase 27.67), agora buscada uma vez só (não mais por página) e usada
+tanto pro filtro quanto pro indicador visual.
+
+Testado com a RPC simulando a sessão real do `daniel.peruffo.app@gmail.com`: antes da correção, a
+consulta direta a `empresas` vinha vazia; com a nova função, resolve corretamente o posto.
+
+Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos tocados (limpos).

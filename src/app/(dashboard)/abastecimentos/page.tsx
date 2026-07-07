@@ -45,9 +45,10 @@ export default async function AbastecimentosPage({
     page?: string;
     combustivel?: string;
     cliente?: string;
+    ajuste?: string;
   }>;
 }) {
-  const { q, de, ate, empresa: empresaParam, page: pageParam, combustivel, cliente } = await searchParams;
+  const { q, de, ate, empresa: empresaParam, page: pageParam, combustivel, cliente, ajuste } = await searchParams;
   const supabase = await createClient();
 
   // Fase 27.8 — mesmo seletor de cliente já usado em Postos, Relatórios,
@@ -72,7 +73,7 @@ export default async function AbastecimentosPage({
         <AbastecimentosPosto
           empresaPostoId={empresaSelecionada}
           nomeEmpresaSelecionada={nomeEmpresaSelecionada}
-          searchParams={{ combustivel, cliente, q, de, ate, page: pageParam }}
+          searchParams={{ combustivel, cliente, q, de, ate, page: pageParam, ajuste }}
         />
       );
     }
@@ -93,6 +94,22 @@ export default async function AbastecimentosPage({
   // continuam refletindo TODO o resultado filtrado — não só a página visível
   // — por isso rodam numa consulta de agregação separada (só as 2 colunas
   // numéricas necessárias, sem os demais campos da tabela).
+  // Fase 27.68 — Daniel pediu um filtro pra ver só os abastecimentos com
+  // ajuste pendente. Busca upfront os IDs (escopados à empresa selecionada —
+  // a RLS já limita ao que envolve essa empresa) e reaproveita pra também
+  // pintar a bolinha vermelha na linha (Fase 27.67), sem precisar de uma 2ª
+  // consulta separada.
+  let idsComAjusteAberto = new Set<number>();
+  if (empresaSelecionada) {
+    const { data: ajustesAbertosTodos } = await supabase
+      .from("ajustes_abastecimentos")
+      .select("abastecimento_id")
+      .eq("empresa_cliente_id", empresaSelecionada)
+      .in("status", ["pendente_cliente", "pendente_posto"]);
+    idsComAjusteAberto = new Set((ajustesAbertosTodos ?? []).map((a) => a.abastecimento_id));
+  }
+  const idsFiltroAjuste = idsComAjusteAberto.size > 0 ? Array.from(idsComAjusteAberto) : [-1];
+
   // Builder genérico do supabase-js — usado pras 3 consultas (contagem,
   // agregados e página) com os mesmos filtros, por isso não dá pra tipar
   // exatamente igual ao retorno específico de cada .select() diferente.
@@ -102,6 +119,7 @@ export default async function AbastecimentosPage({
     if (de) query = query.gte("data_abastecimento", de);
     if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
     if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
+    if (ajuste === "pendente") query = query.in("id", idsFiltroAjuste);
     return query;
   }
 
@@ -131,20 +149,6 @@ export default async function AbastecimentosPage({
   const litrosTotais = agregados.reduce((soma: number, r) => soma + (r.item_quantidade ?? 0), 0);
   const valorTotal = agregados.reduce((soma: number, r) => soma + (r.item_valor_total ?? 0), 0);
   const custoMedioLitro = litrosTotais > 0 ? valorTotal / litrosTotais : 0;
-
-  // Fase 27.67 — mesmo indicador de "tem ajuste em aberto" da visão do posto,
-  // agora também do lado cliente/Frota: uma bolinha vermelha na própria linha
-  // do abastecimento (a RLS já limita o resultado aos ajustes que envolvem a
-  // empresa selecionada).
-  let idsComAjusteAberto = new Set<string>();
-  if (linhas.length > 0) {
-    const { data: ajustesAbertos } = await supabase
-      .from("ajustes_abastecimentos")
-      .select("abastecimento_id")
-      .in("abastecimento_id", linhas.map((r) => Number(r.id)))
-      .in("status", ["pendente_cliente", "pendente_posto"]);
-    idsComAjusteAberto = new Set((ajustesAbertos ?? []).map((a) => String(a.abastecimento_id)));
-  }
 
   return (
     <div>
@@ -209,6 +213,7 @@ export default async function AbastecimentosPage({
             clicar em "Filtrar". Mesmo bug corrigido em /veiculos e
             /motoristas. */}
         <input type="hidden" name="empresa" value={empresaParam ?? ""} />
+        <input type="hidden" name="ajuste" value={ajuste ?? ""} />
         <input
           type="search"
           name="q"
@@ -222,6 +227,23 @@ export default async function AbastecimentosPage({
           Filtrar
         </button>
       </form>
+
+      {/* Fase 27.68 — filtro pra ver só quem tem ajuste pendente, pra não
+          precisar abrir registro por registro procurando a bolinha vermelha. */}
+      <div className="mb-4">
+        <Link
+          href={(() => {
+            const sp = new URLSearchParams();
+            const base = { empresa: empresaParam, q, de, ate, ajuste: ajuste === "pendente" ? undefined : "pendente" };
+            for (const [chave, valor] of Object.entries(base)) if (valor) sp.set(chave, valor);
+            const qs = sp.toString();
+            return qs ? `/abastecimentos?${qs}` : "/abastecimentos";
+          })()}
+          className={`rounded-full px-3 py-1 text-xs font-medium ${ajuste === "pendente" ? "bg-red-500 text-white" : "bg-slate-100 text-slate-600"}`}
+        >
+          🔴 Pendente de ajuste
+        </Link>
+      </div>
 
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar abastecimentos: {error.message}</p>}
@@ -245,7 +267,7 @@ export default async function AbastecimentosPage({
                 <tr key={r.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
                     <Link href={`/abastecimentos/${r.id}`} className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline">
-                      {idsComAjusteAberto.has(String(r.id)) && (
+                      {idsComAjusteAberto.has(Number(r.id)) && (
                         <span
                           className="h-2 w-2 shrink-0 rounded-full bg-red-500"
                           title="Ajuste pendente neste abastecimento"
@@ -286,7 +308,7 @@ export default async function AbastecimentosPage({
             totalRegistros={totalRegistros}
             porPagina={POR_PAGINA}
             basePath="/abastecimentos"
-            paramsAtuais={{ q, de, ate, empresa: empresaParam }}
+            paramsAtuais={{ q, de, ate, empresa: empresaParam, ajuste }}
           />
         </div>
       </div>

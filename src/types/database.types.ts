@@ -1544,6 +1544,16 @@ export interface Database {
         Args: { p_ajuste_id: string; p_decisao: string; p_decidido_por: string | null };
         Returns: undefined;
       };
+      // Fase 27.68 — resolve o id de uma empresa por CNPJ normalizado +
+      // segmento, ignorando a RLS de `empresas` (empresas_select_membro só
+      // libera ver empresas das quais o usuário é membro) — usada em
+      // abastecimentos/[id]/page.tsx pra descobrir se o posto do
+      // abastecimento está cadastrado na plataforma, mesmo quando quem está
+      // olhando é o cliente (que nunca é "membro" do posto).
+      resolver_empresa_por_cnpj_segmento: {
+        Args: { p_cnpj: string; p_segmento: string };
+        Returns: string;
+      };
       // Fase 27.41 — conta a frota REAL da empresa (cadastro_veiculos +
       // placas distintas vistas nos abastecimentos da integração, mesmo sem
       // cadastro formal) — usada por verificarLimiteFrota (src/lib/limitePlano.ts)
