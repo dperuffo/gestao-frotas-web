@@ -140,6 +140,14 @@ export function FormularioSolicitarAjuste({
         (cliente ou posto) vai receber uma notificação para aprovar ou recusar.
       </p>
 
+      {/* Fase 27.70 — snapshot do valor total ANTES do ajuste, só pra dar pra
+          calcular o impacto financeiro depois (ver solicitarAjusteAcao). Não
+          existe em contraproposta: o snapshot já está gravado no header do
+          ajuste original, criado com a 1ª solicitação. */}
+      {!ajusteIdParaContraproposta && (
+        <input type="hidden" name="valor_original_total" value={numeroParaCampo(valoresAtuais.item_valor_total)} />
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Campo label="Data e hora">
           <input

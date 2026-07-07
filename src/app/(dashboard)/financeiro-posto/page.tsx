@@ -13,6 +13,8 @@ import {
   FAIXAS_AGING,
   diasEmAtraso,
 } from "@/lib/financeiroPostos";
+import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
+import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
 import { GraficoFluxoCaixaPosto, type PontoFluxoCaixaPosto } from "./_components/GraficoFluxoCaixaPosto";
 import { FormularioDespesaPosto } from "./_components/FormularioDespesaPosto";
 import { BotaoAcaoFinanceiraPosto } from "./_components/BotaoAcaoFinanceiraPosto";
@@ -84,6 +86,19 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   let faturas: FaturaRow[] = [];
   let despesas: DespesaRow[] = [];
   let erro: string | undefined;
+
+  // Fase 27.70 — pedido do Daniel: seção "Ajustes de abastecimento" também
+  // no painel financeiro do posto.
+  const JANELA_AJUSTES_DIAS = 30;
+  const desdeAjustesIso = new Date(Date.now() - JANELA_AJUSTES_DIAS * 24 * 60 * 60 * 1000).toISOString();
+  const resumoAjustes =
+    empresaSelecionada && segmentoSelecionado === "Revenda"
+      ? await resumoAjustesAbastecimentos(supabase, {
+          lado: "posto",
+          empresaId: empresaSelecionada,
+          desde: desdeAjustesIso,
+        })
+      : null;
 
   if (empresaSelecionada) {
     const [resultadoFaturas, resultadoDespesas] = await Promise.all([
@@ -373,6 +388,18 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
               </tbody>
             </table>
           </div>
+
+          {resumoAjustes && (
+            <div className="mt-6">
+              <SecaoAjustesAbastecimentos
+                pendentes={resumoAjustes.pendentes}
+                aceitosNoPeriodo={resumoAjustes.aceitosNoPeriodo}
+                impactoFinanceiro={resumoAjustes.impactoFinanceiro}
+                ultimosAjustes={resumoAjustes.ultimosAjustes}
+                diasPeriodo={JANELA_AJUSTES_DIAS}
+              />
+            </div>
+          )}
         </>
       )}
     </div>

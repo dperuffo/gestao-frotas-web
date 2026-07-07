@@ -79,6 +79,11 @@ export async function criarSolicitacaoAjuste(
     campos: CamposAjuste;
     motivo: string | null;
     criadoPor: string | null;
+    // Fase 27.70 — snapshot do item_valor_total ATUAL do abastecimento no
+    // momento da criação, pra dar pra calcular o "impacto financeiro" nos
+    // dashboards depois (valor_aceito - valor_original) — sem isso, o valor
+    // original se perde assim que o ajuste é aceito e aplicado de verdade.
+    valorOriginal: number | null;
   }
 ): Promise<{ id: string } | { erro: string }> {
   const erroValidacao = validarCamposAjuste(params.campos);
@@ -97,6 +102,7 @@ export async function criarSolicitacaoAjuste(
       rodada_atual: 1,
       criado_por: params.criadoPor,
       atualizado_por: params.criadoPor,
+      valor_original: params.valorOriginal,
     })
     .select("id")
     .single();
@@ -209,4 +215,95 @@ export async function cancelarAjuste(
     .in("status", ["pendente_posto", "pendente_cliente"]);
   if (error) return { erro: error.message };
   return { ok: true };
+}
+
+// Fase 27.70 — resumo de ajustes pra seção "Ajustes de abastecimento" nos
+// dashboards (cliente e posto) e nos painéis financeiros de ambos. Um único
+// helper reaproveitado nos 4 lugares — só muda qual coluna filtra
+// (empresa_cliente_id ou empresa_posto_id) conforme quem está olhando.
+export type ItemResumoAjuste = {
+  id: string;
+  abastecimentoId: number;
+  status: StatusAjuste;
+  origem: AutorAjuste;
+  valorOriginal: number | null;
+  criadoEm: string;
+  atualizadoEm: string;
+};
+
+export type ResumoAjustesAbastecimentos = {
+  pendentes: number;
+  aceitosNoPeriodo: number;
+  impactoFinanceiro: number; // soma de (valor aceito - valor_original) — em R$, não centavos
+  ultimosAjustes: ItemResumoAjuste[];
+};
+
+export async function resumoAjustesAbastecimentos(
+  supabase: ClienteSupabase,
+  params: { lado: AutorAjuste; empresaId: string; desde: string }
+): Promise<ResumoAjustesAbastecimentos> {
+  const coluna = params.lado === "cliente" ? "empresa_cliente_id" : "empresa_posto_id";
+
+  const [{ count: pendentes }, { data: aceitosNoPeriodo }, { data: ultimos }] = await Promise.all([
+    supabase
+      .from("ajustes_abastecimentos")
+      .select("id", { count: "exact", head: true })
+      .eq(coluna, params.empresaId)
+      .in("status", ["pendente_posto", "pendente_cliente"]),
+    supabase
+      .from("ajustes_abastecimentos")
+      .select("id, rodada_atual, valor_original")
+      .eq(coluna, params.empresaId)
+      .eq("status", "aceito")
+      .gte("atualizado_em", params.desde),
+    supabase
+      .from("ajustes_abastecimentos")
+      .select("id, abastecimento_id, status, origem, valor_original, criado_em, atualizado_em")
+      .eq(coluna, params.empresaId)
+      .order("atualizado_em", { ascending: false })
+      .limit(5),
+  ]);
+
+  // Impacto financeiro real precisa do valor que FOI de fato aceito em cada
+  // ajuste — isso está na rodada com decisao='aceita', não no cabeçalho (o
+  // cabeçalho só guarda o valor de ANTES, em valor_original). Busca as
+  // rodadas aceitas dos ajustes do período numa 2ª query, e cruza em JS (a
+  // lista é sempre pequena — poucos ajustes aceitos por período).
+  const idsAceitos = (aceitosNoPeriodo ?? []).map((a) => a.id);
+  let impactoFinanceiro = 0;
+  if (idsAceitos.length > 0) {
+    const { data: rodadasAceitas } = await supabase
+      .from("ajustes_abastecimentos_rodadas")
+      .select("ajuste_id, item_valor_total, decisao")
+      .in("ajuste_id", idsAceitos)
+      .eq("decisao", "aceita");
+
+    const valorAceitoPorAjuste = new Map<string, number | null>();
+    for (const r of rodadasAceitas ?? []) {
+      valorAceitoPorAjuste.set(r.ajuste_id, r.item_valor_total);
+    }
+    for (const a of aceitosNoPeriodo ?? []) {
+      const valorAceito = valorAceitoPorAjuste.get(a.id);
+      // Se a rodada aceita não mexeu no valor total (só corrigiu hodômetro,
+      // por exemplo), não há impacto financeiro nesse ajuste específico.
+      if (valorAceito != null && a.valor_original != null) {
+        impactoFinanceiro += valorAceito - a.valor_original;
+      }
+    }
+  }
+
+  return {
+    pendentes: pendentes ?? 0,
+    aceitosNoPeriodo: aceitosNoPeriodo?.length ?? 0,
+    impactoFinanceiro,
+    ultimosAjustes: (ultimos ?? []).map((u) => ({
+      id: u.id,
+      abastecimentoId: u.abastecimento_id,
+      status: u.status as StatusAjuste,
+      origem: u.origem as AutorAjuste,
+      valorOriginal: u.valor_original,
+      criadoEm: u.criado_em,
+      atualizadoEm: u.atualizado_em,
+    })),
+  };
 }

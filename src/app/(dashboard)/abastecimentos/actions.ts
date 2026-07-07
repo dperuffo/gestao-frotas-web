@@ -159,6 +159,11 @@ export async function solicitarAjusteAcao(
 
   const campos = lerCamposAjuste(formData);
   const motivo = String(formData.get("motivo") ?? "").trim() || null;
+  // Fase 27.70 — snapshot do valor total ATUAL (antes do ajuste), enviado
+  // pelo formulário via campo oculto (ver FormularioSolicitarAjuste.tsx).
+  // Usado só pra calcular o impacto financeiro dos ajustes aceitos nos
+  // dashboards; não é o valor proposto, é o valor de ANTES.
+  const valorOriginal = numeroOuNull(formData.get("valor_original_total"));
 
   const resultado = await criarSolicitacaoAjuste(supabase, {
     abastecimentoId,
@@ -168,6 +173,7 @@ export async function solicitarAjusteAcao(
     campos,
     motivo,
     criadoPor: user?.email ?? null,
+    valorOriginal,
   });
 
   if ("erro" in resultado) return { erro: resultado.erro };

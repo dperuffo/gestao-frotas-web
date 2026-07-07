@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { calcularPrevisaoConsumo } from "@/lib/previsaoConsumo";
+import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
+import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
 import { GraficoConsumo, type PontoConsumo } from "./_components/GraficoConsumo";
 import { GraficoVariacaoPrecos } from "./_components/GraficoVariacaoPrecos";
 import { GraficoPrevisaoConsumo } from "./_components/GraficoPrevisaoConsumo";
@@ -74,6 +76,20 @@ export default async function DashboardPage({
   if (segmentoSelecionado === "Revenda" && empresaSelecionada) {
     return <DashboardPosto empresaPostoId={empresaSelecionada} nomeEmpresaSelecionada={nomeEmpresaSelecionada} />;
   }
+
+  // Fase 27.70 — pedido do Daniel: mesma seção "Ajustes de abastecimento" do
+  // lado do posto, agora do lado do cliente/frota (só o "lado" da consulta
+  // muda — ver resumoAjustesAbastecimentos). Só faz sentido com um cliente
+  // selecionado (ajustes são sempre por empresa_cliente_id específica).
+  const JANELA_AJUSTES_DIAS = 30;
+  const desdeAjustesIso = new Date(Date.now() - JANELA_AJUSTES_DIAS * 24 * 60 * 60 * 1000).toISOString();
+  const resumoAjustes = empresaSelecionada
+    ? await resumoAjustesAbastecimentos(supabase, {
+        lado: "cliente",
+        empresaId: empresaSelecionada,
+        desde: desdeAjustesIso,
+      })
+    : null;
 
   let queryMotoristasTotal = supabase.from("motoristas").select("id", { count: "exact", head: true });
   let queryMotoristasAtivos = supabase
@@ -445,6 +461,16 @@ export default async function DashboardPage({
         <Indicador label="Valor no mês" valor={formatarMoeda(valorMes)} ajudaChave="dashboard.valor_mes" />
         <Indicador label="Custo médio/litro" valor={formatarMoeda(custoMedioLitroMes)} ajudaChave="dashboard.custo_medio_litro" />
       </div>
+
+      {resumoAjustes && (
+        <SecaoAjustesAbastecimentos
+          pendentes={resumoAjustes.pendentes}
+          aceitosNoPeriodo={resumoAjustes.aceitosNoPeriodo}
+          impactoFinanceiro={resumoAjustes.impactoFinanceiro}
+          ultimosAjustes={resumoAjustes.ultimosAjustes}
+          diasPeriodo={JANELA_AJUSTES_DIAS}
+        />
+      )}
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="card p-4 lg:col-span-2">

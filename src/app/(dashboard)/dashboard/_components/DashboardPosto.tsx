@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatarDataBr } from "@/lib/utils";
 import { STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
+import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
+import { SecaoAjustesAbastecimentos } from "../../_components/SecaoAjustesAbastecimentos";
 import { GraficoEvolutivoPostos, type PontoEvolutivoPostos } from "./GraficoEvolutivoPostos";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -100,6 +102,15 @@ export async function DashboardPosto({
   // dias×combustíveis linhas, bem longe do limite de 1000.
   const { data: empresaPosto } = await supabase.from("empresas").select("cnpj").eq("id", empresaPostoId).maybeSingle();
   const desdeIso = new Date(Date.now() - JANELA_DESEMPENHO_DIAS * 24 * 60 * 60 * 1000).toISOString();
+
+  // Fase 27.70 — pedido do Daniel: contador de ajustes pendentes/aceitos,
+  // impacto financeiro dos aceitos e lista dos últimos, também no dashboard
+  // do posto (não só na tela do abastecimento em si).
+  const resumoAjustes = await resumoAjustesAbastecimentos(supabase, {
+    lado: "posto",
+    empresaId: empresaPostoId,
+    desde: desdeIso,
+  });
 
   let resumoDiario: { dia: string; item_nome: string; quantidade: number; volume: number; receita: number }[] = [];
 
@@ -308,6 +319,14 @@ export async function DashboardPosto({
           </tbody>
         </table>
       </div>
+
+      <SecaoAjustesAbastecimentos
+        pendentes={resumoAjustes.pendentes}
+        aceitosNoPeriodo={resumoAjustes.aceitosNoPeriodo}
+        impactoFinanceiro={resumoAjustes.impactoFinanceiro}
+        ultimosAjustes={resumoAjustes.ultimosAjustes}
+        diasPeriodo={JANELA_DESEMPENHO_DIAS}
+      />
 
       {listaNegociacoes.some((n) => n.status === "pendente_posto") && (
         <div className="mt-6 card overflow-x-auto">

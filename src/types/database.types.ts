@@ -201,6 +201,7 @@ export interface Database {
           criado_em: string;
           atualizado_em: string;
           atualizado_por: string | null;
+          valor_original: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["ajustes_abastecimentos"]["Row"]> & {
           abastecimento_id: number;

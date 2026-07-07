@@ -7,6 +7,8 @@ import {
   NOMES_MES,
   type CategoriaOrcamento,
 } from "@/lib/financeiro";
+import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
+import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
 import { GraficoEvolucaoFinanceira, type PontoFinanceiro } from "./_components/GraficoEvolucaoFinanceira";
 import { FormularioOrcamento } from "./_components/FormularioOrcamento";
 import { FormularioCustoFixo } from "./_components/FormularioCustoFixo";
@@ -36,6 +38,19 @@ export default async function FinanceiroPage({
   const fimMesAtual = new Date(agora.getFullYear(), agora.getMonth() + 1, 0);
   const seisMesesAtras = new Date(agora.getFullYear(), agora.getMonth() - 5, 1);
   const paraISO = (d: Date) => d.toISOString().slice(0, 10);
+
+  // Fase 27.70 — pedido do Daniel: seção "Ajustes de abastecimento" também
+  // no painel financeiro do cliente (impacto financeiro dos ajustes aceitos
+  // é justamente um indicador financeiro).
+  const JANELA_AJUSTES_DIAS = 30;
+  const desdeAjustesIso = new Date(Date.now() - JANELA_AJUSTES_DIAS * 24 * 60 * 60 * 1000).toISOString();
+  const resumoAjustes = empresaSelecionada
+    ? await resumoAjustesAbastecimentos(supabase, {
+        lado: "cliente",
+        empresaId: empresaSelecionada,
+        desde: desdeAjustesIso,
+      })
+    : null;
 
   let indicadores: {
     custo_combustivel: number;
@@ -311,6 +326,18 @@ export default async function FinanceiroPage({
             </h2>
             <TabelaCustosFixos linhas={linhasCustosFixos} />
           </div>
+
+          {resumoAjustes && (
+            <div className="mt-6">
+              <SecaoAjustesAbastecimentos
+                pendentes={resumoAjustes.pendentes}
+                aceitosNoPeriodo={resumoAjustes.aceitosNoPeriodo}
+                impactoFinanceiro={resumoAjustes.impactoFinanceiro}
+                ultimosAjustes={resumoAjustes.ultimosAjustes}
+                diasPeriodo={JANELA_AJUSTES_DIAS}
+              />
+            </div>
+          )}
         </>
       )}
     </div>

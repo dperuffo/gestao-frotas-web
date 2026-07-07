@@ -4405,3 +4405,39 @@ Ambas adicionadas agora. Confirmado via RLS que o admin já enxerga todas as inv
 clientes (`invoices_tenant_select` tem bypass pra `perfil_usuario_atual() = 'admin'`).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.70 — Seção "Ajustes de abastecimento" nos dashboards e painéis financeiros
+
+Pedido do Daniel: incrementar os dashboards de cliente e posto, e os painéis financeiros de ambos, com
+os abastecimentos ajustados — especificamente os 3 itens que ele escolheu: contador de ajustes
+pendentes/aceitos no período, impacto financeiro dos ajustes aceitos, e lista dos últimos ajustes.
+
+**Snapshot do valor original (`valor_original`):** quando um ajuste é aceito, `decidir_ajuste_abastecimento`
+sobrescreve `profrotas_abastecimentos` com os valores novos — o valor de ANTES se perde. Sem guardar
+esse valor em algum lugar, não dava pra calcular um impacto financeiro real (só um proxy). Adicionada a
+coluna `ajustes_abastecimentos.valor_original numeric`, preenchida no momento da criação da solicitação
+(`criarSolicitacaoAjuste`, com o `item_valor_total` atual do abastecimento vindo por um campo oculto do
+formulário — `FormularioSolicitarAjuste.tsx` → `valor_original_total` → `solicitarAjusteAcao`). Ajustes
+criados ANTES desta fase não têm esse valor (ficam com `impacto financeiro = R$ 0,00` pra eles, já que
+não tem como recuperar o valor de antes retroativamente) — só ajustes novos entram no cálculo real.
+
+**Cálculo do impacto financeiro:** o valor ACEITO de fato não fica no cabeçalho do ajuste (que só tem o
+valor de ANTES) — fica na rodada com `decisao = 'aceita'`, em `ajustes_abastecimentos_rodadas.item_valor_total`.
+Nova função `resumoAjustesAbastecimentos` (`src/lib/ajustesAbastecimentos.ts`) busca os ajustes aceitos
+no período, cruza com a rodada aceita de cada um, e soma `(valor_aceito - valor_original)`. Se a rodada
+aceita não mexeu no valor total (ex: só corrigiu hodômetro), aquele ajuste específico não entra na soma
+— faz sentido, não houve variação financeira nesse caso.
+
+**Um helper, 4 telas:** `resumoAjustesAbastecimentos(supabase, { lado, empresaId, desde })` é o mesmo
+em todo lugar — só muda `lado` ("cliente" ou "posto", decide se filtra por `empresa_cliente_id` ou
+`empresa_posto_id`) e qual empresa está selecionada. A apresentação (cards + tabela de últimos ajustes)
+é um componente único, `SecaoAjustesAbastecimentos.tsx` (`src/app/(dashboard)/_components/`), reaproveitado
+em `DashboardPosto.tsx`, `dashboard/page.tsx` (Frota), `financeiro/page.tsx` e `financeiro-posto/page.tsx`
+— sem duplicar JSX 4 vezes.
+
+Janela de período usada em todas as 4 telas: últimos 30 dias (mesma janela já usada no dashboard do
+posto pra desempenho de vendas).
+
+Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos tocados (limpos). Testado com
+consulta direta no banco confirmando a estrutura de `ajustes_abastecimentos_rodadas` (colunas
+`ajuste_id`, `item_valor_total`, `decisao`) usada pela função.
