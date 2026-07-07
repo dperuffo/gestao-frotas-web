@@ -69,33 +69,11 @@ export function FormularioNovaNegociacao({ empresaAtualId, souPosto }: { empresa
           <label className="mb-1 block text-xs font-medium text-slate-500">Vigência — fim</label>
           <input type="date" name="vigencia_fim" required className="input" />
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Ciclo de faturamento (dias)</label>
-          <input
-            type="number"
-            name="ciclo_faturamento_dias"
-            required
-            min="1"
-            step="1"
-            defaultValue={30}
-            className="input"
-          />
-          <p className="mt-1 text-xs text-slate-400">A cada quantos dias uma fatura é gerada.</p>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Prazo de vencimento (dias)</label>
-          <input
-            type="number"
-            name="prazo_vencimento_dias"
-            required
-            min="1"
-            step="1"
-            defaultValue={30}
-            className="input"
-          />
-          <p className="mt-1 text-xs text-slate-400">Dias após o fechamento do período até a fatura vencer.</p>
-        </div>
       </div>
+      <p className="text-xs text-slate-400">
+        Ciclo de faturamento e prazo de vencimento começam em 30/30 dias e são ajustados depois pelo time FNI, direto
+        no cadastro do cliente — não fazem parte da negociação.
+      </p>
 
       <button type="submit" disabled={isPending} className="btn-primary">
         {isPending ? "Enviando..." : "Enviar negociação"}

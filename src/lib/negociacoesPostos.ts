@@ -37,14 +37,6 @@ export type DadosRodada = {
   vigencia_fim: string;
   volume_minimo_mensal: number;
   preco_unitario: number;
-  // Fase 27.74 — achado real: `negociacoes_postos.ciclo_faturamento_dias`/
-  // `prazo_vencimento_dias` já existiam no banco e já eram usados pelo robô
-  // `gerar_faturas_postos_robo()` pra calcular período/vencimento de cada
-  // fatura — mas nenhum formulário deixava o usuário DEFINIR esses valores
-  // (sempre ficavam no default da coluna, 30/30). Agora fazem parte da
-  // proposta de cada rodada, igual combustível/preço/volume.
-  ciclo_faturamento_dias: number;
-  prazo_vencimento_dias: number;
 };
 
 // Dispara a Edge Function "negociacao-email" (Resend) — best-effort, nunca
@@ -82,15 +74,84 @@ export function validarDadosRodada(d: Partial<DadosRodada>): string | null {
   if (!Number.isFinite(preco) || preco <= 0) {
     return '"preco_unitario" precisa ser um número maior que zero.';
   }
-  const ciclo = Number(d.ciclo_faturamento_dias);
-  if (!Number.isFinite(ciclo) || ciclo <= 0 || !Number.isInteger(ciclo)) {
+  return null;
+}
+
+// Fase 27.80 — achado real (Daniel corrigiu o entendimento da Fase 27.74):
+// ciclo_faturamento_dias/prazo_vencimento_dias NÃO são termo comercial
+// negociado rodada a rodada (como preço/volume/vigência) — são parâmetro
+// administrativo de cobrança por relação cliente+posto, ajustado
+// diretamente pela FNI (admin), independente do fluxo de propostas/
+// contrapropostas. Por isso saíram de DadosRodada/validarDadosRodada e
+// ganharam este validador e função próprios, que mexem só no cabeçalho
+// (negociacoes_postos), nunca em negociacoes_postos_rodadas.
+export function validarCicloPagamento(d: {
+  cicloFaturamentoDias: number;
+  prazoVencimentoDias: number;
+}): string | null {
+  if (!Number.isFinite(d.cicloFaturamentoDias) || d.cicloFaturamentoDias <= 0 || !Number.isInteger(d.cicloFaturamentoDias)) {
     return '"ciclo_faturamento_dias" precisa ser um número inteiro maior que zero.';
   }
-  const prazo = Number(d.prazo_vencimento_dias);
-  if (!Number.isFinite(prazo) || prazo <= 0 || !Number.isInteger(prazo)) {
+  if (!Number.isFinite(d.prazoVencimentoDias) || d.prazoVencimentoDias <= 0 || !Number.isInteger(d.prazoVencimentoDias)) {
     return '"prazo_vencimento_dias" precisa ser um número inteiro maior que zero.';
   }
   return null;
+}
+
+// Ajusta o ciclo de faturamento/prazo de vencimento de uma relação
+// cliente+posto já aceita. Só o admin (FNI) pode chamar — verificação
+// própria aqui dentro (não dá pra confiar só na RLS de negociacoes_postos:
+// a policy `negociacoes_postos_tenant_all` libera UPDATE também pros dois
+// lados do tenant, não só admin). Não é retroativo por natureza: o robô
+// `gerar_faturas_postos_robo()` só lê este valor pra calcular o PRÓXIMO
+// período a partir de onde parou — faturas já geradas guardam seu próprio
+// periodo_inicio/periodo_fim/vencimento, imutáveis.
+export async function atualizarCicloPagamento(
+  supabase: ClienteSupabase,
+  params: {
+    negociacaoId: string;
+    cicloFaturamentoDias: number;
+    prazoVencimentoDias: number;
+    atualizadoPor: string | null;
+  }
+): Promise<{ ok: true } | { erro: string }> {
+  const erroValidacao = validarCicloPagamento({
+    cicloFaturamentoDias: params.cicloFaturamentoDias,
+    prazoVencimentoDias: params.prazoVencimentoDias,
+  });
+  if (erroValidacao) return { erro: erroValidacao };
+
+  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const ehSuperusuario = user?.email === "d.peruffo@gmail.com";
+  if (perfil !== "admin" && !ehSuperusuario) {
+    return { erro: "Só o time administrativo (FNI) pode ajustar o ciclo de faturamento e o prazo de vencimento." };
+  }
+
+  const { data: negociacao, error: erroBusca } = await supabase
+    .from("negociacoes_postos")
+    .select("id, status")
+    .eq("id", params.negociacaoId)
+    .maybeSingle();
+  if (erroBusca || !negociacao) return { erro: "Negociação não encontrada." };
+  if (negociacao.status !== "aceita") {
+    return { erro: "Só é possível ajustar o ciclo/prazo de uma relação cliente+posto já aceita." };
+  }
+
+  const { error } = await supabase
+    .from("negociacoes_postos")
+    .update({
+      ciclo_faturamento_dias: params.cicloFaturamentoDias,
+      prazo_vencimento_dias: params.prazoVencimentoDias,
+      atualizado_em: new Date().toISOString(),
+      atualizado_por: params.atualizadoPor,
+    })
+    .eq("id", params.negociacaoId);
+  if (error) return { erro: error.message };
+
+  return { ok: true };
 }
 
 // Cria a negociação (cabeçalho + rodada 1). origem indica quem começou o
@@ -243,9 +304,7 @@ export async function decidirNegociacao(
     .update({ decisao: params.decisao, decidido_em: agora, decidido_por: params.decididoPor })
     .eq("negociacao_id", params.negociacaoId)
     .eq("numero_rodada", negociacao.rodada_atual)
-    .select(
-      "combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario, ciclo_faturamento_dias, prazo_vencimento_dias"
-    )
+    .select("combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario")
     .single();
   if (erroRodada) return { erro: erroRodada.message };
 
@@ -256,9 +315,9 @@ export async function decidirNegociacao(
   // alimenta a aba "Vigentes" da tela /negociacoes, sem precisar de join
   // com negociacoes_postos_rodadas toda vez que a lista é exibida.
   //
-  // Fase 27.74 — ciclo_faturamento_dias/prazo_vencimento_dias entram na
-  // mesma fotografia: é o que o robô gerar_faturas_postos_robo() de fato lê
-  // pra calcular período/vencimento das faturas dessa negociação.
+  // ciclo_faturamento_dias/prazo_vencimento_dias NÃO entram nessa
+  // fotografia (Fase 27.80): não são termo negociado, ficam no default
+  // 30/30 da coluna até o admin ajustar via atualizarCicloPagamento().
   const { error: erroCabecalho } = await supabase
     .from("negociacoes_postos")
     .update({
@@ -272,8 +331,6 @@ export async function decidirNegociacao(
             vigencia_fim: rodadaDecidida.vigencia_fim,
             volume_minimo_mensal: rodadaDecidida.volume_minimo_mensal,
             preco_unitario: rodadaDecidida.preco_unitario,
-            ciclo_faturamento_dias: rodadaDecidida.ciclo_faturamento_dias,
-            prazo_vencimento_dias: rodadaDecidida.prazo_vencimento_dias,
           }
         : {}),
     })

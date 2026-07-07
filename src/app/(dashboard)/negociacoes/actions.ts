@@ -9,6 +9,7 @@ import {
   adicionarContraproposta,
   decidirNegociacao,
   cancelarNegociacao,
+  atualizarCicloPagamento,
   type AutorNegociacao,
   type DadosRodada,
 } from "@/lib/negociacoesPostos";
@@ -28,10 +29,6 @@ function lerDadosRodada(formData: FormData): DadosRodada {
     vigencia_fim: String(formData.get("vigencia_fim") ?? ""),
     volume_minimo_mensal: Number(formData.get("volume_minimo_mensal")),
     preco_unitario: Number(formData.get("preco_unitario")),
-    // Fase 27.74 — se o campo não vier no form (ex: formulário antigo em
-    // cache do navegador), cai no mesmo default 30 que já era o da coluna.
-    ciclo_faturamento_dias: Number(formData.get("ciclo_faturamento_dias")) || 30,
-    prazo_vencimento_dias: Number(formData.get("prazo_vencimento_dias")) || 30,
   };
 }
 
@@ -188,4 +185,32 @@ export async function contarNegociacoesPendentesAcao(): Promise<number> {
     .eq("status", statusQueMeCabeResponder);
 
   return count ?? 0;
+}
+
+// Fase 27.80 — pedido do Daniel: prazo de abastecimento+pagamento (ciclo de
+// faturamento + prazo de vencimento) é parametrizável por relação
+// cliente+posto, ajustado pelo admin (FNI), e não faz parte do fluxo de
+// negociação/rodadas. Usada na tela /clientes/[id] (admin), uma linha por
+// negociação já aceita.
+export async function atualizarCicloPagamentoAcao(
+  negociacaoId: string,
+  _prevState: EstadoFormulario,
+  formData: FormData
+): Promise<EstadoFormulario> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const resultado = await atualizarCicloPagamento(supabase, {
+    negociacaoId,
+    cicloFaturamentoDias: Number(formData.get("ciclo_faturamento_dias")),
+    prazoVencimentoDias: Number(formData.get("prazo_vencimento_dias")),
+    atualizadoPor: user?.email ?? null,
+  });
+
+  if ("erro" in resultado) return { erro: resultado.erro };
+
+  revalidatePath("/clientes");
+  return {};
 }

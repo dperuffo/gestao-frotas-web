@@ -132,30 +132,6 @@ export function FormularioContraproposta({
                 className="input"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Ciclo de faturamento (dias)</label>
-              <input
-                type="number"
-                name="ciclo_faturamento_dias"
-                required
-                min="1"
-                step="1"
-                defaultValue={ultimaRodada.ciclo_faturamento_dias}
-                className="input"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Prazo de vencimento (dias)</label>
-              <input
-                type="number"
-                name="prazo_vencimento_dias"
-                required
-                min="1"
-                step="1"
-                defaultValue={ultimaRodada.prazo_vencimento_dias}
-                className="input"
-              />
-            </div>
           </div>
           <div className="flex gap-2">
             <button type="submit" disabled={isPending} className="btn-primary">

@@ -49,7 +49,7 @@ export default async function ClientePostoDetalhePage({
     supabase
       .from("negociacoes_postos")
       .select(
-        "id, empresa_posto_id, posto_nome, status, combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario"
+        "id, empresa_posto_id, posto_nome, status, combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario, ciclo_faturamento_dias, prazo_vencimento_dias"
       )
       .eq("empresa_posto_id", empresaSelecionada)
       .eq("empresa_cliente_id", clienteId)

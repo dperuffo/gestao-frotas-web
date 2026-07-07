@@ -4532,6 +4532,10 @@ negociação, no mesmo nível de combustível/volume/preço/vigência:
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
 
+> **Nota (Fase 27.80):** este desenho foi corrigido depois que o Daniel esclareceu que ciclo/prazo NÃO é
+> termo negociado — ver Fase 27.80 no fim deste arquivo pro fix definitivo (os campos saíram dos
+> formulários de negociação e viraram parâmetro administrativo por cliente+posto).
+
 ## Fase 27.75 — Cobrança em aberto no painel financeiro do cliente
 
 Pedido do Daniel (mesma mensagem da Fase 27.74): "o painel financeiro precisa mostrar a cobrança em
@@ -4653,5 +4657,82 @@ Testado direto no banco, simulando a sessão do `daniel.peruffo.app@gmail.com`, 
 todas batem EXATAMENTE com `quantidade_abastecimentos` já gravado (38/38, 36/36, 35/35, 36/36) —
 incluindo faturas cujas negociações nasceram do lado do posto (`posto_cnpj = ""`), que antes sempre
 davam extrato vazio.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.80 — Ciclo de faturamento/prazo de vencimento: parâmetro por cliente+posto, não termo negociado
+
+Depois da Fase 27.74, o Daniel apontou: "A fase 27.74 não foi realizada. Não encontrei onde os prazos são
+parametrizáveis por cliente". Investigação (via subagente): os campos SÓ apareciam em 2 formulários —
+criar negociação nova e responder contraproposta pendente. Uma vez que a negociação vira `aceita` (o
+estado normal/estável de qualquer relação cliente+posto de verdade), não existia NENHUM caminho — nem UI
+nem backend — pra ver-e-editar ciclo/prazo; só um histórico somente-leitura das rodadas passadas. Por
+isso o Daniel, procurando especificamente onde "setar" o prazo, nunca achava.
+
+Ao planejar o fix (uma ação "renegociar termos"), o Daniel corrigiu o entendimento de base com mais 3
+mensagens seguidas:
+
+1. "O prazo de abastecimento + pagamento é parametrizável no cliente e não por negociação" — ciclo/prazo
+   NÃO é termo comercial como preço/volume; é parâmetro administrativo de cobrança.
+2. "Este prazo, eventualmente, pode ser alterado e refletir na abertura de uma nova fatura, novo ciclo" —
+   a mudança não é retroativa, só vale a partir do próximo ciclo.
+3. "Exemplos de ciclos: 7+7, 15+10, 15+15, 30+15 (...) 7 dias de abastecimentos + 7 dias para criação da
+   fatura e pagamento" e depois "No mês, podem ter 4 ciclos de 7+7: de 1 a 7, de 8 a 14, de 15 a 21 e de 22
+   a 30 ou 31, dependendo do mês" — os ciclos são ANCORADOS NO CALENDÁRIO (sempre reiniciam no dia 1 de
+   cada mês), não uma rolagem corrida indefinida.
+
+Perguntado (via pergunta de esclarecimento), o Daniel confirmou: escopo por cliente+posto (não um valor
+único pra todo o cliente), edição exclusiva do admin (FNI), e vale a partir do próximo ciclo (não
+retroativo).
+
+**Fix — parte 1 (desacoplar do fluxo de negociação):** `ciclo_faturamento_dias`/`prazo_vencimento_dias`
+saíram de `DadosRodada`/`validarDadosRodada` (`negociacoesPostos.ts`), de `FormularioNovaNegociacao.tsx` e
+`FormularioContraproposta.tsx`, do histórico de rodadas em `/negociacoes/[id]`, e dos campos opcionais da
+API pública (`/api/integracoes/negociacoes` e `.../rodadas`) — voltam a ser puramente comercial
+(combustível/volume/preço/vigência). `decidirNegociacao` não fotografa mais esses 2 campos no cabeçalho
+ao aceitar (ficam no default 30/30 da coluna até o admin ajustar).
+
+**Fix — parte 2 (novo mecanismo administrativo):** nova função `atualizarCicloPagamento()`
+(`negociacoesPostos.ts`) e server action `atualizarCicloPagamentoAcao` (`negociacoes/actions.ts`) — mexem
+DIRETO no cabeçalho de uma negociação já `aceita`, fora do fluxo de rodadas. Guarda de autorização própria
+(`perfil_usuario_atual() = 'admin'` ou superusuário) porque a RLS de `negociacoes_postos`
+(`negociacoes_postos_tenant_all`) libera UPDATE também pros dois lados do tenant, não só admin — sem essa
+guarda, cliente ou posto poderiam mudar o próprio ciclo/prazo direto pela API do Supabase. Novo
+componente `FormularioCicloPagamento.tsx` (edição inline) aparece na tabela de negociações de
+`CicloAbastecimentoPagamento.tsx`, só quando `podeEditarCiclo` é `true` — prop passada como `true` só em
+`/clientes/[id]` (visão admin) e omitida (default `false`) em `/clientes-posto/[clienteId]` (visão do
+posto, mesmo componente reaproveitado, sem controle de edição). Não é retroativo por natureza: faturas já
+geradas guardam seu próprio período/vencimento; `gerar_faturas_postos_robo()` só lê o valor atual pra
+calcular o PRÓXIMO período a partir de onde parou.
+
+**Fix — parte 3 (ciclos ancorados no calendário):** `gerar_faturas_postos_robo()` reescrita — a versão
+anterior (rolagem corrida, sempre `periodo_fim + 1`) nunca respeitava fim de mês, deixando os períodos
+deslizarem indefinidamente pelo calendário. Agora cada período é limitado ao fim do mês corrente
+(`date_trunc('month', ...) + 1 month - 1 day`); e pra não sobrar um pedacinho de período separado no fim
+do mês, se os dias restantes no mês forem menos que 2x o ciclo, o período atual já absorve TUDO até o fim
+do mês (em vez de fechar no ciclo "cheio" e deixar uma sobra pequena logo depois). Validado por simulação
+SQL: ciclo 7+7 num mês de 31 dias gera exatamente 1-7, 8-14, 15-21, 22-31 (10 dias no último) — 4 períodos,
+igual ao exemplo do Daniel; ciclo 15 gera 1-15, 16-31 (16 dias); ciclo 30 gera o mês inteiro num período só.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos), e com simulação da lógica de corte de período
+direto em SQL (recursive CTE) pros casos 7+7, 15+15 e 30+15 em meses de 28/29/30/31 dias.
+
+## Fase 27.81 — Gráfico "Fluxo de caixa previsto" sempre vazio
+
+Pedido do Daniel (print): o indicador "Fluxo de caixa previsto (vencimentos por dia)" em
+`/financeiro-posto` aparecia sempre vazio ("Sem vencimentos no período selecionado").
+
+**Achado real:** `resolverPeriodoFinanceiro()` (`financeiroPostos.ts`) sempre resolve uma janela pra TRÁS
+(`fim = hoje`) pras opções rápidas (Hoje/7 dias/15 dias/Mês atual) — correto pros indicadores
+retrospectivos "Recebido no período"/"Pago no período" (olham `pago_em`, só existe no passado), mas o
+gráfico e os indicadores "vencendo no período"/"Saldo previsto do período" são PROSPECTIVOS (olham
+vencimento futuro) e reaproveitavam por engano a MESMA janela pra trás — uma fatura com vencimento amanhã
+nunca entrava no cálculo do padrão "15 dias".
+
+**Fix:** nova função `resolverJanelaPrevista()` devolve uma janela separada, pra frente a partir de hoje,
+com a mesma duração em dias da opção rápida escolhida ("Mês atual" = resto do mês corrente).
+"Personalizado" continua igual (o usuário já escolhe a direção manualmente ao digitar datas). `page.tsx`
+(`/financeiro-posto`) agora usa duas janelas: a retrospectiva (recebido/pago) e a prospectiva (vencendo/
+saldo previsto/gráfico), com legenda própria ("Previsão: X – Y") no card do gráfico.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

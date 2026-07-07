@@ -26,10 +26,6 @@ type CorpoRequisicao = {
   vigencia_fim?: string;
   volume_minimo_mensal?: number;
   preco_unitario?: number;
-  // Fase 27.74 — opcionais: sistemas externos que ainda não conhecem esses
-  // campos continuam funcionando (cai no default de 30/30 dias, igual antes).
-  ciclo_faturamento_dias?: number;
-  prazo_vencimento_dias?: number;
 };
 
 export async function POST(request: Request) {
@@ -80,8 +76,6 @@ export async function POST(request: Request) {
       vigencia_fim: String(corpo.vigencia_fim ?? ""),
       volume_minimo_mensal: Number(corpo.volume_minimo_mensal),
       preco_unitario: Number(corpo.preco_unitario),
-      ciclo_faturamento_dias: Number(corpo.ciclo_faturamento_dias) || 30,
-      prazo_vencimento_dias: Number(corpo.prazo_vencimento_dias) || 30,
     },
     criadoPor: "api",
   });
