@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
 import { STATUS_FATURA_LABEL, statusFaturaExibicao, type StatusFaturaExibicao } from "@/lib/financeiroPostos";
@@ -63,6 +64,7 @@ export function CobrancaEmAberto({ faturas }: { faturas: FaturaCobranca[] }) {
               <th className="px-4 py-3">Vencimento</th>
               <th className="px-4 py-3">Valor</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -79,12 +81,17 @@ export function CobrancaEmAberto({ faturas }: { faturas: FaturaCobranca[] }) {
                   <td className="px-4 py-3">
                     <BadgeStatus status={statusExib} />
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link href={`/faturas-postos/${f.id}`} className="text-frota-600 hover:underline">
+                      Ver extrato
+                    </Link>
+                  </td>
                 </tr>
               );
             })}
             {faturas.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                   Nenhuma fatura emitida ainda.
                 </td>
               </tr>

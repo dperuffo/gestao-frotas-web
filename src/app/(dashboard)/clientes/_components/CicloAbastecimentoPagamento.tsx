@@ -165,6 +165,7 @@ export function CicloAbastecimentoPagamento({
               <th className="px-4 py-3">Vencimento</th>
               <th className="px-4 py-3">Valor</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -181,12 +182,17 @@ export function CicloAbastecimentoPagamento({
                   <td className="px-4 py-3">
                     <BadgeStatusFatura status={statusExib} />
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link href={`/faturas-postos/${f.id}`} className="text-frota-600 hover:underline">
+                      Ver extrato
+                    </Link>
+                  </td>
                 </tr>
               );
             })}
             {faturas.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                   Nenhuma fatura gerada ainda para este cliente.
                 </td>
               </tr>

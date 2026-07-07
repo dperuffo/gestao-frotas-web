@@ -312,12 +312,17 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
                         <BadgeStatus status={statusExib} />
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {f.status === "aberta" && (
-                          <div className="flex justify-end gap-3">
-                            <BotaoAcaoFinanceiraPosto id={f.id} acao={marcarFaturaPagaAcao} rotulo="Marcar como paga" />
-                            <BotaoAcaoFinanceiraPosto id={f.id} acao={cancelarFaturaAcao} rotulo="Cancelar" variante="danger" />
-                          </div>
-                        )}
+                        <div className="flex justify-end gap-3">
+                          <Link href={`/faturas-postos/${f.id}`} className="text-frota-600 hover:underline">
+                            Ver extrato
+                          </Link>
+                          {f.status === "aberta" && (
+                            <>
+                              <BotaoAcaoFinanceiraPosto id={f.id} acao={marcarFaturaPagaAcao} rotulo="Marcar como paga" />
+                              <BotaoAcaoFinanceiraPosto id={f.id} acao={cancelarFaturaAcao} rotulo="Cancelar" variante="danger" />
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

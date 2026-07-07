@@ -4575,3 +4575,33 @@ correção, a nova função corretamente retorna 0 inserções (limite diário j
 amanhã, com a contagem do dia zerada, volta a gerar até 15.
 
 Sem alterações em código TypeScript — mudança só na função SQL (SECURITY DEFINER) no Supabase.
+
+## Fase 27.76 — Extrato de abastecimentos por fatura + PDF
+
+Pedido do Daniel: cada fatura precisa trazer um extrato dos abastecimentos incluídos no período, com
+botão pra gerar PDF (dados da fatura + abastecimentos).
+
+**Nova rota compartilhada `/faturas-postos/[id]`** — não ficou dentro de `/financeiro-posto` porque a
+MESMA fatura é vista pelos dois lados (posto que emitiu, cliente que deve pagar), e a RLS de
+`faturas_postos` (`faturas_postos_leitura`) já libera SELECT pras duas partes (`empresa_posto_id` OU
+`empresa_cliente_id`) — uma rota só, sem duplicar a tela pra cada lado.
+
+**Extrato:** `profrotas_abastecimentos` filtrado por `empresa_id = fatura.empresa_cliente_id`,
+`pv_cnpj = posto_cnpj` (resolvido via `negociacoes_postos.posto_cnpj`, denormalizado — evita join
+cross-tenant em `empresas`, mesmo problema de RLS da Fase 27.68) e `data_abastecimento` dentro do período
+exato da fatura. Bordas de data calculadas manualmente em UTC (mesmo cuidado da Fase 23.1) pra não
+"vazar" um dia pra fora do período por causa de fuso horário. Testado direto no banco: uma fatura real
+(36 abastecimentos, R$ 11.675,29) bateu EXATAMENTE com `quantidade_abastecimentos`/`valor_total` já
+gravados na fatura.
+
+**PDF:** mesmo padrão 100% client-side de `@react-pdf/renderer` já usado em Rotograma/Roteirização/
+Relatórios/Assistente (Fases 15/16+) — trio `FaturaPdf.tsx` (documento), `BotaoBaixarPdfFatura.tsx`
+(botão + `PDFDownloadLink`), `BotaoBaixarPdfFaturaLazy.tsx` (`next/dynamic`, `ssr:false`, já que a lib só
+funciona no client). PDF traz cabeçalho da fatura (posto, cliente, período, vencimento, status, volume,
+valor total) + tabela do extrato completo.
+
+Links "Ver extrato" adicionados nas 3 telas que já listavam faturas: `/financeiro-posto` (posto),
+`CobrancaEmAberto.tsx` em `/financeiro` (cliente, Fase 27.75) e `CicloAbastecimentoPagamento.tsx`
+(admin/posto por cliente, Fases 27.71/27.72).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
