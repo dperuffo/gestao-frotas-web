@@ -4550,3 +4550,28 @@ Nome do posto em cada fatura resolvido pelo mesmo truque das Fases 27.71/27.72/2
 outro join cross-tenant em `empresas` (mesmo problema de RLS da Fase 27.68).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.77 — Robô de teste limitado a 15 abastecimentos/dia
+
+Pedido do Daniel: o robô que gera abastecimentos de teste (`gerar_abastecimentos_postos_robo()`, só
+banco — sem código TS envolvido) criava 1 registro por VEÍCULO ATIVO de cada um dos 2 clientes de teste,
+todo dia — no Posto Teste isso já tinha chegado a ~2.385/dia (essa mesma escala foi a causa do bug da
+Fase 27.69, corte de 1000 linhas do PostgREST). Pedido: só 15 registros por dia, sorteando motorista,
+placa e combustível.
+
+**Achado ao implementar:** o cron (`robo_abastecimentos_postos`, `pg_cron`) roda a cada 6h — 4x por dia.
+Um `LIMIT 15` fixo por EXECUÇÃO geraria até 60/dia (15 × 4), não 15/dia de verdade. Corrigido contando
+quantos registros do robô já existem HOJE (`robo_dia_referencia = current_date`, somando os 2 clientes)
+ANTES do sorteio, e só gerando o que falta pra completar 15 no dia — rodar de novo depois de já ter
+batido 15 não insere mais nada até o dia virar.
+
+Reescrita a função pra sortear até 15 VEÍCULOS distintos (de qualquer um dos 2 clientes, `order by
+random() limit <o que falta>`), cada um sorteando seu próprio motorista e combustível — mesma lógica de
+preço (via `precos_postos` do posto negociado, ou fallback pra referência ANP) e hodômetro incremental de
+antes, só que rodando no máximo o necessário pra bater 15/dia.
+
+Testado direto no banco: com os 2.385 registros de hoje (07/07) já gerados pela versão antiga ANTES da
+correção, a nova função corretamente retorna 0 inserções (limite diário já estourado) — a partir de
+amanhã, com a contagem do dia zerada, volta a gerar até 15.
+
+Sem alterações em código TypeScript — mudança só na função SQL (SECURITY DEFINER) no Supabase.
