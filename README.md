@@ -4441,3 +4441,29 @@ posto pra desempenho de vendas).
 Validado com `npx tsc --noEmit` e `npx eslint` em todos os arquivos tocados (limpos). Testado com
 consulta direta no banco confirmando a estrutura de `ajustes_abastecimentos_rodadas` (colunas
 `ajuste_id`, `item_valor_total`, `decisao`) usada pela função.
+
+## Fase 27.71 — Resumo consolidado de ciclo abastecimento+pagamento na aba Cliente
+
+Pedido do Daniel: na tela de detalhe do cliente (`/clientes/[id]`, visão admin — o cadastro das
+transportadoras atendidas pela plataforma), adicionar um resumo NOVO do ciclo de abastecimento e
+pagamento desse cliente. Confirmado via AskUserQuestion: não é pra reaproveitar as telas existentes de
+negociação/fatura por posto (`/negociacoes`, `/financeiro-posto`, que olham 1 posto de cada vez) — é uma
+visão consolidada cruzando TODOS os postos com quem aquele cliente já negociou, papel da FNI de
+acompanhar a saúde financeira de cada cliente perante a rede de postos.
+
+Novo componente `CicloAbastecimentoPagamento.tsx` (`src/app/(dashboard)/clientes/_components/`),
+renderizado logo abaixo do formulário de edição do cliente. Busca `negociacoes_postos` e
+`faturas_postos` filtrando só por `empresa_cliente_id = id` (RLS de ambas as tabelas já tem bypass de
+admin, confirmado via `pg_policies`). Mostra: indicadores (postos com negociação, negociações vigentes,
+volume mín. contratado, total em aberto, vencido, pago histórico), aviso da próxima fatura a vencer, e
+duas tabelas (negociações por posto, faturas por posto).
+
+**Achado ao implementar:** `faturas_postos` não tem uma coluna de nome do posto denormalizada (só
+`cliente_nome`) — diferente de `negociacoes_postos`, que tem `posto_nome`. Em vez de arriscar um join
+cross-tenant direto em `empresas` (mesmo problema de RLS já documentado na Fase 27.68), o nome do posto
+de cada fatura é resolvido via um mapa `empresa_posto_id -> posto_nome` montado a partir das negociações
+já buscadas — toda fatura nasce de uma negociação (`negociacao_id`), então o posto sempre aparece lá
+também. Evita adicionar mais uma consulta ou expor `empresas` sem necessidade.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos). Testado com consulta direta confirmando dados
+reais existentes para o cliente de teste (Frotas & Frotas Ltda: 6 negociações com postos).
