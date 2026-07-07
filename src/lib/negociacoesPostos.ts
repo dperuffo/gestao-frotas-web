@@ -37,6 +37,14 @@ export type DadosRodada = {
   vigencia_fim: string;
   volume_minimo_mensal: number;
   preco_unitario: number;
+  // Fase 27.74 — achado real: `negociacoes_postos.ciclo_faturamento_dias`/
+  // `prazo_vencimento_dias` já existiam no banco e já eram usados pelo robô
+  // `gerar_faturas_postos_robo()` pra calcular período/vencimento de cada
+  // fatura — mas nenhum formulário deixava o usuário DEFINIR esses valores
+  // (sempre ficavam no default da coluna, 30/30). Agora fazem parte da
+  // proposta de cada rodada, igual combustível/preço/volume.
+  ciclo_faturamento_dias: number;
+  prazo_vencimento_dias: number;
 };
 
 // Dispara a Edge Function "negociacao-email" (Resend) — best-effort, nunca
@@ -73,6 +81,14 @@ export function validarDadosRodada(d: Partial<DadosRodada>): string | null {
   const preco = Number(d.preco_unitario);
   if (!Number.isFinite(preco) || preco <= 0) {
     return '"preco_unitario" precisa ser um número maior que zero.';
+  }
+  const ciclo = Number(d.ciclo_faturamento_dias);
+  if (!Number.isFinite(ciclo) || ciclo <= 0 || !Number.isInteger(ciclo)) {
+    return '"ciclo_faturamento_dias" precisa ser um número inteiro maior que zero.';
+  }
+  const prazo = Number(d.prazo_vencimento_dias);
+  if (!Number.isFinite(prazo) || prazo <= 0 || !Number.isInteger(prazo)) {
+    return '"prazo_vencimento_dias" precisa ser um número inteiro maior que zero.';
   }
   return null;
 }
@@ -227,7 +243,9 @@ export async function decidirNegociacao(
     .update({ decisao: params.decisao, decidido_em: agora, decidido_por: params.decididoPor })
     .eq("negociacao_id", params.negociacaoId)
     .eq("numero_rodada", negociacao.rodada_atual)
-    .select("combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario")
+    .select(
+      "combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario, ciclo_faturamento_dias, prazo_vencimento_dias"
+    )
     .single();
   if (erroRodada) return { erro: erroRodada.message };
 
@@ -237,6 +255,10 @@ export async function decidirNegociacao(
   // no cabeçalho (vigência, combustível, volume, preço) — é isso que
   // alimenta a aba "Vigentes" da tela /negociacoes, sem precisar de join
   // com negociacoes_postos_rodadas toda vez que a lista é exibida.
+  //
+  // Fase 27.74 — ciclo_faturamento_dias/prazo_vencimento_dias entram na
+  // mesma fotografia: é o que o robô gerar_faturas_postos_robo() de fato lê
+  // pra calcular período/vencimento das faturas dessa negociação.
   const { error: erroCabecalho } = await supabase
     .from("negociacoes_postos")
     .update({
@@ -250,6 +272,8 @@ export async function decidirNegociacao(
             vigencia_fim: rodadaDecidida.vigencia_fim,
             volume_minimo_mensal: rodadaDecidida.volume_minimo_mensal,
             preco_unitario: rodadaDecidida.preco_unitario,
+            ciclo_faturamento_dias: rodadaDecidida.ciclo_faturamento_dias,
+            prazo_vencimento_dias: rodadaDecidida.prazo_vencimento_dias,
           }
         : {}),
     })

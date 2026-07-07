@@ -4500,3 +4500,34 @@ NÃO é dono — retorna vazio (guarda de autorização funcionando).
 Novo item no `menuPosto` (`layout.tsx`): "🏢 Clientes", entre Abastecimentos e Meus Preços.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.74 — Ciclo de faturamento/prazo de vencimento configuráveis por negociação
+
+Pedido do Daniel: "a fatura precisa ser calculada com base no ciclo de abastecimento + pagamento setado
+para o cliente". Investigação (via subagente): a função `gerar_faturas_postos_robo()` (roda via
+`pg_cron`, todo dia às 3h) JÁ calculava período e vencimento de cada fatura corretamente a partir de
+`negociacoes_postos.ciclo_faturamento_dias`/`prazo_vencimento_dias` — confirmado com uma consulta direta
+cruzando `faturas_postos` com `negociacoes_postos` (o período de cada fatura bate exatamente com o ciclo
+configurado, o vencimento bate com o prazo configurado). **O cálculo em si nunca esteve errado.**
+
+**Causa raiz real:** esses dois campos existem no banco desde a Fase 27.64, mas NENHUM formulário da
+aplicação (nem `/negociacoes`, nem a API pública `/api/integracoes/negociacoes`) jamais deixou o usuário
+DEFINIR esses valores — sempre caíam no default fixo da coluna (30/30 dias), nunca "setado para o
+cliente" de verdade. As negociações de teste com ciclo=15 que eu tinha visto antes tinham sido ajustadas
+direto no banco (SQL manual), não pela UI.
+
+**Fix:** ciclo de faturamento e prazo de vencimento agora fazem parte da PROPOSTA de cada rodada de
+negociação, no mesmo nível de combustível/volume/preço/vigência:
+- Nova coluna em `negociacoes_postos_rodadas` (só existiam no cabeçalho `negociacoes_postos`, não na
+  rodada — precisavam existir na rodada pra serem "propostos" e não só herdados de algum outro lugar).
+- `DadosRodada` (`negociacoesPostos.ts`) ganhou os 2 campos; `validarDadosRodada` valida que são inteiros
+  positivos; `decidirNegociacao` agora fotografa esses valores no cabeçalho junto com os demais termos
+  quando a negociação é aceita (mesmo mecanismo da Fase 27.54).
+- `FormularioNovaNegociacao.tsx` e `FormularioContraproposta.tsx` ganharam os 2 campos de input (default
+  30, contraproposta vem pré-preenchida com o valor da rodada anterior).
+- Tela de detalhe da negociação (`/negociacoes/[id]`) mostra ciclo/prazo no histórico de cada rodada.
+- API pública (`/api/integracoes/negociacoes` e `.../rodadas`): campos opcionais — se o sistema do posto
+  não enviar, cai no ciclo/prazo já vigente da rodada atual (contraproposta) ou 30/30 (criação), sem
+  quebrar integrações existentes.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

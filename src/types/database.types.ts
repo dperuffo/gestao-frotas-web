@@ -158,6 +158,10 @@ export interface Database {
           vigencia_fim: string;
           volume_minimo_mensal: number;
           preco_unitario: number;
+          // Fase 27.74 — proposto por rodada (igual combustível/preço/volume),
+          // "fotografado" no cabeçalho (negociacoes_postos) quando aceito.
+          ciclo_faturamento_dias: number;
+          prazo_vencimento_dias: number;
           decisao: string;
           decidido_em: string | null;
           decidido_por: string | null;

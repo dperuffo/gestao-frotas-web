@@ -109,6 +109,8 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
               vigencia_fim: ultimaRodada.vigencia_fim,
               volume_minimo_mensal: ultimaRodada.volume_minimo_mensal,
               preco_unitario: ultimaRodada.preco_unitario,
+              ciclo_faturamento_dias: ultimaRodada.ciclo_faturamento_dias,
+              prazo_vencimento_dias: ultimaRodada.prazo_vencimento_dias,
             }}
           />
         </div>
@@ -156,6 +158,14 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
                 <p className="text-slate-700">
                   {formatarDataBr(r.vigencia_inicio)} – {formatarDataBr(r.vigencia_fim)}
                 </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Ciclo de faturamento</p>
+                <p className="text-slate-700">{r.ciclo_faturamento_dias} dias</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Prazo de vencimento</p>
+                <p className="text-slate-700">{r.prazo_vencimento_dias} dias</p>
               </div>
             </div>
           </div>

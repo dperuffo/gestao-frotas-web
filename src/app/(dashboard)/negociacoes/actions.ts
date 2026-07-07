@@ -28,6 +28,10 @@ function lerDadosRodada(formData: FormData): DadosRodada {
     vigencia_fim: String(formData.get("vigencia_fim") ?? ""),
     volume_minimo_mensal: Number(formData.get("volume_minimo_mensal")),
     preco_unitario: Number(formData.get("preco_unitario")),
+    // Fase 27.74 — se o campo não vier no form (ex: formulário antigo em
+    // cache do navegador), cai no mesmo default 30 que já era o da coluna.
+    ciclo_faturamento_dias: Number(formData.get("ciclo_faturamento_dias")) || 30,
+    prazo_vencimento_dias: Number(formData.get("prazo_vencimento_dias")) || 30,
   };
 }
 

@@ -17,6 +17,10 @@ type CorpoRequisicao = {
   vigencia_fim?: string;
   volume_minimo_mensal?: number;
   preco_unitario?: number;
+  // Fase 27.74 — opcionais: se não vier, cai no ciclo/prazo já vigente na
+  // rodada atual (em vez de resetar pra um default fixo sem querer).
+  ciclo_faturamento_dias?: number;
+  prazo_vencimento_dias?: number;
 };
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -29,13 +33,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { data: negociacao } = await supabase
     .from("negociacoes_postos")
-    .select("id, empresa_posto_id")
+    .select("id, empresa_posto_id, rodada_atual")
     .eq("id", id)
     .maybeSingle();
 
   if (!negociacao || negociacao.empresa_posto_id !== chave.empresaId) {
     return NextResponse.json({ erro: "Negociação não encontrada para este posto." }, { status: 404 });
   }
+
+  const { data: rodadaAtual } = await supabase
+    .from("negociacoes_postos_rodadas")
+    .select("ciclo_faturamento_dias, prazo_vencimento_dias")
+    .eq("negociacao_id", id)
+    .eq("numero_rodada", negociacao.rodada_atual)
+    .maybeSingle();
 
   let corpo: CorpoRequisicao;
   try {
@@ -60,6 +71,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       vigencia_fim: String(corpo.vigencia_fim ?? ""),
       volume_minimo_mensal: Number(corpo.volume_minimo_mensal),
       preco_unitario: Number(corpo.preco_unitario),
+      ciclo_faturamento_dias: Number(corpo.ciclo_faturamento_dias) || rodadaAtual?.ciclo_faturamento_dias || 30,
+      prazo_vencimento_dias: Number(corpo.prazo_vencimento_dias) || rodadaAtual?.prazo_vencimento_dias || 30,
     },
     decididoPor: "api",
   });
