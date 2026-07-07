@@ -4376,3 +4376,32 @@ linhas, numa escala ainda maior (todas as empresas juntas). Não mexi nisso aind
 diferente e o Daniel não relatou problema nela — fica registrado aqui pra não esquecer.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.73 — Painel financeiro do admin com indicadores da FNI
+
+Pedido do Daniel: o painel financeiro visto pelo admin deveria mostrar indicadores da FNI (o próprio
+SaaS), não de um cliente ou posto específico. `/financeiro` sempre exigiu selecionar um cliente (é o
+painel de custo/orçamento DAQUELE cliente) — quem já cumpria esse papel pro lado da FNI era `/assinaturas`
+(Fase 20, exclusivo admin), só que faltavam faturamento/inadimplência reais e churn/novos assinantes do
+mês (só existia contagem por status e MRR estimado, sem noção de período).
+
+Confirmado com o Daniel: manter MRR + assinantes por plano (já existia) e adicionar faturamento/
+inadimplência dos clientes + churn/novos assinantes do mês.
+
+**Faturamento/inadimplência do mês:** direto de `invoices` (histórico real de cobrança gravado pelo
+`stripe-webhook` em `invoice.payment_succeeded`/`failed`, status `pago`/`falhou`) — diferente do MRR, que
+é uma ESTIMATIVA a partir do preço atual do plano de quem está "ativo" agora, não da cobrança de verdade.
+
+**Churn do mês:** `empresas.cancelado_em` dentro do mês (gravado em `customer.subscription.deleted`).
+
+**Novos assinantes do mês:** aproximação — empresas com plano pago cujo `created_at` cai dentro do mês
+(cobre quem já nasce contratando via `/cadastro` + checkout no mesmo dia; quem começa em trial e converte
+depois não é capturado por este critério, já que não existe uma coluna dedicada de "data de conversão pra
+pago" — limitação documentada no código).
+
+**Achado ao implementar:** duas tabelas reais do banco nunca tinham sido adicionadas a
+`database.types.ts` — `empresas.cancelado_em` (existe desde a Fase 20) e a tabela `invoices` inteira.
+Ambas adicionadas agora. Confirmado via RLS que o admin já enxerga todas as invoices de todos os
+clientes (`invoices_tenant_select` tem bypass pra `perfil_usuario_atual() = 'admin'`).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

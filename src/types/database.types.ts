@@ -33,6 +33,10 @@ export interface Database {
           plano: string;
           status: string;
           trial_ends_at: string | null;
+          // Fase 27.73 — coluna real já existia desde a Fase 20
+          // (gravada pelo stripe-webhook em customer.subscription.deleted),
+          // mas nunca tinha sido adicionada aqui.
+          cancelado_em: string | null;
           stripe_customer_id: string | null;
           stripe_subscription_id: string | null;
           max_usuarios: number | null;
@@ -63,6 +67,29 @@ export interface Database {
         };
         Insert: Partial<Database["public"]["Tables"]["empresas"]["Row"]> & { nome: string };
         Update: Partial<Database["public"]["Tables"]["empresas"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase 27.73 — tabela já existia desde a Fase 20 (histórico de
+      // cobrança, gravada pelo stripe-webhook em invoice.payment_succeeded/
+      // failed com status "pago"/"falhou"), mas nunca tinha sido adicionada
+      // aqui.
+      invoices: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          stripe_invoice_id: string | null;
+          valor_cents: number;
+          status: string;
+          periodo_inicio: string | null;
+          periodo_fim: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["invoices"]["Row"]> & {
+          empresa_id: string;
+          valor_cents: number;
+          status: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["invoices"]["Row"]>;
         Relationships: [];
       };
       negociacoes_postos: {

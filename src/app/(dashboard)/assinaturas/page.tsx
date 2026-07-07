@@ -12,6 +12,14 @@ function formatarMoeda(cents: number) {
 // risco de expirar sem converter. Mesmo padrão de checagem de acesso já
 // usado em /inteligencia-rede (perfil_usuario_atual() como 2ª camada de
 // defesa, já que RLS de `empresas` também restringe SELECT geral ao admin).
+//
+// Fase 27.73 — pedido do Daniel: esta é a tela que já mostra os indicadores
+// financeiros DA FNI (não de um cliente ou posto específico — por isso a
+// distinção com /financeiro, que é sempre o painel de custo/orçamento de UM
+// cliente selecionado). Faltavam faturamento/inadimplência real (a partir de
+// `invoices`, alimentada pelo `stripe-webhook`) e churn/novos assinantes do
+// mês — só existia a contagem por status (snapshot, sem noção de período) e
+// o MRR estimado.
 export default async function AssinaturasAdminPage() {
   const supabase = await createClient();
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
@@ -28,15 +36,28 @@ export default async function AssinaturasAdminPage() {
     );
   }
 
-  const [{ data: empresas, error }, precos] = await Promise.all([
+  const agora = new Date();
+  const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+  const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59);
+  const inicioMesIso = inicioMes.toISOString();
+  const fimMesIso = fimMes.toISOString();
+
+  const [{ data: empresas, error }, precos, { data: invoicesDoMes }] = await Promise.all([
     supabase
       .from("empresas")
-      .select("id, nome, plano, status, trial_ends_at, stripe_customer_id, created_at")
+      .select("id, nome, plano, status, trial_ends_at, stripe_customer_id, created_at, cancelado_em")
       .order("created_at", { ascending: false }),
     // Preço real de cada plano, direto do Stripe (Edge Function
     // planos-precos) — usado só pra ESTIMAR o MRR nesta tela; a cobrança de
     // verdade continua 100% no Stripe via stripe-webhook.
     buscarPrecosPlanos(),
+    // Fase 27.73 — faturamento/inadimplência do mês, a partir de `invoices`
+    // (só `pago`/`falhou` são gravados, ver stripe-webhook: invoice.payment_succeeded/failed).
+    supabase
+      .from("invoices")
+      .select("empresa_id, valor_cents, status")
+      .gte("criado_em", inicioMesIso)
+      .lte("criado_em", fimMesIso),
   ]);
 
   const lista = empresas ?? [];
@@ -63,11 +84,41 @@ export default async function AssinaturasAdminPage() {
   const totalCancelados = porStatus.get("cancelado") ?? 0;
   const taxaConversao = totalClientes > 0 ? Math.round((totalAtivos / totalClientes) * 100) : 0;
 
+  // Faturamento e inadimplência do mês — direto de `invoices` (fonte real de
+  // cobrança, diferente do MRR acima que é uma ESTIMATIVA a partir do preço
+  // atual do plano de quem está "ativo" agora).
+  const invoicesPagas = (invoicesDoMes ?? []).filter((i) => i.status === "pago");
+  const invoicesFalhas = (invoicesDoMes ?? []).filter((i) => i.status === "falhou");
+  const faturamentoMesCents = invoicesPagas.reduce((soma, i) => soma + i.valor_cents, 0);
+  const inadimplenciaMesCents = invoicesFalhas.reduce((soma, i) => soma + i.valor_cents, 0);
+
+  // Churn do mês: empresas canceladas dentro da janela (cancelado_em é
+  // gravado pelo stripe-webhook em customer.subscription.deleted).
+  const churnDoMes = lista.filter(
+    (e) => e.cancelado_em && e.cancelado_em >= inicioMesIso && e.cancelado_em <= fimMesIso
+  );
+
+  // Novos assinantes do mês — aproximação: empresas com plano PAGO, criadas
+  // dentro do mês (não existe uma coluna dedicada de "data de conversão pra
+  // pago"; quem já nasce contratando um plano pago via /cadastro + checkout
+  // no mesmo dia cai aqui). Quem começa em trial e converte depois não é
+  // capturado por este critério — documentado como limitação conhecida.
+  const novosAssinantesDoMes = lista.filter(
+    (e) =>
+      e.plano !== "gratuito" &&
+      e.created_at &&
+      e.created_at >= inicioMesIso &&
+      e.created_at <= fimMesIso
+  );
+
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Assinaturas</h1>
-        <p className="mt-1 text-sm text-slate-500">Visão geral de planos, status de cobrança e MRR estimado.</p>
+        <p className="mt-1 text-sm text-slate-500">
+          Indicadores financeiros da FNI — planos, cobrança e MRR (não é o painel de custo do cliente, que
+          fica em Painel Financeiro).
+        </p>
       </div>
 
       {error && <p className="mb-4 text-sm text-red-600">Erro ao carregar empresas: {error.message}</p>}
@@ -81,6 +132,28 @@ export default async function AssinaturasAdminPage() {
         <Indicador label="MRR estimado" valor={formatarMoeda(mrrCents)} />
       </div>
 
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Faturamento — {agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
+      </p>
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Indicador label="Faturado no mês" valor={formatarMoeda(faturamentoMesCents)} />
+        <Indicador
+          label="Inadimplência no mês"
+          valor={`${formatarMoeda(inadimplenciaMesCents)} (${invoicesFalhas.length})`}
+          destaque={invoicesFalhas.length > 0 ? "negativo" : undefined}
+        />
+        <Indicador
+          label="Novos assinantes"
+          valor={String(novosAssinantesDoMes.length)}
+          destaque={novosAssinantesDoMes.length > 0 ? "positivo" : undefined}
+        />
+        <Indicador
+          label="Churn (cancelados)"
+          valor={String(churnDoMes.length)}
+          destaque={churnDoMes.length > 0 ? "negativo" : undefined}
+        />
+      </div>
+
       <div className="mb-6 card p-4">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Taxa de conversão (ativos / total)</p>
         <p className="mt-1 text-xl font-semibold text-slate-900">{taxaConversao}%</p>
@@ -90,6 +163,12 @@ export default async function AssinaturasAdminPage() {
         <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <strong>{trialsEmRisco.length}</strong> trial(s) expirando em até 3 dias sem plano contratado:{" "}
           {trialsEmRisco.map((e) => e.nome).join(", ")}.
+        </div>
+      )}
+
+      {churnDoMes.length > 0 && (
+        <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
+          <strong>{churnDoMes.length}</strong> cliente(s) cancelaram este mês: {churnDoMes.map((e) => e.nome).join(", ")}.
         </div>
       )}
 
@@ -144,11 +223,25 @@ export default async function AssinaturasAdminPage() {
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: string }) {
+function Indicador({
+  label,
+  valor,
+  destaque,
+}: {
+  label: string;
+  valor: string;
+  destaque?: "positivo" | "negativo";
+}) {
   return (
     <div className="card p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
+      <p
+        className={`mt-1 text-lg font-semibold ${
+          destaque === "negativo" ? "text-red-600" : destaque === "positivo" ? "text-green-700" : "text-slate-900"
+        }`}
+      >
+        {valor}
+      </p>
     </div>
   );
 }
