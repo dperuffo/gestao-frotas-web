@@ -9,6 +9,7 @@ import {
 } from "@/lib/financeiro";
 import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
 import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
+import { IndicadoresFinanceirosFni } from "../_components/IndicadoresFinanceirosFni";
 import { CobrancaEmAberto, type FaturaCobranca } from "./_components/CobrancaEmAberto";
 import { GraficoEvolucaoFinanceira, type PontoFinanceiro } from "./_components/GraficoEvolucaoFinanceira";
 import { FormularioOrcamento } from "./_components/FormularioOrcamento";
@@ -32,7 +33,8 @@ export default async function FinanceiroPage({
 }) {
   const { empresa: empresaParam } = await searchParams;
   const supabase = await createClient();
-  const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+  const { empresas, empresaSelecionada, perfil } = await resolverEmpresaAtual(supabase, empresaParam);
+  const ehAdmin = perfil === "admin";
 
   const agora = new Date();
   const inicioMesAtual = new Date(agora.getFullYear(), agora.getMonth(), 1);
@@ -235,14 +237,28 @@ export default async function FinanceiroPage({
     editavel: custoFixoEditavel(c.competencia),
   }));
 
+  // Fase 27.78 — achado real (reportado pelo Daniel, print mostrando
+  // "Selecione um cliente" pro usuário admin): o item de menu que o admin
+  // usa é "Painel Financeiro" (aponta pra cá), mas esta tela sempre foi só
+  // o painel de custo/orçamento de UM cliente selecionado — pro admin, sem
+  // selecionar ninguém, isso não fazia sentido nenhum (ele não é "de" um
+  // cliente). Os indicadores da FNI (MRR, faturamento, churn — Fase 27.73)
+  // só existiam em /assinaturas, uma rota separada que o admin não
+  // necessariamente sabe que existe. Agora, quando é admin E nenhum cliente
+  // específico está selecionado, mostra os indicadores da FNI aqui mesmo —
+  // se o admin selecionar um cliente no seletor, continua vendo o painel de
+  // custo NORMAL daquele cliente (não perde a funcionalidade existente).
+  const mostrarFni = ehAdmin && !empresaSelecionada;
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Painel Financeiro</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Custo de combustível, manutenção, custos fixos e orçamento — {NOMES_MES[agora.getMonth()]}/
-            {agora.getFullYear()}.
+            {mostrarFni
+              ? "Indicadores financeiros da FNI — planos, cobrança e MRR. Selecione um cliente ao lado para ver o painel de custo dele."
+              : `Custo de combustível, manutenção, custos fixos e orçamento — ${NOMES_MES[agora.getMonth()]}/${agora.getFullYear()}.`}
           </p>
         </div>
         {empresas.length > 1 && (
@@ -250,7 +266,7 @@ export default async function FinanceiroPage({
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
               <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
-                <option value="">Nenhum selecionado</option>
+                <option value="">{ehAdmin ? "Indicadores da FNI" : "Nenhum selecionado"}</option>
                 {empresas.map((e) => (
                   <option key={e.id} value={e.id}>
                     {e.nome}
@@ -265,7 +281,9 @@ export default async function FinanceiroPage({
         )}
       </div>
 
-      {!empresaSelecionada && (
+      {mostrarFni && <IndicadoresFinanceirosFni />}
+
+      {!ehAdmin && !empresaSelecionada && (
         <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Selecione um cliente para ver o painel financeiro dele.
         </p>

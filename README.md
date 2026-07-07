@@ -4605,3 +4605,26 @@ Links "Ver extrato" adicionados nas 3 telas que já listavam faturas: `/financei
 (admin/posto por cliente, Fases 27.71/27.72).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.78 — /financeiro mostrar indicadores da FNI pro admin
+
+Achado real (reportado pelo Daniel, print de `/financeiro` mostrando "Selecione um cliente" pro usuário
+admin): a Fase 27.73 pôs os indicadores financeiros da FNI (MRR, faturamento, churn) em `/assinaturas`,
+mas o item de menu que o admin efetivamente usa é **"Painel Financeiro"**, que aponta pra `/financeiro`
+— uma tela que sempre foi só o painel de custo/orçamento de UM cliente selecionado. Pro admin, sem
+selecionar ninguém (o caso normal, já que ele não "é" nenhum cliente), a tela sempre caiu no aviso
+genérico "Selecione um cliente", nunca nos indicadores da FNI.
+
+**Fix:** conteúdo de `/assinaturas` extraído pra `IndicadoresFinanceirosFni.tsx`
+(`src/app/(dashboard)/_components/`) — componente compartilhado, sem props, busca tudo sozinho.
+`/assinaturas` continua existindo (link direto do menu Administração), só que agora chama o componente
+compartilhado em vez de duplicar a lógica.
+
+`/financeiro/page.tsx`: quando `perfil === "admin"` E nenhum cliente está selecionado
+(`mostrarFni = ehAdmin && !empresaSelecionada`), renderiza `<IndicadoresFinanceirosFni />` em vez do
+aviso "Selecione um cliente" — título/subtítulo da página também mudam pra refletir isso. Se o admin
+selecionar um cliente no seletor (o dropdown ganhou a opção "Indicadores da FNI" no lugar de "Nenhum
+selecionado" quando é admin), continua vendo o painel de custo NORMAL daquele cliente — nada muda pra
+quem já usava assim.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
