@@ -64,6 +64,9 @@ const menuPosto = [
   { href: "/dashboard", label: "🏠 Dashboard" },
   { href: "/negociacoes", label: "🤝 Negociações" },
   { href: "/abastecimentos", label: "🛢️ Abastecimentos" },
+  // Fase 27.72 — cadastro dos clientes que já negociaram com o posto
+  // (qualquer status), com ciclo de abastecimento/pagamento por cliente.
+  { href: "/clientes-posto", label: "🏢 Clientes" },
   { href: "/precos-postos", label: "💲 Meus Preços" },
   { href: "/financeiro-posto", label: "💰 Financeiro" },
   { href: "/integracoes", label: "🔌 Integrações" },

@@ -4467,3 +4467,36 @@ também. Evita adicionar mais uma consulta ou expor `empresas` sem necessidade.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos). Testado com consulta direta confirmando dados
 reais existentes para o cliente de teste (Frotas & Frotas Ltda: 6 negociações com postos).
+
+## Fase 27.72 — Nova aba "Clientes" no menu do posto
+
+Pedido do Daniel: uma aba própria no menu do posto pra ver o cadastro dos clientes que já negociaram com
+ele. Confirmado via AskUserQuestion: TODOS que já negociaram, qualquer status (não só os com negociação
+vigente/aceita).
+
+**Problema de RLS (mesma classe da Fase 27.68):** a lista precisa de dados de `empresas` (nome, CNPJ,
+cidade/UF, segmento) dos CLIENTES — mas a RLS de `empresas` (`empresas_select_membro`) só libera ver
+empresas das quais o usuário é membro, e o posto nunca é "membro" da empresa do cliente. Um SELECT direto
+sempre voltaria vazio pro posto.
+
+**Fix:** nova função `clientes_do_posto(p_empresa_posto_id)`, SECURITY DEFINER — mas com uma guarda de
+autorização própria dentro da função (`empresas_do_usuario`/admin/superuser), já que roda com privilégio
+elevado. Faz `negociacoes_postos JOIN empresas` e só devolve clientes que JÁ TÊM uma negociação real com
+o posto informado — nunca a base de `empresas` inteira. Devolve cadastro (nome, CNPJ, cidade/UF, porte,
+segmento, telefone, e-mail) + status da negociação mais recente + contagem de negociações.
+
+Testado simulando a sessão do `posto.teste@fni.test`: retorna os 2 clientes reais que negociaram com o
+Posto Teste. Testado também simulando um cliente tentando chamar a função com o id de um posto que ele
+NÃO é dono — retorna vazio (guarda de autorização funcionando).
+
+**Telas novas:**
+- `/clientes-posto` — lista (mesmo padrão de seletor de empresa de `/financeiro-posto`, com o mesmo
+  bloqueio pra quem não é Revenda).
+- `/clientes-posto/[clienteId]` — detalhe de um cliente: cadastro + o MESMO componente
+  `CicloAbastecimentoPagamento` da Fase 27.71 (reaproveitado sem alteração), só que filtrado por
+  `empresa_posto_id = este posto` E `empresa_cliente_id = este cliente`, em vez de cross-posto como na
+  visão admin.
+
+Novo item no `menuPosto` (`layout.tsx`): "🏢 Clientes", entre Abastecimentos e Meus Preços.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

@@ -1590,6 +1590,29 @@ export interface Database {
         Args: { p_pv_cnpj: string; p_desde: string };
         Returns: { dia: string; item_nome: string; quantidade: number; volume: number; receita: number }[];
       };
+      // Fase 27.72 — lista os clientes (qualquer status de negociação) que já
+      // negociaram com o posto informado, com dados de cadastro de `empresas`
+      // — SECURITY DEFINER porque a RLS de `empresas` bloqueia SELECT
+      // cross-tenant (mesmo problema da Fase 27.68), mas só expõe clientes
+      // com quem o posto chamador tem uma negociação real (guarda de
+      // autorização própria dentro da função).
+      clientes_do_posto: {
+        Args: { p_empresa_posto_id: string };
+        Returns: {
+          id: string;
+          nome: string;
+          cnpj: string | null;
+          municipio: string | null;
+          uf: string | null;
+          porte: string | null;
+          segmento_transporte: string | null;
+          telefone_contato: string | null;
+          email_contato: string | null;
+          status_negociacao: string;
+          negociacoes_count: number;
+          ultima_atualizacao: string | null;
+        }[];
+      };
       // Fase 27.41 — conta a frota REAL da empresa (cadastro_veiculos +
       // placas distintas vistas nos abastecimentos da integração, mesmo sem
       // cadastro formal) — usada por verificarLimiteFrota (src/lib/limitePlano.ts)
