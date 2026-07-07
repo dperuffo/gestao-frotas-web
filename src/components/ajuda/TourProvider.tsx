@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { PASSOS_TOUR } from "@/lib/ajuda/tourPassos";
+import type { PassoTour } from "@/lib/ajuda/tourPassos";
 import { marcarTourVistoAcao } from "@/app/(dashboard)/_components/ajudaActions";
 import { TourOverlay } from "./TourOverlay";
 
@@ -13,11 +13,19 @@ const TourContext = createContext<ContextoTour | null>(null);
 // calculado no server a partir de usuarios_app.tour_onboarding_visto), abre
 // sozinho no primeiro carregamento da sessão. A Central de Ajuda (no rodapé
 // da barra lateral) usa o hook useTour() pra reabrir a qualquer momento.
+//
+// Fase 27.82 — achado real (Daniel reportou que o posto via o mesmo tour do
+// cliente, com passos que nem existem no menu dele): os passos deixaram de
+// ser importados fixos daqui dentro — quem chama (layout.tsx) decide qual
+// array passar (PASSOS_TOUR_FROTA ou PASSOS_TOUR_POSTO) via prop `passos`,
+// de acordo com o perfil do usuário logado.
 export function TourProvider({
   tourJaVisto,
+  passos,
   children,
 }: {
   tourJaVisto: boolean;
+  passos: PassoTour[];
   children: React.ReactNode;
 }) {
   const [ativo, setAtivo] = useState(false);
@@ -46,13 +54,13 @@ export function TourProvider({
 
   const proximo = useCallback(() => {
     setPassoIndice((i) => {
-      if (i + 1 >= PASSOS_TOUR.length) {
+      if (i + 1 >= passos.length) {
         finalizar();
         return i;
       }
       return i + 1;
     });
-  }, [finalizar]);
+  }, [finalizar, passos.length]);
 
   const anterior = useCallback(() => {
     setPassoIndice((i) => Math.max(0, i - 1));
@@ -63,9 +71,9 @@ export function TourProvider({
       {children}
       {ativo && (
         <TourOverlay
-          passo={PASSOS_TOUR[passoIndice]}
+          passo={passos[passoIndice]}
           indice={passoIndice}
-          total={PASSOS_TOUR.length}
+          total={passos.length}
           onProximo={proximo}
           onAnterior={anterior}
           onPular={finalizar}

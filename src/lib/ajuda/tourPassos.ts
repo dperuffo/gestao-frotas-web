@@ -6,7 +6,19 @@ export type PassoTour = { alvo: string; titulo: string; texto: string };
 // depender de qual página o usuário está vendo quando o tour começa —
 // cada passo aponta pra um elemento marcado com data-tour="<alvo>" no
 // layout do dashboard.
-export const PASSOS_TOUR: PassoTour[] = [
+//
+// Fase 27.82 — achado real (reportado pelo Daniel): até aqui só existia UM
+// array de passos, mostrado pra todo mundo — inclusive perfil "posto"
+// (segmento Revenda), cujo menu (menuPosto em layout.tsx) é uma trilha bem
+// mais enxuta e diferente da de Frota (sem Cadastros/Operação/Assistente).
+// Os passos "menu-cadastros"/"menu-operacao"/"menu-assistente" apontavam
+// pra elementos que nem existem na tela do posto (sem data-tour
+// correspondente), então o tour ficava incoerente com as funções reais
+// dele. Agora existem dois arrays — PASSOS_TOUR_FROTA (cliente/admin/
+// gestor_frota/analista, o de sempre) e PASSOS_TOUR_POSTO (revenda) — e
+// TourProvider recebe qual usar via prop `passos`, escolhida em
+// layout.tsx a partir de `ehPosto`.
+export const PASSOS_TOUR_FROTA: PassoTour[] = [
   {
     alvo: "logo",
     titulo: "Bem-vindo(a) à FNI Gestão de Frotas!",
@@ -36,6 +48,53 @@ export const PASSOS_TOUR: PassoTour[] = [
     alvo: "menu-operacao",
     titulo: "Operação",
     texto: "Abastecimentos, roteirização inteligente, rotogramas, manutenção preditiva, relatórios e integrações com outros sistemas.",
+  },
+  {
+    alvo: "central-ajuda",
+    titulo: "Precisa de ajuda depois?",
+    texto: "Clique aqui a qualquer momento pra rever este tour. E fique de olho no ícone (?) ao lado dos indicadores e painéis pela plataforma — ele explica o que cada número significa e como é calculado.",
+  },
+];
+
+// Fase 27.82 — tour do perfil "posto" (segmento Revenda): menu próprio,
+// bem mais enxuto que o de Frota (menuPosto em layout.tsx) — nada de
+// Cadastros/Operação/Assistente/Roteirização. Cada alvo aponta pro
+// data-tour correspondente nos itens de menuPosto.
+export const PASSOS_TOUR_POSTO: PassoTour[] = [
+  {
+    alvo: "logo",
+    titulo: "Bem-vindo(a) à FNI Gestão de Frotas!",
+    texto: "Vamos fazer um tour rápido pelas funções do seu posto na plataforma. Leva menos de um minuto — e você pode rever isso quando quiser.",
+  },
+  {
+    alvo: "menu-dashboard-posto",
+    titulo: "Dashboard",
+    texto: "Visão geral do seu posto: abastecimentos registrados, negociações em andamento e indicadores de vendas.",
+  },
+  {
+    alvo: "menu-negociacoes-posto",
+    titulo: "Negociações",
+    texto: "Aqui você recebe, aceita, recusa ou contrapropõe negociações de fornecimento de combustível com clientes de frota — preço, volume mínimo mensal e vigência.",
+  },
+  {
+    alvo: "menu-clientes-posto",
+    titulo: "Clientes",
+    texto: "Lista de todos os clientes que já negociaram com o seu posto, com o ciclo de abastecimento e pagamento combinado com cada um.",
+  },
+  {
+    alvo: "menu-precos-posto",
+    titulo: "Meus Preços",
+    texto: "Cadastre e atualize os preços dos combustíveis que você vende — é o que aparece pros clientes de frota na hora de negociar.",
+  },
+  {
+    alvo: "menu-financeiro-posto",
+    titulo: "Financeiro",
+    texto: "Faturas emitidas pros seus clientes (a receber), despesas do posto (a pagar) e o fluxo de caixa previsto, dia a dia.",
+  },
+  {
+    alvo: "menu-integracoes-posto",
+    titulo: "Integrações",
+    texto: "Gere sua chave de API pra conectar o sistema do seu posto direto à plataforma — negociações e preços sem precisar acessar aqui toda vez.",
   },
   {
     alvo: "central-ajuda",

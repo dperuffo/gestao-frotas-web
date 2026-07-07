@@ -4736,3 +4736,27 @@ com a mesma duração em dias da opção rápida escolhida ("Mês atual" = resto
 saldo previsto/gráfico), com legenda própria ("Previsão: X – Y") no card do gráfico.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.82 — Tour de onboarding do posto era o mesmo do cliente
+
+Pedido do Daniel: "ajustar o onboarding da tela de posto, pois esta com o mesmo da tela de cliente e sao
+outras funcoes".
+
+**Achado real:** o tour guiado de boas-vindas (Fase 24, `TourProvider` + `PASSOS_TOUR`) sempre foi UM ÚNICO
+array fixo, mostrado igual pra qualquer perfil — inclusive "posto" (segmento Revenda), cujo menu
+(`menuPosto` em `layout.tsx`) é uma trilha bem mais enxuta e diferente da de Frota (sem Cadastros,
+Operação, Assistente FNI, roteirização etc.). Passos como "Cadastros" e "Operação" apontavam
+(`data-tour="menu-cadastros"`/`"menu-operacao"`) pra elementos que sequer existem na tela do posto (sem
+esses atributos no `menuPosto`), deixando o tour incoerente com as funções reais do perfil.
+
+**Fix:** `tourPassos.ts` agora tem dois arrays — `PASSOS_TOUR_FROTA` (o de sempre, renomeado) e o novo
+`PASSOS_TOUR_POSTO`, com passos específicos pro menu do posto (Dashboard, Negociações, Clientes, Meus
+Preços, Financeiro, Integrações). `TourProvider` deixou de importar o array fixo — passou a receber
+`passos: PassoTour[]` como prop. `layout.tsx` escolhe qual array passar
+(`ehPosto ? PASSOS_TOUR_POSTO : PASSOS_TOUR_FROTA`) e ganhou `TOUR_POR_HREF_POSTO`, um mapa href→alvo
+igual ao já existente pro lado Frota, com `data-tour` nos itens correspondentes do `menuPosto` (que antes
+não tinha nenhum atributo `data-tour`). `usuarios_app.tour_onboarding_visto`/`marcar_tour_onboarding_visto`
+não precisaram mudar — são um flag global por usuário, e cada usuário só vê uma trilha (posto OU frota),
+nunca as duas.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

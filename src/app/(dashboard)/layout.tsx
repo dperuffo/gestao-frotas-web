@@ -11,6 +11,7 @@ import { contarNegociacoesPendentesAcao } from "./negociacoes/actions";
 import { contarAjustesAbastecimentosPendentesAcao } from "./abastecimentos/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
+import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
 import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
 
 // Fase 27.15 — o ícone da "Assistente FNI" é a logo (imagem), bem mais larga
@@ -88,6 +89,20 @@ const TOUR_POR_HREF: Record<string, string> = {
   "/dashboard": "menu-dashboard",
   "/assistente": "menu-assistente",
   "/financeiro": "menu-financeiro",
+};
+
+// Fase 27.82 — mesma ideia, só que pros alvos do tour do POSTO (ver
+// PASSOS_TOUR_POSTO em tourPassos.ts) — menuPosto é uma lista só, sem
+// seções, então cada item relevante recebe seu próprio data-tour (não dá
+// pra reaproveitar um "cabeçalho de seção" como Cadastros/Operação fazem
+// pro lado Frota).
+const TOUR_POR_HREF_POSTO: Record<string, string> = {
+  "/dashboard": "menu-dashboard-posto",
+  "/negociacoes": "menu-negociacoes-posto",
+  "/clientes-posto": "menu-clientes-posto",
+  "/precos-postos": "menu-precos-posto",
+  "/financeiro-posto": "menu-financeiro-posto",
+  "/integracoes": "menu-integracoes-posto",
 };
 
 export default async function DashboardLayout({
@@ -203,7 +218,10 @@ export default async function DashboardLayout({
   const ehPosto = perfilUsuario?.perfil === "posto";
 
   return (
-    <TourProvider tourJaVisto={perfilUsuario?.tour_onboarding_visto ?? false}>
+    <TourProvider
+      tourJaVisto={perfilUsuario?.tour_onboarding_visto ?? false}
+      passos={ehPosto ? PASSOS_TOUR_POSTO : PASSOS_TOUR_FROTA}
+    >
     <div className="flex min-h-screen">
       <aside className="flex w-64 shrink-0 flex-col bg-frota-950 text-slate-100">
         <div data-tour="logo" className="border-b border-white/10 px-5 py-6">
@@ -231,6 +249,7 @@ export default async function DashboardLayout({
                 <li key={item.href}>
                   <Link
                     href={item.href}
+                    data-tour={TOUR_POR_HREF_POSTO[item.href]}
                     className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                   >
                     <span>{item.label}</span>
