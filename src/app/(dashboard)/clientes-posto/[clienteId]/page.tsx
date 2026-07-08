@@ -103,6 +103,7 @@ export default async function ClientePostoDetalhePage({
         faturas={faturas}
         ciclosAbertos={ciclosAbertos}
         rotuloCiclos="posto"
+        podeGerenciarFaturas
       />
     </div>
   );

@@ -8,9 +8,8 @@ import {
   type CategoriaOrcamento,
 } from "@/lib/financeiro";
 import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
-import { buscarCiclosAbertos } from "@/lib/ciclosAbertos";
+import { buscarCiclosAbertos, agruparCiclosPorContraparte } from "@/lib/ciclosAbertos";
 import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
-import { SecaoCiclosAbertos } from "../_components/SecaoCiclosAbertos";
 import { IndicadoresFinanceirosFni } from "../_components/IndicadoresFinanceirosFni";
 import { CobrancaEmAberto, type FaturaCobranca } from "./_components/CobrancaEmAberto";
 import { GraficoEvolucaoFinanceira, type PontoFinanceiro } from "./_components/GraficoEvolucaoFinanceira";
@@ -64,11 +63,18 @@ export default async function FinanceiroPage({
   // 27.71/27.72 — faturas_postos não denormaliza nome do posto, e um join
   // direto em `empresas` esbarraria na mesma RLS cross-tenant da Fase 27.68).
   let faturasCobranca: FaturaCobranca[] = [];
+  let negociacoesDoCliente: {
+    empresa_posto_id: string;
+    posto_nome: string | null;
+    status: string;
+    ciclo_faturamento_dias: number;
+    prazo_vencimento_dias: number;
+  }[] = [];
   if (empresaSelecionada) {
-    const [{ data: negociacoesParaNome }, { data: faturasData }] = await Promise.all([
+    const [{ data: negociacoesData }, { data: faturasData }] = await Promise.all([
       supabase
         .from("negociacoes_postos")
-        .select("empresa_posto_id, posto_nome")
+        .select("empresa_posto_id, posto_nome, status, ciclo_faturamento_dias, prazo_vencimento_dias")
         .eq("empresa_cliente_id", empresaSelecionada),
       supabase
         .from("faturas_postos")
@@ -77,7 +83,10 @@ export default async function FinanceiroPage({
         .order("vencimento", { ascending: false })
         .limit(200),
     ]);
-    const nomePorPostoId = new Map((negociacoesParaNome ?? []).map((n) => [n.empresa_posto_id, n.posto_nome]));
+    negociacoesDoCliente = (negociacoesData ?? []).filter(
+      (n): n is typeof n & { empresa_posto_id: string } => n.empresa_posto_id !== null
+    );
+    const nomePorPostoId = new Map(negociacoesDoCliente.map((n) => [n.empresa_posto_id, n.posto_nome]));
     faturasCobranca = (faturasData ?? []).map((f) => ({
       ...f,
       posto_nome: nomePorPostoId.get(f.empresa_posto_id) ?? null,
@@ -88,6 +97,29 @@ export default async function FinanceiroPage({
   // robô) não aparecia em nenhum painel financeiro, só depois de fechado.
   const todosCiclosAbertos = empresaSelecionada ? await buscarCiclosAbertos(supabase) : [];
   const ciclosAbertosDoCliente = todosCiclosAbertos.filter((c) => c.empresa_cliente_id === empresaSelecionada);
+
+  // Fase 27.85 — pedido do Daniel: mesmo agrupamento por contraparte do
+  // lado do posto, agora do lado do cliente (agrupado por POSTO).
+  const ciclosAbertosPorPosto = new Map(ciclosAbertosDoCliente.map((c) => [c.empresa_posto_id, c]));
+  const linhasPorPosto = agruparCiclosPorContraparte({
+    negociacoes: negociacoesDoCliente
+      .filter((n) => n.status === "aceita")
+      .map((n) => ({
+        contraparteId: n.empresa_posto_id,
+        contraparteNome: n.posto_nome,
+        cicloFaturamentoDias: n.ciclo_faturamento_dias,
+        prazoVencimentoDias: n.prazo_vencimento_dias,
+      })),
+    faturas: faturasCobranca.map((f) => ({
+      contraparteId: f.empresa_posto_id,
+      contraparteNome: f.posto_nome,
+      status: f.status,
+      vencimento: f.vencimento,
+      valorTotal: f.valor_total,
+    })),
+    ciclosAbertosPorContraparte: ciclosAbertosPorPosto,
+    hojeIso: paraISO(agora),
+  });
 
   let indicadores: {
     custo_combustivel: number;
@@ -380,9 +412,7 @@ export default async function FinanceiroPage({
             <TabelaCustosFixos linhas={linhasCustosFixos} />
           </div>
 
-          <SecaoCiclosAbertos ciclos={ciclosAbertosDoCliente} rotulo="cliente" />
-
-          <CobrancaEmAberto faturas={faturasCobranca} />
+          <CobrancaEmAberto faturas={faturasCobranca} linhas={linhasPorPosto} empresaId={empresaSelecionada} />
 
           {resumoAjustes && (
             <div className="mt-6">

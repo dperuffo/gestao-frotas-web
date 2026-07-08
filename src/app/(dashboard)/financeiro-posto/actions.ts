@@ -15,7 +15,7 @@ export async function marcarFaturaPagaAcao(faturaId: string): Promise<{ erro?: s
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("faturas_postos")
     .update({
       status: "paga",
@@ -24,10 +24,18 @@ export async function marcarFaturaPagaAcao(faturaId: string): Promise<{ erro?: s
       atualizado_por: user?.email ?? null,
     })
     .eq("id", faturaId)
-    .eq("status", "aberta");
+    .eq("status", "aberta")
+    .select("empresa_cliente_id")
+    .maybeSingle();
 
   if (error) return { erro: error.message };
   revalidatePath("/financeiro-posto");
+  // Fase 27.85 — "Marcar como paga" agora também é acionável a partir do
+  // drill-down /clientes-posto/[clienteId] (a lista plana que só existia
+  // em /financeiro-posto foi substituída pela visão agrupada por cliente),
+  // então precisa revalidar essa rota específica também (mesmo padrão do
+  // bug de cache corrigido na Fase 27.83).
+  if (data?.empresa_cliente_id) revalidatePath(`/clientes-posto/${data.empresa_cliente_id}`);
   return {};
 }
 
@@ -37,14 +45,17 @@ export async function cancelarFaturaAcao(faturaId: string): Promise<{ erro?: str
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("faturas_postos")
     .update({ status: "cancelada", atualizado_em: new Date().toISOString(), atualizado_por: user?.email ?? null })
     .eq("id", faturaId)
-    .eq("status", "aberta");
+    .eq("status", "aberta")
+    .select("empresa_cliente_id")
+    .maybeSingle();
 
   if (error) return { erro: error.message };
   revalidatePath("/financeiro-posto");
+  if (data?.empresa_cliente_id) revalidatePath(`/clientes-posto/${data.empresa_cliente_id}`);
   return {};
 }
 

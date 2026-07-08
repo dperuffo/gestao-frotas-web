@@ -1,10 +1,11 @@
-import Link from "next/link";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
-import { STATUS_FATURA_LABEL, statusFaturaExibicao, type StatusFaturaExibicao } from "@/lib/financeiroPostos";
+import type { LinhaContraparte } from "@/lib/ciclosAbertos";
+import { VisaoCiclosPorContraparte } from "../../_components/VisaoCiclosPorContraparte";
 
 export type FaturaCobranca = {
   id: string;
+  empresa_posto_id: string;
   posto_nome: string | null;
   periodo_inicio: string;
   periodo_fim: string;
@@ -18,7 +19,22 @@ export type FaturaCobranca = {
 // por faturas_postos) — antes só existia essa visão do lado do POSTO
 // (/financeiro-posto, "A receber"). Este componente é o espelho do lado do
 // CLIENTE: o que ELE deve, cruzando todos os postos com quem negociou.
-export function CobrancaEmAberto({ faturas }: { faturas: FaturaCobranca[] }) {
+//
+// Fase 27.85 — pedido do Daniel: mesmo problema de escala do lado do
+// posto (muitos ciclos, muitas contrapartes) pode acontecer aqui se o
+// cliente negociar com muitos postos — a lista plana de faturas virou a
+// visão agrupada por posto (VisaoCiclosPorContraparte), reaproveitando a
+// mesma agregação. KPIs/banner "próxima fatura" continuam vindo direto de
+// `faturas` (retrospectivo/pontual, não precisa de agrupamento).
+export function CobrancaEmAberto({
+  faturas,
+  linhas,
+  empresaId,
+}: {
+  faturas: FaturaCobranca[];
+  linhas: LinhaContraparte[];
+  empresaId: string;
+}) {
   const hojeIso = new Date().toISOString().slice(0, 10);
 
   const abertas = faturas.filter((f) => f.status === "aberta");
@@ -55,50 +71,11 @@ export function CobrancaEmAberto({ faturas }: { faturas: FaturaCobranca[] }) {
         </div>
       )}
 
-      <div className="card overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Posto</th>
-              <th className="px-4 py-3">Período</th>
-              <th className="px-4 py-3">Vencimento</th>
-              <th className="px-4 py-3">Valor</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {faturas.map((f) => {
-              const statusExib = statusFaturaExibicao(f.status, f.vencimento, hojeIso);
-              return (
-                <tr key={f.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-700">{f.posto_nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {formatarDataBr(f.periodo_inicio)} – {formatarDataBr(f.periodo_fim)}
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">{formatarDataBr(f.vencimento)}</td>
-                  <td className="px-4 py-3 font-medium text-slate-700">{formatarMoeda(f.valor_total)}</td>
-                  <td className="px-4 py-3">
-                    <BadgeStatus status={statusExib} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={`/faturas-postos/${f.id}`} className="text-frota-600 hover:underline">
-                      Ver extrato
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-            {faturas.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                  Nenhuma fatura emitida ainda.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <VisaoCiclosPorContraparte
+        linhas={linhas}
+        rotulo="cliente"
+        hrefHistorico={(postoId) => `/meus-postos/${postoId}?empresa=${empresaId}`}
+      />
     </div>
   );
 }
@@ -123,19 +100,5 @@ function Indicador({
         {valor}
       </p>
     </div>
-  );
-}
-
-function BadgeStatus({ status }: { status: StatusFaturaExibicao }) {
-  const cores: Record<StatusFaturaExibicao, string> = {
-    aberta: "bg-slate-100 text-slate-700",
-    vencida: "bg-red-100 text-red-700",
-    paga: "bg-green-100 text-green-700",
-    cancelada: "bg-slate-100 text-slate-400 line-through",
-  };
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cores[status]}`}>
-      {STATUS_FATURA_LABEL[status]}
-    </span>
   );
 }

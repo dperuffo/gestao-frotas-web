@@ -10,6 +10,8 @@ import {
 import { FormularioCicloPagamento } from "./FormularioCicloPagamento";
 import { SecaoCiclosAbertos } from "@/app/(dashboard)/_components/SecaoCiclosAbertos";
 import type { CicloAberto } from "@/lib/ciclosAbertos";
+import { BotaoAcaoFinanceiraPosto } from "@/app/(dashboard)/financeiro-posto/_components/BotaoAcaoFinanceiraPosto";
+import { marcarFaturaPagaAcao, cancelarFaturaAcao } from "@/app/(dashboard)/financeiro-posto/actions";
 
 export type NegociacaoDoCliente = {
   id: string;
@@ -50,6 +52,7 @@ export function CicloAbastecimentoPagamento({
   podeEditarCiclo = false,
   ciclosAbertos = [],
   rotuloCiclos = "cliente",
+  podeGerenciarFaturas = false,
 }: {
   negociacoes: NegociacaoDoCliente[];
   faturas: FaturaDoCliente[];
@@ -64,6 +67,12 @@ export function CicloAbastecimentoPagamento({
   // (usado em /clientes-posto/[clienteId] — o posto já é o próprio viewer).
   ciclosAbertos?: CicloAberto[];
   rotuloCiclos?: "posto" | "cliente";
+  // Fase 27.85 — só a visão do posto sobre UM cliente (/clientes-posto/[clienteId])
+  // passa true. A visão agrupada por contraparte (VisaoCiclosPorContraparte)
+  // substituiu a lista plana de faturas em /financeiro-posto — que era o
+  // único lugar com os botões "Marcar como paga"/"Cancelar". Essa ação
+  // migra pra cá (o drill-down de um cliente específico).
+  podeGerenciarFaturas?: boolean;
 }) {
   const hojeIso = new Date().toISOString().slice(0, 10);
 
@@ -246,10 +255,18 @@ export function CicloAbastecimentoPagamento({
                   <td className="px-4 py-3">
                     <BadgeStatusFatura status={statusExib} />
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={`/faturas-postos/${f.id}`} className="text-frota-600 hover:underline">
-                      Ver extrato
-                    </Link>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-3">
+                      {podeGerenciarFaturas && f.status === "aberta" && (
+                        <>
+                          <BotaoAcaoFinanceiraPosto id={f.id} acao={marcarFaturaPagaAcao} rotulo="Marcar como paga" />
+                          <BotaoAcaoFinanceiraPosto id={f.id} acao={cancelarFaturaAcao} rotulo="Cancelar" variante="danger" />
+                        </>
+                      )}
+                      <Link href={`/faturas-postos/${f.id}`} className="text-frota-600 hover:underline">
+                        Ver extrato
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               );

@@ -15,18 +15,19 @@ import {
   diasEmAtraso,
 } from "@/lib/financeiroPostos";
 import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
-import { buscarCiclosAbertos } from "@/lib/ciclosAbertos";
+import { buscarCiclosAbertos, agruparCiclosPorContraparte } from "@/lib/ciclosAbertos";
 import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
-import { SecaoCiclosAbertos } from "../_components/SecaoCiclosAbertos";
+import { VisaoCiclosPorContraparte } from "../_components/VisaoCiclosPorContraparte";
 import { GraficoFluxoCaixaPosto, type PontoFluxoCaixaPosto } from "./_components/GraficoFluxoCaixaPosto";
 import { FormularioDespesaPosto } from "./_components/FormularioDespesaPosto";
 import { BotaoAcaoFinanceiraPosto } from "./_components/BotaoAcaoFinanceiraPosto";
-import { marcarFaturaPagaAcao, cancelarFaturaAcao, marcarDespesaPagaAcao, excluirDespesaAcao } from "./actions";
+import { marcarDespesaPagaAcao, excluirDespesaAcao } from "./actions";
 
 type SearchParams = { empresa?: string; periodo?: string; inicio?: string; fim?: string };
 
 type FaturaRow = {
   id: string;
+  empresa_cliente_id: string;
   cliente_nome: string | null;
   periodo_inicio: string;
   periodo_fim: string;
@@ -111,7 +112,9 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
     const [resultadoFaturas, resultadoDespesas] = await Promise.all([
       supabase
         .from("faturas_postos")
-        .select("id, cliente_nome, periodo_inicio, periodo_fim, vencimento, valor_total, volume_total, status, pago_em")
+        .select(
+          "id, empresa_cliente_id, cliente_nome, periodo_inicio, periodo_fim, vencimento, valor_total, volume_total, status, pago_em"
+        )
         .eq("empresa_posto_id", empresaSelecionada)
         .order("vencimento", { ascending: false })
         .limit(500),
@@ -136,6 +139,37 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   // devolve tudo que o usuário pode ver).
   const todosCiclosAbertos = empresaSelecionada ? await buscarCiclosAbertos(supabase) : [];
   const ciclosAbertosDoPosto = todosCiclosAbertos.filter((c) => c.empresa_posto_id === empresaSelecionada);
+
+  // Fase 27.85 — pedido do Daniel: "um posto pode ter muitos ciclos... com
+  // muitos clientes" — a lista plana de faturas não escala. Busca as
+  // negociações aceitas (base de clientes com relação ativa, mesmo os que
+  // ainda não têm nenhuma fatura) pra montar 1 linha por cliente.
+  const { data: negociacoesParaAgrupar } = empresaSelecionada
+    ? await supabase
+        .from("negociacoes_postos")
+        .select("empresa_cliente_id, cliente_nome, ciclo_faturamento_dias, prazo_vencimento_dias")
+        .eq("empresa_posto_id", empresaSelecionada)
+        .eq("status", "aceita")
+    : { data: null };
+
+  const ciclosAbertosPorCliente = new Map(ciclosAbertosDoPosto.map((c) => [c.empresa_cliente_id, c]));
+  const linhasPorCliente = agruparCiclosPorContraparte({
+    negociacoes: (negociacoesParaAgrupar ?? []).map((n) => ({
+      contraparteId: n.empresa_cliente_id,
+      contraparteNome: n.cliente_nome,
+      cicloFaturamentoDias: n.ciclo_faturamento_dias,
+      prazoVencimentoDias: n.prazo_vencimento_dias,
+    })),
+    faturas: faturas.map((f) => ({
+      contraparteId: f.empresa_cliente_id,
+      contraparteNome: f.cliente_nome,
+      status: f.status,
+      vencimento: f.vencimento,
+      valorTotal: f.valor_total,
+    })),
+    ciclosAbertosPorContraparte: ciclosAbertosPorCliente,
+    hojeIso,
+  });
 
   // KPIs
   const aReceberAberto = faturas.filter((f) => f.status === "aberta").reduce((s, f) => s + f.valor_total, 0);
@@ -301,64 +335,11 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
             </div>
           </div>
 
-          <SecaoCiclosAbertos ciclos={ciclosAbertosDoPosto} rotulo="posto" />
-
-          <div className="mb-6 card overflow-x-auto">
-            <div className="border-b border-slate-100 px-4 py-3">
-              <h2 className="text-sm font-semibold text-slate-900">Contas a receber (faturas dos clientes)</h2>
-            </div>
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">Cliente</th>
-                  <th className="px-4 py-3">Período</th>
-                  <th className="px-4 py-3">Vencimento</th>
-                  <th className="px-4 py-3">Valor</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {faturas.map((f) => {
-                  const statusExib = statusFaturaExibicao(f.status, f.vencimento, hojeIso);
-                  return (
-                    <tr key={f.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 text-slate-700">{f.cliente_nome ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-500">
-                        {formatarDataBr(f.periodo_inicio)} – {formatarDataBr(f.periodo_fim)}
-                      </td>
-                      <td className="px-4 py-3 text-slate-500">{formatarDataBr(f.vencimento)}</td>
-                      <td className="px-4 py-3 font-medium text-slate-700">{formatarMoeda(f.valor_total)}</td>
-                      <td className="px-4 py-3">
-                        <BadgeStatus status={statusExib} />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-3">
-                          <Link href={`/faturas-postos/${f.id}`} className="text-frota-600 hover:underline">
-                            Ver extrato
-                          </Link>
-                          {f.status === "aberta" && (
-                            <>
-                              <BotaoAcaoFinanceiraPosto id={f.id} acao={marcarFaturaPagaAcao} rotulo="Marcar como paga" />
-                              <BotaoAcaoFinanceiraPosto id={f.id} acao={cancelarFaturaAcao} rotulo="Cancelar" variante="danger" />
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {faturas.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                      Nenhuma fatura gerada ainda. As faturas são geradas automaticamente conforme os períodos de
-                      cada negociação vão se encerrando.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <VisaoCiclosPorContraparte
+            linhas={linhasPorCliente}
+            rotulo="posto"
+            hrefHistorico={(clienteId) => `/clientes-posto/${clienteId}?empresa=${empresaSelecionada}`}
+          />
 
           <div className="mb-6 card p-6">
             <h2 className="mb-1 text-sm font-semibold text-slate-900">Lançar despesa</h2>

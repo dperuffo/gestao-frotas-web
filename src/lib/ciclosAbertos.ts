@@ -22,3 +22,96 @@ export async function buscarCiclosAbertos(
   }
   return data ?? [];
 }
+
+// Fase 27.85 — pedido do Daniel: "um posto pode ter muitos ciclos com
+// diversos status... precisamos facilitar a visão de postos com um volume
+// grande de ciclos, pois possui relacionamento com muitos clientes". A
+// lista plana (1 linha por FATURA, todos os clientes misturados) não
+// escala — vira 1 linha por CONTRAPARTE (cliente, do ponto de vista do
+// posto; ou posto, do ponto de vista do cliente), com o ciclo atual e um
+// resumo de quantas faturas em cada status, pra dar pra escanear dezenas
+// de relações de uma vez. Compartilhado entre /financeiro-posto e
+// /financeiro (cliente) — cada página resolve os nomes/ids da contraparte
+// à sua maneira e chama esta função só pra agregar.
+export type LinhaContraparte = {
+  contraparteId: string;
+  contraparteNome: string;
+  cicloFaturamentoDias: number;
+  prazoVencimentoDias: number;
+  cicloAtual: CicloAberto | null;
+  contagem: { aberta: number; vencida: number; paga: number; cancelada: number };
+  valorEmAberto: number;
+  valorVencido: number;
+};
+
+export function agruparCiclosPorContraparte(params: {
+  negociacoes: Array<{
+    contraparteId: string;
+    contraparteNome: string | null;
+    cicloFaturamentoDias: number;
+    prazoVencimentoDias: number;
+  }>;
+  faturas: Array<{ contraparteId: string; contraparteNome: string | null; status: string; vencimento: string; valorTotal: number }>;
+  ciclosAbertosPorContraparte: Map<string, CicloAberto>;
+  hojeIso: string;
+}): LinhaContraparte[] {
+  const linhas = new Map<string, LinhaContraparte>();
+
+  for (const n of params.negociacoes) {
+    linhas.set(n.contraparteId, {
+      contraparteId: n.contraparteId,
+      contraparteNome: n.contraparteNome ?? "—",
+      cicloFaturamentoDias: n.cicloFaturamentoDias,
+      prazoVencimentoDias: n.prazoVencimentoDias,
+      cicloAtual: params.ciclosAbertosPorContraparte.get(n.contraparteId) ?? null,
+      contagem: { aberta: 0, vencida: 0, paga: 0, cancelada: 0 },
+      valorEmAberto: 0,
+      valorVencido: 0,
+    });
+  }
+
+  for (const f of params.faturas) {
+    let linha = linhas.get(f.contraparteId);
+    if (!linha) {
+      // Fatura de uma relação que não veio no filtro de negociações
+      // (ex: negociação não está mais "aceita") — cria uma linha mínima
+      // só pra não perder a fatura da visão.
+      linha = {
+        contraparteId: f.contraparteId,
+        contraparteNome: f.contraparteNome ?? "—",
+        cicloFaturamentoDias: 0,
+        prazoVencimentoDias: 0,
+        cicloAtual: null,
+        contagem: { aberta: 0, vencida: 0, paga: 0, cancelada: 0 },
+        valorEmAberto: 0,
+        valorVencido: 0,
+      };
+      linhas.set(f.contraparteId, linha);
+    }
+
+    const vencida = f.status === "aberta" && f.vencimento < params.hojeIso;
+    if (vencida) linha.contagem.vencida += 1;
+    else if (f.status in linha.contagem) linha.contagem[f.status as keyof LinhaContraparte["contagem"]] += 1;
+
+    if (f.status === "aberta") {
+      linha.valorEmAberto += f.valorTotal;
+      if (vencida) linha.valorVencido += f.valorTotal;
+    }
+  }
+
+  // Ordena: quem tem fatura vencida primeiro, depois em aberto, depois
+  // ciclo em andamento, por fim só histórico pago/cancelado — dentro de
+  // cada grupo, por nome.
+  function prioridade(l: LinhaContraparte): number {
+    if (l.contagem.vencida > 0) return 0;
+    if (l.contagem.aberta > 0) return 1;
+    if (l.cicloAtual) return 2;
+    return 3;
+  }
+
+  return Array.from(linhas.values()).sort((a, b) => {
+    const p = prioridade(a) - prioridade(b);
+    if (p !== 0) return p;
+    return a.contraparteNome.localeCompare(b.contraparteNome, "pt-BR");
+  });
+}
