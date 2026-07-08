@@ -4938,3 +4938,37 @@ a enxergar as empresas irmãs em QUALQUER tela que já use `resolverEmpresaAtual
 - Novo item de menu "🔗 Rede de Postos" em Cadastros, + tooltip de ajuda (`rede_postos.pagina`).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+**Dados de teste criados junto:** segundo posto revendedor de teste, "Posto Teste 2 Ltda" (CNPJ
+22.333.444/0001-55, login `posto.teste2@fni.test`), com negociações aceitas e preços cadastrados, pra
+Daniel montar uma Rede de Postos com 2 postos e testar a visão cruzada entre eles.
+
+## Fase 27.88 — Robô de teste: 15 abastecimentos/dia por POSTO (não mais no total)
+
+Pedido do Daniel: "Incluir 15 abastecimentos aleatorios, por dia, no posto de teste 2, utilizando o
+preco cadastrado para os combustiveis, negociacoes vigentes com os dois clientes cadastrados" — e, ao
+perguntar se o robô deveria dividir os mesmos 15/dia entre os dois postos de teste ou dar 15 pra cada,
+Daniel confirmou: "não são abastecimentos somente com preço negociado vigente, pode gerar abastecimentos
+com combustíveis que não tem preço negociado com os clientes também. São 15 abastecimentos aleatórios
+para CADA posto."
+
+**Achado real:** o robô da Fase 27.77 (`gerar_abastecimentos_postos_robo()`) tinha um cap de 15/dia no
+TOTAL pros 2 clientes de teste juntos, e resolvia UM posto só por cliente (o da negociação aceita mais
+recentemente atualizada) — desenhado quando só existia 1 posto de teste. Com o Posto Teste 2 (Fase
+27.87), esse desenho faria os 15/dia migrarem inteiros pra um posto ou outro, nunca os dois ao mesmo
+tempo.
+
+**Fix:** reescrita a função pra contar quantos abastecimentos do robô já existem HOJE por POSTO
+(`pv_cnpj`, não mais só no total) e loopar sobre TODOS os postos com negociação aceita e vigente com
+qualquer um dos 2 clientes — cada posto gera seu próprio lote de até 15, sorteando veículos entre os
+clientes que negociaram com AQUELE posto especificamente. Um veículo continua limitado a 1
+abastecimento/dia no robô (índice único por placa+dia), então o mesmo veículo nunca "duplica" pra dois
+postos no mesmo dia. O sorteio de combustível (5 produtos Otto) já era independente do que constava na
+negociação — comportamento mantido, confirmando que não há restrição a "só combustíveis negociados".
+
+Testado direto no banco: com o Posto Teste já no cap de 15/dia (rodadas anteriores do cron), rodar a
+função manualmente gerou exatamente 15 novos pro Posto Teste 2 (0 pro Posto Teste, corretamente já no
+limite); rodar de novo em seguida retornou 0 pros dois (idempotente dentro do mesmo dia).
+
+Sem alterações em código TypeScript — mudança só na função SQL (SECURITY DEFINER) no Supabase, mais
+negociações aceitas e preços cadastrados pro Posto Teste 2 (dados de teste, ver Fase 27.87).
