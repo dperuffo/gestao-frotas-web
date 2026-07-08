@@ -13,6 +13,8 @@ import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
 import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
+import { buscarLogoutInatividadeMinutos } from "@/lib/configuracoesSistema";
+import { MonitorInatividade } from "./_components/MonitorInatividade";
 
 // Fase 27.15 — o ícone da "Assistente FNI" é a logo (imagem), bem mais larga
 // que um emoji, então o texto de cada item desalinhava em relação aos
@@ -79,6 +81,9 @@ const menuAdministracao = [
   { href: "/inteligencia-rede", label: "🌐 Inteligência de Rede" },
   { href: "/assinaturas", label: "💳 Assinaturas (todos os clientes)" },
   { href: "/avaliacoes", label: "⭐ Avaliações dos Clientes" },
+  // Fase 27.86 — parâmetros globais do sistema (hoje só o timeout de
+  // logout por inatividade; ver /configuracoes).
+  { href: "/configuracoes", label: "⚙️ Configurações do Sistema" },
 ];
 
 // Alvos do tour de boas-vindas (Fase 24) — só os 3 itens de menu citados no
@@ -151,6 +156,7 @@ export default async function DashboardLayout({
     anomaliasNaoRevisadas,
     negociacoesPendentes,
     ajustesAbastecimentosPendentes,
+    logoutInatividadeMinutos,
   ] = await Promise.all([
       contarChamadosNaoVistosAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar chamados não vistos (ignorado):", e);
@@ -179,6 +185,11 @@ export default async function DashboardLayout({
         console.error("[dashboard/layout] falha ao contar ajustes de abastecimento pendentes (ignorado):", e);
         return 0;
       }),
+      // Fase 27.86 — timeout do logout automático por inatividade, lido
+      // aqui (não só no filho /configuracoes) porque o MonitorInatividade
+      // roda em TODA tela do dashboard; buscarLogoutInatividadeMinutos já
+      // tem fallback interno pro padrão (30min) se a leitura falhar.
+      buscarLogoutInatividadeMinutos(supabase),
     ]);
 
   // Nome e cargo/função do usuário logado, pra mostrar no lugar do texto
@@ -388,6 +399,7 @@ export default async function DashboardLayout({
       </aside>
       <main className="flex-1 bg-slate-50 p-8">{children}</main>
     </div>
+    <MonitorInatividade minutos={logoutInatividadeMinutos} />
     </TourProvider>
   );
 }

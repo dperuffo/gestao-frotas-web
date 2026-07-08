@@ -477,6 +477,21 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["permissoes_perfil"]["Row"]>;
         Relationships: [];
       };
+      // Fase 27.86 — parâmetros globais do sistema (hoje só o timeout de
+      // logout por inatividade). Tabela singleton: sempre exatamente 1
+      // linha (PK booleana com constraint `id = true`), não precisa de
+      // filtro por empresa/cliente — é o mesmo valor pra toda a plataforma.
+      configuracoes_sistema: {
+        Row: {
+          id: boolean;
+          logout_inatividade_minutos: number;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["configuracoes_sistema"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["configuracoes_sistema"]["Row"]>;
+        Relationships: [];
+      };
       grupos_economicos: {
         Row: {
           id: string;

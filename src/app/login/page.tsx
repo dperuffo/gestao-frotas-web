@@ -97,6 +97,10 @@ function LoginCard() {
   const [carregandoGoogle, setCarregandoGoogle] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [erro, setErro] = useState<string | null>(mensagemDeErro(searchParams.get("erro")));
+  // Fase 27.86 — logout automático por inatividade (ver MonitorInatividade)
+  // redireciona pra cá com ?motivo=inatividade. Aviso informativo (não é
+  // erro do usuário), estilo separado do bloco vermelho de `erro` acima.
+  const [aviso] = useState<string | null>(mensagemDeAviso(searchParams.get("motivo")));
 
   // Estado do botão "novo" (GIS). Enquanto não estiver pronto (ou se falhar),
   // mostramos o botão antigo (redirect via Supabase) — nunca os dois juntos.
@@ -199,6 +203,12 @@ function LoginCard() {
           Entre com sua conta Google ou com e-mail e senha.
         </p>
 
+        {aviso && !erro && (
+          <div className="mb-4 rounded-lg bg-amber-500/10 px-3 py-2 text-left text-sm text-amber-300">
+            {aviso}
+          </div>
+        )}
+
         {erro && (
           <div className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-left text-sm text-red-300">
             {erro}
@@ -267,6 +277,14 @@ function LoginCard() {
       </p>
     </AuthShell>
   );
+}
+
+// Fase 27.86 — logout automático por inatividade.
+function mensagemDeAviso(codigo: string | null): string | null {
+  if (codigo === "inatividade") {
+    return "Você foi desconectado por inatividade. Entre novamente para continuar.";
+  }
+  return null;
 }
 
 function mensagemDeErro(codigo: string | null): string | null {
