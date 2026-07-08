@@ -8,6 +8,8 @@ import {
   type StatusFaturaExibicao,
 } from "@/lib/financeiroPostos";
 import { FormularioCicloPagamento } from "./FormularioCicloPagamento";
+import { SecaoCiclosAbertos } from "@/app/(dashboard)/_components/SecaoCiclosAbertos";
+import type { CicloAberto } from "@/lib/ciclosAbertos";
 
 export type NegociacaoDoCliente = {
   id: string;
@@ -46,6 +48,8 @@ export function CicloAbastecimentoPagamento({
   negociacoes,
   faturas,
   podeEditarCiclo = false,
+  ciclosAbertos = [],
+  rotuloCiclos = "cliente",
 }: {
   negociacoes: NegociacaoDoCliente[];
   faturas: FaturaDoCliente[];
@@ -53,6 +57,13 @@ export function CicloAbastecimentoPagamento({
   // posto (/clientes-posto/[clienteId]) reaproveita este mesmo componente
   // mas nunca mostra o controle de edição (ciclo/prazo é decisão da FNI).
   podeEditarCiclo?: boolean;
+  // Fase 27.84 — ciclo(s) em andamento (ainda não fechados pelo robô),
+  // já filtrados pelo chamador pro cliente (e, quando aplicável, o posto)
+  // desta tela. `rotuloCiclos` decide a coluna principal da seção: "cliente"
+  // (padrão, usado em /clientes/[id] admin — mostra qual POSTO) ou "posto"
+  // (usado em /clientes-posto/[clienteId] — o posto já é o próprio viewer).
+  ciclosAbertos?: CicloAberto[];
+  rotuloCiclos?: "posto" | "cliente";
 }) {
   const hojeIso = new Date().toISOString().slice(0, 10);
 
@@ -116,6 +127,8 @@ export function CicloAbastecimentoPagamento({
           {formatarDataBr(proximaFatura.vencimento)} ({proximaFatura.posto_nome ?? "posto não identificado"}).
         </div>
       )}
+
+      <SecaoCiclosAbertos ciclos={ciclosAbertos} rotulo={rotuloCiclos} />
 
       {podeEditarCiclo && negociacoesAceitas.length > 0 && (
         <div className="mb-6 card p-4">

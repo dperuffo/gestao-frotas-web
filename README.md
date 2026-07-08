@@ -4790,3 +4790,34 @@ sucesso, a tela podia continuar mostrando o valor antigo até um reload manual.
   além da listagem geral.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.84 — Ciclos abertos (em andamento) não apareciam em nenhum painel financeiro
+
+Pedido do Daniel: "os ciclos fechados já estão sendo exibidos nas visões, mas os ciclos abertos, em
+operação dentro do ciclo definido para cada cliente, não aparecem nas visões".
+
+**Achado real:** todos os painéis financeiros (`/financeiro-posto`, `/financeiro` do cliente,
+`/clientes/[id]` admin, `/clientes-posto/[clienteId]`) só mostram `faturas_postos` — e essa tabela só
+ganha uma linha nova quando `gerar_faturas_postos_robo()` FECHA um período (`periodo_fim < current_date`).
+O ciclo ATUAL, em andamento, nunca tinha nenhuma representação em tela alguma — só aparecia no dia
+seguinte ao fechamento, já como fatura de verdade.
+
+**Fix:** nova RPC `ciclos_abertos_postos()` (`SECURITY DEFINER`, guarda manual de autorização — mesmo
+padrão da Fase 27.79) calcula, pra cada negociação aceita visível ao chamador, o ciclo em andamento HOJE
+— reaproveitando a MESMA lógica de corte de período do robô (precisa ficar em sincronia com ele: período
+nunca atravessa fim de mês, absorve o resto do mês quando sobra pouco) — e soma os abastecimentos já
+registrados (`fatura_posto_id is null`) dentro desse período até hoje. Devolve período/vencimento
+PREVISTOS (podem mudar até o fechamento) e o valor/volume/quantidade acumulados.
+
+Novo helper `src/lib/ciclosAbertos.ts` (`buscarCiclosAbertos`) e componente compartilhado
+`SecaoCiclosAbertos.tsx` (`(dashboard)/_components/`) — uma seção "Ciclo em andamento" com badge azul
+distinto de aberta/paga/vencida, reaproveitada nas 4 telas:
+- `/financeiro-posto`: ciclos filtrados pelo posto selecionado, acima de "Contas a receber".
+- `/financeiro` (cliente): ciclos filtrados pelo cliente selecionado, acima de "Cobrança em aberto".
+- `CicloAbastecimentoPagamento.tsx` (`/clientes/[id]` admin e `/clientes-posto/[clienteId]` posto): prop
+  nova `ciclosAbertos` + `rotuloCiclos` ("cliente" no admin — mostra qual POSTO; "posto" no posto — mostra
+  qual CLIENTE), seção renderizada logo após os indicadores/próxima fatura.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos), e a RPC testada direto no banco simulando a
+sessão do `posto.teste@fni.test` — retornou o ciclo em andamento correto pras 2 negociações aceitas dele,
+com abastecimentos acumulados batendo com uma contagem manual por dia.

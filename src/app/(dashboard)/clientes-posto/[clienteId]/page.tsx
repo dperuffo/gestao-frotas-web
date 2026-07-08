@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { buscarCiclosAbertos } from "@/lib/ciclosAbertos";
 import { formatCNPJ } from "@/lib/utils";
 import {
   CicloAbastecimentoPagamento,
@@ -72,6 +73,13 @@ export default async function ClientePostoDetalhePage({
     posto_nome: nomePorPostoId.get(f.empresa_posto_id) ?? null,
   }));
 
+  // Fase 27.84 — pedido do Daniel: o ciclo ATUAL (ainda não fechado pelo
+  // robô) não aparecia em nenhuma tela, só depois de fechado.
+  const todosCiclosAbertos = await buscarCiclosAbertos(supabase);
+  const ciclosAbertos = todosCiclosAbertos.filter(
+    (c) => c.empresa_posto_id === empresaSelecionada && c.empresa_cliente_id === clienteId
+  );
+
   return (
     <div>
       <Link href="/clientes-posto" className="text-sm text-frota-600 hover:underline">
@@ -90,7 +98,12 @@ export default async function ClientePostoDetalhePage({
         </div>
       </div>
 
-      <CicloAbastecimentoPagamento negociacoes={negociacoes} faturas={faturas} />
+      <CicloAbastecimentoPagamento
+        negociacoes={negociacoes}
+        faturas={faturas}
+        ciclosAbertos={ciclosAbertos}
+        rotuloCiclos="posto"
+      />
     </div>
   );
 }

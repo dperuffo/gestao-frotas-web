@@ -15,7 +15,9 @@ import {
   diasEmAtraso,
 } from "@/lib/financeiroPostos";
 import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
+import { buscarCiclosAbertos } from "@/lib/ciclosAbertos";
 import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
+import { SecaoCiclosAbertos } from "../_components/SecaoCiclosAbertos";
 import { GraficoFluxoCaixaPosto, type PontoFluxoCaixaPosto } from "./_components/GraficoFluxoCaixaPosto";
 import { FormularioDespesaPosto } from "./_components/FormularioDespesaPosto";
 import { BotaoAcaoFinanceiraPosto } from "./_components/BotaoAcaoFinanceiraPosto";
@@ -126,6 +128,14 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
     faturas = resultadoFaturas.data ?? [];
     despesas = resultadoDespesas.data ?? [];
   }
+
+  // Fase 27.84 — pedido do Daniel: o ciclo ATUAL (ainda não fechado pelo
+  // robô) não aparecia em nenhum painel financeiro, só depois de fechado.
+  // ciclos_abertos_postos() já devolve só as negociações visíveis a este
+  // usuário — filtra pelas do posto selecionado (RPC não recebe filtro,
+  // devolve tudo que o usuário pode ver).
+  const todosCiclosAbertos = empresaSelecionada ? await buscarCiclosAbertos(supabase) : [];
+  const ciclosAbertosDoPosto = todosCiclosAbertos.filter((c) => c.empresa_posto_id === empresaSelecionada);
 
   // KPIs
   const aReceberAberto = faturas.filter((f) => f.status === "aberta").reduce((s, f) => s + f.valor_total, 0);
@@ -290,6 +300,8 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
               </table>
             </div>
           </div>
+
+          <SecaoCiclosAbertos ciclos={ciclosAbertosDoPosto} rotulo="posto" />
 
           <div className="mb-6 card overflow-x-auto">
             <div className="border-b border-slate-100 px-4 py-3">

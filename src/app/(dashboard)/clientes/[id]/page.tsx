@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { buscarCiclosAbertos } from "@/lib/ciclosAbertos";
 import { ClienteForm } from "../_components/ClienteForm";
 import {
   CicloAbastecimentoPagamento,
@@ -58,11 +59,22 @@ export default async function EditarClientePage({
     posto_nome: nomePorPostoId.get(f.empresa_posto_id) ?? null,
   }));
 
+  // Fase 27.84 — pedido do Daniel: o ciclo ATUAL (ainda não fechado pelo
+  // robô) não aparecia em nenhuma tela, só depois de fechado.
+  const todosCiclosAbertos = await buscarCiclosAbertos(supabase);
+  const ciclosAbertos = todosCiclosAbertos.filter((c) => c.empresa_cliente_id === id);
+
   return (
     <div>
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Cliente — {cliente.nome}</h1>
       <ClienteForm cliente={cliente} souAdmin={souAdmin} />
-      <CicloAbastecimentoPagamento negociacoes={negociacoes} faturas={faturas} podeEditarCiclo={souAdmin} />
+      <CicloAbastecimentoPagamento
+        negociacoes={negociacoes}
+        faturas={faturas}
+        podeEditarCiclo={souAdmin}
+        ciclosAbertos={ciclosAbertos}
+        rotuloCiclos="cliente"
+      />
     </div>
   );
 }

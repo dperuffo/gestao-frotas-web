@@ -8,7 +8,9 @@ import {
   type CategoriaOrcamento,
 } from "@/lib/financeiro";
 import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
+import { buscarCiclosAbertos } from "@/lib/ciclosAbertos";
 import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
+import { SecaoCiclosAbertos } from "../_components/SecaoCiclosAbertos";
 import { IndicadoresFinanceirosFni } from "../_components/IndicadoresFinanceirosFni";
 import { CobrancaEmAberto, type FaturaCobranca } from "./_components/CobrancaEmAberto";
 import { GraficoEvolucaoFinanceira, type PontoFinanceiro } from "./_components/GraficoEvolucaoFinanceira";
@@ -81,6 +83,11 @@ export default async function FinanceiroPage({
       posto_nome: nomePorPostoId.get(f.empresa_posto_id) ?? null,
     }));
   }
+
+  // Fase 27.84 — pedido do Daniel: o ciclo ATUAL (ainda não fechado pelo
+  // robô) não aparecia em nenhum painel financeiro, só depois de fechado.
+  const todosCiclosAbertos = empresaSelecionada ? await buscarCiclosAbertos(supabase) : [];
+  const ciclosAbertosDoCliente = todosCiclosAbertos.filter((c) => c.empresa_cliente_id === empresaSelecionada);
 
   let indicadores: {
     custo_combustivel: number;
@@ -372,6 +379,8 @@ export default async function FinanceiroPage({
             </h2>
             <TabelaCustosFixos linhas={linhasCustosFixos} />
           </div>
+
+          <SecaoCiclosAbertos ciclos={ciclosAbertosDoCliente} rotulo="cliente" />
 
           <CobrancaEmAberto faturas={faturasCobranca} />
 

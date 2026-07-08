@@ -1617,6 +1617,26 @@ export interface Database {
           ultima_atualizacao: string | null;
         }[];
       };
+      // Fase 27.84 — ciclo de faturamento EM ANDAMENTO (ainda não fechado
+      // pelo robô gerar_faturas_postos_robo()) de cada negociação aceita
+      // visível ao chamador, com os abastecimentos acumulados até hoje.
+      // SECURITY DEFINER com guarda manual (mesmo padrão da Fase 27.79).
+      ciclos_abertos_postos: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          negociacao_id: string;
+          empresa_posto_id: string;
+          empresa_cliente_id: string;
+          posto_nome: string | null;
+          cliente_nome: string | null;
+          periodo_inicio: string;
+          periodo_fim_previsto: string;
+          vencimento_previsto: string;
+          valor_acumulado: number;
+          volume_acumulado: number;
+          quantidade_abastecimentos: number;
+        }[];
+      };
       // Fase 27.79 — extrato de abastecimentos de uma fatura_posto, com CNPJ
       // do posto normalizado (negociacoes_postos.posto_cnpj sem pontuação vs
       // profrotas_abastecimentos.pv_cnpj formatado — comparação direta
