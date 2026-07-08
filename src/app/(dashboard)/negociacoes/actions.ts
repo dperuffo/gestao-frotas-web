@@ -211,6 +211,14 @@ export async function atualizarCicloPagamentoAcao(
 
   if ("erro" in resultado) return { erro: resultado.erro };
 
+  // Fase 27.83 — achado real: revalidatePath("/clientes") sozinho (sem
+  // `type: "layout"`) só invalida a rota EXATA "/clientes" (a listagem),
+  // não a sub-rota dinâmica "/clientes/[id]" onde o formulário realmente
+  // fica — por isso o valor editado podia não refletir na tela sem um
+  // reload manual. Revalida também a página específica do cliente (e o
+  // espelho read-only do lado do posto, mesmo id na URL).
   revalidatePath("/clientes");
+  revalidatePath(`/clientes/${resultado.empresaClienteId}`);
+  revalidatePath(`/clientes-posto/${resultado.empresaClienteId}`);
   return {};
 }

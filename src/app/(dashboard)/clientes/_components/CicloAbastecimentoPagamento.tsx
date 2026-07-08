@@ -77,6 +77,16 @@ export function CicloAbastecimentoPagamento({
     .filter((f) => f.vencimento >= hojeIso)
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento))[0];
 
+  // Fase 27.83 — achado real (Daniel: "não encontrei na tela de cliente o
+  // campo para configuração"): o controle de edição (Fase 27.80) só existia
+  // como um link de texto pequeno dentro de uma coluna no MEIO de uma
+  // tabela larga com scroll horizontal — fácil de nunca rolar até lá.
+  // Agora ganha uma seção própria, sempre visível sem precisar rolar,
+  // logo no topo (só aparece pra quem pode editar e só lista negociações
+  // já aceitas — não dá pra configurar ciclo/prazo de uma negociação ainda
+  // pendente).
+  const negociacoesAceitas = negociacoes.filter((n) => n.status === "aceita");
+
   return (
     <div className="mt-8">
       <div className="mb-4">
@@ -104,6 +114,32 @@ export function CicloAbastecimentoPagamento({
         <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Próxima fatura a vencer: <strong>{formatarMoeda(proximaFatura.valor_total)}</strong> em{" "}
           {formatarDataBr(proximaFatura.vencimento)} ({proximaFatura.posto_nome ?? "posto não identificado"}).
+        </div>
+      )}
+
+      {podeEditarCiclo && negociacoesAceitas.length > 0 && (
+        <div className="mb-6 card p-4">
+          <h3 className="text-sm font-semibold text-slate-900">Ciclo de faturamento e prazo de vencimento</h3>
+          <p className="mb-4 mt-1 text-xs text-slate-500">
+            Parâmetro administrativo (FNI) por posto: de quantos em quantos dias o posto fecha uma fatura pra
+            este cliente, e quantos dias depois ela vence (ex: 15+15 = 15 dias de abastecimentos + 15 dias até
+            o vencimento). Ajustar aqui vale a partir do PRÓXIMO ciclo — faturas já geradas não mudam.
+          </p>
+          <div className="space-y-2">
+            {negociacoesAceitas.map((n) => (
+              <div
+                key={n.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2"
+              >
+                <span className="text-sm font-medium text-slate-700">{n.posto_nome ?? "Posto"}</span>
+                <FormularioCicloPagamento
+                  negociacaoId={n.id}
+                  cicloAtual={n.ciclo_faturamento_dias}
+                  prazoAtual={n.prazo_vencimento_dias}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -143,15 +179,7 @@ export function CicloAbastecimentoPagamento({
                     : "—"}
                 </td>
                 <td className="px-4 py-3 text-slate-500">
-                  {podeEditarCiclo && n.status === "aceita" ? (
-                    <FormularioCicloPagamento
-                      negociacaoId={n.id}
-                      cicloAtual={n.ciclo_faturamento_dias}
-                      prazoAtual={n.prazo_vencimento_dias}
-                    />
-                  ) : (
-                    `${n.ciclo_faturamento_dias}+${n.prazo_vencimento_dias} dias`
-                  )}
+                  {n.ciclo_faturamento_dias}+{n.prazo_vencimento_dias} dias
                 </td>
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">

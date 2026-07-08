@@ -28,16 +28,22 @@ export function FormularioCicloPagamento({
 
   if (!aberto) {
     return (
-      <button
-        type="button"
-        onClick={() => {
-          setAberto(true);
-          setOk(false);
-        }}
-        className="text-xs text-frota-600 hover:underline"
-      >
-        Ajustar ciclo/prazo ({cicloAtual}+{prazoAtual} dias)
-      </button>
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-slate-600">
+          Ciclo atual: <strong className="text-slate-900">{cicloAtual}+{prazoAtual} dias</strong>
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            setAberto(true);
+            setOk(false);
+          }}
+          className="btn-secondary text-xs"
+        >
+          Editar
+        </button>
+        {ok && <span className="text-xs text-green-700">Ajustado — vale a partir do próximo ciclo.</span>}
+      </div>
     );
   }
 
@@ -91,7 +97,6 @@ export function FormularioCicloPagamento({
         Cancelar
       </button>
       {erro && <p className="w-full text-xs text-red-600">{erro}</p>}
-      {ok && <p className="w-full text-xs text-green-700">Ajustado — vale a partir do próximo ciclo.</p>}
     </form>
   );
 }

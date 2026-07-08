@@ -114,7 +114,7 @@ export async function atualizarCicloPagamento(
     prazoVencimentoDias: number;
     atualizadoPor: string | null;
   }
-): Promise<{ ok: true } | { erro: string }> {
+): Promise<{ ok: true; empresaClienteId: string } | { erro: string }> {
   const erroValidacao = validarCicloPagamento({
     cicloFaturamentoDias: params.cicloFaturamentoDias,
     prazoVencimentoDias: params.prazoVencimentoDias,
@@ -132,7 +132,7 @@ export async function atualizarCicloPagamento(
 
   const { data: negociacao, error: erroBusca } = await supabase
     .from("negociacoes_postos")
-    .select("id, status")
+    .select("id, status, empresa_cliente_id")
     .eq("id", params.negociacaoId)
     .maybeSingle();
   if (erroBusca || !negociacao) return { erro: "Negociação não encontrada." };
@@ -151,7 +151,7 @@ export async function atualizarCicloPagamento(
     .eq("id", params.negociacaoId);
   if (error) return { erro: error.message };
 
-  return { ok: true };
+  return { ok: true, empresaClienteId: negociacao.empresa_cliente_id };
 }
 
 // Cria a negociação (cabeçalho + rodada 1). origem indica quem começou o

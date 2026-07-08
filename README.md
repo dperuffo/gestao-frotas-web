@@ -4760,3 +4760,33 @@ não precisaram mudar — são um flag global por usuário, e cada usuário só 
 nunca as duas.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.83 — Campo de ciclo/prazo (Fase 27.80) invisível na prática em /clientes/[id]
+
+Depois de deployar a Fase 27.80, o Daniel reportou: "Revisar, pois nao encontrei na tela de cliente o
+campo para configuração".
+
+**Achado real:** o controle de edição existia (`FormularioCicloPagamento`, Fase 27.80) mas só como um link
+de texto pequeno ("Ajustar ciclo/prazo (...)") dentro de uma COLUNA NO MEIO de uma tabela larga com
+`overflow-x-auto` ("Negociações com postos", 8 colunas) — fácil de nunca rolar até lá, ainda mais sem
+nenhuma pista visual de que aquilo era um campo de configuração administrativa importante.
+
+Um segundo problema, achado ao revisar o fluxo de salvamento: `atualizarCicloPagamentoAcao` chamava
+`revalidatePath("/clientes")` sem `{ type: "layout" }` — isso só invalida a rota EXATA `/clientes` (a
+listagem), não a sub-rota dinâmica `/clientes/[id]` onde o formulário realmente fica. Mesmo editando com
+sucesso, a tela podia continuar mostrando o valor antigo até um reload manual.
+
+**Fix:**
+- Nova seção própria "Ciclo de faturamento e prazo de vencimento" em `CicloAbastecimentoPagamento.tsx`,
+  sempre visível logo abaixo dos indicadores/próxima fatura (sem precisar rolar nada), listando uma linha
+  por posto com negociação já aceita — só aparece quando `podeEditarCiclo` é `true` (visão admin).
+- `FormularioCicloPagamento.tsx`: o estado fechado deixou de ser um link discreto — agora mostra
+  "Ciclo atual: **X+Y dias**" com um botão "Editar" (`btn-secondary`, visualmente óbvio como ação).
+- A coluna "Ciclo+prazo" continua na tabela de negociações, só como referência somente-leitura (a edição
+  em si só acontece na seção nova).
+- `atualizarCicloPagamento()` (`negociacoesPostos.ts`) passou a devolver `empresaClienteId` no retorno de
+  sucesso; `atualizarCicloPagamentoAcao` usa isso pra chamar `revalidatePath` também na página específica
+  do cliente (`/clientes/[id]`) e no espelho read-only do lado do posto (`/clientes-posto/[clienteId]`),
+  além da listagem geral.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
