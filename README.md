@@ -4860,3 +4860,47 @@ aplicar dos dois lados — posto (agrupado por cliente) e cliente (agrupado por 
   na Fase 27.83 (`revalidatePath` sem `{ type: "layout" }` só revalida o path literal).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+### Hotfix — erro em produção após o deploy da Fase 27.85
+
+Daniel reportou em runtime (Railway): "Error: Functions cannot be passed directly to Client Components
+unless you explicitly expose it by marking it with 'use server'" ao abrir `/financeiro-posto` e
+`/financeiro`.
+
+**Achado real:** `VisaoCiclosPorContraparte` é `"use client"`, mas `financeiro-posto/page.tsx` e
+`CobrancaEmAberto.tsx` (Server Components) passavam `hrefHistorico` como uma FUNÇÃO
+(`(id) => \`/rota/${id}\``). O Next.js serializa props na fronteira Server→Client, e funções não são
+serializáveis (só Server Actions, marcadas `"use server"`, cruzam essa fronteira). Passou no
+`tsc`/`eslint` porque é um erro de runtime do RSC, não um erro de tipo — só aparece com o app rodando.
+
+**Fix:** trocado o prop função por duas props string (`hrefBase` + `empresaId`); o link é montado dentro
+do próprio Client Component (`${hrefBase}/${contraparteId}?empresa=${empresaId}`).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.86 — Logout automático por inatividade, configurável pelo admin
+
+Pedido do Daniel: "Implementar logout automatico por um período de inatividade do usuario no sistema.
+Parametrizavel em tela de configuração do admin."
+
+**O que foi feito:**
+- Nova tabela `configuracoes_sistema` — singleton (PK booleana com constraint `id = true`, garante no
+  máximo 1 linha): é um parâmetro GLOBAL, vale pra todo o sistema (todos os perfis, clientes e postos),
+  não por empresa. Coluna `logout_inatividade_minutos` (padrão 30, entre 5 e 480 minutos). RLS: SELECT
+  liberado pra qualquer autenticado (o monitor roda em toda tela, de qualquer perfil); UPDATE só
+  admin/superusuário (mesmo padrão de bypass já usado em outras tabelas, ex.: `anomalias_abastecimento`).
+- `src/lib/configuracoesSistema.ts`: leitura (com fallback pro padrão se falhar) + validação + escrita,
+  com guarda de autorização manual (mesmo padrão de `atualizarCicloPagamento`, Fase 27.80 — RLS não é a
+  única camada de defesa nesse projeto).
+- `MonitorInatividade` (novo Client Component, montado em `(dashboard)/layout.tsx` — roda em toda tela
+  autenticada, qualquer perfil): escuta `mousemove`/`keydown`/`mousedown`/`scroll`/`touchstart`, grava a
+  última atividade no `localStorage` (não só em memória — funciona entre ABAS diferentes do mesmo
+  navegador, atividade numa aba conta pra todas) e confere a cada 15s se passou do limite configurado; se
+  sim, desloga (`supabase.auth.signOut()`) e redireciona pra `/login?motivo=inatividade`.
+- `/login`: novo aviso âmbar (separado do bloco vermelho de erro) quando chega com
+  `?motivo=inatividade` — "Você foi desconectado por inatividade. Entre novamente para continuar."
+- Nova tela `/configuracoes` (menu Administração → "⚙️ Configurações do Sistema", exclusiva do perfil
+  admin, mesmo padrão de checagem de acesso de `/assinaturas`): formulário pra ajustar o tempo em
+  minutos.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
