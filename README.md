@@ -4904,3 +4904,37 @@ Parametrizavel em tela de configuração do admin."
   minutos.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.87 — Rede de Postos (mesma mecânica do Grupo Econômico, para postos)
+
+Pedido do Daniel: "Criar a mesma mecanica de grupo economico para postos, só que em postos deve ser
+denominado de 'Rede de Postos' e o nome que leva a Rede" + "agrupamento de postos na mesma Rede para
+visao pelos usarios cadastrados na Rede".
+
+**Decisão de design:** em vez de duplicar tabela/RLS/RPC, a Rede de Postos reaproveita a MESMA mecânica
+do Grupo Econômico (`grupos_economicos` + `grupos_economicos_empresas`). A RPC `empresas_do_usuario()`
+(banco) já expande por `grupos_economicos_empresas` independente do tipo de empresa — clientes e postos
+são ambos linhas de `empresas`, só o campo `segmento` muda ('Frota' vs 'Revenda', mesmos valores já
+usados em `empresas.segmento`). Isso significa que um usuário vinculado a UM posto de uma Rede já passa
+a enxergar as empresas irmãs em QUALQUER tela que já use `resolverEmpresaAtual()`/`empresas_do_usuario()`
+(`/financeiro-posto`, `/negociacoes`, `/precos-postos`, `/clientes-posto`, `/integracoes`, `/usuarios`...)
+— sem precisar alterar RLS nem duplicar autorização.
+
+**O que foi feito:**
+- Migração: nova coluna `grupos_economicos.segmento` ('Frota'|'Revenda', default 'Frota' — o grupo já
+  existente vira Grupo Econômico automaticamente). Sem essa coluna, uma Rede criada pela tela nova
+  apareceria também listada em `/grupo-economico` (mesma tabela, mesma query sem filtro).
+- `src/lib/gruposEconomicos.ts` (novo): lógica de escrita compartilhada (criar/editar grupo, vincular/
+  desvincular empresa) usada pelos dois pares de Server Actions. Guarda de autorização admin/superusuário
+  em código (RLS já restringe escrita a admin via `with_check`, mas o padrão do projeto é sempre validar
+  de novo — mensagem de erro melhor, Fase 27.80) + validação extra: a empresa vinculada precisa ter o
+  MESMO segmento do grupo (não dá pra colocar um posto num Grupo Econômico de clientes, nem uma frota
+  numa Rede de Postos).
+- `/grupo-economico`: ajustado pra usar a lib compartilhada e filtrar `segmento='Frota'` (lista, seletor
+  de empresas disponíveis, guarda de `notFound()` se o id aberto for de uma Rede).
+- Novas rotas `/rede-postos` (page, novo, [id], actions, RedeForm, VincularPostoForm): espelham 1:1 as
+  rotas de `/grupo-economico`, filtradas a `segmento='Revenda'` — rótulos próprios ("Rede de Postos",
+  "Nome da Rede", "Postos vinculados").
+- Novo item de menu "🔗 Rede de Postos" em Cadastros, + tooltip de ajuda (`rede_postos.pagina`).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
