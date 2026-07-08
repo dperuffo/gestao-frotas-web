@@ -15,15 +15,24 @@ type Filtro = "todos" | "andamento" | "aberta" | "vencida" | "paga";
 // 27.75/27.84) por 1 linha por CONTRAPARTE, com filtro por status e busca
 // por nome — pensado pra escanear dezenas de clientes/postos de uma vez,
 // não pra listar toda fatura individual (isso continua disponível no
-// drill-down de cada contraparte, via `hrefHistorico`).
+// drill-down de cada contraparte, via `hrefBase`).
+//
+// hrefBase + empresaId (em vez de uma função `hrefHistorico`): este é um
+// Client Component ("use client"), e os componentes que o chamam
+// (financeiro-posto/page.tsx, CobrancaEmAberto.tsx) são Server Components —
+// não dá pra passar uma função como prop de Server pra Client Component
+// ("Functions cannot be passed directly to Client Components"). O link é
+// montado aqui dentro a partir de strings simples.
 export function VisaoCiclosPorContraparte({
   linhas,
   rotulo,
-  hrefHistorico,
+  hrefBase,
+  empresaId,
 }: {
   linhas: LinhaContraparte[];
   rotulo: "posto" | "cliente";
-  hrefHistorico: (contraparteId: string) => string;
+  hrefBase: string;
+  empresaId: string;
 }) {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
@@ -141,7 +150,10 @@ export function VisaoCiclosPorContraparte({
                   )}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link href={hrefHistorico(l.contraparteId)} className="text-frota-600 hover:underline">
+                  <Link
+                    href={`${hrefBase}/${l.contraparteId}?empresa=${empresaId}`}
+                    className="text-frota-600 hover:underline"
+                  >
                     Ver histórico
                   </Link>
                 </td>

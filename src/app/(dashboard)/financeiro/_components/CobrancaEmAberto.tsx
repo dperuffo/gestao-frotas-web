@@ -74,7 +74,8 @@ export function CobrancaEmAberto({
       <VisaoCiclosPorContraparte
         linhas={linhas}
         rotulo="cliente"
-        hrefHistorico={(postoId) => `/meus-postos/${postoId}?empresa=${empresaId}`}
+        hrefBase="/meus-postos"
+        empresaId={empresaId}
       />
     </div>
   );

@@ -338,7 +338,8 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
           <VisaoCiclosPorContraparte
             linhas={linhasPorCliente}
             rotulo="posto"
-            hrefHistorico={(clienteId) => `/clientes-posto/${clienteId}?empresa=${empresaSelecionada}`}
+            hrefBase="/clientes-posto"
+            empresaId={empresaSelecionada}
           />
 
           <div className="mb-6 card p-6">
