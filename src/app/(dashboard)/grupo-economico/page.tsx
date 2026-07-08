@@ -5,9 +5,13 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 export default async function GrupoEconomicoPage() {
   const supabase = await createClient();
 
+  // Fase 27.87 — a mesma tabela agora também guarda Rede de Postos
+  // (segmento='Revenda', ver /rede-postos); filtra só os grupos de
+  // clientes (segmento='Frota') pra não misturar os dois nesta lista.
   const { data: grupos, error } = await supabase
     .from("grupos_economicos")
     .select("id, nome, cnpj_matriz, ativo, grupos_economicos_empresas(count)")
+    .eq("segmento", "Frota")
     .order("nome");
 
   const totalGrupos = grupos?.length ?? 0;

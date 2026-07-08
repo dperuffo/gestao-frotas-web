@@ -281,6 +281,12 @@ export const AJUDA: Record<string, ItemAjuda> = {
     titulo: "Grupo Econômico",
     texto: "Liga duas ou mais empresas (clientes) que pertencem ao mesmo grupo, pra que os mesmos usuários possam alternar entre elas sem precisar de um login separado por empresa.",
   },
+  // Fase 27.87 — mesma mecânica do Grupo Econômico, só que pro lado dos
+  // postos revendedores.
+  "rede_postos.pagina": {
+    titulo: "Rede de Postos",
+    texto: "Liga dois ou mais postos revendedores que pertencem à mesma Rede, pra que os mesmos usuários possam alternar entre eles sem precisar de um login separado por posto.",
+  },
 
   // ── Integrações ────────────────────────────────────────────────────
   "integracoes.chave_api": {

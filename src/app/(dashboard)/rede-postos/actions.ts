@@ -10,29 +10,30 @@ import {
   desvincularEmpresaDoGrupo,
 } from "@/lib/gruposEconomicos";
 
-export type GrupoFormState = { erro?: string } | undefined;
+export type RedeFormState = { erro?: string } | undefined;
 
-// Fase 27.87 — a lógica de escrita foi extraída pra src/lib/gruposEconomicos.ts
-// (compartilhada com /rede-postos/actions.ts, o equivalente pro lado dos
-// postos) — aqui só fixa segmento: "Frota" e cuida do revalidatePath/redirect
-// desta rota.
-export async function criarGrupo(_prev: GrupoFormState, formData: FormData): Promise<GrupoFormState> {
+// Fase 27.87 — pedido do Daniel: "Criar a mesma mecanica de grupo economico
+// para postos, só que em postos deve ser denominado de 'Rede de Postos'".
+// Espelha /grupo-economico/actions.ts — mesma lib compartilhada
+// (src/lib/gruposEconomicos.ts), só fixando segmento: "Revenda" e
+// revalidando/redirecionando pras rotas de /rede-postos.
+export async function criarRede(_prev: RedeFormState, formData: FormData): Promise<RedeFormState> {
   const supabase = await createClient();
   const nome = String(formData.get("nome") ?? "").trim();
   const cnpj_matriz = String(formData.get("cnpj_matriz") ?? "").trim() || null;
 
-  const resultado = await criarGrupoEconomico(supabase, { segmento: "Frota", nome, cnpjMatriz: cnpj_matriz });
+  const resultado = await criarGrupoEconomico(supabase, { segmento: "Revenda", nome, cnpjMatriz: cnpj_matriz });
   if ("erro" in resultado) return { erro: resultado.erro };
 
-  revalidatePath("/grupo-economico");
-  redirect(`/grupo-economico/${resultado.id}`);
+  revalidatePath("/rede-postos");
+  redirect(`/rede-postos/${resultado.id}`);
 }
 
-export async function atualizarGrupo(
+export async function atualizarRede(
   id: string,
-  _prev: GrupoFormState,
+  _prev: RedeFormState,
   formData: FormData
-): Promise<GrupoFormState> {
+): Promise<RedeFormState> {
   const supabase = await createClient();
   const nome = String(formData.get("nome") ?? "").trim();
   const cnpj_matriz = String(formData.get("cnpj_matriz") ?? "").trim() || null;
@@ -41,21 +42,21 @@ export async function atualizarGrupo(
   const resultado = await atualizarGrupoEconomico(supabase, { id, nome, cnpjMatriz: cnpj_matriz, ativo });
   if (resultado.erro) return { erro: resultado.erro };
 
-  revalidatePath("/grupo-economico");
-  revalidatePath(`/grupo-economico/${id}`);
+  revalidatePath("/rede-postos");
+  revalidatePath(`/rede-postos/${id}`);
   return { erro: undefined };
 }
 
-export async function vincularEmpresa(grupoId: string, empresaId: string) {
+export async function vincularPosto(redeId: string, empresaId: string) {
   const supabase = await createClient();
-  const resultado = await vincularEmpresaAoGrupo(supabase, { grupoId, empresaId });
+  const resultado = await vincularEmpresaAoGrupo(supabase, { grupoId: redeId, empresaId });
   if (resultado.erro) throw new Error(resultado.erro);
-  revalidatePath(`/grupo-economico/${grupoId}`);
+  revalidatePath(`/rede-postos/${redeId}`);
 }
 
-export async function desvincularEmpresa(grupoId: string, vinculoId: string) {
+export async function desvincularPosto(redeId: string, vinculoId: string) {
   const supabase = await createClient();
   const resultado = await desvincularEmpresaDoGrupo(supabase, vinculoId);
   if (resultado.erro) throw new Error(resultado.erro);
-  revalidatePath(`/grupo-economico/${grupoId}`);
+  revalidatePath(`/rede-postos/${redeId}`);
 }

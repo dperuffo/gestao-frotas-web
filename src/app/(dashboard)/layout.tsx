@@ -39,6 +39,8 @@ const menuCadastros = [
   { href: "/veiculos", label: "🚗 Veículos" },
   { href: "/centros-custo", label: "🧾 Centros de Custo" },
   { href: "/postos", label: "⛽ Postos Revendedores" },
+  // Fase 27.87 — mesma mecânica do Grupo Econômico, pro lado dos postos.
+  { href: "/rede-postos", label: "🔗 Rede de Postos" },
 ];
 
 const menuOperacao = [

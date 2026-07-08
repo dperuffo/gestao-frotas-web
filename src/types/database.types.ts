@@ -500,6 +500,9 @@ export interface Database {
           ativo: boolean;
           criado_em: string;
           atualizado_em: string;
+          // Fase 27.87 — mesmos valores de empresas.segmento. 'Frota' =
+          // Grupo Econômico (cliente); 'Revenda' = Rede de Postos.
+          segmento: string;
         };
         Insert: Partial<Database["public"]["Tables"]["grupos_economicos"]["Row"]> & {
           nome: string;

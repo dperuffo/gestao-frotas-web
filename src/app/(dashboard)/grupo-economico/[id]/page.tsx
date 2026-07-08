@@ -12,7 +12,11 @@ export default async function EditarGrupoPage({
   const supabase = await createClient();
 
   const { data: grupo } = await supabase.from("grupos_economicos").select("*").eq("id", id).single();
-  if (!grupo) notFound();
+  // Fase 27.87 — a mesma tabela também guarda Rede de Postos
+  // (segmento='Revenda'); se alguém abrir aqui o id de uma Rede (link
+  // direto, favorito antigo etc.), trata como não encontrado nesta tela —
+  // o lugar certo é /rede-postos/[id].
+  if (!grupo || grupo.segmento !== "Frota") notFound();
 
   const { data: vinculosRaw } = await supabase
     .from("grupos_economicos_empresas")
@@ -26,7 +30,11 @@ export default async function EditarGrupoPage({
 
   const idsVinculados = new Set(vinculos.map((v) => v.empresa?.id).filter(Boolean));
 
-  const { data: todasEmpresas } = await supabase.from("empresas").select("id, nome").order("nome");
+  const { data: todasEmpresas } = await supabase
+    .from("empresas")
+    .select("id, nome")
+    .eq("segmento", "Frota")
+    .order("nome");
   const empresasDisponiveis = (todasEmpresas ?? []).filter((e) => !idsVinculados.has(e.id));
 
   return (
