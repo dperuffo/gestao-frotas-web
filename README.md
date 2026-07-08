@@ -4821,3 +4821,42 @@ distinto de aberta/paga/vencida, reaproveitada nas 4 telas:
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos), e a RPC testada direto no banco simulando a
 sessão do `posto.teste@fni.test` — retornou o ciclo em andamento correto pras 2 negociações aceitas dele,
 com abastecimentos acumulados batendo com uma contagem manual por dia.
+
+## Fase 27.85 — Visão de ciclos agrupada por contraparte no painel financeiro
+
+Pedido do Daniel: "Um posto pode ter muitos ciclos com diversos status, abertos ou em andamento e
+fechados. Precisamos facilitar a visão de postos com um volume grande de ciclos, pois possui
+relacionamento com muitos clientes. Traga uma proposta de facilidade de visualização destes ciclos na
+visão do posto dentro do painel financeiro" — pedido explícito de PROPOSTA, não de implementação direta.
+
+**Achado real:** as telas da Fase 27.84 (`SecaoCiclosAbertos` + a lista plana de faturas em
+`/financeiro-posto` e `/financeiro`) misturam TODAS as contrapartes numa única lista — funciona bem com
+poucos clientes/postos, mas um posto com dezenas de relações de cliente vira uma lista enorme sem
+nenhuma forma de agrupar, filtrar ou buscar por nome.
+
+**Proposta validada com o Daniel** via mockup (`mcp visualize`) + `AskUserQuestion`, com duas decisões de
+escopo confirmadas por ele: (1) a nova visão SUBSTITUI as tabelas atuais, não é uma visão adicional; (2)
+aplicar dos dois lados — posto (agrupado por cliente) e cliente (agrupado por posto) — "Os dois agora".
+
+**Fix:**
+- `agruparCiclosPorContraparte()` (`src/lib/ciclosAbertos.ts`): consolida negociações + faturas + ciclo
+  em andamento em 1 linha por contraparte, com contagem por status (aberta/vencida/paga/cancelada) e
+  ordenação por prioridade (vencida > aberta > em andamento > sem pendência).
+- `VisaoCiclosPorContraparte` (novo componente compartilhado, `(dashboard)/_components/`): busca por
+  nome + chips de filtro por status (Todos/Em andamento/Em aberto/Vencidas/Pagas) + tabela 1-linha-por-
+  contraparte, com link "Ver histórico" pro drill-down completo daquela contraparte.
+- `/financeiro-posto`: tabelas "Ciclo em andamento" + "Contas a receber" (lista plana) substituídas pela
+  visão agrupada por cliente.
+- `/financeiro` (cliente) + `CobrancaEmAberto.tsx`: mesmo tratamento, agrupado por posto. KPIs e o banner
+  "próxima fatura" continuam vindo direto das faturas (retrospectivo/pontual, não precisa de agrupamento).
+- Nova página `/meus-postos/[postoId]`: drill-down do lado do cliente pra UM posto específico — espelha
+  `/clientes-posto/[clienteId]` (que já existia do lado do posto, Fase 27.72), reaproveitando
+  `CicloAbastecimentoPagamento`.
+- `CicloAbastecimentoPagamento.tsx`: novo prop `podeGerenciarFaturas`. A lista plana removida de
+  `/financeiro-posto` era o único lugar com os botões "Marcar como paga"/"Cancelar" — essa ação migrou
+  pro drill-down `/clientes-posto/[clienteId]` (única tela que passa o prop como `true`).
+- `financeiro-posto/actions.ts`: `marcarFaturaPagaAcao`/`cancelarFaturaAcao` passam a revalidar também
+  `/clientes-posto/[empresa_cliente_id]`, além de `/financeiro-posto` — mesmo bug de cache já corrigido
+  na Fase 27.83 (`revalidatePath` sem `{ type: "layout" }` só revalida o path literal).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
