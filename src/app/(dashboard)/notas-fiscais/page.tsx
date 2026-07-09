@@ -185,6 +185,21 @@ export default async function NotasFiscaisPage({
                           ? l.pendencia_detalhe_texto
                           : mensagemMotivoPendencia(l.pendencia_motivo)}
                       </p>
+                      {/* Fase 27.103 — pedido do Daniel: "não deveria ter uma
+                          relação do registro rejeitado com a tela de detalhe
+                          abaixo?" — mesmos dados extraídos do XML já
+                          mostrados na seção "Uploads sem abastecimento
+                          correspondente", agora também aqui na própria
+                          linha. */}
+                      {(l.pendencia_nome_arquivo || l.pendencia_cnpj_emitente || l.pendencia_produto_nome_xml) && (
+                        <p className="mt-1 max-w-xs text-xs text-slate-500">
+                          {l.pendencia_nome_arquivo ? `Arquivo: ${l.pendencia_nome_arquivo}` : ""}
+                          {l.pendencia_cnpj_emitente ? `${l.pendencia_nome_arquivo ? " · " : ""}CNPJ emitente ${l.pendencia_cnpj_emitente}` : ""}
+                          {l.pendencia_produto_nome_xml ? `, ${l.pendencia_produto_nome_xml}` : ""}
+                          {l.pendencia_quantidade !== null ? `, ${l.pendencia_quantidade} L` : ""}
+                          {l.pendencia_valor_total !== null ? `, ${formatarMoeda(l.pendencia_valor_total)}` : ""}
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Pendente</span>

@@ -85,7 +85,18 @@ export async function AbastecimentosPosto({
   let receitaTotal = 0;
   let idsComAjusteAberto = new Set<number>();
   let notaPorAbastecimento = new Map<number, number | null>();
-  let pendenciaPorAbastecimento = new Map<number, { motivo: string; detalheTexto: string | null }>();
+  let pendenciaPorAbastecimento = new Map<
+    number,
+    {
+      motivo: string;
+      detalheTexto: string | null;
+      nomeArquivo: string | null;
+      cnpjEmitente: string | null;
+      produtoNomeXml: string | null;
+      quantidade: number | null;
+      valorTotal: number | null;
+    }
+  >();
   let contagemNf = { todos: 0, emitida: 0, rejeitada: 0, pendente: 0 };
 
   const offset = offsetDaPagina(POR_PAGINA, page);
@@ -138,7 +149,7 @@ export async function AbastecimentosPosto({
         .limit(20000),
       supabase
         .from("notas_fiscais_pendencias")
-        .select("abastecimento_id, motivo, detalhe_texto, criado_em")
+        .select("abastecimento_id, motivo, detalhe_texto, criado_em, nome_arquivo, cnpj_emitente, produto_nome_xml, quantidade, valor_total")
         .eq("empresa_posto_id", empresaPostoId)
         .not("abastecimento_id", "is", null)
         .order("criado_em", { ascending: false })
@@ -149,7 +160,18 @@ export async function AbastecimentosPosto({
     pendenciaPorAbastecimento = new Map();
     for (const p of pendenciasData ?? []) {
       if (p.abastecimento_id === null || pendenciaPorAbastecimento.has(p.abastecimento_id)) continue;
-      pendenciaPorAbastecimento.set(p.abastecimento_id, { motivo: p.motivo, detalheTexto: p.detalhe_texto });
+      // Fase 27.103 — pedido do Daniel: mesmos dados extraídos do XML
+      // (arquivo, CNPJ, produto, quantidade, valor) direto na linha do
+      // abastecimento rejeitado, não só o motivo.
+      pendenciaPorAbastecimento.set(p.abastecimento_id, {
+        motivo: p.motivo,
+        detalheTexto: p.detalhe_texto,
+        nomeArquivo: p.nome_arquivo,
+        cnpjEmitente: p.cnpj_emitente,
+        produtoNomeXml: p.produto_nome_xml,
+        quantidade: p.quantidade,
+        valorTotal: p.valor_total,
+      });
     }
 
     const idsEmitida = Array.from(notaPorAbastecimento.keys());
@@ -424,6 +446,18 @@ export async function AbastecimentosPosto({
                             ? pendencia.detalheTexto
                             : mensagemMotivoPendencia(pendencia.motivo)}
                         </p>
+                        {/* Fase 27.103 — pedido do Daniel: mesmos dados
+                            extraídos do XML já mostrados em
+                            /notas-fiscais, agora também aqui. */}
+                        {(pendencia.nomeArquivo || pendencia.cnpjEmitente || pendencia.produtoNomeXml) && (
+                          <p className="mt-1 max-w-xs text-xs text-slate-500">
+                            {pendencia.nomeArquivo ? `Arquivo: ${pendencia.nomeArquivo}` : ""}
+                            {pendencia.cnpjEmitente ? `${pendencia.nomeArquivo ? " · " : ""}CNPJ emitente ${pendencia.cnpjEmitente}` : ""}
+                            {pendencia.produtoNomeXml ? `, ${pendencia.produtoNomeXml}` : ""}
+                            {pendencia.quantidade !== null ? `, ${pendencia.quantidade} L` : ""}
+                            {pendencia.valorTotal !== null ? `, ${formatarMoeda(pendencia.valorTotal)}` : ""}
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Pendente</span>

@@ -1926,6 +1926,17 @@ export interface Database {
           pendencia_motivo: string | null;
           pendencia_detalhe_texto: string | null;
           pendencia_em: string | null;
+          // Fase 27.103 — dados extraídos do XML da tentativa rejeitada,
+          // mesmos campos já mostrados na seção "Uploads sem abastecimento
+          // correspondente" — agora também na própria linha do abastecimento
+          // (pedido do Daniel: "não deveria ter uma relação do registro
+          // rejeitado com a tela de detalhe abaixo?").
+          pendencia_nome_arquivo: string | null;
+          pendencia_cnpj_emitente: string | null;
+          pendencia_cnpj_destinatario: string | null;
+          pendencia_produto_nome_xml: string | null;
+          pendencia_quantidade: number | null;
+          pendencia_valor_total: number | null;
           total_count: number;
         }[];
       };

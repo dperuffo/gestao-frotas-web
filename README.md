@@ -5669,3 +5669,32 @@ Posto Teste — 7407 abastecimentos no total, 1 emitida, 1 rejeitada (a pendênc
 `codigo_anp_nao_corresponde` da Fase 27.96/27.99, mantida como fixture), 7405 pendentes — soma exata.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.103 — Detalhe do XML rejeitado direto na linha do abastecimento
+
+Pedido do Daniel, olhando `/notas-fiscais` depois da Fase 27.102: "não deveria ter uma relação do
+registro rejeitado com a tela de detalhe abaixo?" — comparando a linha "Rejeitada" da tabela de
+abastecimentos (que só mostrava o motivo) com a seção "Uploads sem abastecimento correspondente" (que
+mostra arquivo + dados extraídos do XML: CNPJ, produto, quantidade, valor). Perguntei o formato via
+`AskUserQuestion` — escolhido: mostrar os mesmos detalhes na própria linha, em vez de um link separado ou
+de unificar as duas tabelas.
+
+Os dados já existiam em `notas_fiscais_pendencias` (Fase 27.99) independente de a pendência ter
+`abastecimento_id` ou não — só não eram devolvidos pela RPC pro caso "com abastecimento vinculado":
+
+- `abastecimentos_com_status_nota_fiscal` (`drop` + `create`, mudou o formato de retorno) ganhou 6
+  colunas novas: `pendencia_nome_arquivo`, `pendencia_cnpj_emitente`, `pendencia_cnpj_destinatario`,
+  `pendencia_produto_nome_xml`, `pendencia_quantidade`, `pendencia_valor_total` — mesma
+  `LEFT JOIN LATERAL` já existente, só selecionando mais colunas de `notas_fiscais_pendencias`.
+- `/notas-fiscais`: a linha "Rejeitada" agora mostra, embaixo do motivo, uma segunda linha cinza com
+  "Arquivo: X.xml · CNPJ emitente ..., produto, quantidade, valor" (só os campos que existirem).
+- `AbastecimentosPosto.tsx` (Fase 27.102): mesma extensão, direto na consulta a
+  `notas_fiscais_pendencias` (não usa a RPC acima, já que essa tela tem filtros próprios que a RPC não
+  cobre — ver Fase 27.102) — mesmo texto, mesmo lugar, pra manter as duas telas consistentes.
+
+**Testado com dados reais:** chamei a RPC estendida como o usuário de teste do posto e confirmei que o
+abastecimento #165865 (pendência de exemplo da Fase 27.96/27.99) devolve
+`pendencia_nome_arquivo = "06-pendencia-codigo-anp-incorreto.xml"`, CNPJ emitente, produto
+"DIESEL S500 COMUM", 45.21 L, R$ 276,01 — batendo exatamente com o XML de exemplo original.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
