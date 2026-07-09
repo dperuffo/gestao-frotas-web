@@ -1,6 +1,6 @@
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
-import type { LinhaContraparte } from "@/lib/ciclosAbertos";
+import type { CicloAberto, LinhaContraparte } from "@/lib/ciclosAbertos";
 import { VisaoCiclosPorContraparte } from "../../_components/VisaoCiclosPorContraparte";
 
 export type FaturaCobranca = {
@@ -30,15 +30,21 @@ export function CobrancaEmAberto({
   faturas,
   linhas,
   empresaId,
+  ciclosAbertos = [],
 }: {
   faturas: FaturaCobranca[];
   linhas: LinhaContraparte[];
   empresaId: string;
+  // Fase 27.91 — pedido do Daniel: o ciclo em andamento (ainda não fechado
+  // pelo robô) já representa valor devido — soma no "Total em aberto" e
+  // "Faturas em aberto" mesmo antes de virar fatura real.
+  ciclosAbertos?: CicloAberto[];
 }) {
   const hojeIso = new Date().toISOString().slice(0, 10);
 
   const abertas = faturas.filter((f) => f.status === "aberta");
-  const totalEmAberto = abertas.reduce((s, f) => s + f.valor_total, 0);
+  const totalCicloAtual = ciclosAbertos.reduce((s, c) => s + c.valor_acumulado, 0);
+  const totalEmAberto = abertas.reduce((s, f) => s + f.valor_total, 0) + totalCicloAtual;
   const vencidas = abertas.filter((f) => f.vencimento < hojeIso);
   const totalVencido = vencidas.reduce((s, f) => s + f.valor_total, 0);
   const proximaFatura = abertas
@@ -61,7 +67,7 @@ export function CobrancaEmAberto({
           valor={formatarMoeda(totalVencido)}
           destaque={totalVencido > 0 ? "negativo" : undefined}
         />
-        <Indicador label="Faturas em aberto" valor={String(abertas.length)} />
+        <Indicador label="Faturas em aberto" valor={String(abertas.length + ciclosAbertos.length)} />
       </div>
 
       {proximaFatura && (

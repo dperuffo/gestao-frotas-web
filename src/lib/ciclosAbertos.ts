@@ -99,6 +99,24 @@ export function agruparCiclosPorContraparte(params: {
     }
   }
 
+  // Fase 27.91 — pedido do Daniel: "deveria aparecer fatura 'Em Aberto'
+  // visto que o ciclo foi iniciado com abastecimentos já realizados...
+  // mesmo que não hajam abastecimentos dentro de um ciclo, ele precisa ser
+  // aberto e fechado, posteriormente, no final do ciclo". Até aqui,
+  // `contagem`/`valorEmAberto` só contavam faturas REAIS (linhas em
+  // `faturas_postos`, geradas pelo robô só depois que o período fecha) — o
+  // ciclo em andamento (`cicloAtual`, calculado ao vivo por
+  // ciclos_abertos_postos()) nunca contribuía pra esse total, mesmo já
+  // tendo abastecimentos e valor acumulado. Cada negociação com ciclo em
+  // andamento agora soma como 1 "aberta" a mais (mesmo com valor 0 — o
+  // ciclo já está "aberto" desde o primeiro dia, só ainda não fechou).
+  for (const linha of linhas.values()) {
+    if (linha.cicloAtual) {
+      linha.contagem.aberta += 1;
+      linha.valorEmAberto += linha.cicloAtual.valor_acumulado;
+    }
+  }
+
   // Ordena: quem tem fatura vencida primeiro, depois em aberto, depois
   // ciclo em andamento, por fim só histórico pago/cancelado — dentro de
   // cada grupo, por nome.

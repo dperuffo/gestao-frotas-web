@@ -172,7 +172,12 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   });
 
   // KPIs
-  const aReceberAberto = faturas.filter((f) => f.status === "aberta").reduce((s, f) => s + f.valor_total, 0);
+  // Fase 27.91 — pedido do Daniel: o ciclo em andamento (ainda não fechado
+  // pelo robô) já representa valor devido pelos abastecimentos já feitos —
+  // soma no "A receber (em aberto)" mesmo antes do robô gerar a fatura real.
+  const aReceberAberto =
+    faturas.filter((f) => f.status === "aberta").reduce((s, f) => s + f.valor_total, 0) +
+    ciclosAbertosDoPosto.reduce((s, c) => s + c.valor_acumulado, 0);
   const vencido = faturas
     .filter((f) => f.status === "aberta" && f.vencimento < hojeIso)
     .reduce((s, f) => s + f.valor_total, 0);

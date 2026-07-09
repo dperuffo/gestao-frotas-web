@@ -5098,3 +5098,36 @@ zeraram, os 7 duplicados sumiram, as 4 FKs sem índice sumiram. Rodado o advisor
 nenhum alerta novo, e o `admin_select_seclogs` corrigido não aparece mais como problema.
 
 Sem alterações em código TypeScript — mudança só em políticas RLS e índices no Supabase.
+
+## Fase 27.91 — Ciclo em andamento conta como "Em Aberto" (cliente, posto e admin)
+
+Pedido do Daniel, com print da tela "Ciclos por cliente": um ciclo aparecia como "Em andamento" com
+valor acumulado (ex: R$ 2.770,53), mas a coluna Faturas mostrava "Nenhuma ainda". Ele: "Deveria
+aparecer faturas 'Em Aberto' visto que o ciclo foi iniciado com abastecimentos já realizados. Mesmo
+que não hajam abastecimentos dentro de um ciclo, ele precisa ser aberto e fechado, posteriormente, no
+final do ciclo" — e confirmou que vale "em ambas as visões de cliente, posto e admin".
+
+**Causa:** a fatura REAL (`faturas_postos`) só é criada pelo robô `gerar_faturas_postos_robo()` depois
+que o período do ciclo termina (`periodo_fim < hoje`) — enquanto o ciclo está em andamento, ele só
+existe como um cálculo ao vivo (`ciclos_abertos_postos()`, Fase 27.84), exibido numa seção separada
+("Ciclo em andamento"), sem contribuir pros totais/contagens de "Em aberto" em nenhuma tela — esses
+totais somavam só faturas já fechadas.
+
+**Fix:** o ciclo em andamento (`cicloAtual`/`ciclosAbertos`) agora soma nos totais e contagens de "Em
+aberto" em paralelo às faturas reais, em 4 pontos:
+- `lib/ciclosAbertos.ts` (`agruparCiclosPorContraparte`): toda contraparte com ciclo em andamento ganha
+  +1 na contagem "aberta" e o valor acumulado soma em `valorEmAberto` — mesmo com valor 0 (ciclo sem
+  abastecimento ainda conta como aberto). Corrige a tabela "Ciclos por contraparte"
+  (`VisaoCiclosPorContraparte`), usada tanto em `/financeiro-posto` quanto em `/financeiro` (cliente).
+- `/financeiro-posto/page.tsx`: indicador "A receber (em aberto)" passa a somar `ciclosAbertosDoPosto`.
+- `/financeiro/page.tsx` + `CobrancaEmAberto.tsx`: indicadores "Total em aberto" e "Faturas em aberto"
+  (visão do cliente) passam a somar/contar os ciclos em andamento — novo prop `ciclosAbertos`.
+- `CicloAbastecimentoPagamento.tsx`: indicador "Em aberto" passa a somar `ciclosAbertos` — usado tanto
+  em `/clientes/[id]` (admin) quanto em `/clientes-posto/[clienteId]` (posto, mesmo componente
+  reaproveitado), cobrindo as 3 visões pedidas (cliente, posto, admin).
+
+Simulado com os dados exatos do print (Frotas & Frotas Ltda com ciclo em andamento e R$ 0,00
+acumulado; Transportes de Cargas Testes Ltda com R$ 2.770,53 acumulado, nenhuma fatura real ainda): o
+resultado bate — as duas passam a contar "1 aberta", a segunda com `valorEmAberto = 2.770,53`.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos, nos 5 arquivos alterados).

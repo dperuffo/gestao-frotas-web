@@ -412,7 +412,12 @@ export default async function FinanceiroPage({
             <TabelaCustosFixos linhas={linhasCustosFixos} />
           </div>
 
-          <CobrancaEmAberto faturas={faturasCobranca} linhas={linhasPorPosto} empresaId={empresaSelecionada} />
+          <CobrancaEmAberto
+            faturas={faturasCobranca}
+            linhas={linhasPorPosto}
+            empresaId={empresaSelecionada}
+            ciclosAbertos={ciclosAbertosDoCliente}
+          />
 
           {resumoAjustes && (
             <div className="mt-6">

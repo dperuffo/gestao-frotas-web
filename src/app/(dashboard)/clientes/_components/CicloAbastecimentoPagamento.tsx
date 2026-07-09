@@ -88,7 +88,11 @@ export function CicloAbastecimentoPagamento({
   const volumeContratadoTotal = negociacoesVigentes.reduce((s, n) => s + (n.volume_minimo_mensal ?? 0), 0);
 
   const faturasAbertas = faturas.filter((f) => f.status === "aberta");
-  const totalEmAberto = faturasAbertas.reduce((s, f) => s + f.valor_total, 0);
+  // Fase 27.91 — pedido do Daniel: o ciclo em andamento (ainda não fechado
+  // pelo robô) já representa valor devido pelos abastecimentos já feitos —
+  // soma no indicador "Em aberto" mesmo antes de virar fatura real.
+  const totalCicloAtual = ciclosAbertos.reduce((s, c) => s + c.valor_acumulado, 0);
+  const totalEmAberto = faturasAbertas.reduce((s, f) => s + f.valor_total, 0) + totalCicloAtual;
   const faturasVencidas = faturasAbertas.filter((f) => f.vencimento < hojeIso);
   const totalVencido = faturasVencidas.reduce((s, f) => s + f.valor_total, 0);
   const totalPago = faturas.filter((f) => f.status === "paga").reduce((s, f) => s + f.valor_total, 0);
