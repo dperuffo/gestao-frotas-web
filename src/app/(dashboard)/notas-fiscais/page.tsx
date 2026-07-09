@@ -14,17 +14,24 @@ const POR_PAGINA = 20;
 // barra de progresso). Mesma tela serve as 3 visões — `resolverEmpresaAtual`
 // já resolve se o usuário só tem 1 empresa (auto-seleciona) ou precisa
 // escolher (admin, ou membro de várias empresas via grupo econômico).
+// Fase 27.100 — pedido do Daniel: "criar filtros de seleção de status de NF
+// para facilitar a busca pelo usuário". Antes só existia "Todos / Só
+// pendentes", que misturava "Rejeitada" (Fase 27.99) e "Pendente" (nunca
+// tentou) no mesmo filtro — como a tela já distingue os 2 visualmente, o
+// filtro passou a distinguir também.
+const STATUS_VALIDOS = new Set(["emitida", "rejeitada", "pendente"]);
+
 export default async function NotasFiscaisPage({
   searchParams,
 }: {
-  searchParams: Promise<{ empresa?: string; pagina?: string; apenasPendentes?: string }>;
+  searchParams: Promise<{ empresa?: string; pagina?: string; status?: string }>;
 }) {
-  const { empresa: empresaParam, pagina: paginaParam, apenasPendentes: apenasPendentesParam } = await searchParams;
+  const { empresa: empresaParam, pagina: paginaParam, status: statusParam } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
   const pagina = Math.max(1, Number(paginaParam) || 1);
-  const apenasPendentes = apenasPendentesParam === "1";
+  const status = statusParam && STATUS_VALIDOS.has(statusParam) ? statusParam : null;
 
   if (!empresaSelecionada) {
     return (
@@ -56,16 +63,18 @@ export default async function NotasFiscaisPage({
   const ehPosto = empresaInfo?.segmento === "Revenda";
 
   const { data: indicadorData } = await supabase.rpc("indicador_notas_fiscais", { p_empresa_id: empresaSelecionada });
-  const indicador = (indicadorData ?? { total: 0, com_nota: 0, sem_nota: 0, percentual: 0 }) as {
+  const indicador = (indicadorData ?? { total: 0, com_nota: 0, sem_nota: 0, rejeitadas: 0, pendentes: 0, percentual: 0 }) as {
     total: number;
     com_nota: number;
     sem_nota: number;
+    rejeitadas: number;
+    pendentes: number;
     percentual: number;
   };
 
   const { data: linhas } = await supabase.rpc("abastecimentos_com_status_nota_fiscal", {
     p_empresa_id: empresaSelecionada,
-    p_apenas_pendentes: apenasPendentes,
+    p_status: status,
     p_limit: POR_PAGINA,
     p_offset: (pagina - 1) * POR_PAGINA,
   });
@@ -84,7 +93,7 @@ export default async function NotasFiscaisPage({
   const qs = (overrides: Record<string, string>) => {
     const params = new URLSearchParams({
       empresa: empresaSelecionada,
-      ...(apenasPendentes ? { apenasPendentes: "1" } : {}),
+      ...(status ? { status } : {}),
       ...overrides,
     });
     return `/notas-fiscais?${params.toString()}`;
@@ -108,6 +117,7 @@ export default async function NotasFiscaisPage({
         total={indicador.total}
         comNota={indicador.com_nota}
         semNota={indicador.sem_nota}
+        rejeitadas={indicador.rejeitadas}
         percentual={indicador.percentual}
       />
 
@@ -116,12 +126,27 @@ export default async function NotasFiscaisPage({
       <div className="card overflow-x-auto">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-slate-900">Abastecimentos (últimos 90 dias)</h2>
-          <div className="flex gap-2 text-xs">
-            <Link href={qs({ apenasPendentes: "", pagina: "1" })} className={!apenasPendentes ? "font-semibold text-frota-600" : "text-slate-500"}>
-              Todos
+          <div className="flex flex-wrap gap-3 text-xs">
+            <Link href={qs({ status: "", pagina: "1" })} className={!status ? "font-semibold text-frota-600" : "text-slate-500"}>
+              Todos ({indicador.total})
             </Link>
-            <Link href={qs({ apenasPendentes: "1", pagina: "1" })} className={apenasPendentes ? "font-semibold text-frota-600" : "text-slate-500"}>
-              Só pendentes
+            <Link
+              href={qs({ status: "emitida", pagina: "1" })}
+              className={status === "emitida" ? "font-semibold text-green-700" : "text-slate-500"}
+            >
+              Emitida ({indicador.com_nota})
+            </Link>
+            <Link
+              href={qs({ status: "rejeitada", pagina: "1" })}
+              className={status === "rejeitada" ? "font-semibold text-red-700" : "text-slate-500"}
+            >
+              Rejeitada ({indicador.rejeitadas})
+            </Link>
+            <Link
+              href={qs({ status: "pendente", pagina: "1" })}
+              className={status === "pendente" ? "font-semibold text-amber-700" : "text-slate-500"}
+            >
+              Pendente ({indicador.pendentes})
             </Link>
           </div>
         </div>

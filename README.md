@@ -5554,3 +5554,31 @@ usar, e o registro de pendência é pulado (best-effort — não quebra o upload
 diagnóstico nesse caso específico). Não afeta o fluxo normal do posto.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.100 — Filtros de status de NF-e na listagem
+
+Pedido do Daniel, na sequência da Fase 27.99: "criar filtros de seleção de status de NF para facilitar
+a busca pelo usuário". A tela só tinha "Todos / Só pendentes" — e "Só pendentes" misturava as duas
+categorias que a Fase 27.99 passou a distinguir visualmente (Rejeitada vs. Pendente), então o filtro
+ficou desalinhado com o que a tela mostra.
+
+- `abastecimentos_com_status_nota_fiscal` trocou `p_apenas_pendentes` (boolean) por `p_status` (text:
+  `'emitida' | 'rejeitada' | 'pendente' | null` = todos) — precisou `drop function` porque o tipo de
+  retorno já tinha mudado na Fase 27.99 (não é só um parâmetro a mais). Testado cada filtro isoladamente
+  contra os dados reais do Posto Teste (7407 abastecimentos): `emitida` → 1, `pendente` → 7406,
+  `rejeitada` → 0 (nenhuma pendência registrada ainda), `null` (todos) → 7407 — bate exatamente com
+  emitida + pendente + rejeitada. Registrei uma pendência de teste pro abastecimento #165865 e confirmei
+  que ela migrou de `pendente` pra `rejeitada` no filtro (contagem: pendente caiu de 7406 pra 7405,
+  rejeitada trouxe exatamente aquele abastecimento) — removida depois.
+- `indicador_notas_fiscais` ganhou os campos `rejeitadas` e `pendentes` (além dos já existentes `total`,
+  `com_nota`, `sem_nota`) — não precisou `drop` porque o retorno é `jsonb` (tipo opaco pro Postgres,
+  só ganha chaves novas). Usado tanto pra mostrar a contagem ao lado de cada filtro (`Emitida (1)`,
+  `Rejeitada (0)`, `Pendente (7406)`) quanto no resumo do painel de indicadores (`IndicadorNotasFiscais`
+  agora mostra "· 6 rejeitadas" em vermelho separado de "· 400 pendentes" em âmbar, em vez de um
+  "pendente" genérico que escondia quantas eram rejeições de verdade).
+- Filtros viram 4 links (`Todos`, `Emitida`, `Rejeitada`, `Pendente`) com a contagem entre parênteses,
+  cor por categoria (verde/vermelho/âmbar) igual ao badge da própria linha da tabela — clicar aplica
+  `?status=` na URL, mesmo padrão de link simples já usado (sem JS extra, funciona com paginação e
+  troca de empresa juntos).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

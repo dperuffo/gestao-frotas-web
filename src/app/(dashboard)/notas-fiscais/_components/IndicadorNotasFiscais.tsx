@@ -11,14 +11,19 @@ export function IndicadorNotasFiscais({
   total,
   comNota,
   semNota,
+  rejeitadas,
   percentual,
 }: {
   total: number;
   comNota: number;
   semNota: number;
+  rejeitadas: number;
   percentual: number;
 }) {
   const cor = corDoPercentual(percentual);
+  // Fase 27.100 — semNota agora se divide em "rejeitadas" (teve tentativa,
+  // foi recusada — ver Fase 27.99) e "pendentes" (nunca teve tentativa).
+  const pendentes = semNota - rejeitadas;
 
   return (
     <div className="mb-6 card p-4">
@@ -27,7 +32,8 @@ export function IndicadorNotasFiscais({
           <h3 className="text-sm font-semibold text-slate-900">Recolha de notas fiscais</h3>
           <p className="text-xs text-slate-500">
             Últimos 90 dias · {comNota} de {total} abastecimento{total === 1 ? "" : "s"} com NF-e vinculada
-            {semNota > 0 && <span className="text-amber-600"> · {semNota} pendente{semNota === 1 ? "" : "s"}</span>}
+            {rejeitadas > 0 && <span className="text-red-600"> · {rejeitadas} rejeitada{rejeitadas === 1 ? "" : "s"}</span>}
+            {pendentes > 0 && <span className="text-amber-600"> · {pendentes} pendente{pendentes === 1 ? "" : "s"}</span>}
           </p>
         </div>
         <span className="text-2xl font-bold" style={{ color: cor }}>

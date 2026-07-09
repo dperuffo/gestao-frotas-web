@@ -1901,7 +1901,10 @@ export interface Database {
       abastecimentos_com_status_nota_fiscal: {
         Args: {
           p_empresa_id: string;
-          p_apenas_pendentes?: boolean;
+          // Fase 27.100 — 'emitida' | 'rejeitada' | 'pendente' | null (todos).
+          // Antes era p_apenas_pendentes (boolean), que misturava
+          // "Rejeitada" e "Pendente" no mesmo filtro.
+          p_status: string | null;
           p_limit?: number;
           p_offset?: number;
         };
