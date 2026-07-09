@@ -4972,3 +4972,129 @@ limite); rodar de novo em seguida retornou 0 pros dois (idempotente dentro do me
 
 Sem alterações em código TypeScript — mudança só na função SQL (SECURITY DEFINER) no Supabase, mais
 negociações aceitas e preços cadastrados pro Posto Teste 2 (dados de teste, ver Fase 27.87).
+
+## Fase 27.89 — Cache analítico pra destravar as funções lentas de inteligência de rede
+
+Pedido do Daniel: "Precisamos verificar novamente a performance da aplicação. Em muitos pontos há
+lentidão." Ao apresentar o diagnóstico, ele escolheu atacar primeiro as funções analíticas lentas e
+depois (Fase 27.90) as políticas RLS duplicadas.
+
+**Diagnóstico (medido, não estimado):** `pg_stat_statements` apontou 8 RPCs usadas em
+`/inteligencia-rede`, `/postos` e `/relatorios` com tempo médio de segundos:
+`historico_precos_detalhado` (5,1s), `historico_precos_serie_uf_combustivel` (2,9s),
+`postos_gf_desvio_anp` (2,5s), `preco_medio_por_combustivel` (2,2s),
+`historico_precos_volatilidade_mensal` (2,1s), `historico_precos_evolucao_mensal` (2,0s),
+`postos_gf_precos_mapa` (1,9s), `preco_medio_por_combustivel_uf` (1,7s). `EXPLAIN ANALYZE` confirmou a
+causa: cada função varria `historico_precos` (14 mil linhas) e/ou `postos_gf` (~3 mil linhas) inteiras,
+sob RLS, de forma independente — e como a tela dispara as 8 em paralelo (`Promise.all`), elas competem
+pela mesma CPU do banco, o que explica os picos bem acima da média. Um `count(*)` trivial sem RLS
+nenhuma já levava ~318ms nesse banco, indicando que o compute do Supabase também é um fator (decisão de
+infra/plano, fora do alcance de mudanças de código).
+
+**Fix:** criado um cache analítico com 3 materialized views (`mv_historico_precos_raw`,
+`mv_historico_precos_join`, `mv_precos_recentes_por_posto`) que pré-computam os scans e joins
+compartilhados pelas 8 funções, atualizadas a cada 6h via `atualizar_cache_precos_postos()` agendada no
+`pg_cron`. As 8 funções foram reescritas como `SECURITY DEFINER` lendo dessas views (materialized view
+não suporta RLS), com um filtro de tenant replicado manualmente na cláusula `WHERE` — idêntico em
+lógica ao que a política RLS original fazia:
+
+```sql
+and (
+  (empresa_id)::text in (select unnest(empresas_do_usuario((select auth.jwt()) ->> 'email')))
+  or ((select auth.jwt()) ->> 'email') = 'd.peruffo@gmail.com'
+  or perfil_usuario_atual() = 'admin'
+)
+```
+
+**Validação de equivalência:** checksum MD5 do resultado (linhas ordenadas e concatenadas) batendo
+exatamente entre a versão antiga e a nova, testado em 4 contextos — sem filtro/admin, com
+`p_empresa_id` que retorna dados, com `p_empresa_id` que retorna vazio, e com JWT real de usuário não-
+admin — cobrindo inclusive o caso de borda das 32 linhas com `empresa_id` nulo em `historico_precos`.
+Isolamento por tenant reconferido com duas contas reais não-admin (uma viu só o que devia ver; a outra,
+sem vínculo com os clientes de teste, viu zero linhas).
+
+**Achado extra na checagem de segurança pós-fix:** o advisor do Supabase (`get_advisors`, tipo
+security) acusou `materialized_view_in_api` nas 3 views novas — como toda tabela nova no schema
+`public`, elas saíram com `SELECT` liberado por padrão pros roles `anon` e `authenticated`. Como
+materialized view não tem RLS, isso permitiria contornar completamente o filtro de tenant das funções e
+puxar os dados de TODOS os clientes direto via REST (`/rest/v1/mv_historico_precos_raw?select=*`), sem
+precisar de nenhuma permissão além da chave pública `anon`. Corrigido revogando todo acesso direto
+(`REVOKE ALL ... FROM anon, authenticated`) nas 3 views — as funções continuam enxergando os dados
+normalmente porque são `SECURITY DEFINER` (dono `postgres`), só o acesso direto à tabela é que fica
+bloqueado. Reconfirmado depois: acesso direto à view retorna "permission denied" pra um usuário
+autenticado comum, e a função correspondente continua retornando os dados certos.
+
+**Resultado medido (`EXPLAIN ANALYZE`, mesmo contexto antes/depois):**
+
+| Função | Antes | Depois | Ganho |
+|---|---|---|---|
+| `historico_precos_detalhado` | 5.130ms | 42,8ms | ~120x |
+| `historico_precos_serie_uf_combustivel` | 2.872ms | 26,3ms | ~109x |
+| `postos_gf_desvio_anp` | 2.530ms | 1.226ms | ~2x |
+| `preco_medio_por_combustivel` | 2.200ms | 264,6ms | ~8x |
+| `historico_precos_volatilidade_mensal` | 2.100ms | 29,3ms | ~72x |
+| `historico_precos_evolucao_mensal` | 2.027ms | 23,5ms | ~86x |
+| `postos_gf_precos_mapa` | 1.900ms | 38,5ms | ~49x |
+| `preco_medio_por_combustivel_uf` | 1.700ms | 24,3ms | ~70x |
+
+`postos_gf_desvio_anp` teve o menor ganho porque ainda recalcula, sem cache, o `DISTINCT ON` sobre
+`anp_precos_referencia` (referência de preço ANP) — pode virar uma 4ª materialized view numa fase
+futura se continuar pesando.
+
+Sem alterações em código TypeScript — mudança só em SQL (materialized views, função de refresh, 8
+funções analíticas reescritas, agendamento no `pg_cron`, e o hardening de grants) no Supabase.
+
+## Fase 27.90 — Consolidar políticas RLS duplicadas + índices (2ª metade da performance)
+
+Segunda parte do pedido "Precisamos verificar novamente a performance da aplicação" (Daniel escolheu
+"as duas, começando pelas analíticas" — Fase 27.89 foi a primeira metade).
+
+**Diagnóstico:** o advisor de performance do Supabase apontava 11 casos de "multiple permissive
+policies" nas tabelas `anp_postos`, `anp_precos_referencia`, `grupos_economicos_empresas`,
+`permissoes_perfil`, `profrotas_abastecimentos`, `security_logs`, `usuarios_app` e `usuarios_empresas`
+— em cada um, uma política `FOR ALL` de escrita (normalmente restrita a admin) tinha o mesmo `command`
+que uma política de leitura já existente, então o Postgres precisava avaliar as duas (unidas por OR) em
+toda consulta nessas tabelas, mesmo quando o resultado final nunca dependia da segunda política. Também
+7 índices duplicados (mesma definição, dois nomes) e 4 chaves estrangeiras sem índice em
+`planos_viagem` (`centro_custo_id`, `motorista_id`, `rota_salva_id`, `rotograma_id`).
+
+**Fix:** pra cada uma das 11 tabelas, a política `FOR ALL` foi separada em políticas dedicadas de
+INSERT/UPDATE/DELETE (sem SELECT), deixando o SELECT coberto por uma única política. Em
+`grupos_economicos_empresas`, `permissoes_perfil`, `usuarios_app` e `usuarios_empresas` isso foi
+possível porque a condição da política de escrita já estava contida (ou era idêntica) na condição da
+política de leitura — provado por análise lógica das expressões antes de aplicar, e reconfirmado com
+teste real depois. Em `profrotas_abastecimentos`, as duas condições de SELECT eram genuinamente
+diferentes (acesso por tenant vs. acesso por posto via CNPJ), então foram fundidas numa única política
+com OR explícito, em vez de manter duas políticas separadas.
+
+**Achado de segurança fora do escopo original, corrigido com autorização do Daniel:** ao mexer em
+`security_logs`, a política `admin_select_seclogs` — apesar do nome — tinha `USING (true)`, sem
+NENHUMA checagem de admin, valendo pra `anon`. Testado ao vivo: uma sessão anônima (sem login, só a
+chave pública) conseguia ler as 152 linhas da tabela, incluindo email e IP de quem gerou cada evento de
+segurança. Não havia nenhuma tela no app usando essa tabela (grep no frontend não achou nada), então não
+tinha risco de quebrar funcionalidade. Perguntado, Daniel escolheu "Restringir a admin" — a política foi
+reescrita pra só permitir SELECT a admin/superusuário. De quebra, a política `security_logs_tenant_all`
+(que também duplicava SELECT, dando acesso a qualquer usuário do MESMO tenant do log) foi limitada a
+UPDATE/DELETE, e a duplicação de INSERT com `backend_insert_seclogs` (que já permite gravar sem
+restrição, necessário pra logar até tentativa de login anônima) foi eliminada.
+
+**Validação de equivalência de acesso:** antes de mexer, capturado um checksum MD5 (linhas ordenadas)
+do que cada uma das 8 tabelas retorna pra 4 contextos reais — admin (`d.peruffo@gmail.com`), usuário
+comum (`daniel.peruffo.app@gmail.com`, perfil gestor_frota), usuário posto (`posto.teste@fni.test`) e
+anônimo (role `anon`, sem JWT). Depois de aplicar as 4 migrações, os 4 contextos foram recapturados: nas
+7 tabelas não relacionadas à correção de `security_logs`, os checksums bateram 100% em TODOS os
+contextos — nenhuma linha a mais, a menos, ou diferente ficou visível pra ninguém. Em `security_logs`,
+o admin continuou vendo as 152 linhas normalmente; o usuário comum e o anônimo, que antes viam as 152
+linhas (bug), passaram a ver 0 — exatamente a mudança pedida.
+
+**Índices:** removidos os 7 duplicados (`avaliacoes_empresa_id_idx`, `avaliacoes_user_email_idx`,
+`idx_postos_gf_empresa`, `idx_pfa_cnpj`, `idx_pfa_pvcnpj`, `idx_stripe_events_event_id`,
+`idx_tele_abast_empresa` — confirmado antes que nenhum deles era o índice por trás de uma constraint
+`UNIQUE`, só `stripe_events_stripe_event_id_key` era, e essa ficou). Criados os 4 índices de FK que
+faltavam em `planos_viagem`.
+
+Rodado o advisor de performance de novo depois: os 11 casos de "multiple permissive policies"
+zeraram, os 7 duplicados sumiram, as 4 FKs sem índice sumiram. Rodado o advisor de segurança também:
+nenhum alerta novo, e o `admin_select_seclogs` corrigido não aparece mais como problema.
+
+Sem alterações em código TypeScript — mudança só em políticas RLS e índices no Supabase.
