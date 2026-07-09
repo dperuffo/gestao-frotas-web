@@ -38,7 +38,7 @@ export default async function EditarClientePage({
     supabase
       .from("negociacoes_postos")
       .select(
-        "id, empresa_posto_id, posto_nome, status, combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario, ciclo_faturamento_dias, prazo_vencimento_dias"
+        "id, empresa_posto_id, posto_nome, status, combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario"
       )
       .eq("empresa_cliente_id", id)
       .order("atualizado_em", { ascending: false }),
@@ -69,6 +69,9 @@ export default async function EditarClientePage({
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Cliente — {cliente.nome}</h1>
       <ClienteForm cliente={cliente} souAdmin={souAdmin} />
       <CicloAbastecimentoPagamento
+        empresaClienteId={id}
+        cicloFaturamentoDias={cliente.ciclo_faturamento_dias}
+        prazoVencimentoDias={cliente.prazo_vencimento_dias}
         negociacoes={negociacoes}
         faturas={faturas}
         podeEditarCiclo={souAdmin}

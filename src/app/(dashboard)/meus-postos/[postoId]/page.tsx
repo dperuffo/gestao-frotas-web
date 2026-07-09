@@ -35,11 +35,11 @@ export default async function MeuPostoDetalhePage({
     return <div className="card p-6 text-sm text-slate-600">Nenhuma empresa vinculada ao seu usuário.</div>;
   }
 
-  const [{ data: negociacoesData }, { data: faturasData }] = await Promise.all([
+  const [{ data: negociacoesData }, { data: faturasData }, { data: clienteEmpresa }] = await Promise.all([
     supabase
       .from("negociacoes_postos")
       .select(
-        "id, empresa_posto_id, posto_nome, status, combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario, ciclo_faturamento_dias, prazo_vencimento_dias"
+        "id, empresa_posto_id, posto_nome, status, combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario"
       )
       .eq("empresa_cliente_id", empresaSelecionada)
       .eq("empresa_posto_id", postoId)
@@ -51,6 +51,13 @@ export default async function MeuPostoDetalhePage({
       .eq("empresa_posto_id", postoId)
       .order("vencimento", { ascending: false })
       .limit(200),
+    // Fase 27.108 — ciclo/prazo agora é atributo do cliente (empresas), não
+    // mais de cada negociação.
+    supabase
+      .from("empresas")
+      .select("ciclo_faturamento_dias, prazo_vencimento_dias")
+      .eq("id", empresaSelecionada)
+      .maybeSingle(),
   ]);
 
   const negociacoesBrutas = negociacoesData ?? [];
@@ -77,6 +84,9 @@ export default async function MeuPostoDetalhePage({
       <h1 className="mt-3 mb-6 text-xl font-semibold text-slate-900">{postoNome}</h1>
 
       <CicloAbastecimentoPagamento
+        empresaClienteId={empresaSelecionada}
+        cicloFaturamentoDias={clienteEmpresa?.ciclo_faturamento_dias ?? 30}
+        prazoVencimentoDias={clienteEmpresa?.prazo_vencimento_dias ?? 30}
         negociacoes={negociacoes}
         faturas={faturas}
         ciclosAbertos={ciclosAbertos}

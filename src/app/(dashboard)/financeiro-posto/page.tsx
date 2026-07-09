@@ -147,18 +147,26 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   const { data: negociacoesParaAgrupar } = empresaSelecionada
     ? await supabase
         .from("negociacoes_postos")
-        .select("empresa_cliente_id, cliente_nome, ciclo_faturamento_dias, prazo_vencimento_dias")
+        .select("empresa_cliente_id, cliente_nome")
         .eq("empresa_posto_id", empresaSelecionada)
         .eq("status", "aceita")
     : { data: null };
+
+  // Fase 27.108 — ciclo/prazo agora é atributo do CLIENTE (empresas), não
+  // mais de cada negociação — busca à parte, pros clientes envolvidos.
+  const idsClientes = [...new Set((negociacoesParaAgrupar ?? []).map((n) => n.empresa_cliente_id))];
+  const { data: clientesCiclo } = idsClientes.length
+    ? await supabase.from("empresas").select("id, ciclo_faturamento_dias, prazo_vencimento_dias").in("id", idsClientes)
+    : { data: [] };
+  const cicloPorCliente = new Map((clientesCiclo ?? []).map((c) => [c.id, c]));
 
   const ciclosAbertosPorCliente = new Map(ciclosAbertosDoPosto.map((c) => [c.empresa_cliente_id, c]));
   const linhasPorCliente = agruparCiclosPorContraparte({
     negociacoes: (negociacoesParaAgrupar ?? []).map((n) => ({
       contraparteId: n.empresa_cliente_id,
       contraparteNome: n.cliente_nome,
-      cicloFaturamentoDias: n.ciclo_faturamento_dias,
-      prazoVencimentoDias: n.prazo_vencimento_dias,
+      cicloFaturamentoDias: cicloPorCliente.get(n.empresa_cliente_id)?.ciclo_faturamento_dias ?? 30,
+      prazoVencimentoDias: cicloPorCliente.get(n.empresa_cliente_id)?.prazo_vencimento_dias ?? 30,
     })),
     faturas: faturas.map((f) => ({
       contraparteId: f.empresa_cliente_id,

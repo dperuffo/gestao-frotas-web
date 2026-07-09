@@ -65,6 +65,13 @@ export interface Database {
           // Fase 27.50 — "Frota" (cliente de gestão de frotas) ou "Revenda"
           // (posto revendedor com conta própria, feature de Negociação).
           segmento: string;
+          // Fase 27.108 — ciclo de faturamento + prazo de vencimento do
+          // CLIENTE (segmento Frota), único pra qualquer posto/rede com quem
+          // negocie. Antes vivia em negociacoes_postos (1 valor por relação
+          // posto+cliente) — Daniel corrigiu: "o ciclo é definido para o
+          // cliente e nao para a negociacao entre cliente e posto".
+          ciclo_faturamento_dias: number;
+          prazo_vencimento_dias: number;
           created_at: string | null;
           updated_at: string | null;
         };

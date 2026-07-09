@@ -6,18 +6,24 @@ import { atualizarCicloPagamentoAcao } from "@/app/(dashboard)/negociacoes/actio
 // Fase 27.80 — pedido do Daniel: o prazo de abastecimento+pagamento (ciclo
 // de faturamento + prazo de vencimento, ex: "7+7" = 7 dias de abastecimentos
 // acumulados + 7 dias pro posto emitir/o cliente pagar a fatura) é
-// parametrizável por relação cliente+posto, não por negociação — e pode ser
+// parametrizável, não faz parte do fluxo de negociação — e pode ser
 // alterado a qualquer momento, valendo a partir do PRÓXIMO ciclo (faturas já
 // geradas guardam seu próprio período/vencimento, nunca são retroativamente
 // alteradas). Só o admin (FNI) edita — verificação real fica no server
 // action/lib (atualizarCicloPagamento), esta tela só decide se MOSTRA o
 // formulário (prop podeEditarCiclo, true só em /clientes/[id], visão admin).
+//
+// Fase 27.108 — Daniel corrigiu: "o ciclo é definido para o cliente e nao
+// para a negociacao entre cliente e posto" — prop virou `empresaClienteId`
+// (1 valor por cliente, vale pra qualquer posto/rede), não mais
+// `negociacaoId`. Reflexo direto: CicloAbastecimentoPagamento.tsx agora
+// renderiza este form UMA vez por cliente, não uma vez por posto.
 export function FormularioCicloPagamento({
-  negociacaoId,
+  empresaClienteId,
   cicloAtual,
   prazoAtual,
 }: {
-  negociacaoId: string;
+  empresaClienteId: string;
   cicloAtual: number;
   prazoAtual: number;
 }) {
@@ -56,7 +62,7 @@ export function FormularioCicloPagamento({
         setOk(false);
         const formData = new FormData(e.currentTarget);
         startTransition(async () => {
-          const resultado = await atualizarCicloPagamentoAcao(negociacaoId, undefined as never, formData);
+          const resultado = await atualizarCicloPagamentoAcao(empresaClienteId, undefined as never, formData);
           if (resultado?.erro) {
             setErro(resultado.erro);
             return;

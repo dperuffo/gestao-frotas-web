@@ -22,11 +22,6 @@ export type NegociacaoDoCliente = {
   vigencia_fim: string | null;
   volume_minimo_mensal: number | null;
   preco_unitario: number | null;
-  // Fase 27.80 — ciclo de faturamento + prazo de vencimento: parâmetro
-  // administrativo por relação cliente+posto (não termo negociado), editável
-  // só pelo admin via FormularioCicloPagamento.
-  ciclo_faturamento_dias: number;
-  prazo_vencimento_dias: number;
 };
 
 export type FaturaDoCliente = {
@@ -47,6 +42,9 @@ export type FaturaDoCliente = {
 // olhando o cliente de fora (papel da FNI: acompanhar a saúde financeira de
 // cada cliente perante os postos que ele abastece).
 export function CicloAbastecimentoPagamento({
+  empresaClienteId,
+  cicloFaturamentoDias,
+  prazoVencimentoDias,
   negociacoes,
   faturas,
   podeEditarCiclo = false,
@@ -54,6 +52,11 @@ export function CicloAbastecimentoPagamento({
   rotuloCiclos = "cliente",
   podeGerenciarFaturas = false,
 }: {
+  // Fase 27.108 — ciclo/prazo agora é atributo do CLIENTE (empresas), não
+  // mais de cada negociação — 1 valor só, vale pra qualquer posto/rede.
+  empresaClienteId: string;
+  cicloFaturamentoDias: number;
+  prazoVencimentoDias: number;
   negociacoes: NegociacaoDoCliente[];
   faturas: FaturaDoCliente[];
   // Fase 27.80 — só a visão admin (/clientes/[id]) passa true; a visão do
@@ -105,11 +108,9 @@ export function CicloAbastecimentoPagamento({
   // campo para configuração"): o controle de edição (Fase 27.80) só existia
   // como um link de texto pequeno dentro de uma coluna no MEIO de uma
   // tabela larga com scroll horizontal — fácil de nunca rolar até lá.
-  // Agora ganha uma seção própria, sempre visível sem precisar rolar,
-  // logo no topo (só aparece pra quem pode editar e só lista negociações
-  // já aceitas — não dá pra configurar ciclo/prazo de uma negociação ainda
-  // pendente).
-  const negociacoesAceitas = negociacoes.filter((n) => n.status === "aceita");
+  // Agora ganha uma seção própria, sempre visível sem precisar rolar, logo
+  // no topo (só aparece pra quem pode editar). Fase 27.108: virou 1 único
+  // formulário por cliente (não mais 1 por negociação/posto).
 
   return (
     <div className="mt-8">
@@ -143,29 +144,20 @@ export function CicloAbastecimentoPagamento({
 
       <SecaoCiclosAbertos ciclos={ciclosAbertos} rotulo={rotuloCiclos} />
 
-      {podeEditarCiclo && negociacoesAceitas.length > 0 && (
+      {podeEditarCiclo && (
         <div className="mb-6 card p-4">
           <h3 className="text-sm font-semibold text-slate-900">Ciclo de faturamento e prazo de vencimento</h3>
           <p className="mb-4 mt-1 text-xs text-slate-500">
-            Parâmetro administrativo (FNI) por posto: de quantos em quantos dias o posto fecha uma fatura pra
-            este cliente, e quantos dias depois ela vence (ex: 15+15 = 15 dias de abastecimentos + 15 dias até
-            o vencimento). Ajustar aqui vale a partir do PRÓXIMO ciclo — faturas já geradas não mudam.
+            Parâmetro administrativo (FNI) do CLIENTE: de quantos em quantos dias fecha uma fatura, e quantos
+            dias depois ela vence (ex: 15+15 = 15 dias de abastecimentos + 15 dias até o vencimento). Vale pra
+            qualquer posto ou rede com quem este cliente negocie — um único ritmo de cobrança, não por posto.
+            Ajustar aqui vale a partir do PRÓXIMO ciclo — faturas já geradas não mudam.
           </p>
-          <div className="space-y-2">
-            {negociacoesAceitas.map((n) => (
-              <div
-                key={n.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2"
-              >
-                <span className="text-sm font-medium text-slate-700">{n.posto_nome ?? "Posto"}</span>
-                <FormularioCicloPagamento
-                  negociacaoId={n.id}
-                  cicloAtual={n.ciclo_faturamento_dias}
-                  prazoAtual={n.prazo_vencimento_dias}
-                />
-              </div>
-            ))}
-          </div>
+          <FormularioCicloPagamento
+            empresaClienteId={empresaClienteId}
+            cicloAtual={cicloFaturamentoDias}
+            prazoAtual={prazoVencimentoDias}
+          />
         </div>
       )}
 
@@ -205,7 +197,7 @@ export function CicloAbastecimentoPagamento({
                     : "—"}
                 </td>
                 <td className="px-4 py-3 text-slate-500">
-                  {n.ciclo_faturamento_dias}+{n.prazo_vencimento_dias} dias
+                  {cicloFaturamentoDias}+{prazoVencimentoDias} dias
                 </td>
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">

@@ -5922,3 +5922,57 @@ pro mesmo par antes de gravar um novo aceite — um `UPDATE` cego só na própri
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos). Confirmado no banco: `select ... group by
 empresa_posto_id, empresa_cliente_id having count(*) > 1` não retorna mais nenhum par duplicado.
+
+## Fase 27.108 — Ciclo/prazo de faturamento é do CLIENTE, não da negociação
+
+Pedido do Daniel, imediatamente depois da Fase 27.107: "ciclos iguais as faturas. lembrando: o ciclo é
+definido para o cliente e nao para a negociacao entre cliente e posto". Confirmei o achado real direto no
+banco: os 2 clientes que negociam com mais de um posto tinham valores DIFERENTES de ciclo/prazo por posto —
+"Frotas & Frotas Ltda" com 7+7 num posto e 15+15 noutro, "Transportes de Cargas Testes Ltda" com 15+10 num
+e 30+15 noutro (os mesmos números do exemplo do Daniel). Perguntei via `AskUserQuestion` se o valor deveria
+ser único por cliente (valendo pra qualquer posto/rede) ou único por cliente+rede (podendo variar entre
+redes/postos avulsos diferentes) — resposta: **um valor único por cliente, sempre.**
+
+Daniel também comentou, de passagem, que preços negociados por combustível deveriam seguir a mesma lógica
+quando o posto pertence a uma Rede — ponto real, mas fora do escopo desta fase (vive em
+`negociacoes_postos_rodadas.preco_unitario`, parte do fluxo de propostas/contrapropostas, não do parâmetro
+administrativo ciclo/prazo) — fica registrado como ideia pra uma fase própria depois.
+
+### Mudança de modelo
+
+`ciclo_faturamento_dias`/`prazo_vencimento_dias` saíram de `negociacoes_postos` (1 valor por relação
+posto+cliente — já tinha sido corrigido de "por negociação/rodada" pra "por relação" na Fase 27.80, mas
+ainda granular demais) e foram pra `empresas` (1 valor por CLIENTE, coluna só relevante pra
+`segmento='Frota'`, default 30/30). As colunas antigas em `negociacoes_postos` foram deixadas no lugar
+(evitei somar um `DROP COLUMN` a uma mudança já grande) mas **não são mais lidas nem escritas por nenhum
+código** — só um resquício inerte, candidato a limpeza numa fase futura de manutenção.
+
+- Migração `fase_27_108_ciclo_prazo_por_cliente`: `alter table empresas add column ciclo_faturamento_dias
+  integer not null default 30, add column prazo_vencimento_dias integer not null default 30`, seguida de um
+  `UPDATE` que semeia o valor de cada cliente a partir da negociação aceita mais recentemente atualizada
+  (critério neutro pra resolver os casos com valores conflitantes entre postos — dado de teste, ajustável
+  depois pelo admin).
+- 3 RPCs (`ciclos_abertos_postos()`, `gerar_faturas_postos_robo()`, `abastecimentos_do_ciclo_aberto()`)
+  passaram a ler `ciclo`/`prazo` via `join empresas ec on ec.id = np.empresa_cliente_id` em vez de
+  `np.ciclo_faturamento_dias`/`np.prazo_vencimento_dias` — mesma assinatura e retorno em todas, `CREATE OR
+  REPLACE` seguro, sem `DROP`.
+- `atualizarCicloPagamento()` (`src/lib/negociacoesPostos.ts`) trocou o parâmetro `negociacaoId` por
+  `empresaClienteId`, e passou a fazer `UPDATE empresas` (checando `segmento='Frota'`) em vez de `UPDATE
+  negociacoes_postos`.
+- `FormularioCicloPagamento.tsx`/`atualizarCicloPagamentoAcao` seguiram a mesma troca de prop/parâmetro.
+- `CicloAbastecimentoPagamento.tsx` (resumo consolidado do cliente, Fase 27.71) ganhou 3 props novas
+  (`empresaClienteId`, `cicloFaturamentoDias`, `prazoVencimentoDias`) e passou a renderizar **1 único
+  formulário de edição por cliente**, não mais 1 por posto — a própria UI antiga (um form por linha de
+  negociação aceita) já expunha visualmente a inconsistência que motivou esta fase.
+- As 5 telas que liam ciclo/prazo (`/clientes/[id]`, `/clientes-posto/[clienteId]`, `/financeiro`,
+  `/financeiro-posto`, `/meus-postos/[postoId]`) passaram a buscar o valor em `empresas` (do cliente
+  específico, ou de todos os clientes envolvidos numa consulta agrupada, conforme o caso) em vez de
+  `negociacoes_postos`.
+- `database.types.ts`: `empresas.Row` ganhou as 2 colunas novas.
+
+**Testado com dados reais:** simulei `ciclos_abertos_postos()` pra "Frotas & Frotas Ltda" antes e depois —
+os dois postos (Posto Teste Ltda e Posto Teste 2 Ltda) agora devolvem o mesmo `periodo_fim_previsto`
+(31/07) e o mesmo `vencimento_previsto` (15/08), refletindo o ciclo único (15+15) do cliente, mesmo com
+`periodo_inicio` diferente por posto (cada um segue de onde sua própria fatura mais recente parou).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

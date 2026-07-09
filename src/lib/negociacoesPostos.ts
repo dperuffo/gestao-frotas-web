@@ -80,11 +80,20 @@ export function validarDadosRodada(d: Partial<DadosRodada>): string | null {
 // Fase 27.80 — achado real (Daniel corrigiu o entendimento da Fase 27.74):
 // ciclo_faturamento_dias/prazo_vencimento_dias NÃO são termo comercial
 // negociado rodada a rodada (como preço/volume/vigência) — são parâmetro
-// administrativo de cobrança por relação cliente+posto, ajustado
-// diretamente pela FNI (admin), independente do fluxo de propostas/
-// contrapropostas. Por isso saíram de DadosRodada/validarDadosRodada e
-// ganharam este validador e função próprios, que mexem só no cabeçalho
-// (negociacoes_postos), nunca em negociacoes_postos_rodadas.
+// administrativo de cobrança, ajustado diretamente pela FNI (admin),
+// independente do fluxo de propostas/contrapropostas.
+//
+// Fase 27.108 — Daniel corrigiu de novo: "ciclos iguais as faturas.
+// lembrando: o ciclo é definido para o cliente e nao para a negociacao
+// entre cliente e posto". Achado real que motivou a correção: o mesmo
+// cliente (Frotas & Frotas Ltda) tinha ciclo 7+7 com um posto e 15+15 com
+// outro — a tela de "ciclo em andamento" mostrava períodos/vencimentos
+// diferentes pro mesmo cliente, o que não faz sentido pro negócio (um
+// cliente fecha com a FNI um único ritmo de cobrança, vale pra qualquer
+// posto ou rede com quem ele abasteça). O campo saiu de
+// `negociacoes_postos` (1 valor por relação posto+cliente) e foi pra
+// `empresas` (1 valor por cliente, coluna só relevante pra segmento
+// "Frota") — ver migração `fase_27_108_ciclo_prazo_por_cliente`.
 export function validarCicloPagamento(d: {
   cicloFaturamentoDias: number;
   prazoVencimentoDias: number;
@@ -98,18 +107,18 @@ export function validarCicloPagamento(d: {
   return null;
 }
 
-// Ajusta o ciclo de faturamento/prazo de vencimento de uma relação
-// cliente+posto já aceita. Só o admin (FNI) pode chamar — verificação
-// própria aqui dentro (não dá pra confiar só na RLS de negociacoes_postos:
-// a policy `negociacoes_postos_tenant_all` libera UPDATE também pros dois
-// lados do tenant, não só admin). Não é retroativo por natureza: o robô
+// Ajusta o ciclo de faturamento/prazo de vencimento de um CLIENTE — vale
+// pra qualquer posto/rede com quem ele negocie (Fase 27.108). Só o admin
+// (FNI) pode chamar — verificação própria aqui dentro (não dá pra confiar
+// só na RLS de `empresas`, que libera UPDATE também pros membros da
+// própria empresa). Não é retroativo por natureza: o robô
 // `gerar_faturas_postos_robo()` só lê este valor pra calcular o PRÓXIMO
 // período a partir de onde parou — faturas já geradas guardam seu próprio
 // periodo_inicio/periodo_fim/vencimento, imutáveis.
 export async function atualizarCicloPagamento(
   supabase: ClienteSupabase,
   params: {
-    negociacaoId: string;
+    empresaClienteId: string;
     cicloFaturamentoDias: number;
     prazoVencimentoDias: number;
     atualizadoPor: string | null;
@@ -130,28 +139,26 @@ export async function atualizarCicloPagamento(
     return { erro: "Só o time administrativo (FNI) pode ajustar o ciclo de faturamento e o prazo de vencimento." };
   }
 
-  const { data: negociacao, error: erroBusca } = await supabase
-    .from("negociacoes_postos")
-    .select("id, status, empresa_cliente_id")
-    .eq("id", params.negociacaoId)
+  const { data: cliente, error: erroBusca } = await supabase
+    .from("empresas")
+    .select("id, segmento")
+    .eq("id", params.empresaClienteId)
     .maybeSingle();
-  if (erroBusca || !negociacao) return { erro: "Negociação não encontrada." };
-  if (negociacao.status !== "aceita") {
-    return { erro: "Só é possível ajustar o ciclo/prazo de uma relação cliente+posto já aceita." };
+  if (erroBusca || !cliente) return { erro: "Cliente não encontrado." };
+  if (cliente.segmento !== "Frota") {
+    return { erro: "Ciclo/prazo de faturamento só se aplica a clientes (segmento Frota)." };
   }
 
   const { error } = await supabase
-    .from("negociacoes_postos")
+    .from("empresas")
     .update({
       ciclo_faturamento_dias: params.cicloFaturamentoDias,
       prazo_vencimento_dias: params.prazoVencimentoDias,
-      atualizado_em: new Date().toISOString(),
-      atualizado_por: params.atualizadoPor,
     })
-    .eq("id", params.negociacaoId);
+    .eq("id", params.empresaClienteId);
   if (error) return { erro: error.message };
 
-  return { ok: true, empresaClienteId: negociacao.empresa_cliente_id };
+  return { ok: true, empresaClienteId: params.empresaClienteId };
 }
 
 // Cria a negociação (cabeçalho + rodada 1). origem indica quem começou o

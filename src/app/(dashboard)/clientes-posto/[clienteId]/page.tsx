@@ -46,11 +46,11 @@ export default async function ClientePostoDetalhePage({
 
   if (!cliente) notFound();
 
-  const [{ data: negociacoesData }, { data: faturasData }] = await Promise.all([
+  const [{ data: negociacoesData }, { data: faturasData }, { data: clienteEmpresa }] = await Promise.all([
     supabase
       .from("negociacoes_postos")
       .select(
-        "id, empresa_posto_id, posto_nome, status, combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario, ciclo_faturamento_dias, prazo_vencimento_dias"
+        "id, empresa_posto_id, posto_nome, status, combustivel, vigencia_inicio, vigencia_fim, volume_minimo_mensal, preco_unitario"
       )
       .eq("empresa_posto_id", empresaSelecionada)
       .eq("empresa_cliente_id", clienteId)
@@ -62,6 +62,10 @@ export default async function ClientePostoDetalhePage({
       .eq("empresa_cliente_id", clienteId)
       .order("vencimento", { ascending: false })
       .limit(200),
+    // Fase 27.108 — ciclo/prazo agora é atributo do cliente (empresas), não
+    // mais de cada negociação; `clientes_do_posto` (RPC acima) não devolve
+    // esses campos, então busca à parte, direto na empresa.
+    supabase.from("empresas").select("ciclo_faturamento_dias, prazo_vencimento_dias").eq("id", clienteId).maybeSingle(),
   ]);
 
   const negociacoesBrutas = negociacoesData ?? [];
@@ -99,6 +103,9 @@ export default async function ClientePostoDetalhePage({
       </div>
 
       <CicloAbastecimentoPagamento
+        empresaClienteId={clienteId}
+        cicloFaturamentoDias={clienteEmpresa?.ciclo_faturamento_dias ?? 30}
+        prazoVencimentoDias={clienteEmpresa?.prazo_vencimento_dias ?? 30}
         negociacoes={negociacoes}
         faturas={faturas}
         ciclosAbertos={ciclosAbertos}

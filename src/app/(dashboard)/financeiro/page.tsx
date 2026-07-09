@@ -67,14 +67,17 @@ export default async function FinanceiroPage({
     empresa_posto_id: string;
     posto_nome: string | null;
     status: string;
-    ciclo_faturamento_dias: number;
-    prazo_vencimento_dias: number;
   }[] = [];
+  // Fase 27.108 — ciclo/prazo agora é atributo do CLIENTE (empresas), único
+  // pra qualquer posto com quem ele negocie — não varia mais por linha de
+  // negociacoes_postos.
+  let cicloFaturamentoDiasCliente = 30;
+  let prazoVencimentoDiasCliente = 30;
   if (empresaSelecionada) {
-    const [{ data: negociacoesData }, { data: faturasData }] = await Promise.all([
+    const [{ data: negociacoesData }, { data: faturasData }, { data: clienteEmpresa }] = await Promise.all([
       supabase
         .from("negociacoes_postos")
-        .select("empresa_posto_id, posto_nome, status, ciclo_faturamento_dias, prazo_vencimento_dias")
+        .select("empresa_posto_id, posto_nome, status")
         .eq("empresa_cliente_id", empresaSelecionada),
       supabase
         .from("faturas_postos")
@@ -82,6 +85,11 @@ export default async function FinanceiroPage({
         .eq("empresa_cliente_id", empresaSelecionada)
         .order("vencimento", { ascending: false })
         .limit(200),
+      supabase
+        .from("empresas")
+        .select("ciclo_faturamento_dias, prazo_vencimento_dias")
+        .eq("id", empresaSelecionada)
+        .maybeSingle(),
     ]);
     negociacoesDoCliente = (negociacoesData ?? []).filter(
       (n): n is typeof n & { empresa_posto_id: string } => n.empresa_posto_id !== null
@@ -91,6 +99,10 @@ export default async function FinanceiroPage({
       ...f,
       posto_nome: nomePorPostoId.get(f.empresa_posto_id) ?? null,
     }));
+    if (clienteEmpresa) {
+      cicloFaturamentoDiasCliente = clienteEmpresa.ciclo_faturamento_dias;
+      prazoVencimentoDiasCliente = clienteEmpresa.prazo_vencimento_dias;
+    }
   }
 
   // Fase 27.84 — pedido do Daniel: o ciclo ATUAL (ainda não fechado pelo
@@ -107,8 +119,8 @@ export default async function FinanceiroPage({
       .map((n) => ({
         contraparteId: n.empresa_posto_id,
         contraparteNome: n.posto_nome,
-        cicloFaturamentoDias: n.ciclo_faturamento_dias,
-        prazoVencimentoDias: n.prazo_vencimento_dias,
+        cicloFaturamentoDias: cicloFaturamentoDiasCliente,
+        prazoVencimentoDias: prazoVencimentoDiasCliente,
       })),
     faturas: faturasCobranca.map((f) => ({
       contraparteId: f.empresa_posto_id,

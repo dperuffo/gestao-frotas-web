@@ -188,12 +188,16 @@ export async function contarNegociacoesPendentesAcao(): Promise<number> {
 }
 
 // Fase 27.80 — pedido do Daniel: prazo de abastecimento+pagamento (ciclo de
-// faturamento + prazo de vencimento) é parametrizável por relação
-// cliente+posto, ajustado pelo admin (FNI), e não faz parte do fluxo de
-// negociação/rodadas. Usada na tela /clientes/[id] (admin), uma linha por
-// negociação já aceita.
+// faturamento + prazo de vencimento) é parametrizável, ajustado pelo admin
+// (FNI), e não faz parte do fluxo de negociação/rodadas.
+//
+// Fase 27.108 — Daniel corrigiu: "o ciclo é definido para o cliente e nao
+// para a negociacao entre cliente e posto" — o parâmetro passou a ser
+// `empresaClienteId` (1 valor por cliente, vale pra qualquer posto/rede com
+// quem ele negocie), não mais `negociacaoId`. Usada na tela /clientes/[id]
+// (admin), agora 1 único formulário por cliente (não mais 1 por posto).
 export async function atualizarCicloPagamentoAcao(
-  negociacaoId: string,
+  empresaClienteId: string,
   _prevState: EstadoFormulario,
   formData: FormData
 ): Promise<EstadoFormulario> {
@@ -203,7 +207,7 @@ export async function atualizarCicloPagamentoAcao(
   } = await supabase.auth.getUser();
 
   const resultado = await atualizarCicloPagamento(supabase, {
-    negociacaoId,
+    empresaClienteId,
     cicloFaturamentoDias: Number(formData.get("ciclo_faturamento_dias")),
     prazoVencimentoDias: Number(formData.get("prazo_vencimento_dias")),
     atualizadoPor: user?.email ?? null,
