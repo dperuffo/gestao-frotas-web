@@ -5460,3 +5460,37 @@ Validado com `npx tsc --noEmit` e `npx eslint` (limpos). Não muda nenhuma RPC/r
 só orquestração (loop no client) e uma consulta extra de leitura (resumo do abastecimento), então os 9
 XMLs de exemplo da Fase 27.96 continuam servindo pra testar cada cenário, agora processados em lote de
 uma vez em vez de um por um.
+
+## Fase 27.98 — Correção: seleção de pasta não funcionava (`webkitdirectory` não confiável)
+
+Daniel testou a Fase 27.97 e reportou, com print de tela: "Nao esta permitindo escolher a pasta,
+somente arquivo por arquivo" — o botão "Selecionar pasta" abria o diálogo NATIVO do sistema, mas em
+modo de arquivo comum (dava pra entrar na pasta e ver os XMLs lá dentro, mas não pra "escolher a pasta
+inteira" com um clique — só arquivo por arquivo, exatamente o problema que a Fase 27.97 devia ter
+resolvido).
+
+**Causa:** a implementação usava o atributo não-padrão `webkitdirectory` num `<input type="file">`
+pra forçar um seletor de pasta. Esse atributo tem suporte bem inconsistente entre
+navegadores/ambientes — quando não suportado, o navegador simplesmente ignora o atributo e volta pro
+comportamento de seletor de arquivo comum, sem avisar nada (foi exatamente o que aconteceu no ambiente
+do Daniel).
+
+**Correção — trocado pra ARRASTAR a pasta (drag-and-drop), mecanismo bem mais confiável entre
+navegadores:**
+- `UploadNotaFiscal.tsx`: a área de seleção agora é uma zona de arrastar-e-soltar (borda tracejada,
+  destaca quando um arquivo está sendo arrastado sobre ela). Arrastar a pasta inteira do
+  Finder/Explorer usa a **File System Entry API**
+  (`DataTransferItem.webkitGetAsEntry()` → `FileSystemDirectoryEntry.createReader().readEntries()`,
+  lida recursivamente) pra ler todos os XMLs de dentro dela — sem depender de nenhum seletor nativo do
+  sistema operacional.
+- Clicar na área (em vez de arrastar) ainda abre o seletor de arquivo comum (`multiple`, sem
+  `webkitdirectory`) como alternativa — com uma dica explícita na tela ("dentro da pasta, use Ctrl+A ou
+  Cmd+A pra marcar todos de uma vez"), já que esse seletor sempre funciona pra multi-seleção dentro de
+  uma pasta, só não força a pasta inteira de um clique só.
+- Achado técnico ao implementar: os itens de um evento de `drop` (`DataTransferItem`) só são válidos
+  **sincronamente**, dentro do próprio handler — `webkitGetAsEntry()` precisa ser chamado ANTES de
+  qualquer `await`; só a leitura dos arquivos a partir da entrada já obtida (`FileSystemEntry`) pode
+  ser assíncrona. O código respeita essa ordem (extrai todas as entradas primeiro, só depois lê os
+  arquivos).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

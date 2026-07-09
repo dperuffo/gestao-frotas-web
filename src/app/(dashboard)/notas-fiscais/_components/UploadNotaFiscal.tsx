@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { enviarNotaFiscalAcao, type ResultadoEnvioNotaFiscal } from "../actions";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -12,18 +12,52 @@ import { formatarDataBr } from "@/lib/utils";
 // Fase 27.97 — correção pedida pelo Daniel: em vez de escolher 1 XML por
 // vez, o posto escolhe a PASTA inteira onde estão os XMLs (ou vários
 // arquivos de uma vez) e a aplicação processa todos, mostrando pra cada um
-// o abastecimento que foi impactado (ou o motivo da pendência), sem
-// precisar entrar em cada NF-e uma por uma pra descobrir o que aconteceu.
-// "Selecionar pasta" usa o atributo não-padrão `webkitdirectory` (suportado
-// por Chrome/Edge/Safari; navegadores sem suporte simplesmente abrem o
-// seletor de arquivo normal) — como o TypeScript/JSX não reconhece esse
-// atributo, ele é definido via ref + setAttribute (evita `any`/cast).
+// o abastecimento que foi impactado (ou o motivo da pendência).
+//
+// Fase 27.98 — correção: a 1ª versão tentava abrir um seletor de PASTA via
+// `webkitdirectory` num `<input type="file">`. Daniel testou e o diálogo
+// nativo abriu como um seletor de ARQUIVO comum (deixa entrar na pasta, mas
+// não deixa "escolher a pasta inteira" — só arquivo por arquivo), sinal de
+// que esse atributo não é respeitado no navegador/ambiente dele. Trocado
+// pelo mecanismo mais confiável entre navegadores: ARRASTAR a pasta (ou os
+// arquivos) do Finder/Explorer direto pra tela — usa a File System Entry
+// API (`DataTransferItem.webkitGetAsEntry`), que lê o conteúdo da pasta
+// recursivamente sem depender do seletor nativo do sistema operacional.
+// Selecionar arquivos manualmente (clique, com Ctrl/Cmd+A pra pegar todos
+// de uma vez dentro da pasta) continua disponível como alternativa.
 type ItemLote = {
   nome: string;
   arquivo: File;
   status: "aguardando" | "processando" | "concluido";
   resultado?: ResultadoEnvioNotaFiscal;
 };
+
+// Lê recursivamente uma pasta arrastada (FileSystemDirectoryEntry) — os
+// itens de um `DataTransfer` só são válidos SINCRONAMENTE dentro do evento
+// de drop, por isso `webkitGetAsEntry()` é chamado ANTES de qualquer
+// `await` (em `handleDrop`) — só a leitura dos arquivos em si (que já
+// devolve objetos `FileSystemEntry` estáveis) é assíncrona.
+async function lerEntradas(entradas: FileSystemEntry[]): Promise<File[]> {
+  const resultado: File[] = [];
+
+  async function lerEntry(entry: FileSystemEntry): Promise<void> {
+    if (entry.isFile) {
+      const arquivo = await new Promise<File>((resolve, reject) => (entry as FileSystemFileEntry).file(resolve, reject));
+      resultado.push(arquivo);
+    } else if (entry.isDirectory) {
+      const reader = (entry as FileSystemDirectoryEntry).createReader();
+      const filhos = await new Promise<FileSystemEntry[]>((resolve, reject) => reader.readEntries(resolve, reject));
+      for (const filho of filhos) {
+        await lerEntry(filho);
+      }
+    }
+  }
+
+  for (const entrada of entradas) {
+    await lerEntry(entrada);
+  }
+  return resultado;
+}
 
 function corLinha(resultado?: ResultadoEnvioNotaFiscal): string {
   if (!resultado) return "bg-white";
@@ -105,24 +139,42 @@ export function UploadNotaFiscal() {
   const [itens, setItens] = useState<ItemLote[]>([]);
   const [ignorados, setIgnorados] = useState(0);
   const [processando, setProcessando] = useState(false);
-  const pastaInputRef = useRef<HTMLInputElement>(null);
+  const [arrastandoSobre, setArrastandoSobre] = useState(false);
   const arquivosInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    // `webkitdirectory`/`directory` não existem no HTMLInputElement padrão
-    // do TypeScript — setados via DOM direto, é o único jeito sem `any`.
-    pastaInputRef.current?.setAttribute("webkitdirectory", "");
-    pastaInputRef.current?.setAttribute("directory", "");
-  }, []);
-
-  function carregarArquivos(fileList: FileList | null) {
-    if (!fileList || fileList.length === 0) return;
-    const todos = Array.from(fileList);
-    const xmls = todos
+  function carregarArquivosLista(arquivosBrutos: File[]) {
+    if (arquivosBrutos.length === 0) return;
+    const xmls = arquivosBrutos
       .filter((f) => f.name.toLowerCase().endsWith(".xml"))
       .sort((a, b) => (a.webkitRelativePath || a.name).localeCompare(b.webkitRelativePath || b.name));
-    setIgnorados(todos.length - xmls.length);
+    setIgnorados(arquivosBrutos.length - xmls.length);
     setItens(xmls.map((f) => ({ nome: f.webkitRelativePath || f.name, arquivo: f, status: "aguardando" })));
+  }
+
+  function handleInputChange(fileList: FileList | null) {
+    if (!fileList) return;
+    carregarArquivosLista(Array.from(fileList));
+  }
+
+  async function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setArrastandoSobre(false);
+    const dataTransfer = e.dataTransfer;
+    // `webkitGetAsEntry()` precisa ser chamado JÁ (síncrono, dentro do
+    // handler) — depois de um `await` os itens do DataTransfer deixam de
+    // ser válidos no navegador.
+    const entradas: FileSystemEntry[] = [];
+    for (let i = 0; i < dataTransfer.items.length; i++) {
+      const entry = dataTransfer.items[i]?.webkitGetAsEntry?.();
+      if (entry) entradas.push(entry);
+    }
+    const arquivos = entradas.length > 0 ? await lerEntradas(entradas) : Array.from(dataTransfer.files);
+    carregarArquivosLista(arquivos);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setArrastandoSobre(true);
   }
 
   async function processarUm(index: number, arquivo: File, abastecimentoIdForcado?: number) {
@@ -155,32 +207,40 @@ export function UploadNotaFiscal() {
     <div className="mb-6 card p-4">
       <h3 className="mb-1 text-sm font-semibold text-slate-900">Enviar NF-e (XML)</h3>
       <p className="mb-3 text-xs text-slate-500">
-        Escolha a pasta onde estão os XMLs das NF-e (ou selecione vários arquivos de uma vez) — o sistema processa todos e mostra,
+        Arraste a pasta com os XMLs das NF-e (ou os arquivos individuais) pra área abaixo — o sistema processa todos e mostra,
         pra cada um, se foi vinculado com sucesso e a qual abastecimento, ou qual pendência precisa ser corrigida.
       </p>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="btn-secondary cursor-pointer">
-          Selecionar pasta
-          <input ref={pastaInputRef} type="file" multiple className="hidden" onChange={(e) => carregarArquivos(e.target.files)} />
-        </label>
-        <label className="btn-secondary cursor-pointer">
-          Selecionar arquivo(s)
-          <input
-            ref={arquivosInputRef}
-            type="file"
-            multiple
-            accept=".xml,text/xml"
-            className="hidden"
-            onChange={(e) => carregarArquivos(e.target.files)}
-          />
-        </label>
-        {itens.length > 0 && (
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={() => setArrastandoSobre(false)}
+        onClick={() => arquivosInputRef.current?.click()}
+        className={`cursor-pointer rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors ${
+          arrastandoSobre ? "border-frota-500 bg-frota-50" : "border-slate-200 hover:border-slate-300"
+        }`}
+      >
+        <p className="text-sm font-medium text-slate-600">Arraste aqui a pasta (ou os arquivos) com os XMLs</p>
+        <p className="mt-1 text-xs text-slate-400">
+          ou clique pra selecionar manualmente — dentro da pasta, use Ctrl+A (ou Cmd+A no Mac) pra marcar todos de uma vez
+        </p>
+        <input
+          ref={arquivosInputRef}
+          type="file"
+          multiple
+          accept=".xml,text/xml"
+          className="hidden"
+          onChange={(e) => handleInputChange(e.target.files)}
+        />
+      </div>
+
+      {itens.length > 0 && (
+        <div className="mt-3">
           <button type="button" disabled={processando} onClick={processarTodos} className="btn-primary">
             {processando ? "Processando..." : `Processar ${itens.length} arquivo${itens.length === 1 ? "" : "s"}`}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {ignorados > 0 && (
         <p className="mt-2 text-xs text-slate-400">
