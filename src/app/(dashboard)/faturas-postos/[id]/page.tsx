@@ -4,8 +4,28 @@ import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
 import { STATUS_FATURA_LABEL, statusFaturaExibicao } from "@/lib/financeiroPostos";
+import { gerarPayloadPix, gerarQrCodePixDataUrl } from "@/lib/pix";
 import BotaoBaixarPdfFaturaLazy from "./_components/BotaoBaixarPdfFaturaLazy";
-import type { ItemExtratoFaturaPdf } from "./_components/FaturaPdf";
+import type { ItemExtratoFaturaPdf, ParteBoletoPdf } from "./_components/FaturaPdf";
+
+function formatarEndereco(p: {
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  municipio: string | null;
+  uf: string | null;
+  cep: string | null;
+}): string {
+  const partes = [
+    [p.logradouro, p.numero].filter(Boolean).join(", "),
+    p.complemento,
+    p.bairro,
+    p.municipio && p.uf ? `${p.municipio}/${p.uf}` : p.municipio,
+    p.cep ? `CEP ${p.cep}` : null,
+  ].filter(Boolean);
+  return partes.join(" — ");
+}
 
 // Fase 27.76 — pedido do Daniel: cada fatura precisa trazer um extrato dos
 // abastecimentos incluídos no período, com botão pra gerar PDF (dados da
@@ -14,6 +34,12 @@ import type { ItemExtratoFaturaPdf } from "./_components/FaturaPdf";
 // que emitiu (empresa_posto_id) e o cliente que deve pagar
 // (empresa_cliente_id) — e a RLS de faturas_postos (faturas_postos_leitura)
 // já libera SELECT pras duas partes, sem precisar de rota duplicada.
+//
+// Fase 27.92 — pedido do Daniel: documento no estilo boleto (baseado num PDF
+// de referência), disponível ao final de cada ciclo fechado pra
+// download/pagamento/quitação, com dados de cedente (posto) e sacado
+// (cliente), número da fatura, e detalhamento dos abastecimentos — em
+// TODAS as visões (cliente, posto, admin), que já acessam esta mesma rota.
 export default async function DetalheFaturaPostoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -21,7 +47,7 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
   const { data: fatura } = await supabase
     .from("faturas_postos")
     .select(
-      "id, negociacao_id, empresa_posto_id, empresa_cliente_id, periodo_inicio, periodo_fim, vencimento, valor_total, volume_total, quantidade_abastecimentos, status, pago_em, cliente_nome"
+      "id, negociacao_id, empresa_posto_id, empresa_cliente_id, periodo_inicio, periodo_fim, vencimento, valor_total, volume_total, quantidade_abastecimentos, status, pago_em, cliente_nome, numero_fatura"
     )
     .eq("id", id)
     .maybeSingle();
@@ -51,6 +77,60 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
   const { data: abastecimentosData } = await supabase.rpc("abastecimentos_da_fatura", { p_fatura_id: fatura.id });
   const abastecimentos = abastecimentosData ?? [];
 
+  // Fase 27.92 — dados completos de cedente/sacado (CNPJ + endereço), via
+  // RPC SECURITY DEFINER com guarda manual (nem cliente nem posto são
+  // "membros" da empresa da contraparte — mesmo problema de RLS cruzada já
+  // resolvido em abastecimentos_da_fatura).
+  const { data: dadosBoletoData } = await supabase.rpc("dados_boleto_fatura", { p_fatura_id: fatura.id });
+  const dadosBoleto = dadosBoletoData?.[0] ?? null;
+
+  const cedente: ParteBoletoPdf = {
+    nome: dadosBoleto?.posto_nome ?? postoNome,
+    cnpj: dadosBoleto?.posto_cnpj ?? "",
+    endereco: dadosBoleto
+      ? formatarEndereco({
+          logradouro: dadosBoleto.posto_logradouro,
+          numero: dadosBoleto.posto_numero,
+          complemento: dadosBoleto.posto_complemento,
+          bairro: dadosBoleto.posto_bairro,
+          municipio: dadosBoleto.posto_municipio,
+          uf: dadosBoleto.posto_uf,
+          cep: dadosBoleto.posto_cep,
+        })
+      : "",
+  };
+  const sacado: ParteBoletoPdf = {
+    nome: dadosBoleto?.cliente_nome ?? clienteNome,
+    cnpj: dadosBoleto?.cliente_cnpj ?? "",
+    endereco: dadosBoleto
+      ? formatarEndereco({
+          logradouro: dadosBoleto.cliente_logradouro,
+          numero: dadosBoleto.cliente_numero,
+          complemento: dadosBoleto.cliente_complemento,
+          bairro: dadosBoleto.cliente_bairro,
+          municipio: dadosBoleto.cliente_municipio,
+          uf: dadosBoleto.cliente_uf,
+          cep: dadosBoleto.cliente_cep,
+        })
+      : "",
+  };
+
+  // QR Code PIX (Fase 27.92) — só se o posto já cadastrou uma chave (ver
+  // /minha-empresa). Gerado no servidor (o pacote `qrcode` roda em Node),
+  // já como data URL, pra não precisar de estado assíncrono no botão de PDF
+  // (client component).
+  let qrCodePixDataUrl: string | null = null;
+  if (dadosBoleto?.posto_pix_chave) {
+    const payloadPix = gerarPayloadPix({
+      chave: dadosBoleto.posto_pix_chave,
+      nomeBeneficiario: cedente.nome,
+      cidadeBeneficiario: dadosBoleto.posto_municipio ?? "BRASIL",
+      valor: fatura.valor_total,
+      txid: `FATURA${fatura.numero_fatura}`,
+    });
+    qrCodePixDataUrl = await gerarQrCodePixDataUrl(payloadPix);
+  }
+
   const hojeIso = new Date().toISOString().slice(0, 10);
   const statusExib = statusFaturaExibicao(fatura.status, fatura.vencimento, hojeIso);
 
@@ -64,21 +144,26 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
     valorTotal: a.item_valor_total ?? 0,
   }));
 
+  const numeroFaturaFormatado = String(fatura.numero_fatura).padStart(6, "0");
+
   return (
     <div>
       <Link href="/financeiro-posto" className="text-sm text-frota-600 hover:underline">
         ← Voltar
       </Link>
 
-      <div className="mt-3 mb-6 flex flex-wrap items-start justify-between gap-3">
+      <div className="mt-3 mb-2 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Fatura — {postoNome}</h1>
-          <p className="mt-1 text-sm text-slate-500">Cliente: {clienteNome}</p>
+          <h1 className="text-xl font-semibold text-slate-900">Boleto — {postoNome}</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Nº da fatura: <strong className="text-slate-700">{numeroFaturaFormatado}</strong> · Cliente: {clienteNome}
+          </p>
         </div>
         <BotaoBaixarPdfFaturaLazy
-          nomeArquivo={`fatura-${postoNome.replace(/\s+/g, "-").toLowerCase()}-${fatura.periodo_inicio}.pdf`}
-          postoNome={postoNome}
-          clienteNome={clienteNome}
+          nomeArquivo={`boleto-${numeroFaturaFormatado}-${postoNome.replace(/\s+/g, "-").toLowerCase()}.pdf`}
+          numeroFatura={fatura.numero_fatura}
+          cedente={cedente}
+          sacado={sacado}
           periodoInicio={formatarDataBr(fatura.periodo_inicio)}
           periodoFim={formatarDataBr(fatura.periodo_fim)}
           vencimento={formatarDataBr(fatura.vencimento)}
@@ -87,7 +172,23 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
           volumeTotal={fatura.volume_total}
           quantidadeAbastecimentos={fatura.quantidade_abastecimentos}
           itens={itensPdf}
+          qrCodePixDataUrl={qrCodePixDataUrl}
         />
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="card p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Cedente (posto)</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">{cedente.nome}</p>
+          <p className="text-xs text-slate-500">CNPJ: {cedente.cnpj || "—"}</p>
+          <p className="text-xs text-slate-500">{cedente.endereco || "—"}</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Sacado (cliente)</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">{sacado.nome}</p>
+          <p className="text-xs text-slate-500">CNPJ: {sacado.cnpj || "—"}</p>
+          <p className="text-xs text-slate-500">{sacado.endereco || "—"}</p>
+        </div>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
@@ -98,11 +199,30 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
         <Indicador label="Valor total" valor={formatarMoeda(fatura.valor_total)} />
       </div>
 
+      {qrCodePixDataUrl ? (
+        <div className="mb-6 card flex flex-wrap items-center gap-4 bg-green-50 p-4">
+          {/* eslint-disable-next-line @next/next/no-img-element -- data URL gerado no servidor, não é asset otimizável */}
+          <img src={qrCodePixDataUrl} alt="QR Code PIX" className="h-24 w-24" />
+          <div>
+            <p className="text-sm font-semibold text-green-800">Pague com PIX</p>
+            <p className="text-xs text-green-700">
+              Aponte a câmera do app do seu banco pro QR Code, ou copie a chave: {dadosBoleto?.posto_pix_chave}
+            </p>
+            <p className="text-xs text-green-700">Valor: {formatarMoeda(fatura.valor_total)}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          O posto ainda não cadastrou uma chave PIX — pagamento a combinar diretamente com {cedente.nome}.
+        </div>
+      )}
+
       <div className="card overflow-x-auto">
         <div className="border-b border-slate-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-slate-900">
-            Extrato de abastecimentos ({fatura.quantidade_abastecimentos})
+            Detalhamento do abastecimento ({fatura.quantidade_abastecimentos})
           </h2>
+          <p className="mt-1 text-xs text-slate-500">Abastecimentos que justificam o valor total cobrado.</p>
         </div>
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">

@@ -55,6 +55,9 @@ export interface Database {
           porte: string | null;
           segmento_transporte: string | null;
           volume_potencial: Json;
+          // Fase 27.92 — chave PIX do posto (cedente do boleto/documento de
+          // cobrança), self-service via /minha-empresa.
+          pix_chave: string | null;
           // Fase 27.42 — ignora o bloqueio de limite de veículos do plano
           // (verificarLimiteFrota) pra esta empresa. Uso interno/teste,
           // editável só por admin em /clientes/[id].
@@ -321,6 +324,9 @@ export interface Database {
           criado_em: string;
           atualizado_em: string;
           atualizado_por: string | null;
+          // Fase 27.92 — número sequencial legível (não é o id/uuid), exibido
+          // como referência no boleto/documento de cobrança.
+          numero_fatura: number;
         };
         Insert: Partial<Database["public"]["Tables"]["faturas_postos"]["Row"]> & {
           negociacao_id: string;
@@ -1672,6 +1678,36 @@ export interface Database {
           item_quantidade: number | null;
           item_valor_unitario: number | null;
           item_valor_total: number | null;
+        }[];
+      };
+      // Fase 27.92 — dados de cedente (posto) e sacado (cliente) pro
+      // boleto/documento de cobrança de uma fatura. Mesmo padrão de
+      // segurança de abastecimentos_da_fatura: SECURITY DEFINER + guarda
+      // manual (cross-tenant, nenhuma RLS direta em `empresas` cobriria
+      // enxergar os dados da CONTRAPARTE).
+      dados_boleto_fatura: {
+        Args: { p_fatura_id: string };
+        Returns: {
+          numero_fatura: number;
+          posto_nome: string | null;
+          posto_cnpj: string | null;
+          posto_logradouro: string | null;
+          posto_numero: string | null;
+          posto_complemento: string | null;
+          posto_bairro: string | null;
+          posto_municipio: string | null;
+          posto_uf: string | null;
+          posto_cep: string | null;
+          posto_pix_chave: string | null;
+          cliente_nome: string | null;
+          cliente_cnpj: string | null;
+          cliente_logradouro: string | null;
+          cliente_numero: string | null;
+          cliente_complemento: string | null;
+          cliente_bairro: string | null;
+          cliente_municipio: string | null;
+          cliente_uf: string | null;
+          cliente_cep: string | null;
         }[];
       };
       // Fase 27.41 — conta a frota REAL da empresa (cadastro_veiculos +

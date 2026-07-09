@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { ItemExtratoFaturaPdf } from "./FaturaPdf";
+import type { ItemExtratoFaturaPdf, ParteBoletoPdf } from "./FaturaPdf";
 
 const BotaoBaixarPdfFatura = dynamic(
   () => import("./BotaoBaixarPdfFatura").then((m) => m.BotaoBaixarPdfFatura),
@@ -13,8 +13,9 @@ const BotaoBaixarPdfFatura = dynamic(
 
 export default function BotaoBaixarPdfFaturaLazy(props: {
   nomeArquivo: string;
-  postoNome: string;
-  clienteNome: string;
+  numeroFatura: number;
+  cedente: ParteBoletoPdf;
+  sacado: ParteBoletoPdf;
   periodoInicio: string;
   periodoFim: string;
   vencimento: string;
@@ -23,6 +24,7 @@ export default function BotaoBaixarPdfFaturaLazy(props: {
   volumeTotal: number;
   quantidadeAbastecimentos: number;
   itens: ItemExtratoFaturaPdf[];
+  qrCodePixDataUrl?: string | null;
 }) {
   return <BotaoBaixarPdfFatura {...props} />;
 }

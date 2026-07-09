@@ -74,6 +74,9 @@ const menuPosto = [
   { href: "/clientes-posto", label: "🏢 Clientes" },
   { href: "/precos-postos", label: "💲 Meus Preços" },
   { href: "/financeiro-posto", label: "💰 Financeiro" },
+  // Fase 27.92 — self-service: cadastro da chave PIX usada como cedente no
+  // boleto/documento de cobrança enviado aos clientes.
+  { href: "/minha-empresa", label: "🏦 Meus Dados / PIX" },
   { href: "/integracoes", label: "🔌 Integrações" },
   { href: "/usuarios", label: "👥 Usuários" },
 ];

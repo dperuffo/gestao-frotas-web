@@ -5131,3 +5131,57 @@ acumulado; Transportes de Cargas Testes Ltda com R$ 2.770,53 acumulado, nenhuma 
 resultado bate — as duas passam a contar "1 aberta", a segunda com `valorEmAberto = 2.770,53`.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos, nos 5 arquivos alterados).
+
+## Fase 27.92 — Boleto/documento de cobrança por fatura fechada (cliente, posto, admin)
+
+Pedido do Daniel, com um PDF de referência anexado (boleto real do Banco Itaú, de um sistema
+concorrente — Ficha de Compensação + Aviso de Débito + Detalhamento de Abastecimento): "criar um
+documento boleto... disponibilizado ao cliente ao final do ciclo de abastecimento, para download,
+pagamento e quitação... com os campos preenchidos com os dados do cliente e do posto, com os valores
+consolidados de cada ciclo de abastecimento fechado... trazer uma sessão com os abastecimentos
+realizados... este boleto deve estar disponível para todas as visões: clientes, postos e admin". Depois:
+"No boleto, tem que ter a referência do número da fatura".
+
+**Decisões tomadas com o Daniel antes de implementar (`AskUserQuestion`):**
+- O PDF anexado é um boleto bancário REAL (código de barras, linha digitável e PIX registrados no
+  Itaú) — reproduzir isso de verdade exigiria integração com banco/gateway de pagamento (credenciais
+  de API que a FNI não me deu acesso). Daniel escolheu: **documento informativo**, com QR Code PIX
+  real, mas **sem** código de barras/linha digitável (removido — incluir uma linha digitável falsa
+  poderia parecer fraude, já que o documento não é registrado em banco nenhum).
+- **Cedente (quem recebe) é o POSTO**, não a FNI — reflete a relação comercial real (a negociação é
+  cliente+posto). Cada posto cadastra a própria chave PIX (self-service).
+
+**Implementado, em cima da infraestrutura já existente da Fase 27.76** (`/faturas-postos/[id]`, rota
+única já acessível às 3 visões via RLS de `faturas_postos_leitura`, com extrato de abastecimentos +
+PDF via `@react-pdf/renderer`):
+
+- **`numero_fatura`** (bigint, sequence, unique) em `faturas_postos` — referência legível da fatura
+  (pedido extra do Daniel), gerada automaticamente via `DEFAULT nextval(...)` em toda fatura nova
+  (inclusive as do robô, sem tocar na função) e backfillada nas já existentes em ordem cronológica.
+- **`pix_chave`** (text) em `empresas` — chave PIX do posto, cadastrada numa tela nova self-service,
+  **`/minha-empresa`** (menu do posto, "🏦 Meus Dados / PIX"), restrita a empresas `segmento='Revenda'`.
+  RLS de `empresas` já permitia UPDATE por qualquer membro da própria empresa (`empresas_update_admin`,
+  apesar do nome), então não precisou de política nova.
+- **RPC `dados_boleto_fatura(p_fatura_id)`** — retorna nome/CNPJ/endereço completos de cedente
+  (posto) e sacado (cliente), mais a chave PIX do posto. `SECURITY DEFINER` com guarda de autorização
+  manual, exatamente no mesmo padrão de `abastecimentos_da_fatura` (Fase 27.79): nem cliente nem posto
+  são "membros" da empresa da contraparte, então SELECT direto em `empresas` pra ver o lado de fora
+  falharia por RLS. Testado com 4 contextos reais: posto (autorizado, dados corretos), cliente
+  (autorizado), admin (autorizado), e um posto de outra Rede SEM relação com a fatura — que também
+  recebeu os dados, porque ele está agrupado na MESMA Rede de Postos do posto da fatura (Fase 27.87);
+  confirmado que é o comportamento correto e já esperado do sistema (visão compartilhada entre postos
+  da mesma Rede), não um vazamento novo.
+- **`src/lib/pix.ts`** — gerador do payload "Pix Copia e Cola" (BR Code, padrão EMV do Banco Central),
+  incluindo o CRC16-CCITT exigido no fim do payload, e a geração do QR Code (pacote `qrcode`, novo
+  nas dependências) como PNG em data URL — tudo client-side/server-side em JS puro, sem precisar de
+  nenhuma API de banco (só a chave PIX de quem recebe). Validado com um payload de teste: parser TLV
+  campo a campo confirma todos os tamanhos batendo, e o CRC recalculado bate com o embutido no payload.
+- **`FaturaPdf.tsx`** ganhou o layout de boleto: caixas de cedente/sacado (nome, CNPJ, endereço),
+  número da fatura em destaque, QR Code PIX (ou aviso de "sem chave cadastrada, combinar com o posto"
+  quando o posto ainda não configurou), e o extrato de abastecimentos renomeado pra "Detalhamento do
+  abastecimento" (mesmo nome da seção do PDF de referência) com uma linha de TOTAL A PAGAR. Sem código
+  de barras. A tela on-line (`/faturas-postos/[id]`) ganhou as mesmas seções.
+
+Sem alterações em RLS além da leitura já existente — a novidade de segurança é toda no `SECURITY
+DEFINER` da RPC nova, testada com os 4 contextos acima. Validado com `npx tsc --noEmit` e `npx eslint`
+(limpos, em todos os arquivos novos/alterados).
