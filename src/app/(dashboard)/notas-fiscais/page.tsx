@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
+import { mensagemMotivoPendencia } from "@/lib/nfe";
 import { IndicadorNotasFiscais } from "./_components/IndicadorNotasFiscais";
 import { UploadNotaFiscal } from "./_components/UploadNotaFiscal";
 
@@ -70,6 +71,15 @@ export default async function NotasFiscaisPage({
   });
   const totalLinhas = linhas?.[0]?.total_count ?? 0;
   const totalPaginas = Math.max(1, Math.ceil(Number(totalLinhas) / POR_PAGINA));
+
+  // Fase 27.99 — pedido do Daniel: evidenciar rejeições de upload de NF-e
+  // com mais detalhe, não só "Pendente" genérico. Pendências sem
+  // abastecimento identificado (ex.: CNPJ do cliente não cadastrado) não
+  // aparecem na tabela abaixo (não tem em qual linha mostrar) — só o posto
+  // vê essa seção, já que é ele quem precisa corrigir e reenviar o XML.
+  const { data: pendenciasSemAbastecimento } = ehPosto
+    ? await supabase.rpc("pendencias_sem_abastecimento", { p_empresa_id: empresaSelecionada, p_limit: 20 })
+    : { data: null };
 
   const qs = (overrides: Record<string, string>) => {
     const params = new URLSearchParams({
@@ -142,6 +152,15 @@ export default async function NotasFiscaisPage({
                     <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                       Emitida{l.nota_numero ? ` · Nº ${l.nota_numero}` : ""}
                     </span>
+                  ) : l.pendencia_motivo ? (
+                    <div>
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Rejeitada</span>
+                      <p className="mt-1 max-w-xs text-xs text-red-600">
+                        {l.pendencia_motivo === "erro_leitura_xml" && l.pendencia_detalhe_texto
+                          ? l.pendencia_detalhe_texto
+                          : mensagemMotivoPendencia(l.pendencia_motivo)}
+                      </p>
+                    </div>
                   ) : (
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Pendente</span>
                   )}
@@ -185,6 +204,53 @@ export default async function NotasFiscaisPage({
           </div>
         )}
       </div>
+
+      {ehPosto && pendenciasSemAbastecimento && pendenciasSemAbastecimento.length > 0 && (
+        <div className="card mt-6 overflow-x-auto">
+          <div className="border-b border-slate-100 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-900">
+              Uploads sem abastecimento correspondente ({pendenciasSemAbastecimento.length})
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Estes XMLs foram rejeitados antes de encontrar um abastecimento pra vincular — confira os dados abaixo, corrija o
+              que estiver errado (CNPJ, quantidade, valor) e envie o XML de novo.
+            </p>
+          </div>
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Quando</th>
+                <th className="px-4 py-3">Arquivo</th>
+                <th className="px-4 py-3">Motivo</th>
+                <th className="px-4 py-3">Dados extraídos do XML</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {pendenciasSemAbastecimento.map((p) => (
+                <tr key={p.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-slate-500">{formatarDataBr(p.criado_em)}</td>
+                  <td className="px-4 py-3 text-slate-600">{p.nome_arquivo ?? "—"}</td>
+                  <td className="px-4 py-3 text-red-700">
+                    {p.motivo === "erro_leitura_xml" && p.detalhe_texto ? p.detalhe_texto : mensagemMotivoPendencia(p.motivo)}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-slate-500">
+                    {p.cnpj_emitente || p.cnpj_destinatario ? (
+                      <>
+                        CNPJ emitente {p.cnpj_emitente ?? "—"}, CNPJ destinatário {p.cnpj_destinatario ?? "—"}
+                        {p.produto_nome_xml ? `, ${p.produto_nome_xml}` : ""}
+                        {p.quantidade !== null ? `, ${p.quantidade} L` : ""}
+                        {p.valor_total !== null ? `, ${formatarMoeda(p.valor_total)}` : ""}
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

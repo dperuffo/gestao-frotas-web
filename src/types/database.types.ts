@@ -1130,6 +1130,42 @@ export interface Database {
           },
         ];
       };
+      // Fase 27.99 — log de tentativas de upload de NF-e rejeitadas (motivo
+      // + dados extraídos do XML pra diagnóstico). Sem política de
+      // INSERT/UPDATE — toda escrita passa pela RPC
+      // registrar_pendencia_nota_fiscal (SECURITY DEFINER).
+      notas_fiscais_pendencias: {
+        Row: {
+          id: string;
+          empresa_posto_id: string;
+          abastecimento_id: number | null;
+          motivo: string;
+          detalhe_texto: string | null;
+          cnpj_emitente: string | null;
+          cnpj_destinatario: string | null;
+          chave_acesso: string | null;
+          numero_nf: number | null;
+          produto_nome_xml: string | null;
+          produto_codigo_anp: string | null;
+          quantidade: number | null;
+          valor_total: number | null;
+          data_emissao_nfe: string | null;
+          nome_arquivo: string | null;
+          criado_em: string;
+          criado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["notas_fiscais_pendencias"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["notas_fiscais_pendencias"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "notas_fiscais_pendencias_abastecimento_id_fkey";
+            columns: ["abastecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "profrotas_abastecimentos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       frota_abastecimentos: {
         Row: {
           id: number;
@@ -1881,6 +1917,12 @@ export interface Database {
           nota_id: string | null;
           nota_numero: number | null;
           nota_chave_acesso: string | null;
+          // Fase 27.99 — motivo da última tentativa de upload rejeitada pra
+          // este abastecimento (null quando nota_id não é null, ou quando
+          // nunca houve tentativa).
+          pendencia_motivo: string | null;
+          pendencia_detalhe_texto: string | null;
+          pendencia_em: string | null;
           total_count: number;
         }[];
       };
@@ -1889,6 +1931,48 @@ export interface Database {
       indicador_notas_fiscais: {
         Args: { p_empresa_id: string };
         Returns: Json;
+      };
+      // Fase 27.99 — grava uma tentativa de upload de NF-e rejeitada
+      // (motivo estrutural do parser OU motivo retornado pela RPC de
+      // inserção), pra a listagem de /notas-fiscais poder mostrar o porquê.
+      registrar_pendencia_nota_fiscal: {
+        Args: {
+          p_empresa_posto_id: string;
+          p_abastecimento_id: number | null;
+          p_motivo: string;
+          p_detalhe_texto: string | null;
+          p_cnpj_emitente: string | null;
+          p_cnpj_destinatario: string | null;
+          p_chave_acesso: string | null;
+          p_numero_nf: number | null;
+          p_produto_nome_xml: string | null;
+          p_produto_codigo_anp: string | null;
+          p_quantidade: number | null;
+          p_valor_total: number | null;
+          p_data_emissao_nfe: string | null;
+          p_nome_arquivo: string;
+        };
+        Returns: string;
+      };
+      // Fase 27.99 — pendências que não puderam ser associadas a NENHUM
+      // abastecimento (ex.: CNPJ do destinatário não bate com nenhum
+      // cliente cadastrado) — não aparecem na listagem de abastecimentos,
+      // então ficam numa seção à parte em /notas-fiscais.
+      pendencias_sem_abastecimento: {
+        Args: { p_empresa_id: string; p_limit?: number };
+        Returns: {
+          id: string;
+          motivo: string;
+          detalhe_texto: string | null;
+          cnpj_emitente: string | null;
+          cnpj_destinatario: string | null;
+          produto_nome_xml: string | null;
+          quantidade: number | null;
+          valor_total: number | null;
+          data_emissao_nfe: string | null;
+          nome_arquivo: string | null;
+          criado_em: string;
+        }[];
       };
       // Fase 27.41 — conta a frota REAL da empresa (cadastro_veiculos +
       // placas distintas vistas nos abastecimentos da integração, mesmo sem

@@ -209,9 +209,18 @@ export function parsearXmlNfe(xmlTexto: string): ResultadoParseNfe {
 // Mensagens amigáveis pros códigos de pendência devolvidos pelas RPCs de
 // inserção (inserir_nota_fiscal_abastecimento) — usadas tanto na Server
 // Action (upload pelo navegador) quanto na API de integração (resposta JSON
-// pro ERP do posto).
+// pro ERP do posto). Fase 27.99 — reaproveitada também pra mostrar o motivo
+// de pendências PERSISTIDAS (notas_fiscais_pendencias) na listagem de
+// /notas-fiscais — por isso inclui também "sem_correspondencia" e
+// "erro_leitura_xml", que não vêm da RPC de inserção (são decididos antes
+// dela, na Server Action) mas passam pelo mesmo dicionário de mensagens
+// pra não duplicar texto em dois lugares.
 export function mensagemMotivoPendencia(motivo: string | undefined): string {
   switch (motivo) {
+    case "sem_correspondencia":
+      return "Nenhum abastecimento encontrado com o CNPJ, quantidade e valor desta NF-e.";
+    case "erro_leitura_xml":
+      return "O XML não pôde ser lido — confira se é o arquivo certo.";
     case "modelo_invalido":
       return "O XML não é uma NF-e modelo 55.";
     case "posto_nao_encontrado":

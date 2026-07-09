@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { parsearXmlNfe, mensagemMotivoPendencia, type NfeExtraida } from "@/lib/nfe";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -19,16 +20,26 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 // RPC inserir_nota_fiscal_abastecimento — esta action nunca decide sozinha
 // se uma NF-e é válida, só orquestra e traduz o resultado pro usuário.
 //
-// Fase 27.97 — pedido do Daniel: o upload passou a ser em LOTE (o usuário
-// escolhe uma pasta inteira de XMLs, não 1 arquivo por vez — ver
-// UploadNotaFiscal.tsx) e "os registros de abastecimentos impactados devem
-// ser facilmente identificados". Por isso toda resposta que resulta num
-// vínculo (sucesso OU duplicada, já que "duplicada" também aponta pra um
-// abastecimento já vinculado antes) agora devolve um resumo do
-// abastecimento (placa, motorista, data, combustível) junto — sem isso, com
-// vários arquivos processados de uma vez, o usuário não tinha como saber
-// qual abastecimento cada linha da lista correspondia sem clicar em cada
-// um.
+// Fase 27.97 — pedido do Daniel: o upload passou a ser em LOTE e toda
+// resposta que resulta num vínculo (sucesso ou duplicada) devolve um
+// resumo do abastecimento junto.
+//
+// Fase 27.99 — pedido do Daniel, testando o upload em lote: "Precisa
+// evidenciar melhor no registro de abastecimento com uma cor diferente e
+// trazer mais detalhes da rejeição para dar nova oportunidade de upload
+// correto da NFe". Até aqui, quando um upload falhava, NADA era
+// persistido — o motivo só existia na lista temporária da tela, e
+// desaparecia ao sair da página. Agora TODA rejeição (estrutural, sem
+// correspondência, ou pendência retornada pela RPC de inserção — exceto
+// "chave_duplicada", que já é tratada como "duplicada" e aponta pra um
+// abastecimento já vinculado, não é uma rejeição) é registrada via
+// `registrar_pendencia_nota_fiscal`, pra a listagem de /notas-fiscais poder
+// mostrar "Rejeitada: <motivo>" na própria linha do abastecimento (quando
+// dá pra saber qual é) ou numa seção à parte (quando não dá — ex.: CNPJ do
+// cliente não bate com nada). Registro é BEST-EFFORT: se falhar, não
+// interrompe nem muda a resposta que o usuário já ia receber — é só um log
+// de diagnóstico, não a fonte de verdade (que continua sendo
+// notas_fiscais_abastecimento pra sucesso).
 
 export type CandidatoNota = {
   abastecimentoId: number;
@@ -76,6 +87,52 @@ async function buscarResumoAbastecimento(supabase: Supabase, abastecimentoId: nu
   };
 }
 
+// Fase 27.99 — resolve o posto do usuário logado (mesmo helper usado pela
+// página, reaproveitado aqui pra não depender do CNPJ do XML — importante
+// pros casos onde o XML nem chega a ser lido direito). Best-effort: se não
+// der pra resolver (ex.: sessão estranha), simplesmente não registra
+// pendência nenhuma — não é motivo pra quebrar o fluxo do usuário.
+async function empresaPostoAtual(supabase: Supabase): Promise<string | null> {
+  try {
+    const { empresaSelecionada } = await resolverEmpresaAtual(supabase);
+    return empresaSelecionada ?? null;
+  } catch {
+    return null;
+  }
+}
+
+type DadosPendencia = {
+  abastecimentoId: number | null;
+  motivo: string;
+  detalheTexto?: string | null;
+  nfe?: NfeExtraida | null;
+  nomeArquivo: string;
+};
+
+async function registrarPendenciaBestEffort(supabase: Supabase, empresaPostoId: string, dados: DadosPendencia): Promise<void> {
+  try {
+    await supabase.rpc("registrar_pendencia_nota_fiscal", {
+      p_empresa_posto_id: empresaPostoId,
+      p_abastecimento_id: dados.abastecimentoId,
+      p_motivo: dados.motivo,
+      p_detalhe_texto: dados.detalheTexto ?? null,
+      p_cnpj_emitente: dados.nfe?.cnpjEmitente ?? null,
+      p_cnpj_destinatario: dados.nfe?.cnpjDestinatario ?? null,
+      p_chave_acesso: dados.nfe?.chaveAcesso ?? null,
+      p_numero_nf: dados.nfe?.numeroNf ?? null,
+      p_produto_nome_xml: dados.nfe?.produtoNomeXml ?? null,
+      p_produto_codigo_anp: dados.nfe?.produtoCodigoAnp ?? null,
+      p_quantidade: dados.nfe?.quantidade ?? null,
+      p_valor_total: dados.nfe?.valorTotal ?? null,
+      p_data_emissao_nfe: dados.nfe?.dataEmissao ?? null,
+      p_nome_arquivo: dados.nomeArquivo,
+    });
+  } catch {
+    // best-effort — falha em registrar o diagnóstico não deve impactar o
+    // resultado que o usuário já vai receber.
+  }
+}
+
 export async function enviarNotaFiscalAcao(formData: FormData): Promise<ResultadoEnvioNotaFiscal> {
   const arquivo = formData.get("arquivo");
   const abastecimentoForcadoRaw = formData.get("abastecimento_id_forcado");
@@ -87,14 +144,23 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
     return { status: "erro", mensagem: "O arquivo é grande demais (máximo 2 MB) — confira se é mesmo o XML da NF-e." };
   }
 
+  const supabase = await createClient();
+  const empresaPostoId = await empresaPostoAtual(supabase);
+
   const texto = await arquivo.text();
   const parse = parsearXmlNfe(texto);
   if (!parse.ok) {
+    if (empresaPostoId) {
+      await registrarPendenciaBestEffort(supabase, empresaPostoId, {
+        abastecimentoId: null,
+        motivo: "erro_leitura_xml",
+        detalheTexto: parse.erro,
+        nomeArquivo: arquivo.name,
+      });
+    }
     return { status: "erro", mensagem: parse.erro };
   }
   const nfe = parse.nfe;
-
-  const supabase = await createClient();
 
   const { data: existente } = await supabase
     .from("notas_fiscais_abastecimento")
@@ -125,6 +191,14 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
     }
 
     if (!candidatos || candidatos.length === 0) {
+      if (empresaPostoId) {
+        await registrarPendenciaBestEffort(supabase, empresaPostoId, {
+          abastecimentoId: null,
+          motivo: "sem_correspondencia",
+          nfe,
+          nomeArquivo: arquivo.name,
+        });
+      }
       return { status: "sem_correspondencia", extraido: nfe };
     }
 
@@ -178,6 +252,14 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
     if (resultado.motivo === "chave_duplicada") {
       const abastecimento = await buscarResumoAbastecimento(supabase, abastecimentoId);
       return { status: "duplicada", notaId: null, abastecimento };
+    }
+    if (empresaPostoId) {
+      await registrarPendenciaBestEffort(supabase, empresaPostoId, {
+        abastecimentoId,
+        motivo: resultado.motivo ?? "erro_desconhecido",
+        nfe,
+        nomeArquivo: arquivo.name,
+      });
     }
     return { status: "erro", mensagem: mensagemMotivoPendencia(resultado.motivo) };
   }

@@ -5494,3 +5494,63 @@ navegadores:**
   arquivos).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.99 — Rejeições de NF-e persistidas e evidenciadas na listagem
+
+Pedido do Daniel, olhando a tabela de abastecimentos depois de testar o upload em lote: "Acho que nao
+ficou muito intuitivo para o usuario quais as notas foram rejeitadas e o por que. Precisa evidenciar
+melhor no registro de abastecimento com uma cor diferente e trazer mais detalhes da rejeicao para dar
+nova oportunidade de upload correto da NFe".
+
+**Causa raiz:** até aqui, quando um upload de XML era rejeitado (sem correspondência, código ANP
+incorreto, modelo inválido etc.), NADA era persistido no banco — o motivo só existia na lista
+temporária da tela de upload (Fase 27.97) e desaparecia ao sair da página ou recarregar. A tabela de
+abastecimentos só distinguia 2 estados: "Emitida" (verde) e "Pendente" (âmbar, usado tanto pra "nunca
+tentou" quanto pra "tentou e falhou" — daí a falta de clareza que o Daniel notou).
+
+**O que mudou:**
+- Nova tabela `notas_fiscais_pendencias` — grava toda tentativa de upload rejeitada: motivo, CNPJ
+  emitente/destinatário extraídos do XML, chave de acesso, produto, quantidade, valor, nome do arquivo
+  e quando aconteceu. `abastecimento_id` fica `null` quando a tentativa não pôde ser associada a
+  nenhum abastecimento (ex.: CNPJ do cliente não cadastrado — não tem como saber qual seria).
+- RPC `registrar_pendencia_nota_fiscal` — grava a pendência, autorização verificada contra o JWT do
+  usuário (mesmo padrão v_autorizado das demais RPCs desta área, Fase 27.94), mas aplicada sobre o
+  `empresa_posto_id` que a Server Action já resolveu via `resolverEmpresaAtual` (a sessão do usuário
+  logado), não via CNPJ do XML — importante porque, quando o XML nem chega a ser lido direito (falha
+  estrutural), não existe CNPJ nenhum pra usar. Testado: usuário autorizado grava normalmente; usuário
+  sem nenhum vínculo com o posto recebe exceção ("não autorizado a registrar pendência para este
+  posto").
+- `actions.ts` (`enviarNotaFiscalAcao`) chama essa RPC em TODO caminho de rejeição — erro estrutural de
+  leitura do XML, sem correspondência (0 candidatos), e qualquer motivo que a RPC de inserção devolva
+  (código ANP incorreto, fora de tolerância etc.) — EXCETO `chave_duplicada`, que já é tratada como
+  "duplicada" e aponta pra um abastecimento já vinculado, não é uma rejeição. Registro é best-effort
+  (`try/catch` silencioso): é só um log de diagnóstico, uma falha nele nunca muda a resposta que o
+  usuário já ia receber.
+- `abastecimentos_com_status_nota_fiscal` (RPC da listagem) ganhou um `LEFT JOIN LATERAL` na pendência
+  mais recente de cada abastecimento — só quando ele AINDA não tem NF-e emitida (`on nf.id is null`),
+  então assim que o abastecimento finalmente recebe uma NF-e válida, a pendência antiga some sozinha da
+  tela sem precisar apagar nada.
+- Nova RPC `pendencias_sem_abastecimento` — lista as rejeições que não têm `abastecimento_id` (não dá
+  pra saber qual linha da tabela destacar), pra uma seção separada em `/notas-fiscais` mostrando arquivo,
+  motivo e os dados extraídos do XML (CNPJ, produto, quantidade, valor), só visível pro posto.
+- Tela `/notas-fiscais`: 3 estados agora — verde "Emitida", **vermelho "Rejeitada" com o motivo escrito
+  embaixo** (reaproveita `mensagemMotivoPendencia`, já usada pelas mensagens da RPC de inserção — texto
+  único, sem duplicar em SQL e TS), e âmbar "Pendente" só quando realmente nunca houve tentativa.
+
+**Testado ponta a ponta com dados reais:** registrei uma pendência `codigo_anp_nao_corresponde` pro
+abastecimento de teste #165865 (cenário 06 dos exemplos da Fase 27.96) e confirmei que
+`abastecimentos_com_status_nota_fiscal` devolveu o motivo certo pra aquela linha; registrei uma
+pendência `sem_correspondencia` sem abastecimento e confirmei que ela aparece em
+`pendencias_sem_abastecimento` com os dados do XML (CNPJ, produto) intactos. Também testei o limite de
+autorização (usuário sem vínculo com o posto → exceção) e um caso de usuário com acesso a 2 postos (Rede
+de Postos, Fase 27.87) → autorizado nos dois, como esperado. Dados de teste removidos depois — a tabela
+fica limpa pro primeiro teste real do Daniel.
+
+**Limitação conhecida:** a Server Action resolve o posto da pendência via sessão do usuário
+(`resolverEmpresaAtual`, sem parâmetro), que auto-seleciona quando o usuário só tem 1 empresa — cobre o
+caso normal (usuário do posto logado). Se um ADMIN fizer upload numa página de posto que não é "a dele"
+(via `?empresa=`), a resolução por sessão não escolhe automaticamente qual das várias empresas do admin
+usar, e o registro de pendência é pulado (best-effort — não quebra o upload em si, só não gera o log de
+diagnóstico nesse caso específico). Não afeta o fluxo normal do posto.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
