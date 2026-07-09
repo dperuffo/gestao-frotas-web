@@ -126,8 +126,19 @@ export function VisaoCiclosPorContraparte({
                       </span>
                       <p className="mt-1 text-xs text-slate-500">
                         {formatarDataBr(l.cicloAtual.periodo_inicio)} – {formatarDataBr(l.cicloAtual.periodo_fim_previsto)} ·{" "}
+                        {l.cicloAtual.quantidade_abastecimentos} abastecimento
+                        {l.cicloAtual.quantidade_abastecimentos === 1 ? "" : "s"} ·{" "}
                         {formatarMoeda(l.cicloAtual.valor_acumulado)}
                       </p>
+                      {/* Fase 27.93 — pedido do Daniel: ciclo em andamento precisa
+                          mostrar a quantidade de abastecimentos (não só o valor) e dar
+                          acesso ao detalhamento de QUAIS abastecimentos compõem o valor. */}
+                      <Link
+                        href={`/ciclo-aberto/${l.cicloAtual.negociacao_id}`}
+                        className="mt-1 inline-block text-xs text-frota-600 hover:underline"
+                      >
+                        Ver detalhamento
+                      </Link>
                     </>
                   ) : (
                     <span className="text-xs text-slate-400">Sem ciclo em andamento</span>

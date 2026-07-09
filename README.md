@@ -5185,3 +5185,72 @@ PDF via `@react-pdf/renderer`):
 Sem alterações em RLS além da leitura já existente — a novidade de segurança é toda no `SECURITY
 DEFINER` da RPC nova, testada com os 4 contextos acima. Validado com `npx tsc --noEmit` e `npx eslint`
 (limpos, em todos os arquivos novos/alterados).
+
+## Fase 27.93 — Detalhamento do ciclo em andamento (quantidade + abastecimentos) + correção de falha de segurança crítica
+
+Pedido do Daniel, com print de "Ciclos por posto" mostrando dois ciclos "Em andamento" só com
+período e R$ 0,00: "Ciclo atual em andamento, precisa ter o valor consolidado e a quantidade de
+abastecimentos, além do detalhamento dos abastecimentos que estão sendo considerados dentro do
+ciclo". Até aqui o ciclo aberto (Fase 27.84) só mostrava valor acumulado — sem quantidade, e sem
+nenhum jeito de ver QUAIS abastecimentos compõem esse valor (isso só existia pra fatura já FECHADA,
+via `abastecimentos_da_fatura`/`/faturas-postos/[id]`, Fase 27.76/27.92).
+
+**Implementado:**
+- **RPC `abastecimentos_do_ciclo_aberto(p_negociacao_id)`** — espelha a mesma lógica de corte de
+  período de `ciclos_abertos_postos()` (Fase 27.84), mas pra UMA negociação, retornando os
+  abastecimentos individuais (mesmo formato de `abastecimentos_da_fatura`).
+- **Nova página `/ciclo-aberto/[negociacaoId]`** — equivalente do `/faturas-postos/[id]` pro ciclo
+  ainda não fechado: indicadores de período/vencimento previstos, status, volume e valor acumulado, e
+  a tabela de abastecimentos que compõem esse valor. Acessível às 3 visões (cliente, posto, admin).
+- **`VisaoCiclosPorContraparte.tsx`** ("Ciclos por posto"/"Ciclos por cliente") — a célula "Ciclo
+  atual" agora mostra a quantidade de abastecimentos junto com período e valor, e ganhou o link "Ver
+  detalhamento" pra nova página.
+- **`SecaoCiclosAbertos.tsx`** — a tabela de ciclos em andamento (usada em `/financeiro`,
+  `/financeiro-posto` e nos painéis de cliente/posto individuais) ganhou a mesma coluna/link "Ver
+  detalhamento".
+
+**Achado de segurança crítico (não relacionado ao pedido original, encontrado durante o teste da RPC
+nova):** ao testar `abastecimentos_do_ciclo_aberto` com um e-mail propositalmente desconhecido
+(`ninguem.desconhecido@fora.test`, simulando um chamador sem vínculo nenhum com o sistema), a função
+devolveu **87 linhas — deveria ter devolvido 0**. Causa raiz: o padrão de autorização usado (herdado
+de `abastecimentos_da_fatura`, Fase 27.79, e copiado pra `dados_boleto_fatura`, Fase 27.92, e pra esta
+função nova) monta a autorização assim:
+
+```sql
+v_autorizado := condA OR condB OR condC OR (perfil_usuario_atual() = 'admin');
+if not v_autorizado then
+  return;
+end if;
+```
+
+Quando o e-mail do chamador não tem linha em `usuarios_app` (caso de qualquer chamador
+desconhecido/não cadastrado), `perfil_usuario_atual()` devolve `NULL` em vez de `false`. Em SQL,
+`false or false or false or NULL` não é `false` — é `NULL` (lógica de 3 valores). E `IF NOT NULL
+THEN` no PL/pgSQL nunca é verdadeiro (só entra no bloco quando a condição é literalmente `TRUE`), então
+o `RETURN` de bloqueio era **pulado silenciosamente**, e a função continuava e devolvia dados reais pra
+um chamador que não deveria ter acesso a nada.
+
+Verifiquei se esse mesmo padrão existia em outro lugar (`pg_get_functiondef` de toda função com `if
+not v_autorizado` no corpo) e encontrei exatamente 3 funções: **`abastecimentos_da_fatura`**
+(pré-existente, em produção desde a Fase 27.79 — não foi algo introduzido nesta sessão, é uma falha
+antiga que só apareceu agora porque testei o caminho negativo pela primeira vez), e as 2 novas desta
+sessão (`dados_boleto_fatura`, Fase 27.92, e `abastecimentos_do_ciclo_aberto`, Fase 27.93 — copiei o
+mesmo padrão vulnerável sem perceber).
+
+**Corrigido** numa migration só (`fase_27_93_corrigir_bug_autorizacao_null_3_funcoes`), trocando `IF
+NOT v_autorizado THEN` por `IF v_autorizado IS NOT TRUE THEN` nas 3 funções — só passa da guarda
+quando `v_autorizado` é literalmente `TRUE`, nunca em caso de `NULL`.
+
+**Reverificado depois da correção**, nas 3 funções:
+- E-mail desconhecido → **0 linhas** (antes: 38/87 linhas, dependendo da função) — confirmado bloqueado.
+- Posto dono do ciclo → dados corretos (sem regressão).
+- Admin (`d.peruffo@gmail.com`) → dados corretos (sem regressão).
+- Cliente dono do ciclo (`daniel.peruffo.app@gmail.com`) → dados corretos (sem regressão) — 30
+  abastecimentos no ciclo em andamento e os dados do boleto da fatura fechada, ambos batendo com o
+  esperado.
+
+Também corrigido nessa mesma migration um bug secundário (`column reference "id" is ambiguous`) na
+RPC nova: o `RETURNS TABLE(id bigint, ...)` colidia com uma busca de `empresas.id` sem apelido dentro
+da função — resolvido com alias (`from empresas e where e.id = ...`).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos, nos arquivos novos/alterados).

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
 import type { CicloAberto } from "@/lib/ciclosAbertos";
@@ -42,6 +43,7 @@ export function SecaoCiclosAbertos({
             <th className="px-4 py-3">Volume</th>
             <th className="px-4 py-3">Valor acumulado</th>
             <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3" />
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -61,6 +63,13 @@ export function SecaoCiclosAbertos({
                 <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
                   Em andamento
                 </span>
+              </td>
+              <td className="px-4 py-3 text-right">
+                {/* Fase 27.93 — pedido do Daniel: dar acesso ao detalhamento de QUAIS
+                    abastecimentos compõem o valor acumulado do ciclo em andamento. */}
+                <Link href={`/ciclo-aberto/${c.negociacao_id}`} className="text-frota-600 hover:underline">
+                  Ver detalhamento
+                </Link>
               </td>
             </tr>
           ))}

@@ -1680,6 +1680,24 @@ export interface Database {
           item_valor_total: number | null;
         }[];
       };
+      // Fase 27.93 — mesmo formato de abastecimentos_da_fatura, mas pro
+      // ciclo AINDA ABERTO (não fechado em fatura) de uma negociação —
+      // recalcula o período em aberto com a mesma lógica de
+      // ciclos_abertos_postos() (Fase 27.84) e devolve as linhas
+      // individuais (não só o agregado). SECURITY DEFINER + guarda manual.
+      abastecimentos_do_ciclo_aberto: {
+        Args: { p_negociacao_id: string };
+        Returns: {
+          id: number;
+          data_abastecimento: string | null;
+          motorista_nome: string | null;
+          veiculo_placa: string | null;
+          item_nome: string | null;
+          item_quantidade: number | null;
+          item_valor_unitario: number | null;
+          item_valor_total: number | null;
+        }[];
+      };
       // Fase 27.92 — dados de cedente (posto) e sacado (cliente) pro
       // boleto/documento de cobrança de uma fatura. Mesmo padrão de
       // segurança de abastecimentos_da_fatura: SECURITY DEFINER + guarda
