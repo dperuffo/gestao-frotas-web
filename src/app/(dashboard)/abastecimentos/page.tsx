@@ -46,9 +46,10 @@ export default async function AbastecimentosPage({
     combustivel?: string;
     cliente?: string;
     ajuste?: string;
+    nf?: string;
   }>;
 }) {
-  const { q, de, ate, empresa: empresaParam, page: pageParam, combustivel, cliente, ajuste } = await searchParams;
+  const { q, de, ate, empresa: empresaParam, page: pageParam, combustivel, cliente, ajuste, nf } = await searchParams;
   const supabase = await createClient();
 
   // Fase 27.8 — mesmo seletor de cliente já usado em Postos, Relatórios,
@@ -73,7 +74,7 @@ export default async function AbastecimentosPage({
         <AbastecimentosPosto
           empresaPostoId={empresaSelecionada}
           nomeEmpresaSelecionada={nomeEmpresaSelecionada}
-          searchParams={{ combustivel, cliente, q, de, ate, page: pageParam, ajuste }}
+          searchParams={{ combustivel, cliente, q, de, ate, page: pageParam, ajuste, nf }}
         />
       );
     }

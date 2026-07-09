@@ -5634,3 +5634,38 @@ com `299af3e2-...`, cada uma no posto certo. Testado também que um CNPJ desconh
 como posto) devolve `null` sem erro. Dados de teste removidos depois.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.102 — Status de NF-e (rejeitada + motivo) também em "Abastecimentos Fornecidos"
+
+Pedido do Daniel, olhando o filtro/badge de NF-e que já existia em `/notas-fiscais` (Fases 27.99/27.100):
+"Gostaria que fosse assim na visão do posto também, identificando no filtro a quantidade de rejeitados
+e nos registros de abastecimentos, o status de rejeitado com a descrição". E, na sequência: "Acho qu fica
+mais intuitivo para o usuario de posto para corrigir a NF".
+
+`/notas-fiscais` é uma tela separada, só de NF-e — mas o posto acompanha o dia a dia mesmo é em
+"Abastecimentos Fornecidos" (`AbastecimentosPosto.tsx`, renderizada dentro de `/abastecimentos` quando a
+empresa selecionada tem `segmento = 'Revenda'` — Fase 27.58). Essa tela nunca teve nenhuma coluna de
+status de NF-e: o posto precisava ir em `/notas-fiscais` pra descobrir o que foi rejeitado. Faz mais
+sentido resolver isso onde ele já está.
+
+- Duas consultas novas (mesmo padrão já usado pra pintar a bolinha de "ajuste pendente" — Fase 27.68):
+  todos os registros de `notas_fiscais_abastecimento` e `notas_fiscais_pendencias` deste posto (ambas as
+  tabelas já têm RLS própria escopando por `empresa_posto_id`, Fases 27.94/27.99 — não precisou de RPC
+  nova), virados em dois mapas `abastecimento_id → status`. Pendência só "vale" como rejeição se o mesmo
+  abastecimento ainda NÃO tem NF-e emitida (mesma regra da `LEFT JOIN LATERAL ... on nf.id is null` já
+  usada em `abastecimentos_com_status_nota_fiscal`) — assim que o posto reenvia a NF-e certa, a rejeição
+  antiga some sozinha da lista, sem precisar apagar nada.
+- Nova coluna "NF-e" na tabela, com o mesmo badge de 3 estados de `/notas-fiscais`: verde "Emitida",
+  vermelho "Rejeitada" com o motivo escrito embaixo (reaproveita `mensagemMotivoPendencia`, mesmo
+  dicionário de mensagens do resto do app), âmbar "Pendente".
+- Nova linha de filtros "NF-e: Todas / Emitida / Rejeitada / Pendente" com contagem, mesma cor por
+  categoria do badge — combinável com os filtros já existentes (combustível, cliente, busca, data,
+  🔴 ajuste pendente). As contagens dos filtros são calculadas SEM o próprio filtro de status de NF-e
+  aplicado (só com os demais filtros), pra os números não mudarem quando o posto troca de um filtro de
+  status pro outro — mesma ideia do painel de indicadores de `/notas-fiscais`.
+
+**Testado com dados reais:** conferi por SQL direto que a contagem bate com o que a tela vai mostrar pro
+Posto Teste — 7407 abastecimentos no total, 1 emitida, 1 rejeitada (a pendência de exemplo
+`codigo_anp_nao_corresponde` da Fase 27.96/27.99, mantida como fixture), 7405 pendentes — soma exata.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
