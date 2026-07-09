@@ -5887,3 +5887,38 @@ operar cada meio de pagamento separadamente"), em vez de só descrever a integra
   tags como texto puro.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.107 — Corrigir negociações "aceita" duplicadas por par posto+cliente
+
+Pedido do Daniel, com print de 2 linhas de "ciclo em andamento" sobrepostas pro mesmo cliente ("Frotas &
+Frotas Ltda"): "Não creio que estes ciclos estejam corretos. A aplicação precisa aplicar os ciclos
+definidos para cada cliente (7+7, 15+10, 30+15,...) e ajustar os ciclos criados."
+
+**Causa raiz encontrada no banco:** existiam 2 negociações com `status='aceita'` SIMULTANEAMENTE para o
+mesmo par (posto, cliente) — `58b7790b...` (ciclo 7 dias + prazo 7 dias, criada 05/07, com histórico real:
+3 faturas já geradas, 2 pagas e 1 aberta) e `e15a517c...` (ciclo 30+30, criada 08/07, sem nenhuma fatura
+ainda — uma segunda negociação aceita por engano pro mesmo par, sem que a primeira fosse encerrada).
+`ciclos_abertos_postos()` itera por TODA negociação com `status='aceita'`, sem deduplicar por par — por
+isso apareciam 2 linhas de ciclo em andamento pro mesmo cliente, com período/vencimento diferentes (a linha
+correta, 05/07–11/07 vencendo 18/07, bate exatamente com a negociação de ciclo 7+7 que já vinha fechando
+faturas normalmente; a segunda linha, 08/07–31/07 vencendo 30/08, era a duplicata sem histórico).
+
+`decidirNegociacao()` (`src/lib/negociacoesPostos.ts`) nunca checava se já existia outra negociação aceita
+pro mesmo par antes de gravar um novo aceite — um `UPDATE` cego só na própria linha. Não existe fluxo de
+"renegociação" vinculado à aceita anterior (`FormularioNovaNegociacao.tsx` sempre cria do zero) nem nenhum
+`UNIQUE` no banco impedindo isso.
+
+**Correção:**
+- Dado: cancelada a negociação duplicada sem histórico (`e15a517c...` → `status='cancelada'`), mantida a
+  negociação com faturas reais (`58b7790b...`, ciclo 7+7).
+- Banco: índice único parcial `negociacoes_postos_par_aceita_unica` em
+  `(empresa_posto_id, empresa_cliente_id) WHERE status = 'aceita'` — garante, a nível de banco, que nunca
+  mais existam 2 negociações aceitas ao mesmo tempo pro mesmo par, mesmo se algum código futuro (ex.: a API
+  externa de decisão em `src/app/api/integracoes/negociacoes/[id]/decisao/route.ts`) esquecer de checar.
+- Código: `decidirNegociacao()` agora, antes de gravar o aceite, cancela automaticamente qualquer outra
+  negociação já aceita do mesmo par posto+cliente — uma renegociação aceita sempre substitui a anterior, as
+  duas nunca convivem. Isso cobre tanto o fluxo interno (`/negociacoes`) quanto a API externa (mesma função
+  compartilhada), e evita que o índice único do banco chegue a barrar a operação com um erro cru.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos). Confirmado no banco: `select ... group by
+empresa_posto_id, empresa_cliente_id having count(*) > 1` não retorna mais nenhum par duplicado.

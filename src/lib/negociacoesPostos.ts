@@ -287,7 +287,7 @@ export async function decidirNegociacao(
 ): Promise<{ ok: true } | { erro: string }> {
   const { data: negociacao, error: erroBusca } = await supabase
     .from("negociacoes_postos")
-    .select("id, status, rodada_atual")
+    .select("id, status, rodada_atual, empresa_posto_id, empresa_cliente_id")
     .eq("id", params.negociacaoId)
     .maybeSingle();
 
@@ -309,6 +309,26 @@ export async function decidirNegociacao(
   if (erroRodada) return { erro: erroRodada.message };
 
   const novoStatus: StatusNegociacao = params.decisao === "aceita" ? "aceita" : "recusada";
+
+  // Fase 27.107 — achado real do Daniel: duas negociações do mesmo par
+  // posto+cliente ficaram "aceita" ao mesmo tempo (uma renegociação nova
+  // foi aceita sem a antiga ser encerrada), e ciclos_abertos_postos()
+  // (que itera por toda negociação 'aceita') passou a mostrar 2 linhas de
+  // "ciclo em andamento" sobrepostas pro mesmo cliente, com ciclo/prazo
+  // diferentes. Antes de marcar esta como aceita, encerra qualquer outra
+  // negociação já aceita do mesmo par — a nova renegociação substitui a
+  // anterior, nunca convivem duas ao mesmo tempo (reforçado também por um
+  // índice único parcial no banco, negociacoes_postos_par_aceita_unica).
+  if (novoStatus === "aceita" && negociacao.empresa_posto_id && negociacao.empresa_cliente_id) {
+    const { error: erroSubstituir } = await supabase
+      .from("negociacoes_postos")
+      .update({ status: "cancelada", atualizado_em: agora, atualizado_por: params.decididoPor })
+      .eq("empresa_posto_id", negociacao.empresa_posto_id)
+      .eq("empresa_cliente_id", negociacao.empresa_cliente_id)
+      .eq("status", "aceita")
+      .neq("id", params.negociacaoId);
+    if (erroSubstituir) return { erro: erroSubstituir.message };
+  }
 
   // Fase 27.54 — quando aceita, "fotografa" os termos da rodada vencedora
   // no cabeçalho (vigência, combustível, volume, preço) — é isso que
