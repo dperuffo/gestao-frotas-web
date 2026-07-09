@@ -5419,3 +5419,44 @@ nessa tela.
 Uso: `node scripts/gerar-exemplos-nfe-teste.mjs [pasta-de-saída]`. Os 9 XMLs + `LEIA-ME.txt` foram
 entregues ao Daniel fora do repositório (não dá pra escrever direto na pasta Downloads do usuário a
 partir daqui). Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.97 — Upload de NF-e em lote (pasta inteira) com abastecimento identificado
+
+Correção pedida pelo Daniel, testando o fluxo com os exemplos da Fase 27.96: "quando o usuário
+escolher o arquivo, na realidade ele precisa escolher a pasta de origem dos XMLs e a aplicação
+carregar os XMLs e realizar os matchs ou as críticas. Os registros de abastecimentos impactados
+deverão ser facilmente identificados para os usuários". O upload de 1 XML por vez (Fase 27.94) virou
+upload em lote:
+
+- `UploadNotaFiscal.tsx` (reescrito) — 2 seletores: "Selecionar pasta" (usa o atributo não-padrão
+  `webkitdirectory`, suportado por Chrome/Edge/Safari — como o React/TypeScript não reconhece esse
+  atributo, ele é setado via `ref` + `element.setAttribute(...)` num `useEffect`, sem precisar de
+  `any`/cast) e "Selecionar arquivo(s)" (`multiple`, para quem prefere marcar vários arquivos
+  manualmente em vez da pasta inteira). Arquivos que não terminam em `.xml` são filtrados
+  silenciosamente (com um aviso de quantos foram ignorados).
+- Depois de escolher, o posto clica em "Processar N arquivos" — cada XML é enviado em sequência (1 por
+  vez, não em paralelo, pra não sobrecarregar nem confundir a ordem de aparição na tela) pra MESMA
+  Server Action de antes (`enviarNotaFiscalAcao`, sem mudança nas regras de negócio/validação — só
+  passou a ser chamada em loop). Cada linha da lista mostra o nome do arquivo e, assim que processado,
+  o resultado com cor (verde = vinculado, âmbar = já cadastrado antes, azul = ambíguo, vermelho =
+  pendência/erro) — sem precisar abrir cada NF-e uma por uma.
+- Resumo no topo da lista (ex.: "✓ 6 vinculadas · ↺ 1 já cadastrada · ? 1 ambígua · ✕ 1 com
+  pendência") pra visão rápida do lote inteiro, importante com muitos arquivos de uma vez (mesma
+  preocupação de UX com volume que o Daniel já tinha pedido nas Fases 27.94/27.95).
+- Ambíguo continua resolvível ali mesmo, sem sair da lista: a linha mostra os candidatos com
+  data/placa/motorista/quantidade, e escolher um reenvia só aquele arquivo com
+  `abastecimento_id_forcado`, atualizando só aquela linha.
+
+**"Registros de abastecimentos impactados facilmente identificados" — a parte que exigiu mudar a
+Server Action, não só a tela:** antes, `enviarNotaFiscalAcao` só devolvia `{status: "sucesso", notaId}`
+em caso de sucesso — pra descobrir qual abastecimento tinha sido vinculado, o usuário precisava clicar
+em "Ver NF-e" e abrir o detalhe. Isso não escala pra um lote de vários arquivos. `actions.ts` agora
+busca e devolve um resumo do abastecimento (data, placa, motorista, combustível, quantidade) junto da
+resposta, tanto em `sucesso` quanto em `duplicada` (que também aponta pra um abastecimento já vinculado
+antes — o usuário também precisa saber qual) — assim cada linha da lista já mostra o abastecimento
+impactado, sem navegação extra. Tipo novo: `AbastecimentoResumo` (exportado de `actions.ts`).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos). Não muda nenhuma RPC/regra de validação —
+só orquestração (loop no client) e uma consulta extra de leitura (resumo do abastecimento), então os 9
+XMLs de exemplo da Fase 27.96 continuam servindo pra testar cada cenário, agora processados em lote de
+uma vez em vez de um por um.

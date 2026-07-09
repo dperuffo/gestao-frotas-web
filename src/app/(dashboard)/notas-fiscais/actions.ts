@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { parsearXmlNfe, mensagemMotivoPendencia, type NfeExtraida } from "@/lib/nfe";
 
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
 // Fase 27.94 — pedido do Daniel: upload do XML da NF-e (modelo 55) pelo
 // posto, vinculando-a ao abastecimento que ela documenta. Fluxo: 1) parse
 // estrutural do XML (src/lib/nfe.ts, sem tocar no banco); 2) checa
@@ -16,6 +18,17 @@ import { parsearXmlNfe, mensagemMotivoPendencia, type NfeExtraida } from "@/lib/
 // crítica final (CNPJ, tolerância, código ANP) é REFEITA server-side pela
 // RPC inserir_nota_fiscal_abastecimento — esta action nunca decide sozinha
 // se uma NF-e é válida, só orquestra e traduz o resultado pro usuário.
+//
+// Fase 27.97 — pedido do Daniel: o upload passou a ser em LOTE (o usuário
+// escolhe uma pasta inteira de XMLs, não 1 arquivo por vez — ver
+// UploadNotaFiscal.tsx) e "os registros de abastecimentos impactados devem
+// ser facilmente identificados". Por isso toda resposta que resulta num
+// vínculo (sucesso OU duplicada, já que "duplicada" também aponta pra um
+// abastecimento já vinculado antes) agora devolve um resumo do
+// abastecimento (placa, motorista, data, combustível) junto — sem isso, com
+// vários arquivos processados de uma vez, o usuário não tinha como saber
+// qual abastecimento cada linha da lista correspondia sem clicar em cada
+// um.
 
 export type CandidatoNota = {
   abastecimentoId: number;
@@ -28,19 +41,47 @@ export type CandidatoNota = {
   itemValorTotal: number;
 };
 
+export type AbastecimentoResumo = {
+  abastecimentoId: number;
+  dataAbastecimento: string | null;
+  veiculoPlaca: string | null;
+  motoristaNome: string | null;
+  itemNome: string | null;
+  itemQuantidade: number | null;
+  itemValorTotal: number | null;
+};
+
 export type ResultadoEnvioNotaFiscal =
-  | { status: "sucesso"; notaId: string; avisoArquivo?: string }
-  | { status: "duplicada" }
+  | { status: "sucesso"; notaId: string; abastecimento: AbastecimentoResumo | null; avisoArquivo?: string }
+  | { status: "duplicada"; notaId: string | null; abastecimento: AbastecimentoResumo | null }
   | { status: "sem_correspondencia"; extraido: NfeExtraida }
   | { status: "ambiguo"; candidatos: CandidatoNota[]; extraido: NfeExtraida }
   | { status: "erro"; mensagem: string };
+
+async function buscarResumoAbastecimento(supabase: Supabase, abastecimentoId: number): Promise<AbastecimentoResumo | null> {
+  const { data } = await supabase
+    .from("profrotas_abastecimentos")
+    .select("id, data_abastecimento, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_total")
+    .eq("id", abastecimentoId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    abastecimentoId: data.id,
+    dataAbastecimento: data.data_abastecimento,
+    veiculoPlaca: data.veiculo_placa,
+    motoristaNome: data.motorista_nome,
+    itemNome: data.item_nome,
+    itemQuantidade: data.item_quantidade === null ? null : Number(data.item_quantidade),
+    itemValorTotal: data.item_valor_total === null ? null : Number(data.item_valor_total),
+  };
+}
 
 export async function enviarNotaFiscalAcao(formData: FormData): Promise<ResultadoEnvioNotaFiscal> {
   const arquivo = formData.get("arquivo");
   const abastecimentoForcadoRaw = formData.get("abastecimento_id_forcado");
 
   if (!(arquivo instanceof File) || arquivo.size === 0) {
-    return { status: "erro", mensagem: "Selecione o arquivo XML da NF-e." };
+    return { status: "erro", mensagem: "Selecione o(s) arquivo(s) XML da NF-e." };
   }
   if (arquivo.size > 2 * 1024 * 1024) {
     return { status: "erro", mensagem: "O arquivo é grande demais (máximo 2 MB) — confira se é mesmo o XML da NF-e." };
@@ -57,11 +98,12 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
 
   const { data: existente } = await supabase
     .from("notas_fiscais_abastecimento")
-    .select("id")
+    .select("id, abastecimento_id")
     .eq("chave_acesso", nfe.chaveAcesso)
     .maybeSingle();
   if (existente) {
-    return { status: "duplicada" };
+    const abastecimento = await buscarResumoAbastecimento(supabase, existente.abastecimento_id);
+    return { status: "duplicada", notaId: existente.id, abastecimento };
   }
 
   let abastecimentoId: number | null = abastecimentoForcadoRaw ? Number(abastecimentoForcadoRaw) : null;
@@ -133,7 +175,10 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
 
   const resultado = resultadoRpc as { ok: boolean; motivo?: string; nota_id?: string };
   if (!resultado.ok) {
-    if (resultado.motivo === "chave_duplicada") return { status: "duplicada" };
+    if (resultado.motivo === "chave_duplicada") {
+      const abastecimento = await buscarResumoAbastecimento(supabase, abastecimentoId);
+      return { status: "duplicada", notaId: null, abastecimento };
+    }
     return { status: "erro", mensagem: mensagemMotivoPendencia(resultado.motivo) };
   }
 
@@ -150,6 +195,7 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
     avisoArquivo = "NF-e validada e vinculada, mas não foi possível guardar uma cópia do arquivo XML original.";
   }
 
+  const abastecimento = await buscarResumoAbastecimento(supabase, abastecimentoId);
   revalidatePath("/notas-fiscais");
-  return { status: "sucesso", notaId: resultado.nota_id!, avisoArquivo };
+  return { status: "sucesso", notaId: resultado.nota_id!, abastecimento, avisoArquivo };
 }
