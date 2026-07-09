@@ -41,6 +41,14 @@ export const ESCOPO_USUARIOS_READ = "usuarios:read";
 export const ESCOPO_NEGOCIACOES_WRITE = "negociacoes:write";
 export const ESCOPO_NEGOCIACOES_READ = "negociacoes:read";
 
+// Fase 27.94 — pedido do Daniel: ERPs de automação de posto (sistema de
+// bomba/gestão) devem poder subir a NF-e (modelo 55) de venda de
+// combustível automaticamente, vinculando-a ao abastecimento que ela
+// documenta — mesmo fluxo de crítica/matching que o upload manual pelo
+// navegador (/notas-fiscais), só que autenticado por chave de API em vez de
+// sessão de usuário.
+export const ESCOPO_NOTAS_FISCAIS_WRITE = "notas_fiscais:write";
+
 // Catálogo central dos escopos disponíveis — usado tanto pela UI de geração
 // de chave (/integracoes, pra montar os checkboxes) quanto pela documentação
 // da API. Adicionar um escopo novo aqui é o único lugar a mudar pra ele
@@ -108,5 +116,11 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
     categoria: "Negociação com Cliente",
     label: "Negociações (leitura)",
     descricao: "Consultar o andamento das negociações enviadas por este posto.",
+  },
+  {
+    escopo: ESCOPO_NOTAS_FISCAIS_WRITE,
+    categoria: "Notas Fiscais",
+    label: "Notas fiscais (escrita)",
+    descricao: "Enviar o XML da NF-e de venda de combustível, vinculando-a ao abastecimento correspondente.",
   },
 ];

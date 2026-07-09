@@ -103,7 +103,7 @@ export default async function IntegracoesPage() {
       <div className="mb-4">
         <FormularioNovaChaveCustosFixos
           empresas={empresas}
-          apenasCategorias={ehPosto ? ["Negociação com Cliente"] : undefined}
+          apenasCategorias={ehPosto ? ["Negociação com Cliente", "Notas Fiscais"] : undefined}
         />
       </div>
 
@@ -211,6 +211,28 @@ export default async function IntegracoesPage() {
           uma proposta do cliente. <code>GET /api/integracoes/negociacoes</code> lista o andamento de
           todas as suas negociações.
         </p>
+
+        {ehPosto && (
+          <>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Enviar NF-e de venda de combustível (escopo notas_fiscais:write)
+            </p>
+            <pre className="mb-1 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+{`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/notas-fiscais \\
+  -H "Authorization: Bearer fni_..." \\
+  -H "Content-Type: application/xml" \\
+  --data-binary @nfe-73051.xml`}
+            </pre>
+            <p className="mb-4 text-xs text-slate-400">
+              Envie o XML completo da NF-e (com o protocolo de autorização da SEFAZ anexado) como corpo
+              bruto da requisição. O sistema tenta encontrar sozinho o abastecimento correspondente (por
+              CNPJ emitente/destinatário, data, quantidade e valor); se achar mais de um candidato, a
+              resposta traz a lista pra você reenviar informando qual é o certo (campo{" "}
+              <code>abastecimento_id</code> no corpo, como query string{" "}
+              <code>?abastecimento_id=123</code>). Nunca aceita duas notas com a mesma chave de acesso.
+            </p>
+          </>
+        )}
 
         {!ehPosto && (
           <>

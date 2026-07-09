@@ -5254,3 +5254,106 @@ RPC nova: o `RETURNS TABLE(id bigint, ...)` colidia com uma busca de `empresas.i
 da função — resolvido com alias (`from empresas e where e.id = ...`).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos, nos arquivos novos/alterados).
+
+## Fase 27.94 — Upload de NF-e (venda de combustível) por abastecimento + API pra ERPs
+
+Pedido do Daniel, com um XML real de NFe anexado (posto real, autorizado pela SEFAZ-MG): "criar
+upload de nota fiscal de venda de produto... o posto realizar o upload do XML da NFe, realizar as
+críticas das regras de validação de todos os campos... e reportar cenários/status... para que o
+usuário consiga corrigir e realizar o upload do XML novamente, salvo quando a NFe já foi inserida...
+o sistema deve exibir para cliente, posto e admin o PDF da NF montada a partir do XML... Nesta
+primeira entrega, 1 NFE para cada abastecimento". Depois, mais dois pedidos na mesma linha: "ERPs de
+automação de postos... podem se integrar com a aplicação para upload automático" e "Sempre levando em
+consideração a experiência do usuário com muitos volumes de abastecimentos".
+
+**Decisões tomadas com o Daniel antes de implementar (`AskUserQuestion`):**
+- **Vínculo NFe↔abastecimento: o sistema tenta descobrir sozinho** (por CNPJ emitente/destinatário +
+  janela de data + tolerância de quantidade/valor), em vez do posto escolher o abastecimento antes de
+  subir o XML.
+- **Validação do código ANP: rígida, contra uma tabela de referência** — pesquisei a Tabela D02.2 da
+  ANP (códigos oficiais de produto) e montei o catálogo completo (`anp_codigos_combustivel`, ~80
+  códigos de combustíveis) mais um mapeamento dos 11 nomes de combustível já usados no app
+  (`precos_postos.combustivel`) pro código ANP esperado (`combustiveis_codigo_anp`). O código da NFe
+  precisa bater exatamente com o esperado pro combustível do abastecimento.
+- **Tolerância numérica: pequena, com folga** — até 0,5 L de diferença na quantidade, até 2% (mínimo
+  R$ 0,05) no valor — cobre arredondamento e o efeito do ICMS monofásico retido (presente no XML de
+  exemplo) sem deixar passar erro grosseiro.
+- **PDF: simplificado, no mesmo estilo do documento de cobrança** (Fase 27.92) — sem código de barras,
+  já que a nota em si já foi autorizada pela SEFAZ (não é preciso reemitir um DANFE oficial).
+
+**Schema novo:**
+- `anp_codigos_combustivel` (codigo_anp, descricao_anp) — catálogo oficial ANP, leitura livre.
+- `combustiveis_codigo_anp` (combustivel, codigo_anp) — mapeamento app→ANP, leitura livre.
+- `notas_fiscais_abastecimento` — 1 linha por NFe validada, `abastecimento_id` **unique** (1:1, 1ª
+  entrega), `chave_acesso` **unique** (44 dígitos, trava de duplicidade), todos os campos extraídos do
+  XML (emitente/destinatário/produto/valores), `xml_storage_path`. RLS: só SELECT (membro do posto ou
+  do cliente da nota, ou admin) — **sem política de INSERT/UPDATE/DELETE**, toda escrita passa pelas
+  RPCs abaixo.
+- Bucket privado `notas-fiscais-xml` (Storage) — mesmo padrão de `ticket-anexos`/`termos-adesao`, com
+  policy de SELECT/INSERT que confere a dona do `abastecimento_id` na pasta.
+
+**Motor de matching/validação (RPCs `SECURITY DEFINER`, mesmo padrão de guarda manual "IS NOT TRUE"
+corrigido na Fase 27.93):**
+- `buscar_abastecimentos_candidatos_nota_fiscal(...)` — dado os dados extraídos do XML, acha os
+  abastecimentos candidatos (CNPJ normalizado + janela de ±2 dias + tolerância). 0 candidatos =
+  pendência; 1 = vincula direto; 2+ = devolve a lista pro usuário escolher.
+- `inserir_nota_fiscal_abastecimento(...)` — **revalida tudo de novo, nunca confia no resultado do
+  matching**: duplicidade de chave, CNPJ batendo com o abastecimento, tolerância, código ANP contra o
+  catálogo E contra o mapeamento esperado do combustível. Só grava se tudo passar; senão devolve um
+  motivo específico (`chave_duplicada`, `fora_da_tolerancia`, `codigo_anp_nao_corresponde` etc.),
+  traduzido em mensagem amigável (`src/lib/nfe.ts`).
+- **API de integração pro ERP do posto** (pedido posterior do Daniel): as duas RPCs acima têm um 2º
+  overload que recebe `empresa_posto_id` já validado (em vez de resolver por e-mail/JWT) — **só o
+  `service_role` pode executar esse overload** (`REVOKE ALL ... FROM public, anon, authenticated` +
+  `GRANT ... TO service_role`, testado: `authenticated` recebe `permission denied`, `service_role`
+  funciona). Usado por `POST /api/integracoes/notas-fiscais` (novo endpoint no Hub de Integrações já
+  existente, Fase 25/27.50 — reaproveita `api_keys`/`autenticarRequisicaoApi`, novo escopo
+  `notas_fiscais:write`, só disponível pra chaves de posto). O ERP manda o XML bruto como corpo da
+  requisição (`Content-Type: application/xml`); se ambíguo, reenvia com `?abastecimento_id=`.
+
+**Parser do XML** (`src/lib/nfe.ts`, `fast-xml-parser`) — **achado real testando com o XML do Daniel**:
+por padrão o `fast-xml-parser` converte texto "numérico" pra `number`, o que **corrompe a chave de
+acesso** (44 dígitos vira notação científica por perda de precisão de ponto flutuante — ex.:
+`3.126072...e+43` em vez dos 44 dígitos exatos) e comeria zeros à esquerda de CNPJ/código ANP.
+Corrigido com `parseTagValue`/`parseAttributeValue: false` (mantém tudo como string; a conversão pros
+campos que precisam virar número é manual). Validações estruturais antes de qualquer consulta ao
+banco: modelo 55, `<protNFe>` presente com `cStat = 100` (autorizada), exatamente 1 item com grupo
+`<comb>` (nesta 1ª entrega). **Testado de ponta a ponta com o XML real anexado pelo Daniel** (NFe da
+Rede Dom Pedro de Postos): parse extrai corretamente chave de 44 dígitos, CNPJ, produto (código ANP
+820101034 "ÓLEO DIESEL B S10 - COMUM"), 300 L, R$ 6,79/L, R$ 2.037,00 — e o fluxo completo (candidatos
+→ inserção → duplicidade → ANP incorreto → fora de tolerância → e-mail desconhecido) foi testado
+diretamente no banco com dados sintéticos equivalentes, todos os cenários batendo com o esperado.
+
+**Performance com grande volume** (pedido explícito do Daniel): `EXPLAIN ANALYZE` na consulta de
+matching mostrou que, sem índice na expressão normalizada de CNPJ, o Postgres cai pra filtro pós-scan
+— criados `idx_pfa_pv_cnpj_normalizado`/`idx_pfa_cnpj_frota_normalizado` (índices funcionais na mesma
+expressão `regexp_replace(upper(x),'[^0-9A-Z]','','g')` usada em TODAS as funções de matching
+cross-tenant deste app, não só as novas — beneficia `ciclos_abertos_postos`, `abastecimentos_da_fatura`
+etc. também).
+
+**UI:**
+- `/notas-fiscais` — tela única que serve as 3 visões (`resolverEmpresaAtual`, mesmo padrão de
+  `/integracoes`): indicador + upload (só posto) + tabela paginada (20/página) dos abastecimentos dos
+  últimos 90 dias com status Emitida/Pendente, filtro "só pendentes".
+- Upload é 1 formulário genérico (reflete a decisão "sistema descobre sozinho") — trata os 5 resultados
+  possíveis (sucesso, duplicada, sem correspondência, ambíguo com lista pra escolher, erro).
+- `/notas-fiscais/[notaId]` — detalhe + `📄 Baixar NF-e (PDF)` (react-pdf, lazy/`ssr:false`, mesmo
+  padrão de `BotaoBaixarPdfFatura`).
+- Menu: `📄 Notas Fiscais` adicionado em `menuOperacao` (cliente/admin) e `menuPosto`.
+
+## Fase 27.95 — Painel de indicadores de recolha de NF-e
+
+Pedido do Daniel, na sequência da Fase 27.94: "precisa ter um painel de indicadores, em todas as
+visões, com os percentuais de notas fiscais emitidas, pendentes de emissão... pode ter uma barra de
+indicação com o percentual de recolha de NF realizado, vai ficando mais verde à medida que vai
+completando a recolha de NF em 100%".
+
+- RPC `indicador_notas_fiscais(p_empresa_id)` — agregado no banco (1 query, `count(*)`/`count(nf.id)`),
+  não no client, mesma janela de 90 dias e mesma guarda de autorização das demais RPCs desta fase.
+- `IndicadorNotasFiscais.tsx` — cartão no topo de `/notas-fiscais` com o percentual e uma barra cuja
+  cor interpola continuamente vermelho → âmbar → verde conforme o percentual sobe (não é degrau fixo).
+- Testado: indicador em 0% (nenhuma nota), inseri 1 NF de teste vinculada e o indicador atualizou pra
+  refletir (`com_nota` +1, `percentual` recalculado) — depois desfeito.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos, em todos os arquivos novos/alterados desta
+fase). Nova dependência: `fast-xml-parser`.

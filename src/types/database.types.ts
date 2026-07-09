@@ -1057,6 +1057,79 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["anp_precos_referencia"]["Row"]>;
         Relationships: [];
       };
+      // Fase 27.94 — catálogo oficial de códigos ANP (Tabela D02.2,
+      // combustíveis), usado pra validar o cProdANP de uma NFe.
+      anp_codigos_combustivel: {
+        Row: {
+          codigo_anp: string;
+          descricao_anp: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["anp_codigos_combustivel"]["Row"]> & {
+          codigo_anp: string;
+          descricao_anp: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["anp_codigos_combustivel"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase 27.94 — mapeia o nome de combustível usado no app
+      // (precos_postos.combustivel / item_nome) pro código ANP esperado.
+      combustiveis_codigo_anp: {
+        Row: {
+          combustivel: string;
+          codigo_anp: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["combustiveis_codigo_anp"]["Row"]> & {
+          combustivel: string;
+          codigo_anp: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["combustiveis_codigo_anp"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase 27.94 — NFe (modelo 55) de venda de combustível, validada e
+      // vinculada 1:1 a um abastecimento (1ª entrega). Ver
+      // src/lib/nfe.ts (parse do XML) e src/app/(dashboard)/notas-fiscais/actions.ts.
+      notas_fiscais_abastecimento: {
+        Row: {
+          id: string;
+          abastecimento_id: number;
+          empresa_posto_id: string;
+          empresa_cliente_id: string;
+          chave_acesso: string;
+          numero_nf: number;
+          serie_nf: string;
+          modelo: string;
+          data_emissao: string;
+          cnpj_emitente: string;
+          nome_emitente: string;
+          cnpj_destinatario: string;
+          nome_destinatario: string;
+          produto_nome_xml: string;
+          produto_codigo_anp: string;
+          produto_descricao_anp: string;
+          quantidade: number;
+          valor_unitario: number;
+          valor_total: number;
+          valor_nf_total: number;
+          xml_storage_path: string;
+          enviado_por: string;
+          criado_em: string;
+        };
+        // Sem política de RLS de INSERT/UPDATE — toda escrita passa pela RPC
+        // inserir_nota_fiscal_abastecimento (SECURITY DEFINER). O tipo aqui
+        // é só pro TS aceitar leitura (.select()); um .insert() direto
+        // falharia em runtime por RLS mesmo que compile.
+        Insert: Partial<Database["public"]["Tables"]["notas_fiscais_abastecimento"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["notas_fiscais_abastecimento"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "notas_fiscais_abastecimento_abastecimento_id_fkey";
+            columns: ["abastecimento_id"];
+            isOneToOne: true;
+            referencedRelation: "profrotas_abastecimentos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       frota_abastecimentos: {
         Row: {
           id: number;
@@ -1727,6 +1800,95 @@ export interface Database {
           cliente_uf: string | null;
           cliente_cep: string | null;
         }[];
+      };
+      // Fase 27.94 — busca abastecimentos candidatos a corresponder a uma
+      // NFe recém-lida (por CNPJ emitente/destinatário, janela de data,
+      // tolerância de quantidade/valor). Tem 2 overloads no banco: esta
+      // (5 args, autoriza por e-mail/JWT — usada pela Server Action do
+      // navegador) e uma com o 6º arg opcional
+      // p_empresa_posto_id_confiavel (só o service_role pode chamar — usada
+      // pela API de integração do ERP do posto, /api/integracoes/notas-fiscais).
+      buscar_abastecimentos_candidatos_nota_fiscal: {
+        Args: {
+          p_cnpj_emitente: string;
+          p_cnpj_destinatario: string;
+          p_data_emissao: string;
+          p_quantidade: number;
+          p_valor_total: number;
+          p_empresa_posto_id_confiavel?: string;
+        };
+        Returns: {
+          abastecimento_id: number;
+          data_abastecimento: string;
+          veiculo_placa: string | null;
+          motorista_nome: string | null;
+          item_nome: string | null;
+          item_quantidade: number;
+          item_valor_unitario: number;
+          item_valor_total: number;
+        }[];
+      };
+      // Fase 27.94 — revalida tudo server-side (CNPJ, duplicidade de chave
+      // de acesso, tolerância, código ANP) e grava a NF-e. Mesmos 2
+      // overloads que buscar_abastecimentos_candidatos_nota_fiscal acima —
+      // os 2 últimos args só existem no overload confiável (API/ERP).
+      inserir_nota_fiscal_abastecimento: {
+        Args: {
+          p_abastecimento_id: number;
+          p_chave_acesso: string;
+          p_numero_nf: number;
+          p_serie_nf: string;
+          p_modelo: string;
+          p_data_emissao: string;
+          p_cnpj_emitente: string;
+          p_nome_emitente: string;
+          p_cnpj_destinatario: string;
+          p_nome_destinatario: string;
+          p_produto_nome_xml: string;
+          p_produto_codigo_anp: string;
+          p_produto_descricao_anp: string;
+          p_quantidade: number;
+          p_valor_unitario: number;
+          p_valor_total: number;
+          p_valor_nf_total: number;
+          p_xml_storage_path: string;
+          p_empresa_posto_id_confiavel?: string;
+          p_enviado_por?: string;
+        };
+        Returns: Json;
+      };
+      // Fase 27.94/27.95 — listagem paginada dos abastecimentos com status
+      // de NF-e (emitida/pendente), pra tela /notas-fiscais. p_empresa_id
+      // pode ser tanto o posto quanto o cliente — a mesma RPC serve as 3
+      // visões. `total_count` vem via count(*) over() (mesma página, sem
+      // 2ª query).
+      abastecimentos_com_status_nota_fiscal: {
+        Args: {
+          p_empresa_id: string;
+          p_apenas_pendentes?: boolean;
+          p_limit?: number;
+          p_offset?: number;
+        };
+        Returns: {
+          abastecimento_id: number;
+          data_abastecimento: string;
+          cliente_nome: string | null;
+          posto_nome: string | null;
+          veiculo_placa: string | null;
+          item_nome: string | null;
+          item_quantidade: number;
+          item_valor_total: number;
+          nota_id: string | null;
+          nota_numero: number | null;
+          nota_chave_acesso: string | null;
+          total_count: number;
+        }[];
+      };
+      // Fase 27.95 — indicador agregado (% de recolha de NF) pro painel da
+      // tela /notas-fiscais — mesma janela de 90 dias da função acima.
+      indicador_notas_fiscais: {
+        Args: { p_empresa_id: string };
+        Returns: Json;
       };
       // Fase 27.41 — conta a frota REAL da empresa (cadastro_veiculos +
       // placas distintas vistas nos abastecimentos da integração, mesmo sem

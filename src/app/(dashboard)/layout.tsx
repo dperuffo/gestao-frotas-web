@@ -45,6 +45,9 @@ const menuCadastros = [
 
 const menuOperacao = [
   { href: "/abastecimentos", label: "🛢️ Abastecimentos" },
+  // Fase 27.94/27.95 — status de NF-e por abastecimento (emitida/pendente)
+  // + indicador de % de recolha, do lado do cliente.
+  { href: "/notas-fiscais", label: "📄 Notas Fiscais" },
   { href: "/anomalias", label: "🚨 Anomalias" },
   { href: "/roteirizacao", label: "🗺️ Roteirização" },
   { href: "/rotograma", label: "🛡️ Rotograma" },
@@ -74,6 +77,9 @@ const menuPosto = [
   { href: "/clientes-posto", label: "🏢 Clientes" },
   { href: "/precos-postos", label: "💲 Meus Preços" },
   { href: "/financeiro-posto", label: "💰 Financeiro" },
+  // Fase 27.94/27.95 — upload de NF-e (XML) por abastecimento + indicador
+  // de % de recolha, do lado do posto.
+  { href: "/notas-fiscais", label: "📄 Notas Fiscais" },
   // Fase 27.92 — self-service: cadastro da chave PIX usada como cedente no
   // boleto/documento de cobrança enviado aos clientes.
   { href: "/minha-empresa", label: "🏦 Meus Dados / PIX" },
