@@ -61,6 +61,24 @@ function apenasDigitos(v: unknown): string {
   return String(v ?? "").replace(/\D/g, "");
 }
 
+// Fase 27.94/27.96 — achado real testando com os XMLs de exemplo: o CNPJ do
+// cliente de teste usado em todo o app desde a Fase 27.x é propositalmente
+// "malformado" (letras misturadas, ex.: "N6.SL9.PHV/0001-84") pra exercitar
+// a normalização alfanumérica já usada em TODAS as funções SQL de matching
+// (regexp_replace(upper(x),'[^0-9A-Z]','','g') — mantém letras, só tira
+// pontuação). apenasDigitos() aqui cortava tudo que não fosse número,
+// devolvendo um CNPJ de 8 caracteres em vez de 14 — inconsistente com o
+// resto do app. Usa a MESMA normalização alfanumérica do lado SQL pros
+// campos de CNPJ (um CNPJ real de NFe autorizada pela SEFAZ é sempre só
+// dígitos, então isso não muda nada no caso real — só evita rejeitar de
+// forma inconsistente um cliente/posto de teste cujo CNPJ cadastrado não é
+// puramente numérico).
+function normalizarCnpj(v: unknown): string {
+  return String(v ?? "")
+    .toUpperCase()
+    .replace(/[^0-9A-Z]/g, "");
+}
+
 // Fase 27.94 — a NF-e pode vir como <nfeProc><NFe>... (com protocolo de
 // autorização anexado, o formato normal de download no portal do posto) ou,
 // mais raramente, só <NFe>... (XML assinado mas sem o protocolo anexado
@@ -139,8 +157,8 @@ export function parsearXmlNfe(xmlTexto: string): ResultadoParseNfe {
   const prod = detsComCombustivel[0].prod as Record<string, unknown>;
   const comb = prod.comb as Record<string, unknown>;
 
-  const cnpjEmitente = apenasDigitos(emit.CNPJ);
-  const cnpjDestinatario = apenasDigitos(dest.CNPJ);
+  const cnpjEmitente = normalizarCnpj(emit.CNPJ);
+  const cnpjDestinatario = normalizarCnpj(dest.CNPJ);
   if (cnpjEmitente.length !== 14) {
     return { ok: false, erro: "CNPJ do emitente inválido ou ausente no XML." };
   }

@@ -5357,3 +5357,65 @@ completando a recolha de NF em 100%".
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos, em todos os arquivos novos/alterados desta
 fase). Nova dependência: `fast-xml-parser`.
+
+## Fase 27.96 — Robô gerador de XMLs de exemplo para testar o upload de NF-e
+
+Pedido do Daniel: "criar um repositório em Downloads, com exemplos de XML de notas fiscais de
+abastecimentos para eu testar o fluxo. Podem ser notas que vão dar o match automático e outras que
+exibirão mensagens de pendências para os usuários".
+
+`scripts/gerar-exemplos-nfe-teste.mjs` gera 9 XMLs de NF-e fictícios (modelo 55, mesma estrutura do
+XML real que o Daniel anexou na Fase 27.94 — `nfeProc > NFe > infNFe` com `protNFe/infProt` anexado),
+cada um pensado pra exercitar um caminho diferente do fluxo de `/notas-fiscais`:
+
+| Arquivo | Cenário | Resultado esperado na tela |
+|---|---|---|
+| `01-match-automatico-diesel-s10-aditivado.xml` | bate com 1 abastecimento | "NF-e validada e vinculada com sucesso" |
+| `02-match-automatico-diesel-s500-aditivado.xml` | bate com 1 abastecimento (Posto Teste 2) | sucesso |
+| `03-match-automatico-gasolina-octanagem.xml` | bate com 1 abastecimento real do robô diário | sucesso |
+| `04-...-cnpj-nao-cadastrado.xml` | CNPJ do cliente não existe na base | "Nenhum abastecimento correspondente foi encontrado" |
+| `05-...-quantidade-nao-bate.xml` | quantidade/valor fora de qualquer tolerância | mesma mensagem do 04 (motivo diferente) |
+| `06-pendencia-codigo-anp-incorreto.xml` | acha 1 abastecimento, mas o código ANP do XML não bate com o combustível dele | "O código ANP da NF-e não corresponde ao combustível deste abastecimento" |
+| `07-pendencia-nfe-nao-autorizada.xml` | `cStat = 101` (cancelada) | rejeitada na leitura do XML |
+| `08-pendencia-modelo-invalido.xml` | `mod = 65` (NFC-e) | rejeitada na leitura do XML |
+| `09-ambiguo-duas-correspondencias.xml` | bate com 2 abastecimentos de teste | lista os 2 pra escolher |
+
+**Achado importante ao testar os próprios exemplos** (2 bugs de normalização de CNPJ, mesma causa
+raiz, dois lugares diferentes): o CNPJ do cliente de teste usado em todo o app desde a Fase 27.x é
+propositalmente "malformado" (`N6.SL9.PHV/0001-84`, com letras) pra exercitar a normalização
+alfanumérica usada em toda função SQL de matching (`regexp_replace(upper(x),'[^0-9A-Z]','','g')` —
+mantém letras, só tira pontuação). Achei DOIS lugares que cortavam as letras por engano, cada um
+quebrando o teste de um jeito diferente:
+1. `src/lib/nfe.ts` (parser real) usava `apenasDigitos()` (só dígitos) pra extrair `cnpjEmitente`/
+   `cnpjDestinatario` do XML — rejeitava um CNPJ de 14 caracteres alfanuméricos válido como se tivesse
+   só 8 dígitos. Corrigido com `normalizarCnpj()` (mesma expressão do lado SQL).
+2. O PRÓPRIO gerador de exemplos (`gerar-exemplos-nfe-teste.mjs`) tinha o mesmo bug ao ESCREVER a tag
+   `<CNPJ>` no XML — mesmo depois de corrigir o `nfe.ts`, os arquivos de teste continuavam falhando,
+   porque o XML gerado nunca tinha o valor certo gravado (o bug estava na geração do dado de teste, não
+   só na leitura). Corrigido com a mesma `normalizarCnpj()` duplicada no script (é um script solto,
+   não importa do `src/`).
+
+**Segundo achado, mais sutil** (por isso os cenários de "match automático" não reaproveitam
+abastecimentos aleatórios do robô de teste diário): a primeira tentativa espelhou XMLs em cima de
+abastecimentos aleatórios existentes (Gasolina Comum, Etanol Aditivado no Posto Teste) — testando a
+busca de verdade contra o banco, descobri que esse posto+cliente tem **1.000+ abastecimentos** desses
+dois combustíveis, então praticamente qualquer quantidade/valor cai dentro da tolerância (0,5 L / 2%)
+de mais de um registro ao mesmo tempo, virando "ambíguo" sem querer. Troquei os cenários de match
+automático pra combinações posto+combustível de baixíssimo volume (Diesel S-10/S-500 Aditivado, que
+não existiam ainda pra este cliente) e criei 4 abastecimentos de teste DEDICADOS
+(`sync_key` começando com `teste-xml-exemplo-`, IDs 165865–165867, mais os 2 já existentes da Fase de
+testes anterior — 165860/165861 — usados no cenário ambíguo). **Cada um dos 9 cenários foi conferido
+rodando a RPC real `buscar_abastecimentos_candidatos_nota_fiscal` contra o banco antes de fechar os
+valores** — não é só "parece certo", é testado ponta a ponta.
+
+Também percebi, lendo o código de `actions.ts`/`_inserir_nota_fiscal_core`, que o motivo
+`fora_da_tolerancia` só é alcançável quando o `abastecimento_id` é indicado diretamente (o jeito que a
+API de integração de ERP permite, via `?abastecimento_id=`) — no upload manual pelo navegador, o posto
+só escolhe entre candidatos que a busca já filtrou por tolerância, então esse motivo nunca aparece por
+lá. Por isso os cenários 04/05 mostram a mesma mensagem genérica de "sem correspondência" por dois
+motivos diferentes, em vez de eu forçar um cenário de "fora de tolerância" que na prática não acontece
+nessa tela.
+
+Uso: `node scripts/gerar-exemplos-nfe-teste.mjs [pasta-de-saída]`. Os 9 XMLs + `LEIA-ME.txt` foram
+entregues ao Daniel fora do repositório (não dá pra escrever direto na pasta Downloads do usuário a
+partir daqui). Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
