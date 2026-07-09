@@ -5858,3 +5858,32 @@ primeira vez que um ciclo vencer organicamente — ou, se o Daniel preferir vali
 forçar um cenário de teste sob demanda.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.106 — Landing page: seção de hub de integração com meios de pagamento
+
+Pedido do Daniel, com texto pronto pra incorporar: explicar que a FNI é um hub que conecta a operação das
+empresas direto aos principais players de meios de pagamento para frota (ex.: Ticket Log, Edenred
+Mobilidade), centralizando abastecimento, regras de consumo por veículo e conciliação de pagamento numa
+única interface. Depois, ajuste de tom: "Precisa incorporar este texto, de forma mais clara para que o
+potencial contratante da plataforma, entenda qual é o principal benefício de contratação da FNI para o seu
+negócio de gestão de frotas. É uma aplicação Hub que integra todos os meios de pagamentos de gestão de
+frotas e gerenciamento único" — ajustei o título/texto de abertura da seção pra deixar esse benefício
+central explícito logo de cara ("Um único hub para todos os meios de pagamento da sua frota... chega de
+operar cada meio de pagamento separadamente"), em vez de só descrever a integração tecnicamente.
+
+- Nova seção `#integracoes` em `src/app/_landing/landingBody.ts`, entre "Funcionalidades" e "Como
+  funciona" (mesmo padrão visual de `sec-lbl`/`sec-title`/`sec-sub`/`grid`/`card` já usado nas outras
+  seções — sem CSS novo). Link novo no menu (`Integrações`).
+- Parágrafo de abertura + sub-título "Principais Vantagens da Integração" + 4 cards: Conexão
+  Multiprestadores (com links para Ticket Log e Edenred Mobilidade, `target="_blank"`), Autorização em
+  Tempo Real, Conciliação Automatizada, Segurança e Controle — texto do Daniel, sem alteração de conteúdo
+  nos 4 cards (só o título/abertura da seção foi reforçado pra deixar o benefício central mais claro).
+- A landing tem troca de idioma PT/EN via `localStorage` (dicionário `_i18n` no fim do arquivo, script
+  troca `textContent`/`innerHTML` de todo elemento com `data-i18n`/`data-i18n-html`) — adicionei as 9
+  chaves novas (`nav_integracoes`, `integracoes_lbl/title/sub/vant_title`, `intcard0..3_t/d`) nos dois
+  idiomas, senão a seção ficaria em português mesmo com o usuário no modo EN. O card de "Conexão
+  Multiprestadores" usa `data-i18n-html` (não `data-i18n`) porque o texto contém os links `<a>` — o script
+  de troca de idioma usa `innerHTML` só pros atributos `-html`, então um `data-i18n` comum escaparia as
+  tags como texto puro.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

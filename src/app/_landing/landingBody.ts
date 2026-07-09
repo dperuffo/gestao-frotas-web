@@ -114,6 +114,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
   <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgNjQiIHdpZHRoPSIyMjAiIGhlaWdodD0iNDQiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQsNCkiPjxsaW5lIHgxPSIyNCIgeTE9IjI0IiB4Mj0iOCIgeTI9IjEyIiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMjQiIHkxPSIyNCIgeDI9IjUiIHkyPSIzMCIgc3Ryb2tlPSIjMDBiNGQ4IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjI0IiB5MT0iMjQiIHgyPSIxMCIgeTI9IjQ0IiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMjQiIHkxPSIyNCIgeDI9IjM2IiB5Mj0iOCIgc3Ryb2tlPSIjMDBiNGQ4IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjI0IiB5MT0iMjQiIHgyPSI0MCIgeTI9IjM4IiBzdHJva2U9IiMwMGI0ZDgiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjQgNSBDMTYgNSAxMCAxMSAxMCAxOCBDMTAgMjcgMjQgNDIgMjQgNDIgQzI0IDQyIDM4IDI3IDM4IDE4IEMzOCAxMSAzMiA1IDI0IDVaIiBmaWxsPSIjMDBiNGQ4Ii8+PGNpcmNsZSBjeD0iMjQiIGN5PSIxOCIgcj0iNiIgZmlsbD0iIzA0MTEyZSIvPjxjaXJjbGUgY3g9IjgiIGN5PSIxMiIgcj0iNCIgZmlsbD0iIzAwYjRkOCIvPjxjaXJjbGUgY3g9IjUiIGN5PSIzMCIgcj0iNCIgZmlsbD0iIzAwYjRkOCIvPjxjaXJjbGUgY3g9IjEwIiBjeT0iNDQiIHI9IjQiIGZpbGw9IiMwMGI0ZDgiLz48Y2lyY2xlIGN4PSIzNiIgY3k9IjgiIHI9IjQiIGZpbGw9IiMwMGI0ZDgiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjM4IiByPSI0IiBmaWxsPSIjMDBiNGQ4Ii8+PC9nPjx0ZXh0IHg9IjYyIiB5PSIyNiIgZm9udC1mYW1pbHk9Ik91dGZpdCxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNzAwIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmZmZmZmIiBsZXR0ZXItc3BhY2luZz0iMC4zIj5GbGVldCBOZXR3b3JrIEludGVsbGlnZW5jZTwvdGV4dD48dGV4dCB4PSI2MiIgeT0iNDQiIGZvbnQtZmFtaWx5PSJPdXRmaXQsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjUwMCIgZm9udC1zaXplPSIxMC41IiBmaWxsPSIjMDBiNGQ4IiBsZXR0ZXItc3BhY2luZz0iMiI+R0VTVMODTyBERSBGUk9UQVM8L3RleHQ+PC9zdmc+" alt="FNI Fleet Network Intelligence" height="38">
   <ul class="nav-links">
     <li><a href="#func" data-i18n="nav_func">Funcionalidades</a></li>
+    <li><a href="#integracoes" data-i18n="nav_integracoes">Integrações</a></li>
     <li><a href="#como" data-i18n="nav_como">Como funciona</a></li>
     <li><a href="#precos" data-i18n="nav_precos">Preços</a></li>
   </ul>
@@ -523,6 +524,19 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   </div>
 </section>
 
+<section class="section" id="integracoes">
+  <div class="sec-lbl" data-i18n="integracoes_lbl">Hub Multiprestadores</div>
+  <div class="sec-title" data-i18n="integracoes_title">Um único hub para todos os meios de pagamento da sua frota</div>
+  <p class="sec-sub" data-i18n="integracoes_sub">Chega de operar cada meio de pagamento separadamente. A FNI conecta a operação da sua empresa diretamente aos principais players de meios de pagamento para frotas — como Ticket Log e Edenred Mobilidade — e reúne tudo em um único lugar: gestão de abastecimentos, regras de consumo por veículo e conciliação automática de pagamentos, em uma interface só.</p>
+  <div class="sec-title" style="font-size:1.3rem;margin-top:56px;margin-bottom:8px" data-i18n="integracoes_vant_title">Principais Vantagens da Integração</div>
+  <div class="grid">
+    <div class="card"><div class="icon">🔗</div><div class="ct" data-i18n="intcard0_t">Conexão Multiprestadores</div><div class="cd" data-i18n-html="intcard0_d">Integração direta com os maiores emissores de cartões e soluções de pagamento do mercado (como <a href="https://www.ticketlog.com.br/" target="_blank" rel="noopener noreferrer" style="color:var(--cyan);text-decoration:underline">Ticket Log</a> ou <a href="https://www.edenredmobilidade.com.br/gestao-abastecimento/" target="_blank" rel="noopener noreferrer" style="color:var(--cyan);text-decoration:underline">Edenred Mobilidade</a>, por exemplo).</div></div>
+    <div class="card"><div class="icon">⚡</div><div class="ct" data-i18n="intcard1_t">Autorização em Tempo Real</div><div class="cd" data-i18n="intcard1_d">Validação instantânea de transações direto na bomba de combustível.</div></div>
+    <div class="card"><div class="icon">🧾</div><div class="ct" data-i18n="intcard2_t">Conciliação Automatizada</div><div class="cd" data-i18n="intcard2_d">Eliminação de planilhas manuais, com importação automática de notas fiscais e cupons.</div></div>
+    <div class="card"><div class="icon">🔒</div><div class="ct" data-i18n="intcard3_t">Segurança e Controle</div><div class="cd" data-i18n="intcard3_d">Travas de segurança contra desvios, limitando o valor, o tipo de combustível e a capacidade do tanque.</div></div>
+  </div>
+</section>
+
 <section class="section" id="como" style="background:rgba(255,255,255,0.012)">
   <div class="sec-lbl" data-i18n="como_lbl">Como funciona</div>
   <div class="sec-title" data-i18n="como_title">Comece em minutos</div>
@@ -675,6 +689,20 @@ var _i18n = {
     card4_d: "Análises de consumo, custo por km e ranking de postos. Exporte para Excel ou integre via API.",
     card5_t: "Integrações Nativas",
     card5_d: "Conecte com TOTVS, SAP, rastreadores (Sascar, Onix, Autotrac) e valide NF-e pela SEFAZ.",
+    // Integrações com meios de pagamento (Fase 27.106)
+    nav_integracoes: "Integrações",
+    integracoes_lbl: "Hub Multiprestadores",
+    integracoes_title: "Um único hub para todos os meios de pagamento da sua frota",
+    integracoes_sub: "Chega de operar cada meio de pagamento separadamente. A FNI conecta a operação da sua empresa diretamente aos principais players de meios de pagamento para frotas — como Ticket Log e Edenred Mobilidade — e reúne tudo em um único lugar: gestão de abastecimentos, regras de consumo por veículo e conciliação automática de pagamentos, em uma interface só.",
+    integracoes_vant_title: "Principais Vantagens da Integração",
+    intcard0_t: "Conexão Multiprestadores",
+    intcard0_d: "Integração direta com os maiores emissores de cartões e soluções de pagamento do mercado (como <a href=\"https://www.ticketlog.com.br/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:var(--cyan);text-decoration:underline\">Ticket Log</a> ou <a href=\"https://www.edenredmobilidade.com.br/gestao-abastecimento/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:var(--cyan);text-decoration:underline\">Edenred Mobilidade</a>, por exemplo).",
+    intcard1_t: "Autorização em Tempo Real",
+    intcard1_d: "Validação instantânea de transações direto na bomba de combustível.",
+    intcard2_t: "Conciliação Automatizada",
+    intcard2_d: "Eliminação de planilhas manuais, com importação automática de notas fiscais e cupons.",
+    intcard3_t: "Segurança e Controle",
+    intcard3_d: "Travas de segurança contra desvios, limitando o valor, o tipo de combustível e a capacidade do tanque.",
     // Steps PT
     step1_t: "Cadastre sua empresa", step1_d: "14 dias grátis com acesso completo ao plano Profissional.",
     step2_t: "Importe sua frota", step2_d: "Cadastre veículos individualmente ou em lote via Excel.",
@@ -732,6 +760,20 @@ var _i18n = {
     card4_d: "Consumption analysis, cost per km, price comparisons and export in Excel/PDF.",
     card5_t: "Native Integrations",
     card5_d: "Connect with TOTVS, SAP, SASCAR and fleet management APIs. Support for webhooks and REST API.",
+    // Payment integrations hub (Fase 27.106)
+    nav_integracoes: "Integrations",
+    integracoes_lbl: "Multi-Provider Hub",
+    integracoes_title: "One single hub for every fleet payment method",
+    integracoes_sub: "Stop operating each payment method separately. FNI connects your company's operation directly to the leading fleet payment providers — like Ticket Log and Edenred Mobilidade — and brings everything together in one place: fuel management, per-vehicle consumption rules and automatic payment reconciliation, in a single interface.",
+    integracoes_vant_title: "Key Integration Benefits",
+    intcard0_t: "Multi-Provider Connection",
+    intcard0_d: "Direct integration with the largest card issuers and payment solutions on the market (such as <a href=\"https://www.ticketlog.com.br/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:var(--cyan);text-decoration:underline\">Ticket Log</a> or <a href=\"https://www.edenredmobilidade.com.br/gestao-abastecimento/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:var(--cyan);text-decoration:underline\">Edenred Mobilidade</a>, for example).",
+    intcard1_t: "Real-Time Authorization",
+    intcard1_d: "Instant transaction validation right at the fuel pump.",
+    intcard2_t: "Automated Reconciliation",
+    intcard2_d: "Eliminates manual spreadsheets, with automatic import of invoices and receipts.",
+    intcard3_t: "Security & Control",
+    intcard3_d: "Security locks against misuse, limiting value, fuel type and tank capacity.",
     como_lbl: "How it works",
     como_title: "Get started in minutes",
     step1_t: "Register your company",
