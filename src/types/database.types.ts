@@ -1957,6 +1957,16 @@ export interface Database {
         };
         Returns: string;
       };
+      // Fase 27.101 — resolve o posto (empresas.id) pelo CNPJ emitente do
+      // XML, checando que o usuário logado tem acesso a ele — usada na
+      // Server Action de upload pra atribuir a pendência ao posto certo sem
+      // depender da "empresa atual" da sessão (que falha pra usuários com
+      // acesso a mais de 1 posto, ver README Fase 27.101). Retorna null se
+      // não encontrar ou se o usuário não tiver acesso.
+      resolver_posto_por_cnpj: {
+        Args: { p_cnpj_emitente: string };
+        Returns: string | null;
+      };
       // Fase 27.99 — pendências que não puderam ser associadas a NENHUM
       // abastecimento (ex.: CNPJ do destinatário não bate com nenhum
       // cliente cadastrado) — não aparecem na listagem de abastecimentos,

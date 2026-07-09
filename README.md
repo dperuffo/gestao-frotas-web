@@ -5582,3 +5582,55 @@ ficou desalinhado com o que a tela mostra.
   troca de empresa juntos).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.101 — Corrigir resolução do posto ao registrar pendência (multi-posto/sessão)
+
+O Daniel processou o lote real dos 9 XMLs de exemplo (Fase 27.96) pela tela de upload: a caixa de
+resultado mostrou "5 com pendência", mas a listagem de `/notas-fiscais` continuou com "Rejeitada (0)" —
+nenhuma das 5 rejeições apareceu. Pedido dele: "Apos processar precisa identificar os abastecimentos na
+lista, incrementando os filtros".
+
+**Causa raiz:** a Server Action resolvia o posto da pendência via `empresaPostoAtual()` →
+`resolverEmpresaAtual(supabase)` **sem parâmetro** — que só auto-resolve a empresa quando o usuário tem
+acesso a **exatamente 1** empresa (`empresaSelecionada` fica `null` caso contrário). O usuário de teste
+(`posto.teste@fni.test`) tem acesso a **2** postos — Posto Teste e Posto Teste 2 — via Rede de Postos
+(Fase 27.87). Resultado: `empresaPostoId` era sempre `null` pra esse usuário, então
+`registrarPendenciaBestEffort` nunca era chamada — a feature inteira da Fase 27.99 ficava silenciosamente
+inoperante pra qualquer usuário com mais de 1 posto vinculado (exatamente o caso do teste do Daniel).
+Isso já tinha sido documentado como "limitação conhecida" na Fase 27.99, mas a limitação real era mais
+ampla do que o texto dizia — não afetava só admins fazendo upload fora do posto "deles", afetava
+qualquer usuário multi-posto comum.
+
+**Correção:** resolver o posto pelo **CNPJ emitente do próprio XML**, em vez da sessão do navegador —
+nova RPC `resolver_posto_por_cnpj(p_cnpj_emitente)`, que reaproveita exatamente o mesmo match já usado em
+`buscar_abastecimentos_candidatos_nota_fiscal` (`regexp_replace(upper(cnpj),'[^0-9A-Z]','','g')` contra
+`empresas` com `segmento = 'Revenda'`), com o mesmo padrão `v_autorizado` (`IS NOT TRUE`, não `NOT`) das
+demais RPCs `SECURITY DEFINER` desde a Fase 27.93 — só devolve o posto se o usuário logado realmente tem
+acesso a ele, senão devolve `null` (tratado como best-effort pela action, igual antes).
+
+- `src/lib/nfe.ts`: `ResultadoParseNfe` (branch `ok: false`) ganhou um campo opcional
+  `cnpjEmitenteParcial` — mesmo quando o XML é rejeitado por um motivo **estrutural** (modelo inválido,
+  NFe não autorizada pela SEFAZ, chave inválida etc.), normalmente ainda dá pra ler o CNPJ do emitente
+  (o XML em si está bem formado, só foi rejeitado por regra de negócio). Esse CNPJ parcial é extraído
+  logo no início de `parsearXmlNfe` (antes de qualquer checagem que possa retornar cedo) e devolvido em
+  **todas** as 9 saídas de erro da função, pra a Server Action ainda saber a qual posto atribuir a
+  pendência mesmo quando o parse falha antes de chegar no CNPJ "oficial" (`nfe.cnpjEmitente`, que só
+  existe no caminho de sucesso).
+- `src/app/(dashboard)/notas-fiscais/actions.ts`: removida a dependência de `resolverEmpresaAtual` por
+  completo — `empresaPostoAtual()` foi substituída por `resolverPostoPorCnpj(supabase, cnpj)`, chamada
+  nos 3 pontos onde uma pendência é registrada: falha estrutural do parser (usa
+  `parse.cnpjEmitenteParcial`), `sem_correspondencia` e rejeição vinda da RPC de inserção (ambas usam
+  `nfe.cnpjEmitente`, já disponível nesses pontos porque o parse teve sucesso).
+- Efeito colateral positivo: um único lote de upload agora pode conter XMLs de **postos diferentes**
+  (o caso real do Daniel — Posto Teste e Posto Teste 2 no mesmo lote de exemplos) e cada pendência é
+  atribuída ao posto certo, individualmente — a resolução por "empresa atual" de sessão nunca poderia
+  representar isso corretamente de qualquer jeito, mesmo se não tivesse o bug do `null`.
+
+**Testado com dados reais:** simulei os dois caminhos (rejeição vinda da RPC de inserção e
+`sem_correspondencia`) como o usuário multi-posto de teste, chamando `resolver_posto_por_cnpj` com o
+CNPJ de cada posto e depois `registrar_pendencia_nota_fiscal` com o resultado — confirmado que a
+pendência do CNPJ do Posto Teste foi gravada com `empresa_posto_id = 453076b1-...` e a do Posto Teste 2
+com `299af3e2-...`, cada uma no posto certo. Testado também que um CNPJ desconhecido (não cadastrado
+como posto) devolve `null` sem erro. Dados de teste removidos depois.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

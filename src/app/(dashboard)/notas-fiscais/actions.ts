@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { parsearXmlNfe, mensagemMotivoPendencia, type NfeExtraida } from "@/lib/nfe";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -40,6 +39,20 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 // interrompe nem muda a resposta que o usuário já ia receber — é só um log
 // de diagnóstico, não a fonte de verdade (que continua sendo
 // notas_fiscais_abastecimento pra sucesso).
+//
+// Fase 27.101 — achado real do Daniel testando o lote de 9 XMLs de exemplo:
+// mesmo com 5 uploads rejeitados, o filtro "Rejeitada" continuava em 0.
+// Causa raiz: o posto da pendência era resolvido por resolverEmpresaAtual
+// (empresa "atual" da SESSÃO do navegador), que só resolve sozinha quando o
+// usuário tem acesso a EXATAMENTE 1 empresa — o usuário de teste tem acesso
+// a 2 postos (Posto Teste + Posto Teste 2, via Rede de Postos, Fase 27.87),
+// então essa resolução sempre devolvia null e o registro nunca acontecia.
+// Trocado por resolução via o CNPJ EMITENTE do próprio XML (RPC
+// resolver_posto_por_cnpj, mesmo match usado em
+// buscar_abastecimentos_candidatos_nota_fiscal) — além de corrigir o bug,
+// é mais correto: um único lote pode ter XMLs de dois postos diferentes (o
+// caso real do Daniel), e nenhuma "empresa atual" de sessão representaria
+// isso certo de qualquer forma.
 
 export type CandidatoNota = {
   abastecimentoId: number;
@@ -87,15 +100,19 @@ async function buscarResumoAbastecimento(supabase: Supabase, abastecimentoId: nu
   };
 }
 
-// Fase 27.99 — resolve o posto do usuário logado (mesmo helper usado pela
-// página, reaproveitado aqui pra não depender do CNPJ do XML — importante
-// pros casos onde o XML nem chega a ser lido direito). Best-effort: se não
-// der pra resolver (ex.: sessão estranha), simplesmente não registra
-// pendência nenhuma — não é motivo pra quebrar o fluxo do usuário.
-async function empresaPostoAtual(supabase: Supabase): Promise<string | null> {
+// Fase 27.101 — resolve o posto pelo CNPJ emitente declarado no PRÓPRIO XML
+// (RPC resolver_posto_por_cnpj, SECURITY DEFINER, já confere se o usuário
+// logado tem acesso a esse posto). Substitui a resolução por sessão da Fase
+// 27.99 (ver nota acima). Best-effort: se não der pra resolver (CNPJ
+// ilegível, posto não cadastrado, ou usuário sem acesso a ele), simplesmente
+// não registra pendência nenhuma — não é motivo pra quebrar o fluxo do
+// usuário.
+async function resolverPostoPorCnpj(supabase: Supabase, cnpjEmitente: string | undefined | null): Promise<string | null> {
+  if (!cnpjEmitente) return null;
   try {
-    const { empresaSelecionada } = await resolverEmpresaAtual(supabase);
-    return empresaSelecionada ?? null;
+    const { data, error } = await supabase.rpc("resolver_posto_por_cnpj", { p_cnpj_emitente: cnpjEmitente });
+    if (error) return null;
+    return data ?? null;
   } catch {
     return null;
   }
@@ -145,11 +162,11 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
   }
 
   const supabase = await createClient();
-  const empresaPostoId = await empresaPostoAtual(supabase);
 
   const texto = await arquivo.text();
   const parse = parsearXmlNfe(texto);
   if (!parse.ok) {
+    const empresaPostoId = await resolverPostoPorCnpj(supabase, parse.cnpjEmitenteParcial);
     if (empresaPostoId) {
       await registrarPendenciaBestEffort(supabase, empresaPostoId, {
         abastecimentoId: null,
@@ -191,6 +208,7 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
     }
 
     if (!candidatos || candidatos.length === 0) {
+      const empresaPostoId = await resolverPostoPorCnpj(supabase, nfe.cnpjEmitente);
       if (empresaPostoId) {
         await registrarPendenciaBestEffort(supabase, empresaPostoId, {
           abastecimentoId: null,
@@ -253,6 +271,7 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
       const abastecimento = await buscarResumoAbastecimento(supabase, abastecimentoId);
       return { status: "duplicada", notaId: null, abastecimento };
     }
+    const empresaPostoId = await resolverPostoPorCnpj(supabase, nfe.cnpjEmitente);
     if (empresaPostoId) {
       await registrarPendenciaBestEffort(supabase, empresaPostoId, {
         abastecimentoId,

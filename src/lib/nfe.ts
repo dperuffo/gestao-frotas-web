@@ -34,7 +34,17 @@ export type NfeExtraida = {
   valorNfTotal: number;
 };
 
-export type ResultadoParseNfe = { ok: true; nfe: NfeExtraida } | { ok: false; erro: string };
+// Fase 27.101 — achado real testando o upload em lote: quando o XML é
+// rejeitado por um motivo ESTRUTURAL (modelo inválido, NFe não autorizada
+// pela SEFAZ etc.), ainda assim normalmente dá pra ler o CNPJ do emitente
+// (o XML em si está bem formado, só foi rejeitado por regra de negócio) —
+// devolver esse CNPJ mesmo na falha permite que quem chama (a Server
+// Action) ainda saiba a qual POSTO atribuir o registro da pendência, sem
+// depender da empresa "atual" da sessão do navegador (que falha pra
+// usuários com acesso a mais de 1 posto — ver Fase 27.101 no README).
+export type ResultadoParseNfe =
+  | { ok: true; nfe: NfeExtraida }
+  | { ok: false; erro: string; cnpjEmitenteParcial?: string };
 
 // Fase 27.94 — achado real testando com o XML de exemplo do Daniel:
 // fast-xml-parser, por padrão, converte texto "numérico" pra JS `number`
@@ -111,9 +121,19 @@ export function parsearXmlNfe(xmlTexto: string): ResultadoParseNfe {
     return { ok: false, erro: "O XML está incompleto — faltam informações obrigatórias da NF-e (ide/emit/dest/total)." };
   }
 
+  // Fase 27.101 — extraído aqui, cedo, pra poder ser devolvido em QUALQUER
+  // falha abaixo (mesmo estrutural) — é o que permite à Server Action
+  // atribuir a pendência ao posto certo mesmo quando o resto da NF-e é
+  // rejeitado.
+  const cnpjEmitenteParcial = normalizarCnpj(emit.CNPJ) || undefined;
+
   const modelo = String(ide.mod ?? "");
   if (modelo !== "55") {
-    return { ok: false, erro: `Este XML é modelo ${modelo || "desconhecido"} — só NF-e modelo 55 (venda de produto) é aceita.` };
+    return {
+      ok: false,
+      erro: `Este XML é modelo ${modelo || "desconhecido"} — só NF-e modelo 55 (venda de produto) é aceita.`,
+      cnpjEmitenteParcial,
+    };
   }
 
   const protNFe = nfeProc?.protNFe as Record<string, unknown> | undefined;
@@ -123,18 +143,20 @@ export function parsearXmlNfe(xmlTexto: string): ResultadoParseNfe {
     return {
       ok: false,
       erro: "O XML não tem o protocolo de autorização da SEFAZ anexado (<protNFe>). Baixe o XML \"completo\" (com protocolo), não só o XML assinado.",
+      cnpjEmitenteParcial,
     };
   }
   if (cStat !== "100") {
     return {
       ok: false,
       erro: `Esta NF-e não está autorizada pela SEFAZ (status ${cStat || "?"}: ${infProt.xMotivo ?? "motivo não informado"}).`,
+      cnpjEmitenteParcial,
     };
   }
 
   const chaveAcesso = apenasDigitos(infProt.chNFe ?? (infNFe["@_Id"] as string | undefined)?.replace(/^NFe/, ""));
   if (!/^\d{44}$/.test(chaveAcesso)) {
-    return { ok: false, erro: "Não foi possível identificar a chave de acesso (44 dígitos) desta NF-e." };
+    return { ok: false, erro: "Não foi possível identificar a chave de acesso (44 dígitos) desta NF-e.", cnpjEmitenteParcial };
   }
 
   const dets = (Array.isArray(detBruto) ? detBruto : detBruto ? [detBruto] : []) as Record<string, unknown>[];
@@ -144,13 +166,14 @@ export function parsearXmlNfe(xmlTexto: string): ResultadoParseNfe {
   });
 
   if (detsComCombustivel.length === 0) {
-    return { ok: false, erro: "Esta NF-e não tem nenhum item de venda de combustível (grupo <comb> ausente)." };
+    return { ok: false, erro: "Esta NF-e não tem nenhum item de venda de combustível (grupo <comb> ausente).", cnpjEmitenteParcial };
   }
   if (detsComCombustivel.length > 1) {
     return {
       ok: false,
       erro:
         "Esta NF-e tem mais de um item de combustível — nesta 1ª entrega só é aceita 1 NF-e por abastecimento (1 item de combustível por nota).",
+      cnpjEmitenteParcial,
     };
   }
 
@@ -160,10 +183,10 @@ export function parsearXmlNfe(xmlTexto: string): ResultadoParseNfe {
   const cnpjEmitente = normalizarCnpj(emit.CNPJ);
   const cnpjDestinatario = normalizarCnpj(dest.CNPJ);
   if (cnpjEmitente.length !== 14) {
-    return { ok: false, erro: "CNPJ do emitente inválido ou ausente no XML." };
+    return { ok: false, erro: "CNPJ do emitente inválido ou ausente no XML.", cnpjEmitenteParcial };
   }
   if (cnpjDestinatario.length !== 14) {
-    return { ok: false, erro: "CNPJ do destinatário inválido ou ausente no XML." };
+    return { ok: false, erro: "CNPJ do destinatário inválido ou ausente no XML.", cnpjEmitenteParcial };
   }
 
   const quantidade = numero(prod.qCom);
@@ -174,13 +197,13 @@ export function parsearXmlNfe(xmlTexto: string): ResultadoParseNfe {
   const dataEmissao = String(ide.dhEmi ?? "");
 
   if (!Number.isFinite(quantidade) || !Number.isFinite(valorUnitario) || !Number.isFinite(valorTotal)) {
-    return { ok: false, erro: "Não foi possível ler quantidade/valor do item de combustível no XML." };
+    return { ok: false, erro: "Não foi possível ler quantidade/valor do item de combustível no XML.", cnpjEmitenteParcial };
   }
   if (!Number.isFinite(numeroNf) || !dataEmissao) {
-    return { ok: false, erro: "Não foi possível ler o número ou a data de emissão da NF-e." };
+    return { ok: false, erro: "Não foi possível ler o número ou a data de emissão da NF-e.", cnpjEmitenteParcial };
   }
   if (!comb.cProdANP || !comb.descANP) {
-    return { ok: false, erro: "O item de combustível não traz o código ANP (cProdANP/descANP)." };
+    return { ok: false, erro: "O item de combustível não traz o código ANP (cProdANP/descANP).", cnpjEmitenteParcial };
   }
 
   return {
