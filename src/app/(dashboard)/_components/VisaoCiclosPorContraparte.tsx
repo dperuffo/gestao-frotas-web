@@ -130,6 +130,14 @@ export function VisaoCiclosPorContraparte({
                         {l.cicloAtual.quantidade_abastecimentos === 1 ? "" : "s"} ·{" "}
                         {formatarMoeda(l.cicloAtual.valor_acumulado)}
                       </p>
+                      {/* Fase 27.105 — regra do Daniel: só entra na fatura quem
+                          tem NF-e vinculada; avisa aqui quando tem valor
+                          represado esperando nota. */}
+                      {l.cicloAtual.quantidade_pendente_nfe > 0 && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {formatarMoeda(l.cicloAtual.valor_pendente_nfe)} ({l.cicloAtual.quantidade_pendente_nfe}) esperando NF-e
+                        </p>
+                      )}
                       {/* Fase 27.93 — pedido do Daniel: ciclo em andamento precisa
                           mostrar a quantidade de abastecimentos (não só o valor) e dar
                           acesso ao detalhamento de QUAIS abastecimentos compõem o valor. */}

@@ -22,6 +22,9 @@ export function SecaoCiclosAbertos({
   if (ciclos.length === 0) return null;
 
   const totalAcumulado = ciclos.reduce((s, c) => s + c.valor_acumulado, 0);
+  // Fase 27.105 — regra do Daniel: só entra na fatura quem tem NF-e
+  // vinculada; o que não tem fica represado e some pro próximo ciclo.
+  const totalPendenteNfe = ciclos.reduce((s, c) => s + c.valor_pendente_nfe, 0);
 
   return (
     <div className="mb-6 card overflow-x-auto">
@@ -31,6 +34,14 @@ export function SecaoCiclosAbertos({
           Abastecimentos já registrados no ciclo atual, ainda não fechado — período, vencimento e valor são
           PREVISTOS e podem mudar até o fechamento (o robô fecha automaticamente quando o ciclo termina).
           {" "}Total acumulado: <strong className="text-slate-700">{formatarMoeda(totalAcumulado)}</strong>.
+          {totalPendenteNfe > 0 && (
+            <>
+              {" "}
+              <span className="text-red-600">
+                {formatarMoeda(totalPendenteNfe)} represado(s) esperando NF-e — só entra na fatura quem tiver nota vinculada.
+              </span>
+            </>
+          )}
         </p>
       </div>
       <table className="w-full text-left text-sm">
@@ -42,6 +53,7 @@ export function SecaoCiclosAbertos({
             <th className="px-4 py-3">Abastecimentos</th>
             <th className="px-4 py-3">Volume</th>
             <th className="px-4 py-3">Valor acumulado</th>
+            <th className="px-4 py-3">Pendente NF-e</th>
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3" />
           </tr>
@@ -59,6 +71,15 @@ export function SecaoCiclosAbertos({
               <td className="px-4 py-3 text-slate-500">{c.quantidade_abastecimentos}</td>
               <td className="px-4 py-3 text-slate-500">{c.volume_acumulado.toLocaleString("pt-BR")} L</td>
               <td className="px-4 py-3 font-medium text-slate-700">{formatarMoeda(c.valor_acumulado)}</td>
+              <td className="px-4 py-3">
+                {c.quantidade_pendente_nfe > 0 ? (
+                  <span className="text-red-600">
+                    {formatarMoeda(c.valor_pendente_nfe)} ({c.quantidade_pendente_nfe})
+                  </span>
+                ) : (
+                  <span className="text-slate-400">—</span>
+                )}
+              </td>
               <td className="px-4 py-3">
                 <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
                   Em andamento

@@ -45,7 +45,7 @@ export default async function CicloAbertoPage({ params }: { params: Promise<{ ne
         automaticamente quando o ciclo termina, virando uma fatura de verdade.
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-6">
         <Indicador
           label="Período (previsto)"
           valor={`${formatarDataBr(ciclo.periodo_inicio)} – ${formatarDataBr(ciclo.periodo_fim_previsto)}`}
@@ -54,6 +54,17 @@ export default async function CicloAbertoPage({ params }: { params: Promise<{ ne
         <Indicador label="Status" valor="Em andamento" />
         <Indicador label="Volume acumulado" valor={`${ciclo.volume_acumulado.toLocaleString("pt-BR")} L`} />
         <Indicador label="Valor acumulado" valor={formatarMoeda(ciclo.valor_acumulado)} />
+        {/* Fase 27.105 — regra do Daniel: só entra na fatura quem tem NF-e
+            vinculada; mostra aqui o que ainda está represado esperando nota. */}
+        <Indicador
+          label="Pendente NF-e"
+          valor={
+            ciclo.quantidade_pendente_nfe > 0
+              ? `${formatarMoeda(ciclo.valor_pendente_nfe)} (${ciclo.quantidade_pendente_nfe})`
+              : "—"
+          }
+          destaque={ciclo.quantidade_pendente_nfe > 0}
+        />
       </div>
 
       <div className="card overflow-x-auto">
@@ -75,6 +86,7 @@ export default async function CicloAbertoPage({ params }: { params: Promise<{ ne
               <th className="px-4 py-3">Litros</th>
               <th className="px-4 py-3">Preço/L</th>
               <th className="px-4 py-3">Valor</th>
+              <th className="px-4 py-3">NF-e</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -95,11 +107,25 @@ export default async function CicloAbertoPage({ params }: { params: Promise<{ ne
                 <td className="px-4 py-3 font-medium text-slate-700">
                   {a.item_valor_total != null ? formatarMoeda(a.item_valor_total) : "—"}
                 </td>
+                <td className="px-4 py-3">
+                  {/* Fase 27.105 — regra do Daniel: só entra na fatura quem
+                      tem NF-e vinculada; sinaliza aqui, linha a linha, quem
+                      já tem nota e quem ainda está represado. */}
+                  {a.tem_nfe ? (
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                      Com NF-e
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                      Sem NF-e
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
             {abastecimentos.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
                   Nenhum abastecimento registrado neste ciclo ainda.
                 </td>
               </tr>
@@ -111,11 +137,19 @@ export default async function CicloAbertoPage({ params }: { params: Promise<{ ne
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: string }) {
+function Indicador({
+  label,
+  valor,
+  destaque,
+}: {
+  label: string;
+  valor: string;
+  destaque?: boolean;
+}) {
   return (
     <div className="card p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
+      <p className={`mt-1 text-lg font-semibold ${destaque ? "text-red-600" : "text-slate-900"}`}>{valor}</p>
     </div>
   );
 }

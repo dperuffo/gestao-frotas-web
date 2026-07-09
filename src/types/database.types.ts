@@ -1769,9 +1769,16 @@ export interface Database {
           periodo_inicio: string;
           periodo_fim_previsto: string;
           vencimento_previsto: string;
+          // Fase 27.105 — valor_acumulado/volume_acumulado/quantidade_abastecimentos
+          // agora contam só quem JÁ TEM NF-e (o que efetivamente vira fatura se
+          // o ciclo fechar agora — regra "só fatura com NF-e vinculada").
           valor_acumulado: number;
           volume_acumulado: number;
           quantidade_abastecimentos: number;
+          // Fase 27.105 — o que está represado nesse período esperando NF-e
+          // (não vai entrar na próxima fatura enquanto não tiver nota).
+          valor_pendente_nfe: number;
+          quantidade_pendente_nfe: number;
         }[];
       };
       // Fase 27.79 — extrato de abastecimentos de uma fatura_posto, com CNPJ
@@ -1809,6 +1816,9 @@ export interface Database {
           item_quantidade: number | null;
           item_valor_unitario: number | null;
           item_valor_total: number | null;
+          // Fase 27.105 — distingue quem já tem NF-e (vai entrar na próxima
+          // fatura) de quem ainda está represado esperando nota.
+          tem_nfe: boolean;
         }[];
       };
       // Fase 27.92 — dados de cedente (posto) e sacado (cliente) pro

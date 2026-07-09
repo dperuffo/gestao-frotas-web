@@ -5746,3 +5746,115 @@ o frontend antigo (só 4 parâmetros, sem `p_busca`) e confirmei que agora funci
 mesma chamada não batia com nenhuma função).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.105 — Regra de negócio: só fatura abastecimento com NF-e vinculada
+
+Pedido do Daniel (regra de negócio nova, texto original): "Os abastecimentos registrados na plataforma,
+precisam ter notas fiscais atreladas para que o posto receba. [...] todos os abastecimentos de um ciclo ao
+qual tiverem notas fiscais atreladas, seguirão no ciclo e na fatura/boleto do ciclo. Os abastecimentos que
+não tiverem nota fiscal atrelada dentro do ciclo, quando o mesmo for fechado, estes abastecimentos serão
+realocados, automaticamente para o próximo ciclo e assim por diante. [...] para tanto, preciso que todos os
+mais de 7000 abastecimentos registrados sejam contemplados com uma nota fiscal e que esta nova regra
+esteja vigente para os próximos ciclos a serem abertos."
+
+Antes de mexer em lógica de faturamento, perguntei dois pontos via `AskUserQuestion`:
+
+1. **O que fazer com as 6 faturas de teste já existentes** (4 pagas, 2 abertas, 218 abastecimentos, nenhum
+   com NF-e)? Resposta do Daniel: **deixar como estão — a regra só vale daqui pra frente.** Nenhuma fatura
+   já gerada foi tocada.
+2. **Como preencher NF-e pros 7000+ abastecimentos já registrados**? Resposta do Daniel: **gerar os
+   registros de NF-e diretamente no banco**, usando a mesma RPC de validação que um upload de verdade usa
+   (não pular a validação).
+
+### Escopo real do backfill (descoberto, não assumido)
+
+A base tem ~8128 `profrotas_abastecimentos` (dados sincronizados do PróFrotas), espalhados por ~690
+`pv_cnpj` diferentes. Mas só **2 postos** têm empresa cadastrada (`segmento='Revenda'`) *e* negociação
+aceita — os únicos dois que estruturalmente podem ser faturados por essa plataforma:
+
+- **Posto Teste Ltda** — 7407 abastecimentos
+- **Posto Teste 2 Ltda** — 31 abastecimentos
+
+Total: **7438**, batendo com o "mais de 7000" do Daniel. Os outros ~690 CNPJs nunca foram cadastrados como
+empresa — sem `empresas`, toda RPC de faturamento devolve `posto_nao_encontrado`; estão fora do escopo de
+qualquer jeito, independente dessa mudança.
+
+### Backfill executado
+
+Rodei um laço (`DO $$ ... $$`, operação de dados pontual, não migração rastreada) chamando
+`inserir_nota_fiscal_abastecimento(..., p_empresa_posto_id_confiavel, p_enviado_por => 'backfill-fase-27-105')`
+para cada abastecimento dos 2 postos acima que ainda não tinha NF-e. Esse overload da função (usado
+internamente também pelo robô de XMLs de exemplo da Fase 27.96) confia no chamador em vez de resolver a
+sessão via `auth.jwt()` — mas delega toda a validação de verdade (`_inserir_nota_fiscal_core`) pro mesmo
+código que valida um upload real: modelo 55, chave de acesso única, abastecimento existe e ainda não tem
+nota, CNPJ bate com o do abastecimento, quantidade/valor dentro da tolerância, código ANP válido.
+
+Os campos da NF-e sintética vêm todos do próprio abastecimento (garante bater na tolerância):
+`cnpj_emitente`/`cnpj_destinatario`, nomes, produto, quantidade, valores. `produto_codigo_anp` resolvido
+via `combustiveis_codigo_anp` → `anp_codigos_combustivel` (os 9 combustíveis usados nos dados de teste
+mapeiam limpo, zero nulos). `chave_acesso` montada de forma determinística e única — CNPJ (14 dígitos) +
+id do abastecimento (20 dígitos) + preenchimento (10 dígitos) = 44 caracteres, bijetiva com o id, garante
+que nunca colide. `enviado_por = 'backfill-fase-27-105'` marca o registro como sintético, pra rastreabilidade
+(distingue de upload real feito pelo posto).
+
+Testei 1 linha primeiro (conferi chave com 44 caracteres, ANP resolvido certo, valores batendo), apaguei, e
+só depois rodei o lote completo. **Resultado: 7435 NF-e criadas** (dos 7438 abastecimentos, 3 já tinham
+NF-e de testes anteriores — Fase 27.96/27.99). Confirmado depois: os dois postos ficaram com 100% de
+cobertura de NF-e.
+
+### Mudança na regra de fechamento de ciclo
+
+`gerar_faturas_postos_robo()` (SECURITY DEFINER, roda toda noite via pg_cron às 03:00 UTC) — `CREATE OR
+REPLACE`, mesma assinatura, só mudou a lógica interna. Duas mudanças na consulta que soma e na que marca
+`fatura_posto_id`:
+
+- Adicionado `and exists (select 1 from notas_fiscais_abastecimento nf where nf.abastecimento_id = pa.id)`
+  — só entra na fatura quem tem NF-e.
+- Trocado `data_abastecimento between periodo_inicio and periodo_fim` por `data_abastecimento <=
+  periodo_fim` (tirou o limite inferior). Como não existe `ciclo_id` armazenado (os ciclos são calculados
+  por intervalo de data, não por uma tabela própria), o "realocamento automático pro próximo ciclo" não
+  precisa de nenhuma lógica explícita de mover/marcar nada: um abastecimento sem NF-e simplesmente fica
+  com `fatura_posto_id` nulo quando o ciclo fecha, e o próximo fechamento (mesma condição `<= periodo_fim`)
+  volta a considerá-lo — assim que ganhar a NF-e, ele é varrido automaticamente pro próximo boleto.
+
+Duas RPCs de pré-visualização (mostram o ciclo "em andamento", ainda não fechado) ganharam a mesma regra,
+pra não mostrar um valor que depois não vai bater com a fatura de verdade:
+
+- **`ciclos_abertos_postos()`** (`DROP` + `CREATE`, mudou o formato de retorno): `valor_acumulado`,
+  `volume_acumulado` e `quantidade_abastecimentos` agora contam só quem TEM NF-e (o que efetivamente vai
+  ser faturado); duas colunas novas, `valor_pendente_nfe` e `quantidade_pendente_nfe`, contam o
+  complementar (represado esperando nota).
+- **`abastecimentos_do_ciclo_aberto(p_negociacao_id)`** (`DROP` + `CREATE`): ganhou a coluna `tem_nfe`
+  (boolean), pra marcar linha a linha quem já tem nota.
+
+Essas duas mudam o formato de retorno (`DROP` necessário), mas são só colunas NOVAS — os dois lugares que
+consomem (`SecaoCiclosAbertos.tsx`, `ciclo-aberto/[negociacaoId]/page.tsx`) sempre acessaram os campos por
+nome (`c.valor_acumulado`, nunca desestruturação posicional), então não corre o mesmo risco do hotfix da
+Fase 27.104 — confirmado antes de aplicar.
+
+### Frontend
+
+- `SecaoCiclosAbertos.tsx` (cards de ciclo em andamento, usado em `/financeiro-posto`, `/financeiro` e nos
+  detalhes de cliente/posto): nova coluna "Pendente NF-e" na tabela, e aviso em vermelho no texto de
+  cabeçalho quando algum ciclo tem valor represado.
+- `VisaoCiclosPorContraparte.tsx` (lista "Ciclos por posto/cliente"): nova linha vermelha
+  "R$ X (N) esperando NF-e" abaixo do resumo do ciclo atual, quando aplicável.
+- `ciclo-aberto/[negociacaoId]/page.tsx` (detalhamento do ciclo em andamento, Fase 27.93): novo card
+  "Pendente NF-e" na grade de indicadores (5 → 6 colunas), e nova coluna "NF-e" na tabela de abastecimentos
+  com badge verde "Com NF-e" / vermelho "Sem NF-e" por linha (`colSpan` do estado vazio ajustado de 7 → 8).
+- `database.types.ts` atualizado com as novas colunas das 2 RPCs.
+
+### Testado, mas com uma limitação honesta
+
+Validei as 3 RPCs modificadas simulando a sessão do posto de teste via JWT: `ciclos_abertos_postos()`
+devolveu as 5 negociações, todas com `valor_pendente_nfe = 0` (confirma que o backfill cobriu 100%);
+`abastecimentos_do_ciclo_aberto(...)` devolveu `tem_nfe = true` pros 87 abastecimentos do ciclo atual.
+Rodei `gerar_faturas_postos_robo()` de verdade — devolveu 0 faturas novas, o que é o esperado: nenhum ciclo
+está de fato vencido hoje (todos os `periodo_fim_previsto` são futuros). **Ou seja, o caminho de
+FECHAMENTO de verdade (o `UPDATE` que marca `fatura_posto_id` com o filtro de NF-e novo) ainda não foi
+exercitado com um ciclo vencendo de verdade** — só a lógica equivalente das RPCs de pré-visualização
+(`SELECT`, mesma estrutura de filtro) foi validada contra dados reais. Vai ser testado de verdade na
+primeira vez que um ciclo vencer organicamente — ou, se o Daniel preferir validar antes disso, dá pra
+forçar um cenário de teste sob demanda.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
