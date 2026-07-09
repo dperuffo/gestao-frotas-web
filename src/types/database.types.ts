@@ -1216,6 +1216,10 @@ export interface Database {
       profrotas_abastecimentos: {
         Row: {
           id: number;
+          // Fase 27.104 — coluna GERADA (1000000000 + id), sempre 10
+          // dígitos — "código" público/humano do abastecimento, pra busca
+          // rápida nos filtros (não é inserível/atualizável).
+          codigo_abastecimento: string;
           cnpj_frota: string;
           identificador: number;
           abastecimento_estornado: number | null;
@@ -1905,11 +1909,17 @@ export interface Database {
           // Antes era p_apenas_pendentes (boolean), que misturava
           // "Rejeitada" e "Pendente" no mesmo filtro.
           p_status: string | null;
+          // Fase 27.104 — busca por código do abastecimento (ILIKE parcial
+          // contra os 10 dígitos gerados) — null/'' = sem filtro.
+          p_busca: string | null;
           p_limit?: number;
           p_offset?: number;
         };
         Returns: {
           abastecimento_id: number;
+          // Fase 27.104 — mesmo "código" de 10 dígitos exibido/buscável nos
+          // filtros (coluna gerada em profrotas_abastecimentos).
+          codigo_abastecimento: string;
           data_abastecimento: string;
           cliente_nome: string | null;
           posto_nome: string | null;

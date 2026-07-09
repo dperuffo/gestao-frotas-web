@@ -19,6 +19,7 @@ function statusBadge(estornado: number | null, autorizacao: number | null) {
 
 type RegistroAbastecimento = {
   id: string;
+  codigo_abastecimento: string;
   data_abastecimento: string | null;
   veiculo_placa: string | null;
   motorista_nome: string | null;
@@ -116,7 +117,14 @@ export default async function AbastecimentosPage({
   // exatamente igual ao retorno específico de cada .select() diferente.
   function comFiltros(builder: any) {
     let query = builder.eq("status_autorizacao", 1);
-    if (q) query = query.or(`veiculo_placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,pv_razao_social.ilike.%${q}%`);
+    // Fase 27.104 — pedido do Daniel: "tela de abastecimentos, no filtro
+    // livre, poder consultar pelo ID abastecimento, em todas as visões" — o
+    // mesmo campo de busca livre agora também casa com o código de 10
+    // dígitos (coluna gerada codigo_abastecimento).
+    if (q)
+      query = query.or(
+        `veiculo_placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,pv_razao_social.ilike.%${q}%,codigo_abastecimento.ilike.%${q}%`
+      );
     if (de) query = query.gte("data_abastecimento", de);
     if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
     if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
@@ -132,7 +140,7 @@ export default async function AbastecimentosPage({
     supabase
       .from("profrotas_abastecimentos")
       .select(
-        "id, data_abastecimento, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_unitario, item_valor_total, pv_razao_social, pv_municipio, pv_uf, abastecimento_estornado, status_autorizacao, identificador"
+        "id, codigo_abastecimento, data_abastecimento, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_unitario, item_valor_total, pv_razao_social, pv_municipio, pv_uf, abastecimento_estornado, status_autorizacao, identificador"
       )
   )
     .order("data_abastecimento", { ascending: false })
@@ -219,7 +227,7 @@ export default async function AbastecimentosPage({
           type="search"
           name="q"
           defaultValue={q ?? ""}
-          placeholder="Buscar por placa, motorista ou posto..."
+          placeholder="Buscar por ID, placa, motorista ou posto..."
           className="input max-w-sm"
         />
         <input type="date" name="de" defaultValue={de ?? ""} className="input" title="Data inicial" />
@@ -251,6 +259,7 @@ export default async function AbastecimentosPage({
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
+              <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">Data</th>
               <th className="px-4 py-3">Placa</th>
               <th className="px-4 py-3">Motorista</th>
@@ -266,6 +275,7 @@ export default async function AbastecimentosPage({
               const status = statusBadge(r.abastecimento_estornado, r.status_autorizacao);
               return (
                 <tr key={r.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{r.codigo_abastecimento}</td>
                   <td className="px-4 py-3">
                     <Link href={`/abastecimentos/${r.id}`} className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline">
                       {idsComAjusteAberto.has(Number(r.id)) && (
@@ -295,7 +305,7 @@ export default async function AbastecimentosPage({
             })}
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
                   Nenhum abastecimento encontrado.
                 </td>
               </tr>

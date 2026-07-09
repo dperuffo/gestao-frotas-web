@@ -54,7 +54,12 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
     return (
       <div>
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-slate-900">Editar Abastecimento</h1>
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">Editar Abastecimento</h1>
+            {/* Fase 27.104 — pedido do Daniel: ID de 10 dígitos por
+                abastecimento, pra facilitar localizar/referenciar o registro. */}
+            <p className="mt-1 text-xs text-slate-400">ID {abastecimento.codigo_abastecimento}</p>
+          </div>
           <ExcluirAbastecimento id={abastecimento.id} />
         </div>
         <AbastecimentoForm abastecimento={abastecimento} empresas={[]} nomeEmpresaAtual={nomeCliente} />
@@ -94,6 +99,9 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
     <div>
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Abastecimento</h1>
+        {/* Fase 27.104 — pedido do Daniel: ID de 10 dígitos por
+            abastecimento, pra facilitar localizar/referenciar o registro. */}
+        <p className="mt-1 text-xs text-slate-400">ID {abastecimento.codigo_abastecimento}</p>
         <p className="mt-1 text-sm text-slate-500">
           Este registro tem cliente e posto identificados na plataforma — qualquer correção precisa
           ser aprovada pela outra parte antes de valer.

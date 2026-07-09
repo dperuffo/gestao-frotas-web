@@ -66,6 +66,7 @@ export async function AbastecimentosPosto({
 
   type Registro = {
     id: number;
+    codigo_abastecimento: string;
     data_abastecimento: string | null;
     frota_razao_social: string | null;
     cnpj_frota: string | null;
@@ -192,7 +193,14 @@ export async function AbastecimentosPosto({
         query = query.eq("item_nome", combustivel);
       }
       if (cliente) query = query.eq("cnpj_frota", cliente);
-      if (q) query = query.or(`veiculo_placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,frota_razao_social.ilike.%${q}%`);
+      // Fase 27.104 — pedido do Daniel: "tela de abastecimentos, no filtro
+      // livre, poder consultar pelo ID abastecimento, em todas as visões" —
+      // o mesmo campo de busca livre agora também casa com o código de 10
+      // dígitos (coluna gerada codigo_abastecimento).
+      if (q)
+        query = query.or(
+          `veiculo_placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,frota_razao_social.ilike.%${q}%,codigo_abastecimento.ilike.%${q}%`
+        );
       if (de) query = query.gte("data_abastecimento", de);
       if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
       if (ajuste === "pendente") query = query.in("id", idsFiltroAjuste);
@@ -234,7 +242,7 @@ export async function AbastecimentosPosto({
         supabase
           .from("profrotas_abastecimentos")
           .select(
-            "id, data_abastecimento, frota_razao_social, cnpj_frota, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_unitario, item_valor_total"
+            "id, codigo_abastecimento, data_abastecimento, frota_razao_social, cnpj_frota, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_unitario, item_valor_total"
           )
       )
         .order("data_abastecimento", { ascending: false })
@@ -382,7 +390,7 @@ export async function AbastecimentosPosto({
           type="search"
           name="q"
           defaultValue={q ?? ""}
-          placeholder="Buscar por placa, motorista ou cliente..."
+          placeholder="Buscar por ID, placa, motorista ou cliente..."
           className="input max-w-sm"
         />
         <input type="date" name="de" defaultValue={de ?? ""} className="input" title="Data inicial" />
@@ -398,6 +406,7 @@ export async function AbastecimentosPosto({
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
+              <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">Data</th>
               <th className="px-4 py-3">Cliente</th>
               <th className="px-4 py-3">Placa</th>
@@ -414,6 +423,7 @@ export async function AbastecimentosPosto({
               const pendencia = pendenciaPorAbastecimento.get(r.id);
               return (
                 <tr key={r.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{r.codigo_abastecimento}</td>
                   <td className="px-4 py-3 text-slate-600">
                     <Link href={`/abastecimentos/${r.id}`} className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline">
                       {idsComAjusteAberto.has(r.id) && (
@@ -468,7 +478,7 @@ export async function AbastecimentosPosto({
             })}
             {registros.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
                   Nenhum abastecimento fornecido encontrado.
                 </td>
               </tr>

@@ -24,14 +24,17 @@ const STATUS_VALIDOS = new Set(["emitida", "rejeitada", "pendente"]);
 export default async function NotasFiscaisPage({
   searchParams,
 }: {
-  searchParams: Promise<{ empresa?: string; pagina?: string; status?: string }>;
+  searchParams: Promise<{ empresa?: string; pagina?: string; status?: string; busca?: string }>;
 }) {
-  const { empresa: empresaParam, pagina: paginaParam, status: statusParam } = await searchParams;
+  const { empresa: empresaParam, pagina: paginaParam, status: statusParam, busca: buscaParam } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
   const pagina = Math.max(1, Number(paginaParam) || 1);
   const status = statusParam && STATUS_VALIDOS.has(statusParam) ? statusParam : null;
+  // Fase 27.104 — pedido do Daniel: ID de 10 dígitos por abastecimento,
+  // buscável nos filtros ("em todas as visões").
+  const busca = buscaParam?.trim() || null;
 
   if (!empresaSelecionada) {
     return (
@@ -75,6 +78,7 @@ export default async function NotasFiscaisPage({
   const { data: linhas } = await supabase.rpc("abastecimentos_com_status_nota_fiscal", {
     p_empresa_id: empresaSelecionada,
     p_status: status,
+    p_busca: busca,
     p_limit: POR_PAGINA,
     p_offset: (pagina - 1) * POR_PAGINA,
   });
@@ -94,6 +98,7 @@ export default async function NotasFiscaisPage({
     const params = new URLSearchParams({
       empresa: empresaSelecionada,
       ...(status ? { status } : {}),
+      ...(busca ? { busca } : {}),
       ...overrides,
     });
     return `/notas-fiscais?${params.toString()}`;
@@ -122,6 +127,28 @@ export default async function NotasFiscaisPage({
       />
 
       {ehPosto && <UploadNotaFiscal />}
+
+      {/* Fase 27.104 — pedido do Daniel: "servirá de base e consulta para
+          que o usuário encontre, rapidamente, o registro, seja ele com NFe
+          ok ou com NFe rejeitada" — busca pelo ID de 10 dígitos do
+          abastecimento (ILIKE parcial, aceita só o final do número). */}
+      <form className="mb-4 flex flex-wrap items-end gap-3">
+        <input type="hidden" name="empresa" value={empresaSelecionada} />
+        <input type="hidden" name="status" value={status ?? ""} />
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar por ID do abastecimento</label>
+          <input
+            type="search"
+            name="busca"
+            defaultValue={busca ?? ""}
+            placeholder="Ex.: 1000165865"
+            className="input max-w-xs"
+          />
+        </div>
+        <button type="submit" className="btn-secondary">
+          Buscar
+        </button>
+      </form>
 
       <div className="card overflow-x-auto">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
@@ -153,6 +180,7 @@ export default async function NotasFiscaisPage({
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
+              <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">Data</th>
               <th className="px-4 py-3">Cliente</th>
               <th className="px-4 py-3">Posto</th>
@@ -166,6 +194,7 @@ export default async function NotasFiscaisPage({
           <tbody className="divide-y divide-slate-100">
             {(linhas ?? []).map((l) => (
               <tr key={l.abastecimento_id} className="hover:bg-slate-50">
+                <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{l.codigo_abastecimento}</td>
                 <td className="px-4 py-3 text-slate-700">{formatarDataBr(l.data_abastecimento)}</td>
                 <td className="px-4 py-3 text-slate-600">{l.cliente_nome ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-600">{l.posto_nome ?? "—"}</td>
@@ -216,7 +245,7 @@ export default async function NotasFiscaisPage({
             ))}
             {(linhas ?? []).length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
                   Nenhum abastecimento encontrado nos últimos 90 dias.
                 </td>
               </tr>

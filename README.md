@@ -5698,3 +5698,51 @@ abastecimento #165865 (pendência de exemplo da Fase 27.96/27.99) devolve
 "DIESEL S500 COMUM", 45.21 L, R$ 276,01 — batendo exatamente com o XML de exemplo original.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.104 — ID de 10 dígitos por abastecimento + busca pelo ID nos filtros
+
+Pedido do Daniel: "Implementar um ID de abastecimento numerico (10 digitos) para cada abastecimento e,
+que servira de base e consulta para que o usuario encontre, rapidamente, o registro, seja ele com NFe ok
+ou com NFe rejeitada. Ajustar os filtros para busca pelo ID". Depois, especificando o escopo: "tela de
+abastecimentos, no filtro livre, poder consultar pelo ID abastecimento, em todas as visões".
+
+- `profrotas_abastecimentos` ganhou a coluna GERADA `codigo_abastecimento` (`text`,
+  `(1000000000 + id)::text`, `STORED`) — sempre 10 dígitos (faixa atual do `id`: 6 dígitos, então soma
+  1 bilhão pra completar; só estoura os 10 dígitos quando `id` passar de 8,9 bilhões, praticamente nunca
+  pra esse volume de negócio). É uma coluna GERADA, não uma sequence nova: preenchida automaticamente
+  pelo Postgres pra toda linha existente e futura, sem backfill nem trigger — e como é bijetiva com o
+  `id` (a própria PK, só reapresentada), buscas por ela continuam baratas (índice único próprio criado
+  também). Tipo `text` (não `bigint`) pra permitir busca PARCIAL (só o final do número), não só exata.
+- Campo de busca livre já existente em "Abastecimentos" (cliente, `/abastecimentos/page.tsx`) e
+  "Abastecimentos Fornecidos" (posto, `AbastecimentosPosto.tsx`) passou a casar também com
+  `codigo_abastecimento` (mesmo `.or(...)` já usado pra placa/motorista/cliente/posto) — "em todas as
+  visões", como pedido.
+- `/notas-fiscais` não tinha nenhum campo de busca livre (só o filtro de status) — ganhou um novo campo
+  "Buscar por ID do abastecimento", e a RPC `abastecimentos_com_status_nota_fiscal` ganhou o parâmetro
+  `p_busca` (ILIKE parcial contra `codigo_abastecimento`).
+- Coluna "ID" nova em todas as 3 tabelas (cliente, posto, notas fiscais), e no cabeçalho de
+  `/abastecimentos/[id]` — pra o usuário conseguir referenciar/copiar o código do registro que encontrou.
+
+**Hotfix durante a implantação:** a primeira versão da migração fez `DROP` + `CREATE` de
+`abastecimentos_com_status_nota_fiscal` adicionando `p_busca` **sem valor padrão**. Como o banco é
+compartilhado e imediato mas o deploy do frontend só acontece com `git push` (regra do Daniel), o site
+que já estava no ar continuou chamando a RPC com só 4 parâmetros (sem `p_busca`) — e como a versão de 4
+parâmetros tinha acabado de ser apagada pelo `DROP`, a chamada passou a não bater com nenhuma função,
+falhando silenciosamente: o indicador (`indicador_notas_fiscais`, função separada, não afetada) continuou
+mostrando a contagem certa, mas a tabela vinha sempre vazia. O Daniel reportou isso ao vivo: "cliquei no
+filtro de rejeitados, nao apareceu o item rejeitado e na tela de notificacao no rodape, aparecem itens
+rejeitados. Muito confuso" — a contagem (1) batia, a tabela não mostrava nada, e a seção separada
+"Uploads sem abastecimento correspondente" (RPC diferente, não afetada) continuava mostrando itens
+normalmente, reforçando a inconsistência. Corrigido dando `DEFAULT null` a `p_busca` (e `DEFAULT` também
+a `p_limit`/`p_offset`, por segurança) via `CREATE OR REPLACE` — mudar só o valor padrão de um parâmetro
+NÃO muda a identidade da função, então não precisa de `DROP`, e o código antigo (sem `p_busca`) voltou a
+funcionar imediatamente, sem precisar de deploy nenhum. **Lição pra próximas fases:** todo parâmetro novo
+adicionado a uma RPC já usada por uma tela em produção precisa ter `DEFAULT`, justamente pra não quebrar
+o site enquanto o `git push` da mudança correspondente no frontend não foi feito.
+
+**Testado com dados reais:** confirmado que `codigo_abastecimento` bate 1:1 com o `id` (ex.: id 165865 →
+`1000165865`); busca parcial (`ilike '%65865%'`) encontra o registro certo; simulei a chamada da RPC como
+o frontend antigo (só 4 parâmetros, sem `p_busca`) e confirmei que agora funciona (antes do hotfix, essa
+mesma chamada não batia com nenhuma função).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
