@@ -2044,6 +2044,10 @@ export interface Database {
           litros: number | null;
           preco_litro: number | null;
           valor_total: number | null;
+          // Fase 27.135 — id em texto (as duas fontes usam bigint de
+          // sequências diferentes) e código de 10 dígitos (só profrotas).
+          id: string | null;
+          codigo_abastecimento: string | null;
         };
         Relationships: [];
       };

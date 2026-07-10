@@ -6494,3 +6494,44 @@ edição de ninguém).
 - Validado com `npx tsc --noEmit` e `npx eslint` nos 3 arquivos alterados, e a nova RPC testada
   direto no banco contra os 2 clientes de teste (retornou profrotas + os 4 provedores externos
   da Fase 27.132, valores batendo com o total já conhecido).
+
+## Fase 27.135 — remover separação PróFrotas × outros meios de pagamento em /abastecimentos
+
+Correção sobre a Fase 27.133, a partir do feedback do Daniel vendo a tela no ar: "nao deveria ter
+separacao de meios de pagamento do Pro-Frotas, pois todas sao meios de pagamento ajustar em todas
+as telas". A Fase 27.133 tinha tratado PróFrotas como especial em `/abastecimentos` — tabela
+principal só com ele (mantendo id/link/ajuste) + uma seção separada "Outros meios de pagamento"
+abaixo. Essa separação foi removida; agora é uma lista só.
+
+- View `abastecimentos_unificado` (Fase 25, já reaproveitada pelas 3 RPCs financeiras e pela Fase
+  27.133) ganhou 2 colunas novas, só ACRESCENTADAS no final (não mudou nem reordenou nenhuma das
+  existentes, pra não arriscar as RPCs financeiras que já dependem dela): `id` (texto — as duas
+  fontes usam bigint de sequências diferentes; unificar como texto evita colidir "id 31 do
+  PróFrotas" com "id 31 da Valecard") e `codigo_abastecimento` (só existe pro lado PróFrotas,
+  nulo pros demais).
+- `/abastecimentos`: tabela principal agora consulta só a view `abastecimentos_unificado` — uma
+  lista única com todos os provedores juntos, sem seção separada. O link de detalhe/edição e a
+  bolinha de ajuste pendente continuam existindo só nas linhas PróFrotas (é a única fonte com
+  página de detalhe e fluxo de ajuste hoje) — as demais linhas aparecem lado a lado, sem link,
+  mas na mesma tabela. Status sempre "Confirmado" (a view já filtra só linhas válidas do lado
+  PróFrotas; os demais provedores só mandam transação já liquidada). Removida a seção "Outros
+  meios de pagamento" que existia na Fase 27.133.
+- Filtro "🔴 Pendente de ajuste" ajustado pra também restringir por `provedor='profrotas'` — sem
+  isso, um `id` de outro provedor podia coincidir por acaso com um `id` de ajuste do PróFrotas
+  (sequências numéricas independentes) e aparecer marcado por engano.
+
+## Fase 27.134 — consolidado por meio de pagamento na visão do posto
+
+Pedido do Daniel: "Trazer este consolidado tambem na visao do posto" (o painel "Consolidado por
+meio de pagamento" da Fase 27.133, até então só em `/financeiro`, do lado do cliente).
+
+- **Achado real**: `abastecimentos_externos` só tinha RLS por `empresa_id` (a empresa CLIENTE,
+  dona do abastecimento) — um posto nunca é "membro" dessa empresa, então não conseguia ler
+  nenhuma linha dali, nem as que ele mesmo forneceu. Nova policy `abastecimentos_externos_select_posto`
+  (aditiva, só soma via OR com a que já existia) libera leitura quando `posto_cnpj` da linha bate
+  com o CNPJ de uma empresa da qual o usuário é membro — mesmo padrão já usado em
+  `profrotas_abastecimentos_select` pro `pv_cnpj`.
+- `/financeiro-posto`: nova seção "Consolidado por meio de pagamento" (abastecimentos, litros e
+  valor por provedor, mesmo período selecionado no topo da tela — De Hoje/7 dias/mês/etc.),
+  consultando `abastecimentos_unificado` filtrada por `posto_cnpj = CNPJ do posto`. Mesmo padrão
+  visual das outras telas (badges de provedor), sem separar PróFrotas dos demais.

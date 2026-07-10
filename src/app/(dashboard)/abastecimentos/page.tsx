@@ -11,17 +11,21 @@ function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function statusBadge(estornado: number | null, autorizacao: number | null) {
-  if (estornado) return { texto: "Estornado", classe: "badge-inativo" };
-  if (autorizacao === 1) return { texto: "Confirmado", classe: "badge-ativo" };
-  return { texto: `Status ${autorizacao ?? "?"}`, classe: "badge-atencao" };
-}
-
-// Fase 27.133 — pedido do Daniel: trazer a informação da origem/meio de
-// pagamento (Pró-Frotas, Valecard, RedeFrota, TicketLog, Veloe...) nos
-// registros de abastecimentos, indicadores e dashboards. Cada provedor tem
-// uma cor fixa só pra facilitar a leitura visual — não tem significado além
-// disso. Provedor desconhecido cai no cinza padrão.
+// Fase 27.133/27.135 — pedido do Daniel: trazer a informação da origem/meio
+// de pagamento (Pró-Frotas, Valecard, RedeFrota, TicketLog, Veloe...) nos
+// registros de abastecimentos. Cada provedor tem uma cor fixa só pra
+// facilitar a leitura visual — não tem significado além disso. Provedor
+// desconhecido cai no cinza padrão.
+//
+// Fase 27.135 — achado real (Daniel, depois de ver a Fase 27.133 no ar):
+// "nao deveria ter separacao de meios de pagamento do Pro-Frotas, pois todas
+// sao meios de pagamento". A versão anterior tratava PróFrotas como
+// especial — tabela principal só com ele + uma seção separada "Outros meios
+// de pagamento". Agora é UMA lista só, vinda da view abastecimentos_unificado
+// (que passou a expor `id` e `codigo_abastecimento` nesta fase, pra dar pra
+// manter o link de detalhe/ajuste nas linhas PróFrotas dentro dessa mesma
+// lista — as demais linhas não têm essa página de detalhe, então aparecem
+// sem link, mas lado a lado com as demais, sem seção à parte).
 const CORES_PROVEDOR: Record<string, string> = {
   profrotas: "bg-blue-100 text-blue-700",
   Valecard: "bg-purple-100 text-purple-700",
@@ -43,37 +47,20 @@ function BadgeProvedor({ provedor }: { provedor: string }) {
   );
 }
 
-type RegistroAbastecimento = {
+// Fase 27.135 — uma linha só, venha ela de profrotas_abastecimentos ou de
+// abastecimentos_externos (view abastecimentos_unificado). `id` é sempre
+// texto (as duas fontes usam bigint de sequências diferentes — unificar
+// como texto evita colidir "id 31 do PróFrotas" com "id 31 da Valecard").
+// `codigo_abastecimento` só existe pro lado PróFrotas.
+type RegistroUnificado = {
   id: string;
-  codigo_abastecimento: string;
-  data_abastecimento: string | null;
-  veiculo_placa: string | null;
-  motorista_nome: string | null;
-  item_nome: string | null;
-  item_quantidade: number | null;
-  item_valor_unitario: number | null;
-  item_valor_total: number | null;
-  pv_razao_social: string | null;
-  pv_municipio: string | null;
-  pv_uf: string | null;
-  abastecimento_estornado: number | null;
-  status_autorizacao: number | null;
-  identificador: string | null;
-};
-
-// Fase 27.133 — registros vindos de outros provedores (Valecard, RedeFrota,
-// TicketLog, Veloe...), tabela abastecimentos_externos. Não têm o mesmo
-// fluxo de edição/ajuste do PróFrotas (não são um "abastecimento lançado na
-// FNI", são um espelho do que o provedor já processou) — por isso aparecem
-// numa lista à parte, sem link de detalhe.
-type RegistroExterno = {
-  id: number;
   provedor: string;
+  codigo_abastecimento: string | null;
+  data_abastecimento: string | null;
   placa: string | null;
   motorista_nome: string | null;
-  data_abastecimento: string | null;
-  combustivel: string | null;
-  quantidade: number | null;
+  produto: string | null;
+  litros: number | null;
   valor_total: number | null;
   posto_nome: string | null;
 };
@@ -124,26 +111,15 @@ export default async function AbastecimentosPage({
     }
   }
 
-  // Fase 27.10 — achado real: abastecimentos com status_autorizacao = 0
-  // (pendente, ainda não confirmado pela operadora) apareciam na lista junto
-  // com os confirmados. A integração continua salvando tudo (ver
-  // sincronizarProfrotas em src/lib/profrotas.ts — não descartamos o
-  // registro, só deixamos de exibi-lo enquanto não for confirmado); quando a
-  // operadora confirma, o próximo sync atualiza a mesma linha e ela passa a
-  // aparecer normalmente. Lançamento manual e importação em planilha já
-  // sempre gravam status_autorizacao = 1, então não são afetados.
-  //
-  // Fase 27.12 — a lista podia chegar a 500 linhas numa tela só (limit fixo,
-  // sem paginação). Agora a tabela busca só a "página" atual (POR_PAGINA=30)
-  // via .range() no banco; os KPIs (litros/valor/custo médio), porém,
-  // continuam refletindo TODO o resultado filtrado — não só a página visível
-  // — por isso rodam numa consulta de agregação separada (só as 2 colunas
-  // numéricas necessárias, sem os demais campos da tabela).
   // Fase 27.68 — Daniel pediu um filtro pra ver só os abastecimentos com
   // ajuste pendente. Busca upfront os IDs (escopados à empresa selecionada —
   // a RLS já limita ao que envolve essa empresa) e reaproveita pra também
   // pintar a bolinha vermelha na linha (Fase 27.67), sem precisar de uma 2ª
-  // consulta separada.
+  // consulta separada. Ajustes só existem pro lado PróFrotas (ver
+  // ajustes_abastecimentos.abastecimento_id, bigint que referencia só
+  // profrotas_abastecimentos) — por isso o filtro abaixo sempre soma um
+  // `.eq("provedor", "profrotas")` junto, evitando que um id de outro
+  // provedor "colida" por coincidência com um id numérico de ajuste.
   let idsComAjusteAberto = new Set<number>();
   if (empresaSelecionada) {
     const { data: ajustesAbertosTodos } = await supabase
@@ -153,100 +129,73 @@ export default async function AbastecimentosPage({
       .in("status", ["pendente_cliente", "pendente_posto"]);
     idsComAjusteAberto = new Set((ajustesAbertosTodos ?? []).map((a) => a.abastecimento_id));
   }
-  const idsFiltroAjuste = idsComAjusteAberto.size > 0 ? Array.from(idsComAjusteAberto) : [-1];
+  const idsFiltroAjuste =
+    idsComAjusteAberto.size > 0 ? Array.from(idsComAjusteAberto).map((id) => String(id)) : ["-1"];
 
   // Builder genérico do supabase-js — usado pras 3 consultas (contagem,
   // agregados e página) com os mesmos filtros, por isso não dá pra tipar
   // exatamente igual ao retorno específico de cada .select() diferente.
+  // Fonte: view abastecimentos_unificado (Fase 27.133/27.135) — já filtra
+  // só linhas confirmadas/não estornadas do lado PróFrotas, e não separa
+  // por provedor (todos os meios de pagamento numa lista só).
   function comFiltros(builder: any) {
-    let query = builder.eq("status_autorizacao", 1);
-    // Fase 27.104 — pedido do Daniel: "tela de abastecimentos, no filtro
-    // livre, poder consultar pelo ID abastecimento, em todas as visões" — o
-    // mesmo campo de busca livre agora também casa com o código de 10
-    // dígitos (coluna gerada codigo_abastecimento).
+    let query = builder;
+    // Fase 27.104 — pedido do Daniel: buscar pelo ID abastecimento (código
+    // de 10 dígitos, só existe pro lado PróFrotas) também no filtro livre.
     if (q)
       query = query.or(
-        `veiculo_placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,pv_razao_social.ilike.%${q}%,codigo_abastecimento.ilike.%${q}%`
+        `placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,posto_nome.ilike.%${q}%,codigo_abastecimento.ilike.%${q}%`
       );
     if (de) query = query.gte("data_abastecimento", de);
     if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
     if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
-    if (ajuste === "pendente") query = query.in("id", idsFiltroAjuste);
+    if (ajuste === "pendente") query = query.eq("provedor", "profrotas").in("id", idsFiltroAjuste);
     return query;
   }
 
   const offset = offsetDaPagina(POR_PAGINA, pageParam);
 
-  const queryContagem = comFiltros(supabase.from("profrotas_abastecimentos").select("id", { count: "exact", head: true }));
-  const queryAgregados = comFiltros(supabase.from("profrotas_abastecimentos").select("item_quantidade, item_valor_total")).limit(50000);
+  const queryContagem = comFiltros(
+    supabase.from("abastecimentos_unificado").select("id", { count: "exact", head: true })
+  );
+  const queryAgregados = comFiltros(supabase.from("abastecimentos_unificado").select("litros, valor_total")).limit(
+    50000
+  );
   const queryPagina = comFiltros(
     supabase
-      .from("profrotas_abastecimentos")
-      .select(
-        "id, codigo_abastecimento, data_abastecimento, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_unitario, item_valor_total, pv_razao_social, pv_municipio, pv_uf, abastecimento_estornado, status_autorizacao, identificador"
-      )
+      .from("abastecimentos_unificado")
+      .select("id, provedor, codigo_abastecimento, data_abastecimento, placa, motorista_nome, produto, litros, valor_total, posto_nome")
   )
     .order("data_abastecimento", { ascending: false })
     .range(offset, offset + POR_PAGINA - 1);
 
   const [{ count }, { data: agregadosRaw }, { data: registros, error }] = semClienteEscolhido
-    ? [{ count: 0 }, { data: [] as { item_quantidade: number | null; item_valor_total: number | null }[] }, { data: [], error: null }]
+    ? [{ count: 0 }, { data: [] as { litros: number | null; valor_total: number | null }[] }, { data: [], error: null }]
     : await Promise.all([queryContagem, queryAgregados, queryPagina]);
 
   const totalRegistros = count ?? 0;
-  const linhas = (registros ?? []) as RegistroAbastecimento[];
+  const linhas = (registros ?? []) as RegistroUnificado[];
   const { paginaAtual, totalPaginas } = calcularPaginacao(totalRegistros, POR_PAGINA, pageParam);
 
-  const agregados = (agregadosRaw ?? []) as { item_quantidade: number | null; item_valor_total: number | null }[];
-  const litrosTotais = agregados.reduce((soma: number, r) => soma + (r.item_quantidade ?? 0), 0);
-  const valorTotal = agregados.reduce((soma: number, r) => soma + (r.item_valor_total ?? 0), 0);
+  const agregados = (agregadosRaw ?? []) as { litros: number | null; valor_total: number | null }[];
+  const litrosTotais = agregados.reduce((soma: number, r) => soma + (r.litros ?? 0), 0);
+  const valorTotal = agregados.reduce((soma: number, r) => soma + (r.valor_total ?? 0), 0);
   const custoMedioLitro = litrosTotais > 0 ? valorTotal / litrosTotais : 0;
-
-  // Fase 27.133 — pedido do Daniel: trazer a origem/meio de pagamento
-  // (Pró-Frotas, Valecard, RedeFrota, TicketLog, Veloe...) pros registros de
-  // abastecimentos. abastecimentos_externos (Fase 25) é a tabela genérica
-  // multi-provedor — nunca teve dado real até o robô da Fase 27.132 passar a
-  // gerar 15/dia/cliente pra teste. Aplica os mesmos filtros de cliente/data
-  // já usados acima na tabela principal (q e ajuste não se aplicam aqui —
-  // esses registros não têm código de 10 dígitos nem fluxo de ajuste).
-  let queryExternos = supabase
-    .from("abastecimentos_externos")
-    .select("id, provedor, placa, motorista_nome, data_abastecimento, combustivel, quantidade, valor_total, posto_nome")
-    .order("data_abastecimento", { ascending: false })
-    .limit(30);
-  if (empresaSelecionada) queryExternos = queryExternos.eq("empresa_id", empresaSelecionada);
-  if (de) queryExternos = queryExternos.gte("data_abastecimento", de);
-  if (ate) queryExternos = queryExternos.lte("data_abastecimento", `${ate}T23:59:59`);
-
-  const { data: registrosExternosRaw } = semClienteEscolhido ? { data: [] } : await queryExternos;
-  const registrosExternos = (registrosExternosRaw ?? []) as RegistroExterno[];
 
   // Consolidado por meio de pagamento (todos os provedores, últimos 6 meses,
   // ignorando os filtros de data da tela — mesmo espírito do "Top 5 clientes"
   // do Dashboard: um resumo estável, não a fatia filtrada no momento).
   const seisMesesAtrasIso = new Date(Date.now() - 183 * 24 * 60 * 60 * 1000).toISOString();
-  const [{ data: profrotasResumo }, { data: externosResumo }] = empresaSelecionada
-    ? await Promise.all([
-        supabase
-          .from("profrotas_abastecimentos")
-          .select("item_valor_total")
-          .eq("empresa_id", empresaSelecionada)
-          .eq("status_autorizacao", 1)
-          .gte("data_abastecimento", seisMesesAtrasIso)
-          .limit(50000),
-        supabase
-          .from("abastecimentos_externos")
-          .select("provedor, valor_total")
-          .eq("empresa_id", empresaSelecionada)
-          .gte("data_abastecimento", seisMesesAtrasIso)
-          .limit(50000),
-      ])
-    : [{ data: [] }, { data: [] }];
+  const { data: resumoRaw } = empresaSelecionada
+    ? await supabase
+        .from("abastecimentos_unificado")
+        .select("provedor, valor_total")
+        .eq("empresa_id", empresaSelecionada)
+        .gte("data_abastecimento", seisMesesAtrasIso)
+        .limit(50000)
+    : { data: [] };
   const resumoPorProvedor = new Map<string, number>();
-  for (const r of profrotasResumo ?? []) {
-    resumoPorProvedor.set("profrotas", (resumoPorProvedor.get("profrotas") ?? 0) + (r.item_valor_total ?? 0));
-  }
-  for (const r of (externosResumo ?? []) as { provedor: string; valor_total: number | null }[]) {
+  for (const r of (resumoRaw ?? []) as { provedor: string; valor_total: number | null }[]) {
     resumoPorProvedor.set(r.provedor, (resumoPorProvedor.get(r.provedor) ?? 0) + (r.valor_total ?? 0));
   }
   const listaResumoProvedores = Array.from(resumoPorProvedor.entries()).sort((a, b) => b[1] - a[1]);
@@ -345,7 +294,8 @@ export default async function AbastecimentosPage({
       </form>
 
       {/* Fase 27.68 — filtro pra ver só quem tem ajuste pendente, pra não
-          precisar abrir registro por registro procurando a bolinha vermelha. */}
+          precisar abrir registro por registro procurando a bolinha vermelha.
+          Só afeta linhas PróFrotas (ver comentário em idsFiltroAjuste). */}
       <div className="mb-4">
         <Link
           href={(() => {
@@ -380,36 +330,45 @@ export default async function AbastecimentosPage({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {linhas.map((r) => {
-              const status = statusBadge(r.abastecimento_estornado, r.status_autorizacao);
+              const ehProfrotas = r.provedor === "profrotas";
+              const dataCelula = (
+                <>
+                  {ehProfrotas && idsComAjusteAberto.has(Number(r.id)) && (
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" title="Ajuste pendente neste abastecimento" />
+                  )}
+                  {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
+                </>
+              );
               return (
-                <tr key={r.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{r.codigo_abastecimento}</td>
-                  <td className="px-4 py-3">
-                    <Link href={`/abastecimentos/${r.id}`} className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline">
-                      {idsComAjusteAberto.has(Number(r.id)) && (
-                        <span
-                          className="h-2 w-2 shrink-0 rounded-full bg-red-500"
-                          title="Ajuste pendente neste abastecimento"
-                        />
-                      )}
-                      {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
-                    </Link>
+                <tr key={`${r.provedor}-${r.id}`} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">
+                    {r.codigo_abastecimento ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{r.veiculo_placa ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    {ehProfrotas ? (
+                      <Link
+                        href={`/abastecimentos/${r.id}`}
+                        className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline"
+                      >
+                        {dataCelula}
+                      </Link>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-slate-700">{dataCelula}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{r.placa ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">{r.motorista_nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.item_nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.item_quantidade ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.produto ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.litros ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">
-                    {r.item_valor_total != null ? formatarMoeda(r.item_valor_total) : "—"}
+                    {r.valor_total != null ? formatarMoeda(r.valor_total) : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {[r.pv_razao_social, r.pv_municipio, r.pv_uf].filter(Boolean).join(" — ") || "—"}
+                  <td className="px-4 py-3 text-slate-600">{r.posto_nome ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <BadgeProvedor provedor={r.provedor} />
                   </td>
                   <td className="px-4 py-3">
-                    <BadgeProvedor provedor="profrotas" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={status.classe}>{status.texto}</span>
+                    <span className="badge-ativo">Confirmado</span>
                   </td>
                 </tr>
               );
@@ -434,57 +393,6 @@ export default async function AbastecimentosPage({
           />
         </div>
       </div>
-
-      {/* Fase 27.133 — abastecimentos vindos de OUTROS provedores (Valecard,
-          RedeFrota, TicketLog, Veloe...), tabela abastecimentos_externos.
-          Lista à parte porque esses registros não têm o mesmo fluxo de
-          edição/ajuste/detalhe do PróFrotas — são um espelho do que o
-          provedor já processou, não um lançamento editável na FNI. */}
-      {registrosExternos.length > 0 && (
-        <div className="card mt-6 overflow-x-auto">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Outros meios de pagamento</h2>
-            <p className="text-xs text-slate-500">
-              Abastecimentos recebidos via integração com outros provedores (Valecard, RedeFrota, TicketLog,
-              Veloe...), fora do PróFrotas.
-            </p>
-          </div>
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Meio de pagamento</th>
-                <th className="px-4 py-3">Data</th>
-                <th className="px-4 py-3">Placa</th>
-                <th className="px-4 py-3">Motorista</th>
-                <th className="px-4 py-3">Produto</th>
-                <th className="px-4 py-3">Litros</th>
-                <th className="px-4 py-3">Valor</th>
-                <th className="px-4 py-3">Posto</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {registrosExternos.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <BadgeProvedor provedor={r.provedor} />
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{r.placa ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.motorista_nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.combustivel ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.quantidade ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {r.valor_total != null ? formatarMoeda(r.valor_total) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{r.posto_nome ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
       </>
       )}
     </div>

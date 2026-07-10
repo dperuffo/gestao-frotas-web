@@ -25,6 +25,32 @@ import { marcarDespesaPagaAcao, excluirDespesaAcao } from "./actions";
 
 type SearchParams = { empresa?: string; periodo?: string; inicio?: string; fim?: string };
 
+// Fase 27.134/27.135 — pedido do Daniel: o "Consolidado por meio de
+// pagamento" (Fase 27.133, em /financeiro) também precisa aparecer na
+// visão do posto. Mesmas cores/rótulo por provedor das outras telas — sem
+// separar PróFrotas do resto, é um provedor igual aos demais na mesma
+// lista/tabela.
+const CORES_PROVEDOR: Record<string, string> = {
+  profrotas: "bg-blue-100 text-blue-700",
+  Valecard: "bg-purple-100 text-purple-700",
+  RedeFrota: "bg-orange-100 text-orange-700",
+  TicketLog: "bg-teal-100 text-teal-700",
+  Veloe: "bg-pink-100 text-pink-700",
+};
+
+function nomeProvedor(provedor: string) {
+  return provedor === "profrotas" ? "PróFrotas" : provedor;
+}
+
+function BadgeProvedor({ provedor }: { provedor: string }) {
+  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 text-slate-600";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${classe}`}>
+      {nomeProvedor(provedor)}
+    </span>
+  );
+}
+
 type FaturaRow = {
   id: string;
   empresa_cliente_id: string;
@@ -94,6 +120,41 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   let faturas: FaturaRow[] = [];
   let despesas: DespesaRow[] = [];
   let erro: string | undefined;
+
+  // Fase 27.134 — pedido do Daniel: trazer o "Consolidado por meio de
+  // pagamento" (Fase 27.133, já em /financeiro) também pra visão do posto.
+  // abastecimentos_unificado já traz posto_cnpj pros dois lados (pv_cnpj do
+  // PróFrotas, posto_cnpj da Valecard/RedeFrota/TicketLog/Veloe) — filtra
+  // pelo CNPJ do próprio posto, mesmo campo/comparação já usada em
+  // AbastecimentosPosto.tsx. A leitura de abastecimentos_externos por
+  // posto_cnpj só passou a funcionar nesta fase (nova policy RLS
+  // abastecimentos_externos_select_posto — antes só existia RLS por
+  // empresa_id, e o posto nunca é "membro" da empresa cliente).
+  let indicadoresPorProvedor: { provedor: string; valorTotal: number; litros: number; qtdAbastecimentos: number }[] = [];
+  if (empresaSelecionada && segmentoSelecionado === "Revenda") {
+    const { data: empresaPosto } = await supabase.from("empresas").select("cnpj").eq("id", empresaSelecionada).maybeSingle();
+    const meuCnpj = empresaPosto?.cnpj;
+    if (meuCnpj) {
+      const { data: unificadoRaw } = await supabase
+        .from("abastecimentos_unificado")
+        .select("provedor, valor_total, litros")
+        .eq("posto_cnpj", meuCnpj)
+        .gte("data_abastecimento", `${inicio}T00:00:00`)
+        .lte("data_abastecimento", `${fim}T23:59:59`)
+        .limit(50000);
+      const porProvedor = new Map<string, { valorTotal: number; litros: number; qtdAbastecimentos: number }>();
+      for (const r of (unificadoRaw ?? []) as { provedor: string; valor_total: number | null; litros: number | null }[]) {
+        const atual = porProvedor.get(r.provedor) ?? { valorTotal: 0, litros: 0, qtdAbastecimentos: 0 };
+        atual.valorTotal += r.valor_total ?? 0;
+        atual.litros += r.litros ?? 0;
+        atual.qtdAbastecimentos += 1;
+        porProvedor.set(r.provedor, atual);
+      }
+      indicadoresPorProvedor = Array.from(porProvedor.entries())
+        .map(([provedor, v]) => ({ provedor, ...v }))
+        .sort((a, b) => b.valorTotal - a.valorTotal);
+    }
+  }
 
   // Fase 27.70 — pedido do Daniel: seção "Ajustes de abastecimento" também
   // no painel financeiro do posto.
@@ -316,6 +377,37 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
               destaque={saldoPrevistoPeriodo < 0 ? "vermelho" : "verde"}
             />
           </div>
+
+          {indicadoresPorProvedor.length > 0 && (
+            <div className="card mb-6 overflow-x-auto p-6">
+              <h2 className="mb-4 text-sm font-semibold text-slate-900">Consolidado por meio de pagamento</h2>
+              <p className="mb-3 text-xs text-slate-500">
+                Abastecimentos que você forneceu no período, por meio de pagamento usado pelo cliente.
+              </p>
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs uppercase text-slate-500">
+                  <tr>
+                    <th className="py-2 pr-4">Meio de pagamento</th>
+                    <th className="py-2 pr-4">Abastecimentos</th>
+                    <th className="py-2 pr-4">Litros</th>
+                    <th className="py-2">Valor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {indicadoresPorProvedor.map((p) => (
+                    <tr key={p.provedor}>
+                      <td className="py-2.5 pr-4">
+                        <BadgeProvedor provedor={p.provedor} />
+                      </td>
+                      <td className="py-2.5 pr-4 text-slate-600">{p.qtdAbastecimentos}</td>
+                      <td className="py-2.5 pr-4 text-slate-600">{p.litros.toLocaleString("pt-BR")}</td>
+                      <td className="py-2.5 text-slate-600">{formatarMoeda(p.valorTotal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="card p-4 lg:col-span-2">
