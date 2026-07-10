@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
+import { DIAS_TRIAL, LIMITES_PLANO } from "@/lib/constants";
 
 // Fase 27.50 — Negociação com Postos Revendedores.
 //
@@ -161,6 +162,70 @@ export async function atualizarCicloPagamento(
   return { ok: true, empresaClienteId: params.empresaClienteId };
 }
 
+// Fase 27.125 — pedido do Daniel: postos revendedores devem poder assinar um
+// plano igual um cliente (mesmos planos/valores, mesmo trial de 14 dias).
+// Quando o CLIENTE cadastra uma negociação com o CNPJ de um posto que ainda
+// não tem conta na FNI, e informa um e-mail de contato, provisiona
+// automaticamente a empresa do posto (segmento "Revenda", status "trial") e
+// convida o usuário — mesmo padrão de 3 passos já usado em
+// /usuarios/novo::criarUsuario (convite no Auth → perfil em usuarios_app →
+// vínculo em usuarios_empresas), só que disparado a partir do lado do
+// CLIENTE, então precisa do cliente ADMIN (service role): a RLS de
+// `empresas` só libera INSERT para admin/superusuário, e quem está criando
+// a negociação é um usuário comum do cliente.
+export async function provisionarEmpresaPostoTrial(
+  admin: ClienteSupabase,
+  params: { cnpj: string; email: string; criadoPor: string | null }
+): Promise<{ empresaId: string } | { erro: string }> {
+  const email = params.email.trim().toLowerCase();
+  const limites = LIMITES_PLANO.gratuito;
+  const trialEndsAt = new Date(Date.now() + DIAS_TRIAL * 24 * 60 * 60 * 1000).toISOString();
+  const nomeProvisorio = `Posto ${params.cnpj}`;
+
+  const { data: empresa, error: empresaError } = await admin
+    .from("empresas")
+    .insert({
+      nome: nomeProvisorio,
+      cnpj: params.cnpj,
+      segmento: "Revenda",
+      status: "trial",
+      plano: "gratuito",
+      trial_ends_at: trialEndsAt,
+      max_usuarios: limites.max_usuarios,
+      max_veiculos: limites.max_veiculos,
+      email_contato: email,
+    })
+    .select("id")
+    .single();
+  if (empresaError || !empresa) {
+    return { erro: `Não foi possível criar a conta do posto: ${empresaError?.message ?? "erro desconhecido"}.` };
+  }
+
+  // Convite via Supabase Auth — envia e-mail com link para o posto definir a
+  // própria senha (idêntico ao passo 1 de criarUsuario).
+  const { error: authError } = await admin.auth.admin.inviteUserByEmail(email);
+  if (authError && !authError.message.toLowerCase().includes("already been registered")) {
+    return { erro: `Empresa do posto criada, mas não foi possível convidar ${email}: ${authError.message}` };
+  }
+
+  const { error: perfilError } = await admin.from("usuarios_app").upsert(
+    { email, nome: nomeProvisorio, perfil: "posto", segmento: "Revenda", ativo: true },
+    { onConflict: "email" }
+  );
+  if (perfilError) {
+    return { erro: `Posto convidado, mas houve erro ao salvar o perfil: ${perfilError.message}` };
+  }
+
+  const { error: vinculoError } = await admin
+    .from("usuarios_empresas")
+    .upsert({ user_email: email, empresa_id: empresa.id, role: "posto", ativo: true });
+  if (vinculoError) {
+    return { erro: `Perfil salvo, mas houve erro ao vincular à empresa: ${vinculoError.message}` };
+  }
+
+  return { empresaId: empresa.id };
+}
+
 // Cria a negociação (cabeçalho + rodada 1). origem indica quem começou o
 // registro (tela do cliente, tela do posto, ou API do posto); autor indica
 // de quem é a proposta inicial (normalmente o mesmo lado de origem, exceto
@@ -303,6 +368,26 @@ export async function decidirNegociacao(
   const statusEsperado: StatusNegociacao = params.autor === "cliente" ? "pendente_cliente" : "pendente_posto";
   if (negociacao.status !== statusEsperado) {
     return { erro: "Não é a sua vez de responder nesta negociação." };
+  }
+
+  // Fase 27.125 — pedido do Daniel: "Se o posto que recebeu o convite está
+  // no período de testes, ao receber uma proposta de negociação, deverá,
+  // obrigatoriamente, assinar um plano". O trial serve pra explorar a
+  // plataforma, mas ACEITAR uma negociação real (o que passa a gerar
+  // ciclo/fatura de verdade) exige assinatura ativa — checado aqui, antes de
+  // decidir qualquer coisa, pra não deixar a negociação "meio aceita".
+  if (params.autor === "posto" && params.decisao === "aceita" && negociacao.empresa_posto_id) {
+    const { data: empresaPosto } = await supabase
+      .from("empresas")
+      .select("status")
+      .eq("id", negociacao.empresa_posto_id)
+      .maybeSingle();
+    if (empresaPosto?.status === "trial") {
+      return {
+        erro:
+          "Este posto ainda está no período de teste. Para aceitar negociações e operar na plataforma, assine um plano em Assinatura.",
+      };
+    }
   }
 
   const agora = new Date().toISOString();

@@ -39,6 +39,24 @@ export function FormularioNovaNegociacao({ empresaAtualId, souPosto }: { empresa
         />
       </div>
 
+      {/* Fase 27.125 — pedido do Daniel: postos revendedores passam a poder
+          assinar um plano igual um cliente. Se o posto informado ainda não
+          tem conta na FNI, este e-mail dispara o convite automático (trial
+          de 14 dias) — sem ele, a negociação é criada do mesmo jeito, só que
+          fica esperando o posto aparecer por conta própria. */}
+      {!souPosto && (
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500">
+            E-mail do posto (opcional — se ele ainda não usa a FNI)
+          </label>
+          <input type="email" name="email_posto" className="input" placeholder="contato@posto.com.br" />
+          <p className="mt-1 text-xs text-slate-400">
+            Se o CNPJ acima não tiver conta na FNI, convidamos esse e-mail automaticamente — o posto entra
+            em teste grátis e precisa assinar um plano para aceitar negociações.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Combustível</label>

@@ -6296,3 +6296,31 @@ dois clientes de teste".
 - Campo `tipo` exposto na API de integração `GET /api/cadastros/veiculos` (Hub de Integrações).
 - `veiculos_da_empresa()` (RPC usada por `/veiculos`, dashboard, integrações) já é `SETOF
   cadastro_veiculos` com `select v.*` — não precisou de alteração, o novo campo já vem junto.
+
+## Fase 27.125 — Postos revendedores: convite automático + assinatura obrigatória
+
+Pedido do Daniel: postos revendedores devem poder assinar um plano igual um cliente de frota
+(mesmos planos/valores), passando por trial e depois assinatura — mas continuam podendo ser
+carregados como referência (postos_gf) via API/planilha pelo cliente, como já funciona hoje.
+
+- **Convite automático**: ao cadastrar uma negociação (`/negociacoes/novo`) com o CNPJ de um
+  posto que ainda não tem conta na FNI, o cliente pode informar um e-mail de contato do posto —
+  se informado, o sistema cria automaticamente a empresa do posto (`segmento='Revenda'`,
+  `status='trial'`, 14 dias) e convida o usuário via `inviteUserByEmail` (mesmo padrão de 3
+  passos já usado em `/usuarios/novo`). Sem e-mail, mantém o comportamento anterior (negociação
+  fica com `empresa_posto_id` nulo até o posto aparecer). `provisionarEmpresaPostoTrial()` em
+  `src/lib/negociacoesPostos.ts`.
+- **Assinatura obrigatória para operar**: "o posto que recebeu o convite, ao receber uma
+  proposta de negociação, deve obrigatoriamente assinar um plano" — `decidirNegociacao()` agora
+  bloqueia a ACEITAÇÃO de uma negociação pelo lado do posto se a empresa dele ainda estiver
+  `status='trial'`, orientando a assinar um plano em Assinatura. O trial continua livre pra
+  explorar a plataforma; só aceitar negociação (que gera ciclo/fatura real) exige assinatura.
+- **Sugestão de plano por tamanho da Rede**: como os planos usam limites de
+  usuários/veículos (conceito de frota, sem sentido pra posto), a régua acordada com o Daniel
+  usa a quantidade de postos na Rede de Postos (grupo econômico, Fase 27.87) do posto logado —
+  1 a 10 postos → Básico, 11 a 50 → Profissional, acima de 50 → Enterprise. Calculado em
+  `/assinatura` via `grupos_economicos_empresas` + `grupos_economicos` (`segmento='Revenda'`),
+  sem RPC nova, e destacado com uma badge "Recomendado" no card do plano sugerido.
+- Nenhuma tabela nova: reaproveita 100% o esqueleto de billing já existente (`empresas`,
+  Stripe webhook, `email-trials`, gate de suspensão no middleware), que já era agnóstico de
+  segmento.

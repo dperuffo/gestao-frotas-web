@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizarCNPJ } from "@/lib/utils";
 import {
   criarNegociacao,
@@ -10,6 +11,7 @@ import {
   decidirNegociacao,
   cancelarNegociacao,
   atualizarCicloPagamento,
+  provisionarEmpresaPostoTrial,
   type AutorNegociacao,
   type DadosRodada,
 } from "@/lib/negociacoesPostos";
@@ -38,6 +40,9 @@ function lerDadosRodada(formData: FormData): DadosRodada {
 // resolvido via empresa_id_do_cnpj — se ainda não existir como empresa
 // cadastrada na FNI, a negociação é criada mesmo assim (fica com
 // empresa_posto_id nulo), só não aparece na tela desse lado até ele existir.
+// Fase 27.125 — exceção: se for o CLIENTE cadastrando um posto novo e ele
+// informar um e-mail de contato (campo "email_posto"), o posto é provisionado
+// e convidado automaticamente em vez de ficar com empresa_posto_id nulo.
 export async function criarNegociacaoAcao(
   empresaAtualId: string,
   souPosto: boolean,
@@ -56,7 +61,31 @@ export async function criarNegociacaoAcao(
     return { erro: souPosto ? "Informe o CNPJ do cliente." : "Informe o CNPJ do posto." };
   }
 
-  const { data: empresaAlvoId } = await supabase.rpc("empresa_id_do_cnpj", { p_cnpj: cnpjAlvo });
+  const { data: empresaAlvoIdBusca } = await supabase.rpc("empresa_id_do_cnpj", { p_cnpj: cnpjAlvo });
+  let empresaAlvoId = empresaAlvoIdBusca;
+
+  // Fase 27.125 — pedido do Daniel: quando o CLIENTE cadastra a negociação e
+  // o CNPJ do posto não corresponde a nenhuma empresa existente, se ele
+  // informou um e-mail de contato do posto, provisiona a conta do posto em
+  // trial + convida o usuário automaticamente (ver
+  // provisionarEmpresaPostoTrial). Sem e-mail, mantém o comportamento
+  // anterior (negociação criada com empresa_posto_id nulo).
+  const emailPosto = !souPosto ? String(formData.get("email_posto") ?? "").trim() : "";
+  if (!souPosto && !empresaAlvoId && emailPosto) {
+    let admin;
+    try {
+      admin = createAdminClient();
+    } catch (e) {
+      return { erro: e instanceof Error ? e.message : "Erro ao inicializar cliente administrativo." };
+    }
+    const provisionado = await provisionarEmpresaPostoTrial(admin, {
+      cnpj: cnpjAlvo,
+      email: emailPosto,
+      criadoPor: user?.email ?? null,
+    });
+    if ("erro" in provisionado) return { erro: provisionado.erro };
+    empresaAlvoId = provisionado.empresaId;
+  }
 
   const dados = lerDadosRodada(formData);
 

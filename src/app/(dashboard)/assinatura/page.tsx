@@ -29,15 +29,17 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
     stripe_customer_id: string | null;
     max_usuarios: number | null;
     max_veiculos: number | null;
+    segmento: string | null;
   } | null = null;
   let qtdUsuarios = 0;
   let qtdVeiculos = 0;
+  let qtdPostosNaRede: number | null = null;
   let invoices: { id: string; valor_cents: number | null; status: string; criado_em: string; periodo_inicio: string | null; periodo_fim: string | null }[] = [];
 
   if (empresaSelecionada) {
     const { data: empresaData } = await supabase
       .from("empresas")
-      .select("id, nome, cnpj, plano, status, trial_ends_at, stripe_customer_id, max_usuarios, max_veiculos")
+      .select("id, nome, cnpj, plano, status, trial_ends_at, stripe_customer_id, max_usuarios, max_veiculos, segmento")
       .eq("id", empresaSelecionada)
       .single();
 
@@ -70,6 +72,33 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
     qtdUsuarios = usuariosCount ?? 0;
     qtdVeiculos = veiculosCount ?? 0;
     invoices = invoicesData ?? [];
+
+    // Fase 27.125 — pedido do Daniel: pra posto revendedor (segmento
+    // "Revenda"), o critério de qual plano faz sentido não é
+    // usuários/veículos (isso é conceito de frota) — é o tamanho da Rede de
+    // Postos (grupo econômico) a que ele pertence. Conta quantos postos
+    // existem em qualquer rede (segmento "Revenda") da qual esta empresa é
+    // membro — reaproveita a mesma tabela de junção da Fase 27.87
+    // (grupos_economicos_empresas), sem precisar de RPC nova.
+    if (empresaData?.segmento === "Revenda") {
+      const { data: redesDoPosto } = await supabase
+        .from("grupos_economicos_empresas")
+        .select("grupo_economico_id, grupos_economicos!inner(segmento)")
+        .eq("empresa_id", empresaSelecionada)
+        .eq("grupos_economicos.segmento", "Revenda");
+
+      const idsRedes = (redesDoPosto ?? []).map((r) => r.grupo_economico_id).filter((id): id is string => !!id);
+      if (idsRedes.length > 0) {
+        const { count } = await supabase
+          .from("grupos_economicos_empresas")
+          .select("empresa_id", { count: "exact", head: true })
+          .in("grupo_economico_id", idsRedes);
+        qtdPostosNaRede = count ?? 0;
+      } else {
+        // Não está em nenhuma rede — conta como 1 (o próprio posto).
+        qtdPostosNaRede = 1;
+      }
+    }
   }
 
   const diasRestantesTrial =
@@ -82,6 +111,17 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
   // planos-precos) — nunca hardcoded aqui, pra não desatualizar se o preço
   // mudar no Stripe.
   const precos = empresa ? await buscarPrecosPlanos() : null;
+
+  // Fase 27.125 — régua combinada com o Daniel: 1 a 10 postos na rede =
+  // Básico, 11 a 50 = Profissional, acima de 50 = Enterprise.
+  const planoRecomendadoRede: Plano | null =
+    qtdPostosNaRede === null
+      ? null
+      : qtdPostosNaRede <= 10
+        ? "basico"
+        : qtdPostosNaRede <= 50
+          ? "profissional"
+          : "enterprise";
 
   return (
     <div>
@@ -165,17 +205,41 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
             <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
               Planos disponíveis <AjudaIcon chave="assinatura.termo_adesao" />
             </h2>
+            {/* Fase 27.125 — pra posto revendedor, o dimensionamento de plano
+                é pelo tamanho da Rede de Postos, não por usuários/veículos
+                (conceito de frota). */}
+            {empresa!.segmento === "Revenda" && qtdPostosNaRede !== null && (
+              <p className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                Sua rede tem {qtdPostosNaRede} posto{qtdPostosNaRede === 1 ? "" : "s"} — recomendamos o
+                plano <strong>{PLANO_LABEL[planoRecomendadoRede!]}</strong> (destacado abaixo).
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {(["basico", "profissional", "enterprise"] as const).map((plano) => {
                 const limites = LIMITES_PLANO[plano];
                 const ehAtual = empresa!.plano === plano && empresa!.status === "ativo";
+                const ehRecomendado = empresa!.segmento === "Revenda" && !ehAtual && plano === planoRecomendadoRede;
                 return (
-                  <div key={plano} className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : "border-slate-200"}`}>
+                  <div
+                    key={plano}
+                    className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : ehRecomendado ? "border-frota-400 bg-frota-50/40" : "border-slate-200"}`}
+                  >
+                    {ehRecomendado && (
+                      <span className="mb-2 inline-block rounded-full bg-frota-600 px-2 py-0.5 text-xs font-medium text-white">
+                        Recomendado
+                      </span>
+                    )}
                     <p className="text-sm font-semibold text-slate-900">{PLANO_LABEL[plano]}</p>
                     <p className="mt-1 text-lg font-semibold text-frota-700">{formatarPrecoPlano(precos?.[plano])}</p>
                     <p className="mt-1 text-xs text-slate-500">
-                      Até {limites.max_usuarios < 0 ? "usuários ilimitados" : `${limites.max_usuarios} usuário(s)`} ·{" "}
-                      {limites.max_veiculos < 0 ? "veículos ilimitados" : `${limites.max_veiculos} veículos`}
+                      {empresa!.segmento === "Revenda" ? (
+                        <>Até {limites.max_usuarios < 0 ? "usuários ilimitados" : `${limites.max_usuarios} usuário(s)`}</>
+                      ) : (
+                        <>
+                          Até {limites.max_usuarios < 0 ? "usuários ilimitados" : `${limites.max_usuarios} usuário(s)`} ·{" "}
+                          {limites.max_veiculos < 0 ? "veículos ilimitados" : `${limites.max_veiculos} veículos`}
+                        </>
+                      )}
                     </p>
                     {ehAtual ? (
                       <span className="badge-ativo mt-3 inline-block">Plano atual</span>
