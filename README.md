@@ -6028,3 +6028,31 @@ redundante e confusa na tabela de negociações.
 tabela "Negociações com postos" (cabeçalho, célula de dado, e `colSpan` do estado vazio ajustado de 8 para 7).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.115 — filtro Com NF-e/Sem NF-e no detalhamento do ciclo aberto
+
+Pedido do Daniel: "Trazer filtro para ver abastecimento com NF e sem NF" (na tela `/ciclo-aberto/[negociacaoId]`,
+"Detalhamento do abastecimento"). Mesmo padrão visual/técnico do filtro de status de NF-e já existente em
+`/abastecimentos` (Fase 27.102): pills de link com `?nf=com`/`?nf=sem`, contagem ao lado de cada pill. Como o
+RPC `abastecimentos_do_ciclo_aberto` só devolve um booleano (`tem_nfe`, sem granularidade de rejeitada/pendente
+— isso é assunto de `/notas-fiscais`), o filtro tem só 3 estados: Todos / Com NF-e / Sem NF-e, filtrados em
+memória no Server Component (RPC já traz tudo, sem necessidade de outra chamada ao banco).
+
+`src/app/(dashboard)/ciclo-aberto/[negociacaoId]/page.tsx`: `searchParams` ganhou `nf`; lista filtrada antes do
+render; mensagem de "vazio" diferencia ciclo sem nenhum abastecimento vs. filtro sem resultado.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.116 — reordenar seções: Faturas, Ciclos em Andamento, Negociações
+
+Pedido do Daniel: "Em todas as telas que traz este detalhamento, ordenar por: Faturas, Ciclos em Andamento e
+Negociacoes". A única tela com as 3 seções juntas nesse formato é o componente `CicloAbastecimentoPagamento`
+(usado em `/clientes/[id]`, `/clientes-posto/[clienteId]` e `/meus-postos/[postoId]`) — ordem antiga era Ciclo
+em andamento → Negociações → Faturas.
+
+`src/app/(dashboard)/clientes/_components/CicloAbastecimentoPagamento.tsx`: bloco "Faturas" movido pra logo
+depois do banner de "Próxima fatura a vencer", antes de `SecaoCiclosAbertos` (Ciclo em andamento) e do form de
+edição de ciclo/prazo (admin); "Negociações com postos" ficou por último. Só reordenação de JSX, nenhuma
+mudança de dado/lógica.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

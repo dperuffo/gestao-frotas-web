@@ -13,8 +13,17 @@ import { formatarDataBr } from "@/lib/utils";
 // período/valor/quantidade PREVISTOS (podem mudar até o fechamento) e a
 // lista de abastecimentos que compõem esse valor. Acessível às 3 visões
 // (cliente, posto, admin), mesma RLS/guarda de abastecimentos_do_ciclo_aberto.
-export default async function CicloAbertoPage({ params }: { params: Promise<{ negociacaoId: string }> }) {
+type SearchParams = { nf?: string };
+
+export default async function CicloAbertoPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ negociacaoId: string }>;
+  searchParams: Promise<SearchParams>;
+}) {
   const { negociacaoId } = await params;
+  const { nf } = await searchParams;
   const supabase = await createClient();
 
   const { data: ciclosAbertos } = await supabase.rpc("ciclos_abertos_postos");
@@ -25,7 +34,26 @@ export default async function CicloAbertoPage({ params }: { params: Promise<{ ne
   const { data: abastecimentosData } = await supabase.rpc("abastecimentos_do_ciclo_aberto", {
     p_negociacao_id: negociacaoId,
   });
-  const abastecimentos = abastecimentosData ?? [];
+  const todosAbastecimentos = abastecimentosData ?? [];
+
+  // Fase 27.115 — pedido do Daniel: "Trazer filtro para ver abastecimento
+  // com NF e sem NF" — mesmo espírito do filtro de NF-e já existente em
+  // /abastecimentos (Fase 27.102), só que aqui o RPC devolve um booleano só
+  // (tem_nfe: já linkado ou não — rejeição/motivo é assunto de /notas-fiscais).
+  const contagemNf = {
+    todos: todosAbastecimentos.length,
+    com: todosAbastecimentos.filter((a) => a.tem_nfe).length,
+    sem: todosAbastecimentos.filter((a) => !a.tem_nfe).length,
+  };
+  const abastecimentos = todosAbastecimentos.filter((a) => {
+    if (nf === "com") return a.tem_nfe;
+    if (nf === "sem") return !a.tem_nfe;
+    return true;
+  });
+
+  function linkFiltroNf(valor: string | undefined) {
+    return valor ? `?nf=${valor}` : "?";
+  }
 
   return (
     <div>
@@ -75,6 +103,29 @@ export default async function CicloAbertoPage({ params }: { params: Promise<{ ne
           <p className="mt-1 text-xs text-slate-500">
             Abastecimentos já registrados no ciclo atual que compõem o valor acumulado acima.
           </p>
+          {/* Fase 27.115 — filtro por status de NF-e (mesmo padrão visual do
+              filtro já existente em /abastecimentos). */}
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-medium text-slate-500">NF-e:</span>
+            <Link
+              href={linkFiltroNf(undefined)}
+              className={`rounded-full px-3 py-1 font-medium ${!nf ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-600"}`}
+            >
+              Todos ({contagemNf.todos})
+            </Link>
+            <Link
+              href={linkFiltroNf(nf === "com" ? undefined : "com")}
+              className={`rounded-full px-3 py-1 font-medium ${nf === "com" ? "bg-green-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            >
+              Com NF-e ({contagemNf.com})
+            </Link>
+            <Link
+              href={linkFiltroNf(nf === "sem" ? undefined : "sem")}
+              className={`rounded-full px-3 py-1 font-medium ${nf === "sem" ? "bg-red-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            >
+              Sem NF-e ({contagemNf.sem})
+            </Link>
+          </div>
         </div>
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
@@ -126,7 +177,9 @@ export default async function CicloAbertoPage({ params }: { params: Promise<{ ne
             {abastecimentos.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
-                  Nenhum abastecimento registrado neste ciclo ainda.
+                  {todosAbastecimentos.length === 0
+                    ? "Nenhum abastecimento registrado neste ciclo ainda."
+                    : "Nenhum abastecimento com este filtro de NF-e."}
                 </td>
               </tr>
             )}

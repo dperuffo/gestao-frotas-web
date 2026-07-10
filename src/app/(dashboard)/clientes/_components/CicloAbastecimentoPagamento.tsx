@@ -142,6 +142,65 @@ export function CicloAbastecimentoPagamento({
         </div>
       )}
 
+      {/* Fase 27.116 — pedido do Daniel: "ordenar por: Faturas, Ciclos em
+          Andamento e Negociacoes" — ordem antiga era Ciclo em andamento →
+          Negociações → Faturas. */}
+      <div className="mb-6 card overflow-x-auto">
+        <div className="border-b border-slate-100 px-4 py-3">
+          <h3 className="text-sm font-semibold text-slate-900">Faturas</h3>
+        </div>
+        <table className="w-full text-left text-sm">
+          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-3">Posto</th>
+              <th className="px-4 py-3">Período</th>
+              <th className="px-4 py-3">Vencimento</th>
+              <th className="px-4 py-3">Valor</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {faturas.map((f) => {
+              const statusExib = statusFaturaExibicao(f.status, f.vencimento, hojeIso);
+              return (
+                <tr key={f.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 text-slate-700">{f.posto_nome ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-500">
+                    {formatarDataBr(f.periodo_inicio)} – {formatarDataBr(f.periodo_fim)}
+                  </td>
+                  <td className="px-4 py-3 text-slate-500">{formatarDataBr(f.vencimento)}</td>
+                  <td className="px-4 py-3 font-medium text-slate-700">{formatarMoeda(f.valor_total)}</td>
+                  <td className="px-4 py-3">
+                    <BadgeStatusFatura status={statusExib} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-3">
+                      {podeGerenciarFaturas && f.status === "aberta" && (
+                        <>
+                          <BotaoAcaoFinanceiraPosto id={f.id} acao={marcarFaturaPagaAcao} rotulo="Marcar como paga" />
+                          <BotaoAcaoFinanceiraPosto id={f.id} acao={cancelarFaturaAcao} rotulo="Cancelar" variante="danger" />
+                        </>
+                      )}
+                      <Link href={`/faturas-postos/${f.id}`} className="text-frota-600 hover:underline">
+                        Ver extrato
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {faturas.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                  Nenhuma fatura gerada ainda para este cliente.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
       <SecaoCiclosAbertos ciclos={ciclosAbertos} rotulo={rotuloCiclos} />
 
       {podeEditarCiclo && (
@@ -161,7 +220,7 @@ export function CicloAbastecimentoPagamento({
         </div>
       )}
 
-      <div className="mb-6 card overflow-x-auto">
+      <div className="card overflow-x-auto">
         <div className="border-b border-slate-100 px-4 py-3">
           <h3 className="text-sm font-semibold text-slate-900">Negociações com postos</h3>
         </div>
@@ -211,62 +270,6 @@ export function CicloAbastecimentoPagamento({
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
                   Este cliente ainda não negociou com nenhum posto.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="card overflow-x-auto">
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h3 className="text-sm font-semibold text-slate-900">Faturas</h3>
-        </div>
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Posto</th>
-              <th className="px-4 py-3">Período</th>
-              <th className="px-4 py-3">Vencimento</th>
-              <th className="px-4 py-3">Valor</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {faturas.map((f) => {
-              const statusExib = statusFaturaExibicao(f.status, f.vencimento, hojeIso);
-              return (
-                <tr key={f.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-700">{f.posto_nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {formatarDataBr(f.periodo_inicio)} – {formatarDataBr(f.periodo_fim)}
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">{formatarDataBr(f.vencimento)}</td>
-                  <td className="px-4 py-3 font-medium text-slate-700">{formatarMoeda(f.valor_total)}</td>
-                  <td className="px-4 py-3">
-                    <BadgeStatusFatura status={statusExib} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-3">
-                      {podeGerenciarFaturas && f.status === "aberta" && (
-                        <>
-                          <BotaoAcaoFinanceiraPosto id={f.id} acao={marcarFaturaPagaAcao} rotulo="Marcar como paga" />
-                          <BotaoAcaoFinanceiraPosto id={f.id} acao={cancelarFaturaAcao} rotulo="Cancelar" variante="danger" />
-                        </>
-                      )}
-                      <Link href={`/faturas-postos/${f.id}`} className="text-frota-600 hover:underline">
-                        Ver extrato
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {faturas.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                  Nenhuma fatura gerada ainda para este cliente.
                 </td>
               </tr>
             )}
