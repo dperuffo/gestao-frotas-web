@@ -396,6 +396,33 @@ export default async function DashboardLayout({
             ))}
           </ul>
 
+          {/* Fase 27.117 — pedido do Daniel: "Aba de Permissoes Precisa
+              aparecer para o cliente. Trazer somente permissoes no menu
+              Configuracoes para a visao do cliente". A Fase 27.110 escondeu
+              Permissões (dentro de Administração) de quem não é admin, mas
+              /permissoes já tem lógica própria pra gestor_frota/analista
+              customizarem as permissões da PRÓPRIA empresa (não é tela
+              exclusiva do time FNI como o resto de Administração) — ficou
+              escondida por engano. Seção própria, só pro cliente (não posto,
+              que já tem seu próprio /usuarios sem ganhar esta tela agora). */}
+          {!ehAdmin && !ehPosto && (
+            <>
+              <p className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Configurações
+              </p>
+              <ul className="space-y-1">
+                <li>
+                  <Link
+                    href="/permissoes"
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                  >
+                    <span>🔑 Permissões</span>
+                  </Link>
+                </li>
+              </ul>
+            </>
+          )}
+
           {/* Fase 27.110 — pedido do Daniel: "O menu Administração deve
               ficar visível somente para o admin da aplicação" — antes só
               excluía o posto (!ehPosto), então o cliente também via este

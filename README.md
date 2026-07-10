@@ -6091,4 +6091,21 @@ do lado Frota); `aba_permissoes`, `aba_assinaturas_clientes`, `aba_avaliacoes_cl
 já existente, não mudou nesta fase) — a tela é hoje um painel informativo/de intenção pro admin documentar e
 ajustar; reforçar isso com enforcement real fica pra uma fase futura, se o Daniel quiser.
 
+## Fase 27.117 — seção "Configurações" com Permissões pro cliente
+
+Pedido do Daniel: "Aba de Permissoes Precisa aparecer para o cliente. Trazer somente permissoes no menu
+Configuracoes para a visao do cliente". Achado real: a Fase 27.110 (menu Administração só pra admin) escondeu
+"Permissões por Perfil" de todo mundo que não é admin — mas `/permissoes/page.tsx` sempre teve lógica própria
+pra `gestor_frota`/`analista` customizarem as permissões da PRÓPRIA empresa (não é uma tela interna do time
+FNI como o resto de Administração — Inteligência de Rede, Assinaturas de todos os clientes, etc.). A Fase
+27.110 escondeu ela por engano.
+
+`src/app/(dashboard)/layout.tsx`: nova seção "Configurações" (cabeçalho + 1 item, "🔑 Permissões" → `/permissoes`),
+visível só quando `!ehAdmin && !ehPosto` (ou seja, `gestor_frota`/`analista`) — renderizada logo depois de
+Operação, antes do bloco de Administração (que continua exclusivo do admin, com "Permissões por Perfil" —
+edita o padrão GLOBAL, diferente da visão do cliente que edita só a própria empresa). Posto não ganhou este
+item agora (não foi pedido).
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
