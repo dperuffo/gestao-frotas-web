@@ -6015,4 +6015,16 @@ Administração, e o item "Chamados" (que já vivia nesta lista) passou a seguir
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
 
+## Fase 27.113 — remover coluna "Ciclo+prazo" da tabela de negociações
+
+Pedido do Daniel, depois de revisar a tela: "nao aparecer a informacao de ciclo + prazo em negociacoes, pois
+confunde o usuario". Desde a Fase 27.108 essa coluna passou a mostrar o valor ATUAL do cliente (não mais o
+valor histórico de cada negociação), então toda linha da tabela — inclusive negociações já canceladas ou
+recusadas — mostrava o mesmo "15+15 dias", dando a impressão de erro. O resumo de ciclo/prazo do cliente já
+aparece em destaque no bloco de cima ("Ciclo de faturamento e prazo de vencimento"), então a coluna era
+redundante e confusa na tabela de negociações.
+
+`src/app/(dashboard)/clientes/_components/CicloAbastecimentoPagamento.tsx`: removida a coluna "Ciclo+prazo" da
+tabela "Negociações com postos" (cabeçalho, célula de dado, e `colSpan` do estado vazio ajustado de 8 para 7).
+
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

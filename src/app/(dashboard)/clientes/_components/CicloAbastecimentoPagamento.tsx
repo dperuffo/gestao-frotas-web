@@ -173,7 +173,6 @@ export function CicloAbastecimentoPagamento({
               <th className="px-4 py-3">Vigência</th>
               <th className="px-4 py-3">Volume mín./mês</th>
               <th className="px-4 py-3">Preço/L</th>
-              <th className="px-4 py-3">Ciclo+prazo</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3" />
             </tr>
@@ -196,9 +195,6 @@ export function CicloAbastecimentoPagamento({
                     ? n.preco_unitario.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                     : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-500">
-                  {cicloFaturamentoDias}+{prazoVencimentoDias} dias
-                </td>
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
                     {STATUS_NEGOCIACAO_LABEL[n.status as StatusNegociacao] ?? n.status}
@@ -213,7 +209,7 @@ export function CicloAbastecimentoPagamento({
             ))}
             {negociacoes.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
                   Este cliente ainda não negociou com nenhum posto.
                 </td>
               </tr>
