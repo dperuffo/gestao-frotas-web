@@ -950,6 +950,9 @@ export interface Database {
           uf_veiculo: string | null;
           numero_eixos: number | null;
           classificacao: "Próprio" | "Agregado" | null;
+          // Fase 27.124 — porte do veículo (Leve/Pesado), distinto de
+          // tipo_veiculo (carroceria) e classificacao (Próprio/Agregado).
+          tipo: "Leve" | "Pesado" | null;
           criado_em: string | null;
           atualizado_em: string | null;
         };

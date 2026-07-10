@@ -15,6 +15,7 @@ type Veiculo = {
   modelo: string | null;
   tipo_veiculo: string | null;
   classificacao: string | null;
+  tipo: string | null;
   ativo: boolean | null;
   centro_custo_nome: string | null;
   municipio: string | null;
@@ -62,7 +63,9 @@ export default async function VeiculosPage({
     // direta, mais simples que passar por RPC quando não há ambiguidade.
     let query = supabase
       .from("cadastro_veiculos")
-      .select("id, placa, marca, modelo, tipo_veiculo, classificacao, ativo, centro_custo_nome, municipio, uf_veiculo")
+      .select(
+        "id, placa, marca, modelo, tipo_veiculo, classificacao, tipo, ativo, centro_custo_nome, municipio, uf_veiculo"
+      )
       .order("placa");
     const { data, error: queryError } = await query;
     error = queryError;
@@ -164,6 +167,10 @@ export default async function VeiculosPage({
                 <tr>
                   <th className="px-4 py-3">Placa</th>
                   <th className="px-4 py-3">Marca/Modelo</th>
+                  <th className="px-4 py-3">Tipo Veículo</th>
+                  {/* Fase 27.124 — porte (Leve/Pesado), campo novo e distinto
+                      de "Tipo Veículo" (carroceria) e "Classificação"
+                      (Próprio/Agregado). */}
                   <th className="px-4 py-3">Tipo</th>
                   <th className="px-4 py-3">Classificação</th>
                   <th className="px-4 py-3">Centro de custo</th>
@@ -184,6 +191,7 @@ export default async function VeiculosPage({
                       {[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}
                     </td>
                     <td className="px-4 py-3 text-slate-600">{v.tipo_veiculo ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600">{v.tipo ?? "—"}</td>
                     <td className="px-4 py-3 text-slate-600">{v.classificacao ?? "—"}</td>
                     <td className="px-4 py-3 text-slate-600">{v.centro_custo_nome ?? "—"}</td>
                     <td className="px-4 py-3 text-slate-600">
@@ -199,7 +207,7 @@ export default async function VeiculosPage({
                 ))}
                 {veiculosFiltrados.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                    <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
                       Nenhum veículo encontrado.
                     </td>
                   </tr>

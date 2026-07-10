@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { criarVeiculo, atualizarVeiculo } from "../actions";
-import { CLASSIFICACAO, TIPOS_VEICULO, CICLOS_COMBUSTIVEL } from "@/lib/constants";
+import { CLASSIFICACAO, TIPOS_VEICULO, TIPO_PORTE_VEICULO, CICLOS_COMBUSTIVEL } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
 
 type Veiculo = Database["public"]["Tables"]["cadastro_veiculos"]["Row"];
@@ -75,6 +75,18 @@ export function VeiculoForm({
               {CLASSIFICACAO.map((c) => (
                 <option key={c} value={c}>
                   {c}
+                </option>
+              ))}
+            </select>
+          </Campo>
+          {/* Fase 27.124 — porte do veículo (Leve/Pesado), usado como filtro em
+              Parâmetros de Uso (ex: variação de hodômetro por porte). */}
+          <Campo label="Tipo">
+            <select name="tipo" defaultValue={veiculo?.tipo ?? ""} className="input">
+              <option value="">Selecione...</option>
+              {TIPO_PORTE_VEICULO.map((t) => (
+                <option key={t} value={t}>
+                  {t}
                 </option>
               ))}
             </select>

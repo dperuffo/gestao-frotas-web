@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { CLASSIFICACAO, type Classificacao } from "@/lib/constants";
+import { CLASSIFICACAO, type Classificacao, TIPO_PORTE_VEICULO, type TipoPorteVeiculo } from "@/lib/constants";
 import { alocarVeiculoCentroCusto } from "@/lib/centroCusto";
 
 export type VeiculoFormState = { erro?: string } | undefined;
@@ -20,6 +20,14 @@ function montarPayloadBase(formData: FormData) {
   const classificacao: Classificacao = CLASSIFICACAO.includes(classificacaoBruta as Classificacao)
     ? (classificacaoBruta as Classificacao)
     : "Próprio";
+
+  // Fase 27.124 — porte do veículo (Leve/Pesado); campo opcional, sem valor
+  // padrão forçado (diferente de classificacao) porque nem todo veículo
+  // legado tem esse dado ainda.
+  const tipoBruto = String(formData.get("tipo") ?? "").trim();
+  const tipo: TipoPorteVeiculo | null = TIPO_PORTE_VEICULO.includes(tipoBruto as TipoPorteVeiculo)
+    ? (tipoBruto as TipoPorteVeiculo)
+    : null;
 
   return {
     placa: String(formData.get("placa") ?? "").trim().toUpperCase(),
@@ -40,6 +48,7 @@ function montarPayloadBase(formData: FormData) {
     uf_veiculo: String(formData.get("uf_veiculo") ?? "").trim() || null,
     numero_eixos: numeroOuNull(formData.get("numero_eixos")),
     classificacao,
+    tipo,
   };
 }
 

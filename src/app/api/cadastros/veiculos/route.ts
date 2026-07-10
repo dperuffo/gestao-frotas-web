@@ -38,6 +38,7 @@ export async function GET(request: Request) {
     ano_modelo: v.ano_modelo,
     tipo_veiculo: v.tipo_veiculo,
     classificacao: v.classificacao,
+    tipo: v.tipo,
     combustivel: v.combustivel,
     centro_custo_nome: v.centro_custo_nome,
     ativo: v.ativo,

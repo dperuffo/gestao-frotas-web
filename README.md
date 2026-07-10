@@ -6276,3 +6276,23 @@ Verificado por SQL direto antes de corrigir: `total=7116, com_nfe=7102, sem_nfe=
 números que o indicador já mostrava (prova de que o bug era só na busca paginada, não no cálculo).
 
 Validado com `npx tsc --noEmit` e `npx eslint` limpos.
+
+## Fase 27.124 — campo Tipo (Leve/Pesado) no cadastro de veículos
+
+Pedido do Daniel: "No cadastro de Veiculos tem que ter um campo de 'Tipo'= Leve ou Pesado.
+Criar este campo no cadastro de veiculos. Atribuir tipo 'Leve' para todos os veiculos destes
+dois clientes de teste".
+
+- Nova coluna `cadastro_veiculos.tipo` (`'Leve' | 'Pesado'`, CHECK constraint) — distinta de
+  `tipo_veiculo` (carroceria: Cavalo Mecânico, Carreta, Truck...) e de `classificacao`
+  (Próprio/Agregado). Mesmo conceito Leve/Pesado já usado como filtro em Parâmetros de Uso
+  (Fase 27.121, variação de hodômetro).
+- Backfill: `tipo = 'Leve'` para os 2.386 veículos dos 2 clientes de teste (Frotas & Frotas Ltda
+  e Transportes de Cargas Testes Ltda), 100% da base — confirmado via SQL antes e depois.
+- `TIPO_PORTE_VEICULO` em `src/lib/constants.ts`.
+- Campo "Tipo" (select Leve/Pesado) no formulário de veículo (`VeiculoForm.tsx`), gravado por
+  `montarPayloadBase()` em `veiculos/actions.ts`.
+- Coluna "Tipo" na listagem `/veiculos`.
+- Campo `tipo` exposto na API de integração `GET /api/cadastros/veiculos` (Hub de Integrações).
+- `veiculos_da_empresa()` (RPC usada por `/veiculos`, dashboard, integrações) já é `SETOF
+  cadastro_veiculos` com `select v.*` — não precisou de alteração, o novo campo já vem junto.

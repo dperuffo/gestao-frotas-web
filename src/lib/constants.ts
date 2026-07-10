@@ -139,6 +139,13 @@ export const TIPOS_VEICULO = [
   "Outro",
 ] as const;
 
+// Fase 27.124 — porte do veículo (cadastro_veiculos.tipo), diferente de
+// tipo_veiculo (carroceria) e classificacao (Próprio/Agregado). Mesmo
+// conceito Leve/Pesado já usado como filtro em Parâmetros de Uso (Fase
+// 27.121: variação de hodômetro, dias/horários, postos permitidos).
+export const TIPO_PORTE_VEICULO = ["Leve", "Pesado"] as const;
+export type TipoPorteVeiculo = (typeof TIPO_PORTE_VEICULO)[number];
+
 // status_transacao não tem CHECK constraint no banco (a integração com o meio
 // de pagamento pode mandar outros valores) — esta lista é só a convenção usada
 // nos lançamentos manuais/importação feitos por este app.
