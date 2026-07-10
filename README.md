@@ -6243,3 +6243,12 @@ direta antes de começar).
 
 Com isso os 10 tipos de regra do anexo do Daniel estão implementados (schema + tela + API). Validado com
 `npx tsc --noEmit` e `npx eslint` limpos.
+
+## Fase 27.122 — exemplos de curl dos Parâmetros de Uso na aba Integrações
+
+Pedido do Daniel: os exemplos de `curl` na aba Integrações (seção "Como usar as APIs do Hub") ainda não
+cobriam os endpoints de Parâmetros de Uso das Fases 27.120/27.121. Adicionado um bloco "Consultar Parâmetros
+de Uso (escopos parametros_*:read)" logo depois do bloco "Consultar cadastros", no mesmo estilo (bloco
+`<pre>` escuro, um exemplo completo + lista dos demais endpoints equivalentes) — listando os 10 endpoints
+(`/api/integracoes/parametros/{vinculo,intervalo,valor-diario,volume-diario,produto,hodometro,dias-horarios,
+postos,servicos,cotas}`) com os filtros de querystring que cada um aceita.

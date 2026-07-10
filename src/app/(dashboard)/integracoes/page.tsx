@@ -253,6 +253,35 @@ export default async function IntegracoesPage() {
               Todas as respostas GET vêm paginadas (<code>limit</code> padrão 100, máximo 500) e sempre
               filtradas pela empresa dona da chave — a chave nunca enxerga dados de outro cliente.
             </p>
+
+            {/* Fase 27.120/27.121 — Parâmetros de Uso: 10 tipos de regra
+                que balizam abastecimentos em soluções de automação de
+                posto/meios de pagamento (ver /parametros-uso). */}
+            <p className="mb-1 mt-6 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Consultar Parâmetros de Uso (escopos parametros_*:read)
+            </p>
+            <pre className="overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+{`curl "https://SEU-DOMINIO-FNI.com.br/api/integracoes/parametros/vinculo?placa=ABC1D23&cpf=12345678900" \\
+  -H "Authorization: Bearer fni_..."
+
+# mesmo padrão (filtros opcionais por querystring, GET, paginado) pra:
+# /api/integracoes/parametros/vinculo           ?placa= &cpf=            (Vínculo Motorista ↔ Veículo)
+# /api/integracoes/parametros/intervalo         ?placa= &motorista_cpf=  (Intervalo entre Abastecimentos)
+# /api/integracoes/parametros/valor-diario      ?motorista_cpf=          (Valor Diário — Motorista)
+# /api/integracoes/parametros/volume-diario     ?placa=                  (Volume Diário — Veículo)
+# /api/integracoes/parametros/produto           ?placa=                  (Produto Abastecido)
+# /api/integracoes/parametros/hodometro         ?placa= &classificacao=Leve|Pesado
+# /api/integracoes/parametros/dias-horarios     ?placa= &motorista_cpf=
+# /api/integracoes/parametros/postos            ?placa= &posto_cnpj=
+# /api/integracoes/parametros/servicos          ?placa=
+# /api/integracoes/parametros/cotas             ?placa=                  (traz consumido/disponível do período atual)`}
+            </pre>
+            <p className="mt-3 text-xs text-slate-400">
+              Cada tipo é um escopo separado — marque só os que a sua integração precisa consultar. Só
+              regras com <code>status: &quot;Ativo&quot;</code> aparecem na resposta; use os filtros pra
+              checar rapidamente um par placa/motorista específico antes de liberar um abastecimento, em
+              vez de trazer a lista inteira.
+            </p>
           </>
         )}
       </div>
