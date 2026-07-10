@@ -6108,4 +6108,25 @@ item agora (não foi pedido).
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
 
+## Fase 27.118 — logout por inatividade: parar de usar valor desatualizado em abas já abertas
+
+Daniel: "Tive a sensacao de que a visao do posto foi deslogada nao respeitando o periodo de inativacao" —
+confirmado: aconteceu DEPOIS de ele mudar o parâmetro de 30 pra 120 min, com no máximo 30 min sem navegar na
+tela quando a sessão caiu.
+
+Causa raiz real: `MonitorInatividade` recebia `minutos` como prop calculada pelo SERVIDOR uma única vez, no
+carregamento da página (`buscarLogoutInatividadeMinutos` em `layout.tsx`). Se a aba fica aberta sem navegar/
+recarregar, o componente client-side nunca fica sabendo que o admin mudou o parâmetro em `/configuracoes` —
+continua aplicando o valor de quando a página carregou pela última vez. Uma sessão do posto aberta antes da
+mudança pra 120 min continuava sendo deslogada em 30 min (o valor anterior), mesmo com o parâmetro já
+atualizado no banco. Isso não é um bug exclusivo do posto — vale pra qualquer perfil com uma aba aberta há
+tempo — mas o posto costuma deixar telas abertas por mais tempo sem navegar (ex.: aguardando abastecimentos),
+o que tornava o problema mais visível nesse perfil.
+
+`src/app/(dashboard)/_components/MonitorInatividade.tsx`: o limite deixou de vir só da prop — agora fica numa
+`ref` atualizada (a) já na montagem do componente e (b) a cada 5 minutos, com uma busca direta em
+`configuracoes_sistema`. Mudanças feitas pelo admin agora valem pra sessões já abertas, sem precisar de
+navegação ou reload. Falha na busca (rede etc.) mantém o último valor conhecido — não derruba a sessão por
+causa disso.
+
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
