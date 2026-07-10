@@ -6386,3 +6386,19 @@ Pedido do Daniel: "Rede de Postos nao faz sentido estar na visao do cliente".
   `menuAdministracao` (só admin). A escrita (`criarRede`, `atualizarRede`, `vincularPosto`,
   `desvincularPosto`) já exigia `ehAdminOuSuperusuario` em `src/lib/gruposEconomicos.ts` — o
   item ficava visível pro cliente sem nenhuma ação que ele pudesse de fato realizar ali.
+
+## Fase 27.130 — menu do posto com seções Gestão e Operação
+
+Pedidos do Daniel na sequência: "No menu da visao Posto ter uma sessão Gestão e uma sessão
+Operação", "ajustaar as abas dentro destes dois conjuntos", "Conjunto Gestão acima de conjunto
+Operação no menu".
+
+- `menuPosto` (lista única, sem seção) virou dois arrays rotulados, mesmo nome/ordem das
+  seções que já existem pro lado Frota (Gestão antes de Operação):
+  - **Gestão**: Dashboard, Assistente FNI, Minha Assinatura, Avaliar Plataforma, Financeiro,
+    Privacidade (LGPD), Meus Dados/PIX, Usuários, Chamados — itens "de conta" (mesmo critério
+    da Fase 27.127 + o que já era self-service de time/PIX).
+  - **Operação**: Negociações, Abastecimentos, Clientes, Meus Preços, Notas Fiscais,
+    Integrações — o dia a dia comercial com os clientes.
+- Badges (negociações/ajustes de abastecimento pendentes) e `data-tour` preservados nos
+  mesmos itens, só movidos pra dentro de `menuPostoOperacao`.

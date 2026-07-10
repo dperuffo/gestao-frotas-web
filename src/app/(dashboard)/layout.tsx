@@ -66,50 +66,50 @@ const menuOperacao = [
 ];
 
 // Fase 27.50 — menu do posto revendedor (perfil "posto", tenant segmento
-// "Revenda"). É uma trilha própria, bem mais enxuta que o menu de Frota:
-// hoje o posto tem Dashboard, Negociações (aceitar/recusar/contrapropor o
-// que o cliente enviou, ou enviar proposta via API), Integrações (gerar a
-// própria chave de API) e Usuários (gerenciar o próprio time). Mais telas
-// devem entrar aqui conforme a plataforma evoluir pro lado Revenda.
-// Fase 27.56 — "Dashboard" entra aqui: todo mundo cai em /dashboard depois
-// do login, e antes disso o posto não tinha nenhum item de menu apontando
-// pra lá (a página é branch por segmento — ver dashboard/page.tsx).
-const menuPosto = [
+// "Revenda"). Trilha própria, separada da hierarquia de Frota.
+// Fase 27.127/27.130 — pedido do Daniel: mecanismo de avaliação, chamados e
+// Assistente FNI também na visão do posto, junto com Privacidade (LGPD) e
+// Minha Assinatura (o posto agora assina um plano próprio — Fase 27.125),
+// "tudo dentro de uma aba Gestão" — e, na sequência, "No menu da visao Posto
+// ter uma sessão Gestão e uma sessão Operação". Mesmo espírito das seções
+// "Gestão"/"Operação" que já existem pro lado Frota (menuVisaoGeral/
+// menuOperacao, ver acima): Gestão = itens "de conta" (visão geral,
+// assinatura, time, dados da empresa, suporte); Operação = o dia a dia de
+// negociar/abastecer/precificar com os clientes. Nenhum item de Gestão exige
+// mudança de RLS/backend — resolverEmpresaAtual, avaliar/actions.ts e
+// chamados/actions.ts já são agnósticos de segmento (usam empresas_do_usuario
+// pelo e-mail, e todo posto tem sua própria linha em usuarios_empresas
+// apontando pra própria empresa, desde sempre — ver Fase 27.50/27.125).
+// Fase 27.56 — "Dashboard" entra em Gestão (mesmo lugar que ocupa no
+// menuVisaoGeral da Frota): todo mundo cai em /dashboard depois do login.
+const menuPostoGestao = [
   { href: "/dashboard", label: "🏠 Dashboard" },
+  { href: "/assistente", label: "Assistente FNI", logo: true },
+  { href: "/assinatura", label: "💳 Minha Assinatura" },
+  { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
+  { href: "/financeiro-posto", label: "💰 Financeiro" },
+  { href: "/lgpd", label: "🔒 Privacidade (LGPD)" },
+  // Fase 27.92 — self-service: cadastro da chave PIX usada como cedente no
+  // boleto/documento de cobrança enviado aos clientes.
+  { href: "/minha-empresa", label: "🏦 Meus Dados / PIX" },
+  { href: "/usuarios", label: "👥 Usuários" },
+];
+
+// Fase 27.130 — o dia a dia operacional do posto: negociar com clientes
+// (aceitar/recusar/contrapropor o que o cliente enviou, ou enviar proposta
+// via API), registrar abastecimentos, acompanhar o cliente/preço/nota fiscal
+// de cada relação comercial, e gerar a própria chave de API.
+const menuPostoOperacao = [
   { href: "/negociacoes", label: "🤝 Negociações" },
   { href: "/abastecimentos", label: "🛢️ Abastecimentos" },
   // Fase 27.72 — cadastro dos clientes que já negociaram com o posto
   // (qualquer status), com ciclo de abastecimento/pagamento por cliente.
   { href: "/clientes-posto", label: "🏢 Clientes" },
   { href: "/precos-postos", label: "💲 Meus Preços" },
-  { href: "/financeiro-posto", label: "💰 Financeiro" },
   // Fase 27.94/27.95 — upload de NF-e (XML) por abastecimento + indicador
   // de % de recolha, do lado do posto.
   { href: "/notas-fiscais", label: "📄 Notas Fiscais" },
-  // Fase 27.92 — self-service: cadastro da chave PIX usada como cedente no
-  // boleto/documento de cobrança enviado aos clientes.
-  { href: "/minha-empresa", label: "🏦 Meus Dados / PIX" },
   { href: "/integracoes", label: "🔌 Integrações" },
-  { href: "/usuarios", label: "👥 Usuários" },
-];
-
-// Fase 27.127 — pedido do Daniel: "Mecanismo de avaliacao da plataforma tem
-// que estar na visao do posto, assim como chamados e Assistente FNI...
-// Privacidade LGPD e Minha Assinatura tambem, pois vai ter que gerenciar a
-// assinatura. Tudo dentro de uma aba Gestão". Mesmo espírito da seção
-// "Gestão" que já existe pro lado Frota (menuVisaoGeral, ver acima) — o
-// posto passou a ser um tenant com assinatura própria (Fase 27.125), então
-// precisa dos mesmos itens "de conta" que um cliente já tem: assistente,
-// assinatura, avaliação, privacidade e suporte. Nenhum desses itens exige
-// mudança de RLS/backend — resolverEmpresaAtual, avaliar/actions.ts e
-// chamados/actions.ts já são agnósticos de segmento (usam empresas_do_usuario
-// pelo e-mail, e todo posto tem sua própria linha em usuarios_empresas
-// apontando pra própria empresa, desde sempre — ver Fase 27.50/27.125).
-const menuPostoGestao = [
-  { href: "/assistente", label: "Assistente FNI", logo: true },
-  { href: "/assinatura", label: "💳 Minha Assinatura" },
-  { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
-  { href: "/lgpd", label: "🔒 Privacidade (LGPD)" },
 ];
 
 const menuAdministracao = [
@@ -306,36 +306,12 @@ export default async function DashboardLayout({
         <nav className="flex-1 px-3 py-4">
           {ehPosto ? (
             <>
-            <ul className="space-y-1">
-              {menuPosto.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    data-tour={TOUR_POR_HREF_POSTO[item.href]}
-                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-                  >
-                    <span>{item.label}</span>
-                    {item.href === "/negociacoes" && negociacoesPendentes > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                        {negociacoesPendentes}
-                      </span>
-                    )}
-                    {item.href === "/abastecimentos" && ajustesAbastecimentosPendentes > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                        {ajustesAbastecimentosPendentes}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            {/* Fase 27.127 — pedido do Daniel: mecanismo de avaliação, chamados
-                e Assistente FNI também na visão do posto, junto com Privacidade
-                (LGPD) e Minha Assinatura (o posto agora assina um plano
-                próprio — Fase 27.125), tudo dentro de uma aba "Gestão" — mesmo
-                nome/espírito da seção "Gestão" que já existe pro lado Frota. */}
-            <p className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            {/* Fase 27.130 — pedido do Daniel: "No menu da visao Posto ter uma
+                sessão Gestão e uma sessão Operação" + "Conjunto Gestão acima
+                de conjunto Operação no menu" — mesma ordem/nomes das seções
+                que já existem pro lado Frota (Gestão vem antes de
+                Cadastros/Operação lá também). */}
+            <p className="mb-2 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
               Gestão
             </p>
             <ul className="space-y-1">
@@ -343,6 +319,7 @@ export default async function DashboardLayout({
                 <li key={item.href}>
                   <Link
                     href={item.href}
+                    data-tour={TOUR_POR_HREF_POSTO[item.href]}
                     className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                   >
                     <span>
@@ -373,6 +350,33 @@ export default async function DashboardLayout({
                   )}
                 </Link>
               </li>
+            </ul>
+
+            <p className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Operação
+            </p>
+            <ul className="space-y-1">
+              {menuPostoOperacao.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    data-tour={TOUR_POR_HREF_POSTO[item.href]}
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                  >
+                    <span>{item.label}</span>
+                    {item.href === "/negociacoes" && negociacoesPendentes > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                        {negociacoesPendentes}
+                      </span>
+                    )}
+                    {item.href === "/abastecimentos" && ajustesAbastecimentosPendentes > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                        {ajustesAbastecimentosPendentes}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
             </ul>
             </>
           ) : (
