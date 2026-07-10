@@ -115,6 +115,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
   <ul class="nav-links">
     <li><a href="#func" data-i18n="nav_func">Funcionalidades</a></li>
     <li><a href="#integracoes" data-i18n="nav_integracoes">Integrações</a></li>
+    <li><a href="#postos" data-i18n="nav_postos">Para Postos</a></li>
     <li><a href="#como" data-i18n="nav_como">Como funciona</a></li>
     <li><a href="#precos" data-i18n="nav_precos">Preços</a></li>
   </ul>
@@ -537,6 +538,21 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   </div>
 </section>
 
+<section class="section" id="postos">
+  <div class="sec-lbl" data-i18n="postos_lbl">Para Postos Revendedores</div>
+  <div class="sec-title" data-i18n="postos_title">Sua rede de postos também opera na FNI</div>
+  <p class="sec-sub" data-i18n="postos_sub">Se sua rede já abastece frotas que usam a FNI, você pode negociar preço e volume direto com esses clientes dentro da plataforma — sem planilha, sem WhatsApp perdido. Comece com 14 dias grátis e, depois, assine um dos mesmos planos usados pelos nossos clientes de frota.</p>
+  <div class="grid">
+    <div class="card"><div class="icon">🤝</div><div class="ct" data-i18n="pocard0_t">Negocie direto com frotas</div><div class="cd" data-i18n="pocard0_d">Receba e responda propostas de preço e volume mínimo mensal direto na plataforma, sem intermediário.</div></div>
+    <div class="card"><div class="icon">🧾</div><div class="ct" data-i18n="pocard1_t">Conciliação automática</div><div class="cd" data-i18n="pocard1_d">Abastecimentos e NF-e conciliados automaticamente com o ciclo de faturamento acordado com cada cliente.</div></div>
+    <div class="card"><div class="icon">🌐</div><div class="ct" data-i18n="pocard2_t">Rede de Postos</div><div class="cd" data-i18n="pocard2_d">Agrupe todos os postos da sua bandeira ou grupo econômico em uma única visão, com um plano por rede.</div></div>
+    <div class="card"><div class="icon">💳</div><div class="ct" data-i18n="pocard3_t">Mesmos planos, sem letra miúda</div><div class="cd" data-i18n="pocard3_d">Trial de 14 dias grátis e depois os mesmos planos e valores usados pelos clientes de frota — sem plano especial escondido.</div></div>
+  </div>
+  <div style="text-align:center;margin-top:40px">
+    <a href="mailto:contato@fxgestaodefrotasonline.com" class="btn-s" data-i18n="postos_cta">💬 Quero cadastrar meu posto</a>
+  </div>
+</section>
+
 <section class="section" id="como" style="background:rgba(255,255,255,0.012)">
   <div class="sec-lbl" data-i18n="como_lbl">Como funciona</div>
   <div class="sec-title" data-i18n="como_title">Comece em minutos</div>
@@ -703,6 +719,20 @@ var _i18n = {
     intcard2_d: "Eliminação de planilhas manuais, com importação automática de notas fiscais e cupons.",
     intcard3_t: "Segurança e Controle",
     intcard3_d: "Travas de segurança contra desvios, limitando o valor, o tipo de combustível e a capacidade do tanque.",
+    // Postos Revendedores (Fase 27.126)
+    nav_postos: "Para Postos",
+    postos_lbl: "Para Postos Revendedores",
+    postos_title: "Sua rede de postos também opera na FNI",
+    postos_sub: "Se sua rede já abastece frotas que usam a FNI, você pode negociar preço e volume direto com esses clientes dentro da plataforma — sem planilha, sem WhatsApp perdido. Comece com 14 dias grátis e, depois, assine um dos mesmos planos usados pelos nossos clientes de frota.",
+    pocard0_t: "Negocie direto com frotas",
+    pocard0_d: "Receba e responda propostas de preço e volume mínimo mensal direto na plataforma, sem intermediário.",
+    pocard1_t: "Conciliação automática",
+    pocard1_d: "Abastecimentos e NF-e conciliados automaticamente com o ciclo de faturamento acordado com cada cliente.",
+    pocard2_t: "Rede de Postos",
+    pocard2_d: "Agrupe todos os postos da sua bandeira ou grupo econômico em uma única visão, com um plano por rede.",
+    pocard3_t: "Mesmos planos, sem letra miúda",
+    pocard3_d: "Trial de 14 dias grátis e depois os mesmos planos e valores usados pelos clientes de frota — sem plano especial escondido.",
+    postos_cta: "💬 Quero cadastrar meu posto",
     // Steps PT
     step1_t: "Cadastre sua empresa", step1_d: "14 dias grátis com acesso completo ao plano Profissional.",
     step2_t: "Importe sua frota", step2_d: "Cadastre veículos individualmente ou em lote via Excel.",
@@ -774,6 +804,20 @@ var _i18n = {
     intcard2_d: "Eliminates manual spreadsheets, with automatic import of invoices and receipts.",
     intcard3_t: "Security & Control",
     intcard3_d: "Security locks against misuse, limiting value, fuel type and tank capacity.",
+    // Gas Station Resellers (Fase 27.126)
+    nav_postos: "For Gas Stations",
+    postos_lbl: "For Gas Station Resellers",
+    postos_title: "Your gas station network can also run on FNI",
+    postos_sub: "If your network already fuels fleets that use FNI, you can negotiate price and volume directly with those clients inside the platform — no spreadsheets, no lost WhatsApp messages. Start with a free 14-day trial and then subscribe to one of the same plans used by our fleet clients.",
+    pocard0_t: "Negotiate directly with fleets",
+    pocard0_d: "Receive and respond to price and minimum monthly volume proposals directly on the platform, no middleman.",
+    pocard1_t: "Automatic reconciliation",
+    pocard1_d: "Fuel purchases and invoices automatically reconciled with the billing cycle agreed with each client.",
+    pocard2_t: "Gas Station Network",
+    pocard2_d: "Group all the stations in your brand or economic group into a single view, with one plan per network.",
+    pocard3_t: "Same plans, no fine print",
+    pocard3_d: "Free 14-day trial, then the same plans and prices used by fleet clients — no hidden special plan.",
+    postos_cta: "💬 I want to register my gas station",
     como_lbl: "How it works",
     como_title: "Get started in minutes",
     step1_t: "Register your company",

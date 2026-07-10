@@ -6324,3 +6324,18 @@ carregados como referência (postos_gf) via API/planilha pelo cliente, como já 
 - Nenhuma tabela nova: reaproveita 100% o esqueleto de billing já existente (`empresas`,
   Stripe webhook, `email-trials`, gate de suspensão no middleware), que já era agnóstico de
   segmento.
+
+## Fase 27.126 — seção da landing page para postos revendedores
+
+Pedido do Daniel: "Precisamos ajustar a landing page para comunicar com o público de postos
+revendedores sobre a plataforma".
+
+- Nova seção `#postos` (PT/EN) na landing pública, entre "Hub Multiprestadores" (Fase 27.106) e
+  "Como funciona" — mesmo padrão visual das demais seções (`sec-lbl`/`sec-title`/`sec-sub` +
+  grid de 4 cards): negociação direta com frotas, conciliação automática, Rede de Postos (Fase
+  27.87) e "mesmos planos, sem letra miúda" (reforça a Fase 27.125).
+- Novo item de menu "Para Postos" (`#postos`) na navegação da landing.
+- CTA por e-mail (`mailto:contato@fxgestaodefrotasonline.com`) em vez de `/cadastro` — hoje não
+  existe self-service signup para posto (Fase 27.125 usa convite automático disparado pelo
+  cliente), então o CTA direciona pra contato manual até esse fluxo existir.
+- Chaves de tradução adicionadas em `src/app/_landing/landingBody.ts` (blocos `pt`/`en`).
