@@ -31,23 +31,55 @@ export default async function CicloAbertoPage({
 
   if (!ciclo) notFound();
 
-  const { data: abastecimentosData } = await supabase.rpc("abastecimentos_do_ciclo_aberto", {
-    p_negociacao_id: negociacaoId,
-  });
-  const todosAbastecimentos = abastecimentosData ?? [];
+  // Fase 27.123 — achado real (Daniel: "Ajustar o filtro para trazer o
+  // Pendente de NFe"): o indicador "Pendente NF-e" (calculado por SQL
+  // agregado em ciclos_abertos_postos) mostrava 14, mas o filtro "Sem NF-e"
+  // desta tabela sempre mostrava 0 — mesmo bug de limite padrão do
+  // PostgREST (db-max-rows = 1000, ver Fase 27.38) batendo de novo: a
+  // chamada a abastecimentos_do_ciclo_aberto não paginava, então ciclos com
+  // mais de 1000 abastecimentos (este tinha 7.116) só traziam os 1000 mais
+  // ANTIGOS (a RPC ordena por data_abastecimento asc). Como as NF-e são
+  // anexadas seguindo a ordem cronológica dos abastecimentos, os 1000 mais
+  // antigos já estavam TODOS com nota — os 14 pendentes de verdade estavam
+  // todos escondidos além da linha 1000, nunca chegavam no filtro. Corrigido
+  // buscando em lotes de 1000 (mesmo padrão de buscarTodosVeiculosDaEmpresa)
+  // até esgotar os resultados.
+  const TAMANHO_LOTE = 1000;
+  type LinhaAbastecimentoCiclo = {
+    id: number;
+    data_abastecimento: string | null;
+    motorista_nome: string | null;
+    veiculo_placa: string | null;
+    item_nome: string | null;
+    item_quantidade: number | null;
+    item_valor_unitario: number | null;
+    item_valor_total: number | null;
+    tem_nfe: boolean;
+  };
+  const todosAbastecimentos: LinhaAbastecimentoCiclo[] = [];
+  for (let offset = 0; ; offset += TAMANHO_LOTE) {
+    const { data: lote } = await supabase
+      .rpc("abastecimentos_do_ciclo_aberto", { p_negociacao_id: negociacaoId })
+      .range(offset, offset + TAMANHO_LOTE - 1);
+    if (!lote || lote.length === 0) break;
+    todosAbastecimentos.push(...lote);
+    if (lote.length < TAMANHO_LOTE) break;
+  }
 
   // Fase 27.115 — pedido do Daniel: "Trazer filtro para ver abastecimento
   // com NF e sem NF" — mesmo espírito do filtro de NF-e já existente em
   // /abastecimentos (Fase 27.102), só que aqui o RPC devolve um booleano só
   // (tem_nfe: já linkado ou não — rejeição/motivo é assunto de /notas-fiscais).
+  // Fase 27.123 — rótulo "Sem NF-e" virou "Pendente NF-e" pra bater com o
+  // texto do indicador acima (mesma condição: !tem_nfe).
   const contagemNf = {
     todos: todosAbastecimentos.length,
     com: todosAbastecimentos.filter((a) => a.tem_nfe).length,
-    sem: todosAbastecimentos.filter((a) => !a.tem_nfe).length,
+    pendente: todosAbastecimentos.filter((a) => !a.tem_nfe).length,
   };
   const abastecimentos = todosAbastecimentos.filter((a) => {
     if (nf === "com") return a.tem_nfe;
-    if (nf === "sem") return !a.tem_nfe;
+    if (nf === "pendente") return !a.tem_nfe;
     return true;
   });
 
@@ -120,10 +152,10 @@ export default async function CicloAbertoPage({
               Com NF-e ({contagemNf.com})
             </Link>
             <Link
-              href={linkFiltroNf(nf === "sem" ? undefined : "sem")}
-              className={`rounded-full px-3 py-1 font-medium ${nf === "sem" ? "bg-red-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              href={linkFiltroNf(nf === "pendente" ? undefined : "pendente")}
+              className={`rounded-full px-3 py-1 font-medium ${nf === "pendente" ? "bg-red-600 text-white" : "bg-slate-100 text-slate-600"}`}
             >
-              Sem NF-e ({contagemNf.sem})
+              Pendente NF-e ({contagemNf.pendente})
             </Link>
           </div>
         </div>
@@ -168,7 +200,7 @@ export default async function CicloAbertoPage({
                     </span>
                   ) : (
                     <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                      Sem NF-e
+                      Pendente NF-e
                     </span>
                   )}
                 </td>

@@ -6252,3 +6252,27 @@ de Uso (escopos parametros_*:read)" logo depois do bloco "Consultar cadastros", 
 `<pre>` escuro, um exemplo completo + lista dos demais endpoints equivalentes) — listando os 10 endpoints
 (`/api/integracoes/parametros/{vinculo,intervalo,valor-diario,volume-diario,produto,hodometro,dias-horarios,
 postos,servicos,cotas}`) com os filtros de querystring que cada um aceita.
+
+## Fase 27.123 — corrigir filtro "Pendente NF-e" no ciclo em andamento (limite de 1000 linhas escondia os pendentes)
+
+Daniel: "Ajustar o filtro para trazer o Pendente de NFe" — no ciclo em andamento (`/ciclo-aberto/[negociacaoId]`),
+o indicador "Pendente NF-e" mostrava R$ 2.940,87 (14), mas o filtro "Sem NF-e" da tabela abaixo sempre mostrava
+0, e a contagem "Todos" ficava travada em 1000 mesmo com o título dizendo "Detalhamento do abastecimento (7102)".
+
+Causa raiz: mesmo bug de limite padrão do PostgREST (`db-max-rows` = 1000 por resposta, já visto na Fase 27.38)
+— a chamada a `abastecimentos_do_ciclo_aberto` não paginava. Este ciclo tinha 7.116 abastecimentos no total
+(7.102 com NF-e + 14 pendentes); a RPC ordena por `data_abastecimento` crescente, e como as NF-e são anexadas
+seguindo a ordem cronológica dos abastecimentos, os 1.000 mais ANTIGOS (os únicos que a página buscava) já
+estavam 100% com nota — os 14 pendentes de verdade ficavam todos escondidos além da linha 1000, nunca chegavam
+no filtro nem na contagem.
+
+Corrigido buscando em lotes de 1000 via `.range()` até esgotar os resultados (mesmo padrão de
+`buscarTodosVeiculosDaEmpresa`, Fase 27.38) — agora a página traz os 7.116 abastecimentos de verdade.
+Aproveitado pra renomear o filtro/rótulo "Sem NF-e" pra "Pendente NF-e" (pill de filtro, badge por linha),
+batendo com o texto já usado no indicador acima, em vez de dois nomes diferentes pra mesma condição
+(`!tem_nfe`).
+
+Verificado por SQL direto antes de corrigir: `total=7116, com_nfe=7102, sem_nfe=14` — bate exatamente com os
+números que o indicador já mostrava (prova de que o bug era só na busca paginada, não no cálculo).
+
+Validado com `npx tsc --noEmit` e `npx eslint` limpos.

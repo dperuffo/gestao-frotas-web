@@ -99,7 +99,7 @@ export default async function ParametrosUsoPage({
           </p>
         </div>
         {empresaSelecionada && tipo === "vinculo" && (
-          <Link href="/parametros-uso/novo" className="btn-primary">
+          <Link href={`/parametros-uso/novo?empresa=${empresaSelecionada}`} className="btn-primary">
             + Novo Vínculo
           </Link>
         )}
