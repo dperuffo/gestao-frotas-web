@@ -594,6 +594,43 @@ export interface Database {
           },
         ];
       };
+      parametros_vinculo_motorista_veiculo: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string;
+          motorista_id: string;
+          data_inicio: string;
+          data_fim: string | null;
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_vinculo_motorista_veiculo"]["Row"]> & {
+          empresa_id: string;
+          placa: string;
+          motorista_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_vinculo_motorista_veiculo"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_vinculo_motorista_veiculo_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "parametros_vinculo_motorista_veiculo_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       cadastro_veiculos: {
         Row: {
           id: string;

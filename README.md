@@ -6163,3 +6163,46 @@ mesma fórmula `volume × autonomia` do robô corrigido. Testado antes/depois: S
 Migrações: `fase_27_119_indicador_eficiencia_media_kml_razao_de_somas`, `fase_27_119_robo_hodometro_cnpj_normalizado`
 (ambas `CREATE OR REPLACE`, mesma assinatura/retorno, sem `DROP`). Reparo de dados feito via SQL direto
 (não é migração — é correção pontual de dado de teste já existente, não schema).
+
+## Fase 27.120 — Parâmetros de Uso (1º tipo: Vínculo Motorista ↔ Veículo)
+
+Pedido do Daniel: uma tela nova de "Parâmetros de Uso" pro cliente configurar regras que balizam
+abastecimentos feitos em postos ou em soluções externas de automação de posto/meios de pagamento — essas
+soluções consultam os parâmetros via API antes de autorizar a transação. Ele trouxe como referência a tela de
+um sistema parecido, com 10 tipos de regra (Vínculo, Intervalo, Valor Diário, Vol. Diário, Produto, Hodômetro
+Leve/Pesado, Dias/Horários, Postos, Serviços, Cotas).
+
+Escopo grande — decidido junto com o Daniel (via pergunta direta) construir **um tipo completo por vez** (banco
+→ tela → API), validando o padrão antes de replicar pros outros 9, e que cada tela **já nasce com a API**
+correspondente (não deixar a API pra depois).
+
+**1º tipo: Vínculo Motorista ↔ Veículo** — associa um motorista a uma placa específica; o abastecimento só é
+considerado autorizado quando o par estiver `status = 'Ativo'` e dentro do período `data_inicio`/`data_fim`.
+
+- Tabela nova `parametros_vinculo_motorista_veiculo` (`empresa_id`, `placa`, `motorista_id`, `data_inicio`,
+  `data_fim`, `status`, `observacao`, `criado_por/em`, `atualizado_em`). `cadastro_veiculos` não tem
+  `empresa_id` direto (vínculo é por `cnpj_frota`), por isso a placa é guardada como texto em vez de FK —
+  mesmo padrão já usado em `profrotas_abastecimentos`/`indicador_eficiencia_veiculos`. RLS no mesmo modelo de
+  `motoristas` (`empresa_id = ANY(empresas_do_usuario(...))` OR admin OR `d.peruffo@gmail.com`, + bypass pro
+  `service_role`). Migração: `fase_27_120_parametros_vinculo_motorista_veiculo`.
+- Tela `/parametros-uso`: lista com filtro Ativo/Inativo, "Novo Vínculo" (`/parametros-uso/novo`) e edição
+  (`/parametros-uso/[id]/editar`), reaproveitando o padrão de formulário/toggle já usado em `/motoristas`. Uma
+  barra de abas mostra "Vínculo" ativa e os outros 9 tipos como "Em breve" (desabilitados) — mesma tela vai
+  ganhar as abas reais conforme cada tipo for implementado. Novo item no menu Operação: "🎛️ Parâmetros de
+  Uso" (só lado Frota — posto não usa). `permissoes_perfil` ganhou `aba_parametros_uso`
+  (admin/gestor_frota/analista = true, posto = false, mesmo padrão da Fase 27.114). `AjudaIcon` com entrada
+  `parametros-uso.pagina` em `conteudo.ts`.
+- **API externa** (Hub de Integrações, Fase 25): novo escopo `parametros_vinculo:read` em `apiKeys.ts`
+  (categoria "Parâmetros de Uso" — aparece automaticamente no formulário de geração de chave em `/integracoes`,
+  que já é 100% orientado por `CATALOGO_ESCOPOS`, sem precisar tocar nesse formulário). Rota
+  `GET /api/integracoes/parametros/vinculo`, autenticada por `Authorization: Bearer <chave>` via
+  `autenticarRequisicaoApi` (mesmo helper de `/api/cadastros/veiculos` e afins). Filtros opcionais `?placa=` e
+  `?cpf=` pro caso de uso mais comum (checar um par específico antes de liberar o abastecimento); resposta traz
+  um campo calculado `autorizado` (status Ativo + dentro do período) além dos dados brutos do vínculo.
+- `database.types.ts`: bloco `parametros_vinculo_motorista_veiculo` adicionado manualmente (mesmo estilo de
+  `motoristas`/`rotas_salvas`).
+
+Próximos passos (fases seguintes, mesmo padrão): os outros 9 tipos de regra, cada um com sua tabela, aba na
+tela e endpoint de leitura.
+
+Validado com `npx tsc --noEmit` e `npx eslint` limpos nos arquivos novos/alterados.

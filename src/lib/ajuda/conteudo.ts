@@ -269,6 +269,10 @@ export const AJUDA: Record<string, ItemAjuda> = {
     titulo: "Motoristas",
     texto: "Cadastro dos motoristas, incluindo CNH e validade — o Dashboard avisa automaticamente quando uma CNH está perto de vencer.",
   },
+  "parametros-uso.pagina": {
+    titulo: "Parâmetros de Uso",
+    texto: "Regras que balizam abastecimentos feitos no posto ou em soluções de automação/meios de pagamento integrados via API. O primeiro tipo (Vínculo Motorista ↔ Veículo) já está disponível; os demais aparecem como \"em breve\".",
+  },
   "usuarios.pagina": {
     titulo: "Usuários",
     texto: "Pessoas com acesso à plataforma e seu perfil (o que cada perfil pode ver/fazer é definido em Permissões por Perfil, no menu Administração).",

@@ -49,6 +49,14 @@ export const ESCOPO_NEGOCIACOES_READ = "negociacoes:read";
 // sessão de usuário.
 export const ESCOPO_NOTAS_FISCAIS_WRITE = "notas_fiscais:write";
 
+// Fase 27.120 — Parâmetros de Uso: regras cadastradas pelo cliente pra
+// balizar abastecimentos autorizados em postos ou soluções de automação/
+// meios de pagamento integrados. Primeiro tipo: Vínculo Motorista ↔
+// Veículo — o sistema externo consulta antes de liberar o abastecimento se
+// aquele par (placa + motorista) está ativo. Os outros 9 tipos do anexo do
+// Daniel ganham escopo próprio conforme forem implementados.
+export const ESCOPO_PARAMETROS_VINCULO_READ = "parametros_vinculo:read";
+
 // Catálogo central dos escopos disponíveis — usado tanto pela UI de geração
 // de chave (/integracoes, pra montar os checkboxes) quanto pela documentação
 // da API. Adicionar um escopo novo aqui é o único lugar a mudar pra ele
@@ -122,5 +130,11 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
     categoria: "Notas Fiscais",
     label: "Notas fiscais (escrita)",
     descricao: "Enviar o XML da NF-e de venda de combustível, vinculando-a ao abastecimento correspondente.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_VINCULO_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Vínculo motorista/veículo (leitura)",
+    descricao: "Consultar se um motorista está autorizado a abastecer um veículo específico antes de liberar a transação.",
   },
 ];

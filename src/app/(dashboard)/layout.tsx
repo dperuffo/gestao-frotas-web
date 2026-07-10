@@ -59,6 +59,10 @@ const menuOperacao = [
   { href: "/negociacoes", label: "🤝 Negociações com Postos" },
   { href: "/precos-postos", label: "💲 Preços dos Postos Parceiros" },
   { href: "/manutencao-preditiva", label: "🔧 Manutenção Preditiva" },
+  // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
+  // soluções de automação/meios de pagamento integrados via API (Hub de
+  // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
+  { href: "/parametros-uso", label: "🎛️ Parâmetros de Uso" },
   { href: "/relatorios", label: "📈 Relatórios" },
   { href: "/integracoes", label: "🔌 Integrações" },
 ];
