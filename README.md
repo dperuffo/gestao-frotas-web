@@ -6402,3 +6402,18 @@ Operação no menu".
     Integrações — o dia a dia comercial com os clientes.
 - Badges (negociações/ajustes de abastecimento pendentes) e `data-tour` preservados nos
   mesmos itens, só movidos pra dentro de `menuPostoOperacao`.
+
+## Fase 27.131 — corrigir filtros de Abastecimentos Fornecidos (posto) sem ?empresa=
+
+Pedido do Daniel (com print dos filtros de NF-e em "Abastecimentos Fornecidos"): "Revisar
+estes filtros pois ao clicar em qualquer um, volta para a seleçao de cliente".
+
+- Causa raiz: mesma classe de bug já corrigida nas Fases 27.31/27.111/27.123 — `linkFiltro()`
+  em `AbastecimentosPosto.tsx` montava a URL sem o parâmetro `empresa`. Como essa função é
+  usada por TODOS os filtros da tela (combustível, "Pendente de ajuste" e os 4 pills de NF-e,
+  não só NF-e), qualquer clique derrubava a empresa selecionada — quem vê mais de uma empresa
+  (ex.: admin olhando um posto específico) caía de volta na tela "selecione uma empresa"
+  (`semClienteEscolhido` em `/abastecimentos/page.tsx`).
+- Corrigido: `linkFiltro()` agora inclui `empresa: empresaPostoId`; o `<form>` de filtro livre
+  (cliente/busca/datas) ganhou `<input type="hidden" name="empresa">`; `<Paginacao
+  paramsAtuais>` também passou a incluir `empresa`.

@@ -286,9 +286,18 @@ export async function AbastecimentosPosto({
   const { paginaAtual, totalPaginas } = calcularPaginacao(totalRegistros, POR_PAGINA, page);
   const precoMedio = volumeTotal > 0 ? receitaTotal / volumeTotal : 0;
 
+  // Fase 27.131 — achado real (Daniel: "ao clicar em qualquer um, volta para
+  // a seleção de cliente"): esta função montava a URL sem o parâmetro
+  // "empresa" — quando quem está vendo é admin (ou qualquer usuário com mais
+  // de uma empresa), clicar em QUALQUER filtro (combustível, ajuste
+  // pendente, ou os 4 de NF-e, todos usam linkFiltro) derrubava a empresa
+  // selecionada e o /abastecimentos/page.tsx pai voltava pra tela de
+  // "selecione uma empresa" (semClienteEscolhido). Mesma causa raiz já
+  // corrigida em outras telas (Fase 27.31/27.111/27.123) — sempre carregar
+  // o "empresa" atual em qualquer link/form que fica na mesma página.
   function linkFiltro(extra: Record<string, string | undefined>) {
     const sp = new URLSearchParams();
-    const base = { cliente, q, de, ate, ajuste, nf: nf ?? undefined, ...extra };
+    const base = { empresa: empresaPostoId, cliente, q, de, ate, ajuste, nf: nf ?? undefined, ...extra };
     for (const [chave, valor] of Object.entries(base)) {
       if (valor) sp.set(chave, valor);
     }
@@ -372,6 +381,7 @@ export async function AbastecimentosPosto({
       </div>
 
       <form className="mb-4 flex flex-wrap items-end gap-3">
+        <input type="hidden" name="empresa" value={empresaPostoId} />
         <input type="hidden" name="combustivel" value={combustivel ?? ""} />
         <input type="hidden" name="ajuste" value={ajuste ?? ""} />
         <input type="hidden" name="nf" value={nf ?? ""} />
@@ -492,7 +502,7 @@ export async function AbastecimentosPosto({
             totalRegistros={totalRegistros}
             porPagina={POR_PAGINA}
             basePath="/abastecimentos"
-            paramsAtuais={{ combustivel, cliente, q, de, ate, ajuste, nf: nf ?? undefined }}
+            paramsAtuais={{ empresa: empresaPostoId, combustivel, cliente, q, de, ate, ajuste, nf: nf ?? undefined }}
           />
         </div>
       </div>
