@@ -49,6 +49,19 @@ export const PASSOS_TOUR_FROTA: PassoTour[] = [
     titulo: "Operação",
     texto: "Abastecimentos, roteirização inteligente, rotogramas, manutenção preditiva, relatórios e integrações com outros sistemas.",
   },
+  // Fase 27.114 — pedido do Daniel: "Ajustar Central de Ajuda e Permissoes
+  // com as novas abas no menu para todas as visoes". A seção Administração
+  // (Fase 27.110: só admin vê) nunca teve passo no tour. Como só existe
+  // um array pro lado Frota inteiro (admin + gestor_frota + analista) e
+  // menu-administracao não existe no DOM pra quem não é admin, layout.tsx
+  // filtra este passo fora do array antes de passar pro TourProvider quando
+  // `!ehAdmin` (mesmo espírito da Fase 27.82: nunca apontar pra um alvo que
+  // não existe na tela de quem está vendo o tour).
+  {
+    alvo: "menu-administracao",
+    titulo: "Administração",
+    texto: "Área exclusiva do time FNI: permissões por perfil, inteligência de rede, assinaturas e avaliações de todos os clientes, e configurações globais do sistema.",
+  },
   {
     alvo: "central-ajuda",
     titulo: "Precisa de ajuda depois?",

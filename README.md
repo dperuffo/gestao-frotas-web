@@ -6056,3 +6056,39 @@ edição de ciclo/prazo (admin); "Negociações com postos" ficou por último. S
 mudança de dado/lógica.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.114 — Central de Ajuda e Permissões acompanham as novas abas do menu
+
+Pedido do Daniel: "Ajustar Central de Ajuda e Permissoes com as novas abas no menu para todas as visoes".
+Investigação: `CentralAjuda` (o modal em si) não tem nenhuma lista de seções/abas hardcoded — o conteúdo real
+que ela expõe é o tour de boas-vindas ("Rever o tour", `src/lib/ajuda/tourPassos.ts`), então é ali que a
+lacuna de "abas novas" realmente mora. Já `/permissoes` é 100% orientada a dados (a matriz vem inteira da
+tabela `permissoes_perfil`) — "ajustar" ali significa inserir as linhas que faltam, não mexer em código.
+
+**Tour (`src/lib/ajuda/tourPassos.ts` + `src/app/(dashboard)/layout.tsx`):** a seção "Administração" (Fase
+27.110, só admin vê) nunca teve passo no tour — nem existia `data-tour` no cabeçalho dela. Adicionado o passo
+"Administração" em `PASSOS_TOUR_FROTA`, com `data-tour="menu-administracao"` no cabeçalho correspondente em
+layout.tsx. Como esse elemento só existe no DOM pra quem é admin, `layout.tsx` agora filtra esse passo fora do
+array antes de passar pro `TourProvider` quando `!ehAdmin` (`passosTourFrota`) — mesmo cuidado da Fase 27.82,
+nunca apontar o tour pra um elemento que não existe na tela de quem está vendo. O tour do posto (`PASSOS_TOUR_POSTO`)
+não mudou — o menu dele não ganhou seção nova.
+
+**Permissões (banco, `permissoes_perfil`, sem migração — mesmo padrão dos seeds anteriores):** a matriz tinha
+21 `funcionalidade`s cadastradas, mas o menu (Cadastros/Operação/Administração/Gestão/posto) hoje tem bem mais
+telas do que isso. Inseridas 19 novas `aba_*` (4 perfis cada — admin/gestor_frota/analista/posto — 76 linhas
+novas, `on conflict do nothing`), com o valor de `permitido` espelhando exatamente quem enxerga cada item HOJE
+em `layout.tsx` (não é uma decisão nova de acesso, é documentar o que já é verdade no menu):
+
+`aba_clientes`, `aba_grupo_economico`, `aba_usuarios`, `aba_motoristas`, `aba_veiculos`, `aba_postos`,
+`aba_rede_postos` (Cadastros — admin/gestor_frota/analista, exceto `aba_usuarios` que o posto também tem no
+próprio menu); `aba_abastecimentos`, `aba_notas_fiscais` (aparecem tanto no menu de Frota quanto no do posto —
+todos os 4 perfis); `aba_clientes_posto`, `aba_meus_dados_pix` (exclusivas do menu do posto); `aba_minha_assinatura`,
+`aba_avaliar_plataforma` (Gestão — somem pro admin, Fase 27.73), `aba_lgpd`, `aba_chamados` (Gestão — todo mundo
+do lado Frota); `aba_permissoes`, `aba_assinaturas_clientes`, `aba_avaliacoes_clientes`, `aba_configuracoes_sistema`
+(Administração — só admin).
+
+`permissoes_perfil` continua sem nenhum código que LEIA essas flags pra bloquear acesso de verdade (constatação
+já existente, não mudou nesta fase) — a tela é hoje um painel informativo/de intenção pro admin documentar e
+ajustar; reforçar isso com enforcement real fica pra uma fase futura, se o Daniel quiser.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).

@@ -243,10 +243,18 @@ export default async function DashboardLayout({
   // menu bem mais enxuto, sem nenhuma das telas de gestão de frota.
   const ehPosto = perfilUsuario?.perfil === "posto";
 
+  // Fase 27.114 — o passo "menu-administracao" só existe no DOM quando
+  // ehAdmin (ver bloco {ehAdmin && (...)} abaixo, Fase 27.110); filtra ele
+  // fora do tour pra quem não é admin, senão o tour aponta pra um elemento
+  // que não existe na tela (mesmo cuidado da Fase 27.82).
+  const passosTourFrota = ehAdmin
+    ? PASSOS_TOUR_FROTA
+    : PASSOS_TOUR_FROTA.filter((p) => p.alvo !== "menu-administracao");
+
   return (
     <TourProvider
       tourJaVisto={perfilUsuario?.tour_onboarding_visto ?? false}
-      passos={ehPosto ? PASSOS_TOUR_POSTO : PASSOS_TOUR_FROTA}
+      passos={ehPosto ? PASSOS_TOUR_POSTO : passosTourFrota}
     >
     <div className="flex min-h-screen">
       <aside className="flex w-64 shrink-0 flex-col bg-frota-950 text-slate-100">
@@ -395,7 +403,10 @@ export default async function DashboardLayout({
               os clientes, etc.), que são telas internas do time FNI. */}
           {ehAdmin && (
             <>
-              <p className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <p
+                data-tour="menu-administracao"
+                className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400"
+              >
                 Administração
               </p>
               <ul className="space-y-1">
