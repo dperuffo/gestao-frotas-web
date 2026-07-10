@@ -6130,3 +6130,36 @@ navegação ou reload. Falha na busca (rede etc.) mantém o último valor conhec
 causa disso.
 
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.119 — corrigir cálculo de km/L absurdo em "Eficiência real por veículo"
+
+Daniel revisou os indicadores do dashboard e apontou números impossíveis: média de 585.7 km/L da frota,
+barras chegando a 3800 km/L. Definições dele (confirmadas corretas): "km médio por abastecimento" = km
+rodados entre o penúltimo e o último abastecimento; "consumo médio km/L" = quantos km o veículo faz com 1
+litro. Achados dois bugs reais, não relacionados às definições em si:
+
+**1. Erro estatístico em `indicador_eficiencia_veiculos()`** — `media_km_l` era `avg()` de uma RAZÃO calculada
+linha a linha (`km_percorrido/litros`). Média de razões não é robusta a outlier: um único intervalo com litros
+muito pequeno já produz um km/L absurdo que puxa a média inteira pra cima. Trocado por RAZÃO DE SOMAS —
+`sum(km_percorrido) / sum(litros)` — cada abastecimento passa a pesar proporcionalmente ao litro que realmente
+usou.
+
+**2. Causa raiz dos saltos de hodômetro, em `gerar_abastecimentos_postos_robo()`** — o robô de teste, ao
+gerar um novo abastecimento, busca o último hodômetro conhecido do veículo pra somar a distância estimada
+(`volume × autonomia`). Essa busca comparava `cnpj_frota` por igualdade EXATA de texto, mas o mesmo CNPJ
+aparece formatado de formas diferentes em `profrotas_abastecimentos` dependendo da origem do registro (robô
+vs. sync real — ex.: "25.265.787/0001-44" vs "25265787000144"). Na maior parte das vezes a busca não achava o
+hodômetro anterior de verdade e caía num fallback aleatório (`floor(8000 + random()*172000)`), criando um novo
+"reinício" de dezenas de milhares de km na sequência do veículo — exatamente o que inflava o km_percorrido.
+Corrigido normalizando o CNPJ na comparação (mesmo padrão `regexp_replace` já usado no resto do arquivo).
+
+**Reparo dos dados já gerados:** como o bug já tinha poluído ~7.200 linhas de abastecimentos do robô (todas
+`sync_key like 'robo-%'`, dado de teste — não afeta faturamento, que usa `item_valor_total`/litros, não
+hodômetro), recalculei o hodômetro de cada uma numa sequência limpa e crescente por veículo (ancorada no
+último hodômetro real conhecido daquele veículo, ou 30.000 como base plausível se não houver nenhum), usando a
+mesma fórmula `volume × autonomia` do robô corrigido. Testado antes/depois: SWJ1D82 saiu de "1167 km/L" pra
+15.7 km/L; frota inteira agora entre 9 e 16 km/L (faixa real).
+
+Migrações: `fase_27_119_indicador_eficiencia_media_kml_razao_de_somas`, `fase_27_119_robo_hodometro_cnpj_normalizado`
+(ambas `CREATE OR REPLACE`, mesma assinatura/retorno, sem `DROP`). Reparo de dados feito via SQL direto
+(não é migração — é correção pontual de dado de teste já existente, não schema).
