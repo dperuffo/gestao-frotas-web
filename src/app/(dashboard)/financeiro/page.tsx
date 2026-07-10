@@ -21,6 +21,29 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 type SearchParams = { empresa?: string };
 
+// Fase 27.133 — mesmas cores/rótulo por provedor usados em /abastecimentos e
+// /dashboard, pra manter a leitura visual consistente entre as telas.
+const CORES_PROVEDOR: Record<string, string> = {
+  profrotas: "bg-blue-100 text-blue-700",
+  Valecard: "bg-purple-100 text-purple-700",
+  RedeFrota: "bg-orange-100 text-orange-700",
+  TicketLog: "bg-teal-100 text-teal-700",
+  Veloe: "bg-pink-100 text-pink-700",
+};
+
+function nomeProvedor(provedor: string) {
+  return provedor === "profrotas" ? "PróFrotas" : provedor;
+}
+
+function BadgeProvedor({ provedor }: { provedor: string }) {
+  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 text-slate-600";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${classe}`}>
+      {nomeProvedor(provedor)}
+    </span>
+  );
+}
+
 // Painel Financeiro do cliente (Fase 22): consolida o que já existia
 // espalhado (custo de combustível e manutenção, já rastreados desde as
 // Fases 3/8/9) com o que era novo — custos fixos (seguro, IPVA,
@@ -168,6 +191,15 @@ export default async function FinanceiroPage({
     custo_manutencao: number;
     custo_fixos: number;
   }[] = [];
+  // Fase 27.133 — consolidado de combustível por meio de pagamento
+  // (Pró-Frotas, Valecard, RedeFrota, TicketLog, Veloe...), mesmo mês do
+  // painel principal.
+  let indicadoresPorProvedor: {
+    provedor: string;
+    custo_combustivel: number;
+    litros: number;
+    qtd_abastecimentos: number;
+  }[] = [];
 
   if (empresaSelecionada) {
     const [
@@ -177,6 +209,7 @@ export default async function FinanceiroPage({
       { data: custosFixosData },
       { data: orcamentosData },
       { data: indicadoresPorCentroData },
+      { data: indicadoresPorProvedorData },
     ] = await Promise.all([
         supabase
           .rpc("indicadores_financeiros", {
@@ -210,6 +243,12 @@ export default async function FinanceiroPage({
           p_data_inicio: paraISO(inicioMesAtual),
           p_data_fim: paraISO(fimMesAtual),
         }),
+        // Fase 27.133 — RPC aditiva, mesmo período do indicador do mês.
+        supabase.rpc("indicadores_financeiros_por_provedor", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: paraISO(inicioMesAtual),
+          p_data_fim: paraISO(fimMesAtual),
+        }),
       ]);
 
     indicadores = indicadoresData;
@@ -223,6 +262,7 @@ export default async function FinanceiroPage({
     ultimosCustosFixos = custosFixosData ?? [];
     orcamentosDoMes = orcamentosData ?? [];
     indicadoresPorCentro = indicadoresPorCentroData ?? [];
+    indicadoresPorProvedor = indicadoresPorProvedorData ?? [];
   }
 
   // Orçamento "geral" (sem centro de custo — vale pra frota inteira) compara
@@ -363,6 +403,34 @@ export default async function FinanceiroPage({
             <Indicador label="Manutenção" valor={formatarMoeda(indicadores.custo_manutencao)} ajudaChave="financeiro.manutencao" />
             <Indicador label="Custos fixos" valor={formatarMoeda(indicadores.custo_fixos)} ajudaChave="financeiro.custos_fixos" />
           </div>
+
+          {indicadoresPorProvedor.length > 0 && (
+            <div className="card mb-6 overflow-x-auto p-6">
+              <h2 className="mb-4 text-sm font-semibold text-slate-900">Consolidado por meio de pagamento</h2>
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs uppercase text-slate-500">
+                  <tr>
+                    <th className="py-2 pr-4">Meio de pagamento</th>
+                    <th className="py-2 pr-4">Abastecimentos</th>
+                    <th className="py-2 pr-4">Litros</th>
+                    <th className="py-2">Custo de combustível</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {indicadoresPorProvedor.map((p) => (
+                    <tr key={p.provedor}>
+                      <td className="py-2.5 pr-4">
+                        <BadgeProvedor provedor={p.provedor} />
+                      </td>
+                      <td className="py-2.5 pr-4 text-slate-600">{p.qtd_abastecimentos}</td>
+                      <td className="py-2.5 pr-4 text-slate-600">{p.litros.toLocaleString("pt-BR")}</td>
+                      <td className="py-2.5 text-slate-600">{formatarMoeda(p.custo_combustivel)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="card mb-6 p-6">
             <div className="mb-4 flex items-center justify-between">

@@ -2679,6 +2679,19 @@ export interface Database {
           custo_fixos: number;
         }[];
       };
+      // Fase 27.133 — RPC aditiva (não altera as 3 acima) que agrupa o custo
+      // de combustível por provedor/meio de pagamento (Pró-Frotas, Valecard,
+      // RedeFrota, TicketLog, Veloe...), pro painel "Consolidado por meio de
+      // pagamento" em /financeiro.
+      indicadores_financeiros_por_provedor: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          provedor: string;
+          custo_combustivel: number;
+          litros: number;
+          qtd_abastecimentos: number;
+        }[];
+      };
       manutencao_preditiva_base: {
         Args: { p_empresa_id: string; p_placa?: string | null };
         Returns: {

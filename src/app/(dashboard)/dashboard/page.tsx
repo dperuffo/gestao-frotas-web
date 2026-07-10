@@ -22,6 +22,29 @@ function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+// Fase 27.133 — mesmas cores/rótulo por provedor usados em /abastecimentos,
+// só pra manter a leitura visual consistente entre as telas.
+const CORES_PROVEDOR: Record<string, string> = {
+  profrotas: "bg-blue-100 text-blue-700",
+  Valecard: "bg-purple-100 text-purple-700",
+  RedeFrota: "bg-orange-100 text-orange-700",
+  TicketLog: "bg-teal-100 text-teal-700",
+  Veloe: "bg-pink-100 text-pink-700",
+};
+
+function nomeProvedor(provedor: string) {
+  return provedor === "profrotas" ? "PróFrotas" : provedor;
+}
+
+function BadgeProvedor({ provedor }: { provedor: string }) {
+  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 text-slate-600";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${classe}`}>
+      {nomeProvedor(provedor)}
+    </span>
+  );
+}
+
 function inicioDoMes(data: Date) {
   return new Date(data.getFullYear(), data.getMonth(), 1);
 }
@@ -138,9 +161,15 @@ export default async function DashboardPage({
       ? supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }).eq("empresa_id", empresaSelecionada)
       : Promise.resolve({ count: 0 }),
     queryCnhVencendo,
+    // Fase 27.133 — pedido do Daniel: trazer a origem/meio de pagamento
+    // (Pró-Frotas, Valecard, RedeFrota, TicketLog, Veloe...) nos indicadores
+    // e dashboards. Troca de profrotas_abastecimentos pra
+    // abastecimentos_unificado (view que já une PróFrotas + outros
+    // provedores, Fase 25) — aqui só usamos colunas agregadas (litros,
+    // valor, data, empresa, provedor), sem precisar do id de nenhuma linha.
     supabase
-      .from("profrotas_abastecimentos")
-      .select("data_abastecimento, item_quantidade, item_valor_total, empresa_id")
+      .from("abastecimentos_unificado")
+      .select("data_abastecimento, litros, valor_total, empresa_id, provedor")
       .gte("data_abastecimento", seisMesesAtras.toISOString())
       .limit(5000),
     // cadastro_veiculos não tem empresa_id — o vínculo é por cnpj_frota,
@@ -176,9 +205,18 @@ export default async function DashboardPage({
   const doMesAtual = abastecimentosCliente.filter(
     (a) => a.data_abastecimento && new Date(a.data_abastecimento) >= inicioMesAtual
   );
-  const litrosMes = doMesAtual.reduce((soma, a) => soma + (a.item_quantidade ?? 0), 0);
-  const valorMes = doMesAtual.reduce((soma, a) => soma + (a.item_valor_total ?? 0), 0);
+  const litrosMes = doMesAtual.reduce((soma, a) => soma + (a.litros ?? 0), 0);
+  const valorMes = doMesAtual.reduce((soma, a) => soma + (a.valor_total ?? 0), 0);
   const custoMedioLitroMes = litrosMes > 0 ? valorMes / litrosMes : 0;
+
+  // Fase 27.133 — consolidado por meio de pagamento do cliente selecionado
+  // (mês atual), pro card "Meios de pagamento" abaixo dos indicadores.
+  const valorPorProvedorMes = new Map<string, number>();
+  for (const a of doMesAtual) {
+    if (!a.provedor) continue;
+    valorPorProvedorMes.set(a.provedor, (valorPorProvedorMes.get(a.provedor) ?? 0) + (a.valor_total ?? 0));
+  }
+  const listaProvedoresMes = Array.from(valorPorProvedorMes.entries()).sort((a, b) => b[1] - a[1]);
 
   // Gráfico: agrupa por mês (últimos 6 meses).
   const porMes = new Map<string, PontoConsumo>();
@@ -193,8 +231,8 @@ export default async function DashboardPage({
     const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
     const ponto = porMes.get(chave);
     if (ponto) {
-      ponto.litros += a.item_quantidade ?? 0;
-      ponto.valor += a.item_valor_total ?? 0;
+      ponto.litros += a.litros ?? 0;
+      ponto.valor += a.valor_total ?? 0;
     }
   }
   const dadosGrafico = Array.from(porMes.values()).map((p) => ({ ...p, litros: Math.round(p.litros) }));
@@ -204,7 +242,7 @@ export default async function DashboardPage({
   const gastoPorEmpresa = new Map<string, number>();
   for (const a of abastecimentosRecentes ?? []) {
     if (!a.empresa_id) continue;
-    gastoPorEmpresa.set(a.empresa_id, (gastoPorEmpresa.get(a.empresa_id) ?? 0) + (a.item_valor_total ?? 0));
+    gastoPorEmpresa.set(a.empresa_id, (gastoPorEmpresa.get(a.empresa_id) ?? 0) + (a.valor_total ?? 0));
   }
   const idsTop = Array.from(gastoPorEmpresa.entries())
     .sort((a, b) => b[1] - a[1])
@@ -471,6 +509,21 @@ export default async function DashboardPage({
         <Indicador label="Valor no mês" valor={formatarMoeda(valorMes)} ajudaChave="dashboard.valor_mes" />
         <Indicador label="Custo médio/litro" valor={formatarMoeda(custoMedioLitroMes)} ajudaChave="dashboard.custo_medio_litro" />
       </div>
+
+      {empresaSelecionada && listaProvedoresMes.length > 0 && (
+        <div className="mb-6 card p-4">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+            Meios de pagamento no mês
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {listaProvedoresMes.map(([provedor, valor]) => (
+              <span key={provedor} className="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                <BadgeProvedor provedor={provedor} /> {formatarMoeda(valor)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {resumoAjustes && (
         <SecaoAjustesAbastecimentos

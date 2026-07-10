@@ -17,6 +17,32 @@ function statusBadge(estornado: number | null, autorizacao: number | null) {
   return { texto: `Status ${autorizacao ?? "?"}`, classe: "badge-atencao" };
 }
 
+// Fase 27.133 — pedido do Daniel: trazer a informação da origem/meio de
+// pagamento (Pró-Frotas, Valecard, RedeFrota, TicketLog, Veloe...) nos
+// registros de abastecimentos, indicadores e dashboards. Cada provedor tem
+// uma cor fixa só pra facilitar a leitura visual — não tem significado além
+// disso. Provedor desconhecido cai no cinza padrão.
+const CORES_PROVEDOR: Record<string, string> = {
+  profrotas: "bg-blue-100 text-blue-700",
+  Valecard: "bg-purple-100 text-purple-700",
+  RedeFrota: "bg-orange-100 text-orange-700",
+  TicketLog: "bg-teal-100 text-teal-700",
+  Veloe: "bg-pink-100 text-pink-700",
+};
+
+function nomeProvedor(provedor: string) {
+  return provedor === "profrotas" ? "PróFrotas" : provedor;
+}
+
+function BadgeProvedor({ provedor }: { provedor: string }) {
+  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 text-slate-600";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${classe}`}>
+      {nomeProvedor(provedor)}
+    </span>
+  );
+}
+
 type RegistroAbastecimento = {
   id: string;
   codigo_abastecimento: string;
@@ -33,6 +59,23 @@ type RegistroAbastecimento = {
   abastecimento_estornado: number | null;
   status_autorizacao: number | null;
   identificador: string | null;
+};
+
+// Fase 27.133 — registros vindos de outros provedores (Valecard, RedeFrota,
+// TicketLog, Veloe...), tabela abastecimentos_externos. Não têm o mesmo
+// fluxo de edição/ajuste do PróFrotas (não são um "abastecimento lançado na
+// FNI", são um espelho do que o provedor já processou) — por isso aparecem
+// numa lista à parte, sem link de detalhe.
+type RegistroExterno = {
+  id: number;
+  provedor: string;
+  placa: string | null;
+  motorista_nome: string | null;
+  data_abastecimento: string | null;
+  combustivel: string | null;
+  quantidade: number | null;
+  valor_total: number | null;
+  posto_nome: string | null;
 };
 
 export default async function AbastecimentosPage({
@@ -159,6 +202,55 @@ export default async function AbastecimentosPage({
   const valorTotal = agregados.reduce((soma: number, r) => soma + (r.item_valor_total ?? 0), 0);
   const custoMedioLitro = litrosTotais > 0 ? valorTotal / litrosTotais : 0;
 
+  // Fase 27.133 — pedido do Daniel: trazer a origem/meio de pagamento
+  // (Pró-Frotas, Valecard, RedeFrota, TicketLog, Veloe...) pros registros de
+  // abastecimentos. abastecimentos_externos (Fase 25) é a tabela genérica
+  // multi-provedor — nunca teve dado real até o robô da Fase 27.132 passar a
+  // gerar 15/dia/cliente pra teste. Aplica os mesmos filtros de cliente/data
+  // já usados acima na tabela principal (q e ajuste não se aplicam aqui —
+  // esses registros não têm código de 10 dígitos nem fluxo de ajuste).
+  let queryExternos = supabase
+    .from("abastecimentos_externos")
+    .select("id, provedor, placa, motorista_nome, data_abastecimento, combustivel, quantidade, valor_total, posto_nome")
+    .order("data_abastecimento", { ascending: false })
+    .limit(30);
+  if (empresaSelecionada) queryExternos = queryExternos.eq("empresa_id", empresaSelecionada);
+  if (de) queryExternos = queryExternos.gte("data_abastecimento", de);
+  if (ate) queryExternos = queryExternos.lte("data_abastecimento", `${ate}T23:59:59`);
+
+  const { data: registrosExternosRaw } = semClienteEscolhido ? { data: [] } : await queryExternos;
+  const registrosExternos = (registrosExternosRaw ?? []) as RegistroExterno[];
+
+  // Consolidado por meio de pagamento (todos os provedores, últimos 6 meses,
+  // ignorando os filtros de data da tela — mesmo espírito do "Top 5 clientes"
+  // do Dashboard: um resumo estável, não a fatia filtrada no momento).
+  const seisMesesAtrasIso = new Date(Date.now() - 183 * 24 * 60 * 60 * 1000).toISOString();
+  const [{ data: profrotasResumo }, { data: externosResumo }] = empresaSelecionada
+    ? await Promise.all([
+        supabase
+          .from("profrotas_abastecimentos")
+          .select("item_valor_total")
+          .eq("empresa_id", empresaSelecionada)
+          .eq("status_autorizacao", 1)
+          .gte("data_abastecimento", seisMesesAtrasIso)
+          .limit(50000),
+        supabase
+          .from("abastecimentos_externos")
+          .select("provedor, valor_total")
+          .eq("empresa_id", empresaSelecionada)
+          .gte("data_abastecimento", seisMesesAtrasIso)
+          .limit(50000),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const resumoPorProvedor = new Map<string, number>();
+  for (const r of profrotasResumo ?? []) {
+    resumoPorProvedor.set("profrotas", (resumoPorProvedor.get("profrotas") ?? 0) + (r.item_valor_total ?? 0));
+  }
+  for (const r of (externosResumo ?? []) as { provedor: string; valor_total: number | null }[]) {
+    resumoPorProvedor.set(r.provedor, (resumoPorProvedor.get(r.provedor) ?? 0) + (r.valor_total ?? 0));
+  }
+  const listaResumoProvedores = Array.from(resumoPorProvedor.entries()).sort((a, b) => b[1] - a[1]);
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -212,6 +304,21 @@ export default async function AbastecimentosPage({
         <Indicador label="Valor total" valor={formatarMoeda(valorTotal)} />
         <Indicador label="Custo médio por litro" valor={formatarMoeda(custoMedioLitro)} />
       </div>
+
+      {listaResumoProvedores.length > 0 && (
+        <div className="mb-6 card p-4">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+            Meios de pagamento — últimos 6 meses
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {listaResumoProvedores.map(([provedor, valor]) => (
+              <span key={provedor} className="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                <BadgeProvedor provedor={provedor} /> {formatarMoeda(valor)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <form className="mb-4 flex flex-wrap gap-3">
         {/* Fase 27.31 — achado real: este form é SEPARADO do form do seletor
@@ -267,6 +374,7 @@ export default async function AbastecimentosPage({
               <th className="px-4 py-3">Litros</th>
               <th className="px-4 py-3">Valor</th>
               <th className="px-4 py-3">Posto</th>
+              <th className="px-4 py-3">Meio de pagamento</th>
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
@@ -298,6 +406,9 @@ export default async function AbastecimentosPage({
                     {[r.pv_razao_social, r.pv_municipio, r.pv_uf].filter(Boolean).join(" — ") || "—"}
                   </td>
                   <td className="px-4 py-3">
+                    <BadgeProvedor provedor="profrotas" />
+                  </td>
+                  <td className="px-4 py-3">
                     <span className={status.classe}>{status.texto}</span>
                   </td>
                 </tr>
@@ -305,7 +416,7 @@ export default async function AbastecimentosPage({
             })}
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={10} className="px-4 py-8 text-center text-slate-400">
                   Nenhum abastecimento encontrado.
                 </td>
               </tr>
@@ -323,6 +434,57 @@ export default async function AbastecimentosPage({
           />
         </div>
       </div>
+
+      {/* Fase 27.133 — abastecimentos vindos de OUTROS provedores (Valecard,
+          RedeFrota, TicketLog, Veloe...), tabela abastecimentos_externos.
+          Lista à parte porque esses registros não têm o mesmo fluxo de
+          edição/ajuste/detalhe do PróFrotas — são um espelho do que o
+          provedor já processou, não um lançamento editável na FNI. */}
+      {registrosExternos.length > 0 && (
+        <div className="card mt-6 overflow-x-auto">
+          <div className="border-b border-slate-100 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-900">Outros meios de pagamento</h2>
+            <p className="text-xs text-slate-500">
+              Abastecimentos recebidos via integração com outros provedores (Valecard, RedeFrota, TicketLog,
+              Veloe...), fora do PróFrotas.
+            </p>
+          </div>
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Meio de pagamento</th>
+                <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3">Placa</th>
+                <th className="px-4 py-3">Motorista</th>
+                <th className="px-4 py-3">Produto</th>
+                <th className="px-4 py-3">Litros</th>
+                <th className="px-4 py-3">Valor</th>
+                <th className="px-4 py-3">Posto</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {registrosExternos.map((r) => (
+                <tr key={r.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3">
+                    <BadgeProvedor provedor={r.provedor} />
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{r.placa ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.motorista_nome ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.combustivel ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.quantidade ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {r.valor_total != null ? formatarMoeda(r.valor_total) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{r.posto_nome ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       </>
       )}
     </div>

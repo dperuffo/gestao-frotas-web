@@ -6455,3 +6455,42 @@ direto ou RPCs que somam tudo agregado sem `group by provedor`; a arquitetura da
 desenhada de propósito pra esconder a origem ("o Dashboard/Financeiro não precisam saber de onde
 veio cada abastecimento"). Trazer o provedor à tona nessas telas é trabalho de UI separado, a
 ser feito na sequência agora que já existe dado real de mais de um meio de pagamento pra mostrar.
+
+## Fase 27.133 — expor provedor/meio de pagamento em /abastecimentos, /dashboard e /financeiro
+
+Parte 2 do pedido do Daniel (parte 1 foi a Fase 27.132, o robô de dados). Perguntado como
+sequenciar (Abastecimentos primeiro, Financeiro primeiro, ou tudo de uma vez — este último
+sinalizado como o de maior risco, por mexer nas 3 RPCs financeiras mais usadas hoje), Daniel
+respondeu **"Tudo de uma vez"**. Pra reduzir esse risco sem abrir mão do pedido, as 3 RPCs
+financeiras existentes (`indicadores_financeiros`, `indicadores_financeiros_evolucao`,
+`indicadores_financeiros_por_centro_custo`) **não foram alteradas** — todo o trabalho foi
+aditivo (nova RPC, view já existente reaproveitada só onde é seguro, sem tocar em id/fluxo de
+edição de ninguém).
+
+- **`/abastecimentos`** (visão Frota):
+  - Tabela principal continua vindo de `profrotas_abastecimentos` (mantém o link de detalhe,
+    a bolinha de ajuste pendente e o filtro por código de 10 dígitos — nada disso existe pra
+    registros de outros provedores) — só ganhou uma coluna "Meio de pagamento" (badge fixo
+    "PróFrotas").
+  - Nova seção **"Outros meios de pagamento"**, abaixo da tabela principal: lista os
+    abastecimentos de `abastecimentos_externos` (Valecard, RedeFrota, TicketLog, Veloe...) do
+    cliente selecionado, respeitando os mesmos filtros de data. Sem link de detalhe/ajuste —
+    são um espelho do que o provedor já processou, não um lançamento editável na FNI.
+  - Novo card "Meios de pagamento — últimos 6 meses" com o total gasto por provedor
+    (badges coloridos), somando as duas fontes.
+- **`/dashboard`**: a consulta que alimenta os indicadores do mês, o gráfico de consumo e o
+  "Top 5 clientes por gasto" trocou de `profrotas_abastecimentos` pra
+  `abastecimentos_unificado` (a view que já une as duas fontes desde a Fase 25) — segura porque
+  essa consulta é só agregada (litros/valor/data/empresa), nunca precisou de `id` de linha.
+  Novo card "Meios de pagamento no mês" com o total gasto por provedor no cliente selecionado.
+- **`/financeiro`**: nova RPC **aditiva** `indicadores_financeiros_por_provedor(empresa, data
+  início, data fim)` — agrupa o custo de combustível por provedor usando a mesma
+  `abastecimentos_unificado`, sem tocar nas 3 RPCs existentes. Nova seção "Consolidado por meio
+  de pagamento" no painel (abastecimentos, litros e custo por provedor, mesmo mês do painel
+  principal).
+- Badges de provedor com cor fixa por nome (só estética, mesmo padrão nas 3 telas):
+  PróFrotas azul, Valecard roxo, RedeFrota laranja, TicketLog verde-azulado, Veloe rosa;
+  provedor desconhecido cai no cinza padrão.
+- Validado com `npx tsc --noEmit` e `npx eslint` nos 3 arquivos alterados, e a nova RPC testada
+  direto no banco contra os 2 clientes de teste (retornou profrotas + os 4 provedores externos
+  da Fase 27.132, valores batendo com o total já conhecido).
