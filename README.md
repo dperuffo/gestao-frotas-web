@@ -6377,3 +6377,12 @@ Cargas Testes Ltda"): "Ajustar a tela com o nome dos clientes ao invés de um al
 - Corrigido trocando pela RPC `nome_empresa_publico` (SECURITY DEFINER, já usada em
   `negociacoesPostos.ts`) — só devolve o nome, nada sensível, chamada em paralelo pros até 5
   ids do ranking.
+
+## Fase 27.129 — remover Rede de Postos do menu do cliente
+
+Pedido do Daniel: "Rede de Postos nao faz sentido estar na visao do cliente".
+
+- `/rede-postos` saiu de `menuCadastros` (visível a qualquer cliente Frota) e passou pra
+  `menuAdministracao` (só admin). A escrita (`criarRede`, `atualizarRede`, `vincularPosto`,
+  `desvincularPosto`) já exigia `ehAdminOuSuperusuario` em `src/lib/gruposEconomicos.ts` — o
+  item ficava visível pro cliente sem nenhuma ação que ele pudesse de fato realizar ali.

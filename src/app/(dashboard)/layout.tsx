@@ -43,8 +43,6 @@ const menuCadastros = [
   { href: "/veiculos", label: "🚗 Veículos" },
   { href: "/centros-custo", label: "🧾 Centros de Custo" },
   { href: "/postos", label: "⛽ Postos Revendedores" },
-  // Fase 27.87 — mesma mecânica do Grupo Econômico, pro lado dos postos.
-  { href: "/rede-postos", label: "🔗 Rede de Postos" },
 ];
 
 const menuOperacao = [
@@ -119,6 +117,12 @@ const menuAdministracao = [
   { href: "/inteligencia-rede", label: "🌐 Inteligência de Rede" },
   { href: "/assinaturas", label: "💳 Assinaturas (todos os clientes)" },
   { href: "/avaliacoes", label: "⭐ Avaliações dos Clientes" },
+  // Fase 27.129 — pedido do Daniel: "Rede de Postos nao faz sentido estar na
+  // visao do cliente". Escrita já era admin-only em código
+  // (gruposEconomicos.ts::ehAdminOuSuperusuario), então deixava o item no
+  // menu do cliente sem nenhuma ação que ele pudesse de fato realizar ali —
+  // movido pra Administração, junto de Grupo Econômico/Assinaturas/etc.
+  { href: "/rede-postos", label: "🔗 Rede de Postos" },
   // Fase 27.86 — parâmetros globais do sistema (hoje só o timeout de
   // logout por inatividade; ver /configuracoes).
   { href: "/configuracoes", label: "⚙️ Configurações do Sistema" },
