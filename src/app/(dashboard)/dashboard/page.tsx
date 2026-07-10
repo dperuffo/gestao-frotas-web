@@ -210,10 +210,20 @@ export default async function DashboardPage({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([id]) => id);
-  const { data: empresasTop } = idsTop.length
-    ? await supabase.from("empresas").select("id, nome").in("id", idsTop)
-    : { data: [] };
-  const nomePorEmpresaId = new Map((empresasTop ?? []).map((e) => [e.id, e.nome]));
+  // Fase 27.128 — achado real (Daniel: painel mostrando UUID em vez do nome
+  // do cliente): mesma causa raiz já corrigida na Fase 27.51 (negociações)
+  // — um join direto em `empresas` falha em silêncio pra qualquer linha que
+  // a RLS de `empresas_select_membro` não libere pra quem está rodando esta
+  // consulta (aqui, o próprio card já soma abastecimentos de TODOS os
+  // clientes — de propósito, "sempre em nível de rede" — então nem sempre
+  // quem está vendo o dashboard tem vínculo direto com cada empresa do
+  // ranking). Troca pela RPC SECURITY DEFINER `nome_empresa_publico` (mesma
+  // já usada em negociacoesPostos.ts), que só devolve o nome — nada sensível
+  // — bypassando essa RLS de propósito.
+  const nomesTop = await Promise.all(
+    idsTop.map((id) => supabase.rpc("nome_empresa_publico", { p_empresa_id: id }))
+  );
+  const nomePorEmpresaId = new Map(idsTop.map((id, i) => [id, nomesTop[i].data as string | null]));
   const topClientes = idsTop.map((id) => ({ nome: nomePorEmpresaId.get(id) ?? id, valor: gastoPorEmpresa.get(id)! }));
 
   // Mês selecionado no seletor único no topo da página — direciona, junto

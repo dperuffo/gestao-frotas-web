@@ -6362,3 +6362,18 @@ que gerenciar a assinatura. Tudo dentro de uma aba Gestão".
   `aba_lgpd`, `aba_minha_assinatura` para `perfil='posto'` atualizadas de `permitido=false`
   para `true` (só reflete a matriz da tela `/permissoes` — essa tabela não é lida por nenhuma
   RLS/gate real hoje, é vitrine).
+
+## Fase 27.128 — corrigir "Top 5 clientes por gasto" mostrando UUID em vez do nome
+
+Pedido do Daniel (com print do painel mostrando `244323b0-04f9-...` em vez de "Transportes de
+Cargas Testes Ltda"): "Ajustar a tela com o nome dos clientes ao invés de um alfanumérico".
+
+- Causa raiz: mesma classe de bug já corrigida na Fase 27.51 (nome da contraparte em
+  negociações) — o painel "Top 5 clientes por gasto" (`/dashboard`) soma abastecimentos de
+  TODOS os clientes de propósito ("sempre em nível de rede"), mas resolvia o nome de cada
+  empresa do ranking com um `.from("empresas").select("id, nome").in(...)` direto, que a RLS
+  `empresas_select_membro` pode não liberar pra quem está vendo o dashboard — sobrava só o
+  UUID cru no fallback.
+- Corrigido trocando pela RPC `nome_empresa_publico` (SECURITY DEFINER, já usada em
+  `negociacoesPostos.ts`) — só devolve o nome, nada sensível, chamada em paralelo pros até 5
+  ids do ranking.
