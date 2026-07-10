@@ -6206,3 +6206,40 @@ Próximos passos (fases seguintes, mesmo padrão): os outros 9 tipos de regra, c
 tela e endpoint de leitura.
 
 Validado com `npx tsc --noEmit` e `npx eslint` limpos nos arquivos novos/alterados.
+
+## Fase 27.121 — Parâmetros de Uso: os outros 9 tipos (Intervalo, Valor Diário, Vol. Diário, Produto, Hodômetro, Dias/Horários, Postos, Serviços, Cotas)
+
+Continuação da Fase 27.120: com o padrão validado no 1º tipo (Vínculo Motorista ↔ Veículo), replicados os outros
+9 tipos de regra do anexo do Daniel, cada um já nascendo com tela + API (decisão tomada com ele via pergunta
+direta antes de começar).
+
+- **Schema**: 9 tabelas novas (`parametros_intervalo_abastecimento`, `parametros_valor_diario_motorista`,
+  `parametros_volume_diario_veiculo`, `parametros_produto_abastecido`, `parametros_variacao_hodometro` — cobre
+  as 2 abas "Hodôm. Leve"/"Hodôm. Pesado" da tela com uma coluna `classificacao`, não duas tabelas —,
+  `parametros_cota_veiculo`, `parametros_dias_horarios`, `parametros_postos_permitidos`,
+  `parametros_limite_servicos`), todas com RLS no mesmo padrão da Fase 27.120 (dono da empresa via
+  `empresas_do_usuario`, admin, `d.peruffo@gmail.com`, bypass `service_role`). Migrações:
+  `fase_27_121_parametros_uso_tipos_simples` e `fase_27_121_parametros_uso_tipos_multidimensao`.
+- **Tela `/parametros-uso`**: as abas que antes eram "Em breve" agora são links reais (`?tipo=...`, mesmo
+  padrão de filtro por Link já usado em `/abastecimentos`). Vínculo (1º tipo) continua com página própria de
+  criar/editar; os 9 novos usam modal inline (`ModalRegra`, reaproveitando o visual do `ModalTermoAdesao` já
+  existente) — evita 18+ páginas novas pra manter. Toggle Ativar/Inativar e Excluir também viraram componentes
+  genéricos (`ToggleStatusRegra`/`ExcluirRegra`) que recebem a Server Action de cada tipo por prop.
+  "Postos Permitidos" e "Limite de Serviços" listam como opção só os postos com negociação **aceita** com o
+  cliente (`negociacoes_postos`), não a base inteira de postos do sistema.
+- **Cota por Veículo**: o "consumido" do período atual (pra mostrar % usado) é calculado on-the-fly contra a
+  view `abastecimentos_unificado`, não fica armazenado — evita ficar desatualizado. Períodos: Semana
+  (segunda–hoje), Quinzena (1–15 ou 16–fim do mês), Mês (dia 1–hoje); "Por abastecimento" não soma (limite é
+  por evento, avaliado na hora). `database.types.ts` ganhou um bloco `Views` novo (era `Record<string, never>`)
+  só com as colunas usadas dessa view.
+- **API externa** (Hub de Integrações): 9 escopos novos (`parametros_intervalo:read`,
+  `parametros_valor_diario:read`, `parametros_volume_diario:read`, `parametros_produto:read`,
+  `parametros_hodometro:read` — cobre Leve e Pesado, filtro opcional `?classificacao=` —,
+  `parametros_dias_horarios:read`, `parametros_postos:read`, `parametros_servicos:read`,
+  `parametros_cotas:read`), todos categoria "Parâmetros de Uso" (aparecem automaticamente no formulário de
+  chave em `/integracoes`). 9 rotas `GET /api/integracoes/parametros/{intervalo,valor-diario,volume-diario,
+  produto,hodometro,dias-horarios,postos,servicos,cotas}`, mesmo padrão de autenticação por
+  `Authorization: Bearer` da Fase 27.120.
+
+Com isso os 10 tipos de regra do anexo do Daniel estão implementados (schema + tela + API). Validado com
+`npx tsc --noEmit` e `npx eslint` limpos.

@@ -631,6 +631,300 @@ export interface Database {
           },
         ];
       };
+      parametros_intervalo_abastecimento: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          tipo: "Veiculo" | "Motorista";
+          placa: string | null;
+          motorista_id: string | null;
+          intervalo_minimo: number;
+          unidade: "Horas" | "Dias";
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_intervalo_abastecimento"]["Row"]> & {
+          empresa_id: string;
+          tipo: "Veiculo" | "Motorista";
+          intervalo_minimo: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_intervalo_abastecimento"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_intervalo_abastecimento_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "parametros_intervalo_abastecimento_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      parametros_valor_diario_motorista: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          motorista_id: string | null;
+          valor_maximo: number;
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_valor_diario_motorista"]["Row"]> & {
+          empresa_id: string;
+          valor_maximo: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_valor_diario_motorista"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_valor_diario_motorista_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "parametros_valor_diario_motorista_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      parametros_volume_diario_veiculo: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string | null;
+          volume_maximo: number;
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_volume_diario_veiculo"]["Row"]> & {
+          empresa_id: string;
+          volume_maximo: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_volume_diario_veiculo"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_volume_diario_veiculo_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      parametros_produto_abastecido: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string | null;
+          combustiveis_permitidos: string[];
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_produto_abastecido"]["Row"]> & {
+          empresa_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_produto_abastecido"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_produto_abastecido_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      parametros_variacao_hodometro: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          classificacao: "Leve" | "Pesado";
+          placa: string | null;
+          variacao_maxima_km: number;
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_variacao_hodometro"]["Row"]> & {
+          empresa_id: string;
+          classificacao: "Leve" | "Pesado";
+          variacao_maxima_km: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_variacao_hodometro"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_variacao_hodometro_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      parametros_cota_veiculo: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string;
+          tipo: "Valor" | "Volume";
+          limite: number;
+          periodicidade: "Abastecimento" | "Semana" | "Quinzena" | "Mes";
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_cota_veiculo"]["Row"]> & {
+          empresa_id: string;
+          placa: string;
+          tipo: "Valor" | "Volume";
+          limite: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_cota_veiculo"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_cota_veiculo_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      parametros_dias_horarios: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          classificacao: "Leve" | "Pesado" | null;
+          placa: string | null;
+          motorista_id: string | null;
+          dias_permitidos: string[];
+          hora_inicio: string;
+          hora_fim: string;
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_dias_horarios"]["Row"]> & {
+          empresa_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_dias_horarios"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_dias_horarios_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "parametros_dias_horarios_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      parametros_postos_permitidos: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          classificacao: "Leve" | "Pesado" | null;
+          placa: string | null;
+          motorista_id: string | null;
+          postos_cnpj: string[];
+          tipo_limite: "Sem limite" | "Valor" | "Volume";
+          valor_maximo: number | null;
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_postos_permitidos"]["Row"]> & {
+          empresa_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_postos_permitidos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_postos_permitidos_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "parametros_postos_permitidos_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      parametros_limite_servicos: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string | null;
+          motorista_id: string | null;
+          postos_cnpj: string[];
+          limites: Json;
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_limite_servicos"]["Row"]> & {
+          empresa_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_limite_servicos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_limite_servicos_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "parametros_limite_servicos_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       cadastro_veiculos: {
         Row: {
           id: string;
@@ -1724,7 +2018,33 @@ export interface Database {
         ];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      // Fase 27.121 — view usada só pra somar consumo de cota (por
+      // enquanto), colunas mínimas usadas pelo app (não é a lista completa
+      // da view no banco). Ver README Fase 27.94/27.119 pra mais contexto
+      // sobre a view em si.
+      abastecimentos_unificado: {
+        Row: {
+          provedor: string | null;
+          empresa_id: string | null;
+          placa: string | null;
+          motorista_nome: string | null;
+          data_abastecimento: string | null;
+          hodometro: number | null;
+          posto_cnpj: string | null;
+          posto_nome: string | null;
+          municipio: string | null;
+          uf: string | null;
+          lat: number | null;
+          lon: number | null;
+          produto: string | null;
+          litros: number | null;
+          preco_litro: number | null;
+          valor_total: number | null;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       // Marca tour_onboarding_visto=true (Fase 24) só na linha do próprio
       // usuário (pelo e-mail do JWT) — SECURITY DEFINER porque não existe

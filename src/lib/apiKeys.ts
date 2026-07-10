@@ -57,6 +57,19 @@ export const ESCOPO_NOTAS_FISCAIS_WRITE = "notas_fiscais:write";
 // Daniel ganham escopo próprio conforme forem implementados.
 export const ESCOPO_PARAMETROS_VINCULO_READ = "parametros_vinculo:read";
 
+// Fase 27.121 — os outros 9 tipos de "Parâmetros de Uso", 1 escopo de
+// leitura por tipo (Hodômetro Leve/Pesado dividem 1 escopo só — mesma
+// tabela no banco, ver parametros_variacao_hodometro).
+export const ESCOPO_PARAMETROS_INTERVALO_READ = "parametros_intervalo:read";
+export const ESCOPO_PARAMETROS_VALOR_DIARIO_READ = "parametros_valor_diario:read";
+export const ESCOPO_PARAMETROS_VOLUME_DIARIO_READ = "parametros_volume_diario:read";
+export const ESCOPO_PARAMETROS_PRODUTO_READ = "parametros_produto:read";
+export const ESCOPO_PARAMETROS_HODOMETRO_READ = "parametros_hodometro:read";
+export const ESCOPO_PARAMETROS_DIAS_HORARIOS_READ = "parametros_dias_horarios:read";
+export const ESCOPO_PARAMETROS_POSTOS_READ = "parametros_postos:read";
+export const ESCOPO_PARAMETROS_SERVICOS_READ = "parametros_servicos:read";
+export const ESCOPO_PARAMETROS_COTAS_READ = "parametros_cotas:read";
+
 // Catálogo central dos escopos disponíveis — usado tanto pela UI de geração
 // de chave (/integracoes, pra montar os checkboxes) quanto pela documentação
 // da API. Adicionar um escopo novo aqui é o único lugar a mudar pra ele
@@ -136,5 +149,59 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
     categoria: "Parâmetros de Uso",
     label: "Vínculo motorista/veículo (leitura)",
     descricao: "Consultar se um motorista está autorizado a abastecer um veículo específico antes de liberar a transação.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_INTERVALO_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Intervalo entre abastecimentos (leitura)",
+    descricao: "Consultar o intervalo mínimo exigido entre 2 abastecimentos, por veículo ou motorista.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_VALOR_DIARIO_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Valor diário por motorista (leitura)",
+    descricao: "Consultar o valor máximo (R$) permitido por dia para um motorista.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_VOLUME_DIARIO_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Volume diário por veículo (leitura)",
+    descricao: "Consultar o volume máximo (L) permitido por dia para um veículo.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_PRODUTO_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Produto abastecido (leitura)",
+    descricao: "Consultar quais combustíveis são permitidos para um veículo.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_HODOMETRO_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Variação de hodômetro (leitura)",
+    descricao: "Consultar a variação máxima de hodômetro permitida entre abastecimentos, por classificação Leve/Pesado.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_DIAS_HORARIOS_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Dias e horários permitidos (leitura)",
+    descricao: "Consultar a janela de dias/horários em que o abastecimento é permitido.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_POSTOS_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Postos permitidos (leitura)",
+    descricao: "Consultar quais postos estão autorizados para um cliente/veículo/motorista.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_SERVICOS_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Limite de serviços (leitura)",
+    descricao: "Consultar limites de quantidade/valor por serviço (lavagem, restaurante etc.).",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_COTAS_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Cota por veículo (leitura)",
+    descricao: "Consultar limite e consumo já realizado da cota (R$ ou L) de um veículo no período atual.",
   },
 ];
