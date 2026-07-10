@@ -29,10 +29,35 @@ export default async function MeuPostoDetalhePage({
   const { postoId } = await params;
   const { empresa: empresaParam } = await searchParams;
   const supabase = await createClient();
-  const { empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+  const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
+  // Fase 27.111 — mesma rede de segurança aplicada em clientes-posto/[clienteId]:
+  // com 2+ empresas vinculadas, mostra seletor em vez de beco sem saída.
   if (!empresaSelecionada) {
-    return <div className="card p-6 text-sm text-slate-600">Nenhuma empresa vinculada ao seu usuário.</div>;
+    return (
+      <div className="card p-6 text-sm text-slate-600">
+        {empresas.length > 1 ? (
+          <form className="flex items-end gap-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+              <select name="empresa" defaultValue="" className="input text-sm">
+                <option value="">Selecione...</option>
+                {empresas.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="btn-secondary text-sm">
+              Aplicar
+            </button>
+          </form>
+        ) : (
+          "Nenhuma empresa vinculada ao seu usuário."
+        )}
+      </div>
+    );
   }
 
   const [{ data: negociacoesData }, { data: faturasData }, { data: clienteEmpresa }] = await Promise.all([

@@ -118,7 +118,10 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
                       {c.ultima_atualizacao ? new Date(c.ultima_atualizacao).toLocaleDateString("pt-BR") : "—"}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link href={`/clientes-posto/${c.id}`} className="text-frota-600 hover:underline">
+                      <Link
+                        href={`/clientes-posto/${c.id}?empresa=${empresaSelecionada}`}
+                        className="text-frota-600 hover:underline"
+                      >
                         Ver ciclo
                       </Link>
                     </td>

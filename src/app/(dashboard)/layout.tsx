@@ -17,18 +17,22 @@ import { buscarLogoutInatividadeMinutos } from "@/lib/configuracoesSistema";
 import { MonitorInatividade } from "./_components/MonitorInatividade";
 
 // Fase 27.15 — o ícone da "Assistente FNI" é a logo (imagem), bem mais larga
-// que um emoji, então o texto de cada item desalinhava em relação aos
-// demais (que usavam emoji direto dentro da string do label). Separado
-// `icone`/`label` pra todo mundo nesta lista renderizar o ícone dentro da
-// mesma coluna de largura fixa (ver render abaixo) — a logo entra no lugar
-// do emoji só pro item "/assistente" (icone: null sinaliza isso).
+// que um emoji, então precisa de tratamento especial no render (ver
+// `item.logo` abaixo) — os demais itens seguem o MESMO padrão do
+// menuCadastros/menuOperacao/menuAdministracao: emoji embutido direto na
+// string do label.
+// Fase 27.112 — pedido do Daniel: "Alinhar ícones e textos iniciais com os
+// ícones e textos do menu Cadastros. Nomear a primeira sessão de ícones e
+// textos GERAL". Esta lista passou a usar o mesmo formato label com emoji
+// embutido (em vez de icone/label separados) pra ficar visualmente idêntica
+// às demais seções, e ganhou o cabeçalho "Geral" (ver render abaixo).
 const menuVisaoGeral = [
-  { href: "/dashboard", icone: "📊", label: "Dashboard" },
-  { href: "/assistente", icone: null, label: "Assistente FNI" },
-  { href: "/assinatura", icone: "💳", label: "Minha Assinatura" },
-  { href: "/avaliar", icone: "⭐", label: "Avaliar Plataforma" },
-  { href: "/financeiro", icone: "💰", label: "Painel Financeiro" },
-  { href: "/lgpd", icone: "🔒", label: "Privacidade (LGPD)" },
+  { href: "/dashboard", label: "📊 Dashboard" },
+  { href: "/assistente", label: "Assistente FNI", logo: true },
+  { href: "/assinatura", label: "💳 Minha Assinatura" },
+  { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
+  { href: "/financeiro", label: "💰 Painel Financeiro" },
+  { href: "/lgpd", label: "🔒 Privacidade (LGPD)" },
 ];
 
 const menuCadastros = [
@@ -291,20 +295,29 @@ export default async function DashboardLayout({
             </ul>
           ) : (
           <>
+          <p data-tour="menu-geral" className="mb-2 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Gestão
+          </p>
           <ul className="space-y-1">
             {itensVisaoGeral.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
                   data-tour={TOUR_POR_HREF[item.href]}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
-                  <span className="flex w-6 shrink-0 items-center justify-center" aria-hidden>
-                    {item.icone ?? (
-                      <Image src="/logo-fni.png" alt="" width={24} height={9} className="h-auto w-6 object-contain" />
+                  <span>
+                    {item.logo && (
+                      <Image
+                        src="/logo-fni.png"
+                        alt=""
+                        width={24}
+                        height={9}
+                        className="mr-1.5 inline-block h-auto w-5 align-middle object-contain"
+                      />
                     )}
+                    {item.label}
                   </span>
-                  {item.label}
                 </Link>
               </li>
             ))}
@@ -313,12 +326,7 @@ export default async function DashboardLayout({
                 href="/chamados"
                 className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
               >
-                <span className="flex items-center gap-2">
-                  <span className="flex w-6 shrink-0 items-center justify-center" aria-hidden>
-                    🎫
-                  </span>
-                  Chamados
-                </span>
+                <span>🎫 Chamados</span>
                 {chamadosNaoVistos > 0 && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                     {chamadosNaoVistos}
@@ -380,26 +388,35 @@ export default async function DashboardLayout({
             ))}
           </ul>
 
-          <p className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Administração
-          </p>
-          <ul className="space-y-1">
-            {menuAdministracao.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-                >
-                  <span>{item.label}</span>
-                  {item.href === "/avaliacoes" && avaliacoesPendentes > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                      {avaliacoesPendentes}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {/* Fase 27.110 — pedido do Daniel: "O menu Administração deve
+              ficar visível somente para o admin da aplicação" — antes só
+              excluía o posto (!ehPosto), então o cliente também via este
+              bloco (Permissões, Inteligência de Rede, Assinaturas de todos
+              os clientes, etc.), que são telas internas do time FNI. */}
+          {ehAdmin && (
+            <>
+              <p className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Administração
+              </p>
+              <ul className="space-y-1">
+                {menuAdministracao.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                    >
+                      <span>{item.label}</span>
+                      {item.href === "/avaliacoes" && avaliacoesPendentes > 0 && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                          {avaliacoesPendentes}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           </>
           )}
         </nav>

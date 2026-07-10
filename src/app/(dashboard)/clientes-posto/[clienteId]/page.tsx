@@ -29,12 +29,38 @@ export default async function ClientePostoDetalhePage({
   const { clienteId } = await params;
   const { empresa: empresaParam } = await searchParams;
   const supabase = await createClient();
-  const { empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+  const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
+  // Fase 27.111 — pedido do Daniel: "Verificar acesso de usuario Posto Teste
+  // 2". Causa raiz: com 2+ empresas vinculadas (ex.: posto que faz parte de
+  // uma Rede de Postos), resolverEmpresaAtual devolve empresaSelecionada
+  // null até o usuário escolher uma — mas esta página só tinha a mensagem
+  // de erro, sem seletor, virando um beco sem saída. Rede corrigida em
+  // clientes-posto/page.tsx (link agora carrega ?empresa=), mas mantém este
+  // seletor aqui como rede de segurança pra qualquer acesso direto/sem param.
   if (!empresaSelecionada) {
     return (
       <div className="card p-6 text-sm text-slate-600">
-        Nenhuma empresa vinculada ao seu usuário.
+        {empresas.length > 1 ? (
+          <form className="flex items-end gap-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+              <select name="empresa" defaultValue="" className="input text-sm">
+                <option value="">Selecione...</option>
+                {empresas.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="btn-secondary text-sm">
+              Aplicar
+            </button>
+          </form>
+        ) : (
+          "Nenhuma empresa vinculada ao seu usuário."
+        )}
       </div>
     );
   }

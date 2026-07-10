@@ -5975,4 +5975,44 @@ os dois postos (Posto Teste Ltda e Posto Teste 2 Ltda) agora devolvem o mesmo `p
 (31/07) e o mesmo `vencimento_previsto` (15/08), refletindo o ciclo único (15+15) do cliente, mesmo com
 `periodo_inicio` diferente por posto (cada um segue de onde sua própria fatura mais recente parou).
 
+## Fase 27.110 — menu Administração visível só para admin
+
+Pedido do Daniel: "O menu Administração deve ficar visível somente para o admin da aplicação". A seção
+(Permissões por Perfil, Inteligência de Rede, Assinaturas de todos os clientes, Avaliações dos Clientes,
+Configurações do Sistema) só excluía o perfil posto (`!ehPosto`), então o cliente também via essas telas
+internas do time FNI. `src/app/(dashboard)/layout.tsx`: bloco envolvido em `{ehAdmin && (...)}` (variável já
+existia no escopo).
+
+## Fase 27.111 — corrigir acesso "Nenhuma empresa vinculada" (Posto Teste 2)
+
+Investigação do bug reportado ("Verificar acesso de usuario Posto Teste 2"). Causa raiz: o usuário faz parte
+de uma Rede de Postos ("Rede de Postos DP", junto com Posto Teste Ltda), então `empresas_do_usuario()`
+devolve 2 empresas em vez de 1 — `resolverEmpresaAtual()` corretamente deixa `empresaSelecionada` nulo até o
+usuário escolher. O link "Ver ciclo" em `/clientes-posto` (lista de clientes do posto) apontava pro detalhe
+(`/clientes-posto/[clienteId]`) sem carregar `?empresa=`, e essa página de detalhe não tinha seletor de
+fallback (só a mensagem de erro) — beco sem saída assim que o usuário tinha 2+ empresas vinculadas.
+
+- `src/app/(dashboard)/clientes-posto/page.tsx`: link "Ver ciclo" passou a incluir `?empresa=${empresaSelecionada}`.
+- `src/app/(dashboard)/clientes-posto/[clienteId]/page.tsx` e `src/app/(dashboard)/meus-postos/[postoId]/page.tsx`:
+  rede de segurança — quando `empresaSelecionada` é nulo e há 2+ empresas, mostra um seletor (mesmo padrão das
+  telas de listagem) em vez de só a mensagem de erro.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
+## Fase 27.112 — seção "Gestão" no menu + alinhamento visual
+
+Pedido do Daniel: "Alinhar ícones e textos iniciais com os ícones e textos do menu Cadastros. Nomear a
+primeira sessão de ícones e textos GERAL" (depois ajustado pra "Gestão"). A primeira seção do menu (Dashboard,
+Assistente FNI, Minha Assinatura, Avaliar Plataforma, Painel Financeiro, Privacidade) não tinha cabeçalho e
+usava uma estrutura de ícone separado (coluna fixa) diferente das demais seções (Cadastros/Operação/
+Administração, que embutem o emoji direto no texto do label).
+
+`src/app/(dashboard)/layout.tsx`: `menuVisaoGeral` passou a usar `label` com emoji embutido (mesmo padrão das
+outras listas), com um campo `logo: true` só no item "Assistente FNI" pra sinalizar o caso especial (usa a
+logo da FNI como ícone, não emoji — precisa continuar como imagem). Adicionado cabeçalho "Gestão" com o mesmo
+estilo visual (`text-xs font-semibold uppercase tracking-wider text-slate-400`) usado em Cadastros/Operação/
+Administração, e o item "Chamados" (que já vivia nesta lista) passou a seguir o mesmo padrão de emoji embutido.
+
+Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
+
 Validado com `npx tsc --noEmit` e `npx eslint` (limpos).
