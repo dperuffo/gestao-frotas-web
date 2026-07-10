@@ -95,6 +95,25 @@ const menuPosto = [
   { href: "/usuarios", label: "👥 Usuários" },
 ];
 
+// Fase 27.127 — pedido do Daniel: "Mecanismo de avaliacao da plataforma tem
+// que estar na visao do posto, assim como chamados e Assistente FNI...
+// Privacidade LGPD e Minha Assinatura tambem, pois vai ter que gerenciar a
+// assinatura. Tudo dentro de uma aba Gestão". Mesmo espírito da seção
+// "Gestão" que já existe pro lado Frota (menuVisaoGeral, ver acima) — o
+// posto passou a ser um tenant com assinatura própria (Fase 27.125), então
+// precisa dos mesmos itens "de conta" que um cliente já tem: assistente,
+// assinatura, avaliação, privacidade e suporte. Nenhum desses itens exige
+// mudança de RLS/backend — resolverEmpresaAtual, avaliar/actions.ts e
+// chamados/actions.ts já são agnósticos de segmento (usam empresas_do_usuario
+// pelo e-mail, e todo posto tem sua própria linha em usuarios_empresas
+// apontando pra própria empresa, desde sempre — ver Fase 27.50/27.125).
+const menuPostoGestao = [
+  { href: "/assistente", label: "Assistente FNI", logo: true },
+  { href: "/assinatura", label: "💳 Minha Assinatura" },
+  { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
+  { href: "/lgpd", label: "🔒 Privacidade (LGPD)" },
+];
+
 const menuAdministracao = [
   { href: "/permissoes", label: "🔑 Permissões por Perfil" },
   { href: "/inteligencia-rede", label: "🌐 Inteligência de Rede" },
@@ -282,6 +301,7 @@ export default async function DashboardLayout({
         </div>
         <nav className="flex-1 px-3 py-4">
           {ehPosto ? (
+            <>
             <ul className="space-y-1">
               {menuPosto.map((item) => (
                 <li key={item.href}>
@@ -305,6 +325,52 @@ export default async function DashboardLayout({
                 </li>
               ))}
             </ul>
+
+            {/* Fase 27.127 — pedido do Daniel: mecanismo de avaliação, chamados
+                e Assistente FNI também na visão do posto, junto com Privacidade
+                (LGPD) e Minha Assinatura (o posto agora assina um plano
+                próprio — Fase 27.125), tudo dentro de uma aba "Gestão" — mesmo
+                nome/espírito da seção "Gestão" que já existe pro lado Frota. */}
+            <p className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Gestão
+            </p>
+            <ul className="space-y-1">
+              {menuPostoGestao.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                  >
+                    <span>
+                      {item.logo && (
+                        <Image
+                          src="/logo-fni.png"
+                          alt=""
+                          width={24}
+                          height={9}
+                          className="mr-1.5 inline-block h-auto w-5 align-middle object-contain"
+                        />
+                      )}
+                      {item.label}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link
+                  href="/chamados"
+                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                >
+                  <span>🎫 Chamados</span>
+                  {chamadosNaoVistos > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                      {chamadosNaoVistos}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            </ul>
+            </>
           ) : (
           <>
           <p data-tour="menu-geral" className="mb-2 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">

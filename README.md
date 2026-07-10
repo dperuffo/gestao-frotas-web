@@ -6339,3 +6339,26 @@ revendedores sobre a plataforma".
   existe self-service signup para posto (Fase 27.125 usa convite automático disparado pelo
   cliente), então o CTA direciona pra contato manual até esse fluxo existir.
 - Chaves de tradução adicionadas em `src/app/_landing/landingBody.ts` (blocos `pt`/`en`).
+
+## Fase 27.127 — aba Gestão no menu do posto
+
+Pedido do Daniel: "Mecanismo de avaliacao da plataforma tem que estar na visao do posto, assim
+como chamados e Assistente FNI [...] Privacidade LGPD e Minha Assinatura tambem, pois vai ter
+que gerenciar a assinatura. Tudo dentro de uma aba Gestão".
+
+- Achado ao investigar: Chamados e Assistente FNI ainda **não** estavam de fato no menu do
+  posto (só o Assistente era alcançável por um atalho indireto dentro da Central de Ajuda) —
+  a percepção de que "já estavam lá" não procedia, mas a direção do pedido (colocar os 5 juntos
+  numa aba Gestão) segue integralmente.
+- Nova seção "Gestão" em `menuPosto` (`src/app/(dashboard)/layout.tsx`), mesmo nome/estilo da
+  seção "Gestão" que já existe pro lado Frota: Assistente FNI, Minha Assinatura, Avaliar
+  Plataforma, Privacidade (LGPD), Chamados (com badge de não vistos).
+- Nenhuma mudança de RLS/backend necessária: confirmado que `resolverEmpresaAtual` (usada por
+  `/assinatura`, `/avaliar`, `/chamados`) já é agnóstica de segmento — todo usuário perfil
+  "posto" sempre teve sua própria linha em `usuarios_empresas` apontando pra própria empresa
+  (confirmado com dados reais: Posto Teste Ltda e Posto Teste 2 Ltda), então essas telas
+  funcionam pro posto exatamente como já funcionam pro cliente.
+- `permissoes_perfil`: `aba_avaliar_plataforma`, `aba_chamados`, `aba_assistente_ia`,
+  `aba_lgpd`, `aba_minha_assinatura` para `perfil='posto'` atualizadas de `permitido=false`
+  para `true` (só reflete a matriz da tela `/permissoes` — essa tabela não é lida por nenhuma
+  RLS/gate real hoje, é vitrine).
