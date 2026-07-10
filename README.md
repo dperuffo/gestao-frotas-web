@@ -6417,3 +6417,41 @@ estes filtros pois ao clicar em qualquer um, volta para a seleçao de cliente".
 - Corrigido: `linkFiltro()` agora inclui `empresa: empresaPostoId`; o `<form>` de filtro livre
   (cliente/busca/datas) ganhou `<input type="hidden" name="empresa">`; `<Paginacao
   paramsAtuais>` também passou a incluir `empresa`.
+
+## Fase 27.132 — robô: 15 abastecimentos/dia por cliente com meios de pagamento diferentes
+
+Pedido do Daniel (parte 1 de 2 sobre "origem/meio de pagamento do abastecimento"): "No robo,
+criar mais 15 abastecimentos por dia, por clientes, utilizando meios de pagamentos diferentes
+para popular os paineis necessarios. Acrescer estes novos 15 registros diarios aos que ja
+ocorrem hoje".
+
+- Investigado antes de implementar: a infraestrutura multi-provedor já existe desde a Fase 25
+  (tabela `abastecimentos_externos`, genérica, `provedor` texto livre; view
+  `abastecimentos_unificado` já une `profrotas_abastecimentos` [sempre `provedor='profrotas'`,
+  hardcoded na view] com `abastecimentos_externos`) — mas **nenhum provedor externo real
+  estava mandando dado**: `abastecimentos_externos` tinha 0 linhas. O endpoint
+  `POST /api/integracoes/abastecimentos` existe e aceita `provedor` livre, mas nunca foi usado
+  de verdade — só citado como exemplo de curl na documentação.
+- Novo robô `gerar_abastecimentos_meios_pagamento_robo()`, companheiro do já existente
+  `gerar_abastecimentos_postos_robo()` (Fase 27.77/27.88, que gera 15/dia **por posto**,
+  sempre "profrotas"): este gera **15/dia por CLIENTE** (não por posto), sorteando o provedor
+  entre Valecard, RedeFrota, TicketLog e Veloe a cada registro, gravando em
+  `abastecimentos_externos` — dado real e diverso por meio de pagamento, sem mexer no que já
+  existia (soma, não substitui).
+- Mesmo padrão de idempotência do robô original (conta quantos já foram gerados hoje por
+  `transacao_externa_id like 'robo-mp-%'`, só completa o que falta) e mesma lógica de preço
+  (`precos_postos` do posto negociado, com fallback pra ANP) e de hodômetro (continuidade
+  olhando as duas fontes — ProFrotas e meios de pagamento — pra não sobrepor km).
+- Agendado via `pg_cron` (`robo_abastecimentos_meios_pagamento`, a cada 6h, mesmo ritmo do
+  robô original).
+- Testado: primeira chamada inseriu 30 registros (15 × 2 clientes teste), segunda chamada no
+  mesmo dia não duplicou (idempotente). Distribuição real após o teste: `RedeFrota` (7),
+  `TicketLog` (9), `Valecard` (10), `Veloe` (4), além dos 8182 já existentes de `profrotas`.
+
+**Pendente (parte 2 do pedido, ainda não feita)**: expor essa origem/provedor nos registros de
+abastecimentos, indicadores, dashboards e painéis financeiros consolidados — hoje as telas
+principais (`/abastecimentos`, `/dashboard`, `/financeiro`) consultam `profrotas_abastecimentos`
+direto ou RPCs que somam tudo agregado sem `group by provedor`; a arquitetura da Fase 25.1 foi
+desenhada de propósito pra esconder a origem ("o Dashboard/Financeiro não precisam saber de onde
+veio cada abastecimento"). Trazer o provedor à tona nessas telas é trabalho de UI separado, a
+ser feito na sequência agora que já existe dado real de mais de um meio de pagamento pra mostrar.
