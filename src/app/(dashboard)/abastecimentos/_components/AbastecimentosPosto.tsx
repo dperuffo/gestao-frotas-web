@@ -147,6 +147,11 @@ export async function AbastecimentosPosto({
         .from("notas_fiscais_abastecimento")
         .select("abastecimento_id, numero_nf")
         .eq("empresa_posto_id", empresaPostoId)
+        // Fase 27.136 — esta tela é só do lado PróFrotas (profrotas_abastecimentos,
+        // ver comentário da Fase 27.58 acima); abastecimento_id agora é null pras
+        // NF-e vinculadas a abastecimentos de outros provedores (que usam
+        // abastecimento_externo_id) — não interessam aqui.
+        .not("abastecimento_id", "is", null)
         .limit(20000),
       supabase
         .from("notas_fiscais_pendencias")
@@ -157,7 +162,9 @@ export async function AbastecimentosPosto({
         .limit(20000),
     ]);
 
-    notaPorAbastecimento = new Map((notasData ?? []).map((n) => [n.abastecimento_id, n.numero_nf]));
+    notaPorAbastecimento = new Map(
+      (notasData ?? []).flatMap((n) => (n.abastecimento_id === null ? [] : [[n.abastecimento_id, n.numero_nf] as const]))
+    );
     pendenciaPorAbastecimento = new Map();
     for (const p of pendenciasData ?? []) {
       if (p.abastecimento_id === null || pendenciaPorAbastecimento.has(p.abastecimento_id)) continue;

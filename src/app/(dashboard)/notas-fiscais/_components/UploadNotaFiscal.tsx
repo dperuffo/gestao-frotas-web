@@ -80,6 +80,7 @@ function RotuloResultado({ resultado }: { resultado: ResultadoEnvioNotaFiscal })
         <p className="text-xs font-medium text-green-800">NF-e vinculada com sucesso.</p>
         {resultado.abastecimento && (
           <p className="mt-0.5 text-xs text-green-700">
+            [{resultado.abastecimento.provedor === "profrotas" ? "PróFrotas" : resultado.abastecimento.provedor}]{" "}
             {formatarDataBr(resultado.abastecimento.dataAbastecimento)} · {resultado.abastecimento.itemNome ?? "—"} ·{" "}
             {resultado.abastecimento.itemQuantidade ?? "—"} L ·{" "}
             {resultado.abastecimento.itemValorTotal !== null ? formatarMoeda(resultado.abastecimento.itemValorTotal) : "—"}
@@ -177,11 +178,12 @@ export function UploadNotaFiscal() {
     setArrastandoSobre(true);
   }
 
-  async function processarUm(index: number, arquivo: File, abastecimentoIdForcado?: number) {
+  async function processarUm(index: number, arquivo: File, abastecimentoIdForcado?: number, provedorForcado?: string) {
     setItens((prev) => prev.map((it, i) => (i === index ? { ...it, status: "processando" } : it)));
     const formData = new FormData();
     formData.set("arquivo", arquivo);
     if (abastecimentoIdForcado) formData.set("abastecimento_id_forcado", String(abastecimentoIdForcado));
+    if (provedorForcado) formData.set("provedor_forcado", provedorForcado);
     const resultado = await enviarNotaFiscalAcao(formData);
     setItens((prev) => prev.map((it, i) => (i === index ? { ...it, status: "concluido", resultado } : it)));
   }
@@ -284,14 +286,14 @@ export function UploadNotaFiscal() {
                     <div className="space-y-1">
                       {item.resultado.candidatos.map((c) => (
                         <button
-                          key={c.abastecimentoId}
+                          key={`${c.provedor}-${c.abastecimentoId}`}
                           type="button"
                           disabled={processando}
-                          onClick={() => processarUm(index, item.arquivo, c.abastecimentoId)}
+                          onClick={() => processarUm(index, item.arquivo, c.abastecimentoId, c.provedor)}
                           className="block w-full rounded border border-blue-200 bg-white px-2 py-1.5 text-left text-xs text-slate-700 hover:bg-blue-100"
                         >
-                          {formatarDataBr(c.dataAbastecimento)} · {c.itemNome ?? "—"} · {c.itemQuantidade} L ·{" "}
-                          {formatarMoeda(c.itemValorTotal)}
+                          [{c.provedor === "profrotas" ? "PróFrotas" : c.provedor}] {formatarDataBr(c.dataAbastecimento)} ·{" "}
+                          {c.itemNome ?? "—"} · {c.itemQuantidade} L · {formatarMoeda(c.itemValorTotal)}
                           {c.veiculoPlaca && ` · Placa ${c.veiculoPlaca}`}
                           {c.motoristaNome && ` · ${c.motoristaNome}`}
                         </button>

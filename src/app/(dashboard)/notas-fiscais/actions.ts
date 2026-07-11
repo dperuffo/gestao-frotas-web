@@ -53,9 +53,20 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 // é mais correto: um único lote pode ter XMLs de dois postos diferentes (o
 // caso real do Daniel), e nenhuma "empresa atual" de sessão representaria
 // isso certo de qualquer forma.
+//
+// Fase 27.136 — pedido do Daniel: "O posto cobra do cliente sobre
+// abastecimentos de outras modalidades de pagamentos, assim como notas
+// fiscais, o posto faz o upload das notas fiscais destes abastecimentos" —
+// o fluxo de NF-e (matching + inserção) passa a valer também pra
+// abastecimentos de outros provedores (Valecard, RedeFrota, TicketLog,
+// Veloe...), não só PróFrotas. As RPCs agora sempre devolvem/recebem
+// `provedor` junto do id (as duas fontes usam sequências de id bigint
+// independentes — sem o provedor junto, um id podia apontar pra linha
+// errada).
 
 export type CandidatoNota = {
   abastecimentoId: number;
+  provedor: string;
   dataAbastecimento: string;
   veiculoPlaca: string | null;
   motoristaNome: string | null;
@@ -67,6 +78,7 @@ export type CandidatoNota = {
 
 export type AbastecimentoResumo = {
   abastecimentoId: number;
+  provedor: string;
   dataAbastecimento: string | null;
   veiculoPlaca: string | null;
   motoristaNome: string | null;
@@ -82,21 +94,52 @@ export type ResultadoEnvioNotaFiscal =
   | { status: "ambiguo"; candidatos: CandidatoNota[]; extraido: NfeExtraida }
   | { status: "erro"; mensagem: string };
 
-async function buscarResumoAbastecimento(supabase: Supabase, abastecimentoId: number): Promise<AbastecimentoResumo | null> {
+// Fase 27.136 — resumo agora busca em uma das duas tabelas conforme o
+// provedor (as duas têm colunas com nomes diferentes pro mesmo conceito —
+// item_nome/item_quantidade/item_valor_total no PróFrotas vs
+// combustivel/quantidade/valor_total no lado externo).
+// `ehProfrotas` decide só qual TABELA consultar — o `id` já é a chave
+// primária de cada uma (não precisa confirmar o provedor de novo pra achar
+// a linha, só pra saber onde procurar).
+async function buscarResumoAbastecimento(
+  supabase: Supabase,
+  abastecimentoId: number,
+  ehProfrotas: boolean
+): Promise<AbastecimentoResumo | null> {
+  if (ehProfrotas) {
+    const { data } = await supabase
+      .from("profrotas_abastecimentos")
+      .select("id, data_abastecimento, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_total")
+      .eq("id", abastecimentoId)
+      .maybeSingle();
+    if (!data) return null;
+    return {
+      abastecimentoId: data.id,
+      provedor: "profrotas",
+      dataAbastecimento: data.data_abastecimento,
+      veiculoPlaca: data.veiculo_placa,
+      motoristaNome: data.motorista_nome,
+      itemNome: data.item_nome,
+      itemQuantidade: data.item_quantidade === null ? null : Number(data.item_quantidade),
+      itemValorTotal: data.item_valor_total === null ? null : Number(data.item_valor_total),
+    };
+  }
+
   const { data } = await supabase
-    .from("profrotas_abastecimentos")
-    .select("id, data_abastecimento, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_total")
+    .from("abastecimentos_externos")
+    .select("id, provedor, data_abastecimento, placa, motorista_nome, combustivel, quantidade, valor_total")
     .eq("id", abastecimentoId)
     .maybeSingle();
   if (!data) return null;
   return {
     abastecimentoId: data.id,
+    provedor: data.provedor,
     dataAbastecimento: data.data_abastecimento,
-    veiculoPlaca: data.veiculo_placa,
+    veiculoPlaca: data.placa,
     motoristaNome: data.motorista_nome,
-    itemNome: data.item_nome,
-    itemQuantidade: data.item_quantidade === null ? null : Number(data.item_quantidade),
-    itemValorTotal: data.item_valor_total === null ? null : Number(data.item_valor_total),
+    itemNome: data.combustivel,
+    itemQuantidade: data.quantidade === null ? null : Number(data.quantidade),
+    itemValorTotal: data.valor_total === null ? null : Number(data.valor_total),
   };
 }
 
@@ -120,6 +163,7 @@ async function resolverPostoPorCnpj(supabase: Supabase, cnpjEmitente: string | u
 
 type DadosPendencia = {
   abastecimentoId: number | null;
+  provedor: string | null;
   motivo: string;
   detalheTexto?: string | null;
   nfe?: NfeExtraida | null;
@@ -128,9 +172,12 @@ type DadosPendencia = {
 
 async function registrarPendenciaBestEffort(supabase: Supabase, empresaPostoId: string, dados: DadosPendencia): Promise<void> {
   try {
+    const ehProfrotas = dados.provedor === "profrotas" || dados.provedor === null;
     await supabase.rpc("registrar_pendencia_nota_fiscal", {
       p_empresa_posto_id: empresaPostoId,
-      p_abastecimento_id: dados.abastecimentoId,
+      p_abastecimento_id: ehProfrotas ? dados.abastecimentoId : null,
+      p_provedor: dados.provedor,
+      p_abastecimento_externo_id: ehProfrotas ? null : dados.abastecimentoId,
       p_motivo: dados.motivo,
       p_detalhe_texto: dados.detalheTexto ?? null,
       p_cnpj_emitente: dados.nfe?.cnpjEmitente ?? null,
@@ -153,6 +200,7 @@ async function registrarPendenciaBestEffort(supabase: Supabase, empresaPostoId: 
 export async function enviarNotaFiscalAcao(formData: FormData): Promise<ResultadoEnvioNotaFiscal> {
   const arquivo = formData.get("arquivo");
   const abastecimentoForcadoRaw = formData.get("abastecimento_id_forcado");
+  const provedorForcadoRaw = formData.get("provedor_forcado");
 
   if (!(arquivo instanceof File) || arquivo.size === 0) {
     return { status: "erro", mensagem: "Selecione o(s) arquivo(s) XML da NF-e." };
@@ -170,6 +218,7 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
     if (empresaPostoId) {
       await registrarPendenciaBestEffort(supabase, empresaPostoId, {
         abastecimentoId: null,
+        provedor: null,
         motivo: "erro_leitura_xml",
         detalheTexto: parse.erro,
         nomeArquivo: arquivo.name,
@@ -181,11 +230,16 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
 
   const { data: existente } = await supabase
     .from("notas_fiscais_abastecimento")
-    .select("id, abastecimento_id")
+    .select("id, abastecimento_id, abastecimento_externo_id")
     .eq("chave_acesso", nfe.chaveAcesso)
     .maybeSingle();
   if (existente) {
-    const abastecimento = await buscarResumoAbastecimento(supabase, existente.abastecimento_id);
+    const abastecimento =
+      existente.abastecimento_id != null
+        ? await buscarResumoAbastecimento(supabase, existente.abastecimento_id, true)
+        : existente.abastecimento_externo_id != null
+          ? await buscarResumoAbastecimento(supabase, existente.abastecimento_externo_id, false)
+          : null;
     return { status: "duplicada", notaId: existente.id, abastecimento };
   }
 
@@ -193,6 +247,7 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
   if (abastecimentoForcadoRaw && !Number.isFinite(abastecimentoId)) {
     abastecimentoId = null;
   }
+  let provedor: string | null = typeof provedorForcadoRaw === "string" && provedorForcadoRaw ? provedorForcadoRaw : null;
 
   if (!abastecimentoId) {
     const { data: candidatos, error: erroBusca } = await supabase.rpc("buscar_abastecimentos_candidatos_nota_fiscal", {
@@ -212,6 +267,7 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
       if (empresaPostoId) {
         await registrarPendenciaBestEffort(supabase, empresaPostoId, {
           abastecimentoId: null,
+          provedor: null,
           motivo: "sem_correspondencia",
           nfe,
           nomeArquivo: arquivo.name,
@@ -226,6 +282,7 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
         extraido: nfe,
         candidatos: candidatos.map((c) => ({
           abastecimentoId: c.abastecimento_id,
+          provedor: c.provedor,
           dataAbastecimento: c.data_abastecimento,
           veiculoPlaca: c.veiculo_placa,
           motoristaNome: c.motorista_nome,
@@ -238,10 +295,16 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
     }
 
     abastecimentoId = candidatos[0].abastecimento_id;
+    provedor = candidatos[0].provedor;
+  }
+
+  if (!provedor) {
+    return { status: "erro", mensagem: "Meio de pagamento do abastecimento não informado." };
   }
 
   const { data: resultadoRpc, error: erroRpc } = await supabase.rpc("inserir_nota_fiscal_abastecimento", {
     p_abastecimento_id: abastecimentoId,
+    p_provedor: provedor,
     p_chave_acesso: nfe.chaveAcesso,
     p_numero_nf: nfe.numeroNf,
     p_serie_nf: nfe.serieNf,
@@ -258,7 +321,7 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
     p_valor_unitario: nfe.valorUnitario,
     p_valor_total: nfe.valorTotal,
     p_valor_nf_total: nfe.valorNfTotal,
-    p_xml_storage_path: `${abastecimentoId}/${nfe.chaveAcesso}.xml`,
+    p_xml_storage_path: `${provedor}-${abastecimentoId}/${nfe.chaveAcesso}.xml`,
   });
 
   if (erroRpc) {
@@ -268,13 +331,14 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
   const resultado = resultadoRpc as { ok: boolean; motivo?: string; nota_id?: string };
   if (!resultado.ok) {
     if (resultado.motivo === "chave_duplicada") {
-      const abastecimento = await buscarResumoAbastecimento(supabase, abastecimentoId);
+      const abastecimento = await buscarResumoAbastecimento(supabase, abastecimentoId, provedor === "profrotas");
       return { status: "duplicada", notaId: null, abastecimento };
     }
     const empresaPostoId = await resolverPostoPorCnpj(supabase, nfe.cnpjEmitente);
     if (empresaPostoId) {
       await registrarPendenciaBestEffort(supabase, empresaPostoId, {
         abastecimentoId,
+        provedor,
         motivo: resultado.motivo ?? "erro_desconhecido",
         nfe,
         nomeArquivo: arquivo.name,
@@ -291,12 +355,12 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
   let avisoArquivo: string | undefined;
   const { error: erroUpload } = await supabase.storage
     .from("notas-fiscais-xml")
-    .upload(`${abastecimentoId}/${nfe.chaveAcesso}.xml`, texto, { contentType: "text/xml" });
+    .upload(`${provedor}-${abastecimentoId}/${nfe.chaveAcesso}.xml`, texto, { contentType: "text/xml" });
   if (erroUpload) {
     avisoArquivo = "NF-e validada e vinculada, mas não foi possível guardar uma cópia do arquivo XML original.";
   }
 
-  const abastecimento = await buscarResumoAbastecimento(supabase, abastecimentoId);
+  const abastecimento = await buscarResumoAbastecimento(supabase, abastecimentoId, provedor === "profrotas");
   revalidatePath("/notas-fiscais");
   return { status: "sucesso", notaId: resultado.nota_id!, abastecimento, avisoArquivo };
 }

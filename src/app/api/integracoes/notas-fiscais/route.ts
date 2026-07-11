@@ -17,6 +17,15 @@ import { parsearXmlNfe, mensagemMotivoPendencia } from "@/lib/nfe";
 // empresa_posto_id já validado pela chave em vez de resolver por e-mail).
 // Esse overload só pode ser executado pelo service_role (REVOKE de
 // anon/authenticated na migration) — não dá pra chamar isso do navegador.
+//
+// Fase 27.136 — pedido do Daniel: NF-e também pra abastecimentos de outros
+// meios de pagamento (Valecard, RedeFrota, TicketLog, Veloe...), não só
+// PróFrotas. Quando o candidato é ambíguo, quem reenvia com
+// "?abastecimento_id=" agora também precisa mandar "?provedor=" (as duas
+// fontes usam sequências de id independentes — sem o provedor junto, o id
+// sozinho pode apontar pra linha errada). "profrotas" continua sendo o
+// padrão quando "?provedor=" não é enviado, pra não quebrar integrações
+// de ERP já existentes que só conhecem PróFrotas.
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
@@ -55,6 +64,7 @@ export async function POST(request: Request) {
   if (abastecimentoForcadoRaw && !Number.isFinite(abastecimentoId)) {
     return NextResponse.json({ erro: '"abastecimento_id" precisa ser um número.' }, { status: 400 });
   }
+  let provedor: string | null = url.searchParams.get("provedor");
 
   if (!abastecimentoId) {
     const { data: candidatos, error: erroBusca } = await supabase.rpc("buscar_abastecimentos_candidatos_nota_fiscal", {
@@ -83,9 +93,11 @@ export async function POST(request: Request) {
     if (candidatos.length > 1) {
       return NextResponse.json(
         {
-          erro: 'Mais de um abastecimento corresponde a esta NF-e — reenvie com "?abastecimento_id=<id>" indicando qual é o certo.',
+          erro:
+            'Mais de um abastecimento corresponde a esta NF-e — reenvie com "?abastecimento_id=<id>&provedor=<provedor>" indicando qual é o certo.',
           candidatos: candidatos.map((c) => ({
             abastecimento_id: c.abastecimento_id,
+            provedor: c.provedor,
             data_abastecimento: c.data_abastecimento,
             veiculo_placa: c.veiculo_placa,
             motorista_nome: c.motorista_nome,
@@ -99,10 +111,18 @@ export async function POST(request: Request) {
     }
 
     abastecimentoId = candidatos[0].abastecimento_id;
+    provedor = candidatos[0].provedor;
+  }
+
+  if (!provedor) {
+    // Compat: integrações de ERP anteriores a esta fase só conheciam
+    // PróFrotas e nunca mandavam "?provedor=".
+    provedor = "profrotas";
   }
 
   const { data: resultadoRpc, error: erroRpc } = await supabase.rpc("inserir_nota_fiscal_abastecimento", {
     p_abastecimento_id: abastecimentoId,
+    p_provedor: provedor,
     p_chave_acesso: nfe.chaveAcesso,
     p_numero_nf: nfe.numeroNf,
     p_serie_nf: nfe.serieNf,
@@ -119,7 +139,7 @@ export async function POST(request: Request) {
     p_valor_unitario: nfe.valorUnitario,
     p_valor_total: nfe.valorTotal,
     p_valor_nf_total: nfe.valorNfTotal,
-    p_xml_storage_path: `${abastecimentoId}/${nfe.chaveAcesso}.xml`,
+    p_xml_storage_path: `${provedor}-${abastecimentoId}/${nfe.chaveAcesso}.xml`,
     p_empresa_posto_id_confiavel: chave.empresaId,
     p_enviado_por: `api:${chave.id}`,
   });
@@ -137,7 +157,7 @@ export async function POST(request: Request) {
   let avisoArquivo: string | undefined;
   const { error: erroUpload } = await supabase.storage
     .from("notas-fiscais-xml")
-    .upload(`${abastecimentoId}/${nfe.chaveAcesso}.xml`, texto, { contentType: "text/xml" });
+    .upload(`${provedor}-${abastecimentoId}/${nfe.chaveAcesso}.xml`, texto, { contentType: "text/xml" });
   if (erroUpload) {
     avisoArquivo = "NF-e validada e vinculada, mas não foi possível guardar uma cópia do arquivo XML original.";
   }
@@ -145,7 +165,7 @@ export async function POST(request: Request) {
   await marcarUsoChaveApi(supabase, chave.id);
 
   return NextResponse.json(
-    { status: "vinculada", nota_id: resultado.nota_id, abastecimento_id: abastecimentoId, aviso: avisoArquivo },
+    { status: "vinculada", nota_id: resultado.nota_id, abastecimento_id: abastecimentoId, provedor, aviso: avisoArquivo },
     { status: 201 }
   );
 }

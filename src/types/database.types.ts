@@ -1085,6 +1085,10 @@ export interface Database {
           valor_total: number;
           transacao_externa_id: string | null;
           criado_em: string;
+          // Fase 27.136 — marca quando este abastecimento já entrou numa
+          // fatura do posto (mesmo espírito de
+          // profrotas_abastecimentos.fatura_posto_id).
+          fatura_posto_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["abastecimentos_externos"]["Row"]> & {
           empresa_id: string;
@@ -1432,7 +1436,13 @@ export interface Database {
       notas_fiscais_abastecimento: {
         Row: {
           id: string;
-          abastecimento_id: number;
+          // Fase 27.136 — exatamente um dos dois é preenchido (CHECK
+          // num_nonnulls no banco): abastecimento_id pro lado PróFrotas,
+          // abastecimento_externo_id pros demais provedores (Valecard,
+          // RedeFrota, TicketLog, Veloe...) — sequências de id
+          // independentes, por isso não dá pra reaproveitar a mesma coluna.
+          abastecimento_id: number | null;
+          abastecimento_externo_id: number | null;
           empresa_posto_id: string;
           empresa_cliente_id: string;
           chave_acesso: string;
@@ -1480,6 +1490,10 @@ export interface Database {
           id: string;
           empresa_posto_id: string;
           abastecimento_id: number | null;
+          // Fase 27.136 — mesmo espírito de notas_fiscais_abastecimento:
+          // pendência pode apontar pra um abastecimento de outro provedor.
+          abastecimento_externo_id: number | null;
+          provedor: string | null;
           motivo: string;
           detalhe_texto: string | null;
           cnpj_emitente: string | null;
@@ -2240,6 +2254,12 @@ export interface Database {
         };
         Returns: {
           abastecimento_id: number;
+          // Fase 27.136 — de qual fonte veio o candidato: "profrotas" ou o
+          // nome do provedor externo (Valecard/RedeFrota/TicketLog/Veloe).
+          // Necessário pro chamador saber qual overload/ramo usar ao
+          // inserir a NF-e (as 2 tabelas-fonte têm sequências de id
+          // independentes).
+          provedor: string;
           data_abastecimento: string;
           veiculo_placa: string | null;
           motorista_nome: string | null;
@@ -2256,6 +2276,9 @@ export interface Database {
       inserir_nota_fiscal_abastecimento: {
         Args: {
           p_abastecimento_id: number;
+          // Fase 27.136 — qual das 2 tabelas-fonte o p_abastecimento_id
+          // acima se refere ("profrotas" ou o nome do provedor externo).
+          p_provedor: string;
           p_chave_acesso: string;
           p_numero_nf: number;
           p_serie_nf: string;
@@ -2344,6 +2367,11 @@ export interface Database {
         Args: {
           p_empresa_posto_id: string;
           p_abastecimento_id: number | null;
+          // Fase 27.136 — mesmo par usado em notas_fiscais_abastecimento:
+          // provedor da fonte + id na tabela correspondente (externos usa
+          // sequência de id independente da profrotas_abastecimentos).
+          p_provedor: string | null;
+          p_abastecimento_externo_id: number | null;
           p_motivo: string;
           p_detalhe_texto: string | null;
           p_cnpj_emitente: string | null;

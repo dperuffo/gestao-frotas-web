@@ -8,6 +8,13 @@ import BotaoBaixarPdfNotaLazy from "../_components/BotaoBaixarPdfNotaLazy";
 // Fase 27.94 — detalhe de uma NF-e já validada/vinculada, acessível às 3
 // visões (RLS de notas_fiscais_abastecimento já filtra por posto/cliente
 // dono ou admin — mesmo padrão de /faturas-postos/[id]).
+//
+// Fase 27.136 — pedido do Daniel: NF-e também pra abastecimentos de outros
+// meios de pagamento, não só PróFrotas. `abastecimento_id` agora é
+// opcional (exatamente um dos dois é preenchido, ver CHECK no banco) — a
+// busca do abastecimento associado passa a checar qual dos dois está
+// presente e consultar a tabela-fonte correta, mesmo padrão de
+// buscarResumoAbastecimento em actions.ts.
 export default async function NotaFiscalPage({ params }: { params: Promise<{ notaId: string }> }) {
   const { notaId } = await params;
   const supabase = await createClient();
@@ -15,18 +22,36 @@ export default async function NotaFiscalPage({ params }: { params: Promise<{ not
   const { data: nota } = await supabase
     .from("notas_fiscais_abastecimento")
     .select(
-      "id, numero_nf, serie_nf, chave_acesso, data_emissao, cnpj_emitente, nome_emitente, cnpj_destinatario, nome_destinatario, produto_nome_xml, produto_codigo_anp, produto_descricao_anp, quantidade, valor_unitario, valor_total, abastecimento_id"
+      "id, numero_nf, serie_nf, chave_acesso, data_emissao, cnpj_emitente, nome_emitente, cnpj_destinatario, nome_destinatario, produto_nome_xml, produto_codigo_anp, produto_descricao_anp, quantidade, valor_unitario, valor_total, abastecimento_id, abastecimento_externo_id"
     )
     .eq("id", notaId)
     .maybeSingle();
 
   if (!nota) notFound();
 
-  const { data: abastecimento } = await supabase
-    .from("profrotas_abastecimentos")
-    .select("data_abastecimento, veiculo_placa, motorista_nome")
-    .eq("id", nota.abastecimento_id)
-    .maybeSingle();
+  const abastecimento =
+    nota.abastecimento_id != null
+      ? (
+          await supabase
+            .from("profrotas_abastecimentos")
+            .select("data_abastecimento, veiculo_placa, motorista_nome")
+            .eq("id", nota.abastecimento_id)
+            .maybeSingle()
+        ).data
+      : nota.abastecimento_externo_id != null
+        ? (
+            await supabase
+              .from("abastecimentos_externos")
+              .select("data_abastecimento, placa, motorista_nome")
+              .eq("id", nota.abastecimento_externo_id)
+              .maybeSingle()
+          ).data
+        : null;
+  const abastecimentoVeiculoPlaca = abastecimento
+    ? "veiculo_placa" in abastecimento
+      ? abastecimento.veiculo_placa
+      : abastecimento.placa
+    : null;
 
   return (
     <div>
@@ -97,7 +122,7 @@ export default async function NotaFiscalPage({ params }: { params: Promise<{ not
         valorUnitario={nota.valor_unitario}
         valorTotal={nota.valor_total}
         abastecimentoData={abastecimento ? formatarDataBr(abastecimento.data_abastecimento) : "—"}
-        veiculoPlaca={abastecimento?.veiculo_placa ?? null}
+        veiculoPlaca={abastecimentoVeiculoPlaca}
         motoristaNome={abastecimento?.motorista_nome ?? null}
       />
     </div>

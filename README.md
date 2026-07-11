@@ -6535,3 +6535,80 @@ meio de pagamento" da Fase 27.133, até então só em `/financeiro`, do lado do 
   valor por provedor, mesmo período selecionado no topo da tela — De Hoje/7 dias/mês/etc.),
   consultando `abastecimentos_unificado` filtrada por `posto_cnpj = CNPJ do posto`. Mesmo padrão
   visual das outras telas (badges de provedor), sem separar PróFrotas dos demais.
+
+## Fase 27.136 — meios de pagamento externos entram em cobrança, NF-e e ajustes
+
+Pedido do Daniel, escalando a Fase 27.135: "Estes abastecimentos com meios de pagamento
+diferentes entram em todos os mecanismos de cobranca, de notas fiscais, de ajustes, de
+negociacoes, entre outros". Perguntado quem cobra o cliente quando o meio de pagamento é externo
+(o provedor, como Valecard/TicketLog, já é ele mesmo uma rede de pagamento), a resposta inicial
+apontava pro provedor já cobrar — mas o Daniel corrigiu isso na sequência: **"O posto cobra do
+cliente sobre abastecimentos de outras modalidades de pagamentos, assim como notas fiscais, o
+posto faz o upload das notas fiscais destes abastecimentos"**. Ou seja: pra FNI, um abastecimento
+Valecard/RedeFrota/TicketLog/Veloe é faturado, tem NF-e e pode ter ajuste **exatamente como um
+PróFrotas** — só muda de qual das 2 tabelas-fonte (`profrotas_abastecimentos` ou
+`abastecimentos_externos`) o registro vem.
+
+**Desafio técnico central**: as duas tabelas-fonte têm sequências de `id` (bigint) **independentes**
+— o "abastecimento 31" da PróFrotas e o "abastecimento 31" da Valecard são linhas totalmente
+diferentes que só coincidem de número por acaso. Reaproveitar a mesma coluna `abastecimento_id`
+nas tabelas que referenciam abastecimento (`notas_fiscais_abastecimento`,
+`ajustes_abastecimentos`, `notas_fiscais_pendencias`) arriscaria vincular a NF-e errada. Resolvido
+com o padrão: coluna original (`abastecimento_id`) virou opcional, nova coluna
+(`abastecimento_externo_id`) foi adicionada apontando pra `abastecimentos_externos`, e um
+`CHECK (num_nonnulls(abastecimento_id, abastecimento_externo_id) = 1)` garante em nível de banco
+que sempre exatamente um dos dois está preenchido — nunca os dois, nunca nenhum.
+
+- **Schema**: `abastecimentos_externos` ganhou `fatura_posto_id` (mesmo papel do já existente em
+  `profrotas_abastecimentos`). `notas_fiscais_abastecimento` e `ajustes_abastecimentos` ganharam
+  `abastecimento_externo_id` + o CHECK acima (`abastecimento_id` virou opcional nas duas);
+  `ajustes_abastecimentos` manteve o mesmo índice único parcial "só 1 ajuste em aberto por vez",
+  agora espelhado pro lado externo. `notas_fiscais_pendencias` ganhou `abastecimento_externo_id` e
+  `provedor` (tabela de log, sem constraints).
+- **NF-e (matching + inserção)**: `_candidatos_nota_fiscal_core` (usada pelas 2 RPCs públicas de
+  busca) agora faz UNION ALL entre um ramo PróFrotas (lógica inalterada) e um ramo externos
+  (mesma janela de data ±1-2 dias, mesma tolerância de quantidade/valor, casando pelo CNPJ do
+  posto e pela empresa do cliente). `_inserir_nota_fiscal_core` ganhou um parâmetro `p_provedor` —
+  com ele, sabe em qual das 2 tabelas validar/gravar. Testado ponta a ponta com dados reais: busca
+  de candidato (inclusive caso ambíguo, cruzando as 2 fontes) e inserção completa retornando o id
+  da nota gravada com `abastecimento_externo_id` preenchido e `abastecimento_id` nulo.
+- **Robô de fechamento de fatura** (`gerar_faturas_postos_robo`): passou a somar também os
+  abastecimentos de `abastecimentos_externos` do período fechado (mesma regra da Fase 27.105 — só
+  entra quem já tem NF-e), e a marcar `fatura_posto_id` nos dois lados. **Bug pego em teste manual
+  antes de ir pro cron**: a 1ª versão usava `sum(litros)` (nome da coluna só na VIEW
+  `abastecimentos_unificado`) em vez do nome real da coluna na tabela base (`quantidade`) —
+  corrigido antes de qualquer execução real, sem impacto em fatura nenhuma.
+- **Ajustes**: `decidir_ajuste_abastecimento` (aplica um ajuste aceito direto no registro) agora
+  também atualiza `abastecimentos_externos` quando o ajuste for de um abastecimento externo,
+  mapeando os nomes de coluna equivalentes (`item_nome→combustivel`,
+  `item_quantidade/item_valor_total→quantidade/valor_total`). A tela que permite CRIAR um pedido
+  de ajuste continua só em `/abastecimentos/[id]`, que hoje só existe pro lado PróFrotas — **ainda
+  não há um jeito de abrir um ajuste pra um abastecimento externo pela interface** (o backend já
+  está pronto pra quando essa tela existir).
+- **Upload de NF-e** (`/notas-fiscais/actions.ts`, `/api/integracoes/notas-fiscais`,
+  `UploadNotaFiscal.tsx`): o fluxo inteiro (Server Action usada pela tela do posto e a rota de API
+  usada por integrações de ERP) passou a receber/devolver `provedor` junto do id do abastecimento
+  em cada etapa — busca de candidato, escolha manual quando ambíguo, inserção final. Quando há mais
+  de 1 candidato batendo com a NF-e, a tela agora mostra o provedor de cada opção (`[PróFrotas]`,
+  `[Valecard]`, etc.) pro posto escolher certo — antes disso seria possível vincular à linha errada
+  se dois provedores tivessem um "id" coincidente. Caminho de armazenamento do XML no Storage
+  passou a ser prefixado por provedor (`${provedor}-${abastecimentoId}/...`) só pra não colidir
+  pastas de fontes diferentes. A rota de API mantém `provedor=profrotas` como padrão quando o
+  parâmetro não é enviado, pra não quebrar integrações de ERP já existentes de antes desta fase.
+- **Página de detalhe da NF-e** (`/notas-fiscais/[notaId]`) e a listagem "Abastecimentos
+  Fornecidos" do posto (`AbastecimentosPosto.tsx`) precisaram de ajustes pontuais pra lidar com
+  `abastecimento_id` agora opcional: a página de detalhe passou a consultar
+  `abastecimentos_externos` quando for o caso (mesma lógica de `buscarResumoAbastecimento` em
+  `actions.ts`); a listagem do posto — que é só do lado PróFrotas — passou a filtrar
+  explicitamente as NF-e sem `abastecimento_id` (que agora podem existir, mas são de outro
+  provedor e não interessam ali).
+- **Deixado de fora desta fase, sinalizado como próximo passo**: (1) tela pra abrir um pedido de
+  ajuste em cima de um abastecimento externo (ver item "Ajustes" acima); (2) a listagem
+  `/notas-fiscais` e a RPC `abastecimentos_com_status_nota_fiscal` por trás dela (usada também nos
+  badges de status de NF-e da tela do posto) — sua busca por texto hoje é construída em cima do
+  `codigo_abastecimento` de 10 dígitos (só existe pro lado PróFrotas), reescrita maior e separada.
+- Validado com `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterados. Testado
+  direto no banco: matching cross-provedor com caso ambíguo real, inserção completa de NF-e externa
+  (conferido o registro gravado com `abastecimento_externo_id` certo e `abastecimento_id` nulo),
+  agregação do robô de fatura pro lado externo, e uma execução real do robô sem erro (fechamento
+  ainda não aconteceu porque o ciclo de teste não tinha fechado — comportamento esperado).
