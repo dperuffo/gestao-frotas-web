@@ -129,6 +129,11 @@ const menuAdministracao = [
   // menu do cliente sem nenhuma ação que ele pudesse de fato realizar ali —
   // movido pra Administração, junto de Grupo Econômico/Assinaturas/etc.
   { href: "/rede-postos", label: "🔗 Rede de Postos" },
+  // Fase 27.137 — fila de revisão dos possíveis duplicados sinalizados pela
+  // checagem de "Meu Posto" contra a base ANP (endereço/coordenadas muito
+  // próximos de outro posto, CNPJ diferente) — nunca bloqueia o posto, só
+  // sinaliza pra um admin decidir aqui.
+  { href: "/postos-duplicados", label: "🔍 Possíveis Duplicados (Postos)" },
   // Fase 27.86 — parâmetros globais do sistema (hoje só o timeout de
   // logout por inatividade; ver /configuracoes).
   { href: "/configuracoes", label: "⚙️ Configurações do Sistema" },

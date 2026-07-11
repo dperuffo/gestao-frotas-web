@@ -6671,6 +6671,24 @@ FNI").
   latitude/longitude (com botão "Usar minha localização", via Geolocation API do navegador — só
   preenche os campos, o posto ainda pode ajustar à mão antes de salvar). Mostra o `anp_status`
   atual como badge, e o resultado da última verificação depois de salvar.
-- **Deixado de fora desta fase, sinalizado como próximo passo**: tela de admin pra revisar a fila
-  `postos_gf_possiveis_duplicados` (descartar ou confirmar duplicata).
 - Validado com `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterados.
+
+## Fase 27.137b — fila de revisão de possíveis duplicados (admin)
+
+Continuação direta da Fase 27.137: tela `/postos-duplicados` (novo item em Administração, "🔍
+Possíveis Duplicados (Postos)") lista os registros `pendente` de `postos_gf_possiveis_duplicados`,
+lado a lado — o posto que se auto-cadastrou em "Meu Posto" (nome, CNPJ) e o candidato a duplicata
+(da base ANP ou de `postos_gf` de outro dono, resolvido em 2 consultas em lote pelos ids/CNPJs
+coletados, não 1 consulta por linha), com a distância estimada em metros. Dois botões: "Não é
+duplicata" (marca `descartado`) e "Confirmar duplicata" (marca `confirmado_duplicata`) — nenhum dos
+dois faz merge/exclusão automática de registro, é só a decisão registrada; resolver de fato (unificar
+ou remover um cadastro) continua manual, fora de escopo desta fase. RLS de
+`postos_gf_possiveis_duplicados` já restringia UPDATE a `perfil_usuario_atual() = 'admin'` (definida
+na Fase 27.137), então as duas Server Actions usam o client autenticado normal, sem precisar de RPC
+própria. Mesmo padrão de guarda de acesso (`perfil !== "admin"` → tela de acesso restrito) de
+`/avaliacoes`/`/inteligencia-rede`.
+
+Testado ponta a ponta com o dado real gerado durante os testes da RPC na Fase 27.137 (Posto Teste 2
+Ltda, candidato a 11,1m de um posto real da ANP em Cruzeiro do Sul/AC) — confirmado que a consulta da
+tela junta certo o posto recém-cadastrado com o candidato de duplicidade. Validado com `npx tsc
+--noEmit` e `npx eslint` limpos.
