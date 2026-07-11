@@ -953,39 +953,74 @@ export async function buscarDetalhePostoParaMapaAcao(cnpj: string): Promise<Deta
     .select("cnpj, razao_social, municipio, uf, bandeira, empresa_id")
     .eq("cnpj", cnpj)
     .maybeSingle();
-  if (!posto) return null;
 
-  const { data: precosBrutos } = await supabase
-    .from("historico_precos")
-    .select("combustivel, preco, data_ref")
+  if (posto) {
+    const { data: precosBrutos } = await supabase
+      .from("historico_precos")
+      .select("combustivel, preco, data_ref")
+      .eq("cnpj", cnpj)
+      .order("data_ref", { ascending: false });
+
+    // Mantém só o registro mais recente por produto (ex: "Diesel S-10 Comum"
+    // e "Diesel S-10 Aditivado" são produtos DIFERENTES, com preços
+    // diferentes — não podem ser colapsados num só, mesmo que a ANP agrupe
+    // os dois na mesma categoria de referência "OLEO DIESEL S10" pra fins de
+    // comparação). `precosBrutos` já vem ordenado do mais recente pro mais
+    // antigo, então o primeiro visto por produto é o vigente.
+    const vistos = new Set<string>();
+    const precosGf = (precosBrutos ?? []).filter((p) => {
+      if (vistos.has(p.combustivel)) return false;
+      vistos.add(p.combustivel);
+      return true;
+    });
+
+    const precos = await resolverPrecosVigentes(
+      supabase,
+      { cnpj: posto.cnpj, empresaPostoId: posto.empresa_id, municipio: posto.municipio, uf: posto.uf },
+      precosGf
+    );
+
+    return {
+      cnpj: posto.cnpj,
+      razaoSocial: posto.razao_social,
+      municipio: posto.municipio,
+      uf: posto.uf,
+      bandeira: posto.bandeira,
+      precos,
+    };
+  }
+
+  // Fase 27.140 — achado real: depois de passar a mostrar postos da base
+  // ANP no mapa (mesclados com postos_gf, ver comentário acima de
+  // carregarPostosAnpPorFiltro), clicar num marcador que só existe na base
+  // ANP caía direto no "Posto não encontrado" do popup — esta função só
+  // olhava postos_gf. Fallback pra anp_postos: mesma cascata de preço
+  // (resolverPrecosVigentes), sem CNPJ de meios de pagamento nem "Meus
+  // Preços" (não fazem sentido pra um posto que não é cliente da
+  // plataforma) — só a estimativa oficial ANP por município/estado/Brasil.
+  const { data: postoAnp } = await supabase
+    .from("anp_postos")
+    .select("cnpj, razao_social, municipio, uf, bandeira")
     .eq("cnpj", cnpj)
-    .order("data_ref", { ascending: false });
-
-  // Mantém só o registro mais recente por produto (ex: "Diesel S-10 Comum"
-  // e "Diesel S-10 Aditivado" são produtos DIFERENTES, com preços
-  // diferentes — não podem ser colapsados num só, mesmo que a ANP agrupe
-  // os dois na mesma categoria de referência "OLEO DIESEL S10" pra fins de
-  // comparação). `precosBrutos` já vem ordenado do mais recente pro mais
-  // antigo, então o primeiro visto por produto é o vigente.
-  const vistos = new Set<string>();
-  const precosGf = (precosBrutos ?? []).filter((p) => {
-    if (vistos.has(p.combustivel)) return false;
-    vistos.add(p.combustivel);
-    return true;
-  });
+    .maybeSingle();
+  // anp_postos.cnpj é opcional na base pública (alguns registros antigos
+  // não têm) — mas como acabamos de filtrar por .eq("cnpj", cnpj) com um
+  // valor não-nulo, só cai aqui um registro que TEM cnpj; a checagem é só
+  // pra o TypeScript entender isso (a coluna é nullable no schema).
+  if (!postoAnp || !postoAnp.cnpj) return null;
 
   const precos = await resolverPrecosVigentes(
     supabase,
-    { cnpj: posto.cnpj, empresaPostoId: posto.empresa_id, municipio: posto.municipio, uf: posto.uf },
-    precosGf
+    { cnpj: postoAnp.cnpj, empresaPostoId: null, municipio: postoAnp.municipio, uf: postoAnp.uf },
+    []
   );
 
   return {
-    cnpj: posto.cnpj,
-    razaoSocial: posto.razao_social,
-    municipio: posto.municipio,
-    uf: posto.uf,
-    bandeira: posto.bandeira,
+    cnpj: postoAnp.cnpj,
+    razaoSocial: postoAnp.razao_social,
+    municipio: postoAnp.municipio,
+    uf: postoAnp.uf,
+    bandeira: postoAnp.bandeira,
     precos,
   };
 }

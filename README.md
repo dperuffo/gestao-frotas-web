@@ -6864,3 +6864,13 @@ sobreposição de CNPJ com o posto próprio desse cliente — confirmando que a 
 até 1.001 postos (limite de 1.000 da base ANP + o próprio), todos com preço resolvido pela cascata
 oficial ANP do Paraná (dados de 2026-07-11, a mais recente disponível). Validado com `npx tsc
 --noEmit` e `npx eslint` limpos em todos os arquivos alterados.
+
+**Achado adicional durante o teste real** (print do Daniel: card "Posto não encontrado" ao clicar
+num marcador da base ANP no mapa) — `buscarDetalhePostoParaMapaAcao` (o card rico que abre ao
+clicar num posto no mapa) só olhava `postos_gf`; um posto que só existe na base ANP (a maioria,
+agora que a busca mescla as duas) caía direto no "não encontrado". Corrigido com o mesmo padrão de
+fallback: se não achar em `postos_gf`, busca em `anp_postos` pelo CNPJ e resolve o preço pela mesma
+cascata (`resolverPrecosVigentes`), sem os níveis de meios de pagamento/"Meus Preços" fazerem menos
+sentido — na prática o nível de meios de pagamento continua rodando (um posto pode ter transação real
+registrada mesmo sem cadastro formal em `postos_gf`), só os níveis específicos de cliente (Meus
+Preços) ficam de fora por não terem `empresaPostoId`.
