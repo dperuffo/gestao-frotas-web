@@ -315,11 +315,17 @@ export function FormRoteirizacao({
               ainda consegue uma roteirização utilizável: os candidatos vieram
               da base pública da ANP (~35 mil postos) em vez da rede própria.
               Mensagem informativa, não de erro, porque o resultado É válido —
-              só explica a origem dos dados e sugere o próximo passo. */}
+              só explica a origem dos dados e sugere o próximo passo.
+              Fase 27.140 — antes só aparecia quando a rede própria estava
+              zerada no corredor (fallback); agora os dois conjuntos são
+              sempre mesclados, então a mensagem também cobre o caso misto
+              (algumas paradas próprias, outras "Base ANP" — sinalizadas
+              individualmente na tabela de abastecimento). */}
           {resultado.usouFallbackAnp && (
             <p className="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
-              Sua empresa ainda não tem postos próprios cadastrados nesse corredor — os preços abaixo são a
-              estimativa oficial da ANP (não um preço negociado). Cadastre os postos do seu relacionamento em{" "}
+              Algumas das paradas sugeridas (marcadas &quot;Base ANP&quot; na tabela abaixo) vêm da base pública
+              nacional, com a estimativa oficial de preço da ANP — não um preço negociado. Cadastre mais postos do
+              seu relacionamento em{" "}
               <Link href="/postos" className="font-medium underline">
                 Postos Revendedores
               </Link>{" "}
@@ -394,7 +400,17 @@ export function FormRoteirizacao({
                     {resultado.paradas.map((p, i) => (
                       <tr key={p.cnpj}>
                         <td className="py-2.5 pr-4 align-top text-slate-500">{i + 1}</td>
-                        <td className="py-2.5 pr-4 align-top text-slate-700">{p.label}</td>
+                        <td className="py-2.5 pr-4 align-top text-slate-700">
+                          {p.label}
+                          {/* Fase 27.140 — sinaliza quando a parada veio da
+                              base pública ANP (preço estimado, não
+                              negociado) em vez da rede própria do cliente. */}
+                          {p.origem === "anp" && (
+                            <span className="ml-1.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
+                              Base ANP
+                            </span>
+                          )}
+                        </td>
                         <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">{p.km.toFixed(0)} km</td>
                         <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
                           {MOTIVO_LABEL[p.motivo] ?? p.motivo}

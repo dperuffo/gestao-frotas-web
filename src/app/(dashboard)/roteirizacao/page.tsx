@@ -57,11 +57,16 @@ export default async function RoteirizacaoUfPage({
           carregar a rede própria de postos ANTES de conseguir consultar
           rota/posto. Não é verdade — a consulta já funciona com a base
           pública de preços ANP por UF/município. Aviso informativo, sempre
-          visível (não é um erro nem bloqueia nada). */}
+          visível (não é um erro nem bloqueia nada).
+          Fase 27.140 — a partir daqui o resultado sempre MESCLA os postos
+          próprios (postos_gf) com a base pública ANP (coluna "Fonte" na
+          tabela abaixo mostra de onde veio cada um). */}
       <p className="mb-4 rounded-lg bg-blue-50 px-4 py-2.5 text-xs text-blue-800">
         💡 Esta consulta já funciona com a base pública de preços ANP, mesmo sem nenhum posto
-        próprio cadastrado. Carregar a rede negociada do cliente (em Postos Revendedores) é
-        opcional e traz os preços realmente negociados.
+        próprio cadastrado — o resultado mistura os dois: postos próprios do cliente (preço
+        negociado/importado) e a base pública nacional (estimativa oficial ANP). Carregar a rede
+        negociada do cliente (em Postos Revendedores) é opcional e traz mais preços realmente
+        negociados.
       </p>
 
       <AbasRoteirizacao ativo="uf" />
@@ -185,7 +190,8 @@ export default async function RoteirizacaoUfPage({
                   <th className="py-2 pr-4">Razão social</th>
                   <th className="whitespace-nowrap py-2 pr-4">Bandeira</th>
                   <th className="whitespace-nowrap py-2 pr-4">Município</th>
-                  <th className="py-2">Preços registrados</th>
+                  <th className="py-2 pr-4">Preços registrados</th>
+                  <th className="whitespace-nowrap py-2">Fonte</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -199,8 +205,24 @@ export default async function RoteirizacaoUfPage({
                     <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
                       {p.municipio ?? "—"} - {p.uf ?? "—"}
                     </td>
-                    <td className="py-2.5 align-top">
+                    <td className="py-2.5 pr-4 align-top">
                       <PrecosChips precos={p.precos} />
+                    </td>
+                    <td className="py-2.5 align-top whitespace-nowrap">
+                      {/* Fase 27.140 — transparência sobre a origem de cada
+                          posto: "Próprio" veio de postos_gf do cliente
+                          (preço negociado/importado); "Base ANP" veio da
+                          base pública nacional (preço é a estimativa
+                          oficial da ANP, não negociado). */}
+                      {p.origem === "anp" ? (
+                        <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
+                          Base ANP
+                        </span>
+                      ) : (
+                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+                          Próprio
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -14,6 +14,11 @@ export type CandidatoAbastecimento = {
   lat: number;
   lon: number;
   bandeira?: string | null;
+  uf?: string | null;
+  // Fase 27.140 — "proprio" (postos_gf do cliente, preço negociado/importado)
+  // ou "anp" (base pública nacional, preço é a estimativa oficial ANP) — só
+  // informativo pra UI, não entra em nenhum peso/cálculo aqui.
+  origem?: "proprio" | "anp";
 };
 
 export type ParadaSugerida = CandidatoAbastecimento & {

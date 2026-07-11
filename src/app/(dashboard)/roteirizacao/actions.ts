@@ -13,7 +13,7 @@ import {
   type SugestaoGeocoding,
 } from "@/lib/geo";
 import { calcularScorePosto, PERFIS_PESO, type ScorePosto } from "@/lib/roteirizacaoScore";
-import { otimizarAbastecimento, type ParadaSugerida } from "@/lib/roteirizacaoAlgoritmo";
+import { otimizarAbastecimento, type ParadaSugerida, type CandidatoAbastecimento } from "@/lib/roteirizacaoAlgoritmo";
 import { resolverPrecosVigentes, type PrecoResolvido } from "@/lib/precoVigente";
 import { PRODUTO_PARA_CATEGORIA_ANP, UF_PARA_ESTADO_ANP } from "@/lib/constants";
 import { normalizarTexto } from "@/lib/utils";
@@ -53,6 +53,11 @@ export type PostoComScore = {
   score: ScorePosto;
   desvioKm?: number;
   kmNaRota?: number;
+  // Fase 27.140 — "proprio" (postos_gf do cliente) ou "anp" (base pública
+  // nacional, sem vínculo com o cliente — preço é a estimativa oficial ANP,
+  // não um preço negociado). Ver comentário completo em
+  // carregarPostosAnpPorFiltro/montarPostosAnp mais abaixo.
+  origem: "proprio" | "anp";
 };
 
 async function carregarPostosComCoordenadas(
@@ -100,6 +105,177 @@ async function carregarPrecosPorCnpj(supabase: Awaited<ReturnType<typeof createC
   return mapa;
 }
 
+// Fase 27.140 — pedido do Daniel: "As consultas de roteirização estão
+// sendo realizadas somente nos postos_gf. As consultas precisam trazer os
+// postos ANP também" (confirmado: as 3 consultas — Por UF/Município,
+// Consulta por Posto e Roteirizador Inteligente). postos_gf é a base
+// PRÓPRIA do cliente (planilha/self-service/meios de pagamento — hoje só
+// alguns milhares de linhas no total, distribuídas entre poucos clientes);
+// anp_postos é a base pública nacional da ANP (~35 mil postos). Até aqui só
+// o Roteirizador Inteligente tinha algum uso da base ANP, e mesmo assim só
+// como FALLBACK quando a rede própria não tinha NENHUM candidato no
+// corredor (Fase 27.17) — as outras 2 consultas nunca chegavam a olhar pra
+// anp_postos, apesar do aviso na tela dizer que "esta consulta já funciona
+// com a base pública de preços ANP". As 3 funções abaixo passam a MESCLAR
+// sempre os dois conjuntos (não só quando postos_gf está vazio), com dedup
+// por CNPJ normalizado — se o mesmo posto aparece nas duas bases (comum
+// depois da Fase 27.137, que casa o cadastro do posto com anp_postos), fica
+// só a versão postos_gf (mais rica: preço negociado/importado + os 10
+// campos de serviço, que a base pública não tem).
+
+// Todas as categorias de combustível que a ANP usa no relatório oficial —
+// derivado do de-para (PRODUTO_PARA_CATEGORIA_ANP) pra nunca ficar
+// dessincronizado dele.
+const CATEGORIAS_ANP = Array.from(new Set(Object.values(PRODUTO_PARA_CATEGORIA_ANP)));
+
+// Limite de segurança pra consulta de anp_postos por UF sem município — a
+// base pública tem estados com mais de 4 mil postos (ex: MG), e não faz
+// sentido carregar tudo isso numa tela só; o cliente pode sempre refinar
+// com o município.
+const LIMITE_POSTOS_ANP = 1000;
+
+type PostoAnpBruto = {
+  cnpj: string | null;
+  razao_social: string | null;
+  municipio: string | null;
+  uf: string | null;
+  bandeira: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+async function carregarPostosAnpPorFiltro(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  filtro: { uf?: string; municipioContem?: string }
+): Promise<PostoAnpBruto[]> {
+  let query = supabase
+    .from("anp_postos")
+    .select("cnpj, razao_social, municipio, uf, bandeira, latitude, longitude")
+    .eq("ativo", true)
+    .not("latitude", "is", null)
+    .not("longitude", "is", null)
+    .not("cnpj", "is", null);
+  if (filtro.uf) query = query.eq("uf", filtro.uf);
+  if (filtro.municipioContem) query = query.ilike("municipio", `%${filtro.municipioContem}%`);
+
+  const { data } = await query.limit(LIMITE_POSTOS_ANP);
+  return data ?? [];
+}
+
+type PrecosAnpEmLote = {
+  porMunicipio: Map<string, Map<string, { preco: number; dataRef: string }>>; // chave: `${municipioNorm}__${estadoAnp}`
+  porEstado: Map<string, Map<string, { preco: number; dataRef: string }>>; // chave: estadoAnp
+  brasil: Map<string, { preco: number; dataRef: string }>;
+};
+
+// Preço oficial ANP (todas as categorias de uma vez) em lote, pros estados
+// informados — mesma cascata município → estado → Brasil já usada em
+// resolverPrecosVigentes (src/lib/precoVigente.ts), só que pra MUITOS
+// postos ao mesmo tempo (evita 1 consulta por posto).
+async function carregarPrecosAnpEmLote(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  estadosAnp: string[]
+): Promise<PrecosAnpEmLote> {
+  const porMunicipio: PrecosAnpEmLote["porMunicipio"] = new Map();
+  const porEstado: PrecosAnpEmLote["porEstado"] = new Map();
+  const brasil: PrecosAnpEmLote["brasil"] = new Map();
+
+  if (estadosAnp.length > 0) {
+    const { data: municData } = await supabase
+      .from("anp_precos_referencia")
+      .select("municipio, estado, produto, preco_medio, data_final")
+      .eq("nivel", "municipio")
+      .in("estado", estadosAnp)
+      .in("produto", CATEGORIAS_ANP)
+      .order("data_final", { ascending: false });
+    for (const l of municData ?? []) {
+      if (l.preco_medio == null) continue;
+      const chave = `${l.municipio}__${l.estado}`;
+      const mapa = porMunicipio.get(chave) ?? new Map();
+      if (!mapa.has(l.produto)) mapa.set(l.produto, { preco: l.preco_medio, dataRef: l.data_final });
+      porMunicipio.set(chave, mapa);
+    }
+
+    const { data: estData } = await supabase
+      .from("anp_precos_referencia")
+      .select("estado, produto, preco_medio, data_final")
+      .eq("nivel", "estado")
+      .in("estado", estadosAnp)
+      .in("produto", CATEGORIAS_ANP)
+      .order("data_final", { ascending: false });
+    for (const l of estData ?? []) {
+      if (l.preco_medio == null) continue;
+      const mapa = porEstado.get(l.estado) ?? new Map();
+      if (!mapa.has(l.produto)) mapa.set(l.produto, { preco: l.preco_medio, dataRef: l.data_final });
+      porEstado.set(l.estado, mapa);
+    }
+  }
+
+  const { data: brasilData } = await supabase
+    .from("anp_precos_referencia")
+    .select("produto, preco_medio, data_final")
+    .eq("nivel", "brasil")
+    .in("produto", CATEGORIAS_ANP)
+    .order("data_final", { ascending: false });
+  for (const l of brasilData ?? []) {
+    if (l.preco_medio == null) continue;
+    if (!brasil.has(l.produto)) brasil.set(l.produto, { preco: l.preco_medio, dataRef: l.data_final });
+  }
+
+  return { porMunicipio, porEstado, brasil };
+}
+
+// Monta os PostoComScore dos postos ANP que ainda não estão no conjunto
+// (dedup por CNPJ normalizado, contra os postos_gf já carregados) — preço
+// de cada categoria vem da cascata oficial ANP; sem nenhum dos 10 campos de
+// serviço, porque a base pública não tem essa informação (score cai pro
+// "sem serviço nenhum marcado", igual ao fallback que já existia no
+// Roteirizador Inteligente).
+function montarPostosAnp(
+  postosAnp: PostoAnpBruto[],
+  cnpjsJaPresentes: Set<string>,
+  precosAnp: PrecosAnpEmLote
+): PostoComScore[] {
+  const resultado: PostoComScore[] = [];
+  for (const p of postosAnp) {
+    if (!p.cnpj || p.latitude == null || p.longitude == null) continue;
+    const cnpjNorm = p.cnpj.replace(/\D/g, "");
+    if (!cnpjNorm || cnpjsJaPresentes.has(cnpjNorm)) continue;
+    cnpjsJaPresentes.add(cnpjNorm);
+
+    const estadoAnp = p.uf ? UF_PARA_ESTADO_ANP[p.uf.toUpperCase()] : undefined;
+    const municipioNorm = p.municipio ? normalizarTexto(p.municipio) : "";
+    const mapaMunicipio = estadoAnp ? precosAnp.porMunicipio.get(`${municipioNorm}__${estadoAnp}`) : undefined;
+    const mapaEstado = estadoAnp ? precosAnp.porEstado.get(estadoAnp) : undefined;
+
+    const precos: { combustivel: string; preco: number; dataRef: string }[] = [];
+    for (const categoria of CATEGORIAS_ANP) {
+      const achado = mapaMunicipio?.get(categoria) ?? mapaEstado?.get(categoria) ?? precosAnp.brasil.get(categoria);
+      if (achado) precos.push({ combustivel: categoria, preco: achado.preco, dataRef: achado.dataRef });
+    }
+
+    const precoMedio = precos.length ? precos.reduce((s, x) => s + x.preco, 0) / precos.length : null;
+    resultado.push({
+      cnpj: cnpjNorm,
+      razaoSocial: p.razao_social,
+      municipio: p.municipio,
+      uf: p.uf,
+      bandeira: p.bandeira,
+      lat: Number(p.latitude),
+      lon: Number(p.longitude),
+      precos,
+      score: calcularScorePosto({
+        precoPosto: precoMedio,
+        precoReferenciaAnp: null,
+        servicosAtivos: 0,
+        servicosTotal: CAMPOS_SERVICO.length,
+      }),
+      origem: "anp",
+    });
+  }
+  return resultado;
+}
+
 // ── Modo "Por UF/Município" ──────────────────────────────────────────
 export async function buscarPostosPorUfAcao(params: {
   empresaId: string;
@@ -111,14 +287,13 @@ export async function buscarPostosPorUfAcao(params: {
     uf: params.uf,
     municipioContem: params.municipio,
   });
-  if (postos.length === 0) return [];
 
   const precosPorCnpj = await carregarPrecosPorCnpj(
     supabase,
     postos.map((p) => p.cnpj)
   );
 
-  return postos.map((p) => {
+  const resultadoGf: PostoComScore[] = postos.map((p) => {
     const precos = precosPorCnpj.get(p.cnpj) ?? [];
     const precoMedio = precos.length ? precos.reduce((s, x) => s + x.preco, 0) / precos.length : null;
     return {
@@ -136,8 +311,31 @@ export async function buscarPostosPorUfAcao(params: {
         servicosAtivos: contarServicos(p),
         servicosTotal: CAMPOS_SERVICO.length,
       }),
+      origem: "proprio",
     };
   });
+
+  // Fase 27.140 — mescla com a base pública ANP (ver comentário acima de
+  // carregarPostosAnpPorFiltro). Só busca ANP quando o filtro tem algo
+  // (UF ou município) — igual ao comportamento de antes pra postos_gf, que
+  // também exige pelo menos a UF no formulário desta tela.
+  if (params.uf || params.municipio) {
+    const cnpjsJaPresentes = new Set(resultadoGf.map((p) => p.cnpj.replace(/\D/g, "")));
+    const postosAnpBrutos = await carregarPostosAnpPorFiltro(supabase, {
+      uf: params.uf,
+      municipioContem: params.municipio,
+    });
+    const estadosAnp = Array.from(
+      new Set(
+        postosAnpBrutos.map((p) => (p.uf ? UF_PARA_ESTADO_ANP[p.uf.toUpperCase()] : undefined)).filter((x): x is string => !!x)
+      )
+    );
+    const precosAnp = await carregarPrecosAnpEmLote(supabase, estadosAnp);
+    const resultadoAnp = montarPostosAnp(postosAnpBrutos, cnpjsJaPresentes, precosAnp);
+    return [...resultadoGf, ...resultadoAnp];
+  }
+
+  return resultadoGf;
 }
 
 // ── Modo "Consulta por Posto" ────────────────────────────────────────
@@ -160,15 +358,15 @@ export async function buscarPostoPorTermoAcao(params: {
 
   query = ehCnpj ? query.ilike("cnpj", `%${termoDigitos}%`) : query.ilike("razao_social", `%${params.termo}%`);
 
-  const { data: postos } = await query.limit(30);
-  if (!postos || postos.length === 0) return [];
+  const { data: postosBrutos } = await query.limit(30);
+  const postos = postosBrutos ?? [];
 
   const precosPorCnpj = await carregarPrecosPorCnpj(
     supabase,
     postos.map((p) => p.cnpj)
   );
 
-  return postos.map((p) => {
+  const resultadoGf: PostoComScore[] = postos.map((p) => {
     const precos = precosPorCnpj.get(p.cnpj) ?? [];
     const precoMedio = precos.length ? precos.reduce((s, x) => s + x.preco, 0) / precos.length : null;
     return {
@@ -186,8 +384,35 @@ export async function buscarPostoPorTermoAcao(params: {
         servicosAtivos: contarServicos(p),
         servicosTotal: CAMPOS_SERVICO.length,
       }),
+      origem: "proprio",
     };
   });
+
+  // Fase 27.140 — mesma busca (CNPJ ou nome) também na base pública ANP,
+  // mesclada com dedup por CNPJ (ver comentário acima de
+  // carregarPostosAnpPorFiltro/montarPostosAnp).
+  let queryAnp = supabase
+    .from("anp_postos")
+    .select("cnpj, razao_social, municipio, uf, bandeira, latitude, longitude")
+    .eq("ativo", true)
+    .not("latitude", "is", null)
+    .not("longitude", "is", null)
+    .not("cnpj", "is", null);
+  queryAnp = ehCnpj ? queryAnp.ilike("cnpj", `%${termoDigitos}%`) : queryAnp.ilike("razao_social", `%${params.termo}%`);
+  const { data: postosAnpBrutos } = await queryAnp.limit(30);
+
+  const cnpjsJaPresentes = new Set(resultadoGf.map((p) => p.cnpj.replace(/\D/g, "")));
+  const estadosAnp = Array.from(
+    new Set(
+      (postosAnpBrutos ?? [])
+        .map((p) => (p.uf ? UF_PARA_ESTADO_ANP[p.uf.toUpperCase()] : undefined))
+        .filter((x): x is string => !!x)
+    )
+  );
+  const precosAnp = await carregarPrecosAnpEmLote(supabase, estadosAnp);
+  const resultadoAnp = montarPostosAnp(postosAnpBrutos ?? [], cnpjsJaPresentes, precosAnp);
+
+  return [...resultadoGf, ...resultadoAnp];
 }
 
 export type ResultadoRotaCalculada = {
@@ -269,6 +494,7 @@ export async function calcularRotaEPostosAcao(params: {
         servicosAtivos: contarServicos(p),
         servicosTotal: CAMPOS_SERVICO.length,
       }),
+      origem: "proprio",
     };
   });
 
@@ -310,11 +536,13 @@ export type ResultadoRoteirizacao = {
   precoMedioGf: number | null;
   precoReferenciaAnp: number | null;
   ufReferencia: string | null;
-  // Fase 27.17 — true quando a empresa não tem postos próprios (postos_gf)
-  // com preço pro combustível escolhido nesse corredor, e os candidatos
-  // vieram da base pública anp_postos + estimativa oficial ANP em vez da
-  // rede própria do cliente (ver comentário mais abaixo em
-  // calcularRoteirizacaoAcao).
+  // Fase 27.17, ampliado na Fase 27.140 — true quando pelo menos 1 dos
+  // candidatos do corredor veio da base pública anp_postos (preço é a
+  // estimativa oficial ANP, não um preço negociado). Antes só ficava true
+  // quando a rede própria não tinha NENHUM candidato (fallback); agora os
+  // dois conjuntos são sempre mesclados, então também fica true quando a
+  // rede própria tem candidatos mas a base ANP completa com mais opções no
+  // mesmo corredor (ver comentário completo em calcularRoteirizacaoAcao).
   usouFallbackAnp: boolean;
 };
 
@@ -383,7 +611,7 @@ export async function calcularRoteirizacaoAcao(params: {
   // Só entram no algoritmo os postos que têm preço registrado para o
   // combustível escolhido do veículo — sem preço, não dá para pontuar nem
   // decidir se compensa parar ali.
-  let candidatos = candidatosBrutos
+  let candidatos: CandidatoAbastecimento[] = candidatosBrutos
     .map((p) => {
       const precoRegistrado = (precosPorCnpj.get(p.cnpj) ?? []).find(
         (x) => x.combustivel.toLowerCase() === params.veiculo.combustivel.toLowerCase()
@@ -406,6 +634,7 @@ export async function calcularRoteirizacaoAcao(params: {
         lon: p.lon as number,
         bandeira: p.bandeira,
         uf: p.uf as string | null,
+        origem: "proprio" as const,
       };
     })
     .filter((c): c is NonNullable<typeof c> => c !== null);
@@ -413,22 +642,34 @@ export async function calcularRoteirizacaoAcao(params: {
   // Fase 27.17 — achado real: cliente novo (sem nenhum posto próprio
   // cadastrado em postos_gf — só 1 empresa no banco tinha postos_gf
   // preenchido) não conseguia usar a Roteirização de jeito nenhum, mesmo
-  // sendo uma feature que não deveria depender de onboarding prévio. Quando
-  // a rede própria não tem NENHUM candidato com preço nesse corredor,
-  // busca no cadastro público da ANP (anp_postos, ~35 mil postos com
-  // coordenadas, sem vínculo de empresa) + a estimativa oficial de preço da
-  // ANP (município → estado → Brasil, mesma cascata de resolverPrecosVigentes
-  // — só que em lote aqui, porque são dezenas/centenas de candidatos de uma
+  // sendo uma feature que não deveria depender de onboarding prévio. Busca
+  // no cadastro público da ANP (anp_postos, ~35 mil postos com coordenadas,
+  // sem vínculo de empresa) + a estimativa oficial de preço da ANP
+  // (município → estado → Brasil, mesma cascata de resolverPrecosVigentes —
+  // só que em lote aqui, porque são dezenas/centenas de candidatos de uma
   // vez, não um posto só).
+  //
+  // Fase 27.140 — pedido do Daniel: antes só buscava ANP quando a rede
+  // própria não tinha NENHUM candidato no corredor (fallback); agora
+  // SEMPRE busca e mescla os dois conjuntos (dedup por CNPJ, priorizando o
+  // candidato "próprio" quando o mesmo posto aparece nas duas bases) — o
+  // Roteirizador Inteligente passa a considerar as duas fontes na mesma
+  // rota, não só uma ou outra.
   let usouFallbackAnp = false;
-  if (candidatos.length === 0) {
+  {
     const categoriaAnp = PRODUTO_PARA_CATEGORIA_ANP[params.veiculo.combustivel];
     if (categoriaAnp) {
+      // CNPJs já cobertos pelos candidatos "próprios" — a base ANP só
+      // completa o que a rede própria ainda não tem nesse corredor, nunca
+      // duplica o mesmo posto.
+      const cnpjsProprios = new Set(candidatos.map((c) => c.cnpj.replace(/\D/g, "")));
+
       const anpPostosBrutosPorBox = await Promise.all(
         boxesRota.map((box) =>
           supabase
             .from("anp_postos")
             .select("cnpj, razao_social, municipio, uf, bandeira, latitude, longitude")
+            .eq("ativo", true)
             .not("latitude", "is", null)
             .not("longitude", "is", null)
             .gte("latitude", box.minLat)
@@ -440,7 +681,10 @@ export async function calcularRoteirizacaoAcao(params: {
       );
       const anpPostosBrutos = Array.from(
         new Map(
-          anpPostosBrutosPorBox.flatMap((r) => r.data ?? []).map((p) => [p.cnpj ?? `${p.latitude}_${p.longitude}`, p])
+          anpPostosBrutosPorBox
+            .flatMap((r) => r.data ?? [])
+            .filter((p) => p.cnpj && !cnpjsProprios.has(p.cnpj.replace(/\D/g, "")))
+            .map((p) => [p.cnpj ?? `${p.latitude}_${p.longitude}`, p])
         ).values()
       );
 
@@ -502,7 +746,7 @@ export async function calcularRoteirizacaoAcao(params: {
         .maybeSingle();
       precoBrasil = brasilData?.preco_medio ?? null;
 
-      candidatos = candidatosAnpBrutos
+      const candidatosAnp = candidatosAnpBrutos
         .map((p) => {
           const estadoAnp = p.uf ? UF_PARA_ESTADO_ANP[p.uf.toUpperCase()] : undefined;
           const municipioNorm = p.municipio ? normalizarTexto(p.municipio) : "";
@@ -532,11 +776,14 @@ export async function calcularRoteirizacaoAcao(params: {
             lon: Number(p.longitude),
             bandeira: p.bandeira,
             uf: p.uf as string | null,
+            origem: "anp" as const,
           };
         })
         .filter((c): c is NonNullable<typeof c> => c !== null);
 
-      usouFallbackAnp = candidatos.length > 0;
+      // Mescla — não substitui — os candidatos "próprios" já encontrados.
+      candidatos = [...candidatos, ...candidatosAnp];
+      usouFallbackAnp = candidatosAnp.length > 0;
     }
   }
 

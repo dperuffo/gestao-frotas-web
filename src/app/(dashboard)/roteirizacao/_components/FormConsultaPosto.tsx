@@ -95,6 +95,7 @@ export function FormConsultaPosto({
                   <th className="whitespace-nowrap py-2 pr-4">CNPJ</th>
                   <th className="whitespace-nowrap py-2 pr-4">Município</th>
                   <th className="py-2 pr-4">Preços</th>
+                  <th className="whitespace-nowrap py-2 pr-4">Fonte</th>
                   <th className="py-2"></th>
                 </tr>
               </thead>
@@ -112,10 +113,27 @@ export function FormConsultaPosto({
                     <td className="py-2.5 pr-4 align-top">
                       <PrecosChips precos={p.precos} />
                     </td>
+                    <td className="py-2.5 pr-4 align-top whitespace-nowrap">
+                      {/* Fase 27.140 — ver comentário equivalente em
+                          roteirizacao/page.tsx. Posto "Base ANP" não tem
+                          cadastro em postos_gf, então não existe
+                          /postos/[cnpj] pra ele — sem link de detalhe. */}
+                      {p.origem === "anp" ? (
+                        <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
+                          Base ANP
+                        </span>
+                      ) : (
+                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+                          Próprio
+                        </span>
+                      )}
+                    </td>
                     <td className="py-2.5 align-top">
-                      <Link href={`/postos/${p.cnpj}`} className="whitespace-nowrap text-frota-600 hover:underline">
-                        Ver detalhe
-                      </Link>
+                      {p.origem === "proprio" && (
+                        <Link href={`/postos/${p.cnpj}`} className="whitespace-nowrap text-frota-600 hover:underline">
+                          Ver detalhe
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 ))}

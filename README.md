@@ -6821,3 +6821,46 @@ recém-criada com sucesso; renomear a própria Rede com sucesso; um usuário "es
 vínculo com a Rede) tentando renomear a mesma Rede — bloqueado silenciosamente pela RLS (0 linhas
 afetadas, sem erro, mesmo padrão de UPDATE filtrado por USING). Validado com `npx tsc --noEmit` e
 `npx eslint` limpos em todos os arquivos alterados.
+
+## Fase 27.140 — mesclar base ANP nas 3 consultas de Roteirização
+
+Achado do Daniel a partir de um print real da tela "Por UF/Município": buscando postos no Paraná,
+a consulta trazia só **1 posto** (o único cadastrado em `postos_gf` daquele cliente), mesmo o aviso
+da própria tela dizendo "Esta consulta já funciona com a base pública de preços ANP, mesmo sem
+nenhum posto próprio cadastrado" — o aviso estava certo na intenção, mas não na prática: nenhuma das
+3 consultas atuais (Por UF/Município, Consulta por Posto, Roteirizador Inteligente) de fato olhava
+para `anp_postos`. Só o Roteirizador Inteligente tinha algum uso da base ANP, e mesmo assim só como
+**fallback**: buscava lá apenas quando a rede própria não tinha *nenhum* candidato no corredor da
+rota (Fase 27.17) — bastava ter 1 candidato próprio pra base pública inteira ficar de fora.
+
+**Mudança**: as 3 consultas passam a **mesclar sempre** os dois conjuntos — `postos_gf` (base
+própria do cliente: planilha, self-service, meios de pagamento) e `anp_postos` (base pública
+nacional, ~35 mil postos) — em vez de usar só um ou só o outro. Dedup por CNPJ normalizado: se o
+mesmo posto aparece nas duas bases (comum depois da Fase 27.137, que casa o cadastro do posto com
+`anp_postos`), fica só a versão `postos_gf` (mais completa: preço negociado/importado + os 10 campos
+de serviço, que a base pública não tem).
+
+- **Por UF/Município** (`buscarPostosPorUfAcao`) e **Consulta por Posto** (`buscarPostoPorTermoAcao`)
+  nunca tinham nenhum uso de `anp_postos` — passaram a buscar lá com o mesmo filtro (UF/município ou
+  CNPJ/nome) e resolver o preço de cada posto pela cascata oficial ANP (mesma lógica de
+  `resolverPrecosVigentes`, só que em lote — `carregarPrecosAnpEmLote` — porque são dezenas/centenas
+  de postos de uma vez, não um só). Limite de 1.000 postos ANP por consulta sem município (estados
+  grandes como MG chegam a 4.500 no cadastro público) — o cliente pode sempre refinar com o
+  município pra não bater no limite.
+- **Roteirizador Inteligente** (`calcularRoteirizacaoAcao`) já buscava ANP, mas só como fallback
+  vazio-total; agora sempre mescla os candidatos do corredor da rota (postos_gf + anp_postos, dedup
+  por CNPJ) — o campo `usouFallbackAnp` do retorno passa a significar "pelo menos 1 candidato veio
+  da ANP" (podendo ser um resultado misto), não mais "a rede própria estava zerada".
+- Cada posto no resultado ganhou um campo `origem: "proprio" | "anp"` (`PostoComScore`, e também
+  `CandidatoAbastecimento`/`ParadaSugerida` no motor de otimização) — as 3 telas mostram essa origem
+  num badge ("Próprio" / "Base ANP"), pra transparência: preço de posto próprio é negociado/
+  importado, preço de posto da base ANP é a estimativa oficial (não um preço real negociado). Em
+  "Consulta por Posto", o link "Ver detalhe" só aparece pra postos `origem: "proprio"` — um posto só
+  da base ANP não tem cadastro em `postos_gf`, então não existe página `/postos/[cnpj]` pra ele.
+
+Testado direto no banco com o caso real do print: cliente "Frotas & Frotas Ltda" tem só 1 posto
+próprio no Paraná (`postos_gf`), enquanto `anp_postos` tem 2.141 postos ativos no estado, sem
+sobreposição de CNPJ com o posto próprio desse cliente — confirmando que a consulta passa de 1 pra
+até 1.001 postos (limite de 1.000 da base ANP + o próprio), todos com preço resolvido pela cascata
+oficial ANP do Paraná (dados de 2026-07-11, a mais recente disponível). Validado com `npx tsc
+--noEmit` e `npx eslint` limpos em todos os arquivos alterados.
