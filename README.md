@@ -6612,3 +6612,65 @@ que sempre exatamente um dos dois está preenchido — nunca os dois, nunca nenh
   (conferido o registro gravado com `abastecimento_externo_id` certo e `abastecimento_id` nulo),
   agregação do robô de fatura pro lado externo, e uma execução real do robô sem erro (fechamento
   ainda não aconteceu porque o ciclo de teste não tinha fechado — comportamento esperado).
+
+## Fase 27.137 — aba "Meu Posto": cadastro do estabelecimento comparado com a base ANP
+
+Pedido do Daniel: "os dados cadastrais do estabelecimento precisam ser comparados com os dados de
+postos ANP [...] Preciso que voce monte uma solução de comparação do posto que esta sendo
+cadastrado na plataforma com a base ANP para que nao hajam registros sobrepostos ou duplicados".
+Perguntado como agir diante de um possível duplicado (endereço/coordenadas muito próximos de outro
+posto, mas CNPJ diferente), o Daniel escolheu **não bloquear o posto**: "Cadastrar e sinalizar pra
+admin depois" — a checagem existe pra "evitar duplicidades ou sobreposições de registros para as
+consultas", não pra travar o trial/assinatura.
+
+**Decisão de design**: em vez de criar uma tabela nova pro cadastro do posto, "Meu Posto" escreve
+direto em `postos_gf` — a mesma tabela que já alimenta consultas/roteirização desde a Fase 5 (hoje
+populada por planilha do cliente), reaproveitando 100% do que já existe (`empresa_id` como dono,
+mesmo padrão de "reivindicar" um CNPJ ainda sem dono já usado desde a correção de RLS da Fase
+"postos_gf — conflito real de dono"). Endereço/contato do posto também são as colunas que já
+existiam em `empresas` (usadas em `/clientes`, nunca antes editáveis pelo próprio posto — ver
+`/minha-empresa`, que hoje só mostra em modo leitura: "Pra corrigir algum desses dados, fale com a
+FNI").
+
+- **Schema**: `empresas` ganhou `latitude`, `longitude` e `anp_status` (`pendente` | `confirmado` |
+  `novo_sem_anp` | `possivel_duplicidade`) + `anp_verificado_em`. `postos_gf` ganhou `origem`
+  (`planilha_cliente` | `auto_cadastro_posto` | `meio_pagamento`) só pra rastreabilidade — não muda
+  nenhum comportamento existente. Nova tabela `postos_gf_possiveis_duplicados` (fila de revisão,
+  admin-only) e índices `(latitude, longitude)`/`(lat, lon)` em `anp_postos`/`postos_gf` pra apoiar
+  a busca por proximidade.
+- **RPC `verificar_e_registrar_posto_anp`** (SECURITY DEFINER): atualiza o cadastro da empresa,
+  depois resolve o status em cascata — 1) CNPJ bate exato com `anp_postos` → `confirmado`; 2) sem
+  match de CNPJ, mas há um posto (ANP ou `postos_gf` de outro dono) a menos de 150m de distância
+  (fórmula de haversine, com bounding-box antes pra não escanear os 35 mil+ registros da ANP
+  inteiros a cada chamada) → `possivel_duplicidade`, grava uma linha em
+  `postos_gf_possiveis_duplicados`; 3) nenhum dos dois → `novo_sem_anp`. Em qualquer um dos 3 casos
+  o upsert em `postos_gf` (`empresa_id` = a própria empresa) acontece igual — nunca bloqueia,
+  conforme decisão do Daniel. Bloqueio de verdade só existe pra um caso de integridade real: CNPJ
+  já reivindicado (`postos_gf.empresa_id`) por **outro** tenant — mesma classe de proteção já
+  existente na policy de RLS de `postos_gf`, replicada aqui porque a RPC roda como SECURITY
+  DEFINER (não passa pela RLS normal).
+- **Bug de segurança pego em teste manual, corrigido antes de qualquer uso real**: a checagem de
+  permissão (`p_empresa_id pertence ao usuário OU é admin`) usava `perfil_usuario_atual() = 'admin'`
+  direto num `OR` — só que essa função devolve `NULL` (não `false`) pra usuário sem perfil ativo, e
+  em SQL `false OR NULL` é `NULL`, não `false`. Um `IF NOT (...)` do PL/pgSQL trata condição `NULL`
+  como se fosse falsa (não entra no bloco), então a guarda **nunca disparava pra chamador
+  desconhecido** — testado de propósito com um e-mail inventado, sem nenhum vínculo com a empresa,
+  e a chamada passou como autorizada. Corrigido envolvendo os dois lados do `OR` em
+  `coalesce(..., false)` antes de comparar. Re-testado com o mesmo e-mail inventado: agora volta
+  `{"ok":false,"motivo":"sem_permissao"}` como esperado.
+- **Testado direto no banco** (todos os 5 caminhos, com `set_config('request.jwt.claims', ...)` pra
+  simular sessões diferentes): CNPJ confirmado na ANP (com um registro `anp_postos` temporário,
+  removido depois do teste), possível duplicidade por proximidade (~11m de um posto ANP real,
+  sinalizado e gravado em `postos_gf_possiveis_duplicados`), posto novo sem match nenhum, tentativa
+  de reivindicar um CNPJ já vinculado a outro posto (bloqueado), e a chamada não autorizada acima
+  (bloqueada só depois do fix). Um bug adicional de tipo (`round(double precision, integer)` não
+  existe no Postgres — a distância vem de `acos`/`cos`/`sin`, que retornam `double precision`, não
+  `numeric`) também foi pego e corrigido nesse processo.
+- **Tela `/meu-posto`** (novo item de menu, topo do menuPostoGestao — "primeiro passo esperado de
+  quem acabou de aderir"): formulário de CNPJ, razão social, endereço completo, contatos e
+  latitude/longitude (com botão "Usar minha localização", via Geolocation API do navegador — só
+  preenche os campos, o posto ainda pode ajustar à mão antes de salvar). Mostra o `anp_status`
+  atual como badge, e o resultado da última verificação depois de salvar.
+- **Deixado de fora desta fase, sinalizado como próximo passo**: tela de admin pra revisar a fila
+  `postos_gf_possiveis_duplicados` (descartar ou confirmar duplicata).
+- Validado com `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterados.

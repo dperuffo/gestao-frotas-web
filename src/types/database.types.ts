@@ -72,6 +72,15 @@ export interface Database {
           // cliente e nao para a negociacao entre cliente e posto".
           ciclo_faturamento_dias: number;
           prazo_vencimento_dias: number;
+          // Fase 27.137 — aba "Meu Posto": localização usada tanto pra
+          // comparar com anp_postos (evitar duplicidade) quanto pra
+          // posicionar o posto nos cards de consulta/roteirização.
+          latitude: number | null;
+          longitude: number | null;
+          // Fase 27.137 — resultado da checagem contra anp_postos:
+          // pendente | confirmado | novo_sem_anp | possivel_duplicidade.
+          anp_status: string;
+          anp_verificado_em: string | null;
           created_at: string | null;
           updated_at: string | null;
         };
@@ -1721,12 +1730,48 @@ export interface Database {
           outros_servicos: string | null;
           data_habilitacao: string | null;
           ativo: boolean;
+          // Fase 27.137 — de onde veio este registro: planilha_cliente
+          // (padrão, importação Excel da Fase 5), auto_cadastro_posto
+          // ("Meu Posto") ou meio_pagamento.
+          origem: string;
         };
         Insert: Partial<Database["public"]["Tables"]["postos_gf"]["Row"]> & { cnpj: string };
         Update: Partial<Database["public"]["Tables"]["postos_gf"]["Row"]>;
         Relationships: [
           {
             foreignKeyName: "postos_gf_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase 27.137 — fila de revisão pra possíveis duplicados sinalizados
+      // pelo matching de "Meu Posto" contra anp_postos/postos_gf (endereço/
+      // coordenadas muito próximos de outro posto já cadastrado, com CNPJ
+      // diferente) — não bloqueia o posto, só entra numa fila pra admin.
+      postos_gf_possiveis_duplicados: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          cnpj_informado: string;
+          anp_postos_id: number | null;
+          postos_gf_cnpj_candidato: string | null;
+          distancia_metros: number | null;
+          status: string;
+          revisado_por: string | null;
+          revisado_em: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["postos_gf_possiveis_duplicados"]["Row"]> & {
+          empresa_id: string;
+          cnpj_informado: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["postos_gf_possiveis_duplicados"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "postos_gf_possiveis_duplicados_empresa_id_fkey";
             columns: ["empresa_id"];
             isOneToOne: false;
             referencedRelation: "empresas";
@@ -2077,6 +2122,30 @@ export interface Database {
       empresas_do_usuario: {
         Args: { p_email: string };
         Returns: string[];
+      };
+      // Fase 27.137 — tela "Meu Posto": atualiza o cadastro da empresa,
+      // compara CNPJ/coordenadas com anp_postos (e postos_gf de outros
+      // donos) e faz upsert em postos_gf — nunca bloqueia, só sinaliza
+      // possível duplicidade (fila postos_gf_possiveis_duplicados) pra
+      // revisão de admin. Retorna { ok, status? } ou { ok: false, motivo }.
+      verificar_e_registrar_posto_anp: {
+        Args: {
+          p_empresa_id: string;
+          p_cnpj: string;
+          p_razao_social: string;
+          p_logradouro: string | null;
+          p_numero: string | null;
+          p_complemento: string | null;
+          p_bairro: string | null;
+          p_municipio: string | null;
+          p_uf: string | null;
+          p_cep: string | null;
+          p_telefone: string | null;
+          p_email: string | null;
+          p_latitude: number | null;
+          p_longitude: number | null;
+        };
+        Returns: Json;
       };
       empresa_id_do_cnpj: {
         Args: { p_cnpj: string };

@@ -84,6 +84,12 @@ const menuOperacao = [
 // menuVisaoGeral da Frota): todo mundo cai em /dashboard depois do login.
 const menuPostoGestao = [
   { href: "/dashboard", label: "🏠 Dashboard" },
+  // Fase 27.137 — pedido do Daniel: cadastro do estabelecimento (CNPJ,
+  // razão social, endereço, contatos, lat/long) logo na adesão do posto,
+  // comparado com a base ANP pra evitar registro duplicado/sobreposto —
+  // perto do topo do menu de propósito, é o primeiro passo esperado de
+  // quem acabou de aderir.
+  { href: "/meu-posto", label: "📍 Meu Posto" },
   { href: "/assistente", label: "Assistente FNI", logo: true },
   { href: "/assinatura", label: "💳 Minha Assinatura" },
   { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
