@@ -40,12 +40,17 @@ export default async function EditarPostoPage({ params }: { params: Promise<{ cn
   // da ANP (município → estado → Brasil).
   const precosResolvidos = await resolverPrecosVigentes(
     supabase,
-    { municipio: posto.municipio, uf: posto.uf },
+    { cnpj: posto.cnpj, empresaPostoId: posto.empresa_id, municipio: posto.municipio, uf: posto.uf },
     Array.from(vigentes.values()).map((p) => ({ combustivel: p.combustivel, preco: p.preco, data_ref: p.data_ref }))
   );
 
+  // Fase 27.138 — 2 níveis novos à frente do "próprio do posto" (import em
+  // lote): preço de meios de pagamento (transação real recente) e "Meus
+  // Preços" (self-service do posto).
   const ROTULO_FONTE: Record<string, string> = {
-    gf: "próprio do posto",
+    meios_pagamento: "praticado nos meios de pagamento",
+    meus_precos: "cadastrado pelo posto (Meus Preços)",
+    gf: "próprio do posto (planilha)",
     anp_municipio: "estimativa ANP (município)",
     anp_estado: "estimativa ANP (estado)",
     anp_brasil: "estimativa ANP (Brasil)",

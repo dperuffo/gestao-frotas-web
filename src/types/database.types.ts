@@ -2151,6 +2151,16 @@ export interface Database {
         Args: { p_cnpj: string };
         Returns: string | null;
       };
+      // Fase 27.138 — 1º nível da cascata de preço "vigente" (ver
+      // resolverPrecosVigentes em src/lib/precoVigente.ts): última
+      // transação real de qualquer provedor naquele posto, últimos 60 dias.
+      // SECURITY DEFINER — abastecimentos_unificado é security_invoker, e
+      // aqui o objetivo é um preço de referência agregado visível a
+      // qualquer cliente, não só quem já tem abastecimento próprio ali.
+      preco_meios_pagamento_por_posto: {
+        Args: { p_posto_cnpj: string };
+        Returns: { produto: string; preco_litro: number; data_abastecimento: string }[];
+      };
       // Fase 27.51 — devolve só o nome de uma empresa, sem checar RLS
       // (SECURITY DEFINER) — usada só pra "fotografar" o nome da contraparte
       // ao criar uma negociação (negociacoes_postos.cliente_nome/posto_nome).

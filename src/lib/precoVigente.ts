@@ -21,7 +21,7 @@ export type PrecoResolvido = {
   categoria: string;
   preco: number;
   dataRef: string;
-  fonte: "gf" | "anp_municipio" | "anp_estado" | "anp_brasil";
+  fonte: "meios_pagamento" | "meus_precos" | "gf" | "anp_municipio" | "anp_estado" | "anp_brasil";
   combustivelGf?: string;
 };
 
@@ -33,21 +33,82 @@ function maisRecentePorProduto(linhas: LinhaAnp[]) {
   return mapa;
 }
 
-// Resolve o preço "vigente" por categoria de combustível para um posto: o
-// preço próprio dele (vindo de preco_posto.xlsx, tabela historico_precos)
-// SEMPRE prevalece quando existe. Só cai para a estimativa oficial da ANP
-// (precos_anp.xlsx) — nesta ordem: município do posto, depois estado, por
-// fim Brasil — quando o posto não tem preço próprio para aquela categoria.
+// Fase 27.138 — pedido do Daniel: "ajustar a ordem de apresentação dos
+// preços de combustíveis nos cards de consultas: 1) Preços de combustíveis
+// praticados nos meios de pagamentos, 2) Preços de combustíveis cadastrados
+// pelos usuarios na tela do posto, preços de combustíveis ANP, sendo
+// primeiro por município e depois por estado". Cascata agora tem 5 níveis
+// (do mais confiável/recente pro mais genérico):
+//   1) meios_pagamento — última transação real (qualquer provedor) naquele
+//      posto, via RPC preco_meios_pagamento_por_posto (últimos 60 dias).
+//   2) meus_precos — preço que o próprio posto publicou em "Meus Preços"
+//      (tabela precos_postos, Fase 27.57) — só existe/é visível quando o
+//      posto já tem alguma negociação com o cliente logado (RLS da Fase
+//      27.57, não alterada aqui).
+//   3) gf — preço "próprio do posto" importado em lote (preco_posto.xlsx,
+//      tabela historico_precos) — comportamento ORIGINAL desta função,
+//      preservado sem nenhuma mudança, só reordenado pra 3º lugar.
+//   4/5) anp_municipio → anp_estado → anp_brasil — estimativa oficial da
+//      ANP, inalterada.
+// Cada nível só entra pra cobrir as categorias que os níveis anteriores
+// ainda não resolveram — nunca sobrescreve um preço já resolvido por um
+// nível de maior prioridade.
 export async function resolverPrecosVigentes(
   supabase: Supabase,
-  posto: { municipio: string | null; uf: string | null },
+  posto: { cnpj: string | null; empresaPostoId?: string | null; municipio: string | null; uf: string | null },
   precosGf: { combustivel: string; preco: number; data_ref: string }[]
 ): Promise<PrecoResolvido[]> {
   const resultado: PrecoResolvido[] = [];
-  const categoriaCobertaPorGf = new Set<string>();
+  const categoriaResolvida = new Set<string>();
 
+  // Nível 1 — meios de pagamento (RPC SECURITY DEFINER: enxerga além da RLS
+  // do cliente logado só pra devolver produto/preço/data agregados, nunca
+  // dado de outro cliente).
+  if (posto.cnpj) {
+    const { data: precosMeiosPagamento } = await supabase.rpc("preco_meios_pagamento_por_posto", {
+      p_posto_cnpj: posto.cnpj,
+    });
+    for (const p of precosMeiosPagamento ?? []) {
+      const categoria = PRODUTO_PARA_CATEGORIA_ANP[p.produto] ?? p.produto;
+      if (categoriaResolvida.has(categoria)) continue;
+      resultado.push({
+        categoria,
+        preco: p.preco_litro,
+        dataRef: p.data_abastecimento,
+        fonte: "meios_pagamento",
+        combustivelGf: p.produto,
+      });
+      categoriaResolvida.add(categoria);
+    }
+  }
+
+  // Nível 2 — preço que o próprio posto cadastrou em "Meus Preços"
+  // (precos_postos, Fase 27.57). RLS dessa tabela já limita a leitura a
+  // quem tem negociação com o posto — não mexida aqui.
+  if (posto.empresaPostoId) {
+    const { data: meusPrecos } = await supabase
+      .from("precos_postos")
+      .select("combustivel, preco, atualizado_em")
+      .eq("empresa_posto_id", posto.empresaPostoId);
+    for (const p of meusPrecos ?? []) {
+      const categoria = PRODUTO_PARA_CATEGORIA_ANP[p.combustivel] ?? p.combustivel;
+      if (categoriaResolvida.has(categoria)) continue;
+      resultado.push({
+        categoria,
+        preco: p.preco,
+        dataRef: p.atualizado_em,
+        fonte: "meus_precos",
+        combustivelGf: p.combustivel,
+      });
+      categoriaResolvida.add(categoria);
+    }
+  }
+
+  // Nível 3 — preço "próprio do posto" importado em lote (comportamento
+  // original desta função, inalterado — só reordenado pra 3º lugar).
   for (const p of precosGf) {
     const categoria = PRODUTO_PARA_CATEGORIA_ANP[p.combustivel];
+    if (categoria && categoriaResolvida.has(categoria)) continue;
     resultado.push({
       categoria: categoria ?? p.combustivel,
       preco: p.preco,
@@ -55,10 +116,10 @@ export async function resolverPrecosVigentes(
       fonte: "gf",
       combustivelGf: p.combustivel,
     });
-    if (categoria) categoriaCobertaPorGf.add(categoria);
+    if (categoria) categoriaResolvida.add(categoria);
   }
 
-  let faltando: string[] = CATEGORIAS_ANP.filter((c) => !categoriaCobertaPorGf.has(c));
+  let faltando: string[] = CATEGORIAS_ANP.filter((c) => !categoriaResolvida.has(c));
   if (faltando.length === 0) return resultado;
 
   const municipioNorm = posto.municipio ? normalizarTexto(posto.municipio) : "";

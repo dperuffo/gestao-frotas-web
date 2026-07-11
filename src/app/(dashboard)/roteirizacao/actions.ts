@@ -703,7 +703,7 @@ export async function buscarDetalhePostoParaMapaAcao(cnpj: string): Promise<Deta
 
   const { data: posto } = await supabase
     .from("postos_gf")
-    .select("cnpj, razao_social, municipio, uf, bandeira")
+    .select("cnpj, razao_social, municipio, uf, bandeira, empresa_id")
     .eq("cnpj", cnpj)
     .maybeSingle();
   if (!posto) return null;
@@ -727,7 +727,11 @@ export async function buscarDetalhePostoParaMapaAcao(cnpj: string): Promise<Deta
     return true;
   });
 
-  const precos = await resolverPrecosVigentes(supabase, { municipio: posto.municipio, uf: posto.uf }, precosGf);
+  const precos = await resolverPrecosVigentes(
+    supabase,
+    { cnpj: posto.cnpj, empresaPostoId: posto.empresa_id, municipio: posto.municipio, uf: posto.uf },
+    precosGf
+  );
 
   return {
     cnpj: posto.cnpj,

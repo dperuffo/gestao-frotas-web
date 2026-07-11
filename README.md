@@ -6692,3 +6692,51 @@ Testado ponta a ponta com o dado real gerado durante os testes da RPC na Fase 27
 Ltda, candidato a 11,1m de um posto real da ANP em Cruzeiro do Sul/AC) — confirmado que a consulta da
 tela junta certo o posto recém-cadastrado com o candidato de duplicidade. Validado com `npx tsc
 --noEmit` e `npx eslint` limpos.
+
+## Fase 27.138 — reordenar prioridade de preços nos cards de posto
+
+Pedido do Daniel: "Vamos ter que ajustar a ordem de apresentação dos preços de combustíveis nos
+cards de consultas: 1) Preços de combustíveis praticados nos meios de pagamentos, 2) Preços de
+combustíveis cadastrados pelos usuarios na tela do posto, preços de combustíveis ANP, sendo primeiro
+por município e depois por estado".
+
+Toda a cascata de preço "vigente" por posto já passava por uma única função central,
+`resolverPrecosVigentes` (`src/lib/precoVigente.ts`) — usada tanto no popup de detalhe do posto no
+mapa da Roteirização (`buscarDetalhePostoParaMapaAcao`) quanto na tela de edição de Postos
+Revendedores (`/postos/[cnpj]`). Bastou estender essa função só nela: os 2 níveis já existentes
+(preço próprio importado em lote → estimativa ANP município/estado/Brasil, essa última já na ordem
+pedida desde a Fase 5) ficaram **inalterados**, só reordenados — 2 níveis novos entraram na frente:
+
+1. **`meios_pagamento`** — nova RPC `preco_meios_pagamento_por_posto(cnpj)` (SECURITY DEFINER):
+   última transação real de qualquer provedor (PróFrotas, Valecard, RedeFrota, TicketLog, Veloe, via
+   `abastecimentos_unificado`) naquele posto, por produto, dos últimos 60 dias. Precisou ser
+   SECURITY DEFINER porque `abastecimentos_unificado` é `security_invoker` — um cliente só vê seus
+   próprios abastecimentos por RLS, mas o preço mostrado numa consulta pública de postos precisa ser
+   uma referência agregada visível a qualquer cliente (mesmo quem nunca abasteceu ali). A função só
+   devolve produto/preço/data — nunca client/placa/motorista.
+2. **`meus_precos`** — preço que o próprio posto publicou em "Meus Preços" (tabela `precos_postos`,
+   Fase 27.57), o que Daniel chamou de "cadastrados pelos usuarios na tela do posto". RLS dessa
+   tabela não foi mexida (só visível pra quem já tem alguma negociação com aquele posto, regra da
+   própria Fase 27.57) — pra um cliente olhando um posto que nunca negociou, este nível
+   simplesmente não contribui nada, e a cascata cai pros níveis seguintes normalmente.
+3. **`gf`** (preço importado em lote, `historico_precos`) e os 3 níveis ANP — comportamento
+   **idêntico** ao que já existia, só descidos pra 3º/4º/5º lugar.
+
+Cada nível só preenche as categorias de combustível que os níveis anteriores ainda não resolveram —
+nunca sobrescreve um preço de nível mais prioritário. Os 2 pontos de chamada de
+`resolverPrecosVigentes` foram atualizados pra passar `cnpj`/`empresa_id` do posto (só precisavam de
+`municipio`/`uf` antes).
+
+**Deixado de fora de propósito**: o algoritmo de otimização de rota (`calcularRoteirizacaoAcao`, a
+função que decide ONDE parar ao longo do trajeto, diferente do popup de detalhe que só mostra o
+preço) continua escolhendo candidatos só pelo preço de `historico_precos`/ANP — não pelos 2 níveis
+novos. É uma função de pontuação em lote (dezenas/centenas de postos candidatos de uma rota de
+uma vez, não 1 posto por clique) — encaixar meios de pagamento/Meus Preços ali sem N+1 de
+consultas exige um desenho em lote próprio, fora do escopo desta fase; sinalizado como próximo
+passo se o Daniel quiser essa mesma prioridade também na hora de ESCOLHER onde parar, não só na
+hora de EXIBIR o preço de um posto já escolhido.
+
+Testado direto no banco: a RPC `preco_meios_pagamento_por_posto` contra o Posto Teste 2 Ltda (CNPJ
+real de teste, com abastecimentos de vários provedores desta sessão) devolveu o preço mais recente
+de 6 produtos diferentes, todos dentro da janela de 60 dias. Validado com `npx tsc --noEmit` e `npx
+eslint` limpos em todos os arquivos alterados.
