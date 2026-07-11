@@ -33,10 +33,47 @@ async function ehAdminOuSuperusuario(supabase: ClienteSupabase): Promise<boolean
   return perfil === "admin" || user?.email === "d.peruffo@gmail.com";
 }
 
+// Fase 27.139 — pedido do Daniel: "Rede de Posto tem que estar na visão do
+// posto para criação e gestão". Um posto revendedor (segmento='Revenda')
+// que já é membro de uma Rede pode gerenciá-la (editar nome/CNPJ matriz,
+// vincular/desvincular postos que ele mesmo controla) sem precisar de
+// admin — mas só PARA REDES DAS QUAIS ELE JÁ FAZ PARTE (não pode mexer em
+// rede de outro grupo econômico só por saber o id). Grupo Econômico
+// (segmento='Frota') continua 100% admin-only, sem nenhuma mudança.
+async function ehAdminSuperusuarioOuMembroDaRede(
+  supabase: ClienteSupabase,
+  grupoId: string
+): Promise<boolean> {
+  if (await ehAdminOuSuperusuario(supabase)) return true;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+  if (!minhasEmpresasIds || minhasEmpresasIds.length === 0) return false;
+
+  const { data: grupo } = await supabase.from("grupos_economicos").select("segmento").eq("id", grupoId).maybeSingle();
+  if (!grupo || grupo.segmento !== "Revenda") return false;
+
+  const { data: vinculo } = await supabase
+    .from("grupos_economicos_empresas")
+    .select("id")
+    .eq("grupo_economico_id", grupoId)
+    .in("empresa_id", minhasEmpresasIds)
+    .limit(1)
+    .maybeSingle();
+  return !!vinculo;
+}
+
 // A RLS de grupos_economicos/grupos_economicos_empresas já restringe
 // escrita a admin/superusuário (with_check), mas o padrão do projeto é
 // sempre validar de novo aqui — mensagem de erro melhor pro usuário, não
 // depender só da RLS pra dar feedback (ver Fase 27.80).
+//
+// Usada por /grupo-economico (Frota, sempre admin) e, quando quem chama é
+// admin, também por /rede-postos (criação administrativa de uma Rede sem
+// vincular posto nenhum ainda). Self-service de posto usa
+// criarRedePostoSelfService, abaixo.
 export async function criarGrupoEconomico(
   supabase: ClienteSupabase,
   params: { segmento: SegmentoGrupo; nome: string; cnpjMatriz: string | null }
@@ -57,14 +94,49 @@ export async function criarGrupoEconomico(
   return { id: data.id };
 }
 
+// Fase 27.139 — criação de Rede de Postos pelo próprio posto (self-service).
+// Implementada como RPC SECURITY DEFINER (criar_rede_posto_self_service) em
+// vez de um INSERT direto via supabase-js: uma Rede recém-criada ainda não
+// tem nenhum vínculo em grupos_economicos_empresas, e o supabase-js sempre
+// pede a linha de volta (RETURNING) depois do INSERT — o Postgres aplica a
+// policy de SELECT (que exige já pertencer ao grupo) também sobre a linha
+// devolvida por um RETURNING, então a Rede acabada de criar sempre seria
+// rejeitada com "new row violates row-level security policy" antes de ter
+// o primeiro membro. A RPC resolve isso criando o grupo E o vínculo do
+// posto fundador na mesma transação, como dono da função (sem passar pelo
+// RETURNING problemático). Funciona tanto pro posto quanto pro admin (a
+// RPC também aceita admin/superusuário) — por isso /rede-postos/novo usa
+// sempre esta função, nunca mais cria uma Rede "órfã" sem posto nenhum.
+export async function criarRedePostoSelfService(
+  supabase: ClienteSupabase,
+  params: { nome: string; cnpjMatriz: string | null; empresaId: string }
+): Promise<{ id: string } | { erro: string }> {
+  const nome = params.nome.trim();
+  if (!nome) return { erro: "Nome é obrigatório." };
+  if (!params.empresaId) return { erro: "Selecione o posto fundador da Rede." };
+
+  const { data, error } = await supabase.rpc("criar_rede_posto_self_service", {
+    p_nome: nome,
+    p_cnpj_matriz: params.cnpjMatriz,
+    p_empresa_id: params.empresaId,
+  });
+  if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+
+  const resultado = data as { ok: boolean; id?: string; erro?: string };
+  if (!resultado.ok) return { erro: resultado.erro ?? "Não foi possível salvar." };
+  return { id: resultado.id! };
+}
+
 export async function atualizarGrupoEconomico(
   supabase: ClienteSupabase,
   params: { id: string; nome: string; cnpjMatriz: string | null; ativo: boolean }
 ): Promise<{ erro?: string }> {
   const nome = params.nome.trim();
   if (!nome) return { erro: "Nome é obrigatório." };
-  if (!(await ehAdminOuSuperusuario(supabase))) {
-    return { erro: "Só o time administrativo (FNI) pode editar grupos." };
+  // Fase 27.139 — Grupo Econômico (Frota) continua admin-only; Rede de
+  // Postos (Revenda) também aceita quem já é membro da própria Rede.
+  if (!(await ehAdminSuperusuarioOuMembroDaRede(supabase, params.id))) {
+    return { erro: "Você não tem permissão para editar este grupo." };
   }
 
   const { error } = await supabase
@@ -85,8 +157,16 @@ export async function vincularEmpresaAoGrupo(
   supabase: ClienteSupabase,
   params: { grupoId: string; empresaId: string }
 ): Promise<{ erro?: string }> {
-  if (!(await ehAdminOuSuperusuario(supabase))) {
-    return { erro: "Só o time administrativo (FNI) pode vincular empresas." };
+  // Fase 27.139 — Grupo Econômico (Frota) continua admin-only; Rede de
+  // Postos (Revenda) também aceita quem já é membro da própria Rede (só
+  // pode adicionar posto A UMA REDE DA QUAL JÁ FAZ PARTE — evita que um
+  // posto se auto-vincule a uma Rede de outra empresa só por saber o id;
+  // essa checagem de "já é membro" fica em código, não em RLS, porque uma
+  // policy de INSERT em grupos_economicos_empresas que consulta a própria
+  // tabela pra isso dá erro de recursão infinita no Postgres — ver
+  // migração fase_27_139_fix_recursao_via_grupos_select).
+  if (!(await ehAdminSuperusuarioOuMembroDaRede(supabase, params.grupoId))) {
+    return { erro: "Você não tem permissão para vincular postos a esta Rede." };
   }
 
   // Defesa extra: a empresa precisa ser do mesmo segmento do grupo — não
@@ -115,10 +195,12 @@ export async function vincularEmpresaAoGrupo(
 
 export async function desvincularEmpresaDoGrupo(
   supabase: ClienteSupabase,
-  vinculoId: string
+  vinculoId: string,
+  grupoId: string
 ): Promise<{ erro?: string }> {
-  if (!(await ehAdminOuSuperusuario(supabase))) {
-    return { erro: "Só o time administrativo (FNI) pode remover vínculos." };
+  // Fase 27.139 — mesma regra de atualizarGrupoEconomico/vincularEmpresaAoGrupo.
+  if (!(await ehAdminSuperusuarioOuMembroDaRede(supabase, grupoId))) {
+    return { erro: "Você não tem permissão para remover vínculos desta Rede." };
   }
   const { error } = await supabase.from("grupos_economicos_empresas").delete().eq("id", vinculoId);
   if (error) return { erro: error.message };

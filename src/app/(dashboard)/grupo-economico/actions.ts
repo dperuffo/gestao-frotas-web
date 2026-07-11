@@ -55,7 +55,11 @@ export async function vincularEmpresa(grupoId: string, empresaId: string) {
 
 export async function desvincularEmpresa(grupoId: string, vinculoId: string) {
   const supabase = await createClient();
-  const resultado = await desvincularEmpresaDoGrupo(supabase, vinculoId);
+  // Fase 27.139 — desvincularEmpresaDoGrupo passou a exigir o grupoId (pra
+  // permitir self-service de Rede de Postos sem abrir mão da checagem de
+  // permissão) — Grupo Econômico (Frota) continua admin-only, sem mudança
+  // de comportamento aqui.
+  const resultado = await desvincularEmpresaDoGrupo(supabase, vinculoId, grupoId);
   if (resultado.erro) throw new Error(resultado.erro);
   revalidatePath(`/grupo-economico/${grupoId}`);
 }

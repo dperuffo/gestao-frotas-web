@@ -6740,3 +6740,84 @@ Testado direto no banco: a RPC `preco_meios_pagamento_por_posto` contra o Posto 
 real de teste, com abastecimentos de vários provedores desta sessão) devolveu o preço mais recente
 de 6 produtos diferentes, todos dentro da janela de 60 dias. Validado com `npx tsc --noEmit` e `npx
 eslint` limpos em todos os arquivos alterados.
+
+## Fase 27.139 — Rede de Postos disponível na visão do posto (criação e gestão)
+
+Pedido do Daniel: "Rede de Posto tem que estar na visão do posto para criação e gestão". Até aqui a
+escrita de `grupos_economicos`/`grupos_economicos_empresas` (mesma mecânica de Grupo Econômico, com
+`segmento='Revenda'` — ver Fase 27.87) era 100% admin-only, tanto em RLS quanto no código
+(`ehAdminOuSuperusuario` em `gruposEconomicos.ts`) — a Fase 27.129 tinha inclusive movido o item de
+menu pra Administração por não ter nenhuma ação real disponível pro posto. Esta fase abre
+self-service: um posto revendedor pode criar sua própria Rede e gerenciar (renomear, vincular/
+desvincular postos que ele mesmo controla) as redes das quais já é membro, sem depender de admin —
+Grupo Econômico (Frota) continua inteiramente admin-only, sem nenhuma mudança de comportamento.
+
+**RLS** — `grupos_economicos`: `grupos_select`/`grupos_update` já aceitam quem já é membro da Rede
+(via `empresas_do_usuario`) além de admin/superusuário; `grupos_insert` aceita quem controla alguma
+empresa `segmento='Revenda'`. `grupos_economicos_empresas`: `gee_insere` aceita vincular uma empresa
+da qual o chamador é dono **direto** (`usuarios_empresas`, não `empresas_do_usuario` — ver nota de
+recursão abaixo) a um grupo `segmento='Revenda'`.
+
+**Achado real, bloqueador, durante o teste manual da RLS** — depois de aplicar a policy de INSERT
+mais óbvia (`empresa_id` controlada pelo chamador `AND` grupo é Revenda), uma inserção de teste real
+(`INSERT INTO grupos_economicos_empresas ...` como `posto.teste@fni.test`) falhava com `ERROR:
+42501: new row violates row-level security policy`, mesmo com a condição do `with_check` avaliando
+`true` isoladamente (confirmado por uma consulta separada simulando a mesma expressão). A causa raiz
+não era a lógica da policy — era o **INSERT com `RETURNING` implícito do supabase-js**: toda escrita
+via `.insert().select()` pede a linha de volta, e o Postgres também aplica a policy de `SELECT`
+sobre essa linha devolvida. Uma Rede recém-criada não tem nenhum vínculo em
+`grupos_economicos_empresas` ainda, então `grupos_select` (que exige já pertencer ao grupo) rejeitava
+a própria linha que acabara de ser inserida — sem RETURNING, o INSERT sozinho sempre funcionava
+(confirmado via teste direto). Resolvido criando `criar_rede_posto_self_service` (RPC SECURITY
+DEFINER) que insere o grupo **e** o vínculo do posto fundador na mesma transação, como dono da
+função — nunca existe uma Rede "órfã" visível via RLS normal.
+
+**Segundo achado, também bloqueador** — ao tentar reforçar a policy de INSERT com uma regra extra
+("só pode vincular posto a uma Rede da qual já é membro", pra impedir um posto se auto-vincular a
+qualquer Rede alheia só sabendo o UUID), qualquer forma de consultar `grupos_economicos_empresas`
+de dentro da própria policy de INSERT desta tabela — mesmo através de uma função `SECURITY DEFINER`
+dedicada — disparava `ERROR: 42P17: infinite recursion detected in policy for relation
+"grupos_economicos_empresas"`. Confirmado que isso não é sobre RLS realmente se aplicar (a função
+era dona `postgres`, que bypassa RLS por padrão nesta tabela, sem `FORCE ROW LEVEL SECURITY`) — é
+uma limitação estrutural do detector de recursão do Postgres, que dispara pelo simples fato da mesma
+relação ser tocada de novo dentro do mesmo statement, antes mesmo de resolver se aquela consulta
+aninhada seria isenta. Rastreado até a fonte real: a própria função `empresas_do_usuario()` (já usada
+em várias RLS do projeto) consulta `grupos_economicos_empresas` internamente (pra expandir empresas
+"irmãs" de grupo) — usá-la em QUALQUER policy definida sobre essa tabela recursa. A correção definitiva
+combinou duas partes: (1) `gee_insere` passou a checar vínculo **direto** via `usuarios_empresas`
+(não `empresas_do_usuario`, não referencia `grupos_economicos_empresas`) — semanticamente mais
+correto de qualquer forma (só a própria empresa, não uma "irmã" enxergada por outro grupo); (2) a
+regra "já é membro desta Rede específica" saiu da RLS e foi pro código
+(`ehAdminSuperusuarioOuMembroDaRede` em `gruposEconomicos.ts`), que faz uma consulta `SELECT`
+independente (fora do INSERT, sem recursão) antes de tentar a escrita. Um terceiro sintoma da mesma
+causa apareceu num SELECT simples em `grupos_economicos_empresas` (via `gee_membro_select`, que
+também chama `empresas_do_usuario()`) — corrigido fixando `row_security = off` na config da função
+(faz o planner nem tentar resolver policies pra ela, em vez de aplicar e depois isentar por
+ownership). De quebra, o advisor de segurança apontou que `empresas_do_usuario()` nunca tinha
+`search_path` fixado (risco clássico de search_path hijacking em função SECURITY DEFINER) — corrigido
+também (`set search_path to 'public'`), alinhando com o padrão do resto do projeto.
+
+**Código** (`src/lib/gruposEconomicos.ts`): nova `criarRedePostoSelfService` (chama a RPC acima,
+usada tanto pelo posto quanto pelo admin — a RPC aceita os dois); `criarGrupoEconomico` continua
+existindo só pra Grupo Econômico (Frota, sempre admin); `atualizarGrupoEconomico`,
+`vincularEmpresaAoGrupo` e `desvincularEmpresaDoGrupo` passaram a aceitar quem já é membro da Rede
+(`ehAdminSuperusuarioOuMembroDaRede`) além de admin — `desvincularEmpresaDoGrupo` ganhou um parâmetro
+`grupoId` a mais (precisa saber qual grupo pra checar a permissão); os dois call sites
+(`/rede-postos/actions.ts` e `/grupo-economico/actions.ts`) foram ajustados.
+
+**Telas**: `/rede-postos/novo` agora sempre pede o posto fundador (campo obrigatório) — pro posto
+self-service, mostra só os postos Revenda que ele controla (via `empresas_do_usuario`); pro admin,
+mostra todos. Se um posto sem nenhuma empresa Revenda cadastrada tentar acessar, mostra uma mensagem
+guiando pra `/meu-posto` primeiro. `/rede-postos/[id]` — a lista de "postos disponíveis pra vincular"
+(`postosDisponiveis`) também passou a ser restrita à mesma regra (antes mostrava TODOS os postos
+Revenda da base pra qualquer usuário que abrisse a tela, vazando nome de posto de outra empresa).
+Item de menu `/rede-postos` (🔗 Rede de Postos) voltou pro menu do posto (logo depois de "Meu
+Posto", no `menuPostoGestao`) — continua também em Administração, pra visão global do admin sobre
+todas as Redes da plataforma.
+
+Testado ponta a ponta direto no banco, simulando a sessão de `posto.teste@fni.test` (que controla 2
+postos de teste): criação de Rede via RPC com sucesso; vínculo de um segundo posto próprio à Rede
+recém-criada com sucesso; renomear a própria Rede com sucesso; um usuário "estranho" (sem nenhum
+vínculo com a Rede) tentando renomear a mesma Rede — bloqueado silenciosamente pela RLS (0 linhas
+afetadas, sem erro, mesmo padrão de UPDATE filtrado por USING). Validado com `npx tsc --noEmit` e
+`npx eslint` limpos em todos os arquivos alterados.

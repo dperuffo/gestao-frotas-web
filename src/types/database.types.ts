@@ -2151,6 +2151,17 @@ export interface Database {
         Args: { p_cnpj: string };
         Returns: string | null;
       };
+      // Fase 27.139 — cria uma Rede de Postos self-service: grupo +
+      // primeiro vínculo (posto fundador) na mesma transação, como dono da
+      // função — evita o problema de RETURNING sobre uma Rede recém-criada
+      // sem membro nenhum ainda (grupos_select exigiria já pertencer ao
+      // grupo pra devolver a linha do INSERT). Aceita tanto o próprio
+      // posto (precisa controlar p_empresa_id) quanto admin/superusuário.
+      // Retorna { ok: true, id } ou { ok: false, erro }.
+      criar_rede_posto_self_service: {
+        Args: { p_nome: string; p_cnpj_matriz: string | null; p_empresa_id: string };
+        Returns: Json;
+      };
       // Fase 27.138 — 1º nível da cascata de preço "vigente" (ver
       // resolverPrecosVigentes em src/lib/precoVigente.ts): última
       // transação real de qualquer provedor naquele posto, últimos 60 dias.

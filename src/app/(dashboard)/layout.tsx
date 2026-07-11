@@ -90,6 +90,13 @@ const menuPostoGestao = [
   // perto do topo do menu de propósito, é o primeiro passo esperado de
   // quem acabou de aderir.
   { href: "/meu-posto", label: "📍 Meu Posto" },
+  // Fase 27.139 — pedido do Daniel: "Rede de Posto tem que estar na visão
+  // do posto para criação e gestão". Volta pro menu do posto (tinha ido
+  // só pra Administração na Fase 27.129, quando a escrita ainda era
+  // 100% admin-only) — RLS/código agora permitem que um posto crie e
+  // gerencie sua própria Rede (ver gruposEconomicos.ts). Continua também
+  // em Administração, pra visão global do admin sobre todas as redes.
+  { href: "/rede-postos", label: "🔗 Rede de Postos" },
   { href: "/assistente", label: "Assistente FNI", logo: true },
   { href: "/assinatura", label: "💳 Minha Assinatura" },
   { href: "/avaliar", label: "⭐ Avaliar Plataforma" },

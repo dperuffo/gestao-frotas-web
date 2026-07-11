@@ -1,48 +1,59 @@
-"use client";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { NovaRedeForm } from "../_components/NovaRedeForm";
 
-import { useState, useTransition, type FormEvent } from "react";
-import { criarRede } from "../actions";
+// Fase 27.139 — pedido do Daniel: "Rede de Posto tem que estar na visão do
+// posto para criação e gestão". Antes esta tela só existia pra admin criar
+// uma Rede vazia (sem posto nenhum) e depois vincular postos na tela
+// seguinte. Agora sempre pede o posto fundador aqui — pro posto self-service
+// isso já resolve o problema de "Rede órfã sem membro" (ver
+// criarRedePostoSelfService em gruposEconomicos.ts); pro admin, mostra
+// todos os postos Revenda pra escolher qualquer um como fundador.
+export default async function NovaRedePage() {
+  const supabase = await createClient();
 
-// Fase 27.87 — espelha /grupo-economico/novo/page.tsx.
-export default function NovaRedePage() {
-  const [erro, setErro] = useState<string | undefined>();
-  const [isPending, startTransition] = useTransition();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const ehAdmin = perfil === "admin" || user?.email === "d.peruffo@gmail.com";
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setErro(undefined);
-    const formData = new FormData(e.currentTarget);
-    startTransition(async () => {
-      const resultado = await criarRede(undefined, formData);
-      if (resultado?.erro) setErro(resultado.erro);
-    });
+  let postosOpcoes: { id: string; nome: string }[] = [];
+  if (ehAdmin) {
+    const { data } = await supabase.from("empresas").select("id, nome").eq("segmento", "Revenda").order("nome");
+    postosOpcoes = data ?? [];
+  } else {
+    const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+    if (minhasEmpresasIds && minhasEmpresasIds.length > 0) {
+      const { data } = await supabase
+        .from("empresas")
+        .select("id, nome")
+        .eq("segmento", "Revenda")
+        .in("id", minhasEmpresasIds)
+        .order("nome");
+      postosOpcoes = data ?? [];
+    }
+  }
+
+  if (!ehAdmin && postosOpcoes.length === 0) {
+    return (
+      <div>
+        <h1 className="mb-6 text-xl font-semibold text-slate-900">Nova Rede de Postos</h1>
+        <div className="card p-6 text-sm text-slate-600">
+          Você precisa ter um posto cadastrado antes de criar uma Rede de Postos.{" "}
+          <Link href="/meu-posto" className="font-medium text-frota-600 hover:underline">
+            Cadastre seu posto em &quot;Meu Posto&quot;
+          </Link>{" "}
+          e volte aqui em seguida.
+        </div>
+      </div>
+    );
   }
 
   return (
     <div>
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Nova Rede de Postos</h1>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
-        <section className="card max-w-lg p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
-                Nome da Rede <span className="text-red-500">*</span>
-              </label>
-              <input name="nome" required className="input" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">CNPJ da Matriz (opcional)</label>
-              <input name="cnpj_matriz" className="input" />
-            </div>
-          </div>
-        </section>
-        <div className="flex justify-end">
-          <button type="submit" disabled={isPending} className="btn-primary">
-            {isPending ? "Salvando..." : "Salvar Rede"}
-          </button>
-        </div>
-      </form>
+      <NovaRedeForm postosOpcoes={postosOpcoes} />
     </div>
   );
 }
