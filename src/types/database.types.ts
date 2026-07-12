@@ -94,12 +94,96 @@ export interface Database {
           tipo_conta: string | null;
           titular_nome: string | null;
           titular_documento: string | null;
+          // Fase 27.149 — documentação societária/cadastral (Contrato
+          // Social, comprovante de endereço da empresa, docs dos sócios em
+          // empresas_socios/empresas_documentos). nao_iniciada | pendente |
+          // aprovada | rejeitada — aprovada é pré-requisito pra criar/aderir
+          // a Redes de Postos/Grupos Econômicos e pra aceitar/criar
+          // negociações. Empresas já existentes na plataforma antes desta
+          // fase foram marcadas aprovada automaticamente (grandfather).
+          documentacao_status: string;
+          documentacao_enviada_em: string | null;
+          documentacao_revisado_em: string | null;
+          documentacao_revisado_por: string | null;
+          documentacao_motivo_rejeicao: string | null;
           created_at: string | null;
           updated_at: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["empresas"]["Row"]> & { nome: string };
         Update: Partial<Database["public"]["Tables"]["empresas"]["Row"]>;
         Relationships: [];
+      };
+      // Fase 27.149 — sócios cadastrados pela própria empresa (lista
+      // dinâmica, reflete o quadro societário do Contrato Social). Cada
+      // sócio tem seu próprio conjunto de documentos pessoais em
+      // empresas_documentos (socio_id preenchido).
+      empresas_socios: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          nome: string;
+          cpf: string;
+          criado_em: string;
+          criado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["empresas_socios"]["Row"]> & {
+          empresa_id: string;
+          nome: string;
+          cpf: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["empresas_socios"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "empresas_socios_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase 27.149 — documentos enviados pra checagem do admin.
+      // contrato_social/comprovante_endereco_empresa são a nível de empresa
+      // (socio_id null); socio_cpf/socio_identidade/
+      // socio_comprovante_endereco são por sócio (socio_id obrigatório).
+      // Reenvio SUBSTITUI o documento anterior do mesmo tipo (índices
+      // únicos parciais no banco garantem no máximo 1 linha ativa por
+      // empresa+tipo ou sócio+tipo — sem histórico de versões antigas).
+      empresas_documentos: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          tipo: string;
+          socio_id: string | null;
+          storage_path: string;
+          nome_arquivo: string;
+          tamanho_bytes: number | null;
+          enviado_por: string | null;
+          enviado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["empresas_documentos"]["Row"]> & {
+          empresa_id: string;
+          tipo: string;
+          storage_path: string;
+          nome_arquivo: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["empresas_documentos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "empresas_documentos_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "empresas_documentos_socio_id_fkey";
+            columns: ["socio_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas_socios";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       // Fase 27.73 — tabela já existia desde a Fase 20 (histórico de
       // cobrança, gravada pelo stripe-webhook em invoice.payment_succeeded/

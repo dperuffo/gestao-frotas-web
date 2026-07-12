@@ -7131,3 +7131,74 @@ card "flutuar" longe do ícone que o abriu).
 Arquivo alterado: `src/components/ajuda/AjudaIcon.tsx` (componente
 compartilhado — corrige em todas as telas que usam o ícone de ajuda, não só
 Roteirização).
+
+## Fase 27.149 — documentação societária/cadastral (upload + aprovação do admin)
+
+Pedido do Daniel: mecanismo de upload de documentos societários/cadastrais
+para checagem pelo admin e liberação de uso da plataforma. Documentação
+aprovada vira pré-requisito para (a) criar uma Rede de Postos/Grupo
+Econômico, (b) ser vinculado como novo membro a um grupo já existente,
+(c) posto aceitar uma negociação, (d) cliente criar uma negociação — vale
+para todo posto/cliente da plataforma, com bloqueio total até aprovação
+(mesmo espírito do gate de assinatura obrigatória, Fase 27.125).
+
+Documentos exigidos: Contrato Social ou Estatuto (registrado na Junta
+Comercial, com quadro societário), comprovante de endereço da empresa
+(IPTU, conta de consumo), e por sócio (lista dinâmica cadastrada pela
+própria empresa) — CPF, RG ou CNH, e comprovante de endereço pessoal.
+
+**Schema**: `empresas` ganhou `documentacao_status` (nao_iniciada |
+pendente | aprovada | rejeitada, default nao_iniciada) + campos de
+enviada_em/revisado_em/revisado_por/motivo_rejeicao. Empresas já existentes
+na plataforma foram marcadas `aprovada` automaticamente (grandfather) —
+não trava quem já opera. Tabela `empresas_socios` (lista dinâmica) e
+`empresas_documentos` (upload por tipo, com FK opcional pro sócio — reenvio
+substitui o documento anterior do mesmo tipo, índices únicos parciais
+garantem isso). Bucket de Storage privado `documentos-empresas`
+(path `{empresa_id}/...`, RLS dono da empresa + admin, mesmo padrão já
+usado em `termos-adesao`).
+
+**Camada TS** (`src/lib/empresasDocumentos.ts`): CRUD de sócios/documentos,
+`enviarDocumentacaoParaAnalise` (valida completude antes de marcar
+`pendente`), `revisarDocumentacao` (admin-only, aprova/rejeita a
+documentação inteira com motivo), e `exigirDocumentacaoAprovada` — gate
+reutilizável (mesmo padrão do gate de assinatura em `decidirNegociacao`),
+usado nos 4 pontos de bloqueio.
+
+**Tela self-service `/documentos`** (posto e cliente, sem seletor de
+segmento): status geral, upload por slot (Contrato Social, comprovante de
+endereço da empresa), seção de sócios (adicionar/remover + 3 documentos
+cada), botão "Enviar para análise".
+
+**Fila do admin `/documentos-empresas`**: lista por status (tabs com
+contagem), detalhe por empresa (`/documentos-empresas/[id]`) com todos os
+documentos (link assinado pra visualizar) e decisão Aprovar/Rejeitar
+(rejeitar exige motivo).
+
+**Gates aplicados**:
+- `criarRedePostoSelfService` (gruposEconomicos.ts) — bloqueia criação da
+  Rede se o posto fundador não tem documentação aprovada.
+- `vincularEmpresaAoGrupo` (gruposEconomicos.ts) — bloqueia vínculo de novo
+  membro (Rede de Postos ou Grupo Econômico) sem documentação aprovada.
+- `criarNegociacao` (negociacoesPostos.ts) — bloqueia cliente sem
+  documentação aprovada de abrir negociação.
+- `decidirNegociacao` (negociacoesPostos.ts) — bloqueia posto sem
+  documentação aprovada de aceitar negociação (mesmo bloco de checagem do
+  gate de assinatura, Fase 27.125).
+
+**Menu**: "📁 Documentos" em Visão Geral (Frota) e Gestão (Posto); "📁
+Aprovação de Documentos" em Administração.
+
+Arquivos novos: `src/lib/empresasDocumentos.ts`,
+`src/app/(dashboard)/documentos/**`,
+`src/app/(dashboard)/documentos-empresas/**`.
+Arquivos alterados: `src/types/database.types.ts`,
+`src/lib/gruposEconomicos.ts`, `src/lib/negociacoesPostos.ts`,
+`src/app/(dashboard)/layout.tsx`.
+
+Pendências conhecidas (fora do escopo desta fase): não há tela dedicada de
+"pendências de onboarding" chamando atenção pro posto/cliente logo no
+primeiro acesso (ele só vê o novo item "Documentos" no menu) — se o Daniel
+quiser um aviso mais explícito (banner no Dashboard, por exemplo), dá pra
+somar depois. Também não há notificação por e-mail quando o admin
+aprova/rejeita — só o status mudando na tela.

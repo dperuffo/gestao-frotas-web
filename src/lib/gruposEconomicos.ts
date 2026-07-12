@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
+import { exigirDocumentacaoAprovada } from "@/lib/empresasDocumentos";
 
 type ClienteSupabase = SupabaseClient<Database>;
 
@@ -115,6 +116,15 @@ export async function criarRedePostoSelfService(
   if (!nome) return { erro: "Nome é obrigatório." };
   if (!params.empresaId) return { erro: "Selecione o posto fundador da Rede." };
 
+  // Fase 27.149 — pedido do Daniel: "Na criação de Redes de Postos ou Grupos
+  // Economicos, esta documentação devera servir de base para autorização de
+  // criação dos grupos" — o posto fundador precisa ter documentação
+  // societária/cadastral aprovada pelo admin antes de criar a Rede. Mesmo
+  // espírito do gate de assinatura obrigatória (Fase 27.125,
+  // decidirNegociacao): checagem em código, antes de qualquer escrita.
+  const erroDocumentacao = await exigirDocumentacaoAprovada(supabase, params.empresaId, "Criar uma Rede de Postos");
+  if (erroDocumentacao) return { erro: erroDocumentacao };
+
   const { data, error } = await supabase.rpc("criar_rede_posto_self_service", {
     p_nome: nome,
     p_cnpj_matriz: params.cnpjMatriz,
@@ -185,6 +195,19 @@ export async function vincularEmpresaAoGrupo(
           : "Só é possível vincular clientes (frota) a um Grupo Econômico.",
     };
   }
+
+  // Fase 27.149 — pedido do Daniel: "Sempre que um novo posto ou um cliente
+  // é aderido e agrupado nos grupos, a documentação devera ser solicitada
+  // para analise e aprovação do admin" — a empresa sendo adicionada precisa
+  // ter documentação aprovada antes do vínculo. Único ponto de código por
+  // onde TODO novo membro de um grupo (Rede de Postos self-service ou
+  // Grupo Econômico admin) passa, então basta aqui.
+  const erroDocumentacao = await exigirDocumentacaoAprovada(
+    supabase,
+    params.empresaId,
+    "Vincular esta empresa a um grupo"
+  );
+  if (erroDocumentacao) return { erro: erroDocumentacao };
 
   const { error } = await supabase
     .from("grupos_economicos_empresas")

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { DIAS_TRIAL, LIMITES_PLANO } from "@/lib/constants";
+import { exigirDocumentacaoAprovada } from "@/lib/empresasDocumentos";
 
 // Fase 27.50 — Negociação com Postos Revendedores.
 //
@@ -245,6 +246,15 @@ export async function criarNegociacao(
   const erroValidacao = validarDadosRodada(params.dados);
   if (erroValidacao) return { erro: erroValidacao };
 
+  // Fase 27.149 — pedido do Daniel: documentação societária aprovada é
+  // pré-requisito pra "operar de verdade" na plataforma — aqui, o cliente
+  // não pode abrir uma negociação (início de relação comercial de verdade
+  // com um posto) sem isso, espelhando o gate do lado posto em
+  // decidirNegociacao (aceitar). Mesmo padrão do gate de assinatura (Fase
+  // 27.125): checagem em código, antes de qualquer escrita.
+  const erroDocumentacao = await exigirDocumentacaoAprovada(supabase, params.empresaClienteId, "Criar uma negociação");
+  if (erroDocumentacao) return { erro: erroDocumentacao };
+
   const status: StatusNegociacao = params.autor === "cliente" ? "pendente_posto" : "pendente_cliente";
 
   // Fase 27.51 — achado real: mostrar o nome da CONTRAPARTE via join do
@@ -388,6 +398,18 @@ export async function decidirNegociacao(
           "Este posto ainda está no período de teste. Para aceitar negociações e operar na plataforma, assine um plano em Assinatura.",
       };
     }
+  }
+
+  // Fase 27.149 — mesmo espírito do gate de assinatura logo acima: o posto
+  // também precisa ter documentação societária/cadastral aprovada pelo
+  // admin antes de aceitar uma negociação real.
+  if (params.autor === "posto" && params.decisao === "aceita" && negociacao.empresa_posto_id) {
+    const erroDocumentacao = await exigirDocumentacaoAprovada(
+      supabase,
+      negociacao.empresa_posto_id,
+      "Aceitar esta negociação"
+    );
+    if (erroDocumentacao) return { erro: erroDocumentacao };
   }
 
   const agora = new Date().toISOString();

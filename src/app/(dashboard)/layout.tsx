@@ -32,6 +32,11 @@ const menuVisaoGeral = [
   { href: "/assinatura", label: "💳 Minha Assinatura" },
   { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
   { href: "/financeiro", label: "💰 Painel Financeiro" },
+  // Fase 27.149 — upload de documentação societária/cadastral (Contrato
+  // Social, docs dos sócios, comprovante de endereço), aprovada pelo admin
+  // em /documentos-empresas — pré-requisito pra criar/aderir a Redes de
+  // Postos/Grupos Econômicos e aceitar/criar negociações.
+  { href: "/documentos", label: "📁 Documentos" },
   { href: "/lgpd", label: "🔒 Privacidade (LGPD)" },
 ];
 
@@ -105,6 +110,9 @@ const menuPostoGestao = [
   // Fase 27.92 — self-service: cadastro da chave PIX usada como cedente no
   // boleto/documento de cobrança enviado aos clientes.
   { href: "/minha-empresa", label: "🏦 Meus Dados / PIX" },
+  // Fase 27.149 — mesmo item de /documentos do lado Frota (menuVisaoGeral,
+  // ver acima), agora também disponível pro posto.
+  { href: "/documentos", label: "📁 Documentos" },
   { href: "/usuarios", label: "👥 Usuários" },
 ];
 
@@ -127,6 +135,10 @@ const menuPostoOperacao = [
 
 const menuAdministracao = [
   { href: "/permissoes", label: "🔑 Permissões por Perfil" },
+  // Fase 27.149 — fila de revisão da documentação societária/cadastral
+  // enviada por postos e clientes em /documentos (Contrato Social, docs
+  // dos sócios, comprovante de endereço).
+  { href: "/documentos-empresas", label: "📁 Aprovação de Documentos" },
   { href: "/inteligencia-rede", label: "🌐 Inteligência de Rede" },
   { href: "/assinaturas", label: "💳 Assinaturas (todos os clientes)" },
   { href: "/avaliacoes", label: "⭐ Avaliações dos Clientes" },
