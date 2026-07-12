@@ -38,6 +38,13 @@ const menuVisaoGeral = [
   // em /documentos-empresas — pré-requisito pra criar/aderir a Redes de
   // Postos/Grupos Econômicos e aceitar/criar negociações.
   { href: "/documentos", label: "📁 Documentos" },
+  // Fase 27.151 — pedido do Daniel: "faz todo o sentido deixar na visão do
+  // cliente [Inteligência de Rede]". A tela (que já era admin-only) passou
+  // a aceitar também o perfil cliente, mostrando só a rede da PRÓPRIA
+  // empresa (nunca a de outros clientes — ver comentário em
+  // inteligencia-rede/page.tsx). Continua também em Administração, com
+  // visão consolidada de toda a plataforma pro admin.
+  { href: "/inteligencia-rede", label: "🌐 Inteligência de Rede" },
   { href: "/lgpd", label: "🔒 Privacidade (LGPD)" },
 ];
 

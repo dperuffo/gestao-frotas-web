@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ANP_PRECO_REFERENCIA_FALLBACK, ESTADO_PARA_UF, PRODUTO_PARA_CATEGORIA_ANP } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
+import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { GraficoCustoAnp } from "./_components/GraficoCustoAnp";
 import { GraficoTopMunicipios } from "./_components/GraficoTopMunicipios";
 import { GraficoSavingMensal } from "./_components/GraficoSavingMensal";
@@ -49,26 +50,91 @@ function formatarInt(valor: number) {
   return valor.toLocaleString("pt-BR");
 }
 
-export default async function InteligenciaRedePage() {
+type SearchParams = { empresa?: string };
+
+// Fase 27.151 — pedido do Daniel: "faz todo o sentido deixar na visão do
+// cliente [Inteligência de Rede]. Não há nada lá que afete os
+// relacionamentos criados". Passou de admin-only pra também disponível pro
+// cliente (perfil "posto" continua de fora — postos_gf é a rede de postos
+// QUE O CLIENTE pesquisou/cadastrou, não faz sentido pro posto revendedor).
+//
+// Importante: a tela em si sempre chamou RPCs com p_empresa_id opcional
+// (null = "sem filtro"). Pra quem é admin, deixamos null mesmo (visão
+// consolidada de toda a plataforma, como sempre foi). Pra cliente, agora
+// resolvemos a empresa dele (resolverEmpresaAtual — mesmo padrão de
+// /dashboard, /documentos etc.) e passamos o id em TODA RPC que aceita
+// p_empresa_id — nunca deixamos null pra cliente, pra nunca depender só do
+// RLS/checagem embutida na função (defesa em profundidade, mesmo espírito
+// da Fase 27.2 documentada em resolverEmpresaAtual). As RPCs que ainda não
+// têm parâmetro de empresa (postos_gf_por_uf, postos_gf_municipios_unicos,
+// etc.) rodam como SECURITY INVOKER direto sobre postos_gf/
+// abastecimentos_unificado — a RLS dessas tabelas (postos_gf_tenant_all,
+// profrotas_abastecimentos_select, abastecimentos_externos_tenant_all) já
+// restringe automaticamente pra só a própria empresa do cliente, então
+// continuam seguras sem precisar de parâmetro extra.
+export default async function InteligenciaRedePage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const { empresa: empresaParam } = await searchParams;
   const supabase = await createClient();
+  const { perfil, empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(
+    supabase,
+    empresaParam
+  );
 
-  // Restrito ao time interno (perfil admin) — mesma função usada nas policies
-  // de RLS, então a checagem aqui é só uma segunda camada (defesa em
-  // profundidade): mesmo que alguém acesse a URL direto, sem ser admin as
-  // consultas abaixo já vêm vazias por causa do RLS.
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const ehAdmin = perfil === "admin";
+  const ehPosto = perfil === "posto";
 
-  if (perfil !== "admin") {
+  if (perfil == null || ehPosto) {
     return (
       <div className="card p-6">
         <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
         <p className="mt-2 text-sm text-slate-500">
-          Esta tela é exclusiva do time interno (perfil administrador). Fale com um
-          administrador se você precisa desses dados.
+          Esta tela não está disponível pro seu perfil. Fale com um administrador se você
+          precisa desses dados.
         </p>
       </div>
     );
   }
+
+  // Admin não escolhe empresa (visão consolidada, sempre foi assim). Cliente
+  // com mais de uma empresa (grupo econômico) precisa escolher antes de ver
+  // qualquer dado — mesmo comportamento de /dashboard quando há mais de uma
+  // empresa disponível.
+  if (!ehAdmin && !empresaSelecionada) {
+    return (
+      <div>
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-slate-900">Inteligência de Rede</h1>
+          <p className="mt-1 text-sm text-slate-500">Selecione a empresa pra ver a rede de postos dela.</p>
+        </div>
+        <form className="card flex flex-wrap items-end gap-3 p-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <select name="empresa" defaultValue="" className="input text-sm">
+              <option value="" disabled>
+                Selecione…
+              </option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn-secondary">
+            Ver
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  // Pra cliente, nunca deixa null (defesa em profundidade — ver comentário
+  // acima da função). Pra admin, null = sem filtro (toda a plataforma).
+  const empresaIdFiltro = ehAdmin ? null : (empresaSelecionada as string);
 
   // As tabelas de origem (postos_gf, anp_postos, historico_precos) já passam
   // de mil linhas — o PostgREST corta em 1000 por padrão quando se busca
@@ -101,26 +167,28 @@ export default async function InteligenciaRedePage() {
     supabase.rpc("postos_gf_por_uf"),
     supabase.rpc("anp_postos_por_uf"),
     supabase.rpc("postos_gf_municipios_unicos"),
-    supabase.rpc("preco_medio_por_combustivel"),
-    supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }),
+    supabase.rpc("preco_medio_por_combustivel", { p_empresa_id: empresaIdFiltro }),
+    empresaIdFiltro
+      ? supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }).eq("empresa_id", empresaIdFiltro)
+      : supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }),
     supabase.rpc("postos_gf_top_municipios", { p_limit: 10 }),
-    supabase.rpc("postos_gf_pontos_mapa"),
+    supabase.rpc("postos_gf_pontos_mapa", { p_empresa_id: empresaIdFiltro }),
     supabase.rpc("historico_precos_evolucao_mensal"),
-    supabase.rpc("postos_gf_alertas_preco", { p_threshold: 0.05 }),
+    supabase.rpc("postos_gf_alertas_preco", { p_threshold: 0.05, p_empresa_id: empresaIdFiltro }),
     // threshold bem negativo = praticamente "sem filtro" -> serve só pra
     // saber quantos postos+combustível TÊM referência ANP resolvida (o
     // denominador do "% em alerta"), reaproveitando a mesma função.
-    supabase.rpc("postos_gf_alertas_preco", { p_threshold: -100 }),
+    supabase.rpc("postos_gf_alertas_preco", { p_threshold: -100, p_empresa_id: empresaIdFiltro }),
     supabase.rpc("postos_gf_municipios_por_uf"),
     supabase.rpc("postos_gf_distribuidoras_por_uf"),
     supabase.rpc("preco_medio_por_combustivel_uf"),
-    supabase.rpc("historico_precos_serie_uf_combustivel"),
-    supabase.rpc("historico_precos_volatilidade_mensal"),
-    supabase.rpc("historico_precos_detalhado"),
+    supabase.rpc("historico_precos_serie_uf_combustivel", { p_empresa_id: empresaIdFiltro }),
+    supabase.rpc("historico_precos_volatilidade_mensal", { p_empresa_id: empresaIdFiltro }),
+    supabase.rpc("historico_precos_detalhado", { p_empresa_id: empresaIdFiltro }),
     supabase.rpc("abastecimentos_preco_periodo"),
     supabase.rpc("postos_gf_precos_mapa"),
-    supabase.rpc("postos_gf_desvio_anp"),
-    supabase.rpc("postos_gf_servicos"),
+    supabase.rpc("postos_gf_desvio_anp", { p_empresa_id: empresaIdFiltro }),
+    supabase.rpc("postos_gf_servicos", { p_empresa_id: empresaIdFiltro }),
     supabase.rpc("abastecimentos_postos_visitados"),
   ]);
 
@@ -413,10 +481,37 @@ export default async function InteligenciaRedePage() {
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Inteligência de Rede</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Visão consolidada de todos os clientes — restrita ao time interno. Cobertura da rede
-          de postos revendedores e comparação de preço médio contra referência nacional.
+          {ehAdmin ? (
+            <>
+              Visão consolidada de todos os clientes — restrita ao time interno. Cobertura da rede
+              de postos revendedores e comparação de preço médio contra referência nacional.
+            </>
+          ) : (
+            <>
+              Cobertura da rede de postos revendedores {nomeEmpresaSelecionada ? `de ${nomeEmpresaSelecionada}` : "da sua empresa"} e
+              comparação de preço médio contra referência nacional (ANP).
+            </>
+          )}
         </p>
       </div>
+
+      {!ehAdmin && empresas.length > 1 && (
+        <form className="mb-4 flex items-end gap-2 text-sm">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn-secondary">
+            Trocar
+          </button>
+        </form>
+      )}
 
       <div className="mb-6 card p-4">
         <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
@@ -456,9 +551,11 @@ export default async function InteligenciaRedePage() {
                 <div className="mb-6 card p-4">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-sm font-semibold text-slate-900">Preço médio da rede vs referência ANP</h2>
-                    <Link href="/inteligencia-rede/importar-precos-anp" className="btn-secondary">
-                      Atualizar preços oficiais ANP
-                    </Link>
+                    {ehAdmin && (
+                      <Link href="/inteligencia-rede/importar-precos-anp" className="btn-secondary">
+                        Atualizar preços oficiais ANP
+                      </Link>
+                    )}
                   </div>
                   <p className="mb-3 text-xs text-slate-400">
                     {semanaMaisRecente
