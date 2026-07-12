@@ -131,17 +131,20 @@ export default async function NotasFiscaisPage({
       {/* Fase 27.104 — pedido do Daniel: "servirá de base e consulta para
           que o usuário encontre, rapidamente, o registro, seja ele com NFe
           ok ou com NFe rejeitada" — busca pelo ID de 10 dígitos do
-          abastecimento (ILIKE parcial, aceita só o final do número). */}
+          abastecimento (ILIKE parcial, aceita só o final do número).
+          Fase 27.143 — o ID de 10 dígitos só existe pro lado PróFrotas; pra
+          abastecimentos de outros provedores (Valecard, RedeFrota...) a
+          mesma busca agora também casa placa, posto ou cliente. */}
       <form className="mb-4 flex flex-wrap items-end gap-3">
         <input type="hidden" name="empresa" value={empresaSelecionada} />
         <input type="hidden" name="status" value={status ?? ""} />
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar por ID do abastecimento</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar por ID, placa, posto ou cliente</label>
           <input
             type="search"
             name="busca"
             defaultValue={busca ?? ""}
-            placeholder="Ex.: 1000165865"
+            placeholder="Ex.: 1000165865, ABC1D23 ou nome do posto"
             className="input max-w-xs"
           />
         </div>
@@ -187,20 +190,35 @@ export default async function NotasFiscaisPage({
               <th className="px-4 py-3">Placa</th>
               <th className="px-4 py-3">Combustível</th>
               <th className="px-4 py-3">Valor</th>
+              <th className="px-4 py-3">Fonte</th>
               <th className="px-4 py-3">NF-e</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
+            {/* Fase 27.143 — abastecimento_id só é único DENTRO de cada
+                provedor (bigint de sequências independentes por
+                tabela-fonte) — a chave da linha precisa incluir o
+                provedor, senão um id PróFrotas e um id externo que
+                coincidem por acaso colidiriam no React. */}
             {(linhas ?? []).map((l) => (
-              <tr key={l.abastecimento_id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{l.codigo_abastecimento}</td>
+              <tr key={`${l.provedor}-${l.abastecimento_id}`} className="hover:bg-slate-50">
+                <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{l.codigo_abastecimento ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-700">{formatarDataBr(l.data_abastecimento)}</td>
                 <td className="px-4 py-3 text-slate-600">{l.cliente_nome ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-600">{l.posto_nome ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-600">{l.veiculo_placa ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-600">{l.item_nome ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-600">{formatarMoeda(l.item_valor_total)}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {l.provedor === "profrotas" ? (
+                    <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">PróFrotas</span>
+                  ) : (
+                    <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+                      {l.provedor}
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   {l.nota_id ? (
                     <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
@@ -245,7 +263,7 @@ export default async function NotasFiscaisPage({
             ))}
             {(linhas ?? []).length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={10} className="px-4 py-8 text-center text-slate-400">
                   Nenhum abastecimento encontrado nos últimos 90 dias.
                 </td>
               </tr>

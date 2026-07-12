@@ -6979,3 +6979,39 @@ Validado com `npx tsc --noEmit` e `npx eslint` limpos nos arquivos alterados. Co
 banco que existem empresas segmento="Frota" com CNPJ cadastrado — o caminho de resolução do cliente
 é exercitável com dados reais (mesma RPC já provada em produção pela Fase 27.65/27.142, só que com
 `p_segmento` invertido).
+
+## Fase 27.143 — listagem /notas-fiscais cobrindo os dois lados (multi-provedor)
+
+Item "próximo passo" deixado pendente na Fase 27.136: a listagem `/notas-fiscais` e a RPC
+`abastecimentos_com_status_nota_fiscal` por trás dela (usada também nos badges de status de NF-e da
+tela do posto) eram 100% do lado PróFrotas — nunca olhavam `abastecimentos_externos`, mesmo depois da
+Fase 27.136b ter dado suporte a NF-e de outros meios de pagamento.
+
+- **`indicador_notas_fiscais` e `abastecimentos_com_status_nota_fiscal`** (RPCs, migração
+  `fase_27_143_notas_fiscais_multiprovedor`): reescritas com `UNION ALL` entre `profrotas_abastecimentos`
+  e `abastecimentos_externos`, mesmo padrão da `abastecimentos_unificado` (Fase 27.133/27.135) e do
+  merge de ANP na Roteirização (Fase 27.140). Pro lado externo: `nome` do cliente vem de um `LEFT JOIN
+  empresas` (não existe coluna denormalizada como `frota_razao_social`); o vínculo com
+  `notas_fiscais_abastecimento`/`notas_fiscais_pendencias` passa a usar `abastecimento_externo_id` em
+  vez de `abastecimento_id` (colunas que já existiam desde a Fase 27.136a, só nunca tinham sido lidas
+  por aqui). Pertencimento à empresa: `ae.empresa_id = p_empresa_id` (lado cliente, FK direta) OU
+  `posto_cnpj` normalizado batendo com o CNPJ da empresa (lado posto) — mesmo espírito do `pv_cnpj`/
+  `cnpj_frota` já usado pro lado PróFrotas.
+- **Busca por texto**: o campo "Buscar por ID do abastecimento" usava só `codigo_abastecimento` (coluna
+  gerada, só existe em `profrotas_abastecimentos`) — pra abastecimentos de outro provedor a busca
+  sempre vinha vazia mesmo com termo válido. Passou a casar também `veiculo_placa`, `posto_nome` e
+  `cliente_nome`, funcionando nos dois lados; label do campo atualizado pra refletir isso.
+- **`database.types.ts`**: `Returns` de `abastecimentos_com_status_nota_fiscal` ganhou `provedor:
+  string` e `codigo_abastecimento` virou `string | null` (nulo pro lado externo).
+- **UI**: nova coluna "Fonte" na tabela (badge "PróFrotas" azul / nome do provedor em cinza pros
+  demais — mesmo estilo de badge já usado em Roteirização e na listagem de Abastecimentos). Chave de
+  linha React trocada de `abastecimento_id` sozinho pra `` `${provedor}-${abastecimento_id}` `` — o id
+  só é único DENTRO de cada tabela-fonte (sequências independentes), um id PróFrotas e um id externo
+  podiam coincidir por acaso.
+- `pendencias_sem_abastecimento` (seção "Uploads sem abastecimento correspondente") não precisou de
+  mudança — já era multi-provedor desde a Fase 27.136b (mostra uploads que não bateram com NENHUMA das
+  2 fontes na hora do matching, não é filtrada por provedor).
+
+Validado com `npx tsc --noEmit` e `npx eslint` limpos. Conferido direto no banco: a nova junção com
+`abastecimentos_externos` traz linhas reais (RedeFrota/Valecard/TicketLog) com `cliente_nome`/
+`posto_nome` resolvidos corretamente pelas 2 vias de pertencimento (empresa_id e posto_cnpj).

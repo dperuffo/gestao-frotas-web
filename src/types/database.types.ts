@@ -2427,17 +2427,24 @@ export interface Database {
           // Antes era p_apenas_pendentes (boolean), que misturava
           // "Rejeitada" e "Pendente" no mesmo filtro.
           p_status: string | null;
-          // Fase 27.104 — busca por código do abastecimento (ILIKE parcial
-          // contra os 10 dígitos gerados) — null/'' = sem filtro.
+          // Fase 27.104/27.143 — busca por código do abastecimento (só
+          // existe pro lado PróFrotas) OU placa/posto/cliente (cobre
+          // também abastecimentos_externos) — null/'' = sem filtro.
           p_busca: string | null;
           p_limit?: number;
           p_offset?: number;
         };
         Returns: {
           abastecimento_id: number;
+          // Fase 27.143 — "profrotas" ou o nome do provedor externo
+          // (abastecimentos_externos.provedor) — id só é único DENTRO de
+          // cada fonte, por isso o front usa `${provedor}-${abastecimento_id}`
+          // como chave de linha.
+          provedor: string;
           // Fase 27.104 — mesmo "código" de 10 dígitos exibido/buscável nos
-          // filtros (coluna gerada em profrotas_abastecimentos).
-          codigo_abastecimento: string;
+          // filtros (coluna gerada em profrotas_abastecimentos) — Fase
+          // 27.143: null pro lado externo (não existe lá).
+          codigo_abastecimento: string | null;
           data_abastecimento: string;
           cliente_nome: string | null;
           posto_nome: string | null;
