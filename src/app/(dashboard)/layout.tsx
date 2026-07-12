@@ -9,6 +9,7 @@ import { contarAcessosClientesNaoVistosAcao } from "./clientes/actions";
 import { contarAnomaliasNaoRevisadasAcao } from "./anomalias/actions";
 import { contarNegociacoesPendentesAcao } from "./negociacoes/actions";
 import { contarAjustesAbastecimentosPendentesAcao } from "./abastecimentos/actions";
+import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
@@ -228,6 +229,7 @@ export default async function DashboardLayout({
     anomaliasNaoRevisadas,
     negociacoesPendentes,
     ajustesAbastecimentosPendentes,
+    documentosPendentes,
     logoutInatividadeMinutos,
   ] = await Promise.all([
       contarChamadosNaoVistosAcao().catch((e) => {
@@ -255,6 +257,13 @@ export default async function DashboardLayout({
       // demais contagens.
       contarAjustesAbastecimentosPendentesAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar ajustes de abastecimento pendentes (ignorado):", e);
+        return 0;
+      }),
+      // Fase 27.150 — bolinha de notificação na chegada de documentos
+      // societários/cadastrais (empresas com documentacao_status=pendente),
+      // mesma blindagem "falha vira 0" das demais contagens.
+      contarDocumentosPendentesAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar documentos pendentes (ignorado):", e);
         return 0;
       }),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
@@ -555,6 +564,11 @@ export default async function DashboardLayout({
                       {item.href === "/avaliacoes" && avaliacoesPendentes > 0 && (
                         <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                           {avaliacoesPendentes}
+                        </span>
+                      )}
+                      {item.href === "/documentos-empresas" && documentosPendentes > 0 && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                          {documentosPendentes}
                         </span>
                       )}
                     </Link>

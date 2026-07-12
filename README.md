@@ -7202,3 +7202,19 @@ primeiro acesso (ele só vê o novo item "Documentos" no menu) — se o Daniel
 quiser um aviso mais explícito (banner no Dashboard, por exemplo), dá pra
 somar depois. Também não há notificação por e-mail quando o admin
 aprova/rejeita — só o status mudando na tela.
+
+## Fase 27.150 — bolinha de notificação na tela do admin (Aprovação de Documentos)
+
+Pedido do Daniel: notificar o admin (bolinha vermelha no menu) quando chega
+documentação nova pra revisar, mesmo padrão já usado em Avaliações/
+Negociações/Ajustes de Abastecimento (contagem best-effort, calculada no
+layout, escondida se der erro ou for zero).
+
+`contarDocumentosPendentesAcao` (`documentos-empresas/actions.ts`) conta
+empresas com `documentacao_status = 'pendente'` — só pra perfil admin.
+Wireada no layout junto das demais contagens (Promise.all com catch→0) e
+renderizada como badge no item "📁 Aprovação de Documentos" (seção
+Administração), só quando > 0.
+
+Arquivos alterados: `src/app/(dashboard)/documentos-empresas/actions.ts`,
+`src/app/(dashboard)/layout.tsx`.
