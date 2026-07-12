@@ -22,6 +22,30 @@ function formatarMoeda(valor: number) {
 // foi rejeitado, ele já vê aqui, na mesma lista de abastecimentos que já usa.
 const STATUS_NF_VALIDOS = new Set(["emitida", "rejeitada", "pendente"]);
 
+// Fase 27.147 — mesmas cores/nomes já usados na visão do cliente
+// (src/app/(dashboard)/abastecimentos/page.tsx), reaproveitados aqui pra
+// mostrar o meio de pagamento também do lado do posto.
+const CORES_PROVEDOR: Record<string, string> = {
+  profrotas: "bg-blue-100 text-blue-700",
+  Valecard: "bg-purple-100 text-purple-700",
+  RedeFrota: "bg-orange-100 text-orange-700",
+  TicketLog: "bg-teal-100 text-teal-700",
+  Veloe: "bg-pink-100 text-pink-700",
+};
+
+function nomeProvedor(provedor: string) {
+  return provedor === "profrotas" ? "PróFrotas" : provedor;
+}
+
+function BadgeProvedor({ provedor }: { provedor: string }) {
+  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 text-slate-600";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${classe}`}>
+      {nomeProvedor(provedor)}
+    </span>
+  );
+}
+
 type SearchParamsPosto = {
   combustivel?: string;
   cliente?: string;
@@ -31,23 +55,41 @@ type SearchParamsPosto = {
   page?: string;
   ajuste?: string;
   nf?: string;
+  provedor?: string;
+};
+
+type DetalhePendencia = {
+  motivo: string;
+  detalheTexto: string | null;
+  nomeArquivo: string | null;
+  cnpjEmitente: string | null;
+  produtoNomeXml: string | null;
+  quantidade: number | null;
+  valorTotal: number | null;
 };
 
 // Fase 27.58 — visão do posto na mesma tela /abastecimentos: o que ele
 // FORNECEU (não o que consumiu — isso é o lado cliente, acima em
-// AbastecimentosPage). O robô grava pv_cnpj com o CNPJ do posto (ver
-// gerar_abastecimentos_postos_robo em Supabase); a RLS
-// profrotas_abastecimentos_leitura_posto libera a leitura pra quem for
-// dono desse CNPJ. Sem seletor de EMPRESA aqui — o posto já é sempre uma
-// única empresa (não tem grupo econômico como Frota) — mas o posto atende
-// VÁRIOS clientes, daí o filtro de "cliente" abaixo (Fase 27.65).
+// AbastecimentosPage). Sem seletor de EMPRESA aqui — o posto já é sempre
+// uma única empresa (não tem grupo econômico como Frota) — mas o posto
+// atende VÁRIOS clientes e recebe por VÁRIOS meios de pagamento, daí os
+// filtros de "cliente" e "provedor" abaixo.
 //
 // Fase 27.65 — Daniel pediu filtro de cliente, data inicial, data final e
 // campo livre pra pesquisa, mesmo padrão já usado em /abastecimentos (lado
-// Frota, Fase 27.8/27.31) — aqui não existia nenhum desses (só a pill de
-// combustível). Aproveitado pra também paginar (Fase 27.12 já tinha corrigido
-// isso pro lado Frota; esta tela ficou de fora até agora, com `.limit(500)`
-// sem paginação nenhuma).
+// Frota, Fase 27.8/27.31).
+//
+// Fase 27.147 — achado real (Daniel, com print de "Abastecimentos
+// Fornecidos" mostrando só linhas PróFrotas): esta tela lia só
+// profrotas_abastecimentos (filtrando por pv_cnpj) — abastecimentos
+// fornecidos por este posto através de outros meios de pagamento
+// (Valecard/RedeFrota/TicketLog/Veloe, tabela abastecimentos_externos)
+// simplesmente não apareciam aqui, mesmo já aparecendo do lado do cliente
+// (view abastecimentos_unificado, Fase 27.133/27.135). Trocada a fonte pra
+// abastecimentos_unificado filtrando por posto_cnpj=meuCnpj (RLS já libera:
+// abastecimentos_externos_select_posto compara o CNPJ normalizado) — agora
+// cobre os dois lados, com coluna/badge de meio de pagamento e filtro por
+// provedor, igual ao lado cliente.
 export async function AbastecimentosPosto({
   empresaPostoId,
   nomeEmpresaSelecionada,
@@ -58,128 +100,147 @@ export async function AbastecimentosPosto({
   searchParams: SearchParamsPosto;
 }) {
   const supabase = await createClient();
-  const { combustivel, cliente, q, de, ate, page, ajuste, nf: nfParam } = searchParams;
+  const { combustivel, cliente, q, de, ate, page, ajuste, nf: nfParam, provedor } = searchParams;
   const nf = nfParam && STATUS_NF_VALIDOS.has(nfParam) ? nfParam : null;
 
   const { data: empresa } = await supabase.from("empresas").select("cnpj").eq("id", empresaPostoId).maybeSingle();
   const meuCnpj = empresa?.cnpj;
 
+  // Fase 27.147 — achado real ao investigar o gap de abastecimentos_externos
+  // (ver comentário grande acima): `empresas.cnpj` é sempre gravado sem
+  // pontuação, mas `abastecimentos_externos.posto_cnpj` (texto livre — cada
+  // provedor manda como quiser) tem linhas com o MESMO CNPJ em formatos
+  // diferentes ("22333444000155" e "22.333.444/0001-55"). Um `.eq()` simples
+  // deixaria de fora a variante formatada. Sem poder aplicar
+  // regexp_replace num filtro do PostgREST, comparamos contra as duas
+  // variantes mais prováveis (crua e com máscara padrão de CNPJ).
+  function mascararCnpj(cnpjLimpo: string): string | null {
+    const digitos = cnpjLimpo.replace(/\D/g, "");
+    if (digitos.length !== 14) return null;
+    return `${digitos.slice(0, 2)}.${digitos.slice(2, 5)}.${digitos.slice(5, 8)}/${digitos.slice(8, 12)}-${digitos.slice(12, 14)}`;
+  }
+  const meuCnpjMascarado = meuCnpj ? mascararCnpj(meuCnpj) : null;
+  const variantesCnpj = meuCnpj ? (meuCnpjMascarado ? [meuCnpj, meuCnpjMascarado] : [meuCnpj]) : [];
+
+  // Fase 27.147 — `id` é texto (view abastecimentos_unificado — bigint de
+  // sequências independentes por tabela-fonte, unificar como texto evita
+  // colidir "id 31 do PróFrotas" com "id 31 da Valecard").
+  // `codigo_abastecimento` só existe pro lado PróFrotas.
   type Registro = {
-    id: number;
-    codigo_abastecimento: string;
+    id: string;
+    provedor: string;
+    codigo_abastecimento: string | null;
     data_abastecimento: string | null;
-    frota_razao_social: string | null;
-    cnpj_frota: string | null;
-    veiculo_placa: string | null;
+    empresa_id: string | null;
+    placa: string | null;
     motorista_nome: string | null;
-    item_nome: string | null;
-    item_quantidade: number | null;
-    item_valor_unitario: number | null;
-    item_valor_total: number | null;
+    produto: string | null;
+    litros: number | null;
+    valor_total: number | null;
   };
 
   let registros: Registro[] = [];
   let erro: string | undefined;
-  let clientesOpcoes: { cnpj: string; nome: string }[] = [];
+  let clientesOpcoes: { id: string; nome: string }[] = [];
+  let provedoresOpcoes: string[] = [];
   let totalRegistros = 0;
   let volumeTotal = 0;
   let receitaTotal = 0;
-  let idsComAjusteAberto = new Set<number>();
-  let notaPorAbastecimento = new Map<number, number | null>();
-  let pendenciaPorAbastecimento = new Map<
-    number,
-    {
-      motivo: string;
-      detalheTexto: string | null;
-      nomeArquivo: string | null;
-      cnpjEmitente: string | null;
-      produtoNomeXml: string | null;
-      quantidade: number | null;
-      valorTotal: number | null;
-    }
-  >();
+  let idsComAjusteAbertoProfrotas = new Set<number>();
+  let idsComAjusteAbertoExterno = new Set<number>();
+  let notaPorAbastecimentoProfrotas = new Map<number, number | null>();
+  let notaPorAbastecimentoExterno = new Map<number, number | null>();
+  let pendenciaPorAbastecimentoProfrotas = new Map<number, DetalhePendencia>();
+  let pendenciaPorAbastecimentoExterno = new Map<number, DetalhePendencia>();
   let contagemNf = { todos: 0, emitida: 0, rejeitada: 0, pendente: 0 };
 
   const offset = offsetDaPagina(POR_PAGINA, page);
 
   if (meuCnpj) {
-    // Clientes que já abasteceram neste posto — pro seletor de filtro (só
-    // quem realmente tem registro aqui, não a lista genérica de negociações).
-    const { data: clientesData } = await supabase
-      .from("profrotas_abastecimentos")
-      .select("cnpj_frota, frota_razao_social")
-      .eq("pv_cnpj", meuCnpj)
-      .limit(5000);
-    const mapaClientes = new Map<string, string>();
-    for (const c of clientesData ?? []) {
-      if (c.cnpj_frota && !mapaClientes.has(c.cnpj_frota)) {
-        mapaClientes.set(c.cnpj_frota, c.frota_razao_social ?? c.cnpj_frota);
-      }
-    }
-    clientesOpcoes = Array.from(mapaClientes, ([cnpj, nome]) => ({ cnpj, nome })).sort((a, b) =>
-      a.nome.localeCompare(b.nome)
+    // Clientes que já abasteceram neste posto (qualquer meio de pagamento) —
+    // pro seletor de filtro. A view não expõe nome do cliente, só empresa_id
+    // — busca à parte em `empresas` pra resolver o nome de exibição.
+    const [{ data: clientesData }, { data: provedoresData }] = await Promise.all([
+      supabase.from("abastecimentos_unificado").select("empresa_id").in("posto_cnpj", variantesCnpj).limit(20000),
+      supabase.from("abastecimentos_unificado").select("provedor").in("posto_cnpj", variantesCnpj).limit(20000),
+    ]);
+    const idsClientes = Array.from(
+      new Set((clientesData ?? []).map((c) => c.empresa_id).filter((id): id is string => !!id))
     );
+    if (idsClientes.length > 0) {
+      const { data: empresasData } = await supabase.from("empresas").select("id, nome").in("id", idsClientes);
+      clientesOpcoes = (empresasData ?? [])
+        .map((e) => ({ id: e.id, nome: e.nome }))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+    }
+
+    provedoresOpcoes = Array.from(
+      new Set((provedoresData ?? []).map((p) => p.provedor).filter((p): p is string => !!p))
+    ).sort((a, b) => nomeProvedor(a).localeCompare(nomeProvedor(b)));
+
+    // Fase 27.147 — a view não tem nome do cliente pra casar com o campo de
+    // busca livre; resolve à parte quais empresas batem pelo nome e inclui
+    // o(s) empresa_id(s) encontrados no filtro OR abaixo.
+    let idsClientesQ: string[] = [];
+    if (q) {
+      const { data: matchNome } = await supabase.from("empresas").select("id").ilike("nome", `%${q}%`).limit(200);
+      idsClientesQ = (matchNome ?? []).map((e) => e.id);
+    }
 
     // Fase 27.68 — Daniel pediu um filtro pra ver só os abastecimentos com
     // ajuste pendente ("melhor visualização"). Aproveitada a mesma consulta
-    // pra também pintar a bolinha vermelha na linha (Fase 27.67) — antes essa
-    // bolinha só olhava a página atual; agora é 1 consulta só, com todos os
-    // IDs em aberto pra este posto (a RLS já limita ao que envolve este
-    // posto), reaproveitada nos dois lugares.
-    // Fase 27.142 — esta lista é só do lado PróFrotas (ver comentário da
-    // Fase 27.58 acima); ajustes de abastecimentos de outros provedores têm
-    // abastecimento_id null (usam abastecimento_externo_id) — filtrados
-    // fora daqui, senão a bolinha vermelha "casaria" por acaso com um id
-    // PróFrotas coincidente.
+    // pra também pintar a bolinha vermelha na linha (Fase 27.67).
+    // Fase 27.147 — agora 2 conjuntos (PróFrotas/externo), mesmo motivo já
+    // documentado no lado cliente (Fase 27.142): o `id` da view só é único
+    // DENTRO de cada provedor.
     const { data: ajustesAbertosTodos } = await supabase
       .from("ajustes_abastecimentos")
-      .select("abastecimento_id")
-      .not("abastecimento_id", "is", null)
+      .select("abastecimento_id, abastecimento_externo_id")
+      .eq("empresa_posto_id", empresaPostoId)
       .in("status", ["pendente_cliente", "pendente_posto"]);
-    idsComAjusteAberto = new Set(
-      (ajustesAbertosTodos ?? []).flatMap((a) => (a.abastecimento_id != null ? [a.abastecimento_id] : []))
-    );
-    const idsFiltroAjuste = idsComAjusteAberto.size > 0 ? Array.from(idsComAjusteAberto) : [-1];
+    for (const a of ajustesAbertosTodos ?? []) {
+      if (a.abastecimento_id != null) idsComAjusteAbertoProfrotas.add(a.abastecimento_id);
+      if (a.abastecimento_externo_id != null) idsComAjusteAbertoExterno.add(a.abastecimento_externo_id);
+    }
 
-    // Fase 27.102 — mesma ideia da bolinha de ajuste acima: 2 consultas com
+    // Fase 27.102 — mesma ideia da bolinha de ajuste acima: consultas com
     // TODOS os registros de NF-e/pendência deste posto (tabelas já têm RLS
     // própria escopando por empresa_posto_id — Fases 27.94/27.99), viradas em
-    // mapa abastecimento_id -> status, reaproveitadas tanto pra pintar o
-    // badge de cada linha quanto pra montar os filtros por status abaixo.
-    // Pendência só "vale" se ainda não tem NF-e emitida pro mesmo
-    // abastecimento (mesma regra da LEFT JOIN LATERAL "on nf.id is null" já
-    // usada em abastecimentos_com_status_nota_fiscal) — assim que o posto
-    // reenvia a NF-e certa, a rejeição antiga some sozinha da lista.
+    // mapas abastecimento_id/abastecimento_externo_id -> status, reaproveitadas
+    // tanto pra pintar o badge de cada linha quanto pra montar os filtros por
+    // status abaixo. Pendência só "vale" se ainda não tem NF-e emitida pro
+    // mesmo abastecimento.
+    // Fase 27.147 — antes filtrava só abastecimento_id (lado PróFrotas); agora
+    // traz os dois lados (sem o .not(...) que descartava as linhas externas).
     const [{ data: notasData }, { data: pendenciasData }] = await Promise.all([
       supabase
         .from("notas_fiscais_abastecimento")
-        .select("abastecimento_id, numero_nf")
+        .select("abastecimento_id, abastecimento_externo_id, numero_nf")
         .eq("empresa_posto_id", empresaPostoId)
-        // Fase 27.136 — esta tela é só do lado PróFrotas (profrotas_abastecimentos,
-        // ver comentário da Fase 27.58 acima); abastecimento_id agora é null pras
-        // NF-e vinculadas a abastecimentos de outros provedores (que usam
-        // abastecimento_externo_id) — não interessam aqui.
-        .not("abastecimento_id", "is", null)
         .limit(20000),
       supabase
         .from("notas_fiscais_pendencias")
-        .select("abastecimento_id, motivo, detalhe_texto, criado_em, nome_arquivo, cnpj_emitente, produto_nome_xml, quantidade, valor_total")
+        .select(
+          "abastecimento_id, abastecimento_externo_id, motivo, detalhe_texto, criado_em, nome_arquivo, cnpj_emitente, produto_nome_xml, quantidade, valor_total"
+        )
         .eq("empresa_posto_id", empresaPostoId)
-        .not("abastecimento_id", "is", null)
         .order("criado_em", { ascending: false })
         .limit(20000),
     ]);
 
-    notaPorAbastecimento = new Map(
-      (notasData ?? []).flatMap((n) => (n.abastecimento_id === null ? [] : [[n.abastecimento_id, n.numero_nf] as const]))
-    );
-    pendenciaPorAbastecimento = new Map();
+    for (const n of notasData ?? []) {
+      if (n.abastecimento_id != null && !notaPorAbastecimentoProfrotas.has(n.abastecimento_id)) {
+        notaPorAbastecimentoProfrotas.set(n.abastecimento_id, n.numero_nf);
+      }
+      if (n.abastecimento_externo_id != null && !notaPorAbastecimentoExterno.has(n.abastecimento_externo_id)) {
+        notaPorAbastecimentoExterno.set(n.abastecimento_externo_id, n.numero_nf);
+      }
+    }
     for (const p of pendenciasData ?? []) {
-      if (p.abastecimento_id === null || pendenciaPorAbastecimento.has(p.abastecimento_id)) continue;
       // Fase 27.103 — pedido do Daniel: mesmos dados extraídos do XML
       // (arquivo, CNPJ, produto, quantidade, valor) direto na linha do
       // abastecimento rejeitado, não só o motivo.
-      pendenciaPorAbastecimento.set(p.abastecimento_id, {
+      const detalhe: DetalhePendencia = {
         motivo: p.motivo,
         detalheTexto: p.detalhe_texto,
         nomeArquivo: p.nome_arquivo,
@@ -187,12 +248,49 @@ export async function AbastecimentosPosto({
         produtoNomeXml: p.produto_nome_xml,
         quantidade: p.quantidade,
         valorTotal: p.valor_total,
-      });
+      };
+      if (p.abastecimento_id != null && !pendenciaPorAbastecimentoProfrotas.has(p.abastecimento_id)) {
+        pendenciaPorAbastecimentoProfrotas.set(p.abastecimento_id, detalhe);
+      }
+      if (p.abastecimento_externo_id != null && !pendenciaPorAbastecimentoExterno.has(p.abastecimento_externo_id)) {
+        pendenciaPorAbastecimentoExterno.set(p.abastecimento_externo_id, detalhe);
+      }
     }
 
-    const idsEmitida = Array.from(notaPorAbastecimento.keys());
-    const idsRejeitada = Array.from(pendenciaPorAbastecimento.keys()).filter((id) => !notaPorAbastecimento.has(id));
-    const idsSemTentativa = [...idsEmitida, ...idsRejeitada];
+    const idsEmitidaProfrotas = Array.from(notaPorAbastecimentoProfrotas.keys());
+    const idsEmitidaExterno = Array.from(notaPorAbastecimentoExterno.keys());
+    const idsRejeitadaProfrotas = Array.from(pendenciaPorAbastecimentoProfrotas.keys()).filter(
+      (id) => !notaPorAbastecimentoProfrotas.has(id)
+    );
+    const idsRejeitadaExterno = Array.from(pendenciaPorAbastecimentoExterno.keys()).filter(
+      (id) => !notaPorAbastecimentoExterno.has(id)
+    );
+    const idsSemTentativaProfrotas = [...idsEmitidaProfrotas, ...idsRejeitadaProfrotas];
+    const idsSemTentativaExterno = [...idsEmitidaExterno, ...idsRejeitadaExterno];
+
+    // Fase 27.147 — filtro por "id dentro do provedor certo" (evita colisão
+    // entre um id PróFrotas e um id externo que coincidam por acaso), mesmo
+    // padrão já usado no filtro de ajuste pendente da visão cliente (Fase
+    // 27.142).
+    function orIdsPorProvedor(idsProfrotas: number[], idsExterno: number[]) {
+      const p = idsProfrotas.length > 0 ? idsProfrotas.join(",") : "-1";
+      const e = idsExterno.length > 0 ? idsExterno.join(",") : "-1";
+      return `and(provedor.eq.profrotas,id.in.(${p})),and(provedor.neq.profrotas,id.in.(${e}))`;
+    }
+
+    // "Pendente" é o complemento (nenhuma tentativa de NF-e ainda) — só dá
+    // pra expressar como exclusão, por isso o id.not.in por provedor.
+    function orPendentePorProvedor() {
+      const p =
+        idsSemTentativaProfrotas.length > 0
+          ? `and(provedor.eq.profrotas,id.not.in.(${idsSemTentativaProfrotas.join(",")}))`
+          : `provedor.eq.profrotas`;
+      const e =
+        idsSemTentativaExterno.length > 0
+          ? `and(provedor.neq.profrotas,id.not.in.(${idsSemTentativaExterno.join(",")}))`
+          : `provedor.neq.profrotas`;
+      return `${p},${e}`;
+    }
 
     function aplicarFiltrosBase<
       T extends {
@@ -200,45 +298,51 @@ export async function AbastecimentosPosto({
         or: (arg: string) => T;
         gte: (...args: [string, string]) => T;
         lte: (...args: [string, string]) => T;
-        in: (coluna: string, valores: number[]) => T;
+        in: (coluna: string, valores: string[]) => T;
       },
     >(builder: T): T {
-      let query = builder.eq("pv_cnpj", meuCnpj as string);
+      let query = builder.in("posto_cnpj", variantesCnpj);
       if (combustivel && (PRODUTOS_POSTO as readonly string[]).includes(combustivel)) {
-        query = query.eq("item_nome", combustivel);
+        query = query.eq("produto", combustivel);
       }
-      if (cliente) query = query.eq("cnpj_frota", cliente);
+      if (cliente) query = query.eq("empresa_id", cliente);
+      // Fase 27.147 — filtro por meio de pagamento.
+      if (provedor) query = query.eq("provedor", provedor);
       // Fase 27.104 — pedido do Daniel: "tela de abastecimentos, no filtro
       // livre, poder consultar pelo ID abastecimento, em todas as visões" —
-      // o mesmo campo de busca livre agora também casa com o código de 10
-      // dígitos (coluna gerada codigo_abastecimento).
-      if (q)
-        query = query.or(
-          `veiculo_placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,frota_razao_social.ilike.%${q}%,codigo_abastecimento.ilike.%${q}%`
-        );
+      // o mesmo campo de busca livre também casa com o código de 10
+      // dígitos (coluna gerada codigo_abastecimento) e, agora, com o nome
+      // do cliente (resolvido em idsClientesQ acima).
+      if (q) {
+        const clausulas = [`placa.ilike.%${q}%`, `motorista_nome.ilike.%${q}%`, `codigo_abastecimento.ilike.%${q}%`];
+        if (idsClientesQ.length > 0) clausulas.push(`empresa_id.in.(${idsClientesQ.join(",")})`);
+        query = query.or(clausulas.join(","));
+      }
       if (de) query = query.gte("data_abastecimento", de);
       if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
-      if (ajuste === "pendente") query = query.in("id", idsFiltroAjuste);
+      if (ajuste === "pendente") {
+        query = query.or(orIdsPorProvedor(Array.from(idsComAjusteAbertoProfrotas), Array.from(idsComAjusteAbertoExterno)));
+      }
       return query;
     }
 
     // Fase 27.102 — aplica o filtro de status de NF-e por cima dos filtros
-    // já existentes (combustível/cliente/busca/data/ajuste), reaproveitando
-    // os mesmos "ids extras" já usados pro filtro de ajuste pendente.
+    // já existentes (combustível/cliente/provedor/busca/data/ajuste),
+    // reaproveitando os mesmos "ids extras" já usados pro filtro de ajuste
+    // pendente.
     function aplicarFiltrosComNf<
       T extends {
         eq: (...args: [string, string]) => T;
         or: (arg: string) => T;
         gte: (...args: [string, string]) => T;
         lte: (...args: [string, string]) => T;
-        in: (coluna: string, valores: number[]) => T;
-        not: (coluna: string, operador: string, valor: string) => T;
+        in: (coluna: string, valores: string[]) => T;
       },
     >(builder: T): T {
       let query = aplicarFiltrosBase(builder);
-      if (nf === "emitida") query = query.in("id", idsEmitida.length > 0 ? idsEmitida : [-1]);
-      else if (nf === "rejeitada") query = query.in("id", idsRejeitada.length > 0 ? idsRejeitada : [-1]);
-      else if (nf === "pendente" && idsSemTentativa.length > 0) query = query.not("id", "in", `(${idsSemTentativa.join(",")})`);
+      if (nf === "emitida") query = query.or(orIdsPorProvedor(idsEmitidaProfrotas, idsEmitidaExterno));
+      else if (nf === "rejeitada") query = query.or(orIdsPorProvedor(idsRejeitadaProfrotas, idsRejeitadaExterno));
+      else if (nf === "pendente") query = query.or(orPendentePorProvedor());
       return query;
     }
 
@@ -251,13 +355,13 @@ export async function AbastecimentosPosto({
       { count: countRejeitada },
       { count: countPendente },
     ] = await Promise.all([
-      aplicarFiltrosComNf(supabase.from("profrotas_abastecimentos").select("id", { count: "exact", head: true })),
-      aplicarFiltrosComNf(supabase.from("profrotas_abastecimentos").select("item_quantidade, item_valor_total")).limit(50000),
+      aplicarFiltrosComNf(supabase.from("abastecimentos_unificado").select("id", { count: "exact", head: true })),
+      aplicarFiltrosComNf(supabase.from("abastecimentos_unificado").select("litros, valor_total")).limit(50000),
       aplicarFiltrosComNf(
         supabase
-          .from("profrotas_abastecimentos")
+          .from("abastecimentos_unificado")
           .select(
-            "id, codigo_abastecimento, data_abastecimento, frota_razao_social, cnpj_frota, veiculo_placa, motorista_nome, item_nome, item_quantidade, item_valor_unitario, item_valor_total"
+            "id, provedor, codigo_abastecimento, data_abastecimento, empresa_id, placa, motorista_nome, produto, litros, valor_total"
           )
       )
         .order("data_abastecimento", { ascending: false })
@@ -265,22 +369,16 @@ export async function AbastecimentosPosto({
       // Fase 27.102 — contagens dos filtros de status SEMPRE com os filtros
       // base (sem o próprio filtro de nf), pra os números não sumirem/mudarem
       // quando o posto clica de um filtro de status pro outro.
-      aplicarFiltrosBase(supabase.from("profrotas_abastecimentos").select("id", { count: "exact", head: true })),
-      aplicarFiltrosBase(supabase.from("profrotas_abastecimentos").select("id", { count: "exact", head: true })).in(
-        "id",
-        idsEmitida.length > 0 ? idsEmitida : [-1]
+      aplicarFiltrosBase(supabase.from("abastecimentos_unificado").select("id", { count: "exact", head: true })),
+      aplicarFiltrosBase(supabase.from("abastecimentos_unificado").select("id", { count: "exact", head: true })).or(
+        orIdsPorProvedor(idsEmitidaProfrotas, idsEmitidaExterno)
       ),
-      aplicarFiltrosBase(supabase.from("profrotas_abastecimentos").select("id", { count: "exact", head: true })).in(
-        "id",
-        idsRejeitada.length > 0 ? idsRejeitada : [-1]
+      aplicarFiltrosBase(supabase.from("abastecimentos_unificado").select("id", { count: "exact", head: true })).or(
+        orIdsPorProvedor(idsRejeitadaProfrotas, idsRejeitadaExterno)
       ),
-      idsSemTentativa.length > 0
-        ? aplicarFiltrosBase(supabase.from("profrotas_abastecimentos").select("id", { count: "exact", head: true })).not(
-            "id",
-            "in",
-            `(${idsSemTentativa.join(",")})`
-          )
-        : aplicarFiltrosBase(supabase.from("profrotas_abastecimentos").select("id", { count: "exact", head: true })),
+      aplicarFiltrosBase(supabase.from("abastecimentos_unificado").select("id", { count: "exact", head: true })).or(
+        orPendentePorProvedor()
+      ),
     ]);
 
     if (resultadoPagina.error) erro = resultadoPagina.error.message;
@@ -293,10 +391,12 @@ export async function AbastecimentosPosto({
       pendente: countPendente ?? 0,
     };
 
-    const agregados = (agregadosRaw ?? []) as { item_quantidade: number | null; item_valor_total: number | null }[];
-    volumeTotal = agregados.reduce((soma, r) => soma + (r.item_quantidade ?? 0), 0);
-    receitaTotal = agregados.reduce((soma, r) => soma + (r.item_valor_total ?? 0), 0);
+    const agregados = (agregadosRaw ?? []) as { litros: number | null; valor_total: number | null }[];
+    volumeTotal = agregados.reduce((soma, r) => soma + (r.litros ?? 0), 0);
+    receitaTotal = agregados.reduce((soma, r) => soma + (r.valor_total ?? 0), 0);
   }
+
+  const nomesClientes = clientesOpcoes.length > 0 ? new Map(clientesOpcoes.map((c) => [c.id, c.nome])) : new Map<string, string>();
 
   const { paginaAtual, totalPaginas } = calcularPaginacao(totalRegistros, POR_PAGINA, page);
   const precoMedio = volumeTotal > 0 ? receitaTotal / volumeTotal : 0;
@@ -304,15 +404,14 @@ export async function AbastecimentosPosto({
   // Fase 27.131 — achado real (Daniel: "ao clicar em qualquer um, volta para
   // a seleção de cliente"): esta função montava a URL sem o parâmetro
   // "empresa" — quando quem está vendo é admin (ou qualquer usuário com mais
-  // de uma empresa), clicar em QUALQUER filtro (combustível, ajuste
-  // pendente, ou os 4 de NF-e, todos usam linkFiltro) derrubava a empresa
+  // de uma empresa), clicar em QUALQUER filtro derrubava a empresa
   // selecionada e o /abastecimentos/page.tsx pai voltava pra tela de
   // "selecione uma empresa" (semClienteEscolhido). Mesma causa raiz já
   // corrigida em outras telas (Fase 27.31/27.111/27.123) — sempre carregar
   // o "empresa" atual em qualquer link/form que fica na mesma página.
   function linkFiltro(extra: Record<string, string | undefined>) {
     const sp = new URLSearchParams();
-    const base = { empresa: empresaPostoId, cliente, q, de, ate, ajuste, nf: nf ?? undefined, ...extra };
+    const base = { empresa: empresaPostoId, cliente, q, de, ate, ajuste, nf: nf ?? undefined, provedor, ...extra };
     for (const [chave, valor] of Object.entries(base)) {
       if (valor) sp.set(chave, valor);
     }
@@ -362,6 +461,29 @@ export async function AbastecimentosPosto({
         </Link>
       </div>
 
+      {/* Fase 27.147 — pedido do Daniel: filtro por meio de pagamento,
+          mesmo padrão visual dos demais filtros de pill desta tela. */}
+      {provedoresOpcoes.length > 1 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-medium text-slate-500">Meio de pagamento:</span>
+          <Link
+            href={linkFiltro({ provedor: undefined })}
+            className={`rounded-full px-3 py-1 font-medium ${!provedor ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+          >
+            Todos
+          </Link>
+          {provedoresOpcoes.map((p) => (
+            <Link
+              key={p}
+              href={linkFiltro({ provedor: p })}
+              className={`rounded-full px-3 py-1 font-medium ${provedor === p ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            >
+              {nomeProvedor(p)}
+            </Link>
+          ))}
+        </div>
+      )}
+
       {/* Fase 27.102 — pedido do Daniel: mesmo filtro por status de NF-e já
           existente em /notas-fiscais, agora também aqui, onde o posto
           realmente acompanha o dia a dia. Cor por categoria igual ao badge
@@ -400,12 +522,13 @@ export async function AbastecimentosPosto({
         <input type="hidden" name="combustivel" value={combustivel ?? ""} />
         <input type="hidden" name="ajuste" value={ajuste ?? ""} />
         <input type="hidden" name="nf" value={nf ?? ""} />
+        <input type="hidden" name="provedor" value={provedor ?? ""} />
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
           <select name="cliente" defaultValue={cliente ?? ""} className="input text-sm">
             <option value="">Todos os clientes</option>
             {clientesOpcoes.map((c) => (
-              <option key={c.cnpj} value={c.cnpj}>
+              <option key={c.id} value={c.id}>
                 {c.nome}
               </option>
             ))}
@@ -439,19 +562,36 @@ export async function AbastecimentosPosto({
               <th className="px-4 py-3">Combustível</th>
               <th className="px-4 py-3">Litros</th>
               <th className="px-4 py-3">Valor</th>
+              <th className="px-4 py-3">Meio de pagamento</th>
               <th className="px-4 py-3">NF-e</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {registros.map((r) => {
-              const numeroNf = notaPorAbastecimento.get(r.id);
-              const pendencia = pendenciaPorAbastecimento.get(r.id);
+              const ehProfrotas = r.provedor === "profrotas";
+              const idNum = Number(r.id);
+              const numeroNf = ehProfrotas ? notaPorAbastecimentoProfrotas.get(idNum) : notaPorAbastecimentoExterno.get(idNum);
+              const pendencia = ehProfrotas
+                ? pendenciaPorAbastecimentoProfrotas.get(idNum)
+                : pendenciaPorAbastecimentoExterno.get(idNum);
+              const temAjustePendente = ehProfrotas
+                ? idsComAjusteAbertoProfrotas.has(idNum)
+                : idsComAjusteAbertoExterno.has(idNum);
               return (
-                <tr key={r.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{r.codigo_abastecimento}</td>
+                <tr key={`${r.provedor}-${r.id}`} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">
+                    {r.codigo_abastecimento ?? "—"}
+                  </td>
                   <td className="px-4 py-3 text-slate-600">
-                    <Link href={`/abastecimentos/${r.id}`} className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline">
-                      {idsComAjusteAberto.has(r.id) && (
+                    {/* Fase 27.147 — linhas de outros provedores também têm
+                        página de detalhe/ajuste (ver /abastecimentos/externo/[id],
+                        Fase 27.142). `r.id` já é o id real da tabela-fonte (a
+                        view abastecimentos_unificado não gera id sintético). */}
+                    <Link
+                      href={ehProfrotas ? `/abastecimentos/${r.id}` : `/abastecimentos/externo/${r.id}`}
+                      className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline"
+                    >
+                      {temAjustePendente && (
                         <span
                           className="h-2 w-2 shrink-0 rounded-full bg-red-500"
                           title="Ajuste pendente neste abastecimento"
@@ -460,13 +600,18 @@ export async function AbastecimentosPosto({
                       {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-700">{r.frota_razao_social ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.veiculo_placa ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-700">
+                    {(r.empresa_id ? nomesClientes.get(r.empresa_id) : null) ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{r.placa ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">{r.motorista_nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.item_nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.item_quantidade ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.produto ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.litros ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">
-                    {r.item_valor_total != null ? formatarMoeda(r.item_valor_total) : "—"}
+                    {r.valor_total != null ? formatarMoeda(r.valor_total) : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <BadgeProvedor provedor={r.provedor} />
                   </td>
                   <td className="px-4 py-3">
                     {numeroNf !== undefined ? (
@@ -503,7 +648,7 @@ export async function AbastecimentosPosto({
             })}
             {registros.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={10} className="px-4 py-8 text-center text-slate-400">
                   Nenhum abastecimento fornecido encontrado.
                 </td>
               </tr>
@@ -517,7 +662,7 @@ export async function AbastecimentosPosto({
             totalRegistros={totalRegistros}
             porPagina={POR_PAGINA}
             basePath="/abastecimentos"
-            paramsAtuais={{ empresa: empresaPostoId, combustivel, cliente, q, de, ate, ajuste, nf: nf ?? undefined }}
+            paramsAtuais={{ empresa: empresaPostoId, combustivel, cliente, q, de, ate, ajuste, nf: nf ?? undefined, provedor }}
           />
         </div>
       </div>

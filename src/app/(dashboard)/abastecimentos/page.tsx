@@ -78,9 +78,11 @@ export default async function AbastecimentosPage({
     cliente?: string;
     ajuste?: string;
     nf?: string;
+    provedor?: string;
   }>;
 }) {
-  const { q, de, ate, empresa: empresaParam, page: pageParam, combustivel, cliente, ajuste, nf } = await searchParams;
+  const { q, de, ate, empresa: empresaParam, page: pageParam, combustivel, cliente, ajuste, nf, provedor } =
+    await searchParams;
   const supabase = await createClient();
 
   // Fase 27.8 — mesmo seletor de cliente já usado em Postos, Relatórios,
@@ -105,7 +107,7 @@ export default async function AbastecimentosPage({
         <AbastecimentosPosto
           empresaPostoId={empresaSelecionada}
           nomeEmpresaSelecionada={nomeEmpresaSelecionada}
-          searchParams={{ combustivel, cliente, q, de, ate, page: pageParam, ajuste, nf }}
+          searchParams={{ combustivel, cliente, q, de, ate, page: pageParam, ajuste, nf, provedor }}
         />
       );
     }
@@ -158,6 +160,9 @@ export default async function AbastecimentosPage({
     if (de) query = query.gte("data_abastecimento", de);
     if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
     if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
+    // Fase 27.147 — pedido do Daniel: filtro por meio de pagamento
+    // (provedor), igual ao filtro de combustível já existente.
+    if (provedor) query = query.eq("provedor", provedor);
     // Fase 27.142 — casa tanto ajuste pendente do lado PróFrotas quanto do
     // lado externo, sem deixar um id de um provedor "colidir" por
     // coincidência com o id de ajuste do outro (ver comentário acima).
@@ -214,6 +219,28 @@ export default async function AbastecimentosPage({
     resumoPorProvedor.set(r.provedor, (resumoPorProvedor.get(r.provedor) ?? 0) + (r.valor_total ?? 0));
   }
   const listaResumoProvedores = Array.from(resumoPorProvedor.entries()).sort((a, b) => b[1] - a[1]);
+
+  // Fase 27.147 — pedido do Daniel: filtro por meio de pagamento na lista de
+  // abastecimentos, igual ao filtro de combustível. Opções vêm de uma
+  // consulta enxuta (só a coluna provedor, sem limite de data) — assim o
+  // filtro mostra todo provedor que este cliente já usou, não só os dos
+  // últimos 6 meses do resumo acima.
+  const { data: provedoresRaw } = empresaSelecionada
+    ? await supabase.from("abastecimentos_unificado").select("provedor").eq("empresa_id", empresaSelecionada).limit(50000)
+    : { data: [] };
+  const provedoresOpcoes = Array.from(
+    new Set((provedoresRaw ?? []).map((r: { provedor: string | null }) => r.provedor).filter((p): p is string => !!p))
+  ).sort((a, b) => nomeProvedor(a).localeCompare(nomeProvedor(b)));
+
+  // Fase 27.147 — mesma lógica de link já usada no filtro de ajuste
+  // pendente abaixo, generalizada pra reaproveitar no filtro de provedor.
+  function linkFiltro(extra: Record<string, string | undefined>) {
+    const sp = new URLSearchParams();
+    const base = { empresa: empresaParam, q, de, ate, ajuste, provedor, ...extra };
+    for (const [chave, valor] of Object.entries(base)) if (valor) sp.set(chave, valor);
+    const qs = sp.toString();
+    return qs ? `/abastecimentos?${qs}` : "/abastecimentos";
+  }
 
   return (
     <div>
@@ -294,6 +321,7 @@ export default async function AbastecimentosPage({
             /motoristas. */}
         <input type="hidden" name="empresa" value={empresaParam ?? ""} />
         <input type="hidden" name="ajuste" value={ajuste ?? ""} />
+        <input type="hidden" name="provedor" value={provedor ?? ""} />
         <input
           type="search"
           name="q"
@@ -308,18 +336,36 @@ export default async function AbastecimentosPage({
         </button>
       </form>
 
+      {/* Fase 27.147 — pedido do Daniel: filtro por meio de pagamento ao
+          lado dos demais, mesmo padrão visual do filtro de combustível já
+          usado na visão do posto. */}
+      {provedoresOpcoes.length > 1 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-medium text-slate-500">Meio de pagamento:</span>
+          <Link
+            href={linkFiltro({ provedor: undefined })}
+            className={`rounded-full px-3 py-1 font-medium ${!provedor ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+          >
+            Todos
+          </Link>
+          {provedoresOpcoes.map((p) => (
+            <Link
+              key={p}
+              href={linkFiltro({ provedor: p })}
+              className={`rounded-full px-3 py-1 font-medium ${provedor === p ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            >
+              {nomeProvedor(p)}
+            </Link>
+          ))}
+        </div>
+      )}
+
       {/* Fase 27.68 — filtro pra ver só quem tem ajuste pendente, pra não
           precisar abrir registro por registro procurando a bolinha vermelha.
           Só afeta linhas PróFrotas (ver comentário em idsFiltroAjuste). */}
       <div className="mb-4">
         <Link
-          href={(() => {
-            const sp = new URLSearchParams();
-            const base = { empresa: empresaParam, q, de, ate, ajuste: ajuste === "pendente" ? undefined : "pendente" };
-            for (const [chave, valor] of Object.entries(base)) if (valor) sp.set(chave, valor);
-            const qs = sp.toString();
-            return qs ? `/abastecimentos?${qs}` : "/abastecimentos";
-          })()}
+          href={linkFiltro({ ajuste: ajuste === "pendente" ? undefined : "pendente" })}
           className={`rounded-full px-3 py-1 text-xs font-medium ${ajuste === "pendente" ? "bg-red-500 text-white" : "bg-slate-100 text-slate-600"}`}
         >
           🔴 Pendente de ajuste
@@ -408,7 +454,7 @@ export default async function AbastecimentosPage({
             totalRegistros={totalRegistros}
             porPagina={POR_PAGINA}
             basePath="/abastecimentos"
-            paramsAtuais={{ q, de, ate, empresa: empresaParam, ajuste }}
+            paramsAtuais={{ q, de, ate, empresa: empresaParam, ajuste, provedor }}
           />
         </div>
       </div>
