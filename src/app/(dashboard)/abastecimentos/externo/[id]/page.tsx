@@ -52,7 +52,9 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
       <div>
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-slate-900">Abastecimento</h1>
-          <p className="mt-1 text-xs text-slate-400">{abastecimento.provedor}</p>
+          {/* Fase 27.152/27.153 — mesmo ID de 10 dígitos de /abastecimentos/[id]
+              (Fase 27.104), agora também pro lado externo (API/planilha). */}
+          <p className="mt-1 text-xs text-slate-400">ID {abastecimento.codigo_abastecimento} · {abastecimento.provedor}</p>
         </div>
         <ValoresCard abastecimento={abastecimento} nomeCliente={nomeCliente ?? null} />
         <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
@@ -94,7 +96,9 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
     <div>
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Abastecimento</h1>
-        <p className="mt-1 text-xs text-slate-400">{abastecimento.provedor}</p>
+        {/* Fase 27.152/27.153 — mesmo ID de 10 dígitos de /abastecimentos/[id]
+            (Fase 27.104), agora também pro lado externo (API/planilha). */}
+        <p className="mt-1 text-xs text-slate-400">ID {abastecimento.codigo_abastecimento} · {abastecimento.provedor}</p>
         <p className="mt-1 text-sm text-slate-500">
           Este registro tem cliente e posto identificados na plataforma — qualquer correção precisa
           ser aprovada pela outra parte antes de valer.

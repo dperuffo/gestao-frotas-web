@@ -7251,3 +7251,19 @@ offset criaria colisão entre um código PróFrotas e um código externo.
 Validado: `tsc --noEmit` e `eslint` limpos nos arquivos alterados; consulta direta confirmou
 `abastecimentos_unificado` retornando `2000000002`, `2000000003` etc. pros registros
 TicketLog/RedeFrota/Valecard já existentes.
+
+## Fase 27.153 — ID na tela de detalhe do abastecimento (todas as visões)
+
+Pedido do Daniel, complementar à Fase 27.152: o ID (`codigo_abastecimento`) precisa aparecer na
+tela de detalhe do abastecimento, em todas as visões. `/abastecimentos/[id]` (lado PróFrotas) já
+mostrava desde a Fase 27.104 ("ID {codigo_abastecimento}", logo abaixo do título). Faltava em
+`/abastecimentos/externo/[id]` (Valecard/RedeFrota/TicketLog/Veloe — Fase 27.142), que não
+renderizava nenhum ID.
+
+- `src/app/(dashboard)/abastecimentos/externo/[id]/page.tsx`: adicionada a mesma linha "ID
+  {abastecimento.codigo_abastecimento}" nos dois branches da página (sem contraparte identificada
+  e com contraparte), ao lado do nome do provedor. `abastecimento` vem de `.select("*")` em
+  `abastecimentos_externos`, que já passou a incluir `codigo_abastecimento` desde a Fase 27.152 —
+  não precisou mudar a query, só o `database.types.ts` (Fase 27.152) já cobria isso.
+
+Validado: `tsc --noEmit` e `eslint` limpos.
