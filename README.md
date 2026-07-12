@@ -7060,3 +7060,74 @@ Correção:
   do marcador, que usa um campo `label` separado.
 
 Arquivos alterados: `src/lib/coresBandeira.ts`, `src/app/(dashboard)/roteirizacao/_components/MapaRota.tsx`.
+
+## Fase 27.147 — meio de pagamento em todas as visões de /abastecimentos + filtro
+
+Pedido do Daniel: "Na tela de abastecimentos de todas as visoes precisa
+trazer o meio de pagamento utilizado ao lado de cada registro de
+abastecimentos e filtro de selecao de meio de pgamento", com print da tela
+"Abastecimentos Fornecidos" (visão posto).
+
+**Visão cliente (Frota)** já mostrava a coluna "Meio de pagamento" desde a
+Fase 27.133/27.135 — só faltava o filtro. Adicionado: pills "Meio de
+pagamento" (Todos + cada provedor já usado por este cliente) acima do filtro
+de "Pendente de ajuste", com as opções resolvidas por uma consulta enxuta em
+`abastecimentos_unificado`.
+
+**Visão posto ("Abastecimentos Fornecidos")** tinha um problema mais sério:
+`AbastecimentosPosto.tsx` lia só `profrotas_abastecimentos` (filtrando por
+`pv_cnpj`) — abastecimentos fornecidos por este posto através de outros
+meios de pagamento (Valecard/RedeFrota/TicketLog/Veloe, tabela
+`abastecimentos_externos`) simplesmente não apareciam nessa tela, mesmo já
+aparecendo do lado do cliente. Reescrito pra usar a view
+`abastecimentos_unificado` (Fase 27.133/27.135) filtrando por
+`posto_cnpj` — cobre os dois lados agora, com coluna "Meio de pagamento" e
+filtro por provedor, mesmo padrão visual da visão cliente.
+
+Como a tela do posto identifica clientes/dados de NF-e/ajuste por dois tipos
+de id diferentes (abastecimento PróFrotas vs. externo, sequências
+independentes), toda a lógica de contagem/filtro de NF-e e de "pendente de
+ajuste" precisou ser duplicada por provedor (mesmo padrão já usado na visão
+cliente desde a Fase 27.142), incluindo o filtro "Pendente" de NF-e, que
+usa `id.not.in.(...)` dentro de um `or()` combinando os dois provedores —
+essa é a parte com sintaxe mais nova neste código; vale conferir esse filtro
+específico depois do deploy.
+
+**Achado à parte durante a investigação**: `abastecimentos_externos.posto_cnpj`
+tem o mesmo CNPJ gravado em formatos diferentes pra postos de teste (ex:
+"22333444000155" e "22.333.444/0001-55"), enquanto `empresas.cnpj` é sempre
+gravado sem pontuação. Um filtro `.eq()` simples perderia a variante
+formatada. Corrigido comparando contra as duas variantes prováveis (crua e
+com máscara padrão de CNPJ) via `.in(...)` em vez de `.eq(...)`.
+
+Arquivos alterados: `src/app/(dashboard)/abastecimentos/page.tsx`,
+`src/app/(dashboard)/abastecimentos/_components/AbastecimentosPosto.tsx`.
+
+Pendente de melhoria futura: a formatação divergente de `posto_cnpj` em
+`abastecimentos_externos` é um problema de qualidade de dado (provavelmente
+de um seed/robô antigo) — o ideal a médio prazo é normalizar essa coluna na
+origem, não só contornar na leitura.
+
+## Fase 27.148 — card de ajuda (?) cortado perto da borda esquerda da tela
+
+Bug reportado pelo Daniel: o popover do ícone "?" (AjudaIcon, usado em
+várias telas — ex: coluna "Score" da Roteirização, 1ª coluna da tabela)
+aparecia cortado quando o ícone estava perto da borda esquerda da tela.
+
+Causa: o card abria com `position: absolute`, centralizado embaixo do
+ícone, largura fixa de 256px (`w-64`). Perto da borda esquerda, metade do
+card tentava renderizar fora da área visível — e como o ícone fica dentro
+de um card com `overflow-x-auto` (padrão das tabelas do sistema), esse
+ancestral CORTAVA o conteúdo que passava da borda, em vez de só empurrar
+pra fora de vista.
+
+Correção: o popover agora renderiza num portal direto em `document.body`
+(fora do fluxo/scroll da tabela — não sofre mais clipping do ancestral),
+com posição calculada em coordenadas de viewport a partir do próprio ícone
+(`getBoundingClientRect`) e travada pra nunca passar das bordas da tela.
+Fecha automaticamente ao rolar a página ou redimensionar a janela (evita o
+card "flutuar" longe do ícone que o abriu).
+
+Arquivo alterado: `src/components/ajuda/AjudaIcon.tsx` (componente
+compartilhado — corrige em todas as telas que usam o ícone de ajuda, não só
+Roteirização).
