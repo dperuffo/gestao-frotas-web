@@ -7218,3 +7218,36 @@ Administração), só quando > 0.
 
 Arquivos alterados: `src/app/(dashboard)/documentos-empresas/actions.ts`,
 `src/app/(dashboard)/layout.tsx`.
+
+## Fase 27.152 — ID de 10 dígitos também pros abastecimentos integrados via API/planilha
+
+Pedido do Daniel: nas telas de Abastecimentos e Notas Fiscais, os registros vindos de outras
+modalidades de pagamento (TicketLog, RedeFrota, Valecard, Veloe — tudo que entra em
+`abastecimentos_externos`, seja por API ou por importação de planilha) apareciam com "—" na
+coluna ID, porque só `profrotas_abastecimentos` tinha a coluna gerada `codigo_abastecimento`
+(Fase 27.104: `(1000000000 + id)::text`, sempre 10 dígitos, começando com "1").
+
+Adicionada a mesma coluna gerada em `abastecimentos_externos`, mas com faixa própria —
+`(2000000000 + id)::text`, começando com "2" — porque as duas tabelas têm sequences de `id`
+independentes que já se sobrepõem (existe `id=167854` nas duas), então reaproveitar o mesmo
+offset criaria colisão entre um código PróFrotas e um código externo.
+
+- Migração `fase_27_152_codigo_abastecimento_externos`: `alter table abastecimentos_externos add
+  column codigo_abastecimento text generated always as ((2000000000 + id)::text) stored`.
+- `abastecimentos_unificado` (view usada em /abastecimentos, dashboards, financeiro) e
+  `abastecimentos_com_status_nota_fiscal` (RPC usada em /notas-fiscais) expunham
+  `NULL::text as codigo_abastecimento` fixo pro lado externo — trocado por `e.codigo_abastecimento`
+  / `ae.codigo_abastecimento` nos dois lugares.
+- `src/types/database.types.ts`: `codigo_abastecimento: string` adicionado ao Row de
+  `abastecimentos_externos` (mesmo padrão do já existente em `profrotas_abastecimentos` — coluna
+  gerada, não é inserível/atualizável, por isso `Insert` continua sem exigi-la).
+- Comentários em `abastecimentos/page.tsx` e `AbastecimentosPosto.tsx` que diziam
+  "codigo_abastecimento só existe pro lado PróFrotas" atualizados — agora os dois lados têm,
+  em faixas que nunca colidem (1xxxxxxxxx = PróFrotas, 2xxxxxxxxx = integrado via API/planilha).
+  Nenhuma mudança de código foi necessária nos componentes de exibição — eles já faziam
+  `r.codigo_abastecimento ?? "—"`, então passaram a mostrar o código real assim que a
+  view/RPC pararam de forçar NULL.
+
+Validado: `tsc --noEmit` e `eslint` limpos nos arquivos alterados; consulta direta confirmou
+`abastecimentos_unificado` retornando `2000000002`, `2000000003` etc. pros registros
+TicketLog/RedeFrota/Valecard já existentes.

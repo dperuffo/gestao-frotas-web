@@ -51,7 +51,10 @@ function BadgeProvedor({ provedor }: { provedor: string }) {
 // abastecimentos_externos (view abastecimentos_unificado). `id` é sempre
 // texto (as duas fontes usam bigint de sequências diferentes — unificar
 // como texto evita colidir "id 31 do PróFrotas" com "id 31 da Valecard").
-// `codigo_abastecimento` só existe pro lado PróFrotas.
+// Fase 27.152 — `codigo_abastecimento` agora existe dos dois lados: código
+// de 10 dígitos começando com "1" pra PróFrotas (Fase 27.104) e com "2" pra
+// abastecimentos integrados via API/planilha (TicketLog, RedeFrota,
+// Valecard, Veloe) — faixas próprias, nunca colidem entre si.
 type RegistroUnificado = {
   id: string;
   provedor: string;

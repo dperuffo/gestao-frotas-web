@@ -125,7 +125,8 @@ export async function AbastecimentosPosto({
   // Fase 27.147 — `id` é texto (view abastecimentos_unificado — bigint de
   // sequências independentes por tabela-fonte, unificar como texto evita
   // colidir "id 31 do PróFrotas" com "id 31 da Valecard").
-  // `codigo_abastecimento` só existe pro lado PróFrotas.
+  // Fase 27.152 — `codigo_abastecimento` agora existe dos dois lados: "1..."
+  // pra PróFrotas, "2..." pra abastecimentos integrados via API/planilha.
   type Registro = {
     id: string;
     provedor: string;

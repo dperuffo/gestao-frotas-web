@@ -1206,6 +1206,12 @@ export interface Database {
           // fatura do posto (mesmo espírito de
           // profrotas_abastecimentos.fatura_posto_id).
           fatura_posto_id: string | null;
+          // Fase 27.152 — coluna GERADA (2000000000 + id), faixa própria
+          // (começa com "2") pra nunca colidir com o código do lado
+          // profrotas (1000000000 + id — mesmo espírito da Fase 27.104, ver
+          // profrotas_abastecimentos.codigo_abastecimento). Não é
+          // inserível/atualizável.
+          codigo_abastecimento: string;
         };
         Insert: Partial<Database["public"]["Tables"]["abastecimentos_externos"]["Row"]> & {
           empresa_id: string;
@@ -2212,7 +2218,10 @@ export interface Database {
           preco_litro: number | null;
           valor_total: number | null;
           // Fase 27.135 — id em texto (as duas fontes usam bigint de
-          // sequências diferentes) e código de 10 dígitos (só profrotas).
+          // sequências diferentes). Fase 27.152 — código de 10 dígitos dos
+          // dois lados agora (1xxxxxxxxx = profrotas, 2xxxxxxxxx = externo/
+          // API/planilha — ver comentário em
+          // abastecimentos_externos.codigo_abastecimento).
           id: string | null;
           codigo_abastecimento: string | null;
         };
