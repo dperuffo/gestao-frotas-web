@@ -6940,3 +6940,42 @@ Validado com `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alter
 direto no banco: existem `abastecimentos_externos` reais (RedeFrota/TicketLog/Valecard) com posto já
 resolvível via `resolver_empresa_por_cnpj_segmento` — o caminho "com contraparte" da nova tela é
 exercitável com dados reais, não só o caminho "sem contraparte".
+
+## Fase 27.144 — integração de automação de posto (abastecimentos fornecidos)
+
+Pedido do Daniel: "na aba de integrações na visão de postos, precisa criar o mecanismo de integração
+com softwares de automação de postos para integrar abastecimentos realizados. Criar o Curl de
+integração e a chave de acesso para importação de abastecimentos, todos os detalhes do abastecimento."
+
+Terceiro canal de entrada de abastecimento na FNI, depois de PróFrotas (Fase 11, puxado por cron) e
+provedores de cartão de combustível (Fase 25/27.136, empurrado pela CLIENTE): agora o próprio sistema
+de automação da bomba/PDV do posto (Tanknomia, SAT Combustíveis e afins) pode empurrar cada venda
+direto, sem precisar de nenhum provedor de cartão no meio.
+
+- **Mesma tabela, papéis invertidos**: cai em `abastecimentos_externos` (Fase 25/27.136) — entra
+  automaticamente nos mesmos indicadores financeiros, cobrança (`fatura_posto_id`), pedido de ajuste
+  (Fase 27.142) e vínculo de NF-e (Fase 27.136b) que qualquer outro meio de pagamento. A diferença é
+  de quem detém a chave: no endpoint da Fase 25 (`/api/integracoes/abastecimentos`) é a CLIENTE, e o
+  abastecimento cai com `empresa_id = chave.empresaId` direto. Aqui é o POSTO — o corpo da requisição
+  informa o CNPJ do cliente atendido (`cliente_cnpj`), resolvido pra `empresa_id` na hora via
+  `resolver_empresa_por_cnpj_segmento(cnpj, 'Frota')` (mesma RPC já usada em `/abastecimentos/[id]`
+  pra resolver o posto a partir do lado cliente — aqui é o caminho inverso). Se o cliente não estiver
+  cadastrado na FNI, devolve 404 com mensagem clara em vez de gravar um registro órfão.
+- **Posto nunca vem do corpo**: CNPJ e nome do posto são sempre lidos da empresa dona da chave
+  (`chave.empresaId`) — um posto nunca consegue lançar venda em nome de outro, mesmo que tente
+  informar `posto_cnpj` na requisição (o campo nem existe no corpo aceito).
+- **Novo escopo** `abastecimentos_fornecidos:write` (categoria "Abastecimentos Fornecidos" no
+  catálogo de `apiKeys.ts`), disponível na tela `/integracoes` só pro perfil posto, junto com
+  "Negociação com Cliente" e "Notas Fiscais" já existentes.
+- **Nova rota** `POST /api/integracoes/abastecimentos-fornecidos`: `cliente_cnpj`, `sistema` (nome do
+  software de automação — vira o valor de `provedor`), `placa`, `data_abastecimento`, `quantidade` e
+  `valor_total` obrigatórios; `motorista_nome`, `hodometro`, `combustivel`, `valor_unitario` e
+  `transacao_externa_id` opcionais. Idempotente por `(empresa_id, provedor, transacao_externa_id)` —
+  reenvio da mesma transação devolve 200 `"ja_existia"` em vez de erro (mesmo padrão da Fase 25).
+- Bloco de exemplo `curl` adicionado em `/integracoes`, ao lado dos já existentes de Negociação e
+  Notas Fiscais (visão posto).
+
+Validado com `npx tsc --noEmit` e `npx eslint` limpos nos arquivos alterados. Conferido direto no
+banco que existem empresas segmento="Frota" com CNPJ cadastrado — o caminho de resolução do cliente
+é exercitável com dados reais (mesma RPC já provada em produção pela Fase 27.65/27.142, só que com
+`p_segmento` invertido).

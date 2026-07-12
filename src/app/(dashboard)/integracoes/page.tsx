@@ -103,7 +103,7 @@ export default async function IntegracoesPage() {
       <div className="mb-4">
         <FormularioNovaChaveCustosFixos
           empresas={empresas}
-          apenasCategorias={ehPosto ? ["Negociação com Cliente", "Notas Fiscais"] : undefined}
+          apenasCategorias={ehPosto ? ["Negociação com Cliente", "Notas Fiscais", "Abastecimentos Fornecidos"] : undefined}
         />
       </div>
 
@@ -230,6 +230,36 @@ export default async function IntegracoesPage() {
               resposta traz a lista pra você reenviar informando qual é o certo (campo{" "}
               <code>abastecimento_id</code> no corpo, como query string{" "}
               <code>?abastecimento_id=123</code>). Nunca aceita duas notas com a mesma chave de acesso.
+            </p>
+
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Lançar abastecimento fornecido (escopo abastecimentos_fornecidos:write)
+            </p>
+            <pre className="mb-1 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+{`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/abastecimentos-fornecidos \\
+  -H "Authorization: Bearer fni_..." \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "cliente_cnpj": "12.345.678/0001-90",
+    "sistema": "tanknomia",
+    "placa": "ABC1D23",
+    "motorista_nome": "João da Silva",
+    "data_abastecimento": "2026-07-12T14:30:00Z",
+    "hodometro": 82500,
+    "combustivel": "Diesel S-10 Comum",
+    "quantidade": 45.5,
+    "valor_unitario": 6.29,
+    "valor_total": 286.20,
+    "transacao_externa_id": "BOMBA-4-00019823"
+  }'`}
+            </pre>
+            <p className="mb-4 text-xs text-slate-400">
+              Use isto pra integrar o sistema de automação da bomba/PDV do seu posto direto com a FNI,
+              sem depender de nenhum provedor de cartão no meio. <code>cliente_cnpj</code> precisa ser de
+              um cliente já cadastrado na FNI; CNPJ e nome do posto são sempre os da empresa dona desta
+              chave (não vêm do corpo). Cai na mesma lista de abastecimentos fornecidos, entra nos
+              indicadores financeiros, pode receber pedido de ajuste e vincular NF-e — igual a qualquer
+              outro meio de pagamento.
             </p>
           </>
         )}

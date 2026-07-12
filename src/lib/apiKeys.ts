@@ -49,6 +49,20 @@ export const ESCOPO_NEGOCIACOES_READ = "negociacoes:read";
 // sessão de usuário.
 export const ESCOPO_NOTAS_FISCAIS_WRITE = "notas_fiscais:write";
 
+// Fase 27.144 — pedido do Daniel: sistemas de automação de posto (bomba/PDV
+// — Tanknomia, SAT Combustíveis e afins) devem poder integrar direto, sem
+// depender de um provedor de cartão de combustível no meio, empurrando cada
+// abastecimento REALIZADO no posto assim que ele acontece. Mesma tabela
+// abastecimentos_externos da Fase 25/27.136 (então cai automaticamente nos
+// mesmos indicadores financeiros, cobrança, ajuste e NF-e que qualquer outro
+// meio de pagamento) — a diferença é só de quem detém a chave e como o
+// cliente é identificado: aqui é o POSTO quem gera a chave (como já faz pra
+// Negociação e Notas Fiscais), e o corpo da requisição informa o CNPJ do
+// cliente (frota) que abasteceu, resolvido pra empresa_id na hora. CNPJ e
+// nome do próprio posto NÃO vêm do corpo — são sempre os da empresa dona da
+// chave, pra um posto nunca conseguir lançar venda em nome de outro.
+export const ESCOPO_ABASTECIMENTOS_FORNECIDOS_WRITE = "abastecimentos_fornecidos:write";
+
 // Fase 27.120 — Parâmetros de Uso: regras cadastradas pelo cliente pra
 // balizar abastecimentos autorizados em postos ou soluções de automação/
 // meios de pagamento integrados. Primeiro tipo: Vínculo Motorista ↔
@@ -143,6 +157,13 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
     categoria: "Notas Fiscais",
     label: "Notas fiscais (escrita)",
     descricao: "Enviar o XML da NF-e de venda de combustível, vinculando-a ao abastecimento correspondente.",
+  },
+  {
+    escopo: ESCOPO_ABASTECIMENTOS_FORNECIDOS_WRITE,
+    categoria: "Abastecimentos Fornecidos",
+    label: "Abastecimentos fornecidos (escrita)",
+    descricao:
+      "Lançar, direto do sistema de automação da bomba/PDV do posto, cada abastecimento realizado a um cliente.",
   },
   {
     escopo: ESCOPO_PARAMETROS_VINCULO_READ,
