@@ -2,7 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { decidirAjusteAcao, cancelarAjusteAcao } from "../actions";
-import { STATUS_AJUSTE_LABEL, LABEL_CAMPO_AJUSTE, type AutorAjuste, type CamposAjuste, type StatusAjuste } from "@/lib/ajustesAbastecimentos";
+import {
+  STATUS_AJUSTE_LABEL,
+  LABEL_CAMPO_AJUSTE,
+  type AutorAjuste,
+  type CamposAjuste,
+  type StatusAjuste,
+  type IdentificadorAbastecimento,
+} from "@/lib/ajustesAbastecimentos";
 import { FormularioSolicitarAjuste } from "./FormularioSolicitarAjuste";
 import { formatarDataHoraBr } from "@/lib/utils";
 
@@ -55,7 +62,7 @@ function formatarValorCampo(campo: keyof CamposAjuste, valor: string | number | 
 // contraparte identificada (ver resolverContraparteAjuste na page.tsx) —
 // sem isso, a tela continua usando a edição direta de sempre.
 export function PainelAjusteAbastecimento({
-  abastecimentoId,
+  identificador,
   empresaClienteId,
   empresaPostoId,
   meuLado,
@@ -63,7 +70,7 @@ export function PainelAjusteAbastecimento({
   rodadas,
   valoresAtuais,
 }: {
-  abastecimentoId: number;
+  identificador: IdentificadorAbastecimento;
   empresaClienteId: string;
   empresaPostoId: string;
   meuLado: AutorAjuste;
@@ -84,7 +91,7 @@ export function PainelAjusteAbastecimento({
           recebe uma notificação para aprovar ou recusar antes de qualquer mudança valer.
         </p>
         <FormularioSolicitarAjuste
-          abastecimentoId={abastecimentoId}
+          identificador={identificador}
           empresaClienteId={empresaClienteId}
           empresaPostoId={empresaPostoId}
           autor={meuLado}
@@ -101,7 +108,7 @@ export function PainelAjusteAbastecimento({
   function handleDecisao(decisao: "aceita" | "recusada") {
     setErro(undefined);
     startTransition(async () => {
-      const resultado = await decidirAjusteAcao(ajusteAberto!.id, abastecimentoId, decisao);
+      const resultado = await decidirAjusteAcao(ajusteAberto!.id, identificador, decisao);
       if (resultado?.erro) setErro(resultado.erro);
     });
   }
@@ -109,7 +116,7 @@ export function PainelAjusteAbastecimento({
   function handleCancelar() {
     setErro(undefined);
     startTransition(async () => {
-      const resultado = await cancelarAjusteAcao(ajusteAberto!.id, abastecimentoId);
+      const resultado = await cancelarAjusteAcao(ajusteAberto!.id, identificador);
       if (resultado?.erro) setErro(resultado.erro);
     });
   }
@@ -154,7 +161,7 @@ export function PainelAjusteAbastecimento({
       {minhaVezDeResponder ? (
         contrapropondo ? (
           <FormularioSolicitarAjuste
-            abastecimentoId={abastecimentoId}
+            identificador={identificador}
             empresaClienteId={empresaClienteId}
             empresaPostoId={empresaPostoId}
             autor={meuLado}

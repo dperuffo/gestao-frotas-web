@@ -227,7 +227,12 @@ export interface Database {
       ajustes_abastecimentos: {
         Row: {
           id: string;
-          abastecimento_id: number;
+          // Fase 27.136a — abastecimento_id virou opcional: um ajuste agora
+          // pode ser sobre um abastecimento PróFrotas (abastecimento_id) OU
+          // de outro provedor (abastecimento_externo_id) — CHECK no banco
+          // garante que exatamente um dos dois está preenchido.
+          abastecimento_id: number | null;
+          abastecimento_externo_id: number | null;
           empresa_cliente_id: string;
           empresa_posto_id: string;
           origem: string;
@@ -240,7 +245,6 @@ export interface Database {
           valor_original: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["ajustes_abastecimentos"]["Row"]> & {
-          abastecimento_id: number;
           empresa_cliente_id: string;
           empresa_posto_id: string;
           origem: string;
@@ -252,6 +256,13 @@ export interface Database {
             columns: ["abastecimento_id"];
             isOneToOne: false;
             referencedRelation: "profrotas_abastecimentos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ajustes_abastecimentos_abastecimento_externo_id_fkey";
+            columns: ["abastecimento_externo_id"];
+            isOneToOne: false;
+            referencedRelation: "abastecimentos_externos";
             referencedColumns: ["id"];
           },
           {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { STATUS_AJUSTE_LABEL, type ItemResumoAjuste } from "@/lib/ajustesAbastecimentos";
+import { STATUS_AJUSTE_LABEL, caminhoAbastecimento, type ItemResumoAjuste } from "@/lib/ajustesAbastecimentos";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -60,7 +60,7 @@ export function SecaoAjustesAbastecimentos({
           <tbody className="divide-y divide-slate-100">
             {ultimosAjustes.map((a) => (
               <tr key={a.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 text-slate-700">#{a.abastecimentoId}</td>
+                <td className="px-4 py-3 text-slate-700">#{a.identificador.id}</td>
                 <td className="px-4 py-3 text-slate-500">{a.origem === "cliente" ? "Cliente" : "Posto"}</td>
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
@@ -69,7 +69,7 @@ export function SecaoAjustesAbastecimentos({
                 </td>
                 <td className="px-4 py-3 text-slate-500">{new Date(a.atualizadoEm).toLocaleDateString("pt-BR")}</td>
                 <td className="px-4 py-3 text-right">
-                  <Link href={`/abastecimentos/${a.abastecimentoId}`} className="text-frota-600 hover:underline">
+                  <Link href={caminhoAbastecimento(a.identificador)} className="text-frota-600 hover:underline">
                     Ver
                   </Link>
                 </td>

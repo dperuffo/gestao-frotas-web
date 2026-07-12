@@ -3,7 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import { solicitarAjusteAcao, contrapropostaAjusteAcao } from "../actions";
 import { PRODUTOS_POSTO } from "@/lib/constants";
-import type { AutorAjuste } from "@/lib/ajustesAbastecimentos";
+import type { AutorAjuste, IdentificadorAbastecimento } from "@/lib/ajustesAbastecimentos";
 
 type ValoresAjuste = {
   data_abastecimento: string | null;
@@ -53,14 +53,14 @@ function numeroMudou(atual: number | null, textoForm: string, casasTolerancia: n
 // (validarCamposAjuste, a rodada só grava o que foi alterado) continua
 // funcionando sem mudança nenhuma.
 export function FormularioSolicitarAjuste({
-  abastecimentoId,
+  identificador,
   empresaClienteId,
   empresaPostoId,
   autor,
   valoresAtuais,
   ajusteIdParaContraproposta,
 }: {
-  abastecimentoId: number;
+  identificador: IdentificadorAbastecimento;
   empresaClienteId: string;
   empresaPostoId: string;
   autor: AutorAjuste;
@@ -115,8 +115,8 @@ export function FormularioSolicitarAjuste({
 
     startTransition(async () => {
       const resultado = ajusteIdParaContraproposta
-        ? await contrapropostaAjusteAcao(ajusteIdParaContraproposta, abastecimentoId, autor, undefined, formData)
-        : await solicitarAjusteAcao(abastecimentoId, empresaClienteId, empresaPostoId, autor, undefined, formData);
+        ? await contrapropostaAjusteAcao(ajusteIdParaContraproposta, identificador, autor, undefined, formData)
+        : await solicitarAjusteAcao(identificador, empresaClienteId, empresaPostoId, autor, undefined, formData);
       if (resultado?.erro) setErro(resultado.erro);
       else if (!ajusteIdParaContraproposta) setAberto(false);
     });

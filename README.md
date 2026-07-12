@@ -6899,3 +6899,44 @@ apesar do nome, já libera UPDATE pra qualquer membro da própria empresa — n�
   automaticamente neste projeto — ver comentário no topo do arquivo).
 
 Validado com `npx tsc --noEmit` e `npx eslint` limpos nos arquivos alterados.
+
+## Fase 27.142 — tela para abrir ajuste em abastecimento de outro provedor
+
+Item "próximo passo" deixado pendente na Fase 27.136: "tela pra abrir um pedido de ajuste em cima
+de um abastecimento externo" — o backend (`decidir_ajuste_abastecimento`) já sabia aplicar um ajuste
+aceito tanto em `profrotas_abastecimentos` quanto em `abastecimentos_externos` desde aquela fase, mas
+a única tela que permitia CRIAR o pedido (`/abastecimentos/[id]`) só existia pro lado PróFrotas.
+
+- **`database.types.ts` corrigido**: `ajustes_abastecimentos.abastecimento_id` estava declarado como
+  `number` (obrigatório) mesmo depois da Fase 27.136a ter tornado a coluna opcional no banco, e
+  `abastecimento_externo_id` nem constava no arquivo — nunca dava erro de compilação porque nenhum
+  código lia/escrevia esse campo ainda. Corrigido junto com esta fase.
+- **`lib/ajustesAbastecimentos.ts`**: novo tipo `IdentificadorAbastecimento` (`{tipo: "profrotas" |
+  "externo", id: number}`) substitui o antigo `abastecimentoId: number` cru em `criarSolicitacaoAjuste`
+  — a função grava em `abastecimento_id` ou `abastecimento_externo_id` conforme o tipo (exatamente um
+  dos dois, igual ao CHECK do banco). Nova função `caminhoAbastecimento` centraliza o link da página de
+  detalhe conforme o tipo. `ItemResumoAjuste` (usado nos 4 painéis de resumo — dashboards e
+  financeiro, cliente e posto) trocou `abastecimentoId` por `identificador` pelo mesmo motivo.
+- **`abastecimentos/actions.ts`**: as 4 Server Actions de ajuste (`solicitarAjusteAcao`,
+  `contrapropostaAjusteAcao`, `decidirAjusteAcao`, `cancelarAjusteAcao`) passaram a receber
+  `IdentificadorAbastecimento` em vez de um `abastecimentoId` cru, só pra saber qual caminho
+  revalidar depois da mutação.
+- **Nova página `/abastecimentos/externo/[id]`**: mesmo layout e mesmo `PainelAjusteAbastecimento`/
+  `FormularioSolicitarAjuste` de `/abastecimentos/[id]` (Fase 27.65), reaproveitados sem duplicar
+  código — só troca de onde vêm os dados. Diferenças de resolução: `empresa_id` já é o cliente
+  diretamente (FK, não precisa resolver por CNPJ como `cnpj_frota`); nome do cliente resolvido via RPC
+  `nome_empresa_publico` (a mesma já usada em negociações, evita depender de RLS cruzada); posto
+  continua resolvido por CNPJ via `resolver_empresa_por_cnpj_segmento`, igual ao lado PróFrotas. Sem
+  contraparte identificada, mostra os dados em modo leitura com um aviso — não existe edição direta
+  pra este lado (registros só vêm de integração).
+- **Listagem `/abastecimentos`**: linhas de outros provedores (que antes não tinham link nenhum)
+  agora linkam pra `/abastecimentos/externo/[id]`. O filtro "🔴 Pendente de ajuste" e a bolinha
+  vermelha na linha, que antes só olhavam ajustes PróFrotas, passaram a cobrir os dois lados —
+  precisou separar os conjuntos de IDs por provedor, porque o `id` da view `abastecimentos_unificado`
+  só é único DENTRO de cada tabela-fonte (um id PróFrotas e um id externo podem coincidir por
+  acaso).
+
+Validado com `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterados. Conferido
+direto no banco: existem `abastecimentos_externos` reais (RedeFrota/TicketLog/Valecard) com posto já
+resolvível via `resolver_empresa_por_cnpj_segmento` — o caminho "com contraparte" da nova tela é
+exercitável com dados reais, não só o caminho "sem contraparte".

@@ -8,8 +8,10 @@ import {
   adicionarContrapropostaAjuste,
   decidirAjuste,
   cancelarAjuste,
+  caminhoAbastecimento,
   type AutorAjuste,
   type CamposAjuste,
+  type IdentificadorAbastecimento,
 } from "@/lib/ajustesAbastecimentos";
 
 export type AbastecimentoFormState = { erro?: string } | undefined;
@@ -145,7 +147,7 @@ function lerCamposAjuste(formData: FormData): CamposAjuste {
 }
 
 export async function solicitarAjusteAcao(
-  abastecimentoId: number,
+  identificador: IdentificadorAbastecimento,
   empresaClienteId: string,
   empresaPostoId: string,
   autor: AutorAjuste,
@@ -166,7 +168,7 @@ export async function solicitarAjusteAcao(
   const valorOriginal = numeroOuNull(formData.get("valor_original_total"));
 
   const resultado = await criarSolicitacaoAjuste(supabase, {
-    abastecimentoId,
+    identificador,
     empresaClienteId,
     empresaPostoId,
     autor,
@@ -178,13 +180,13 @@ export async function solicitarAjusteAcao(
 
   if ("erro" in resultado) return { erro: resultado.erro };
 
-  revalidatePath(`/abastecimentos/${abastecimentoId}`);
+  revalidatePath(caminhoAbastecimento(identificador));
   return {};
 }
 
 export async function contrapropostaAjusteAcao(
   ajusteId: string,
-  abastecimentoId: number,
+  identificador: IdentificadorAbastecimento,
   autor: AutorAjuste,
   _prev: AjusteFormState,
   formData: FormData
@@ -207,13 +209,13 @@ export async function contrapropostaAjusteAcao(
 
   if ("erro" in resultado) return { erro: resultado.erro };
 
-  revalidatePath(`/abastecimentos/${abastecimentoId}`);
+  revalidatePath(caminhoAbastecimento(identificador));
   return {};
 }
 
 export async function decidirAjusteAcao(
   ajusteId: string,
-  abastecimentoId: number,
+  identificador: IdentificadorAbastecimento,
   decisao: "aceita" | "recusada"
 ): Promise<{ erro?: string }> {
   const supabase = await createClient();
@@ -225,11 +227,14 @@ export async function decidirAjusteAcao(
   if ("erro" in resultado) return { erro: resultado.erro };
 
   revalidatePath("/abastecimentos");
-  revalidatePath(`/abastecimentos/${abastecimentoId}`);
+  revalidatePath(caminhoAbastecimento(identificador));
   return {};
 }
 
-export async function cancelarAjusteAcao(ajusteId: string, abastecimentoId: number): Promise<{ erro?: string }> {
+export async function cancelarAjusteAcao(
+  ajusteId: string,
+  identificador: IdentificadorAbastecimento
+): Promise<{ erro?: string }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -238,7 +243,7 @@ export async function cancelarAjusteAcao(ajusteId: string, abastecimentoId: numb
   const resultado = await cancelarAjuste(supabase, ajusteId, user?.email ?? null);
   if ("erro" in resultado) return { erro: resultado.erro };
 
-  revalidatePath(`/abastecimentos/${abastecimentoId}`);
+  revalidatePath(caminhoAbastecimento(identificador));
   return {};
 }
 

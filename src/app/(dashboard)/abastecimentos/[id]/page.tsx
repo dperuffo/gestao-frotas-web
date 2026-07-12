@@ -131,7 +131,7 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
       </div>
 
       <PainelAjusteAbastecimento
-        abastecimentoId={abastecimento.id}
+        identificador={{ tipo: "profrotas", id: abastecimento.id }}
         empresaClienteId={abastecimento.empresa_id as string}
         empresaPostoId={empresaPostoId as string}
         meuLado={meuLado}

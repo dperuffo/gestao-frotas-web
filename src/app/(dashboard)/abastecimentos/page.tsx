@@ -115,22 +115,31 @@ export default async function AbastecimentosPage({
   // ajuste pendente. Busca upfront os IDs (escopados à empresa selecionada —
   // a RLS já limita ao que envolve essa empresa) e reaproveita pra também
   // pintar a bolinha vermelha na linha (Fase 27.67), sem precisar de uma 2ª
-  // consulta separada. Ajustes só existem pro lado PróFrotas (ver
-  // ajustes_abastecimentos.abastecimento_id, bigint que referencia só
-  // profrotas_abastecimentos) — por isso o filtro abaixo sempre soma um
-  // `.eq("provedor", "profrotas")` junto, evitando que um id de outro
-  // provedor "colida" por coincidência com um id numérico de ajuste.
-  let idsComAjusteAberto = new Set<number>();
+  // consulta separada.
+  //
+  // Fase 27.142 — ajuste deixou de ser só do lado PróFrotas (agora também
+  // existe pra abastecimentos_externos, com o id na coluna
+  // abastecimento_externo_id) — precisa de 2 conjuntos separados, porque o
+  // `id` da view abastecimentos_unificado só é único DENTRO de cada
+  // provedor (bigint de sequências independentes por tabela-fonte): um id
+  // profrotas e um id externo podem coincidir por acaso.
+  let idsComAjusteAbertoProfrotas = new Set<number>();
+  let idsComAjusteAbertoExterno = new Set<number>();
   if (empresaSelecionada) {
     const { data: ajustesAbertosTodos } = await supabase
       .from("ajustes_abastecimentos")
-      .select("abastecimento_id")
+      .select("abastecimento_id, abastecimento_externo_id")
       .eq("empresa_cliente_id", empresaSelecionada)
       .in("status", ["pendente_cliente", "pendente_posto"]);
-    idsComAjusteAberto = new Set((ajustesAbertosTodos ?? []).map((a) => a.abastecimento_id));
+    for (const a of ajustesAbertosTodos ?? []) {
+      if (a.abastecimento_id != null) idsComAjusteAbertoProfrotas.add(a.abastecimento_id);
+      if (a.abastecimento_externo_id != null) idsComAjusteAbertoExterno.add(a.abastecimento_externo_id);
+    }
   }
-  const idsFiltroAjuste =
-    idsComAjusteAberto.size > 0 ? Array.from(idsComAjusteAberto).map((id) => String(id)) : ["-1"];
+  const idsFiltroProfrotas =
+    idsComAjusteAbertoProfrotas.size > 0 ? Array.from(idsComAjusteAbertoProfrotas).map((id) => String(id)) : ["-1"];
+  const idsFiltroExterno =
+    idsComAjusteAbertoExterno.size > 0 ? Array.from(idsComAjusteAbertoExterno).map((id) => String(id)) : ["-1"];
 
   // Builder genérico do supabase-js — usado pras 3 consultas (contagem,
   // agregados e página) com os mesmos filtros, por isso não dá pra tipar
@@ -149,7 +158,13 @@ export default async function AbastecimentosPage({
     if (de) query = query.gte("data_abastecimento", de);
     if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
     if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
-    if (ajuste === "pendente") query = query.eq("provedor", "profrotas").in("id", idsFiltroAjuste);
+    // Fase 27.142 — casa tanto ajuste pendente do lado PróFrotas quanto do
+    // lado externo, sem deixar um id de um provedor "colidir" por
+    // coincidência com o id de ajuste do outro (ver comentário acima).
+    if (ajuste === "pendente")
+      query = query.or(
+        `and(provedor.eq.profrotas,id.in.(${idsFiltroProfrotas.join(",")})),and(provedor.neq.profrotas,id.in.(${idsFiltroExterno.join(",")}))`
+      );
     return query;
   }
 
@@ -331,9 +346,12 @@ export default async function AbastecimentosPage({
           <tbody className="divide-y divide-slate-100">
             {linhas.map((r) => {
               const ehProfrotas = r.provedor === "profrotas";
+              const temAjustePendente = ehProfrotas
+                ? idsComAjusteAbertoProfrotas.has(Number(r.id))
+                : idsComAjusteAbertoExterno.has(Number(r.id));
               const dataCelula = (
                 <>
-                  {ehProfrotas && idsComAjusteAberto.has(Number(r.id)) && (
+                  {temAjustePendente && (
                     <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" title="Ajuste pendente neste abastecimento" />
                   )}
                   {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
@@ -345,16 +363,17 @@ export default async function AbastecimentosPage({
                     {r.codigo_abastecimento ?? "—"}
                   </td>
                   <td className="px-4 py-3">
-                    {ehProfrotas ? (
-                      <Link
-                        href={`/abastecimentos/${r.id}`}
-                        className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline"
-                      >
-                        {dataCelula}
-                      </Link>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 text-slate-700">{dataCelula}</span>
-                    )}
+                    {/* Fase 27.142 — linhas de outros provedores agora também
+                        têm página de detalhe/ajuste (antes só PróFrotas
+                        tinha; ver /abastecimentos/externo/[id]). `r.id` já é
+                        o id real da tabela abastecimentos_externos (a view
+                        abastecimentos_unificado não gera um id sintético). */}
+                    <Link
+                      href={ehProfrotas ? `/abastecimentos/${r.id}` : `/abastecimentos/externo/${r.id}`}
+                      className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline"
+                    >
+                      {dataCelula}
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-slate-600">{r.placa ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">{r.motorista_nome ?? "—"}</td>

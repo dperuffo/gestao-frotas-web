@@ -24,6 +24,21 @@ export const STATUS_AJUSTE_LABEL: Record<StatusAjuste, string> = {
 
 export type AutorAjuste = "cliente" | "posto";
 
+// Fase 27.142 — um ajuste agora pode ser sobre um abastecimento PróFrotas
+// (tabela profrotas_abastecimentos, id numérico próprio) ou de outro
+// provedor de pagamento (tabela abastecimentos_externos, sequência de id
+// independente — ver Fase 27.136a) — precisa dizer qual das duas tabelas
+// (e qual coluna em ajustes_abastecimentos) usar em cada operação.
+export type IdentificadorAbastecimento = { tipo: "profrotas"; id: number } | { tipo: "externo"; id: number };
+
+// Caminho da página de detalhe/ajuste — usado pra revalidatePath depois de
+// qualquer mutação de ajuste.
+export function caminhoAbastecimento(identificador: IdentificadorAbastecimento): string {
+  return identificador.tipo === "profrotas"
+    ? `/abastecimentos/${identificador.id}`
+    : `/abastecimentos/externo/${identificador.id}`;
+}
+
 type ClienteSupabase = SupabaseClient<Database>;
 
 // Fase 27.65 — campos ajustáveis confirmados com o Daniel: os principais
@@ -72,7 +87,7 @@ export function validarCamposAjuste(campos: CamposAjuste): string | null {
 export async function criarSolicitacaoAjuste(
   supabase: ClienteSupabase,
   params: {
-    abastecimentoId: number;
+    identificador: IdentificadorAbastecimento;
     empresaClienteId: string;
     empresaPostoId: string;
     autor: AutorAjuste;
@@ -94,7 +109,10 @@ export async function criarSolicitacaoAjuste(
   const { data: ajuste, error } = await supabase
     .from("ajustes_abastecimentos")
     .insert({
-      abastecimento_id: params.abastecimentoId,
+      // Fase 27.142 — exatamente um dos dois é preenchido (CHECK no banco);
+      // o outro fica null.
+      abastecimento_id: params.identificador.tipo === "profrotas" ? params.identificador.id : null,
+      abastecimento_externo_id: params.identificador.tipo === "externo" ? params.identificador.id : null,
       empresa_cliente_id: params.empresaClienteId,
       empresa_posto_id: params.empresaPostoId,
       origem: params.autor,
@@ -223,7 +241,10 @@ export async function cancelarAjuste(
 // (empresa_cliente_id ou empresa_posto_id) conforme quem está olhando.
 export type ItemResumoAjuste = {
   id: string;
-  abastecimentoId: number;
+  // Fase 27.142 — o ajuste agora pode ser de um abastecimento PróFrotas ou
+  // de outro provedor; identificador carrega qual tabela/id usar pro link
+  // "Ver" (ver caminhoAbastecimento).
+  identificador: IdentificadorAbastecimento;
   status: StatusAjuste;
   origem: AutorAjuste;
   valorOriginal: number | null;
@@ -258,7 +279,7 @@ export async function resumoAjustesAbastecimentos(
       .gte("atualizado_em", params.desde),
     supabase
       .from("ajustes_abastecimentos")
-      .select("id, abastecimento_id, status, origem, valor_original, criado_em, atualizado_em")
+      .select("id, abastecimento_id, abastecimento_externo_id, status, origem, valor_original, criado_em, atualizado_em")
       .eq(coluna, params.empresaId)
       .order("atualizado_em", { ascending: false })
       .limit(5),
@@ -298,7 +319,11 @@ export async function resumoAjustesAbastecimentos(
     impactoFinanceiro,
     ultimosAjustes: (ultimos ?? []).map((u) => ({
       id: u.id,
-      abastecimentoId: u.abastecimento_id,
+      identificador: (
+        u.abastecimento_id != null
+          ? { tipo: "profrotas", id: u.abastecimento_id }
+          : { tipo: "externo", id: u.abastecimento_externo_id as number }
+      ) as IdentificadorAbastecimento,
       status: u.status as StatusAjuste,
       origem: u.origem as AutorAjuste,
       valorOriginal: u.valor_original,

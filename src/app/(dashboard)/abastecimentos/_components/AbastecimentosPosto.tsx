@@ -126,11 +126,19 @@ export async function AbastecimentosPosto({
     // bolinha só olhava a página atual; agora é 1 consulta só, com todos os
     // IDs em aberto pra este posto (a RLS já limita ao que envolve este
     // posto), reaproveitada nos dois lugares.
+    // Fase 27.142 — esta lista é só do lado PróFrotas (ver comentário da
+    // Fase 27.58 acima); ajustes de abastecimentos de outros provedores têm
+    // abastecimento_id null (usam abastecimento_externo_id) — filtrados
+    // fora daqui, senão a bolinha vermelha "casaria" por acaso com um id
+    // PróFrotas coincidente.
     const { data: ajustesAbertosTodos } = await supabase
       .from("ajustes_abastecimentos")
       .select("abastecimento_id")
+      .not("abastecimento_id", "is", null)
       .in("status", ["pendente_cliente", "pendente_posto"]);
-    idsComAjusteAberto = new Set((ajustesAbertosTodos ?? []).map((a) => a.abastecimento_id));
+    idsComAjusteAberto = new Set(
+      (ajustesAbertosTodos ?? []).flatMap((a) => (a.abastecimento_id != null ? [a.abastecimento_id] : []))
+    );
     const idsFiltroAjuste = idsComAjusteAberto.size > 0 ? Array.from(idsComAjusteAberto) : [-1];
 
     // Fase 27.102 — mesma ideia da bolinha de ajuste acima: 2 consultas com
