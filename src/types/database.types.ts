@@ -81,6 +81,19 @@ export interface Database {
           // pendente | confirmado | novo_sem_anp | possivel_duplicidade.
           anp_status: string;
           anp_verificado_em: string | null;
+          // Fase 27.141 — dados bancários do posto (self-service via
+          // /minha-empresa), base para futuro ajuste de layout de boleto
+          // conforme domicílio bancário do estabelecimento. Só captura os
+          // dados aqui; nenhuma lógica de boleto usa esses campos ainda.
+          banco_codigo: string | null;
+          banco_nome: string | null;
+          agencia: string | null;
+          agencia_digito: string | null;
+          conta: string | null;
+          conta_digito: string | null;
+          tipo_conta: string | null;
+          titular_nome: string | null;
+          titular_documento: string | null;
           created_at: string | null;
           updated_at: string | null;
         };

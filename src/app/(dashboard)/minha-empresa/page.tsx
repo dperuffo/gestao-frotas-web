@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { FormularioPix } from "./_components/FormularioPix";
+import { FormularioDadosBancarios } from "./_components/FormularioDadosBancarios";
 
 type SearchParams = { empresa?: string };
 
@@ -22,7 +23,9 @@ export default async function MinhaEmpresaPage({
 
   const { data: postosDoUsuario } = await supabase
     .from("empresas")
-    .select("id, nome, cnpj, segmento, logradouro, numero, complemento, bairro, municipio, uf, cep, pix_chave")
+    .select(
+      "id, nome, cnpj, segmento, logradouro, numero, complemento, bairro, municipio, uf, cep, pix_chave, banco_codigo, banco_nome, agencia, agencia_digito, conta, conta_digito, tipo_conta, titular_nome, titular_documento"
+    )
     .in(
       "id",
       empresas.map((e) => e.id)
@@ -90,6 +93,21 @@ export default async function MinhaEmpresaPage({
           </div>
 
           <FormularioPix empresaId={atual.id} pixChaveAtual={atual.pix_chave} />
+
+          <FormularioDadosBancarios
+            empresaId={atual.id}
+            dadosAtuais={{
+              banco_codigo: atual.banco_codigo,
+              banco_nome: atual.banco_nome,
+              agencia: atual.agencia,
+              agencia_digito: atual.agencia_digito,
+              conta: atual.conta,
+              conta_digito: atual.conta_digito,
+              tipo_conta: atual.tipo_conta,
+              titular_nome: atual.titular_nome,
+              titular_documento: atual.titular_documento,
+            }}
+          />
         </>
       )}
     </div>

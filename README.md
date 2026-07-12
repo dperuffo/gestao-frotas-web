@@ -6874,3 +6874,28 @@ cascata (`resolverPrecosVigentes`), sem os níveis de meios de pagamento/"Meus P
 sentido — na prática o nível de meios de pagamento continua rodando (um posto pode ter transação real
 registrada mesmo sem cadastro formal em `postos_gf`), só os níveis específicos de cliente (Meus
 Preços) ficam de fora por não terem `empresaPostoId`.
+
+## Fase 27.141 — campos de dados bancários do posto (self-service)
+
+Pedido do Daniel: criar campos para o posto cadastrar os próprios dados bancários, como base para,
+futuramente, ajustar o layout do boleto/documento de cobrança conforme o domicílio bancário do
+estabelecimento. Escopo desta fase é só a captura dos dados — nenhuma lógica de boleto foi alterada
+(o boleto informativo da Fase 27.92 continua usando só a chave PIX como cedente).
+
+Seguiu o mesmo padrão self-service da chave PIX (Fase 27.92): campos novos na tabela `empresas`,
+editáveis em `/minha-empresa` por qualquer usuário vinculado ao posto (RLS `empresas_update_admin`,
+apesar do nome, já libera UPDATE pra qualquer membro da própria empresa — não só admin).
+
+- **Schema** (migração `fase_27_141_dados_bancarios_posto`): 9 colunas novas em `empresas` —
+  `banco_codigo`, `banco_nome`, `agencia`, `agencia_digito`, `conta`, `conta_digito`, `tipo_conta`
+  (check: `corrente` ou `poupanca`), `titular_nome`, `titular_documento` (CPF/CNPJ do titular — pode
+  ser diferente do CNPJ do posto, ex. conta em nome de holding). Todas nullable.
+- **Server Action** `atualizarDadosBancariosAcao` (`minha-empresa/actions.ts`): valida `tipo_conta`
+  contra o enum, limita tamanho de cada campo, converte string vazia em `null`.
+- **UI**: novo componente `FormularioDadosBancarios`, renderizado logo abaixo do formulário de PIX
+  existente em `/minha-empresa/page.tsx`. Mesmo card/estilo, com aviso "Hoje é só cadastro — serve de
+  base para, futuramente, ajustar o boleto conforme o banco do estabelecimento".
+- `database.types.ts` atualizado manualmente com as 9 colunas novas (arquivo não é gerado
+  automaticamente neste projeto — ver comentário no topo do arquivo).
+
+Validado com `npx tsc --noEmit` e `npx eslint` limpos nos arquivos alterados.
