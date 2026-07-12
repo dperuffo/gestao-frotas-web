@@ -128,11 +128,13 @@ async function carregarPrecosPorCnpj(supabase: Awaited<ReturnType<typeof createC
 // dessincronizado dele.
 const CATEGORIAS_ANP = Array.from(new Set(Object.values(PRODUTO_PARA_CATEGORIA_ANP)));
 
-// Limite de segurança pra consulta de anp_postos por UF sem município — a
-// base pública tem estados com mais de 4 mil postos (ex: MG), e não faz
-// sentido carregar tudo isso numa tela só; o cliente pode sempre refinar
-// com o município.
-const LIMITE_POSTOS_ANP = 1000;
+// Limite de segurança pra consulta de anp_postos por UF sem município.
+// Fase 27.140 tinha isso em 1000 "pra não carregar tudo numa tela só" — o
+// Daniel testou com MG (o maior estado da base, 4.500 postos ativos) e viu
+// a consulta cortada bem antes do fim: "tem muito mais que isso". 6.000
+// cobre folgado o maior estado hoje (MG=4.500, SP=4.013, RS=2.772...) com
+// margem pra base ANP crescer um pouco sem precisar mexer aqui de novo.
+const LIMITE_POSTOS_ANP = 6000;
 
 type PostoAnpBruto = {
   cnpj: string | null;

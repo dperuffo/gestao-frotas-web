@@ -7015,3 +7015,24 @@ Fase 27.136b ter dado suporte a NF-e de outros meios de pagamento.
 Validado com `npx tsc --noEmit` e `npx eslint` limpos. Conferido direto no banco: a nova junção com
 `abastecimentos_externos` traz linhas reais (RedeFrota/Valecard/TicketLog) com `cliente_nome`/
 `posto_nome` resolvidos corretamente pelas 2 vias de pertencimento (empresa_id e posto_cnpj).
+
+## Fase 27.145 — limite de postos ANP por UF era baixo demais (MG cortado em 1.000)
+
+Achado do Daniel testando a Fase 27.140 direto: "as consultas de roteirização precisam apresentar
+todos os postos ANP. Fiz uma consulta do estado de MG e só apareceu 1000 postos. Tem muito mais que
+isso" — confirmado no banco: MG tem 4.500 `anp_postos` ativos, mas `LIMITE_POSTOS_ANP` (Fase 27.140)
+estava fixo em 1.000, cortando a consulta bem antes do fim pros estados maiores.
+
+Levantamento rápido dos maiores estados: MG=4.500, SP=4.013, RS=2.772, BA=2.708, PR=2.141, GO=2.004,
+RJ=1.988, SC=1.787... — subir `LIMITE_POSTOS_ANP` pra 6.000 cobre folgado até o maior estado hoje
+(MG), com margem pra base pública crescer sem cortar de novo. `carregarPrecosAnpEmLote` (preço em
+lote por município/estado/Brasil) não escala por posto — carrega uma vez por UF, então mais postos na
+lista não pesa nessa parte; o custo extra é só a query de `anp_postos` em si e o merge/dedup em JS,
+ambos baratos mesmo com milhares de linhas.
+
+Só 1 arquivo mudou (`roteirizacao/actions.ts`, constante `LIMITE_POSTOS_ANP`). Validado com `npx tsc
+--noEmit` e `npx eslint` limpos.
+
+**Nota pro Daniel**: se depois do deploy a consulta de MG ainda parar perto de 1.000, o corte pode
+estar vindo de um limite de linhas configurado no próprio projeto Supabase (Dashboard → Settings →
+API → "Max Rows"), não do código — nesse caso é só aumentar esse valor lá.
