@@ -5,7 +5,8 @@ import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { PostoPopupContent } from "./PostoPopupContent";
-import { CORES_HEX, type CorMarcador } from "@/lib/coresBandeira";
+import { CORES_HEX, formatarLabelBandeira, type CorMarcador } from "@/lib/coresBandeira";
+import { normalizarTexto } from "@/lib/utils";
 
 // O Leaflet, por padrão, referencia os ícones de marcador via caminho
 // relativo que quebra com o bundler do Next.js — apontamos para o CDN
@@ -87,13 +88,20 @@ export default function MapaRota({
   // Legenda: uma entrada por combinação (cor, rótulo) entre os marcadores
   // de posto exibidos — assim ela reflete exatamente o que está no mapa,
   // sem listar bandeira que não apareceu nessa consulta.
+  //
+  // Fase 27.146 — achado do Daniel: "Ale"/"ALE", "Ipiranga"/"IPIRANGA" etc.
+  // apareciam como linhas separadas (mesma cor, rótulo cru diferente) por
+  // causa da capitalização variar entre postos_gf e anp_postos. Agrupa pela
+  // versão normalizada (sem acento/maiúscula, mesmo critério de
+  // corPorBandeira) e mostra sempre o rótulo em Title Case.
   const legenda = useMemo(() => {
     const vistos = new Map<string, { cor: CorMarcador; label: string }>();
     for (const m of marcadores) {
       if (!m.cnpj) continue;
       const cor = m.cor ?? "azul";
-      const label = m.legendaLabel ?? "Sem bandeira";
-      vistos.set(`${cor}__${label}`, { cor, label });
+      const label = formatarLabelBandeira(m.legendaLabel);
+      const chave = `${cor}__${normalizarTexto(label)}`;
+      if (!vistos.has(chave)) vistos.set(chave, { cor, label });
     }
     return Array.from(vistos.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [marcadores]);

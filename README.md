@@ -7036,3 +7036,27 @@ Só 1 arquivo mudou (`roteirizacao/actions.ts`, constante `LIMITE_POSTOS_ANP`). 
 **Nota pro Daniel**: se depois do deploy a consulta de MG ainda parar perto de 1.000, o corte pode
 estar vindo de um limite de linhas configurado no próprio projeto Supabase (Dashboard → Settings →
 API → "Max Rows"), não do código — nesse caso é só aumentar esse valor lá.
+
+## Fase 27.146 — unificar rótulos de bandeira duplicados na legenda do mapa
+
+Bug reportado pelo Daniel: a legenda do mapa de Roteirização mostrava a mesma
+bandeira/distribuidora duas vezes (ex: "Ale" e "ALE", "Ipiranga" e "IPIRANGA",
+"Bandeira Branca" e "BANDEIRA BRANCA"), porque `postos_gf` e `anp_postos`
+gravam o texto da bandeira com capitalização diferente.
+
+Causa raiz: `corPorBandeira` (src/lib/coresBandeira.ts) já normalizava o texto
+(via `normalizarTexto`) para decidir a COR do marcador — por isso as duas
+grafias caíam na mesma cor. Mas a legenda, em `MapaRota.tsx`, agrupava e
+exibia o `legendaLabel` cru, então duas grafias da mesma bandeira geravam duas
+linhas na legenda (mesma cor, texto diferente).
+
+Correção:
+- Nova função `formatarLabelBandeira` em `src/lib/coresBandeira.ts`: normaliza
+  para Title Case (ex: "IPIRANGA" → "Ipiranga", "ale" → "Ale"), dando um
+  rótulo único e legível independente da grafia de origem.
+- `MapaRota.tsx`: a legenda agora agrupa por `${cor}__${normalizarTexto(label)}`
+  (chave de dedup normalizada) mas exibe `formatarLabelBandeira(label)`
+  (Title Case). Mudança isolada ao `useMemo` da legenda — não afeta o popup
+  do marcador, que usa um campo `label` separado.
+
+Arquivos alterados: `src/lib/coresBandeira.ts`, `src/app/(dashboard)/roteirizacao/_components/MapaRota.tsx`.

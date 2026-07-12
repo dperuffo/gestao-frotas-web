@@ -58,3 +58,19 @@ export function corPorBandeira(bandeira: string | null | undefined): CorMarcador
   for (let i = 0; i < nome.length; i++) hash = (hash * 31 + nome.charCodeAt(i)) >>> 0;
   return PALETA_OUTRAS[hash % PALETA_OUTRAS.length];
 }
+
+// Fase 27.146 — achado do Daniel na legenda do mapa: a mesma bandeira
+// aparecia 2x (ex: "Ale" e "ALE", "Ipiranga" e "IPIRANGA") porque
+// postos_gf e anp_postos gravam o texto com capitalização diferente.
+// corPorBandeira já ignorava isso pro CÁLCULO da cor (normalizarTexto), mas
+// o RÓTULO mostrado continuava cru — Title Case dá um rótulo único e
+// legível não importa como veio na fonte.
+export function formatarLabelBandeira(bandeira: string | null | undefined): string {
+  const texto = (bandeira ?? "").trim();
+  if (!texto) return "Sem bandeira";
+  return texto
+    .toLowerCase()
+    .split(" ")
+    .map((palavra) => (palavra ? palavra[0].toUpperCase() + palavra.slice(1) : palavra))
+    .join(" ");
+}
