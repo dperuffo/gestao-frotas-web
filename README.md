@@ -7267,3 +7267,73 @@ renderizava nenhum ID.
   não precisou mudar a query, só o `database.types.ts` (Fase 27.152) já cobria isso.
 
 Validado: `tsc --noEmit` e `eslint` limpos.
+
+## Fase FLT-2 (achado real) — corrigir `exigirDocumentacaoAprovada` (RLS cruzada)
+
+Bug real encontrado ao testar a criação de negociação no app Flutter com uma conta de posto de
+teste (não a superusuária): dava "Empresa não encontrada" mesmo com o CNPJ certo do cliente. Causa
+raiz: `exigirDocumentacaoAprovada` (`src/lib/empresasDocumentos.ts`), usada em
+`decidirNegociacao`/`criarNegociacao`/`gruposEconomicos.ts`, lia `documentacao_status`/`nome` com
+um SELECT direto em `empresas` usando o client RLS-scoped de quem chama. Funciona quando a empresa
+checada é a PRÓPRIA empresa do chamador, mas falha em silêncio quando é a da CONTRAPARTE (ex:
+posto criando negociação, checando o cliente-alvo, do qual não é membro) — a policy
+`empresas_select_membro` só libera SELECT pra quem é membro/admin/superusuário daquela empresa.
+Nunca apareceu nos testes na web porque sempre foram feitos com a conta superusuária (bypassa
+RLS).
+
+- Migração `fase_flt2_status_documentacao_empresa_publico`: nova função `status_documentacao_empresa_publico(p_empresa_id)`
+  (SECURITY DEFINER), mesmo padrão de `nome_empresa_publico`/`empresa_id_do_cnpj` — devolve só
+  `documentacao_status` + `nome`, sem checar RLS.
+- `src/lib/empresasDocumentos.ts`: `exigirDocumentacaoAprovada` passou a chamar essa RPC em vez do
+  SELECT direto.
+- `src/types/database.types.ts`: tipo da nova RPC adicionado em `Functions`.
+- Mesma correção replicada no app Flutter (`negociacoes_service.dart`), que foi onde o bug foi
+  encontrado.
+
+Validado: `tsc --noEmit` e `eslint` limpos nos arquivos alterados.
+
+## Fase FLT-2 (achado real #2) — nome do cliente sumindo em "Abastecimentos Fornecidos" (posto)
+
+Mesma causa raiz do achado acima, encontrada de novo testando a tela Abastecimentos do app Flutter
+com uma conta de posto de teste: o nome do cliente aparecia sempre como "—" em cada linha.
+`AbastecimentosPosto.tsx` resolve `clientesOpcoes` (lista de nomes pro filtro/exibição) com um
+SELECT direto em `empresas` filtrando pelos `empresa_id` vistos em `abastecimentos_unificado` — o
+posto não é membro dessas empresas-clientes, então a `policy` `empresas_select_membro` bloqueia o
+SELECT e a lista vem vazia. O mesmo bug afetava a busca por nome de cliente no campo de busca livre
+(também um SELECT/`ilike` direto em `empresas`). Só não aparecia nos testes anteriores por serem
+feitos com a conta superusuária (bypassa RLS) — mesmo padrão do achado #1 acima.
+
+- Migração `fase_flt2_nomes_empresas_publico_batch`: nova função `nomes_empresas_publico(p_empresa_ids uuid[])`
+  (SECURITY DEFINER), mesmo espírito de `nome_empresa_publico`, mas em lote (recebe um array de ids).
+- `AbastecimentosPosto.tsx`: `clientesOpcoes` agora resolve via essa RPC em vez do SELECT direto; a
+  busca por nome de cliente agora filtra em memória sobre `clientesOpcoes` já resolvido, em vez de
+  bater de novo em `empresas` (também mais correto: só busca entre clientes que já abasteceram com
+  o posto).
+- `src/types/database.types.ts`: tipo da nova RPC adicionado em `Functions`.
+- Mesma correção replicada no app Flutter (`abastecimentos_posto_service.dart`), que foi onde o bug
+  foi encontrado.
+
+Validado: `tsc --noEmit` e `eslint` limpos nos arquivos alterados.
+
+## Fase FLT-2 — rota `/api/assistente` (Assistente FNI exposto pro PWA Flutter)
+
+Pedido do Daniel: levar a aba Assistente FNI também pro app Flutter. Diferente de todas as outras
+telas do Flutter (que falam direto com o Supabase — RLS cuida da segurança), o Assistente usa a API
+da Anthropic com uma chave secreta (`ANTHROPIC_API_KEY`, ver `src/lib/assistenteIA.ts`) — essa chave
+não pode ir pro bundle JS do app de jeito nenhum. Criada uma rota nova, só pra isso:
+
+- `src/app/api/assistente/route.ts` (novo): `POST` autenticado por `Authorization: Bearer
+  <access_token>` — o mesmo access_token que `supabase_flutter` já guarda na sessão do usuário depois
+  do login (o app não compartilha domínio/cookies com o site, então o padrão de cookie do
+  `@supabase/ssr` usado pelas Server Actions da web não se aplica aqui). A rota valida o token com
+  `supabase.auth.getUser(token)`, monta um client Supabase autenticado "como" aquele usuário (RLS
+  aplica normalmente, igual ao client do navegador) e chama a MESMA `perguntarAssistente()` já usada
+  pela web — zero lógica de IA duplicada. Inclui headers de CORS (`Access-Control-Allow-Origin: *` +
+  handler de `OPTIONS`) porque o Flutter web roda num domínio Railway separado do site.
+- Recebe `{ pergunta, historico }` e devolve `{ resposta, consultas }` ou `{ erro }` — mesmo formato
+  de `RespostaChatAssistente` em `assistente/actions.ts`.
+- Lado Flutter: `lib/features/posto/services/assistente_service.dart` (chama a rota via `dio`) +
+  `lib/features/posto/screens/assistente_screen.dart` (porta de `ChatAssistente.tsx`, sem o botão de
+  exportar PDF da conversa — fora do escopo desta versão).
+
+Validado: `tsc --noEmit` limpo (rota nova incluída).
