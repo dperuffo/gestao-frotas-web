@@ -7336,4 +7336,34 @@ não pode ir pro bundle JS do app de jeito nenhum. Criada uma rota nova, só pra
   `lib/features/posto/screens/assistente_screen.dart` (porta de `ChatAssistente.tsx`, sem o botão de
   exportar PDF da conversa — fora do escopo desta versão).
 
+
+
+## Fase FLT-2 — rota `/api/usuarios/convidar` (convidar usuário exposto pro PWA Flutter)
+
+Mesma situação do Assistente FNI, aba diferente: pedido do Daniel pra levar a aba Usuários
+(convidar novo usuário) pro app Flutter. `criarUsuario()` (`usuarios/actions.ts`) usa a Auth Admin
+API do Supabase (`admin.auth.admin.inviteUserByEmail`), que exige a `SUPABASE_SERVICE_ROLE_KEY` —
+chave secreta que nunca pode ir pro bundle do app. Criada uma rota nova, só pra isso:
+
+- `src/app/api/usuarios/convidar/route.ts` (novo): `POST` autenticado por `Authorization: Bearer
+  <access_token>`, mesmo padrão de `/api/assistente`. Replica os 3 passos de `criarUsuario()`:
+  convite via `admin.auth.admin.inviteUserByEmail(email)` → `upsert` em `usuarios_app` → `upsert` em
+  `usuarios_empresas` (`role = perfil`). Inclui CORS (`Access-Control-Allow-Origin: *` + `OPTIONS`).
+- **Endurecimento em relação à Server Action original** (não é um bug corrigido — a Action nunca foi
+  explorável na prática, porque só é alcançável hoje por quem já é admin dentro do dashboard
+  autenticado por sessão/cookie): a Server Action não confere se o `empresa_id` recebido pertence a
+  quem está chamando. Como esta rota HTTP abre um caminho novo de entrada (Bearer token, chamável por
+  qualquer posto autenticado, não só admin), adicionei uma checagem que a Action não tinha: antes de
+  trocar pro client admin, a rota confirma — usando o client RLS-scoped do próprio chamador — que ele
+  enxerga a empresa pra qual está convidando (`select id from empresas where id = empresa_id`; RLS de
+  `empresas` já devolve 0 linhas se ele não for membro). Só depois disso usa `createAdminClient()`.
+- Recebe `{ email, nome, cpf, telefone, perfil, segmento, empresa_id }` e devolve `{ ok: true }` ou
+  `{ erro }`.
+- Lado Flutter: `lib/features/posto/services/usuarios_service.dart` (chama a rota via `dio`, só pra
+  `convidarUsuario` — editar e ativar/inativar continuam falando direto com o Supabase, RLS-scoped,
+  igual a `atualizarUsuario`/`alternarAtivoUsuario` da web) + `lib/features/posto/screens/
+  usuario_novo_screen.dart` (porta de `usuarios/novo/page.tsx`, com perfil/segmento fixos em
+  "posto"/"Revenda" — sem o dropdown de perfil da web, que também atende Frota/admin nessa mesma
+  tela).
+
 Validado: `tsc --noEmit` limpo (rota nova incluída).
