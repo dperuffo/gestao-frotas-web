@@ -168,10 +168,19 @@ export async function AbastecimentosPosto({
     const idsClientes = Array.from(
       new Set((clientesData ?? []).map((c) => c.empresa_id).filter((id): id is string => !!id))
     );
+    // Achado real (Fase FLT-2) — igual ao já documentado em
+    // exigirDocumentacaoAprovada (empresasDocumentos.ts): um SELECT direto
+    // em `empresas` só é liberado pela RLS `empresas_select_membro` pra
+    // quem é membro da empresa (ou admin/superusuário) — o posto NUNCA é
+    // membro das empresas-clientes, então esta busca vinha vazia pra contas
+    // reais, e a linha do abastecimento mostrava "—" no lugar do nome do
+    // cliente (só não aparecia com a conta superusuária, que ignora RLS).
+    // Corrigido chamando a RPC SECURITY DEFINER `nomes_empresas_publico`
+    // (mesmo padrão de `nome_empresa_publico`, agora em lote).
     if (idsClientes.length > 0) {
-      const { data: empresasData } = await supabase.from("empresas").select("id, nome").in("id", idsClientes);
+      const { data: empresasData } = await supabase.rpc("nomes_empresas_publico", { p_empresa_ids: idsClientes });
       clientesOpcoes = (empresasData ?? [])
-        .map((e) => ({ id: e.id, nome: e.nome }))
+        .map((e) => ({ id: e.id, nome: e.nome ?? "—" }))
         .sort((a, b) => a.nome.localeCompare(b.nome));
     }
 
@@ -180,12 +189,14 @@ export async function AbastecimentosPosto({
     ).sort((a, b) => nomeProvedor(a).localeCompare(nomeProvedor(b)));
 
     // Fase 27.147 — a view não tem nome do cliente pra casar com o campo de
-    // busca livre; resolve à parte quais empresas batem pelo nome e inclui
-    // o(s) empresa_id(s) encontrados no filtro OR abaixo.
+    // busca livre; resolve quais dos clientesOpcoes (já resolvidos acima,
+    // sem depender de RLS cruzada) batem pelo nome e inclui o(s)
+    // empresa_id(s) encontrados no filtro OR abaixo. Antes buscava direto em
+    // `empresas` por `ilike` — mesmo bug de RLS cruzada do bloco acima.
     let idsClientesQ: string[] = [];
     if (q) {
-      const { data: matchNome } = await supabase.from("empresas").select("id").ilike("nome", `%${q}%`).limit(200);
-      idsClientesQ = (matchNome ?? []).map((e) => e.id);
+      const termo = q.toLowerCase();
+      idsClientesQ = clientesOpcoes.filter((c) => c.nome.toLowerCase().includes(termo)).map((c) => c.id);
     }
 
     // Fase 27.68 — Daniel pediu um filtro pra ver só os abastecimentos com

@@ -289,16 +289,30 @@ export async function revisarDocumentacao(
 // qualquer escrita, devolve uma mensagem pronta (ou null se está tudo bem).
 // `contexto` é a frase que abre a mensagem (ex: "Criar uma Rede de Postos",
 // "Aceitar esta negociação").
+//
+// Fase FLT-2 (achado real, via o app Flutter) — esta função lia
+// documentacao_status/nome com um SELECT direto em `empresas`, usando o
+// client RLS-scoped de quem está chamando. Funciona quando `empresaId` é a
+// PRÓPRIA empresa do chamador (aceitar negociação: posto checando a si
+// mesmo), mas falha em silêncio ("Empresa não encontrada") quando é a
+// empresa da CONTRAPARTE (criar negociação: posto checando o cliente-alvo,
+// do qual não é membro; vincular a um grupo: idem) — a policy
+// `empresas_select_membro` só libera SELECT pra quem é membro/admin/
+// superusuário daquela empresa. Nunca apareceu nos testes na web porque
+// sempre foram feitos com a conta superusuária (bypassa RLS); só surgiu ao
+// testar com uma conta de posto de verdade no app. Corrigido chamando a
+// RPC SECURITY DEFINER `status_documentacao_empresa_publico` (mesmo padrão
+// de nome_empresa_publico/empresa_id_do_cnpj: bypassa RLS só pra devolver
+// os 2 campos não-sensíveis necessários aqui).
 export async function exigirDocumentacaoAprovada(
   supabase: ClienteSupabase,
   empresaId: string,
   contexto: string
 ): Promise<string | null> {
-  const { data: empresa } = await supabase
-    .from("empresas")
-    .select("documentacao_status, nome")
-    .eq("id", empresaId)
-    .maybeSingle();
+  const { data: linhas } = await supabase.rpc("status_documentacao_empresa_publico", {
+    p_empresa_id: empresaId,
+  });
+  const empresa = linhas?.[0];
   if (!empresa) return "Empresa não encontrada.";
   if (empresa.documentacao_status === "aprovada") return null;
 

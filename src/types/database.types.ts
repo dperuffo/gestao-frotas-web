@@ -2296,6 +2296,25 @@ export interface Database {
         Args: { p_empresa_id: string };
         Returns: string | null;
       };
+      // Fase FLT-2 (achado real) — mesmo espírito de nome_empresa_publico,
+      // em lote: usada onde é preciso resolver nome de VÁRIAS empresas de
+      // uma vez (ex: clientesOpcoes em AbastecimentosPosto.tsx) sem cair na
+      // RLS cruzada de um SELECT direto em `empresas` (empresas_select_membro
+      // só libera pra quem é membro/admin/superusuário).
+      nomes_empresas_publico: {
+        Args: { p_empresa_ids: string[] };
+        Returns: { id: string; nome: string | null }[];
+      };
+      // Fase FLT-2 — mesmo espírito de nome_empresa_publico, mas pros 2
+      // campos usados pelo gate exigirDocumentacaoAprovada
+      // (empresasDocumentos.ts): documentacao_status + nome, sem checar RLS
+      // (SECURITY DEFINER) — necessário porque esse gate às vezes precisa
+      // checar a documentação da CONTRAPARTE (ex: posto criando negociação
+      // com um cliente do qual não é membro), não só da própria empresa.
+      status_documentacao_empresa_publico: {
+        Args: { p_empresa_id: string };
+        Returns: { documentacao_status: string | null; nome: string | null }[];
+      };
       // Fase 27.65 — decide (aceita/recusa) um ajuste de abastecimento;
       // SECURITY DEFINER porque aplica os campos aceitos em
       // profrotas_abastecimentos independente de qual lado (cliente ou
