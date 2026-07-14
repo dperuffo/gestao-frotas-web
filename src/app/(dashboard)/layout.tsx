@@ -147,7 +147,11 @@ const menuAdministracao = [
   // enviada por postos e clientes em /documentos (Contrato Social, docs
   // dos sócios, comprovante de endereço).
   { href: "/documentos-empresas", label: "📁 Aprovação de Documentos" },
-  { href: "/inteligencia-rede", label: "🌐 Inteligência de Rede" },
+  // Fase 27.161 — pedido do Daniel: "remover a duplicidade, pois ja esta
+  // dentro de Gestão" — o admin via "Inteligência de Rede" 2x (aqui E em
+  // Gestão, ver comentário da Fase 27.151 em menuVisaoGeral). O item
+  // continua existindo com visão consolidada da rede toda pro admin
+  // (inteligencia-rede/page.tsx), só o link duplicado saiu daqui.
   { href: "/assinaturas", label: "💳 Assinaturas (todos os clientes)" },
   { href: "/avaliacoes", label: "⭐ Avaliações dos Clientes" },
   // Fase 27.129 — pedido do Daniel: "Rede de Postos nao faz sentido estar na
