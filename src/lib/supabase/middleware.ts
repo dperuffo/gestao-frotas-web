@@ -54,7 +54,17 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/redefinir-senha") ||
     rotasLandingPublicas.has(path);
 
-  if (!user && !isRotaPublica) {
+  // Rotas /api/* fazem a própria autenticação (Bearer token de sessão do
+  // Supabase em /api/assistente e /api/usuarios/convidar — usados pelo app
+  // Flutter, que não compartilha cookie de domínio com o site; ou
+  // CRON_SECRET em /api/cron/*) — nenhuma delas depende de cookie de sessão.
+  // Sem esta exceção, este middleware redirecionava qualquer chamada sem
+  // cookie para /login (resposta HTML, sem CORS), quebrando o Assistente
+  // FNI no Flutter (cliente e posto — acharam o mesmo erro porque chamam a
+  // mesma rota) e, muito provavelmente, o cron do PróFrotas também.
+  const isRotaApi = path.startsWith("/api/");
+
+  if (!user && !isRotaPublica && !isRotaApi) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
