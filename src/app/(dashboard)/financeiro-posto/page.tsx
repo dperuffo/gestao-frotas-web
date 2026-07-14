@@ -217,7 +217,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   // mais de cada negociação — busca à parte, pros clientes envolvidos.
   const idsClientes = [...new Set((negociacoesParaAgrupar ?? []).map((n) => n.empresa_cliente_id))];
   const { data: clientesCiclo } = idsClientes.length
-    ? await supabase.from("empresas").select("id, ciclo_faturamento_dias, prazo_vencimento_dias").in("id", idsClientes)
+    ? await supabase.from("empresas").select("id, ciclo_faturamento_dias").in("id", idsClientes)
     : { data: [] };
   const cicloPorCliente = new Map((clientesCiclo ?? []).map((c) => [c.id, c]));
 
@@ -227,7 +227,6 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
       contraparteId: n.empresa_cliente_id,
       contraparteNome: n.cliente_nome,
       cicloFaturamentoDias: cicloPorCliente.get(n.empresa_cliente_id)?.ciclo_faturamento_dias ?? 30,
-      prazoVencimentoDias: cicloPorCliente.get(n.empresa_cliente_id)?.prazo_vencimento_dias ?? 30,
     })),
     faturas: faturas.map((f) => ({
       contraparteId: f.empresa_cliente_id,
@@ -245,10 +244,10 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   // pelo robô) já representa valor devido pelos abastecimentos já feitos —
   // soma no "A receber (em aberto)" mesmo antes do robô gerar a fatura real.
   const aReceberAberto =
-    faturas.filter((f) => f.status === "aberta").reduce((s, f) => s + f.valor_total, 0) +
+    faturas.filter((f) => f.status === "fechada" || f.status === "a_vencer").reduce((s, f) => s + f.valor_total, 0) +
     ciclosAbertosDoPosto.reduce((s, c) => s + c.valor_acumulado, 0);
   const vencido = faturas
-    .filter((f) => f.status === "aberta" && f.vencimento < hojeIso)
+    .filter((f) => f.status === "a_vencer" && f.vencimento < hojeIso)
     .reduce((s, f) => s + f.valor_total, 0);
   const recebidoNoPeriodo = faturas
     .filter((f) => f.status === "paga" && f.pago_em && f.pago_em.slice(0, 10) >= inicio && f.pago_em.slice(0, 10) <= fim)
@@ -260,7 +259,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
     .reduce((s, d) => s + d.valor, 0);
 
   const aReceberVencendoNoPeriodo = faturas
-    .filter((f) => f.status === "aberta" && f.vencimento >= inicioPrevisto && f.vencimento <= fimPrevisto)
+    .filter((f) => f.status === "a_vencer" && f.vencimento >= inicioPrevisto && f.vencimento <= fimPrevisto)
     .reduce((s, f) => s + f.valor_total, 0);
   const aPagarVencendoNoPeriodo = despesas
     .filter((d) => d.status === "aberta" && d.vencimento >= inicioPrevisto && d.vencimento <= fimPrevisto)
@@ -270,7 +269,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   // Aging (faturas vencidas, em aberto)
   const agingFaturas = FAIXAS_AGING.map((faixa) => {
     const linhas = faturas.filter((f) => {
-      if (f.status !== "aberta" || f.vencimento >= hojeIso) return false;
+      if (f.status !== "a_vencer" || f.vencimento >= hojeIso) return false;
       const dias = diasEmAtraso(f.vencimento, hojeIso);
       return dias >= faixa.min && dias <= faixa.max;
     });
@@ -285,7 +284,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   while (cursor <= fimData) {
     const diaIso = cursor.toISOString().slice(0, 10);
     const aReceberDia = faturas
-      .filter((f) => f.status === "aberta" && f.vencimento === diaIso)
+      .filter((f) => f.status === "a_vencer" && f.vencimento === diaIso)
       .reduce((s, f) => s + f.valor_total, 0);
     const aPagarDia = despesas
       .filter((d) => d.status === "aberta" && d.vencimento === diaIso)

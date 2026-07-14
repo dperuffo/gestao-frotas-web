@@ -42,12 +42,18 @@ export function CobrancaEmAberto({
 }) {
   const hojeIso = new Date().toISOString().slice(0, 10);
 
-  const abertas = faturas.filter((f) => f.status === "aberta");
+  // Fase CICLOS-6 — "aberta" virou 2 status: "fechada" (janela terminou,
+  // boleto ainda não gerado, valor ainda 0) e "a_vencer" (boleto gerado,
+  // valor travado, aguardando pagamento). "Em aberto" conta os dois;
+  // vencida/próxima fatura só fazem sentido pra quem já tem valor e
+  // vencimento reais (a_vencer).
+  const abertas = faturas.filter((f) => f.status === "fechada" || f.status === "a_vencer");
   const totalCicloAtual = ciclosAbertos.reduce((s, c) => s + c.valor_acumulado, 0);
   const totalEmAberto = abertas.reduce((s, f) => s + f.valor_total, 0) + totalCicloAtual;
-  const vencidas = abertas.filter((f) => f.vencimento < hojeIso);
+  const aVencer = faturas.filter((f) => f.status === "a_vencer");
+  const vencidas = aVencer.filter((f) => f.vencimento < hojeIso);
   const totalVencido = vencidas.reduce((s, f) => s + f.valor_total, 0);
-  const proximaFatura = abertas
+  const proximaFatura = aVencer
     .filter((f) => f.vencimento >= hojeIso)
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento))[0];
 

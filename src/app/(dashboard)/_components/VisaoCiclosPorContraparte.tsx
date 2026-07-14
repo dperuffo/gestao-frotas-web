@@ -6,7 +6,7 @@ import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
 import type { LinhaContraparte } from "@/lib/ciclosAbertos";
 
-type Filtro = "todos" | "andamento" | "aberta" | "vencida" | "paga";
+type Filtro = "todos" | "andamento" | "fechada" | "aVencer" | "vencida" | "paga";
 
 // Fase 27.85 — pedido do Daniel: "um posto pode ter muitos ciclos com
 // diversos status... precisamos facilitar a visão de postos com um volume
@@ -41,7 +41,8 @@ export function VisaoCiclosPorContraparte({
     () => ({
       todos: linhas.length,
       andamento: linhas.filter((l) => l.cicloAtual).length,
-      aberta: linhas.filter((l) => l.contagem.aberta > 0).length,
+      fechada: linhas.filter((l) => l.contagem.fechada > 0).length,
+      aVencer: linhas.filter((l) => l.contagem.aVencer > 0).length,
       vencida: linhas.filter((l) => l.contagem.vencida > 0).length,
       paga: linhas.filter((l) => l.contagem.paga > 0).length,
     }),
@@ -51,7 +52,8 @@ export function VisaoCiclosPorContraparte({
   const linhasFiltradas = useMemo(() => {
     let resultado = linhas;
     if (filtro === "andamento") resultado = resultado.filter((l) => l.cicloAtual);
-    else if (filtro === "aberta") resultado = resultado.filter((l) => l.contagem.aberta > 0);
+    else if (filtro === "fechada") resultado = resultado.filter((l) => l.contagem.fechada > 0);
+    else if (filtro === "aVencer") resultado = resultado.filter((l) => l.contagem.aVencer > 0);
     else if (filtro === "vencida") resultado = resultado.filter((l) => l.contagem.vencida > 0);
     else if (filtro === "paga") resultado = resultado.filter((l) => l.contagem.paga > 0);
 
@@ -86,7 +88,8 @@ export function VisaoCiclosPorContraparte({
           onClick={() => setFiltro("andamento")}
           cor="azul"
         />
-        <FiltroChip label="Em aberto" contagem={contagens.aberta} ativo={filtro === "aberta"} onClick={() => setFiltro("aberta")} />
+        <FiltroChip label="Fechadas" contagem={contagens.fechada} ativo={filtro === "fechada"} onClick={() => setFiltro("fechada")} />
+        <FiltroChip label="A vencer" contagem={contagens.aVencer} ativo={filtro === "aVencer"} onClick={() => setFiltro("aVencer")} />
         <FiltroChip
           label="Vencidas"
           contagem={contagens.vencida}
@@ -113,9 +116,7 @@ export function VisaoCiclosPorContraparte({
                 <td className="px-4 py-3">
                   <p className="font-medium text-slate-700">{l.contraparteNome}</p>
                   {l.cicloFaturamentoDias > 0 && (
-                    <p className="text-xs text-slate-400">
-                      Ciclo {l.cicloFaturamentoDias}+{l.prazoVencimentoDias} dias
-                    </p>
+                    <p className="text-xs text-slate-400">Ciclo de {l.cicloFaturamentoDias} dias</p>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -155,9 +156,10 @@ export function VisaoCiclosPorContraparte({
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1.5">
                     {l.contagem.vencida > 0 && <Chip texto={`${l.contagem.vencida} vencida${l.contagem.vencida > 1 ? "s" : ""}`} cor="vermelho" />}
-                    {l.contagem.aberta > 0 && <Chip texto={`${l.contagem.aberta} aberta${l.contagem.aberta > 1 ? "s" : ""}`} cor="neutro" />}
+                    {l.contagem.fechada > 0 && <Chip texto={`${l.contagem.fechada} fechada${l.contagem.fechada > 1 ? "s" : ""}`} cor="neutro" />}
+                    {l.contagem.aVencer > 0 && <Chip texto={`${l.contagem.aVencer} a vencer`} cor="neutro" />}
                     {l.contagem.paga > 0 && <Chip texto={`${l.contagem.paga} paga${l.contagem.paga > 1 ? "s" : ""}`} cor="verde" />}
-                    {l.contagem.vencida === 0 && l.contagem.aberta === 0 && l.contagem.paga === 0 && (
+                    {l.contagem.vencida === 0 && l.contagem.fechada === 0 && l.contagem.aVencer === 0 && l.contagem.paga === 0 && (
                       <span className="text-xs text-slate-400">Nenhuma ainda</span>
                     )}
                   </div>

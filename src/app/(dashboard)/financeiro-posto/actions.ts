@@ -8,7 +8,9 @@ export type FinanceiroPostoFormState = { erro?: string; sucesso?: string } | und
 
 // Fatura (conta a receber) — o posto marca como paga quando o cliente
 // quita; RLS já garante que só o dono da fatura (empresa_posto_id) chega
-// até aqui.
+// até aqui. Fase CICLOS-6: só dá pra marcar como paga uma fatura
+// "a_vencer" (boleto já gerado, valor travado) — uma "fechada" ainda não
+// tem valor definido, não faz sentido dar baixa nela.
 export async function marcarFaturaPagaAcao(faturaId: string): Promise<{ erro?: string }> {
   const supabase = await createClient();
   const {
@@ -24,7 +26,7 @@ export async function marcarFaturaPagaAcao(faturaId: string): Promise<{ erro?: s
       atualizado_por: user?.email ?? null,
     })
     .eq("id", faturaId)
-    .eq("status", "aberta")
+    .eq("status", "a_vencer")
     .select("empresa_cliente_id")
     .maybeSingle();
 
@@ -49,7 +51,7 @@ export async function cancelarFaturaAcao(faturaId: string): Promise<{ erro?: str
     .from("faturas_postos")
     .update({ status: "cancelada", atualizado_em: new Date().toISOString(), atualizado_por: user?.email ?? null })
     .eq("id", faturaId)
-    .eq("status", "aberta")
+    .eq("status", "a_vencer")
     .select("empresa_cliente_id")
     .maybeSingle();
 

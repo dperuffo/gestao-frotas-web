@@ -95,7 +95,6 @@ export default async function FinanceiroPage({
   // pra qualquer posto com quem ele negocie — não varia mais por linha de
   // negociacoes_postos.
   let cicloFaturamentoDiasCliente = 30;
-  let prazoVencimentoDiasCliente = 30;
   if (empresaSelecionada) {
     const [{ data: negociacoesData }, { data: faturasData }, { data: clienteEmpresa }] = await Promise.all([
       supabase
@@ -110,7 +109,7 @@ export default async function FinanceiroPage({
         .limit(200),
       supabase
         .from("empresas")
-        .select("ciclo_faturamento_dias, prazo_vencimento_dias")
+        .select("ciclo_faturamento_dias")
         .eq("id", empresaSelecionada)
         .maybeSingle(),
     ]);
@@ -124,7 +123,6 @@ export default async function FinanceiroPage({
     }));
     if (clienteEmpresa) {
       cicloFaturamentoDiasCliente = clienteEmpresa.ciclo_faturamento_dias;
-      prazoVencimentoDiasCliente = clienteEmpresa.prazo_vencimento_dias;
     }
   }
 
@@ -143,7 +141,6 @@ export default async function FinanceiroPage({
         contraparteId: n.empresa_posto_id,
         contraparteNome: n.posto_nome,
         cicloFaturamentoDias: cicloFaturamentoDiasCliente,
-        prazoVencimentoDias: prazoVencimentoDiasCliente,
       })),
     faturas: faturasCobranca.map((f) => ({
       contraparteId: f.empresa_posto_id,

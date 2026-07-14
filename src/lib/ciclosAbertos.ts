@@ -33,13 +33,20 @@ export async function buscarCiclosAbertos(
 // de relações de uma vez. Compartilhado entre /financeiro-posto e
 // /financeiro (cliente) — cada página resolve os nomes/ids da contraparte
 // à sua maneira e chama esta função só pra agregar.
+// Fase CICLOS-6 — pedido do Daniel: novo modelo de 5 status (ver
+// financeiroPostos.ts). "aberta" (fatura real, valor travado, aguardando
+// pagamento) virou "aVencer"; ganhou "fechada" (janela terminou mas o
+// boleto ainda não foi gerado — valor ainda 0). O ciclo em andamento
+// (`cicloAtual`, sem linha em faturas_postos ainda) é o verdadeiro
+// "Aberto" do modelo novo — nome mantido pra não quebrar quem já lê
+// `l.cicloAtual`. `prazoVencimentoDias` saiu (sempre = cicloFaturamentoDias
+// agora, não precisa de 2 campos).
 export type LinhaContraparte = {
   contraparteId: string;
   contraparteNome: string;
   cicloFaturamentoDias: number;
-  prazoVencimentoDias: number;
   cicloAtual: CicloAberto | null;
-  contagem: { aberta: number; vencida: number; paga: number; cancelada: number };
+  contagem: { fechada: number; aVencer: number; vencida: number; paga: number; cancelada: number };
   valorEmAberto: number;
   valorVencido: number;
 };
@@ -49,7 +56,6 @@ export function agruparCiclosPorContraparte(params: {
     contraparteId: string;
     contraparteNome: string | null;
     cicloFaturamentoDias: number;
-    prazoVencimentoDias: number;
   }>;
   faturas: Array<{ contraparteId: string; contraparteNome: string | null; status: string; vencimento: string; valorTotal: number }>;
   ciclosAbertosPorContraparte: Map<string, CicloAberto>;
@@ -62,9 +68,8 @@ export function agruparCiclosPorContraparte(params: {
       contraparteId: n.contraparteId,
       contraparteNome: n.contraparteNome ?? "—",
       cicloFaturamentoDias: n.cicloFaturamentoDias,
-      prazoVencimentoDias: n.prazoVencimentoDias,
       cicloAtual: params.ciclosAbertosPorContraparte.get(n.contraparteId) ?? null,
-      contagem: { aberta: 0, vencida: 0, paga: 0, cancelada: 0 },
+      contagem: { fechada: 0, aVencer: 0, vencida: 0, paga: 0, cancelada: 0 },
       valorEmAberto: 0,
       valorVencido: 0,
     });
@@ -80,20 +85,25 @@ export function agruparCiclosPorContraparte(params: {
         contraparteId: f.contraparteId,
         contraparteNome: f.contraparteNome ?? "—",
         cicloFaturamentoDias: 0,
-        prazoVencimentoDias: 0,
         cicloAtual: null,
-        contagem: { aberta: 0, vencida: 0, paga: 0, cancelada: 0 },
+        contagem: { fechada: 0, aVencer: 0, vencida: 0, paga: 0, cancelada: 0 },
         valorEmAberto: 0,
         valorVencido: 0,
       };
       linhas.set(f.contraparteId, linha);
     }
 
-    const vencida = f.status === "aberta" && f.vencimento < params.hojeIso;
+    const vencida = f.status === "a_vencer" && f.vencimento < params.hojeIso;
     if (vencida) linha.contagem.vencida += 1;
-    else if (f.status in linha.contagem) linha.contagem[f.status as keyof LinhaContraparte["contagem"]] += 1;
+    else if (f.status === "fechada") linha.contagem.fechada += 1;
+    else if (f.status === "a_vencer") linha.contagem.aVencer += 1;
+    else if (f.status === "paga") linha.contagem.paga += 1;
+    else if (f.status === "cancelada") linha.contagem.cancelada += 1;
 
-    if (f.status === "aberta") {
+    // "Em aberto" = ainda vai precisar ser pago (fechada ou a_vencer,
+    // vencida ou não) — fechada normalmente soma 0 (valor só trava na
+    // geração do boleto), mas somar não faz mal.
+    if (f.status === "fechada" || f.status === "a_vencer") {
       linha.valorEmAberto += f.valorTotal;
       if (vencida) linha.valorVencido += f.valorTotal;
     }
@@ -102,27 +112,22 @@ export function agruparCiclosPorContraparte(params: {
   // Fase 27.91 — pedido do Daniel: "deveria aparecer fatura 'Em Aberto'
   // visto que o ciclo foi iniciado com abastecimentos já realizados...
   // mesmo que não hajam abastecimentos dentro de um ciclo, ele precisa ser
-  // aberto e fechado, posteriormente, no final do ciclo". Até aqui,
-  // `contagem`/`valorEmAberto` só contavam faturas REAIS (linhas em
-  // `faturas_postos`, geradas pelo robô só depois que o período fecha) — o
-  // ciclo em andamento (`cicloAtual`, calculado ao vivo por
-  // ciclos_abertos_postos()) nunca contribuía pra esse total, mesmo já
-  // tendo abastecimentos e valor acumulado. Cada negociação com ciclo em
-  // andamento agora soma como 1 "aberta" a mais (mesmo com valor 0 — o
-  // ciclo já está "aberto" desde o primeiro dia, só ainda não fechou).
+  // aberto e fechado, posteriormente, no final do ciclo". O ciclo em
+  // andamento (`cicloAtual`, calculado ao vivo por ciclos_abertos_postos(),
+  // sem linha em faturas_postos ainda) soma no valor em aberto mesmo antes
+  // de virar fatura de verdade.
   for (const linha of linhas.values()) {
     if (linha.cicloAtual) {
-      linha.contagem.aberta += 1;
       linha.valorEmAberto += linha.cicloAtual.valor_acumulado;
     }
   }
 
-  // Ordena: quem tem fatura vencida primeiro, depois em aberto, depois
-  // ciclo em andamento, por fim só histórico pago/cancelado — dentro de
-  // cada grupo, por nome.
+  // Ordena: quem tem fatura vencida primeiro, depois com algo em aberto
+  // (fechada/a_vencer), depois só ciclo em andamento, por fim só histórico
+  // pago/cancelado — dentro de cada grupo, por nome.
   function prioridade(l: LinhaContraparte): number {
     if (l.contagem.vencida > 0) return 0;
-    if (l.contagem.aberta > 0) return 1;
+    if (l.contagem.fechada > 0 || l.contagem.aVencer > 0) return 1;
     if (l.cicloAtual) return 2;
     return 3;
   }

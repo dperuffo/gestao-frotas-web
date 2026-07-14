@@ -24,10 +24,11 @@ export const TIPO_DESPESA_POSTO_LABEL: Record<TipoDespesaPosto, string> = {
   outro: "Outro",
 };
 
-// Status "de verdade" gravado no banco. "Vencida" não é um valor de status —
-// é derivado (status = 'aberta' e vencimento < hoje), mesmo espírito de
+// Status "de verdade" gravado no banco — DESPESAS do posto (contas a
+// pagar, lançamento manual). "Vencida" não é um valor de status — é
+// derivado (status = 'aberta' e vencimento < hoje), mesmo espírito de
 // "Vigente" em negociacoes_postos (Fase 27.54): evita ter que voltar toda
-// fatura já paga pra reabrir se o robô de virada de dia atrasar.
+// despesa já paga pra reabrir se o robô de virada de dia atrasar.
 export const STATUS_FATURA_POSTO = ["aberta", "paga", "cancelada"] as const;
 export type StatusFaturaPosto = (typeof STATUS_FATURA_POSTO)[number];
 
@@ -43,6 +44,38 @@ export const STATUS_FATURA_LABEL: Record<StatusFaturaExibicao, string> = {
 export function statusFaturaExibicao(status: string, vencimento: string, hojeIso: string): StatusFaturaExibicao {
   if (status === "aberta" && vencimento < hojeIso) return "vencida";
   return status as StatusFaturaExibicao;
+}
+
+// Fase CICLOS-6 — pedido do Daniel: novo modelo de ciclo de
+// abastecimento/pagamento (janelas fixas ancoradas no calendário, robô em
+// 2 fases — ver gerar_faturas_postos_robo() no banco). Status de FATURA
+// (faturas_postos, contas a receber do posto) é um conjunto DIFERENTE do
+// de despesa acima — por isso um tipo/label/derivação à parte, sem tocar
+// em STATUS_FATURA_POSTO (que continua servindo só pras despesas):
+//   - fechada: janela de abastecimento terminou, mas o boleto ainda não foi
+//     gerado (esperando NFe chegar — ver data_geracao_boleto no banco).
+//   - a_vencer: boleto gerado, valor travado, aguardando pagamento.
+//   - vencida: DERIVADO (a_vencer + vencimento < hoje), nunca gravado.
+//   - paga / cancelada: iguais ao modelo antigo.
+// O estado "Aberto" (janela de abastecimento em andamento) não é um status
+// de faturas_postos — a linha nem existe ainda nessa fase, é representado
+// pela RPC ciclos_abertos_postos() (ver ciclosAbertos.ts).
+export const STATUS_CICLO_FATURA = ["fechada", "a_vencer", "paga", "cancelada"] as const;
+export type StatusCicloFatura = (typeof STATUS_CICLO_FATURA)[number];
+
+export type StatusCicloFaturaExibicao = StatusCicloFatura | "vencida";
+
+export const STATUS_CICLO_FATURA_LABEL: Record<StatusCicloFaturaExibicao, string> = {
+  fechada: "Fechada",
+  a_vencer: "A vencer",
+  vencida: "Vencida",
+  paga: "Paga",
+  cancelada: "Cancelada",
+};
+
+export function statusCicloFaturaExibicao(status: string, vencimento: string, hojeIso: string): StatusCicloFaturaExibicao {
+  if (status === "a_vencer" && vencimento < hojeIso) return "vencida";
+  return status as StatusCicloFaturaExibicao;
 }
 
 // Seletor de período — as opções rápidas pedidas (dia/semana/quinzena/mês) +

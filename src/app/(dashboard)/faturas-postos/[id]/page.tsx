@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
-import { STATUS_FATURA_LABEL, statusFaturaExibicao } from "@/lib/financeiroPostos";
+import { STATUS_CICLO_FATURA_LABEL, statusCicloFaturaExibicao } from "@/lib/financeiroPostos";
 import { gerarPayloadPix, gerarQrCodePixDataUrl } from "@/lib/pix";
 import BotaoBaixarPdfFaturaLazy from "./_components/BotaoBaixarPdfFaturaLazy";
 import type { ItemExtratoFaturaPdf, ParteBoletoPdf } from "./_components/FaturaPdf";
@@ -47,7 +47,7 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
   const { data: fatura } = await supabase
     .from("faturas_postos")
     .select(
-      "id, negociacao_id, empresa_posto_id, empresa_cliente_id, periodo_inicio, periodo_fim, vencimento, valor_total, volume_total, quantidade_abastecimentos, status, pago_em, cliente_nome, numero_fatura"
+      "id, negociacao_id, empresa_posto_id, empresa_cliente_id, periodo_inicio, periodo_fim, vencimento, valor_total, volume_total, quantidade_abastecimentos, status, pago_em, cliente_nome, numero_fatura, data_geracao_boleto"
     )
     .eq("id", id)
     .maybeSingle();
@@ -132,7 +132,12 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
   }
 
   const hojeIso = new Date().toISOString().slice(0, 10);
-  const statusExib = statusFaturaExibicao(fatura.status, fatura.vencimento, hojeIso);
+  const statusExib = statusCicloFaturaExibicao(fatura.status, fatura.vencimento, hojeIso);
+  // Fase CICLOS-6 — enquanto a fatura está "fechada" (janela terminou, mas
+  // o boleto ainda não foi gerado — esperando NFe das compras do período),
+  // ainda não existe valor/boleto de verdade pra mostrar: PIX, PDF e o
+  // detalhamento de valores ficam pra quando virar "a_vencer".
+  const boletoJaGerado = fatura.status !== "fechada";
 
   const itensPdf: ItemExtratoFaturaPdf[] = abastecimentos.map((a) => ({
     data: a.data_abastecimento ? formatarDataBr(a.data_abastecimento) : "—",
@@ -159,21 +164,27 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
             Nº da fatura: <strong className="text-slate-700">{numeroFaturaFormatado}</strong> · Cliente: {clienteNome}
           </p>
         </div>
-        <BotaoBaixarPdfFaturaLazy
-          nomeArquivo={`boleto-${numeroFaturaFormatado}-${postoNome.replace(/\s+/g, "-").toLowerCase()}.pdf`}
-          numeroFatura={fatura.numero_fatura}
-          cedente={cedente}
-          sacado={sacado}
-          periodoInicio={formatarDataBr(fatura.periodo_inicio)}
-          periodoFim={formatarDataBr(fatura.periodo_fim)}
-          vencimento={formatarDataBr(fatura.vencimento)}
-          status={STATUS_FATURA_LABEL[statusExib]}
-          valorTotal={fatura.valor_total}
-          volumeTotal={fatura.volume_total}
-          quantidadeAbastecimentos={fatura.quantidade_abastecimentos}
-          itens={itensPdf}
-          qrCodePixDataUrl={qrCodePixDataUrl}
-        />
+        {boletoJaGerado ? (
+          <BotaoBaixarPdfFaturaLazy
+            nomeArquivo={`boleto-${numeroFaturaFormatado}-${postoNome.replace(/\s+/g, "-").toLowerCase()}.pdf`}
+            numeroFatura={fatura.numero_fatura}
+            cedente={cedente}
+            sacado={sacado}
+            periodoInicio={formatarDataBr(fatura.periodo_inicio)}
+            periodoFim={formatarDataBr(fatura.periodo_fim)}
+            vencimento={formatarDataBr(fatura.vencimento)}
+            status={STATUS_CICLO_FATURA_LABEL[statusExib]}
+            valorTotal={fatura.valor_total}
+            volumeTotal={fatura.volume_total}
+            quantidadeAbastecimentos={fatura.quantidade_abastecimentos}
+            itens={itensPdf}
+            qrCodePixDataUrl={qrCodePixDataUrl}
+          />
+        ) : (
+          <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800">
+            Boleto ainda não gerado — previsto para {formatarDataBr(fatura.data_geracao_boleto)}
+          </span>
+        )}
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -193,13 +204,19 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
         <Indicador label="Período" valor={`${formatarDataBr(fatura.periodo_inicio)} – ${formatarDataBr(fatura.periodo_fim)}`} />
-        <Indicador label="Vencimento" valor={formatarDataBr(fatura.vencimento)} />
-        <Indicador label="Status" valor={STATUS_FATURA_LABEL[statusExib]} />
-        <Indicador label="Volume total" valor={`${fatura.volume_total.toLocaleString("pt-BR")} L`} />
-        <Indicador label="Valor total" valor={formatarMoeda(fatura.valor_total)} />
+        <Indicador label="Vencimento" valor={boletoJaGerado ? formatarDataBr(fatura.vencimento) : "—"} />
+        <Indicador label="Status" valor={STATUS_CICLO_FATURA_LABEL[statusExib]} />
+        <Indicador label="Volume total" valor={boletoJaGerado ? `${fatura.volume_total.toLocaleString("pt-BR")} L` : "—"} />
+        <Indicador label="Valor total" valor={boletoJaGerado ? formatarMoeda(fatura.valor_total) : "—"} />
       </div>
 
-      {qrCodePixDataUrl ? (
+      {!boletoJaGerado ? (
+        <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          O ciclo de abastecimento já fechou, mas o boleto ainda não foi gerado — o sistema aguarda até{" "}
+          {formatarDataBr(fatura.data_geracao_boleto)} pra dar tempo das notas fiscais dos abastecimentos chegarem.
+          Volte depois dessa data pra ver o valor e o boleto completos.
+        </div>
+      ) : qrCodePixDataUrl ? (
         <div className="mb-6 card flex flex-wrap items-center gap-4 bg-green-50 p-4">
           {/* eslint-disable-next-line @next/next/no-img-element -- data URL gerado no servidor, não é asset otimizável */}
           <img src={qrCodePixDataUrl} alt="QR Code PIX" className="h-24 w-24" />
@@ -217,6 +234,7 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
         </div>
       )}
 
+      {boletoJaGerado && (
       <div className="card overflow-x-auto">
         <div className="border-b border-slate-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-slate-900">
@@ -266,6 +284,7 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }

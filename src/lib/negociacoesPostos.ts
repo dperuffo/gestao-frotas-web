@@ -96,39 +96,43 @@ export function validarDadosRodada(d: Partial<DadosRodada>): string | null {
 // `negociacoes_postos` (1 valor por relação posto+cliente) e foi pra
 // `empresas` (1 valor por cliente, coluna só relevante pra segmento
 // "Frota") — ver migração `fase_27_108_ciclo_prazo_por_cliente`.
-export function validarCicloPagamento(d: {
-  cicloFaturamentoDias: number;
-  prazoVencimentoDias: number;
-}): string | null {
+// Fase CICLOS-6 — pedido do Daniel: o modelo novo de ciclos (janelas fixas
+// ancoradas no calendário, ver ciclo_janela_inicio/fim no banco) sempre usa
+// prazo de vencimento = ciclo (ex.: ciclo de 7 dias vence 7 dias depois de
+// fechar, 15 vence 15 dias depois). Por isso "prazo_vencimento_dias" deixou
+// de ser um valor independente — só sobra o ciclo. A coluna
+// `prazo_vencimento_dias` continua existindo no banco (não removida), mas
+// agora é sempre gravada igual a `ciclo_faturamento_dias` (ver
+// atualizarCicloPagamento abaixo).
+export function validarCicloPagamento(d: { cicloFaturamentoDias: number }): string | null {
   if (!Number.isFinite(d.cicloFaturamentoDias) || d.cicloFaturamentoDias <= 0 || !Number.isInteger(d.cicloFaturamentoDias)) {
     return '"ciclo_faturamento_dias" precisa ser um número inteiro maior que zero.';
-  }
-  if (!Number.isFinite(d.prazoVencimentoDias) || d.prazoVencimentoDias <= 0 || !Number.isInteger(d.prazoVencimentoDias)) {
-    return '"prazo_vencimento_dias" precisa ser um número inteiro maior que zero.';
   }
   return null;
 }
 
-// Ajusta o ciclo de faturamento/prazo de vencimento de um CLIENTE — vale
-// pra qualquer posto/rede com quem ele negocie (Fase 27.108). Só o admin
-// (FNI) pode chamar — verificação própria aqui dentro (não dá pra confiar
-// só na RLS de `empresas`, que libera UPDATE também pros membros da
-// própria empresa). Não é retroativo por natureza: o robô
-// `gerar_faturas_postos_robo()` só lê este valor pra calcular o PRÓXIMO
-// período a partir de onde parou — faturas já geradas guardam seu próprio
-// periodo_inicio/periodo_fim/vencimento, imutáveis.
+// Ajusta o ciclo de faturamento de um CLIENTE — vale pra qualquer
+// posto/rede com quem ele negocie (Fase 27.108). Só o admin (FNI) pode
+// chamar — verificação própria aqui dentro (não dá pra confiar só na RLS de
+// `empresas`, que libera UPDATE também pros membros da própria empresa).
+// Não é retroativo por natureza: o robô `gerar_faturas_postos_robo()` só lê
+// este valor pra calcular o PRÓXIMO período a partir de onde parou —
+// faturas já geradas guardam seu próprio periodo_inicio/periodo_fim/
+// vencimento, imutáveis.
+//
+// Fase CICLOS-6: prazo de vencimento sempre = ciclo agora (ver
+// validarCicloPagamento) — grava os 2 campos iguais, prazo_vencimento_dias
+// deixa de ser editável separadamente.
 export async function atualizarCicloPagamento(
   supabase: ClienteSupabase,
   params: {
     empresaClienteId: string;
     cicloFaturamentoDias: number;
-    prazoVencimentoDias: number;
     atualizadoPor: string | null;
   }
 ): Promise<{ ok: true; empresaClienteId: string } | { erro: string }> {
   const erroValidacao = validarCicloPagamento({
     cicloFaturamentoDias: params.cicloFaturamentoDias,
-    prazoVencimentoDias: params.prazoVencimentoDias,
   });
   if (erroValidacao) return { erro: erroValidacao };
 
@@ -138,7 +142,7 @@ export async function atualizarCicloPagamento(
   } = await supabase.auth.getUser();
   const ehSuperusuario = user?.email === "d.peruffo@gmail.com";
   if (perfil !== "admin" && !ehSuperusuario) {
-    return { erro: "Só o time administrativo (FNI) pode ajustar o ciclo de faturamento e o prazo de vencimento." };
+    return { erro: "Só o time administrativo (FNI) pode ajustar o ciclo de faturamento." };
   }
 
   const { data: cliente, error: erroBusca } = await supabase
@@ -148,14 +152,14 @@ export async function atualizarCicloPagamento(
     .maybeSingle();
   if (erroBusca || !cliente) return { erro: "Cliente não encontrado." };
   if (cliente.segmento !== "Frota") {
-    return { erro: "Ciclo/prazo de faturamento só se aplica a clientes (segmento Frota)." };
+    return { erro: "Ciclo de faturamento só se aplica a clientes (segmento Frota)." };
   }
 
   const { error } = await supabase
     .from("empresas")
     .update({
       ciclo_faturamento_dias: params.cicloFaturamentoDias,
-      prazo_vencimento_dias: params.prazoVencimentoDias,
+      prazo_vencimento_dias: params.cicloFaturamentoDias,
     })
     .eq("id", params.empresaClienteId);
   if (error) return { erro: error.message };

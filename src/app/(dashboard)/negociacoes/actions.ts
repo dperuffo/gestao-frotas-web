@@ -238,7 +238,6 @@ export async function atualizarCicloPagamentoAcao(
   const resultado = await atualizarCicloPagamento(supabase, {
     empresaClienteId,
     cicloFaturamentoDias: Number(formData.get("ciclo_faturamento_dias")),
-    prazoVencimentoDias: Number(formData.get("prazo_vencimento_dias")),
     atualizadoPor: user?.email ?? null,
   });
 

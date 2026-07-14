@@ -3,29 +3,31 @@
 import { useState, useTransition } from "react";
 import { atualizarCicloPagamentoAcao } from "@/app/(dashboard)/negociacoes/actions";
 
-// Fase 27.80 — pedido do Daniel: o prazo de abastecimento+pagamento (ciclo
-// de faturamento + prazo de vencimento, ex: "7+7" = 7 dias de abastecimentos
-// acumulados + 7 dias pro posto emitir/o cliente pagar a fatura) é
-// parametrizável, não faz parte do fluxo de negociação — e pode ser
-// alterado a qualquer momento, valendo a partir do PRÓXIMO ciclo (faturas já
-// geradas guardam seu próprio período/vencimento, nunca são retroativamente
-// alteradas). Só o admin (FNI) edita — verificação real fica no server
-// action/lib (atualizarCicloPagamento), esta tela só decide se MOSTRA o
-// formulário (prop podeEditarCiclo, true só em /clientes/[id], visão admin).
+// Fase 27.80 — pedido do Daniel: o ciclo de faturamento é parametrizável,
+// não faz parte do fluxo de negociação — e pode ser alterado a qualquer
+// momento, valendo a partir do PRÓXIMO ciclo (faturas já geradas guardam
+// seu próprio período/vencimento, nunca são retroativamente alteradas). Só
+// o admin (FNI) edita — verificação real fica no server action/lib
+// (atualizarCicloPagamento), esta tela só decide se MOSTRA o formulário
+// (prop podeEditarCiclo, true só em /clientes/[id], visão admin).
 //
 // Fase 27.108 — Daniel corrigiu: "o ciclo é definido para o cliente e nao
 // para a negociacao entre cliente e posto" — prop virou `empresaClienteId`
 // (1 valor por cliente, vale pra qualquer posto/rede), não mais
 // `negociacaoId`. Reflexo direto: CicloAbastecimentoPagamento.tsx agora
 // renderiza este form UMA vez por cliente, não uma vez por posto.
+//
+// Fase CICLOS-6 — pedido do Daniel: ciclos fixos ancorados no calendário
+// (dia 1 do mês em diante), com vencimento = próprio ciclo (ex.: ciclo de 7
+// dias vence 7 dias depois de fechar). O campo "Prazo" separado sumiu — só
+// um número agora, o ritmo do cliente (ex.: 7 = 4 janelas/mês, 15 = 2
+// janelas/mês).
 export function FormularioCicloPagamento({
   empresaClienteId,
   cicloAtual,
-  prazoAtual,
 }: {
   empresaClienteId: string;
   cicloAtual: number;
-  prazoAtual: number;
 }) {
   const [aberto, setAberto] = useState(false);
   const [erro, setErro] = useState<string | undefined>();
@@ -36,7 +38,8 @@ export function FormularioCicloPagamento({
     return (
       <div className="flex items-center gap-3">
         <span className="text-sm text-slate-600">
-          Ciclo atual: <strong className="text-slate-900">{cicloAtual}+{prazoAtual} dias</strong>
+          Ciclo atual: <strong className="text-slate-900">{cicloAtual} dias</strong> (vencimento também em{" "}
+          {cicloAtual} dias após o fechamento)
         </span>
         <button
           type="button"
@@ -81,18 +84,6 @@ export function FormularioCicloPagamento({
           min="1"
           step="1"
           defaultValue={cicloAtual}
-          className="input w-20 text-sm"
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Prazo (dias)</label>
-        <input
-          type="number"
-          name="prazo_vencimento_dias"
-          required
-          min="1"
-          step="1"
-          defaultValue={prazoAtual}
           className="input w-20 text-sm"
         />
       </div>

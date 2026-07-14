@@ -71,7 +71,6 @@ export default async function EditarClientePage({
       <CicloAbastecimentoPagamento
         empresaClienteId={id}
         cicloFaturamentoDias={cliente.ciclo_faturamento_dias}
-        prazoVencimentoDias={cliente.prazo_vencimento_dias}
         negociacoes={negociacoes}
         faturas={faturas}
         podeEditarCiclo={souAdmin}

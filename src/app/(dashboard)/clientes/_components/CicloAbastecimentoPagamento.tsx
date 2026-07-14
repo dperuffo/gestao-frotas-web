@@ -3,9 +3,9 @@ import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
 import { STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
 import {
-  STATUS_FATURA_LABEL,
-  statusFaturaExibicao,
-  type StatusFaturaExibicao,
+  STATUS_CICLO_FATURA_LABEL,
+  statusCicloFaturaExibicao,
+  type StatusCicloFaturaExibicao,
 } from "@/lib/financeiroPostos";
 import { FormularioCicloPagamento } from "./FormularioCicloPagamento";
 import { SecaoCiclosAbertos } from "@/app/(dashboard)/_components/SecaoCiclosAbertos";
@@ -44,7 +44,6 @@ export type FaturaDoCliente = {
 export function CicloAbastecimentoPagamento({
   empresaClienteId,
   cicloFaturamentoDias,
-  prazoVencimentoDias,
   negociacoes,
   faturas,
   podeEditarCiclo = false,
@@ -56,7 +55,6 @@ export function CicloAbastecimentoPagamento({
   // mais de cada negociação — 1 valor só, vale pra qualquer posto/rede.
   empresaClienteId: string;
   cicloFaturamentoDias: number;
-  prazoVencimentoDias: number;
   negociacoes: NegociacaoDoCliente[];
   faturas: FaturaDoCliente[];
   // Fase 27.80 — só a visão admin (/clientes/[id]) passa true; a visão do
@@ -90,7 +88,11 @@ export function CicloAbastecimentoPagamento({
   const postosComNegociacao = new Set(negociacoes.map((n) => n.posto_nome ?? "")).size;
   const volumeContratadoTotal = negociacoesVigentes.reduce((s, n) => s + (n.volume_minimo_mensal ?? 0), 0);
 
-  const faturasAbertas = faturas.filter((f) => f.status === "aberta");
+  // Fase CICLOS-6 — "aberta" virou "a_vencer" no novo modelo (boleto já
+  // gerado, aguardando pagamento); "fechada" (janela fechada mas boleto
+  // ainda não gerado) não entra nos totais financeiros — ainda não tem
+  // valor travado.
+  const faturasAbertas = faturas.filter((f) => f.status === "a_vencer");
   // Fase 27.91 — pedido do Daniel: o ciclo em andamento (ainda não fechado
   // pelo robô) já representa valor devido pelos abastecimentos já feitos —
   // soma no indicador "Em aberto" mesmo antes de virar fatura real.
@@ -162,7 +164,7 @@ export function CicloAbastecimentoPagamento({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {faturas.map((f) => {
-              const statusExib = statusFaturaExibicao(f.status, f.vencimento, hojeIso);
+              const statusExib = statusCicloFaturaExibicao(f.status, f.vencimento, hojeIso);
               return (
                 <tr key={f.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 text-slate-700">{f.posto_nome ?? "—"}</td>
@@ -176,7 +178,7 @@ export function CicloAbastecimentoPagamento({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-3">
-                      {podeGerenciarFaturas && f.status === "aberta" && (
+                      {podeGerenciarFaturas && f.status === "a_vencer" && (
                         <>
                           <BotaoAcaoFinanceiraPosto id={f.id} acao={marcarFaturaPagaAcao} rotulo="Marcar como paga" />
                           <BotaoAcaoFinanceiraPosto id={f.id} acao={cancelarFaturaAcao} rotulo="Cancelar" variante="danger" />
@@ -215,7 +217,6 @@ export function CicloAbastecimentoPagamento({
           <FormularioCicloPagamento
             empresaClienteId={empresaClienteId}
             cicloAtual={cicloFaturamentoDias}
-            prazoAtual={prazoVencimentoDias}
           />
         </div>
       )}
@@ -303,16 +304,17 @@ function Indicador({
   );
 }
 
-function BadgeStatusFatura({ status }: { status: StatusFaturaExibicao }) {
-  const cores: Record<StatusFaturaExibicao, string> = {
-    aberta: "bg-slate-100 text-slate-700",
+function BadgeStatusFatura({ status }: { status: StatusCicloFaturaExibicao }) {
+  const cores: Record<StatusCicloFaturaExibicao, string> = {
+    fechada: "bg-amber-100 text-amber-700",
+    a_vencer: "bg-slate-100 text-slate-700",
     vencida: "bg-red-100 text-red-700",
     paga: "bg-green-100 text-green-700",
     cancelada: "bg-slate-100 text-slate-400 line-through",
   };
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cores[status]}`}>
-      {STATUS_FATURA_LABEL[status]}
+      {STATUS_CICLO_FATURA_LABEL[status]}
     </span>
   );
 }

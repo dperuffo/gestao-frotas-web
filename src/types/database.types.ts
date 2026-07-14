@@ -451,6 +451,12 @@ export interface Database {
           // Fase 27.92 — número sequencial legível (não é o id/uuid), exibido
           // como referência no boleto/documento de cobrança.
           numero_fatura: number;
+          // Fase CICLOS-6 — novo modelo de ciclos (janelas fixas + robô em 2
+          // fases, ver migração ciclos_fixos_faturas_postos_schema). status
+          // agora é 'fechada' | 'a_vencer' | 'paga' | 'cancelada'.
+          ciclo_dias_referencia: number;
+          data_geracao_boleto: string;
+          boleto_gerado_em: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["faturas_postos"]["Row"]> & {
           negociacao_id: string;

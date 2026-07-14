@@ -1,0 +1,37 @@
+import { XMLParser } from "fast-xml-parser";
+import fs from "fs";
+
+const xmlTexto = fs.readFileSync("./_teste_nfe_temp2.xml", "utf8");
+
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "@_",
+  parseTagValue: false,
+  parseAttributeValue: false,
+  isArray: (nome) => nome === "det" || nome === "origComb" || nome === "autXML",
+});
+
+const doc = parser.parse(xmlTexto);
+const nfeProc = doc.nfeProc;
+const nfe = nfeProc?.NFe ?? doc.NFe;
+const infNFe = nfe?.infNFe;
+const ide = infNFe.ide;
+const emit = infNFe.emit;
+const dest = infNFe.dest;
+const dets = Array.isArray(infNFe.det) ? infNFe.det : [infNFe.det];
+const total = infNFe.total;
+const protNFe = nfeProc?.protNFe;
+const infProt = protNFe?.infProt;
+
+console.log("modelo:", ide.mod, typeof ide.mod);
+console.log("cStat:", infProt?.cStat, infProt?.xMotivo);
+console.log("chNFe:", infProt?.chNFe, "len:", String(infProt?.chNFe).length);
+console.log("emit CNPJ:", emit.CNPJ, "len:", String(emit.CNPJ).length);
+console.log("dest CNPJ:", dest.CNPJ);
+const prod = dets[0].prod;
+console.log("prod.xProd:", prod.xProd);
+console.log("comb.cProdANP:", prod.comb.cProdANP, prod.comb.descANP);
+console.log("qCom:", prod.qCom, typeof prod.qCom, "vUnCom:", prod.vUnCom, "vProd:", prod.vProd);
+console.log("vNF:", total.ICMSTot.vNF);
+console.log("dhEmi:", ide.dhEmi, "nNF:", ide.nNF, "serie:", ide.serie);
+console.log("infNFe @_Id:", infNFe["@_Id"]);

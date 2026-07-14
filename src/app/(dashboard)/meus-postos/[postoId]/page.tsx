@@ -80,7 +80,7 @@ export default async function MeuPostoDetalhePage({
     // mais de cada negociação.
     supabase
       .from("empresas")
-      .select("ciclo_faturamento_dias, prazo_vencimento_dias")
+      .select("ciclo_faturamento_dias")
       .eq("id", empresaSelecionada)
       .maybeSingle(),
   ]);
@@ -111,7 +111,6 @@ export default async function MeuPostoDetalhePage({
       <CicloAbastecimentoPagamento
         empresaClienteId={empresaSelecionada}
         cicloFaturamentoDias={clienteEmpresa?.ciclo_faturamento_dias ?? 30}
-        prazoVencimentoDias={clienteEmpresa?.prazo_vencimento_dias ?? 30}
         negociacoes={negociacoes}
         faturas={faturas}
         ciclosAbertos={ciclosAbertos}

@@ -91,7 +91,7 @@ export default async function ClientePostoDetalhePage({
     // Fase 27.108 — ciclo/prazo agora é atributo do cliente (empresas), não
     // mais de cada negociação; `clientes_do_posto` (RPC acima) não devolve
     // esses campos, então busca à parte, direto na empresa.
-    supabase.from("empresas").select("ciclo_faturamento_dias, prazo_vencimento_dias").eq("id", clienteId).maybeSingle(),
+    supabase.from("empresas").select("ciclo_faturamento_dias").eq("id", clienteId).maybeSingle(),
   ]);
 
   const negociacoesBrutas = negociacoesData ?? [];
@@ -131,7 +131,6 @@ export default async function ClientePostoDetalhePage({
       <CicloAbastecimentoPagamento
         empresaClienteId={clienteId}
         cicloFaturamentoDias={clienteEmpresa?.ciclo_faturamento_dias ?? 30}
-        prazoVencimentoDias={clienteEmpresa?.prazo_vencimento_dias ?? 30}
         negociacoes={negociacoes}
         faturas={faturas}
         ciclosAbertos={ciclosAbertos}
