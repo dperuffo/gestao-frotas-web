@@ -53,7 +53,7 @@ export function IndicadorNotasFiscais({
 // Interpola de vermelho (#DC2626, 0%) passando por âmbar (#D97706, 50%) até
 // verde (#16A34A, 100%) — cada faixa de 50 pontos percentuais mistura
 // linearmente entre as duas cores vizinhas.
-function corDoPercentual(percentual: number): string {
+export function corDoPercentual(percentual: number): string {
   const p = Math.min(100, Math.max(0, percentual));
   const vermelho = { r: 220, g: 38, b: 38 };
   const ambar = { r: 217, g: 119, b: 6 };

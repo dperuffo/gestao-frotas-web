@@ -2599,6 +2599,75 @@ export interface Database {
         Args: { p_empresa_id: string };
         Returns: Json;
       };
+      // Fase NFE-1 — 1 linha por ciclo de faturamento (o aberto atual + os
+      // últimos p_qtd_fechados já fechados em faturas_postos) de cada
+      // negociação em que p_empresa_id participa (posto ou cliente), com o
+      // % de recolha de NF-e daquele ciclo específico, independente do
+      // status. Substitui indicador_notas_fiscais() no painel da tela
+      // /notas-fiscais (pedido do Daniel: "percentual de recolha por
+      // ciclo, seja o status que ele estiver").
+      nfe_recolha_por_ciclo: {
+        Args: { p_empresa_id: string; p_qtd_fechados?: number };
+        Returns: {
+          negociacao_id: string;
+          empresa_posto_id: string;
+          empresa_cliente_id: string;
+          posto_nome: string | null;
+          cliente_nome: string | null;
+          fatura_posto_id: string | null;
+          // 'aberto' (virtual, sem linha em faturas_postos) | 'fechada' |
+          // 'a_vencer' | 'vencida' (derivado) | 'paga' | 'cancelada'.
+          status: string;
+          periodo_inicio: string;
+          periodo_fim: string;
+          vencimento: string;
+          total: number;
+          com_nota: number;
+          sem_nota: number;
+          rejeitadas: number;
+          percentual: number | null;
+        }[];
+      };
+      // Fase NFE-1 — análoga a abastecimentos_com_status_nota_fiscal, mas
+      // escopada a UM ciclo específico (negociação + período) em vez da
+      // janela fixa de 90 dias — usada quando o usuário seleciona um card
+      // de ciclo na tela /notas-fiscais.
+      abastecimentos_do_ciclo_nfe: {
+        Args: {
+          p_negociacao_id: string;
+          p_periodo_inicio: string;
+          p_periodo_fim: string;
+          p_status: string | null;
+          p_busca: string | null;
+          p_limit?: number;
+          p_offset?: number;
+        };
+        Returns: {
+          abastecimento_id: number;
+          provedor: string;
+          codigo_abastecimento: string | null;
+          data_abastecimento: string;
+          cliente_nome: string | null;
+          posto_nome: string | null;
+          veiculo_placa: string | null;
+          item_nome: string | null;
+          item_quantidade: number;
+          item_valor_total: number;
+          nota_id: string | null;
+          nota_numero: number | null;
+          nota_chave_acesso: string | null;
+          pendencia_motivo: string | null;
+          pendencia_detalhe_texto: string | null;
+          pendencia_em: string | null;
+          pendencia_nome_arquivo: string | null;
+          pendencia_cnpj_emitente: string | null;
+          pendencia_cnpj_destinatario: string | null;
+          pendencia_produto_nome_xml: string | null;
+          pendencia_quantidade: number | null;
+          pendencia_valor_total: number | null;
+          total_count: number;
+        }[];
+      };
       // Fase 27.99 — grava uma tentativa de upload de NF-e rejeitada
       // (motivo estrutural do parser OU motivo retornado pela RPC de
       // inserção), pra a listagem de /notas-fiscais poder mostrar o porquê.

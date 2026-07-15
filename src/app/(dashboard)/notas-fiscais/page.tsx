@@ -4,7 +4,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
 import { mensagemMotivoPendencia } from "@/lib/nfe";
-import { IndicadorNotasFiscais } from "./_components/IndicadorNotasFiscais";
+import { RecolhaPorCiclo, type CicloNfe } from "./_components/RecolhaPorCiclo";
 import { UploadNotaFiscal } from "./_components/UploadNotaFiscal";
 
 const POR_PAGINA = 20;
@@ -19,14 +19,28 @@ const POR_PAGINA = 20;
 // pendentes", que misturava "Rejeitada" (Fase 27.99) e "Pendente" (nunca
 // tentou) no mesmo filtro — como a tela já distingue os 2 visualmente, o
 // filtro passou a distinguir também.
+// Fase NFE-1 — pedido do Daniel: "apresentar o percentual de recolha por
+// ciclo, seja o status que ele estiver". O indicador único de "últimos 90
+// dias" virou 1 card por ciclo de faturamento (o aberto atual + os últimos
+// já fechados, de cada negociação posto↔cliente), e a tabela de
+// abastecimentos abaixo passou a ser escopada ao ciclo selecionado (não
+// mais uma janela fixa) — ver nfe_recolha_por_ciclo()/abastecimentos_do_ciclo_nfe()
+// no banco.
 const STATUS_VALIDOS = new Set(["emitida", "rejeitada", "pendente"]);
 
 export default async function NotasFiscaisPage({
   searchParams,
 }: {
-  searchParams: Promise<{ empresa?: string; pagina?: string; status?: string; busca?: string }>;
+  searchParams: Promise<{
+    empresa?: string;
+    pagina?: string;
+    status?: string;
+    busca?: string;
+    ciclo?: string;
+  }>;
 }) {
-  const { empresa: empresaParam, pagina: paginaParam, status: statusParam, busca: buscaParam } = await searchParams;
+  const { empresa: empresaParam, pagina: paginaParam, status: statusParam, busca: buscaParam, ciclo: cicloParam } =
+    await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
@@ -65,25 +79,65 @@ export default async function NotasFiscaisPage({
     .maybeSingle();
   const ehPosto = empresaInfo?.segmento === "Revenda";
 
-  const { data: indicadorData } = await supabase.rpc("indicador_notas_fiscais", { p_empresa_id: empresaSelecionada });
-  const indicador = (indicadorData ?? { total: 0, com_nota: 0, sem_nota: 0, rejeitadas: 0, pendentes: 0, percentual: 0 }) as {
-    total: number;
-    com_nota: number;
-    sem_nota: number;
-    rejeitadas: number;
-    pendentes: number;
-    percentual: number;
-  };
-
-  const { data: linhas } = await supabase.rpc("abastecimentos_com_status_nota_fiscal", {
+  const { data: ciclosData } = await supabase.rpc("nfe_recolha_por_ciclo", {
     p_empresa_id: empresaSelecionada,
-    p_status: status,
-    p_busca: busca,
-    p_limit: POR_PAGINA,
-    p_offset: (pagina - 1) * POR_PAGINA,
+    p_qtd_fechados: 6,
   });
+  const ciclos: CicloNfe[] = (ciclosData ?? [])
+    .map((c) => ({
+      negociacaoId: c.negociacao_id as string,
+      postoNome: c.posto_nome as string,
+      clienteNome: c.cliente_nome as string,
+      faturaPostoId: c.fatura_posto_id as string | null,
+      status: c.status as string,
+      periodoInicio: c.periodo_inicio as string,
+      periodoFim: c.periodo_fim as string,
+      vencimento: c.vencimento as string,
+      total: Number(c.total ?? 0),
+      comNota: Number(c.com_nota ?? 0),
+      semNota: Number(c.sem_nota ?? 0),
+      rejeitadas: Number(c.rejeitadas ?? 0),
+      percentual: c.percentual === null ? null : Number(c.percentual),
+    }))
+    // ciclo aberto primeiro, depois os fechados do mais recente pro mais antigo
+    .sort((a, b) => {
+      if (a.status === "aberto" && b.status !== "aberto") return -1;
+      if (b.status === "aberto" && a.status !== "aberto") return 1;
+      return b.periodoFim.localeCompare(a.periodoFim);
+    });
+
+  // Ciclo selecionado: vem do param `ciclo` (formato "negociacaoId|periodoInicio|periodoFim"),
+  // ou cai no primeiro card da lista (ciclo aberto mais relevante) por padrão.
+  const cicloAtivo =
+    (cicloParam ? ciclos.find((c) => `${c.negociacaoId}|${c.periodoInicio}|${c.periodoFim}` === cicloParam) : null) ??
+    ciclos[0] ??
+    null;
+
+  const { data: linhas } = cicloAtivo
+    ? await supabase.rpc("abastecimentos_do_ciclo_nfe", {
+        p_negociacao_id: cicloAtivo.negociacaoId,
+        p_periodo_inicio: cicloAtivo.periodoInicio,
+        p_periodo_fim: cicloAtivo.periodoFim,
+        p_status: status,
+        p_busca: busca,
+        p_limit: POR_PAGINA,
+        p_offset: (pagina - 1) * POR_PAGINA,
+      })
+    : { data: null };
   const totalLinhas = linhas?.[0]?.total_count ?? 0;
   const totalPaginas = Math.max(1, Math.ceil(Number(totalLinhas) / POR_PAGINA));
+
+  // Contadores dos filtros "Todos/Emitida/Rejeitada/Pendente" vêm do próprio
+  // ciclo selecionado (já calculados na RPC de ciclos), não mais de um
+  // indicador global de 90 dias.
+  const contagem = cicloAtivo
+    ? {
+        total: cicloAtivo.total,
+        comNota: cicloAtivo.comNota,
+        rejeitadas: cicloAtivo.rejeitadas,
+        pendentes: cicloAtivo.semNota - cicloAtivo.rejeitadas,
+      }
+    : { total: 0, comNota: 0, rejeitadas: 0, pendentes: 0 };
 
   // Fase 27.99 — pedido do Daniel: evidenciar rejeições de upload de NF-e
   // com mais detalhe, não só "Pendente" genérico. Pendências sem
@@ -94,15 +148,21 @@ export default async function NotasFiscaisPage({
     ? await supabase.rpc("pendencias_sem_abastecimento", { p_empresa_id: empresaSelecionada, p_limit: 20 })
     : { data: null };
 
+  const cicloParamAtivo = cicloAtivo ? `${cicloAtivo.negociacaoId}|${cicloAtivo.periodoInicio}|${cicloAtivo.periodoFim}` : "";
+
   const qs = (overrides: Record<string, string>) => {
     const params = new URLSearchParams({
       empresa: empresaSelecionada,
+      ...(cicloParamAtivo ? { ciclo: cicloParamAtivo } : {}),
       ...(status ? { status } : {}),
       ...(busca ? { busca } : {}),
       ...overrides,
     });
     return `/notas-fiscais?${params.toString()}`;
   };
+
+  const linkParaCiclo = (c: CicloNfe) =>
+    qs({ ciclo: `${c.negociacaoId}|${c.periodoInicio}|${c.periodoFim}`, status: "", busca: "", pagina: "1" });
 
   return (
     <div>
@@ -118,12 +178,11 @@ export default async function NotasFiscaisPage({
         )}
       </div>
 
-      <IndicadorNotasFiscais
-        total={indicador.total}
-        comNota={indicador.com_nota}
-        semNota={indicador.sem_nota}
-        rejeitadas={indicador.rejeitadas}
-        percentual={indicador.percentual}
+      <RecolhaPorCiclo
+        ciclos={ciclos}
+        ehPosto={ehPosto}
+        cicloSelecionado={cicloAtivo ? { negociacaoId: cicloAtivo.negociacaoId, periodoInicio: cicloAtivo.periodoInicio, periodoFim: cicloAtivo.periodoFim } : null}
+        linkParaCiclo={linkParaCiclo}
       />
 
       {ehPosto && <UploadNotaFiscal />}
@@ -137,6 +196,7 @@ export default async function NotasFiscaisPage({
           mesma busca agora também casa placa, posto ou cliente. */}
       <form className="mb-4 flex flex-wrap items-end gap-3">
         <input type="hidden" name="empresa" value={empresaSelecionada} />
+        <input type="hidden" name="ciclo" value={cicloParamAtivo} />
         <input type="hidden" name="status" value={status ?? ""} />
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Buscar por ID, placa, posto ou cliente</label>
@@ -155,28 +215,32 @@ export default async function NotasFiscaisPage({
 
       <div className="card overflow-x-auto">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">Abastecimentos (últimos 90 dias)</h2>
+          <h2 className="text-sm font-semibold text-slate-900">
+            {cicloAtivo
+              ? `Abastecimentos do ciclo (${formatarDataBr(cicloAtivo.periodoInicio)} – ${formatarDataBr(cicloAtivo.periodoFim)})`
+              : "Abastecimentos"}
+          </h2>
           <div className="flex flex-wrap gap-3 text-xs">
             <Link href={qs({ status: "", pagina: "1" })} className={!status ? "font-semibold text-frota-600" : "text-slate-500"}>
-              Todos ({indicador.total})
+              Todos ({contagem.total})
             </Link>
             <Link
               href={qs({ status: "emitida", pagina: "1" })}
               className={status === "emitida" ? "font-semibold text-green-700" : "text-slate-500"}
             >
-              Emitida ({indicador.com_nota})
+              Emitida ({contagem.comNota})
             </Link>
             <Link
               href={qs({ status: "rejeitada", pagina: "1" })}
               className={status === "rejeitada" ? "font-semibold text-red-700" : "text-slate-500"}
             >
-              Rejeitada ({indicador.rejeitadas})
+              Rejeitada ({contagem.rejeitadas})
             </Link>
             <Link
               href={qs({ status: "pendente", pagina: "1" })}
               className={status === "pendente" ? "font-semibold text-amber-700" : "text-slate-500"}
             >
-              Pendente ({indicador.pendentes})
+              Pendente ({contagem.pendentes})
             </Link>
           </div>
         </div>
@@ -264,7 +328,7 @@ export default async function NotasFiscaisPage({
             {(linhas ?? []).length === 0 && (
               <tr>
                 <td colSpan={10} className="px-4 py-8 text-center text-slate-400">
-                  Nenhum abastecimento encontrado nos últimos 90 dias.
+                  {cicloAtivo ? "Nenhum abastecimento encontrado neste ciclo." : "Nenhum ciclo de faturamento encontrado."}
                 </td>
               </tr>
             )}
