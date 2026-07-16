@@ -61,7 +61,7 @@ export const CORPO = `
   <h2>3. Data Sharing</h2>
   <p>We do not sell or share your personal data with third parties, except:</p>
   <ul>
-    <li><strong>Service providers:</strong> Supabase (database), Stripe (payments), Resend (email) — under confidentiality agreements</li>
+    <li><strong>Service providers:</strong> Supabase (database), Stripe (payments), Resend (email), MouseFlow (heatmaps and session recording for usability analysis) — under confidentiality agreements</li>
     <li><strong>Legal requirement:</strong> when required by Brazilian law or competent authority</li>
   </ul>
 
@@ -85,7 +85,7 @@ export const CORPO = `
   </ul>
 
   <h2>6. Cookies</h2>
-  <p>We use only essential cookies for authentication and session maintenance. We do not use advertising or tracking cookies.</p>
+  <p>We use essential cookies for authentication and session maintenance, and a session/heatmap analytics cookie (MouseFlow) to understand how the platform is used and improve usability. We do not use advertising cookies.</p>
 
   <h2>7. Data Retention</h2>
   <p>Your data is retained for as long as your account is active. After cancellation, data is kept for 90 days and then permanently deleted, unless required by law.</p>
