@@ -84,6 +84,13 @@ export const ESCOPO_PARAMETROS_POSTOS_READ = "parametros_postos:read";
 export const ESCOPO_PARAMETROS_SERVICOS_READ = "parametros_servicos:read";
 export const ESCOPO_PARAMETROS_COTAS_READ = "parametros_cotas:read";
 
+// Fase 27.15x — Regras Antifraude: diferente de Parâmetros de Uso (o sistema
+// externo consulta e decide sozinho), aqui é a PLATAFORMA quem avalia as
+// regras e devolve o veredito pronto (autorizado/reprovado + motivo) — 1
+// único escopo cobre a consulta, já que as regras dos 3 tipos moram na mesma
+// tabela e são avaliadas juntas numa chamada só.
+export const ESCOPO_ANTIFRAUDE_VERIFICAR = "antifraude:verificar";
+
 // Catálogo central dos escopos disponíveis — usado tanto pela UI de geração
 // de chave (/integracoes, pra montar os checkboxes) quanto pela documentação
 // da API. Adicionar um escopo novo aqui é o único lugar a mudar pra ele
@@ -224,5 +231,12 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
     categoria: "Parâmetros de Uso",
     label: "Cota por veículo (leitura)",
     descricao: "Consultar limite e consumo já realizado da cota (R$ ou L) de um veículo no período atual.",
+  },
+  {
+    escopo: ESCOPO_ANTIFRAUDE_VERIFICAR,
+    categoria: "Antifraude",
+    label: "Verificação antifraude",
+    descricao:
+      "Consultar, antes de autorizar um abastecimento, se ele passa nas regras antifraude cadastradas pelo cliente.",
   },
 ];

@@ -312,6 +312,40 @@ export default async function IntegracoesPage() {
               checar rapidamente um par placa/motorista específico antes de liberar um abastecimento, em
               vez de trazer a lista inteira.
             </p>
+
+            {/* Fase 27.15x — Regras Antifraude: diferente de Parâmetros de
+                Uso acima (o sistema externo consulta os dados crus e decide
+                sozinho), aqui a FNI já avalia as regras e devolve o
+                veredito pronto (autorizado/reprovado + motivo) numa única
+                chamada — ver /antifraude. */}
+            <p className="mb-1 mt-6 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Verificar antifraude antes de autorizar (escopo antifraude:verificar)
+            </p>
+            <pre className="overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+{`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/antifraude/verificar \\
+  -H "Authorization: Bearer fni_..." \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "placa": "ABC1D23",
+    "motorista_cpf": "12345678900",
+    "posto_cnpj": "98765432000100",
+    "data_hora": "2026-07-16T14:30:00-03:00",
+    "litros": 45,
+    "valor_total": 315.90
+  }'
+
+# resposta (aprovado):     { "autorizado": true }
+# resposta (reprovado):    { "autorizado": false, "motivo": "...", "regra_id": "..." }
+# resposta (falha nossa):  { "autorizado": true, "aviso": "..." }  — nunca bloqueia por erro nosso`}
+            </pre>
+            <p className="mt-3 text-xs text-slate-400">
+              Chame isto <strong>antes</strong> de liberar o abastecimento — a resposta já diz se pode
+              seguir. Se a verificação falhar por algum problema nosso, a resposta ainda assim autoriza
+              (<code>autorizado: true</code>), pra nunca travar sua operação; o cliente é avisado por
+              e-mail pra revisar depois. Todos os campos do corpo são opcionais — quanto mais informar,
+              mais regras conseguem ser checadas (ex.: sem <code>motorista_cpf</code>, regras por
+              motorista não são avaliadas).
+            </p>
           </>
         )}
       </div>

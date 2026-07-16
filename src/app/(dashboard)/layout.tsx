@@ -10,6 +10,7 @@ import { contarAnomaliasNaoRevisadasAcao } from "./anomalias/actions";
 import { contarNegociacoesPendentesAcao } from "./negociacoes/actions";
 import { contarAjustesAbastecimentosPendentesAcao } from "./abastecimentos/actions";
 import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
+import { contarFalhasVerificacaoAntifraudeAcao } from "./antifraude/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
@@ -64,6 +65,10 @@ const menuOperacao = [
   // + indicador de % de recolha, do lado do cliente.
   { href: "/notas-fiscais", label: "📄 Notas Fiscais" },
   { href: "/anomalias", label: "🚨 Anomalias" },
+  // Fase 27.15x — diferente de Anomalias (detecta DEPOIS do abastecimento),
+  // aqui o cliente cadastra regras que um sistema externo consulta ANTES de
+  // autorizar — ver POST /api/integracoes/antifraude/verificar.
+  { href: "/antifraude", label: "🕵️ Antifraude" },
   { href: "/roteirizacao", label: "🗺️ Roteirização" },
   { href: "/rotograma", label: "🛡️ Rotograma" },
   { href: "/planos-viagem", label: "🧳 Planos de Viagem" },
@@ -241,6 +246,7 @@ export default async function DashboardLayout({
     negociacoesPendentes,
     ajustesAbastecimentosPendentes,
     documentosPendentes,
+    falhasVerificacaoAntifraude,
     logoutInatividadeMinutos,
   ] = await Promise.all([
       contarChamadosNaoVistosAcao().catch((e) => {
@@ -275,6 +281,13 @@ export default async function DashboardLayout({
       // mesma blindagem "falha vira 0" das demais contagens.
       contarDocumentosPendentesAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar documentos pendentes (ignorado):", e);
+        return 0;
+      }),
+      // Fase 27.15x — bolinha de falhas de verificação antifraude (fail-open
+      // — ver POST /api/integracoes/antifraude/verificar) ainda não lidas,
+      // mesma blindagem "falha vira 0" das demais contagens.
+      contarFalhasVerificacaoAntifraudeAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar falhas de verificação antifraude (ignorado):", e);
         return 0;
       }),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
@@ -517,6 +530,11 @@ export default async function DashboardLayout({
                   {item.href === "/abastecimentos" && ajustesAbastecimentosPendentes > 0 && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                       {ajustesAbastecimentosPendentes}
+                    </span>
+                  )}
+                  {item.href === "/antifraude" && falhasVerificacaoAntifraude > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                      {falhasVerificacaoAntifraude}
                     </span>
                   )}
                 </Link>

@@ -717,6 +717,64 @@ export interface Database {
           },
         ];
       };
+      regras_antifraude: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          nome: string;
+          tipo: "limite_valor_quantidade" | "janela_tempo_frequencia" | "localizacao_posto";
+          escopo: "motorista" | "veiculo" | "empresa";
+          escopo_referencia: string | null;
+          condicoes: Json;
+          status: "Ativo" | "Inativo";
+          vigencia_inicio: string;
+          vigencia_fim: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["regras_antifraude"]["Row"]> & {
+          empresa_id: string;
+          nome: string;
+          tipo: "limite_valor_quantidade" | "janela_tempo_frequencia" | "localizacao_posto";
+          escopo: "motorista" | "veiculo" | "empresa";
+          condicoes: Json;
+        };
+        Update: Partial<Database["public"]["Tables"]["regras_antifraude"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "regras_antifraude_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      antifraude_verificacoes_falhas: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          detalhe: string;
+          abastecimento_referencia: Json | null;
+          criado_em: string;
+          lida_em: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["antifraude_verificacoes_falhas"]["Row"]> & {
+          empresa_id: string;
+          detalhe: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["antifraude_verificacoes_falhas"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "antifraude_verificacoes_falhas_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       parametros_vinculo_motorista_veiculo: {
         Row: {
           id: string;

@@ -1,0 +1,260 @@
+import { NextResponse } from "next/server";
+import { autenticarRequisicaoApi, marcarUsoChaveApi } from "@/lib/apiAuth";
+import { ESCOPO_ANTIFRAUDE_VERIFICAR } from "@/lib/apiKeys";
+import type { Json } from "@/types/database.types";
+
+// Fase 27.15x — Regras Antifraude (proposta em PROPOSTA-ANTIFRAUDE.md): um
+// sistema externo (bandeira de cartão, posto, gateway de pagamento) chama
+// este endpoint ANTES de liberar um abastecimento. Diferente dos endpoints
+// de "Parâmetros de Uso" (que só devolvem os dados crus da regra e deixam o
+// sistema externo decidir), aqui a PLATAFORMA já avalia as regras ativas do
+// cliente e devolve o veredito pronto: autorizado ou não, com o motivo.
+//
+// Decisão importante (confirmada com o Daniel): se algo falhar durante a
+// avaliação (erro de banco, timeout etc.), a resposta é FAIL-OPEN —
+// `autorizado: true` mesmo assim, nunca trava a operação do cliente por uma
+// falha nossa — mas a falha fica registrada em antifraude_verificacoes_falhas
+// (alimenta o badge no menu de "Antifraude" e, na Fase seguinte, dispara um
+// e-mail de aviso) pra o cliente saber que aquele abastecimento específico
+// não foi checado e possa investigar antes do próximo.
+export const runtime = "nodejs";
+
+type CorpoRequisicao = {
+  placa?: string;
+  motorista_cpf?: string;
+  posto_cnpj?: string;
+  data_hora?: string;
+  litros?: number;
+  valor_total?: number;
+};
+
+type CondicoesLimiteValorQuantidade = {
+  litros_max_dia?: number;
+  valor_max_abastecimento?: number;
+};
+type CondicoesJanelaTempoFrequencia = {
+  intervalo_minimo_horas?: number;
+  horario_permitido?: { inicio?: string | null; fim?: string | null };
+};
+type CondicoesLocalizacaoPosto = {
+  postos_permitidos_cnpj?: string[];
+  distancia_maxima_km_da_rota?: number;
+};
+
+type RegraRow = {
+  id: string;
+  tipo: "limite_valor_quantidade" | "janela_tempo_frequencia" | "localizacao_posto";
+  escopo: "motorista" | "veiculo" | "empresa";
+  escopo_referencia: string | null;
+  condicoes: CondicoesLimiteValorQuantidade & CondicoesJanelaTempoFrequencia & CondicoesLocalizacaoPosto;
+};
+
+function normalizarPlaca(placa: string): string {
+  return placa.toUpperCase().replace(/[^0-9A-Z]/g, "");
+}
+
+// Extrai HH:MM do horário de "parede" indicado no ISO 8601 recebido (ex.:
+// "2026-07-16T14:30:00-03:00" → "14:30") — não converte pra UTC de
+// propósito: "horário permitido" precisa comparar com o horário local de
+// quem abasteceu, não com UTC.
+function horaMinutoLocal(dataHoraIso: string): string | null {
+  const m = dataHoraIso.match(/T(\d{2}):(\d{2})/);
+  return m ? `${m[1]}:${m[2]}` : null;
+}
+
+function dentroDoHorario(horaMin: string, inicio?: string | null, fim?: string | null): boolean {
+  if (!inicio && !fim) return true;
+  if (inicio && horaMin < inicio) return false;
+  if (fim && horaMin > fim) return false;
+  return true;
+}
+
+export async function POST(request: Request) {
+  const auth = await autenticarRequisicaoApi(request, ESCOPO_ANTIFRAUDE_VERIFICAR);
+  if (!auth.ok) {
+    return NextResponse.json({ erro: auth.erro }, { status: auth.status });
+  }
+  const { chave, supabase } = auth;
+
+  let corpo: CorpoRequisicao;
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição precisa ser um JSON válido." }, { status: 400 });
+  }
+
+  const placa = corpo.placa?.trim() ? normalizarPlaca(corpo.placa) : null;
+  const motoristaCpf = corpo.motorista_cpf?.trim() || null;
+  const postoCnpj = corpo.posto_cnpj?.trim() || null;
+  const dataHora = corpo.data_hora?.trim() || new Date().toISOString();
+  const litros = Number(corpo.litros ?? 0);
+  const valorTotal = Number(corpo.valor_total ?? 0);
+
+  if (Number.isNaN(new Date(dataHora).getTime())) {
+    return NextResponse.json({ erro: '"data_hora" precisa ser uma data/hora válida (ISO 8601).' }, { status: 400 });
+  }
+
+  try {
+    const hoje = dataHora.slice(0, 10);
+    const inicioDoDia = `${hoje}T00:00:00`;
+    const fimDoDiaExclusivo = new Date(new Date(`${hoje}T00:00:00Z`).getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: regrasRaw, error: erroRegras } = await supabase
+      .from("regras_antifraude")
+      .select("id, tipo, escopo, escopo_referencia, condicoes")
+      .eq("empresa_id", chave.empresaId)
+      .eq("status", "Ativo")
+      .lte("vigencia_inicio", hoje)
+      .or(`vigencia_fim.is.null,vigencia_fim.gte.${hoje}`);
+
+    if (erroRegras) throw new Error(erroRegras.message);
+
+    const regras = (regrasRaw ?? []) as unknown as RegraRow[];
+
+    // Só as regras que de fato se aplicam a esta transação: empresa toda,
+    // ou o motorista/veículo específico informado no corpo da requisição.
+    const regrasAplicaveis = regras.filter((r) => {
+      if (r.escopo === "empresa") return true;
+      if (r.escopo === "motorista") return motoristaCpf !== null && r.escopo_referencia === motoristaCpf;
+      if (r.escopo === "veiculo") return placa !== null && r.escopo_referencia !== null && normalizarPlaca(r.escopo_referencia) === placa;
+      return false;
+    });
+
+    for (const regra of regrasAplicaveis) {
+      if (regra.tipo === "limite_valor_quantidade") {
+        const { valor_max_abastecimento, litros_max_dia } = regra.condicoes;
+
+        if (valor_max_abastecimento !== undefined && valorTotal > valor_max_abastecimento) {
+          return NextResponse.json({
+            autorizado: false,
+            motivo: `Valor do abastecimento (R$ ${valorTotal.toFixed(2)}) excede o limite de R$ ${valor_max_abastecimento.toFixed(2)} por abastecimento.`,
+            regra_id: regra.id,
+          });
+        }
+
+        if (litros_max_dia !== undefined) {
+          let query = supabase
+            .from("abastecimentos_unificado")
+            .select("litros")
+            .eq("empresa_id", chave.empresaId)
+            .gte("data_abastecimento", inicioDoDia)
+            .lt("data_abastecimento", fimDoDiaExclusivo);
+          if (regra.escopo === "veiculo" && placa) query = query.eq("placa", placa);
+          if (regra.escopo === "motorista" && motoristaCpf) {
+            // abastecimentos_unificado só tem motorista_nome (texto livre),
+            // não CPF — resolve o nome uma vez a partir do cadastro de
+            // motoristas pra poder filtrar.
+            const { data: motorista } = await supabase
+              .from("motoristas")
+              .select("nome_completo")
+              .eq("empresa_id", chave.empresaId)
+              .eq("cpf", motoristaCpf)
+              .maybeSingle();
+            if (motorista?.nome_completo) query = query.eq("motorista_nome", motorista.nome_completo);
+          }
+          const { data: abastecimentosHoje } = await query;
+          const litrosJaHoje = (abastecimentosHoje ?? []).reduce((soma, a) => soma + Number(a.litros ?? 0), 0);
+          const litrosComEsteAbastecimento = litrosJaHoje + litros;
+
+          if (litrosComEsteAbastecimento > litros_max_dia) {
+            return NextResponse.json({
+              autorizado: false,
+              motivo: `Limite diário de ${litros_max_dia}L excedido (já abastecido hoje: ${litrosJaHoje.toFixed(1)}L, mais este de ${litros.toFixed(1)}L).`,
+              regra_id: regra.id,
+            });
+          }
+        }
+      }
+
+      if (regra.tipo === "janela_tempo_frequencia") {
+        const { intervalo_minimo_horas, horario_permitido } = regra.condicoes;
+
+        if (horario_permitido) {
+          const horaMin = horaMinutoLocal(dataHora);
+          if (horaMin && !dentroDoHorario(horaMin, horario_permitido.inicio, horario_permitido.fim)) {
+            return NextResponse.json({
+              autorizado: false,
+              motivo: `Fora do horário permitido (${horario_permitido.inicio ?? "00:00"}–${horario_permitido.fim ?? "23:59"}).`,
+              regra_id: regra.id,
+            });
+          }
+        }
+
+        if (intervalo_minimo_horas !== undefined && placa) {
+          const { data: ultimo } = await supabase
+            .from("abastecimentos_unificado")
+            .select("data_abastecimento")
+            .eq("empresa_id", chave.empresaId)
+            .eq("placa", placa)
+            .lt("data_abastecimento", dataHora)
+            .order("data_abastecimento", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (ultimo?.data_abastecimento) {
+            const horasDesdeUltimo =
+              (new Date(dataHora).getTime() - new Date(ultimo.data_abastecimento).getTime()) / (1000 * 60 * 60);
+            if (horasDesdeUltimo < intervalo_minimo_horas) {
+              return NextResponse.json({
+                autorizado: false,
+                motivo: `Intervalo mínimo de ${intervalo_minimo_horas}h entre abastecimentos não respeitado (último foi há ${horasDesdeUltimo.toFixed(1)}h).`,
+                regra_id: regra.id,
+              });
+            }
+          }
+        }
+      }
+
+      if (regra.tipo === "localizacao_posto") {
+        const { postos_permitidos_cnpj } = regra.condicoes;
+        // Nota: "distancia_maxima_km_da_rota" ainda não é avaliada — depende
+        // de dados de rota planejada que este endpoint não recebe hoje.
+        if (postos_permitidos_cnpj && postos_permitidos_cnpj.length > 0 && postoCnpj) {
+          if (!postos_permitidos_cnpj.includes(postoCnpj)) {
+            return NextResponse.json({
+              autorizado: false,
+              motivo: `Posto (CNPJ ${postoCnpj}) não está na lista de postos permitidos para esta regra.`,
+              regra_id: regra.id,
+            });
+          }
+        }
+      }
+    }
+
+    await marcarUsoChaveApi(supabase, chave.id);
+    return NextResponse.json({ autorizado: true });
+  } catch (erro) {
+    // Fail-open: nunca bloqueia o cliente por uma falha nossa, mas registra
+    // pra ele saber e poder investigar antes do próximo abastecimento (Fase
+    // seguinte adiciona o e-mail de aviso — ver antifraude_verificacoes_falhas
+    // e PROPOSTA-ANTIFRAUDE.md, seção 6).
+    const mensagem = erro instanceof Error ? erro.message : "Erro desconhecido ao avaliar as regras.";
+    const { data: falhaRegistrada } = await supabase
+      .from("antifraude_verificacoes_falhas")
+      .insert({
+        empresa_id: chave.empresaId,
+        detalhe: mensagem,
+        abastecimento_referencia: corpo as unknown as Json,
+      })
+      .select("id")
+      .single();
+
+    // Best-effort (mesmo padrão de notificarNegociacao em
+    // negociacoesPostos.ts) — se o e-mail falhar, o registro da falha já foi
+    // salvo normalmente, só o aviso por e-mail que não sai.
+    if (falhaRegistrada?.id) {
+      try {
+        await supabase.functions.invoke("antifraude-email", { body: { falha_id: falhaRegistrada.id } });
+      } catch (erroEmail) {
+        console.error("[antifraude] falha ao notificar por e-mail (ignorado):", erroEmail);
+      }
+    }
+
+    await marcarUsoChaveApi(supabase, chave.id);
+    return NextResponse.json({
+      autorizado: true,
+      aviso:
+        "Não foi possível concluir a verificação antifraude — abastecimento autorizado por padrão. O cliente foi notificado para revisar.",
+    });
+  }
+}
