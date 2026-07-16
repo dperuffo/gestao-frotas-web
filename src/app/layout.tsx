@@ -7,22 +7,18 @@ export const metadata: Metadata = {
   description: "Plataforma de Gestão de Frotas — cadastros, dashboards e relatórios gerenciais.",
 };
 
-// MouseFlow — mapa de calor e gravação de sessão (heatmaps/session replay).
-// Só carrega se a env var estiver preenchida (pegue o Website ID em
-// mouseflow.com > Websites > seu site > Install Tracking Code) e nunca em
-// desenvolvimento local, pra não sujar as estatísticas com testes.
-//
-// Achado real (Daniel): com strategy="afterInteractive", o <script> só é
-// injetado no DOM depois que o React termina de hidratar no navegador — um
-// visitante real carrega normal (confirmado com mouseflow.isRecording() ===
-// true no console), mas o verificador automático de instalação do MouseFlow
-// não roda JavaScript, só lê o HTML puro que o servidor manda — e nesse HTML
-// o script ainda não existe. Por isso o painel ficava preso em "You must
-// install the tracking code" e não coletava nada. strategy="beforeInteractive"
-// resolve: é a única estratégia do next/script que o Next.js efetivamente
-// embute no HTML já na resposta do servidor (só pode ser usada no layout
-// raiz, que é exatamente onde este script está).
-const MOUSEFLOW_WEBSITE_ID = process.env.NEXT_PUBLIC_MOUSEFLOW_WEBSITE_ID;
+// Hotjar — mapa de calor e gravação de sessão (heatmaps/session replay).
+// Troca do MouseFlow (Fase FLT-3): a verificação de instalação do MouseFlow
+// nunca destravou (script confirmado rodando via mouseflow.isRecording() ===
+// true, mas a conta nunca saiu do estado "aguardando instalação" mesmo após
+// abrir chamado com o suporte deles) — Hotjar tem fluxo mais simples,
+// sem esse passo extra de ativação manual. Só carrega se a env var estiver
+// preenchida (Site ID em Hotjar > Settings > Sites & Organizations) e nunca
+// em desenvolvimento local, pra não sujar as estatísticas com testes.
+// strategy="beforeInteractive" garante que o script já vai embutido no HTML
+// que o servidor manda (aprendido com o problema do MouseFlow) — só pode
+// ser usada no layout raiz, que é exatamente onde este script está.
+const HOTJAR_SITE_ID = process.env.NEXT_PUBLIC_HOTJAR_SITE_ID;
 
 export default function RootLayout({
   children,
@@ -31,20 +27,20 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         {children}
-        {process.env.NODE_ENV === "production" && MOUSEFLOW_WEBSITE_ID && (
+        {process.env.NODE_ENV === "production" && HOTJAR_SITE_ID && (
           <Script
-            id="mouseflow"
+            id="hotjar"
             strategy="beforeInteractive"
             dangerouslySetInnerHTML={{
               __html: `
-                window._mfq = window._mfq || [];
-                (function () {
-                  var mf = document.createElement("script");
-                  mf.type = "text/javascript";
-                  mf.defer = true;
-                  mf.src = "//cdn.mouseflow.com/projects/${MOUSEFLOW_WEBSITE_ID}.js";
-                  document.getElementsByTagName("head")[0].appendChild(mf);
-                })();
+                (function (h, o, t, j, a, r) {
+                  h.hj = h.hj || function () { (h.hj.q = h.hj.q || []).push(arguments); };
+                  h._hjSettings = { hjid: ${HOTJAR_SITE_ID}, hjsv: 6 };
+                  a = o.getElementsByTagName("head")[0];
+                  r = o.createElement("script"); r.async = 1;
+                  r.src = t + h._hjSettings.hjid + j + h._hjSettings.hjsv;
+                  a.appendChild(r);
+                })(window, document, "https://static.hotjar.com/c/hotjar-", ".js?sv=");
               `,
             }}
           />
