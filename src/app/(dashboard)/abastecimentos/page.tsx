@@ -181,9 +181,6 @@ export default async function AbastecimentosPage({
   const queryContagem = comFiltros(
     supabase.from("abastecimentos_unificado").select("id", { count: "exact", head: true })
   );
-  const queryAgregados = comFiltros(supabase.from("abastecimentos_unificado").select("litros, valor_total")).limit(
-    50000
-  );
   const queryPagina = comFiltros(
     supabase
       .from("abastecimentos_unificado")
@@ -192,44 +189,70 @@ export default async function AbastecimentosPage({
     .order("data_abastecimento", { ascending: false })
     .range(offset, offset + POR_PAGINA - 1);
 
-  const [{ count }, { data: agregadosRaw }, { data: registros, error }] = semClienteEscolhido
-    ? [{ count: 0 }, { data: [] as { litros: number | null; valor_total: number | null }[] }, { data: [], error: null }]
-    : await Promise.all([queryContagem, queryAgregados, queryPagina]);
+  // Fase FLT-3 — achado real (Daniel, cliente de teste com 8,4k+
+  // abastecimentos): "Litros abastecidos"/"Valor total" vinham de
+  // .select("litros, valor_total").limit(50000) e soma em JS. O PostgREST
+  // corta em 1.000 linhas por padrão quando não há paginação/range explícito
+  // (mesmo bug já documentado e corrigido na Inteligência de Rede, Fase 6) —
+  // clientes com mais de 1.000 registros tinham esses indicadores calculados
+  // sobre uma fatia arbitrária dos dados, quase sempre dominada pelo
+  // provedor histórico maior (profrotas). Trocado por uma RPC que soma
+  // direto no Postgres (imune ao limite de linhas), replicando os mesmos
+  // filtros desta tela (busca, data, provedor, ajuste pendente).
+  const queryTotais = empresaSelecionada
+    ? supabase.rpc("abastecimentos_totais_filtrados", {
+        p_empresa_id: empresaSelecionada,
+        p_q: q || null,
+        p_de: de || null,
+        p_ate: ate || null,
+        p_provedor: provedor || null,
+        p_apenas_ajuste_pendente: ajuste === "pendente",
+      })
+    : Promise.resolve({ data: null as { litros: number; valor_total: number; registros: number }[] | null });
+
+  const [{ count }, { data: totaisRaw }, { data: registros, error }] = semClienteEscolhido
+    ? [{ count: 0 }, { data: null }, { data: [], error: null }]
+    : await Promise.all([queryContagem, queryTotais, queryPagina]);
 
   const totalRegistros = count ?? 0;
   const linhas = (registros ?? []) as RegistroUnificado[];
   const { paginaAtual, totalPaginas } = calcularPaginacao(totalRegistros, POR_PAGINA, pageParam);
 
-  const agregados = (agregadosRaw ?? []) as { litros: number | null; valor_total: number | null }[];
-  const litrosTotais = agregados.reduce((soma: number, r) => soma + (r.litros ?? 0), 0);
-  const valorTotal = agregados.reduce((soma: number, r) => soma + (r.valor_total ?? 0), 0);
+  const totaisLinha = (totaisRaw?.[0] ?? null) as { litros: number | null; valor_total: number | null } | null;
+  const litrosTotais = Number(totaisLinha?.litros ?? 0);
+  const valorTotal = Number(totaisLinha?.valor_total ?? 0);
   const custoMedioLitro = litrosTotais > 0 ? valorTotal / litrosTotais : 0;
 
   // Consolidado por meio de pagamento (todos os provedores, últimos 6 meses,
   // ignorando os filtros de data da tela — mesmo espírito do "Top 5 clientes"
   // do Dashboard: um resumo estável, não a fatia filtrada no momento).
-  const seisMesesAtrasIso = new Date(Date.now() - 183 * 24 * 60 * 60 * 1000).toISOString();
+  // Fase FLT-3 — trocado de .select().limit(50000) + soma em JS (mesmo
+  // problema do limite de 1.000 linhas do PostgREST) pela RPC
+  // indicadores_financeiros_por_provedor, já usada em /financeiro — agrega
+  // no banco, então não perde nenhum provedor por causa do corte de linhas.
+  const hojeIso = new Date().toISOString().slice(0, 10);
+  const seisMesesAtrasIso = new Date(Date.now() - 183 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const { data: resumoRaw } = empresaSelecionada
-    ? await supabase
-        .from("abastecimentos_unificado")
-        .select("provedor, valor_total")
-        .eq("empresa_id", empresaSelecionada)
-        .gte("data_abastecimento", seisMesesAtrasIso)
-        .limit(50000)
+    ? await supabase.rpc("indicadores_financeiros_por_provedor", {
+        p_empresa_id: empresaSelecionada,
+        p_data_inicio: seisMesesAtrasIso,
+        p_data_fim: hojeIso,
+      })
     : { data: [] };
-  const resumoPorProvedor = new Map<string, number>();
-  for (const r of (resumoRaw ?? []) as { provedor: string; valor_total: number | null }[]) {
-    resumoPorProvedor.set(r.provedor, (resumoPorProvedor.get(r.provedor) ?? 0) + (r.valor_total ?? 0));
-  }
-  const listaResumoProvedores = Array.from(resumoPorProvedor.entries()).sort((a, b) => b[1] - a[1]);
+  const listaResumoProvedores = ((resumoRaw ?? []) as { provedor: string; custo_combustivel: number }[])
+    .map((r) => [r.provedor, Number(r.custo_combustivel)] as [string, number])
+    .sort((a, b) => b[1] - a[1]);
 
   // Fase 27.147 — pedido do Daniel: filtro por meio de pagamento na lista de
-  // abastecimentos, igual ao filtro de combustível. Opções vêm de uma
-  // consulta enxuta (só a coluna provedor, sem limite de data) — assim o
-  // filtro mostra todo provedor que este cliente já usou, não só os dos
-  // últimos 6 meses do resumo acima.
+  // abastecimentos, igual ao filtro de combustível. Opções vêm de todo o
+  // histórico do cliente (mesma RPC agregada, sem limite de data), não só
+  // os últimos 6 meses do resumo acima.
   const { data: provedoresRaw } = empresaSelecionada
-    ? await supabase.from("abastecimentos_unificado").select("provedor").eq("empresa_id", empresaSelecionada).limit(50000)
+    ? await supabase.rpc("indicadores_financeiros_por_provedor", {
+        p_empresa_id: empresaSelecionada,
+        p_data_inicio: "2000-01-01",
+        p_data_fim: hojeIso,
+      })
     : { data: [] };
   const provedoresOpcoes = Array.from(
     new Set((provedoresRaw ?? []).map((r: { provedor: string | null }) => r.provedor).filter((p): p is string => !!p))

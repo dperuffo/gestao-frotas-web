@@ -2925,6 +2925,22 @@ export interface Database {
           litros_total: number;
         }[];
       };
+      abastecimentos_totais_filtrados: {
+        Args: {
+          p_empresa_id: string;
+          p_q?: string | null;
+          p_de?: string | null;
+          p_ate?: string | null;
+          p_provedor?: string | null;
+          p_apenas_ajuste_pendente?: boolean;
+          p_produto?: string | null;
+        };
+        Returns: {
+          litros: number;
+          valor_total: number;
+          registros: number;
+        }[];
+      };
       postos_gf_servicos: {
         Args: { p_empresa_id?: string | null };
         Returns: {
