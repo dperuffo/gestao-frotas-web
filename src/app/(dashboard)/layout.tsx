@@ -173,6 +173,10 @@ const menuAdministracao = [
   // Fase 27.86 — parâmetros globais do sistema (hoje só o timeout de
   // logout por inatividade; ver /configuracoes).
   { href: "/configuracoes", label: "⚙️ Configurações do Sistema" },
+  // Programa "Estrada que Cuida" (app do motorista) — catálogo de resgate
+  // simulado (v1, sem parceiros reais) + fila de resgates pra cumprimento
+  // manual. Ver PROPOSTA-FIDELIDADE-MOTORISTA.md.
+  { href: "/fidelidade", label: "🎁 Catálogo de Fidelidade" },
 ];
 
 // Alvos do tour de boas-vindas (Fase 24) — só os 3 itens de menu citados no

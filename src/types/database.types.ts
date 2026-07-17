@@ -775,6 +775,93 @@ export interface Database {
           },
         ];
       };
+      fidelidade_catalogo_itens: {
+        Row: {
+          id: string;
+          categoria:
+            | "economia_imediata"
+            | "marketplace_cabine"
+            | "saude_estrada"
+            | "universidade_estrada"
+            | "clube_caminhao"
+            | "volte_para_casa";
+          titulo: string;
+          descricao: string | null;
+          parceiro_nome: string | null;
+          pontos_necessarios: number;
+          ativo: boolean;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fidelidade_catalogo_itens"]["Row"]> & {
+          categoria:
+            | "economia_imediata"
+            | "marketplace_cabine"
+            | "saude_estrada"
+            | "universidade_estrada"
+            | "clube_caminhao"
+            | "volte_para_casa";
+          titulo: string;
+          pontos_necessarios: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["fidelidade_catalogo_itens"]["Row"]>;
+        Relationships: [];
+      };
+      fidelidade_resgates: {
+        Row: {
+          id: string;
+          motorista_id: string;
+          dependente_id: string | null;
+          item_id: string;
+          categoria: string;
+          titulo: string;
+          pontos_gastos: number;
+          status: "solicitado" | "em_andamento" | "concluido" | "cancelado";
+          solicitado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fidelidade_resgates"]["Row"]> & {
+          motorista_id: string;
+          item_id: string;
+          categoria: string;
+          titulo: string;
+          pontos_gastos: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["fidelidade_resgates"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "fidelidade_resgates_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      fidelidade_dependentes: {
+        Row: {
+          id: string;
+          motorista_id: string;
+          nome: string;
+          parentesco: string | null;
+          data_nascimento: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fidelidade_dependentes"]["Row"]> & {
+          motorista_id: string;
+          nome: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fidelidade_dependentes"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "fidelidade_dependentes_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       parametros_vinculo_motorista_veiculo: {
         Row: {
           id: string;
