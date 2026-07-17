@@ -851,6 +851,111 @@ export interface Database {
           },
         ];
       };
+      // Fase Fretes — rede de motoristas parceiros (terceiros/agregados) de
+      // uma empresa, usada pro modo de atribuição direta de frete.
+      empresas_motoristas_parceiros: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          motorista_id: string;
+          status: "convidado" | "ativo" | "recusado" | "removido";
+          convidado_por: string | null;
+          convidado_em: string;
+          respondido_em: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["empresas_motoristas_parceiros"]["Row"]> & {
+          empresa_id: string;
+          motorista_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["empresas_motoristas_parceiros"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase Fretes — oferta de frete publicada por um cliente: modo direto
+      // (motorista_id já preenchido, status aguardando_confirmacao) ou modo
+      // mercado aberto (status disponivel, visível pra rede toda).
+      fretes: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          plano_viagem_id: string | null;
+          titulo: string;
+          descricao: string | null;
+          origem_label: string;
+          origem_lat: number;
+          origem_lon: number;
+          destino_label: string;
+          destino_lat: number;
+          destino_lon: number;
+          tipo_carga: string | null;
+          peso_carga_kg: number | null;
+          data_saida_prevista: string | null;
+          prazo_entrega: string | null;
+          km_estimado: number | null;
+          valor_oferecido: number;
+          status:
+            | "disponivel"
+            | "aguardando_confirmacao"
+            | "aceito"
+            | "em_andamento"
+            | "concluido"
+            | "cancelado"
+            | "recusado";
+          motorista_id: string | null;
+          negociacao_aceita_id: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes"]["Row"]> & {
+          empresa_id: string;
+          titulo: string;
+          origem_label: string;
+          origem_lat: number;
+          origem_lon: number;
+          destino_label: string;
+          destino_lat: number;
+          destino_lon: number;
+          valor_oferecido: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes"]["Row"]>;
+        Relationships: [];
+      };
+      fretes_negociacoes: {
+        Row: {
+          id: string;
+          frete_id: string;
+          motorista_id: string;
+          status: "aberta" | "aceita" | "recusada" | "retirada" | "perdida";
+          rodada_atual: number;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_negociacoes"]["Row"]> & {
+          frete_id: string;
+          motorista_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_negociacoes"]["Row"]>;
+        Relationships: [];
+      };
+      fretes_negociacoes_rodadas: {
+        Row: {
+          id: number;
+          negociacao_id: string;
+          numero_rodada: number;
+          autor: "cliente" | "motorista";
+          valor_proposto: number;
+          mensagem: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_negociacoes_rodadas"]["Row"]> & {
+          negociacao_id: string;
+          numero_rodada: number;
+          autor: "cliente" | "motorista";
+          valor_proposto: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_negociacoes_rodadas"]["Row"]>;
+        Relationships: [];
+      };
       fidelidade_dependentes: {
         Row: {
           id: string;
@@ -3174,6 +3279,93 @@ export interface Database {
           missoes_concluidas: number;
           resgates_total: number;
           resgates_concluidos: number;
+        }[];
+      };
+      // Fase Fretes — rede de parceiros.
+      buscar_motorista_documento: {
+        Args: { p_documento: string };
+        Returns: { motorista_id: string; nome_completo: string; telefone: string | null }[];
+      };
+      convidar_motorista_parceiro: {
+        Args: { p_empresa_id: string; p_motorista_id: string };
+        Returns: Database["public"]["Tables"]["empresas_motoristas_parceiros"]["Row"];
+      };
+      meus_parceiros_empresa: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          id: string;
+          motorista_id: string;
+          nome_completo: string;
+          telefone: string | null;
+          status: string;
+          convidado_em: string;
+          respondido_em: string | null;
+        }[];
+      };
+      // Fase Fretes — negociação e listagem.
+      negociacoes_frete_empresa: {
+        Args: { p_frete_id: string };
+        Returns: {
+          negociacao_id: string;
+          motorista_id: string;
+          nome_motorista: string;
+          telefone_motorista: string | null;
+          status: string;
+          rodada_atual: number;
+          ultimo_valor: number;
+          ultimo_autor: string;
+          criado_em: string;
+        }[];
+      };
+      meus_fretes_empresa: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          id: string;
+          titulo: string;
+          status: string;
+          origem_label: string;
+          destino_label: string;
+          valor_oferecido: number;
+          km_estimado: number | null;
+          motorista_id: string | null;
+          nome_motorista: string | null;
+          telefone_motorista: string | null;
+          criado_em: string;
+        }[];
+      };
+      abrir_negociacao_frete: {
+        Args: { p_frete_id: string; p_valor_proposto: number; p_mensagem?: string | null };
+        Returns: string;
+      };
+      propor_rodada_negociacao: {
+        Args: { p_negociacao_id: string; p_valor_proposto: number; p_mensagem?: string | null };
+        Returns: undefined;
+      };
+      aceitar_negociacao_frete: {
+        Args: { p_negociacao_id: string };
+        Returns: undefined;
+      };
+      recusar_negociacao_frete: {
+        Args: { p_negociacao_id: string };
+        Returns: undefined;
+      };
+      responder_frete_direto: {
+        Args: { p_frete_id: string; p_aceitar: boolean };
+        Returns: undefined;
+      };
+      resgates_beneficios_empresa: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          id: string;
+          titulo: string;
+          categoria: string;
+          pontos_gastos: number;
+          status: string;
+          numero_voucher: string | null;
+          valido_ate: string | null;
+          solicitado_em: string;
+          atualizado_em: string;
+          nome_motorista: string;
         }[];
       };
       indicadores_financeiros: {

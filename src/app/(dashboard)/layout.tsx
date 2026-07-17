@@ -81,6 +81,12 @@ const menuOperacao = [
   { href: "/roteirizacao", label: "🗺️ Roteirização" },
   { href: "/rotograma", label: "🛡️ Rotograma" },
   { href: "/planos-viagem", label: "🧳 Planos de Viagem" },
+  // Fase Fretes — contratação de frete entre cliente e motorista, estilo
+  // Uber (mercado aberto com negociação) ou atribuição direta a um
+  // motorista próprio/parceiro. Motoristas Parceiros é o cadastro de
+  // terceiros/agregados usado pelo modo direto.
+  { href: "/fretes", label: "🚚 Fretes" },
+  { href: "/motoristas-parceiros", label: "🤝 Motoristas Parceiros" },
   { href: "/negociacoes", label: "🤝 Negociações com Postos" },
   { href: "/precos-postos", label: "💲 Preços dos Postos Parceiros" },
   { href: "/manutencao-preditiva", label: "🔧 Manutenção Preditiva" },

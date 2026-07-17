@@ -38,7 +38,7 @@ type ResgateRow = {
   valido_ate: string | null;
   solicitado_em: string;
   atualizado_em: string;
-  motoristas: { nome_completo: string } | null;
+  nome_motorista: string;
 };
 
 export default async function ParceriasLocaisPage({
@@ -64,20 +64,17 @@ export default async function ParceriasLocaisPage({
     itens = (dataItens ?? []) as ItemRow[];
     erroItens = error?.message;
 
-    if (itens.length > 0) {
-      const { data: dataResgates } = await supabase
-        .from("fidelidade_resgates")
-        .select(
-          "id, titulo, categoria, pontos_gastos, status, numero_voucher, valido_ate, solicitado_em, atualizado_em, motoristas(nome_completo)"
-        )
-        .in(
-          "item_id",
-          itens.map((i) => i.id)
-        )
-        .order("solicitado_em", { ascending: false })
-        .limit(200);
-      resgates = (dataResgates ?? []) as unknown as ResgateRow[];
-    }
+    // fidelidade_resgates permite leitura (RLS) de vouchers dos próprios
+    // itens, mas o embed de motoristas(nome_completo) não funciona aqui:
+    // a RLS de "motoristas" só libera leitura pra empresa DONA do
+    // motorista (cliente/frota), não pra empresa dona do BENEFÍCIO
+    // (posto). RPC resgates_beneficios_empresa (SECURITY DEFINER) resolve
+    // isso trazendo o nome já junto, com a mesma checagem de autorização
+    // por empresa feita dentro da função.
+    const { data: dataResgates } = await supabase.rpc("resgates_beneficios_empresa", {
+      p_empresa_id: empresaSelecionada,
+    });
+    resgates = (dataResgates ?? []) as unknown as ResgateRow[];
   }
 
   // "Queimado" = voucher já entregue/honrado (status concluído) — pedido do
@@ -217,7 +214,7 @@ export default async function ParceriasLocaisPage({
                         ({LABEL_CATEGORIA_FIDELIDADE[r.categoria] ?? r.categoria})
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{r.motoristas?.nome_completo ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600">{r.nome_motorista}</td>
                     <td className="px-4 py-3 text-slate-600">{r.pontos_gastos.toLocaleString("pt-BR")}</td>
                     <td className="px-4 py-3 text-slate-600">
                       {r.valido_ate ? new Date(r.valido_ate).toLocaleDateString("pt-BR") : "Sem validade"}
@@ -263,7 +260,7 @@ export default async function ParceriasLocaisPage({
                         ({LABEL_CATEGORIA_FIDELIDADE[r.categoria] ?? r.categoria})
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{r.motoristas?.nome_completo ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600">{r.nome_motorista}</td>
                     <td className="px-4 py-3 text-slate-600">{r.pontos_gastos.toLocaleString("pt-BR")}</td>
                     <td className="px-4 py-3 text-slate-600">
                       {new Date(r.atualizado_em).toLocaleString("pt-BR")}
