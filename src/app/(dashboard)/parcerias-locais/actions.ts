@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { enviarImagemBeneficio } from "@/lib/fidelidadeImagens";
-import { CATEGORIAS_FIDELIDADE, eCategoriaFidelidadeValida, type CategoriaFidelidade } from "@/lib/fidelidadeCategorias";
+import { eCategoriaFidelidadeValida, type CategoriaFidelidade } from "@/lib/fidelidadeCategorias";
 
 // Parcerias Locais (Fase 17/07) — pedido do Daniel: posto e cliente criam e
 // gerem seus PRÓPRIOS benefícios no catálogo "Estrada que Cuida" (vale-
@@ -17,7 +17,6 @@ import { CATEGORIAS_FIDELIDADE, eCategoriaFidelidadeValida, type CategoriaFideli
 // padrão de postos-duplicados/actions.ts).
 
 export type ItemParceriaFormState = { erro?: string } | undefined;
-export { CATEGORIAS_FIDELIDADE };
 
 // Mesma regra da RLS (fidelidade_catalogo_itens_dono_gerencia +
 // fidelidade_catalogo_itens_admin_escreve): dono da empresa, OU admin/

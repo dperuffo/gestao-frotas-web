@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition, type ChangeEvent, type FormEvent } from "react";
-import { criarItemParceria, atualizarItemParceria, CATEGORIAS_FIDELIDADE } from "../actions";
+import { criarItemParceria, atualizarItemParceria } from "../actions";
+import { CATEGORIAS_FIDELIDADE } from "@/lib/fidelidadeCategorias";
 
 type ItemExistente = {
   id: string;
