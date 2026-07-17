@@ -3148,6 +3148,21 @@ export interface Database {
           consumo_medio: number | null;
         }[];
       };
+      indicadores_fidelidade_motoristas: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          motorista_id: string;
+          nome_completo: string;
+          telefone: string | null;
+          aderido: boolean | null;
+          aderiu_em: string | null;
+          saldo_pontos: number;
+          abastecimentos_confirmados: number;
+          missoes_concluidas: number;
+          resgates_total: number;
+          resgates_concluidos: number;
+        }[];
+      };
       indicadores_financeiros: {
         Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
         Returns: {

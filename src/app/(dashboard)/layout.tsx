@@ -69,6 +69,11 @@ const menuOperacao = [
   // aqui o cliente cadastra regras que um sistema externo consulta ANTES de
   // autorizar — ver POST /api/integracoes/antifraude/verificar.
   { href: "/antifraude", label: "🕵️ Antifraude" },
+  // Fase 27.130 — indicadores do programa "Estrada que Cuida" (app próprio
+  // do motorista) por motorista, mesmo padrão de seleção de cliente do
+  // Antifraude acima; RPC indicadores_fidelidade_motoristas já checa
+  // autorização por empresa/admin internamente.
+  { href: "/fidelidade-motoristas", label: "🎁 Fidelidade dos Motoristas" },
   { href: "/roteirizacao", label: "🗺️ Roteirização" },
   { href: "/rotograma", label: "🛡️ Rotograma" },
   { href: "/planos-viagem", label: "🧳 Planos de Viagem" },
