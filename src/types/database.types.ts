@@ -1062,6 +1062,61 @@ export interface Database {
           },
         ];
       };
+      fidelidade_missoes: {
+        Row: {
+          id: string;
+          empresa_id: string | null;
+          codigo: string;
+          titulo: string;
+          descricao: string;
+          icone: string;
+          tipo_metrica: string;
+          meta: number;
+          bonus: number;
+          ativa: boolean;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fidelidade_missoes"]["Row"]> & {
+          codigo: string;
+          titulo: string;
+          tipo_metrica: string;
+          meta: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["fidelidade_missoes"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "fidelidade_missoes_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      fidelidade_eventos_engajamento: {
+        Row: {
+          id: string;
+          motorista_id: string;
+          tipo_evento: string;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fidelidade_eventos_engajamento"]["Row"]> & {
+          motorista_id: string;
+          tipo_evento: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fidelidade_eventos_engajamento"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "fidelidade_eventos_engajamento_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       parametros_vinculo_motorista_veiculo: {
         Row: {
           id: string;

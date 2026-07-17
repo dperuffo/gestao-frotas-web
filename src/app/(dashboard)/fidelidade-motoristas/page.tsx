@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { MissoesGestao } from "./MissoesGestao";
+import { listarMissoes } from "./missoesActions";
 
 // Painel de indicadores do programa "Estrada que Cuida" (app do motorista)
 // por motorista — pedido do Daniel em 17/07: visão do cliente (só os
@@ -53,12 +55,14 @@ export default async function FidelidadeMotoristasPage({
 
   let indicadores: IndicadorRow[] = [];
   let erroConsulta: string | undefined;
+  let missoes: Awaited<ReturnType<typeof listarMissoes>> = [];
   if (empresaSelecionada) {
     const { data, error } = await supabase.rpc("indicadores_fidelidade_motoristas", {
       p_empresa_id: empresaSelecionada,
     });
     indicadores = (data ?? []) as IndicadorRow[];
     erroConsulta = error?.message;
+    missoes = await listarMissoes(empresaSelecionada);
   }
 
   const aderidos = indicadores.filter((i) => i.aderido);
@@ -170,6 +174,8 @@ export default async function FidelidadeMotoristasPage({
               </tbody>
             </table>
           </div>
+
+          <MissoesGestao empresaId={empresaSelecionada} missoesIniciais={missoes} />
         </>
       )}
     </div>
