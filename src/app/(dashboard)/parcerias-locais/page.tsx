@@ -6,6 +6,7 @@ import { CardVoucher } from "./_components/CardVoucher";
 import { ToggleAtivoItemParceria } from "./_components/ToggleAtivoItemParceria";
 import { ExcluirItemParceria } from "./_components/ExcluirItemParceria";
 import { AtualizarStatusResgateProprio } from "./_components/AtualizarStatusResgateProprio";
+import { QueimarVoucherForm } from "./_components/QueimarVoucherForm";
 
 // Parcerias Locais (Fase 17/07) — tela self-service, acessível tanto pro
 // perfil posto quanto cliente (ver menuOperacao/menuPostoOperacao em
@@ -171,6 +172,8 @@ export default async function ParceriasLocaisPage({
               ))}
             </div>
           )}
+
+          <QueimarVoucherForm empresaId={empresaSelecionada} />
 
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="card p-4">

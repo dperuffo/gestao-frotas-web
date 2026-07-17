@@ -3,10 +3,12 @@
 import { useTransition } from "react";
 import { atualizarStatusResgateProprio } from "../actions";
 
+// "Concluído" saiu daqui — a baixa final agora exige o código do voucher
+// (ver QueimarVoucherForm/queimarVoucher). Esse select serve só pros
+// estados intermediários: preparar o atendimento ou cancelar.
 const OPCOES = [
   { valor: "solicitado", label: "Solicitado" },
   { valor: "em_andamento", label: "Em andamento" },
-  { valor: "concluido", label: "Concluído" },
   { valor: "cancelado", label: "Cancelado" },
 ] as const;
 

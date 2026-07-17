@@ -166,9 +166,12 @@ export async function excluirItemParceria(id: string, empresaId: string) {
   revalidatePath("/parcerias-locais");
 }
 
-// Posto/cliente só avança/cancela o próprio atendimento do voucher — não
-// devolve pra "solicitado" (esse estado inicial é só da RPC de resgate).
-const STATUS_RESGATE_PROPRIO = ["em_andamento", "concluido", "cancelado"] as const;
+// Posto/cliente avança/cancela o próprio atendimento do voucher — mas não
+// pra "concluído" por aqui (ver queimarVoucher, abaixo: a baixa final exige
+// digitar o código do voucher, senão daria pra marcar "entregue" sem o
+// motorista ter passado no balcão). Também não devolve pra "solicitado",
+// esse é só o estado inicial da RPC de resgate.
+const STATUS_RESGATE_PROPRIO = ["em_andamento", "cancelado"] as const;
 
 export async function atualizarStatusResgateProprio(id: string, empresaId: string, status: string) {
   if (!(STATUS_RESGATE_PROPRIO as readonly string[]).includes(status)) return;
@@ -179,4 +182,67 @@ export async function atualizarStatusResgateProprio(id: string, empresaId: strin
     .update({ status: status as (typeof STATUS_RESGATE_PROPRIO)[number], atualizado_em: new Date().toISOString() })
     .eq("id", id);
   revalidatePath("/parcerias-locais");
+}
+
+// Queima do voucher — pedido do Daniel (17/07): "o voucher precisa ter um
+// código para ser queimado". Antes, "Concluído" era só mais uma opção do
+// dropdown de status, sem checagem nenhuma; agora exige digitar o código
+// exibido no app do motorista, valida que o voucher (a) existe, (b) é de um
+// benefício DESTA empresa, (c) ainda não foi usado/cancelado e (d) não
+// venceu — só então marca como concluído.
+export type QueimarVoucherState = { erro?: string; sucesso?: { titulo: string; motorista: string } } | undefined;
+
+export async function queimarVoucher(
+  empresaId: string,
+  _prev: QueimarVoucherState,
+  formData: FormData
+): Promise<QueimarVoucherState> {
+  const supabase = await createClient();
+  if (!(await empresaPertenceAoUsuario(supabase, empresaId))) {
+    return { erro: "Você não tem permissão para queimar vouchers desta empresa." };
+  }
+
+  const codigo = String(formData.get("codigo") ?? "")
+    .trim()
+    .toUpperCase();
+  if (!codigo) return { erro: "Digite o código do voucher." };
+
+  const { data: resgate, error: erroBusca } = await supabase
+    .from("fidelidade_resgates")
+    .select("id, titulo, status, valido_ate, item_id, motoristas(nome_completo)")
+    .eq("numero_voucher", codigo)
+    .maybeSingle();
+
+  if (erroBusca || !resgate) {
+    return { erro: "Voucher não encontrado. Confira o código com o motorista." };
+  }
+
+  const { data: item } = await supabase
+    .from("fidelidade_catalogo_itens")
+    .select("criador_empresa_id")
+    .eq("id", resgate.item_id)
+    .maybeSingle();
+
+  if (item?.criador_empresa_id !== empresaId) {
+    return { erro: "Esse voucher não pertence a um benefício desta empresa." };
+  }
+  if (resgate.status === "concluido") return { erro: "Esse voucher já foi queimado antes." };
+  if (resgate.status === "cancelado") return { erro: "Esse voucher foi cancelado — não pode ser queimado." };
+  if (resgate.valido_ate && new Date(resgate.valido_ate) < new Date()) {
+    return { erro: `Esse voucher venceu em ${new Date(resgate.valido_ate).toLocaleDateString("pt-BR")}.` };
+  }
+
+  const { error } = await supabase
+    .from("fidelidade_resgates")
+    .update({ status: "concluido", atualizado_em: new Date().toISOString() })
+    .eq("id", resgate.id);
+  if (error) return { erro: `Não foi possível queimar o voucher: ${error.message}` };
+
+  revalidatePath("/parcerias-locais");
+  return {
+    sucesso: {
+      titulo: resgate.titulo,
+      motorista: (resgate.motoristas as { nome_completo: string } | null)?.nome_completo ?? "motorista",
+    },
+  };
 }
