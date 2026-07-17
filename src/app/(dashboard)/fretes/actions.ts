@@ -170,3 +170,47 @@ export async function contraporPropostaAcao(negociacaoId: string, empresaId: str
   if (error) return { erro: error.message };
   revalidatePath("/fretes");
 }
+
+// Fase Fretes B — postos recomendados, linha do tempo e avaliação.
+
+export async function adicionarPostoRecomendadoAcao(
+  freteId: string,
+  empresaId: string,
+  formData: FormData
+): Promise<{ erro?: string } | undefined> {
+  const supabase = await createClient();
+  if (!(await empresaPertenceAoUsuario(supabase, empresaId))) return { erro: "Sem permissão." };
+
+  const nomePosto = String(formData.get("nome_posto") ?? "").trim();
+  const itemCatalogoId = String(formData.get("item_catalogo_id") ?? "").trim() || null;
+  const observacao = String(formData.get("observacao") ?? "").trim() || null;
+  if (!nomePosto) return { erro: "Digite o nome do posto." };
+
+  const { error } = await supabase.from("fretes_postos_recomendados").insert({
+    frete_id: freteId,
+    nome_posto: nomePosto,
+    item_catalogo_id: itemCatalogoId,
+    observacao,
+  });
+  if (error) return { erro: error.message };
+  revalidatePath(`/fretes/${freteId}`);
+}
+
+export async function removerPostoRecomendadoAcao(id: string, freteId: string, empresaId: string) {
+  const supabase = await createClient();
+  if (!(await empresaPertenceAoUsuario(supabase, empresaId))) return;
+  await supabase.from("fretes_postos_recomendados").delete().eq("id", id);
+  revalidatePath(`/fretes/${freteId}`);
+}
+
+export async function avaliarMotoristaAcao(freteId: string, empresaId: string, estrelas: number, comentario: string | null) {
+  const supabase = await createClient();
+  if (!(await empresaPertenceAoUsuario(supabase, empresaId))) return { erro: "Sem permissão." };
+  const { error } = await supabase.rpc("avaliar_frete", {
+    p_frete_id: freteId,
+    p_estrelas: estrelas,
+    p_comentario: comentario,
+  });
+  if (error) return { erro: error.message };
+  revalidatePath(`/fretes/${freteId}`);
+}

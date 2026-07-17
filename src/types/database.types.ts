@@ -580,6 +580,10 @@ export interface Database {
           respondido_por: string | null;
           respondido_em: string | null;
           criado_em: string | null;
+          // Fase chamados-e-avaliação-motorista — preenchido quando a
+          // avaliação vem do PWA motorista (estrada-que-cuida, sessão por
+          // telefone, sem e-mail); null pro fluxo normal (web, cliente/posto).
+          motorista_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["avaliacoes"]["Row"]> & {
           user_email: string;
@@ -954,6 +958,84 @@ export interface Database {
           valor_proposto: number;
         };
         Update: Partial<Database["public"]["Tables"]["fretes_negociacoes_rodadas"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase Fretes B — postos recomendados pelo cliente ao longo do trajeto,
+      // opcionalmente ligados a um benefício de Parcerias Locais do posto.
+      fretes_postos_recomendados: {
+        Row: {
+          id: string;
+          frete_id: string;
+          nome_posto: string;
+          lat: number | null;
+          lon: number | null;
+          item_catalogo_id: string | null;
+          ordem: number;
+          observacao: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_postos_recomendados"]["Row"]> & {
+          frete_id: string;
+          nome_posto: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_postos_recomendados"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase Fretes B — checkpoints da execução (saiu, chegou no posto,
+      // abasteceu, parada, chegou no destino, concluído, ocorrência).
+      fretes_eventos: {
+        Row: {
+          id: string;
+          frete_id: string;
+          tipo_evento:
+            | "saiu_origem"
+            | "chegou_posto"
+            | "abasteceu"
+            | "parada"
+            | "chegou_destino"
+            | "ocorrencia"
+            | "concluido";
+          posto_recomendado_id: string | null;
+          observacao: string | null;
+          lat: number | null;
+          lon: number | null;
+          criado_por: string | null;
+          criado_em: string;
+          // Fase foto-evidência-checkpoints — caminho no bucket privado
+          // `fretes-evidencias` (obrigatório em abasteceu/chegou_destino/
+          // concluido/ocorrencia, opcional nos demais tipos).
+          foto_path: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_eventos"]["Row"]> & {
+          frete_id: string;
+          tipo_evento:
+            | "saiu_origem"
+            | "chegou_posto"
+            | "abasteceu"
+            | "parada"
+            | "chegou_destino"
+            | "ocorrencia"
+            | "concluido";
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_eventos"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase Fretes B — avaliação bidirecional (1 a 5 estrelas) ao concluir.
+      fretes_avaliacoes: {
+        Row: {
+          id: string;
+          frete_id: string;
+          avaliador: "cliente" | "motorista";
+          estrelas: number;
+          comentario: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_avaliacoes"]["Row"]> & {
+          frete_id: string;
+          avaliador: "cliente" | "motorista";
+          estrelas: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_avaliacoes"]["Row"]>;
         Relationships: [];
       };
       fidelidade_dependentes: {
@@ -2385,6 +2467,10 @@ export interface Database {
           atualizado_em: string | null;
           usuario_visto_em: string | null;
           admin_visto_em: string | null;
+          // Fase chamados-e-avaliação-motorista — preenchido quando o
+          // chamado vem do PWA motorista (estrada-que-cuida, sessão por
+          // telefone, sem e-mail); null pro fluxo normal (web, cliente/posto).
+          motorista_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["tickets"]["Row"]> & {
           user_email: string;
@@ -3351,6 +3437,22 @@ export interface Database {
       };
       responder_frete_direto: {
         Args: { p_frete_id: string; p_aceitar: boolean };
+        Returns: undefined;
+      };
+      // Fase Fretes B.
+      registrar_evento_frete: {
+        Args: {
+          p_frete_id: string;
+          p_tipo_evento: string;
+          p_posto_recomendado_id?: string | null;
+          p_observacao?: string | null;
+          p_lat?: number | null;
+          p_lon?: number | null;
+        };
+        Returns: undefined;
+      };
+      avaliar_frete: {
+        Args: { p_frete_id: string; p_estrelas: number; p_comentario?: string | null };
         Returns: undefined;
       };
       resgates_beneficios_empresa: {
