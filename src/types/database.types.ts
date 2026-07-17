@@ -784,7 +784,8 @@ export interface Database {
             | "saude_estrada"
             | "universidade_estrada"
             | "clube_caminhao"
-            | "volte_para_casa";
+            | "volte_para_casa"
+            | "conveniencia_posto";
           titulo: string;
           descricao: string | null;
           parceiro_nome: string | null;
@@ -792,6 +793,12 @@ export interface Database {
           ativo: boolean;
           criado_em: string;
           atualizado_em: string;
+          // Fase parcerias locais — dono do item: null = catálogo global FNI
+          // (admin), preenchido = posto ou cliente que criou o benefício
+          // (empresas_do_usuario cobre os dois, ambos são linhas de "empresas").
+          criador_empresa_id: string | null;
+          imagem_url: string | null;
+          validade_dias: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["fidelidade_catalogo_itens"]["Row"]> & {
           categoria:
@@ -800,7 +807,8 @@ export interface Database {
             | "saude_estrada"
             | "universidade_estrada"
             | "clube_caminhao"
-            | "volte_para_casa";
+            | "volte_para_casa"
+            | "conveniencia_posto";
           titulo: string;
           pontos_necessarios: number;
         };
@@ -819,6 +827,11 @@ export interface Database {
           status: "solicitado" | "em_andamento" | "concluido" | "cancelado";
           solicitado_em: string;
           atualizado_em: string;
+          // Fase parcerias locais — snapshot do voucher no momento do resgate.
+          numero_voucher: string | null;
+          valido_ate: string | null;
+          parceiro_nome: string | null;
+          imagem_url: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["fidelidade_resgates"]["Row"]> & {
           motorista_id: string;

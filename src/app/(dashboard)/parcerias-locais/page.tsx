@@ -1,0 +1,212 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { LABEL_CATEGORIA_FIDELIDADE } from "@/lib/fidelidadeCategorias";
+import { CardVoucher } from "./_components/CardVoucher";
+import { ToggleAtivoItemParceria } from "./_components/ToggleAtivoItemParceria";
+import { ExcluirItemParceria } from "./_components/ExcluirItemParceria";
+import { AtualizarStatusResgateProprio } from "./_components/AtualizarStatusResgateProprio";
+
+// Parcerias Locais (Fase 17/07) — tela self-service, acessível tanto pro
+// perfil posto quanto cliente (ver menuOperacao/menuPostoOperacao em
+// layout.tsx): cada um cria e gerencia os PRÓPRIOS benefícios no catálogo
+// de fidelidade "Estrada que Cuida" (motoristas resgatam gastando pontos) e
+// acompanha/atualiza o status dos vouchers resgatados pelos motoristas.
+// resolverEmpresaAtual é agnóstico de segmento — posto e cliente são ambos
+// linhas de "empresas", só muda o valor de segmento.
+
+type ItemRow = {
+  id: string;
+  categoria: string;
+  titulo: string;
+  descricao: string | null;
+  parceiro_nome: string | null;
+  pontos_necessarios: number;
+  ativo: boolean;
+  imagem_url: string | null;
+  validade_dias: number | null;
+};
+
+type ResgateRow = {
+  id: string;
+  titulo: string;
+  categoria: string;
+  pontos_gastos: number;
+  status: string;
+  numero_voucher: string | null;
+  valido_ate: string | null;
+  solicitado_em: string;
+  motoristas: { nome_completo: string } | null;
+};
+
+export default async function ParceriasLocaisPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ empresa?: string }>;
+}) {
+  const { empresa: empresaParam } = await searchParams;
+  const supabase = await createClient();
+  const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+  const semClienteEscolhido = empresas.length > 1 && !empresaSelecionada;
+
+  let itens: ItemRow[] = [];
+  let resgates: ResgateRow[] = [];
+  let erroItens: string | undefined;
+
+  if (empresaSelecionada) {
+    const { data: dataItens, error } = await supabase
+      .from("fidelidade_catalogo_itens")
+      .select("id, categoria, titulo, descricao, parceiro_nome, pontos_necessarios, ativo, imagem_url, validade_dias")
+      .eq("criador_empresa_id", empresaSelecionada)
+      .order("criado_em", { ascending: false });
+    itens = (dataItens ?? []) as ItemRow[];
+    erroItens = error?.message;
+
+    if (itens.length > 0) {
+      const { data: dataResgates } = await supabase
+        .from("fidelidade_resgates")
+        .select(
+          "id, titulo, categoria, pontos_gastos, status, numero_voucher, valido_ate, solicitado_em, motoristas(nome_completo)"
+        )
+        .in(
+          "item_id",
+          itens.map((i) => i.id)
+        )
+        .order("solicitado_em", { ascending: false })
+        .limit(50);
+      resgates = (dataResgates ?? []) as unknown as ResgateRow[];
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">🎟️ Parcerias Locais</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Crie benefícios próprios pro catálogo de fidelidade &quot;Estrada que Cuida&quot; — vale-refeição,
+            lavagem, treinamentos, telemedicina, o que fizer sentido pro seu negócio. Motoristas de toda a rede
+            enxergam e resgatam com os pontos que acumulam.
+            {nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
+          </p>
+        </div>
+        {empresaSelecionada && (
+          <Link href={`/parcerias-locais/novo?empresa=${empresaSelecionada}`} className="btn-primary">
+            + Novo Benefício
+          </Link>
+        )}
+      </div>
+
+      {empresas.length > 1 && (
+        <form className="mb-4 flex items-end gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">Selecione...</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn-secondary text-sm">
+            Filtrar
+          </button>
+        </form>
+      )}
+
+      {semClienteEscolhido || !empresaSelecionada ? (
+        <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e criar benefícios.</p>
+      ) : (
+        <>
+          {erroItens && <p className="mb-4 text-sm text-red-600">Erro ao carregar benefícios: {erroItens}</p>}
+
+          {itens.length === 0 ? (
+            <div className="card p-8 text-center text-sm text-slate-400">
+              Nenhum benefício criado ainda. Clique em &quot;+ Novo Benefício&quot; pra começar.
+            </div>
+          ) : (
+            <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {itens.map((item) => (
+                <CardVoucher
+                  key={item.id}
+                  titulo={item.titulo}
+                  descricao={item.descricao}
+                  categoria={item.categoria}
+                  parceiroNome={item.parceiro_nome}
+                  pontos={item.pontos_necessarios}
+                  imagemUrl={item.imagem_url}
+                  rodape={
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span className={item.ativo ? "badge-ativo" : "badge-inativo"}>
+                        {item.ativo ? "Ativo" : "Inativo"}
+                      </span>
+                      {item.validade_dias ? <span>Válido por {item.validade_dias} dias</span> : <span>Sem validade</span>}
+                    </div>
+                  }
+                  acoes={
+                    <div className="flex items-center gap-3 border-t border-dashed border-slate-300 pt-2">
+                      <Link
+                        href={`/parcerias-locais/${item.id}/editar?empresa=${empresaSelecionada}`}
+                        className="text-xs font-medium text-frota-600 hover:underline"
+                      >
+                        Editar
+                      </Link>
+                      <ToggleAtivoItemParceria id={item.id} empresaId={empresaSelecionada} ativo={item.ativo} />
+                      <ExcluirItemParceria id={item.id} empresaId={empresaSelecionada} titulo={item.titulo} />
+                    </div>
+                  }
+                />
+              ))}
+            </div>
+          )}
+
+          <h2 className="mb-3 text-sm font-semibold text-slate-900">Vouchers resgatados pelos motoristas</h2>
+          <div className="card overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Voucher</th>
+                  <th className="px-4 py-3">Benefício</th>
+                  <th className="px-4 py-3">Motorista</th>
+                  <th className="px-4 py-3">Pontos</th>
+                  <th className="px-4 py-3">Válido até</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {resgates.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-600">{r.numero_voucher ?? "—"}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      {r.titulo}
+                      <span className="ml-1 text-xs font-normal text-slate-400">
+                        ({LABEL_CATEGORIA_FIDELIDADE[r.categoria] ?? r.categoria})
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{r.motoristas?.nome_completo ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600">{r.pontos_gastos.toLocaleString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {r.valido_ate ? new Date(r.valido_ate).toLocaleDateString("pt-BR") : "Sem validade"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <AtualizarStatusResgateProprio id={r.id} empresaId={empresaSelecionada} status={r.status} />
+                    </td>
+                  </tr>
+                ))}
+                {resgates.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                      Nenhum voucher resgatado ainda.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

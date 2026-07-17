@@ -74,6 +74,10 @@ const menuOperacao = [
   // Antifraude acima; RPC indicadores_fidelidade_motoristas já checa
   // autorização por empresa/admin internamente.
   { href: "/fidelidade-motoristas", label: "🎁 Fidelidade dos Motoristas" },
+  // Fase Parcerias Locais (17/07) — o cliente cria seus próprios benefícios
+  // (treinamentos, marketplace, telemedicina etc.) no catálogo de
+  // fidelidade; mesma tela também vive em menuPostoOperacao (ver abaixo).
+  { href: "/parcerias-locais", label: "🎟️ Parcerias Locais" },
   { href: "/roteirizacao", label: "🗺️ Roteirização" },
   { href: "/rotograma", label: "🛡️ Rotograma" },
   { href: "/planos-viagem", label: "🧳 Planos de Viagem" },
@@ -141,6 +145,12 @@ const menuPostoGestao = [
 const menuPostoOperacao = [
   { href: "/negociacoes", label: "🤝 Negociações" },
   { href: "/abastecimentos", label: "🛢️ Abastecimentos" },
+  // Fase Parcerias Locais (17/07) — o posto cria seus próprios benefícios
+  // (vale-refeição, banho, estacionamento, lavagem/troca de óleo, produtos
+  // da conveniência etc.) no catálogo de fidelidade "Estrada que Cuida",
+  // publicados pra rede toda de motoristas resgatar. Mesma tela do lado
+  // cliente (ver menuOperacao acima) — RLS escopa por criador_empresa_id.
+  { href: "/parcerias-locais", label: "🎟️ Parcerias Locais" },
   // Fase 27.72 — cadastro dos clientes que já negociaram com o posto
   // (qualquer status), com ciclo de abastecimento/pagamento por cliente.
   { href: "/clientes-posto", label: "🏢 Clientes" },
