@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { verificarAcessoFretes, MENSAGEM_FRETES_BLOQUEADO } from "@/lib/limitePlano";
 
 // Fretes (Fase Fretes) — mecanismo de contratação de frete entre cliente e
 // motorista, dois modos:
@@ -36,6 +37,14 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
   const supabase = await createClient();
   if (!(await empresaPertenceAoUsuario(supabase, empresaId))) {
     return { erro: "Você não tem permissão para publicar fretes nesta empresa." };
+  }
+
+  // Gestão de Fretes é exclusiva do plano Enterprise (com exceção do
+  // período de trial) — pedido do Daniel (18/07). Checado aqui (não só na
+  // tela) porque é o ponto real de escrita; RLS não sabe de plano.
+  const acesso = await verificarAcessoFretes(supabase, empresaId);
+  if (!acesso.ok) {
+    return { erro: MENSAGEM_FRETES_BLOQUEADO };
   }
 
   const titulo = String(formData.get("titulo") ?? "").trim();

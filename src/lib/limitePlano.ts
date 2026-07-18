@@ -55,3 +55,33 @@ export function mensagemLimiteExcedido(r: Extract<LimiteFrotaResultado, { ok: fa
     `atual. Faça upgrade em Minha Assinatura antes de continuar a sincronização.`
   );
 }
+
+// Pedido do Daniel (18/07): Gestão de Fretes vira exclusividade do plano
+// Enterprise — com uma exceção: continua liberada durante o período de
+// trial self-service (status "trial", plano "gratuito" nesse momento — ver
+// /cadastro/actions.ts), pra quem está avaliando a plataforma não perder a
+// funcionalidade antes de decidir por um plano pago. Fora do trial, só
+// Enterprise. Mesmo padrão de "best-effort" de verificarLimiteFrota acima:
+// falha ao resolver a empresa não bloqueia (outra camada já barra isso).
+export type AcessoFretesResultado =
+  | { ok: true }
+  | { ok: false; plano: string; status: string };
+
+export async function verificarAcessoFretes(
+  supabase: SupabaseClient<Database>,
+  empresaId: string
+): Promise<AcessoFretesResultado> {
+  const { data: empresa, error } = await supabase
+    .from("empresas")
+    .select("plano, status")
+    .eq("id", empresaId)
+    .single();
+
+  if (error || !empresa) return { ok: true };
+  if (empresa.plano === "enterprise" || empresa.status === "trial") return { ok: true };
+
+  return { ok: false, plano: empresa.plano, status: empresa.status };
+}
+
+export const MENSAGEM_FRETES_BLOQUEADO =
+  "Gestão de Fretes é exclusiva do plano Enterprise (ou liberada durante o período de trial). Faça upgrade em Minha Assinatura para publicar novos fretes.";

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { verificarAcessoFretes, MENSAGEM_FRETES_BLOQUEADO } from "@/lib/limitePlano";
 import { FreteForm } from "../_components/FreteForm";
 
 export default async function NovoFretePage({ searchParams }: { searchParams: Promise<{ empresa?: string }> }) {
@@ -15,6 +16,22 @@ export default async function NovoFretePage({ searchParams }: { searchParams: Pr
           Selecione uma empresa em <Link href="/fretes" className="text-frota-600 hover:underline">Fretes</Link> antes de
           publicar.
         </p>
+      </div>
+    );
+  }
+
+  // Gestão de Fretes é exclusiva do plano Enterprise (com exceção do
+  // período de trial) — pedido do Daniel (18/07). Bloqueia aqui além de em
+  // criarFrete (actions.ts) pra nem mostrar o formulário à toa.
+  const acesso = await verificarAcessoFretes(supabase, empresaSelecionada);
+  if (!acesso.ok) {
+    return (
+      <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        {MENSAGEM_FRETES_BLOQUEADO}{" "}
+        <Link href={`/assinatura?empresa=${empresaSelecionada}`} className="font-medium underline">
+          Ver planos
+        </Link>
+        .
       </div>
     );
   }
