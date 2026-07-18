@@ -188,8 +188,11 @@ export async function atualizarStatusResgateProprio(id: string, empresaId: strin
 // código para ser queimado". Antes, "Concluído" era só mais uma opção do
 // dropdown de status, sem checagem nenhuma; agora exige digitar o código
 // exibido no app do motorista, valida que o voucher (a) existe, (b) é de um
-// benefício DESTA empresa, (c) ainda não foi usado/cancelado e (d) não
-// venceu — só então marca como concluído.
+// benefício DESTA empresa OU de um item global do catálogo do admin — esses
+// não têm empresa dona, qualquer posto/cliente pode honrar (fix 18/07: RLS
+// antiga bloqueava até a leitura de voucher de item global, dava "não
+// encontrado" mesmo existindo) —, (c) ainda não foi usado/cancelado e (d)
+// não venceu — só então marca como concluído.
 export type QueimarVoucherState = { erro?: string; sucesso?: { titulo: string; motorista: string } } | undefined;
 
 export async function queimarVoucher(
@@ -223,7 +226,12 @@ export async function queimarVoucher(
     .eq("id", resgate.item_id)
     .maybeSingle();
 
-  if (item?.criador_empresa_id !== empresaId) {
+  // Item global do catálogo do admin (criador_empresa_id null) — benefício de
+  // rede, não de uma empresa específica. Decisão do Daniel (18/07): qualquer
+  // posto/cliente autenticado pode queimar (RLS fidelidade_resgates_leitura_
+  // global / _atualiza_global libera a leitura/gravação desses casos).
+  const ehItemGlobal = item?.criador_empresa_id === null;
+  if (!ehItemGlobal && item?.criador_empresa_id !== empresaId) {
     return { erro: "Esse voucher não pertence a um benefício desta empresa." };
   }
   if (resgate.status === "concluido") return { erro: "Esse voucher já foi queimado antes." };
