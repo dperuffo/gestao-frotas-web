@@ -16,6 +16,9 @@ export type ReputacaoMotorista = {
   seguranca_2fa_ativo: boolean;
   dias_cadastro: number | null;
   selo_verificado: boolean;
+  // Fase Destaques-Automaticos — tags que o cliente marcou na avaliação e
+  // que se repetiram em 2+ avaliações diferentes (ver _reputacao_motorista).
+  tags_destaque: { tag: string; quantidade: number }[];
 };
 
 function formatarTempoCadastro(dias: number | null): string {
@@ -36,6 +39,7 @@ export function CartaoReputacaoMotorista({ reputacao }: { reputacao: ReputacaoMo
     seguranca_2fa_ativo,
     dias_cadastro,
     selo_verificado,
+    tags_destaque,
   } = reputacao;
 
   return (
@@ -45,6 +49,15 @@ export function CartaoReputacaoMotorista({ reputacao }: { reputacao: ReputacaoMo
           ✅ Motorista verificado
         </span>
       )}
+      {(tags_destaque ?? []).map(({ tag, quantidade }) => (
+        <span
+          key={tag}
+          className="rounded-full bg-frota-100 px-2 py-0.5 text-[11px] font-medium text-frota-700"
+          title={`Mencionado por ${quantidade} cliente${quantidade === 1 ? "" : "s"}`}
+        >
+          🏷️ {tag}
+        </span>
+      ))}
       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
         {media_estrelas !== null ? `⭐ ${media_estrelas.toFixed(1)} (${total_avaliacoes})` : "⭐ Sem avaliações ainda"}
       </span>

@@ -1055,6 +1055,7 @@ export interface Database {
           avaliador: "cliente" | "motorista";
           estrelas: number;
           comentario: string | null;
+          tags: string[];
           criado_em: string;
         };
         Insert: Partial<Database["public"]["Tables"]["fretes_avaliacoes"]["Row"]> & {
@@ -3489,6 +3490,9 @@ export interface Database {
           seguranca_2fa_ativo: boolean;
           dias_cadastro: number | null;
           selo_verificado: boolean;
+          // Fase Destaques-Automaticos — tags recorrentes (2+ avaliações),
+          // ver _reputacao_motorista().
+          tags_destaque: { tag: string; quantidade: number }[];
         }[];
       };
       // Fase Fretes — negociação e listagem.
@@ -3514,6 +3518,7 @@ export interface Database {
           seguranca_2fa_ativo: boolean;
           dias_cadastro: number | null;
           selo_verificado: boolean;
+          tags_destaque: { tag: string; quantidade: number }[];
         }[];
       };
       meus_fretes_empresa: {

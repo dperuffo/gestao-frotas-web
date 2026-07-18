@@ -272,13 +272,20 @@ export async function removerPostoRecomendadoAcao(id: string, freteId: string, e
   revalidatePath(`/fretes/${freteId}`);
 }
 
-export async function avaliarMotoristaAcao(freteId: string, empresaId: string, estrelas: number, comentario: string | null) {
+export async function avaliarMotoristaAcao(
+  freteId: string,
+  empresaId: string,
+  estrelas: number,
+  comentario: string | null,
+  tags: string[] = []
+) {
   const supabase = await createClient();
   if (!(await empresaPertenceAoUsuario(supabase, empresaId))) return { erro: "Sem permissão." };
   const { error } = await supabase.rpc("avaliar_frete", {
     p_frete_id: freteId,
     p_estrelas: estrelas,
     p_comentario: comentario,
+    p_tags: tags,
   });
   if (error) return { erro: error.message };
   revalidatePath(`/fretes/${freteId}`);
