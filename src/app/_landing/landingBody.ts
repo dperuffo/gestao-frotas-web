@@ -314,6 +314,11 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
   <button class="dtab2" onclick="sd(1)" data-i18n="demo_tab1">🗺️ Consulta por Rota</button>
   <button class="dtab2" onclick="sd(2)" data-i18n="demo_tab2">🤖 Assistente IA</button>
   <button class="dtab2" onclick="sd(3)" data-i18n="demo_tab3">🗺️ Rotograma</button>
+  <button class="dtab2" onclick="sd(4)" data-i18n="demo_tab4">🚚 Marketplace de Fretes</button>
+  <button class="dtab2" onclick="sd(5)" data-i18n="demo_tab5">⭐ Reputação do Motorista</button>
+  <button class="dtab2" onclick="sd(6)" data-i18n="demo_tab6">🎮 Missões e Fidelidade</button>
+  <button class="dtab2" onclick="sd(7)" data-i18n="demo_tab7">🛡️ Antifraude</button>
+  <button class="dtab2" onclick="sd(8)" data-i18n="demo_tab8">📱 App do Motorista</button>
 </div>
 <div style="border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 24px 64px rgba(0,0,0,0.6)">
   <div style="background:#1a1f2e;padding:10px 16px;display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.08)">
@@ -455,6 +460,136 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
       <div style="grid-column:1/-1;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#00e5ff;font-weight:600;text-align:center">PRF 191 · SAMU 192 · Bombeiros 193 · PM 190 · ANTT 166</div>
     </div>
   </div>
+  <div id="dp4" style="display:none;background:#0d1117;padding:16px;min-height:360px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08)">
+      <div style="font-size:14px;font-weight:700;color:#00e5ff">Frete #1042 — São Paulo/SP → Curitiba/PR</div>
+      <span style="background:rgba(0,229,255,0.12);color:#00e5ff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:12px;flex-shrink:0">Aberto a propostas</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px">
+      <div>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:14px;margin-bottom:10px">
+          <div style="font-size:10px;color:#718096;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Dados do frete</div>
+          <div style="font-size:12px;color:#e2e8f0;margin-bottom:6px">📍 Coleta: Av. Marginal, 1200 — Osasco/SP · 22/07 08h-10h</div>
+          <div style="font-size:12px;color:#e2e8f0;margin-bottom:6px">📍 Entrega: Rod. BR-116, km 12 — Curitiba/PR · 23/07</div>
+          <div style="font-size:12px;color:#e2e8f0;margin-bottom:6px">📦 Carga geral · 3,2t · 8m³ · Baú/Sider</div>
+          <div style="font-size:12px;color:#00e5ff;font-weight:600">💰 Valor ofertado: R$ 2.850</div>
+        </div>
+        <div style="background:rgba(72,187,120,0.08);border:1px solid rgba(72,187,120,0.25);border-radius:8px;padding:12px 14px">
+          <div style="font-size:10px;color:#48bb78;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🧮 Calculadora de lucro</div>
+          <div style="font-size:11px;color:#a0aec0">408 km · Diesel S-10 a R$5,84/L (ANP) · Consumo médio 3,2 km/L</div>
+          <div style="font-size:13px;color:#48bb78;font-weight:700;margin-top:6px">Lucro estimado: R$ 2.106 (74%)</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:14px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#00e5ff,#1a56f0);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#04112e;flex-shrink:0">JS</div>
+          <div><div style="font-size:12px;font-weight:700;color:#e2e8f0">João Silva</div><div style="font-size:10px;color:#718096">Parceiro há 8 meses</div></div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+          <span style="background:rgba(72,187,120,0.12);color:#48bb78;font-size:10px;padding:3px 8px;border-radius:10px">✅ Verificado</span>
+          <span style="background:rgba(255,255,255,0.06);color:#a0aec0;font-size:10px;padding:3px 8px;border-radius:10px">⭐ 4.9 (62)</span>
+          <span style="background:rgba(0,229,255,0.1);color:#00e5ff;font-size:10px;padding:3px 8px;border-radius:10px">🏷️ Pontual</span>
+          <span style="background:rgba(0,229,255,0.1);color:#00e5ff;font-size:10px;padding:3px 8px;border-radius:10px">🏷️ Cuidado com a carga</span>
+        </div>
+        <div style="font-size:11px;color:#718096;margin-bottom:4px">🪪 CNH válida · 📱 Telefone verificado · 🔒 2FA ativo</div>
+        <div style="font-size:11px;color:#718096">📦 96% de conclusão · 📍 12 km até a coleta</div>
+      </div>
+    </div>
+  </div>
+  <div id="dp5" style="display:none;background:#0d1117;padding:16px;min-height:360px">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08)">
+      <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#00e5ff,#1a56f0);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#04112e;flex-shrink:0">JS</div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#e2e8f0">João Silva</div>
+        <div style="font-size:11px;color:#718096">Motorista parceiro · Cadastrado há 8 meses</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-size:22px;font-weight:800;color:#ffd600">⭐ 4.9</div>
+        <div style="font-size:10px;color:#718096">62 avaliações</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#48bb78">96%</div><div style="font-size:9px;color:#4a5568">Conclusão</div></div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#00e5ff">184</div><div style="font-size:9px;color:#4a5568">Fretes concluídos</div></div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#9f7aea">✅</div><div style="font-size:9px;color:#4a5568">CNH válida</div></div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#48bb78">🔒</div><div style="font-size:9px;color:#4a5568">2FA ativo</div></div>
+    </div>
+    <div style="font-size:10px;color:#718096;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🏷️ Destaques automáticos (recorrentes em avaliações)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
+      <span style="background:rgba(0,229,255,0.1);color:#00e5ff;font-size:11px;padding:5px 12px;border-radius:14px">🏷️ Pontual (14)</span>
+      <span style="background:rgba(0,229,255,0.1);color:#00e5ff;font-size:11px;padding:5px 12px;border-radius:14px">🏷️ Cuidado com a carga (11)</span>
+      <span style="background:rgba(0,229,255,0.1);color:#00e5ff;font-size:11px;padding:5px 12px;border-radius:14px">🏷️ Comunicativo (7)</span>
+    </div>
+    <div style="font-size:10px;color:#718096;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Últimas avaliações</div>
+    <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:11px;color:#a0aec0">⭐⭐⭐⭐⭐ "Muito pontual e cuidadoso com a carga, recomendo." — Transportes Alfa</div>
+    <div style="padding:8px 0;font-size:11px;color:#a0aec0">⭐⭐⭐⭐⭐ "Comunicação excelente durante toda a viagem." — Distribuidora Sul</div>
+  </div>
+  <div id="dp6" style="display:none;background:#0d1117;padding:16px;min-height:360px">
+    <div style="font-size:14px;font-weight:700;color:#00e5ff;margin-bottom:14px">🎮 Missões da Rede — Julho/2026</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px"><div style="font-size:12px;font-weight:600;color:#e2e8f0">Complete 10 fretes este mês</div><div style="font-size:11px;color:#ffd600;font-weight:700;flex-shrink:0">🎁 R$ 200 de bônus</div></div>
+        <div style="height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden"><div style="height:100%;width:70%;background:#00e5ff;border-radius:4px"></div></div>
+        <div style="font-size:10px;color:#718096;margin-top:4px">7 de 10 concluídos</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px"><div style="font-size:12px;font-weight:600;color:#e2e8f0">Mantenha nota acima de 4.8</div><div style="font-size:11px;color:#ffd600;font-weight:700;flex-shrink:0">🎁 Selo Ouro</div></div>
+        <div style="height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden"><div style="height:100%;width:100%;background:#48bb78;border-radius:4px"></div></div>
+        <div style="font-size:10px;color:#718096;margin-top:4px">Concluída — nota atual 4.9</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px"><div style="font-size:12px;font-weight:600;color:#e2e8f0">Missão da rede: 50 fretes entre parceiros</div><div style="font-size:11px;color:#ffd600;font-weight:700;flex-shrink:0">🎁 Desconto em oficinas</div></div>
+        <div style="height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden"><div style="height:100%;width:38%;background:#9f7aea;border-radius:4px"></div></div>
+        <div style="font-size:10px;color:#718096;margin-top:4px">19 de 50 — toda a rede de motoristas parceiros contribui</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:10px 14px;font-size:11px;color:#00e5ff">🏪 Parcerias locais desbloqueadas: 15% off na Borracharia Central e no Restaurante do Caminhoneiro</div>
+  </div>
+  <div id="dp7" style="display:none;background:#0d1117;padding:16px;min-height:360px">
+    <div style="font-size:14px;font-weight:700;color:#00e5ff;margin-bottom:14px">🛡️ Alertas Antifraude — últimas 24h</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:rgba(231,76,60,0.08);border-left:3px solid #e74c3c">
+        <div style="font-size:15px">🚨</div>
+        <div><div style="font-size:12px;font-weight:600;color:#e2e8f0">Abastecimento 41% acima da média do veículo</div><div style="font-size:10px;color:#4a5568">Veículo PLB-3421 · Posto Estrela — 02h14 · Sinalizado para revisão</div></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:rgba(230,126,34,0.08);border-left:3px solid #e67e22">
+        <div style="font-size:15px">⚠️</div>
+        <div><div style="font-size:12px;font-weight:600;color:#e2e8f0">Rota com desvio de 28 km sem justificativa</div><div style="font-size:10px;color:#4a5568">Frete #1038 · Motorista Carlos M. · Aguardando confirmação</div></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:rgba(0,229,255,0.05);border-left:3px solid #00e5ff44">
+        <div style="font-size:15px">✅</div>
+        <div><div style="font-size:12px;font-weight:600;color:#e2e8f0">Abastecimento fora do horário revisado e aprovado</div><div style="font-size:10px;color:#4a5568">Veículo ABC-1234 · Confirmado pelo gestor de frota</div></div>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#e74c3c">3</div><div style="font-size:9px;color:#4a5568">Alertas ativos</div></div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#48bb78">R$ 4.180</div><div style="font-size:9px;color:#4a5568">Economizado no mês</div></div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#00e5ff">100%</div><div style="font-size:9px;color:#4a5568">Abastecimentos monitorados</div></div>
+    </div>
+  </div>
+  <div id="dp8" style="display:none;background:#0d1117;padding:24px 16px;min-height:360px">
+    <div style="display:flex;justify-content:center">
+      <div style="width:230px;background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:22px;padding:14px;box-shadow:0 20px 50px rgba(0,0,0,0.5)">
+        <div style="text-align:center;font-size:10px;color:#4a5568;margin-bottom:10px">📱 App do Motorista</div>
+        <div style="background:linear-gradient(135deg,#1a1040,#0d1a3a);border:1px solid rgba(0,229,255,0.25);border-radius:12px;padding:12px;margin-bottom:10px;text-align:center">
+          <div style="font-size:10px;color:#a0aec0">Programa de Fidelidade</div>
+          <div style="font-size:22px;font-weight:800;color:#ffd600;margin:4px 0">2.480 pts</div>
+          <div style="font-size:9px;color:#48bb78">+120 pts nesta semana</div>
+        </div>
+        <div style="font-size:10px;color:#718096;font-weight:700;text-transform:uppercase;margin-bottom:6px">Próxima meta</div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 10px;margin-bottom:10px">
+          <div style="font-size:11px;color:#e2e8f0;margin-bottom:6px">Complete 10 fretes → R$ 200</div>
+          <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.08)"><div style="height:100%;width:70%;background:#00e5ff;border-radius:3px"></div></div>
+        </div>
+        <div style="font-size:10px;color:#718096;font-weight:700;text-transform:uppercase;margin-bottom:6px">Parcerias desbloqueadas</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#a0aec0;background:rgba(255,255,255,0.03);border-radius:6px;padding:6px 8px"><span>🔧 Oficina Central</span><span style="color:#48bb78">-15%</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#a0aec0;background:rgba(255,255,255,0.03);border-radius:6px;padding:6px 8px"><span>🍽️ Rest. do Caminhoneiro</span><span style="color:#48bb78">-10%</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#a0aec0;background:rgba(255,255,255,0.03);border-radius:6px;padding:6px 8px"><span>🛞 Borracharia Rota Segura</span><span style="color:#48bb78">-20%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <div id="demo-cap2" style="text-align:center;color:#a0aec0;font-size:14px;margin-top:20px;padding:0 20px;line-height:1.7"><strong style="color:#fff">Dashboard Analitico</strong> — Visao consolidada de abastecimentos reais, cobertura por UF e comparativo ANP em tempo real.</div>
 </div>
@@ -465,25 +600,26 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 .dtab2.dtab-on{background:rgba(0,229,255,0.12);border-color:#00e5ff;color:#00e5ff}
 </style>
 <script>
-var _u2_pt=["fxgestaodefrotasonline.com - Dashboard Analítico","fxgestaodefrotasonline.com - Consulta por Rota","fxgestaodefrotasonline.com - Assistente IA","fxgestaodefrotasonline.com - Rotograma de Segurança"];var _u2_en=["fxgestaodefrotasonline.com - Analytics Dashboard","fxgestaodefrotasonline.com - Route Search","fxgestaodefrotasonline.com - AI Assistant","fxgestaodefrotasonline.com - Safety Map"];
+var _u2_pt=["fxgestaodefrotasonline.com - Dashboard Analítico","fxgestaodefrotasonline.com - Consulta por Rota","fxgestaodefrotasonline.com - Assistente IA","fxgestaodefrotasonline.com - Rotograma de Segurança","fxgestaodefrotasonline.com - Marketplace de Fretes","fxgestaodefrotasonline.com - Reputação do Motorista","fxgestaodefrotasonline.com - Missões e Fidelidade","fxgestaodefrotasonline.com - Antifraude","fxgestaodefrotasonline.com - App do Motorista"];var _u2_en=["fxgestaodefrotasonline.com - Analytics Dashboard","fxgestaodefrotasonline.com - Route Search","fxgestaodefrotasonline.com - AI Assistant","fxgestaodefrotasonline.com - Safety Map","fxgestaodefrotasonline.com - Freight Marketplace","fxgestaodefrotasonline.com - Driver Reputation","fxgestaodefrotasonline.com - Missions & Loyalty","fxgestaodefrotasonline.com - Fraud Prevention","fxgestaodefrotasonline.com - Driver App"];
 // Fase corrige-toggle-idioma-landing — começa sempre em PT: a variável
 // _lang (idioma salvo no localStorage) só existe no script de i18n, que
 // carrega DEPOIS deste aqui. _applyLang() já roda logo em seguida (no
 // DOMContentLoaded) e corrige pro idioma certo se for o caso — não precisa
 // (nem dá) pra adivinhar aqui.
 var _u2=_u2_pt;
-var _cp2_pt=["<strong style='color:#fff'>Dashboard Analitico</strong> — Visao consolidada de abastecimentos reais, cobertura por UF e evolucao de precos.","<strong style='color:#fff'>Consulta por Rota</strong> — Mapa interativo com os melhores postos ANP ao longo da rota, com precos e distancias.","<strong style='color:#fff'>Assistente IA</strong> — Converse em linguagem natural com IA especializada em frotas.","<strong style='color:#fff'>Rotograma de Seguranca</strong> — Mapeie riscos, paradas e contatos de emergencia."];var _cp2_en=["<strong style='color:#fff'>Analytics Dashboard</strong> — Consolidated view of real fueling data, coverage by state and real-time ANP price comparison.","<strong style='color:#fff'>Route Search</strong> — Interactive map with the best ANP stations along the route, with prices and distances.","<strong style='color:#fff'>AI Assistant</strong> — Chat in natural language with AI specialized in fleet management.","<strong style='color:#fff'>Safety Map</strong> — Map risks, stops and emergency contacts. Export as PDF."];var _cp2=_cp2_pt;
+var _cp2_pt=["<strong style='color:#fff'>Dashboard Analitico</strong> — Visao consolidada de abastecimentos reais, cobertura por UF e evolucao de precos.","<strong style='color:#fff'>Consulta por Rota</strong> — Mapa interativo com os melhores postos ANP ao longo da rota, com precos e distancias.","<strong style='color:#fff'>Assistente IA</strong> — Converse em linguagem natural com IA especializada em frotas.","<strong style='color:#fff'>Rotograma de Seguranca</strong> — Mapeie riscos, paradas e contatos de emergencia.","<strong style='color:#fff'>Marketplace de Fretes</strong> — Cliente publica o frete completo, motorista ve a reputacao e simula o lucro antes de aceitar.","<strong style='color:#fff'>Reputacao do Motorista</strong> — Nota, selos de verificacao e destaques automaticos, tudo num so perfil.","<strong style='color:#fff'>Missoes e Fidelidade</strong> — Metas com premios pra motoristas parceiros, individuais ou de toda a rede.","<strong style='color:#fff'>Antifraude</strong> — Regras automaticas sinalizam abastecimentos e rotas fora do padrao.","<strong style='color:#fff'>App do Motorista</strong> — Pontos, metas e parcerias locais direto no bolso do motorista."];var _cp2_en=["<strong style='color:#fff'>Analytics Dashboard</strong> — Consolidated view of real fueling data, coverage by state and real-time ANP price comparison.","<strong style='color:#fff'>Route Search</strong> — Interactive map with the best ANP stations along the route, with prices and distances.","<strong style='color:#fff'>AI Assistant</strong> — Chat in natural language with AI specialized in fleet management.","<strong style='color:#fff'>Safety Map</strong> — Map risks, stops and emergency contacts. Export as PDF.","<strong style='color:#fff'>Freight Marketplace</strong> — Shippers post the complete freight, drivers see the reputation and simulate profit before accepting.","<strong style='color:#fff'>Driver Reputation</strong> — Rating, verification badges and automatic highlights, all in one profile.","<strong style='color:#fff'>Missions & Loyalty</strong> — Goals with rewards for partner drivers, individual or network-wide.","<strong style='color:#fff'>Fraud Prevention</strong> — Automatic rules flag fueling and routes outside the normal pattern.","<strong style='color:#fff'>Driver App</strong> — Points, goals and local partnerships right in the driver's pocket."];var _cp2=_cp2_pt;
 var _c2=0,_t2;
+var _dpIds=["dp0","dp1","dp2","dp3","dp4","dp5","dp6","dp7","dp8"];
 function sd(i){
   clearInterval(_t2);_c2=i;
-  ["dp0","dp1","dp2","dp3"].forEach(function(id,j){
+  _dpIds.forEach(function(id,j){
     var el=document.getElementById(id);
     if(el)el.style.display=j===i?"block":"none";
   });
   document.querySelectorAll(".dtab2").forEach(function(t,j){t.classList.toggle("dtab-on",j===i);});
   var u=document.getElementById("demo-url2");if(u)u.textContent=_u2[i];
   var c=document.getElementById("demo-cap2");if(c)c.innerHTML=_cp2[i];
-  _t2=setInterval(function(){sd((_c2+1)%4);},7000);
+  _t2=setInterval(function(){sd((_c2+1)%_dpIds.length);},7000);
 }
 document.addEventListener("DOMContentLoaded",function(){sd(0);});
 </script>
@@ -629,6 +765,11 @@ var _i18n = {
     demo_tab1: "🗺️ Consulta por Rota",
     demo_tab2: "🤖 Assistente IA",
     demo_tab3: "🗺️ Rotograma",
+    demo_tab4: "🚚 Marketplace de Fretes",
+    demo_tab5: "⭐ Reputação do Motorista",
+    demo_tab6: "🎮 Missões e Fidelidade",
+    demo_tab7: "🛡️ Antifraude",
+    demo_tab8: "📱 App do Motorista",
     demo_cap0: "<strong style='color:#e2e8f0'>Dashboard Analítico</strong> — Visão consolidada de abastecimentos reais, cobertura por UF e evolução de preços.",
     demo_cap1: "<strong style='color:#e2e8f0'>Consulta por Rota</strong> — Mapa interativo com os melhores postos ANP ao longo da rota, com preços e distâncias.",
     demo_cap2: "<strong style='color:#e2e8f0'>Assistente IA</strong> — Converse em linguagem natural com IA especializada em frotas.",
@@ -791,6 +932,11 @@ var _i18n = {
     demo_tab1: "🗺️ Route Search",
     demo_tab2: "🤖 AI Assistant",
     demo_tab3: "🗺️ Safety Map",
+    demo_tab4: "🚚 Freight Marketplace",
+    demo_tab5: "⭐ Driver Reputation",
+    demo_tab6: "🎮 Missions & Loyalty",
+    demo_tab7: "🛡️ Fraud Prevention",
+    demo_tab8: "📱 Driver App",
     demo_cap0: "<strong style='color:#e2e8f0'>Analytics Dashboard</strong> — Consolidated view of real fueling data, coverage by state and price trends.",
     demo_cap1: "<strong style='color:#e2e8f0'>Route Search</strong> — Interactive map with the best ANP stations along the route, with prices and distances.",
     demo_cap2: "<strong style='color:#e2e8f0'>AI Assistant</strong> — Chat in natural language with AI specialized in fleet management.",
@@ -937,6 +1083,11 @@ function _applyLang() {
   var _urlEl = document.getElementById("demo-url2");
   var _u2_atual = _lang === "en" ? _u2_en : _u2_pt;
   if (_urlEl && _u2_atual) _urlEl.textContent = _u2_atual[_idxDemo];
+  // Corrige bug: sd() (chamado ao clicar numa aba do demo) lê as variáveis
+  // globais _u2/_cp2, não estas locais — sem atualizá-las aqui, trocar de
+  // idioma e depois clicar numa aba fazia a legenda/URL voltar pro português.
+  if (typeof _u2 !== "undefined") _u2 = _u2_atual;
+  if (typeof _cp2 !== "undefined") _cp2 = _cp2_atual;
   // Botões de idioma
   document.getElementById("btn-pt") && document.getElementById("btn-pt").classList.toggle("lang-active", _lang==="pt");
   document.getElementById("btn-en") && document.getElementById("btn-en").classList.toggle("lang-active", _lang==="en");
