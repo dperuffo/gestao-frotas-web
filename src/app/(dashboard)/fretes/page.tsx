@@ -122,9 +122,13 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
               )}
 
               <div className="mt-auto flex items-center gap-3 border-t border-dashed border-slate-300 pt-2 text-xs">
-                {(f.status === "disponivel" || f.status === "aguardando_confirmacao") && (
+                {f.status !== "cancelado" && f.status !== "recusado" && (
                   <Link href={`/fretes/${f.id}?empresa=${empresaSelecionada}`} className="font-medium text-frota-600 hover:underline">
-                    {f.status === "disponivel" ? "Ver propostas" : "Ver detalhes"}
+                    {f.status === "disponivel"
+                      ? "Ver propostas"
+                      : f.status === "concluido"
+                        ? "Ver fotos e avaliar"
+                        : "Ver detalhes"}
                   </Link>
                 )}
                 {(f.status === "disponivel" || f.status === "aguardando_confirmacao" || f.status === "aceito") && (

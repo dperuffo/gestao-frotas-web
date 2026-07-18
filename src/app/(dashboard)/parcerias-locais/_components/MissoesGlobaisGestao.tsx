@@ -7,22 +7,22 @@ import {
   alternarAtivaMissao,
   excluirMissao,
   type MissaoRow,
-} from "./missoesActions";
+} from "../../fidelidade-motoristas/missoesActions";
 import { METRICAS_MISSAO, ICONES_MISSAO, LABEL_METRICA_MISSAO, metricaEhBinaria } from "@/lib/fidelidadeMissoes";
 
-// Painel de missões (Fase 17/07-4) — pedido do Daniel: "quero que o cliente
-// tenha uma tela para criar mais missões, para que ele se engaje mais,
-// consuma mais, tenha a motivação de subir de nível". Tudo client-side numa
-// seção só (sem rotas /novo, /[id]/editar) — lista + formulário de criar/
-// editar no mesmo lugar, com um card por missão.
+// Missões globais do posto (Fase 17/07-5) — pedido do Daniel: "dar a opção
+// para os usuários cliente e posto de aplicar as missões para o grupo
+// econômico (clientes) e rede de postos (postos)". Resposta do próprio
+// Daniel na clarificação: pro posto, a missão fica GLOBAL (empresa_id
+// null) — vale pra QUALQUER motorista da rede, mesmo espírito de Parcerias
+// Locais (que também é visível pra rede toda, não só clientes do posto).
+// Reusa as mesmas server actions de /fidelidade-motoristas, só que com
+// modo="global" — o posto nem tem motoristas próprios pra escopar, então
+// não faz sentido reaproveitar o conceito de "grupo econômico" aqui.
 
-export function MissoesGestao({ empresaId, missoesIniciais }: { empresaId: string; missoesIniciais: MissaoRow[] }) {
+export function MissoesGlobaisGestao({ empresaId, missoesIniciais }: { empresaId: string; missoesIniciais: MissaoRow[] }) {
   const [missoes, setMissoes] = useState(missoesIniciais);
   const [editando, setEditando] = useState<MissaoRow | "nova" | null>(null);
-
-  const globais = missoes.filter((m) => m.empresa_id === null);
-  const proprias = missoes.filter((m) => m.empresa_id === empresaId);
-  const doGrupo = missoes.filter((m) => m.empresa_id !== null && m.empresa_id !== empresaId);
 
   function aoSalvar(missao: MissaoRow, isNova: boolean) {
     setMissoes((atual) => (isNova ? [...atual, missao] : atual.map((m) => (m.id === missao.id ? missao : m))));
@@ -30,13 +30,14 @@ export function MissoesGestao({ empresaId, missoesIniciais }: { empresaId: strin
   }
 
   return (
-    <div className="mt-8">
+    <div className="mb-8">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">🎯 Missões de engajamento</h2>
+          <h2 className="text-base font-semibold text-slate-900">🎯 Missões da rede</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Crie desafios pros seus motoristas — cada missão concluída dá pontos bônus e aparece na Home do app
-            deles, incentivando a subir de nível.
+            Crie desafios que valem pra QUALQUER motorista da rede &quot;Estrada que Cuida&quot; — ex.: abastecer no
+            seu posto algumas vezes no mês. Cada missão concluída dá pontos bônus e aparece na Home do app do
+            motorista.
           </p>
         </div>
         <button type="button" className="btn-primary" onClick={() => setEditando("nova")}>
@@ -45,7 +46,7 @@ export function MissoesGestao({ empresaId, missoesIniciais }: { empresaId: strin
       </div>
 
       {editando && (
-        <MissaoForm
+        <MissaoGlobalForm
           empresaId={empresaId}
           missao={editando === "nova" ? undefined : editando}
           onCancelar={() => setEditando(null)}
@@ -53,68 +54,45 @@ export function MissoesGestao({ empresaId, missoesIniciais }: { empresaId: strin
         />
       )}
 
-      {proprias.length === 0 ? (
-        <div className="card mb-4 p-6 text-center text-sm text-slate-400">
-          Nenhuma missão própria criada ainda. Clique em &quot;+ Nova Missão&quot; pra engajar seus motoristas.
+      {missoes.length === 0 ? (
+        <div className="card p-6 text-center text-sm text-slate-400">
+          Nenhuma missão criada ainda. Clique em &quot;+ Nova Missão&quot; pra engajar a rede de motoristas.
         </div>
       ) : (
-        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {proprias.map((m) => (
-            <CardMissao key={m.id} missao={m} empresaId={empresaId} editavel onEditar={() => setEditando(m)} onExcluida={(id) => setMissoes((atual) => atual.filter((x) => x.id !== id))} onAtualizada={(m2) => setMissoes((atual) => atual.map((x) => (x.id === m2.id ? m2 : x)))} />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {missoes.map((m) => (
+            <CardMissaoGlobal
+              key={m.id}
+              missao={m}
+              empresaId={empresaId}
+              onExcluida={(id) => setMissoes((atual) => atual.filter((x) => x.id !== id))}
+              onAtualizada={(m2) => setMissoes((atual) => atual.map((x) => (x.id === m2.id ? m2 : x)))}
+            />
           ))}
         </div>
-      )}
-
-      {doGrupo.length > 0 && (
-        <>
-          <p className="mb-2 mt-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-            Missões do grupo econômico (criadas por outra empresa do grupo, valem pros seus motoristas também)
-          </p>
-          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {doGrupo.map((m) => (
-              <CardMissao key={m.id} missao={m} empresaId={empresaId} editavel={false} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {globais.length > 0 && (
-        <>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-            Missões padrão (valem pra todos os motoristas, não editáveis aqui)
-          </p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {globais.map((m) => (
-              <CardMissao key={m.id} missao={m} empresaId={empresaId} editavel={false} />
-            ))}
-          </div>
-        </>
       )}
     </div>
   );
 }
 
-function CardMissao({
+function CardMissaoGlobal({
   missao,
   empresaId,
-  editavel,
-  onEditar,
   onExcluida,
   onAtualizada,
 }: {
   missao: MissaoRow;
   empresaId: string;
-  editavel: boolean;
-  onEditar?: () => void;
-  onExcluida?: (id: string) => void;
-  onAtualizada?: (m: MissaoRow) => void;
+  onExcluida: (id: string) => void;
+  onAtualizada: (m: MissaoRow) => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [editando, setEditando] = useState(false);
 
   function toggle() {
     startTransition(async () => {
       await alternarAtivaMissao(missao.id, empresaId, !missao.ativa);
-      onAtualizada?.({ ...missao, ativa: !missao.ativa });
+      onAtualizada({ ...missao, ativa: !missao.ativa });
     });
   }
 
@@ -122,8 +100,24 @@ function CardMissao({
     if (!confirm(`Excluir a missão "${missao.titulo}"? Essa ação não pode ser desfeita.`)) return;
     startTransition(async () => {
       await excluirMissao(missao.id, empresaId);
-      onExcluida?.(missao.id);
+      onExcluida(missao.id);
     });
+  }
+
+  if (editando) {
+    return (
+      <div className="sm:col-span-2 lg:col-span-3">
+        <MissaoGlobalForm
+          empresaId={empresaId}
+          missao={missao}
+          onCancelar={() => setEditando(false)}
+          onSalvar={(m) => {
+            onAtualizada(m);
+            setEditando(false);
+          }}
+        />
+      </div>
+    );
   }
 
   return (
@@ -140,24 +134,22 @@ function CardMissao({
         <span>🎯 Meta: {missao.meta}</span>
         <span>🏅 +{missao.bonus} pontos</span>
       </div>
-      {editavel && (
-        <div className="mt-3 flex items-center gap-3 border-t border-dashed border-slate-200 pt-2">
-          <button type="button" onClick={onEditar} className="text-xs font-medium text-frota-600 hover:underline">
-            Editar
-          </button>
-          <button type="button" onClick={toggle} disabled={isPending} className="text-xs font-medium text-frota-600 hover:underline disabled:opacity-50">
-            {isPending ? "..." : missao.ativa ? "Inativar" : "Ativar"}
-          </button>
-          <button type="button" onClick={excluir} disabled={isPending} className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50">
-            {isPending ? "..." : "Excluir"}
-          </button>
-        </div>
-      )}
+      <div className="mt-3 flex items-center gap-3 border-t border-dashed border-slate-200 pt-2">
+        <button type="button" onClick={() => setEditando(true)} className="text-xs font-medium text-frota-600 hover:underline">
+          Editar
+        </button>
+        <button type="button" onClick={toggle} disabled={isPending} className="text-xs font-medium text-frota-600 hover:underline disabled:opacity-50">
+          {isPending ? "..." : missao.ativa ? "Inativar" : "Ativar"}
+        </button>
+        <button type="button" onClick={excluir} disabled={isPending} className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50">
+          {isPending ? "..." : "Excluir"}
+        </button>
+      </div>
     </div>
   );
 }
 
-function MissaoForm({
+function MissaoGlobalForm({
   empresaId,
   missao,
   onCancelar,
@@ -179,16 +171,12 @@ function MissaoForm({
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       const resultado = missao
-        ? await atualizarMissao(missao.id, empresaId, "empresa", undefined, formData)
-        : await criarMissao(empresaId, "empresa", undefined, formData);
+        ? await atualizarMissao(missao.id, empresaId, "global", undefined, formData)
+        : await criarMissao(empresaId, "global", undefined, formData);
       if (resultado?.erro) {
         setErro(resultado.erro);
         return;
       }
-      const aplicaGrupoEconomico = formData.get("aplica_grupo_economico") === "on";
-      // Servidor não devolve a linha criada/atualizada (evita round-trip
-      // extra) — monta o objeto localmente a partir do próprio formData,
-      // já que validamos os mesmos campos no server action.
       onSalvar({
         id: missao?.id ?? crypto.randomUUID(),
         codigo: missao?.codigo ?? "",
@@ -199,9 +187,9 @@ function MissaoForm({
         meta: binaria ? 1 : Number(formData.get("meta") ?? 0),
         bonus: Number(formData.get("bonus") ?? 0),
         ativa: missao ? formData.get("ativa") === "on" : true,
-        empresa_id: empresaId,
+        empresa_id: null,
         criador_empresa_id: empresaId,
-        aplica_grupo_economico: aplicaGrupoEconomico,
+        aplica_grupo_economico: false,
       });
     });
   }
@@ -215,7 +203,7 @@ function MissaoForm({
           <label className="mb-1 block text-xs font-medium text-slate-500">
             Título <span className="text-red-500">*</span>
           </label>
-          <input type="text" name="titulo" required defaultValue={missao?.titulo ?? ""} placeholder='Ex.: "10 fretes no mês"' className="input" />
+          <input type="text" name="titulo" required defaultValue={missao?.titulo ?? ""} placeholder='Ex.: "Abasteça 3x no nosso posto"' className="input" />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Ícone</label>
@@ -268,22 +256,6 @@ function MissaoForm({
           </label>
         )}
       </div>
-
-      <label className="flex items-start gap-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
-        <input
-          type="checkbox"
-          name="aplica_grupo_economico"
-          defaultChecked={missao?.aplica_grupo_economico ?? false}
-          className="mt-0.5 h-4 w-4 rounded border-slate-300"
-        />
-        <span>
-          Aplicar pra todo o grupo econômico
-          <span className="block text-xs text-slate-400">
-            Motoristas de todas as empresas do mesmo grupo econômico (mesmo CNPJ matriz) também poderão concluir
-            esta missão.
-          </span>
-        </span>
-      </label>
 
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancelar} className="btn-secondary">

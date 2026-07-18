@@ -1066,6 +1066,8 @@ export interface Database {
         Row: {
           id: string;
           empresa_id: string | null;
+          criador_empresa_id: string | null;
+          aplica_grupo_economico: boolean;
           codigo: string;
           titulo: string;
           descricao: string;
@@ -1089,6 +1091,13 @@ export interface Database {
           {
             foreignKeyName: "fidelidade_missoes_empresa_id_fkey";
             columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fidelidade_missoes_criador_empresa_id_fkey";
+            columns: ["criador_empresa_id"];
             isOneToOne: false;
             referencedRelation: "empresas";
             referencedColumns: ["id"];

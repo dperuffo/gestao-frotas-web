@@ -7,6 +7,8 @@ import { ToggleAtivoItemParceria } from "./_components/ToggleAtivoItemParceria";
 import { ExcluirItemParceria } from "./_components/ExcluirItemParceria";
 import { AtualizarStatusResgateProprio } from "./_components/AtualizarStatusResgateProprio";
 import { QueimarVoucherForm } from "./_components/QueimarVoucherForm";
+import { MissoesGlobaisGestao } from "./_components/MissoesGlobaisGestao";
+import { listarMissoesGlobaisCriadasPor, type MissaoRow } from "../fidelidade-motoristas/missoesActions";
 
 // Parcerias Locais (Fase 17/07) — tela self-service, acessível tanto pro
 // perfil posto quanto cliente (ver menuOperacao/menuPostoOperacao em
@@ -48,12 +50,13 @@ export default async function ParceriasLocaisPage({
 }) {
   const { empresa: empresaParam } = await searchParams;
   const supabase = await createClient();
-  const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+  const { perfil, empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
   const semClienteEscolhido = empresas.length > 1 && !empresaSelecionada;
 
   let itens: ItemRow[] = [];
   let resgates: ResgateRow[] = [];
   let erroItens: string | undefined;
+  let missoesGlobais: MissaoRow[] = [];
 
   if (empresaSelecionada) {
     const { data: dataItens, error } = await supabase
@@ -75,6 +78,13 @@ export default async function ParceriasLocaisPage({
       p_empresa_id: empresaSelecionada,
     });
     resgates = (dataResgates ?? []) as unknown as ResgateRow[];
+
+    // Missões globais (Fase 17/07-5) — só o perfil "posto" cria aqui; o
+    // cliente já tem sua própria tela de missões em /fidelidade-motoristas
+    // (escopadas pra sua empresa/grupo econômico, não globais).
+    if (perfil === "posto") {
+      missoesGlobais = await listarMissoesGlobaisCriadasPor(empresaSelecionada);
+    }
   }
 
   // "Queimado" = voucher já entregue/honrado (status concluído) — pedido do
@@ -128,6 +138,8 @@ export default async function ParceriasLocaisPage({
         <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e criar benefícios.</p>
       ) : (
         <>
+          {perfil === "posto" && <MissoesGlobaisGestao empresaId={empresaSelecionada} missoesIniciais={missoesGlobais} />}
+
           {erroItens && <p className="mb-4 text-sm text-red-600">Erro ao carregar benefícios: {erroItens}</p>}
 
           {itens.length === 0 ? (
