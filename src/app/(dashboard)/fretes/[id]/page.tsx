@@ -4,6 +4,7 @@ import { PainelPropostas, type Proposta } from "../_components/PainelPropostas";
 import { FormPostoRecomendado } from "../_components/FormPostoRecomendado";
 import { RemoverPostoRecomendadoButton } from "../_components/RemoverPostoRecomendadoButton";
 import { AvaliarMotoristaForm } from "../_components/AvaliarMotoristaForm";
+import { FretesDocumentos, type CteRow, type CiotRow } from "../_components/FretesDocumentos";
 
 type FreteDetalhe = {
   id: string;
@@ -107,6 +108,62 @@ export default async function FreteDetalhePage({
       .eq("ativo", true),
     supabase.from("fretes_avaliacoes").select("avaliador, estrelas, comentario").eq("frete_id", id),
   ]);
+
+  // Fase Fretes-CIOT-CTe (18/07) — documentos registrados pro frete (não
+  // emitidos por aqui, ver comentário em src/lib/cte.ts). Bucket
+  // fretes-documentos é privado, então geramos signed URL por arquivo (1h),
+  // mesmo padrão já usado pras fotos de evidência acima.
+  const [{ data: ctesData }, { data: ciotsData }] = await Promise.all([
+    supabase
+      .from("fretes_cte")
+      .select("id, numero_cte, serie, protocolo_autorizacao, valor_prestacao, data_emissao, xml_storage_path")
+      .eq("frete_id", id)
+      .order("criado_em", { ascending: false }),
+    supabase
+      .from("fretes_ciot")
+      .select("id, numero_ciot, rntrc, placa_veiculo, valor_frete, data_emissao, observacao, anexo_storage_path")
+      .eq("frete_id", id)
+      .order("criado_em", { ascending: false }),
+  ]);
+
+  const ctes: CteRow[] = await Promise.all(
+    (ctesData ?? []).map(async (c): Promise<CteRow> => {
+      let xmlUrl: string | null = null;
+      if (c.xml_storage_path) {
+        const { data } = await supabase.storage.from("fretes-documentos").createSignedUrl(c.xml_storage_path, 3600);
+        xmlUrl = data?.signedUrl ?? null;
+      }
+      return {
+        id: c.id,
+        numero_cte: c.numero_cte,
+        serie: c.serie,
+        protocolo_autorizacao: c.protocolo_autorizacao,
+        valor_prestacao: c.valor_prestacao,
+        data_emissao: c.data_emissao,
+        xmlUrl,
+      };
+    })
+  );
+
+  const ciots: CiotRow[] = await Promise.all(
+    (ciotsData ?? []).map(async (c): Promise<CiotRow> => {
+      let anexoUrl: string | null = null;
+      if (c.anexo_storage_path) {
+        const { data } = await supabase.storage.from("fretes-documentos").createSignedUrl(c.anexo_storage_path, 3600);
+        anexoUrl = data?.signedUrl ?? null;
+      }
+      return {
+        id: c.id,
+        numero_ciot: c.numero_ciot,
+        rntrc: c.rntrc,
+        placa_veiculo: c.placa_veiculo,
+        valor_frete: c.valor_frete,
+        data_emissao: c.data_emissao,
+        observacao: c.observacao,
+        anexoUrl,
+      };
+    })
+  );
 
   // Fase foto-evidência-checkpoints — bucket `fretes-evidencias` é privado,
   // então geramos uma signed URL por foto (válida 1h) só pra quem esta
@@ -229,6 +286,8 @@ export default async function FreteDetalhePage({
           />
         </div>
       )}
+
+      <FretesDocumentos freteId={id} empresaId={empresaId} ctes={ctes} ciots={ciots} />
 
       {freteTipado.status === "aguardando_confirmacao" && (
         <p className="card mb-6 p-4 text-sm text-slate-600">

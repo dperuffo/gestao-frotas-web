@@ -1066,6 +1066,52 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["fretes_avaliacoes"]["Row"]>;
         Relationships: [];
       };
+      // Fase Fretes-CIOT-CTe (18/07) — documentos registrados por frete,
+      // emitidos fora da plataforma (ver src/lib/cte.ts).
+      fretes_cte: {
+        Row: {
+          id: string;
+          frete_id: string;
+          chave_acesso: string;
+          numero_cte: string | null;
+          serie: string | null;
+          protocolo_autorizacao: string | null;
+          cnpj_emitente: string | null;
+          nome_emitente: string | null;
+          valor_prestacao: number | null;
+          data_emissao: string | null;
+          xml_storage_path: string | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_cte"]["Row"]> & {
+          frete_id: string;
+          chave_acesso: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_cte"]["Row"]>;
+        Relationships: [];
+      };
+      fretes_ciot: {
+        Row: {
+          id: string;
+          frete_id: string;
+          numero_ciot: string;
+          rntrc: string | null;
+          placa_veiculo: string | null;
+          valor_frete: number | null;
+          data_emissao: string | null;
+          observacao: string | null;
+          anexo_storage_path: string | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_ciot"]["Row"]> & {
+          frete_id: string;
+          numero_ciot: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_ciot"]["Row"]>;
+        Relationships: [];
+      };
       fidelidade_dependentes: {
         Row: {
           id: string;
