@@ -499,6 +499,26 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
     <div class="card"><div class="icon">💰</div><div class="ct" data-i18n="card3_t">Acordos de Preços</div><div class="cd" data-i18n="card3_d">Gerencie contratos com postos e valide automaticamente se os preços respeitam os acordos.</div></div>
     <div class="card"><div class="icon">📈</div><div class="ct" data-i18n="card4_t">Relatórios Avançados</div><div class="cd" data-i18n="card4_d">Análises de consumo, custo por km e ranking de postos. Exporte para Excel ou integre via API.</div></div>
     <div class="card"><div class="icon">🔌</div><div class="ct" data-i18n="card5_t">Integrações Nativas</div><div class="cd" data-i18n="card5_d">Conecte com TOTVS, SAP, rastreadores (Sascar, Onix, Autotrac) e valide NF-e pela SEFAZ.</div></div>
+    <div class="card"><div class="icon">🎮</div><div class="ct" data-i18n="card6_t">Missões e Fidelidade</div><div class="cd" data-i18n="card6_d">Crie metas com prêmios pros motoristas parceiros, dentro da sua rede ou em conjunto com outras empresas do mesmo grupo econômico.</div></div>
+    <div class="card"><div class="icon">🏪</div><div class="ct" data-i18n="card7_t">Parcerias Locais</div><div class="cd" data-i18n="card7_d">Conecte sua rede a comércios locais — borracharia, oficina, restaurante — com benefícios exclusivos pros motoristas.</div></div>
+    <div class="card"><div class="icon">🛡️</div><div class="ct" data-i18n="card8_t">Antifraude</div><div class="cd" data-i18n="card8_d">Regras automáticas sinalizam abastecimentos e rotas fora do padrão antes que virem prejuízo.</div></div>
+  </div>
+</section>
+
+<section class="section" id="fretes">
+  <div class="sec-lbl" data-i18n="fretes_lbl">Marketplace de Fretes</div>
+  <div class="sec-title" data-i18n-html="fretes_title">Conecte cargas e motoristas,<br>com segurança pros dois lados</div>
+  <p class="sec-sub" data-i18n="fretes_sub">Cliente publica o frete com endereço completo e prazo; motorista decide com dados reais antes de aceitar. Negociação, execução e avaliação — tudo dentro da mesma plataforma, sem intermediário.</p>
+  <div class="grid">
+    <div class="card"><div class="icon">📋</div><div class="ct" data-i18n="frcard0_t">Frete com dados completos</div><div class="cd" data-i18n="frcard0_d">Endereço estruturado de coleta e entrega, dimensões da carga, datas e horários — o motorista decide com informação real antes de aceitar.</div></div>
+    <div class="card"><div class="icon">⭐</div><div class="ct" data-i18n="frcard1_t">Reputação do motorista</div><div class="cd" data-i18n="frcard1_d">Nota, taxa de conclusão, CNH válida, telefone e autenticação em duas etapas verificados — o cliente vê tudo antes de negociar.</div></div>
+    <div class="card"><div class="icon">🧮</div><div class="ct" data-i18n="frcard2_t">Calculadora de lucro</div><div class="cd" data-i18n="frcard2_d">O motorista simula o custo de combustível da viagem com o preço médio ANP da região antes de decidir se vale a pena aceitar.</div></div>
+    <div class="card"><div class="icon">🚛</div><div class="ct" data-i18n="frcard3_t">Filtro por veículo e carroceria</div><div class="cd" data-i18n="frcard3_d">Motorista vê só os fretes compatíveis com o veículo que tem; cliente restringe o frete pro tipo de carroceria certo.</div></div>
+    <div class="card"><div class="icon">📍</div><div class="ct" data-i18n="frcard4_t">Distância até a coleta</div><div class="cd" data-i18n="frcard4_d">Antes de aceitar, o motorista vê quantos km faltam até o ponto de coleta — geolocalização em tempo real, sem letra miúda.</div></div>
+    <div class="card"><div class="icon">🏷️</div><div class="ct" data-i18n="frcard5_t">Destaques automáticos</div><div class="cd" data-i18n="frcard5_d">Motoristas com elogios recorrentes — pontual, cuidado com a carga, comunicativo — ganham selos automáticos no perfil.</div></div>
+  </div>
+  <div style="text-align:center;margin-top:40px">
+    <a href="/cadastro" class="btn-s" data-i18n="fretes_cta">🚚 Publicar meu primeiro frete →</a>
   </div>
 </section>
 
