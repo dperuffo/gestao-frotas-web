@@ -274,29 +274,24 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 }
 </style>
 
-<script>
-function showDemo(idx) {
-  document.querySelectorAll('.demo-panel').forEach((p,i) => {
-    p.classList.toggle('active', i === idx);
-  });
-  document.querySelectorAll('.demo-tab').forEach((t,i) => {
-    t.classList.toggle('active', i === idx);
-  });
-}
-
-// Auto-rotação a cada 5 segundos
-let _demoIdx = 0;
-let _demoTimer = setInterval(() => {
-  _demoIdx = (_demoIdx + 1) % 4;
-  showDemo(_demoIdx);
-}, 5000);
-
-// Para auto-rotação ao clicar
-document.querySelectorAll('.demo-tab').forEach(t => {
-  t.addEventListener('click', () => clearInterval(_demoTimer));
-});
-</script>
-
+<!-- Fase corrige-toggle-idioma-landing — pedido do Daniel: "ao clicar em EN,
+     a página não atualiza para english". Causa raiz: existiam DOIS scripts
+     de demo animado concorrentes aqui (um mais antigo, referenciando classes
+     .demo-panel/.demo-tab e um elemento #demo-caption2 que já não existem
+     mais no HTML atual, e um mais novo usando #dp0-#dp3/#demo-cap2, que É o
+     que está de fato na página). O script antigo quebrava com erro
+     (TypeError: Cannot set properties of null) assim que a página carregava
+     — removido abaixo. Isso por si só não impedia a troca de idioma, mas o
+     script novo (mantido, ver abaixo) tentava ler a variável _lang antes
+     dela existir (só é declarada no script de i18n, que vem depois no
+     documento), o que jogava um ReferenceError e interrompia aquele script
+     ANTES de registrar seu listener de carregamento — e esse mesmo erro
+     encadeava outro (undefined[0]) dentro da própria função de troca de
+     idioma (_applyLang), interrompendo-a antes de marcar visualmente qual
+     botão (PT/EN) está ativo. Corrigido: o script abaixo agora só define os
+     textos iniciais em português (o _applyLang, chamado no carregamento da
+     página e a cada clique, já corrige pro idioma certo logo depois) —
+     nenhum dos dois scripts precisa mais adivinhar o idioma antes da hora. -->
 
 <style>
 .dtab2{padding:9px 18px;border-radius:24px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#718096;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
@@ -306,30 +301,6 @@ document.querySelectorAll('.demo-tab').forEach(t => {
 @keyframes fadeUp2{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes blink2{0%,49%{opacity:1}50%,100%{opacity:0}}
 </style>
-
-<script>
-var _urls=['fxgestaodefrotasonline.com · Dashboard Analítico','fxgestaodefrotasonline.com · Consulta por Rota','fxgestaodefrotasonline.com · Assistente IA','fxgestaodefrotasonline.com · Rotograma de Segurança'];
-var _captions=[
-  '<strong style="color:#e2e8f0">Dashboard Analítico</strong> — Visão consolidada de abastecimentos reais, cobertura por UF e comparativo ANP em tempo real.',
-  '<strong style="color:#e2e8f0">Consulta por Rota</strong> — Mapa interativo com os melhores postos ANP ao longo da rota, com animação da rota e economia calculada automaticamente.',
-  '<strong style="color:#e2e8f0">Assistente IA</strong> — Converse em linguagem natural com IA especializada em frotas. Powered by Claude AI, com dados reais da sua empresa.',
-  '<strong style="color:#e2e8f0">Rotograma de Segurança</strong> — Mapeie riscos, paradas e contatos de emergência. Exporte em PDF para o motorista carregar na viagem.'
-];
-var _cur2=0,_timer2;
-function sd(i){
-  clearInterval(_timer2);
-  _cur2=i;
-  ['dp0','dp1','dp2','dp3'].forEach(function(id,j){
-    var el=document.getElementById(id);
-    if(el){el.style.display=(j===i?(id==='dp2'?'flex':'block'):'none');}
-  });
-  document.querySelectorAll('.dtab2').forEach(function(t,j){t.classList.toggle('dtab-on',j===i);});
-  document.getElementById('demo-url2').textContent=_urls[i];
-  document.getElementById('demo-caption2').innerHTML=_captions[i];
-  _timer2=setInterval(function(){sd((_cur2+1)%4);},6000);
-}
-sd(0);
-</script>
 
 <section id="demo" style="padding:80px 0;background:rgba(0,0,0,0.2)">
 <div class="container">
@@ -494,8 +465,14 @@ sd(0);
 .dtab2.dtab-on{background:rgba(0,229,255,0.12);border-color:#00e5ff;color:#00e5ff}
 </style>
 <script>
-var _u2_pt=["fxgestaodefrotasonline.com - Dashboard Analítico","fxgestaodefrotasonline.com - Consulta por Rota","fxgestaodefrotasonline.com - Assistente IA","fxgestaodefrotasonline.com - Rotograma de Segurança"];var _u2_en=["fxgestaodefrotasonline.com - Analytics Dashboard","fxgestaodefrotasonline.com - Route Search","fxgestaodefrotasonline.com - AI Assistant","fxgestaodefrotasonline.com - Safety Map"];var _u2=_lang==="en"?_u2_en:_u2_pt;
-var _cp2_pt=["<strong style='color:#fff'>Dashboard Analitico</strong> — Visao consolidada de abastecimentos reais, cobertura por UF e evolucao de precos.","<strong style='color:#fff'>Consulta por Rota</strong> — Mapa interativo com os melhores postos ANP ao longo da rota, com precos e distancias.","<strong style='color:#fff'>Assistente IA</strong> — Converse em linguagem natural com IA especializada em frotas.","<strong style='color:#fff'>Rotograma de Seguranca</strong> — Mapeie riscos, paradas e contatos de emergencia."];var _cp2_en=["<strong style='color:#fff'>Analytics Dashboard</strong> — Consolidated view of real fueling data, coverage by state and real-time ANP price comparison.","<strong style='color:#fff'>Route Search</strong> — Interactive map with the best ANP stations along the route, with prices and distances.","<strong style='color:#fff'>AI Assistant</strong> — Chat in natural language with AI specialized in fleet management.","<strong style='color:#fff'>Safety Map</strong> — Map risks, stops and emergency contacts. Export as PDF."];var _cp2=_lang==="en"?_cp2_en:_cp2_pt;
+var _u2_pt=["fxgestaodefrotasonline.com - Dashboard Analítico","fxgestaodefrotasonline.com - Consulta por Rota","fxgestaodefrotasonline.com - Assistente IA","fxgestaodefrotasonline.com - Rotograma de Segurança"];var _u2_en=["fxgestaodefrotasonline.com - Analytics Dashboard","fxgestaodefrotasonline.com - Route Search","fxgestaodefrotasonline.com - AI Assistant","fxgestaodefrotasonline.com - Safety Map"];
+// Fase corrige-toggle-idioma-landing — começa sempre em PT: a variável
+// _lang (idioma salvo no localStorage) só existe no script de i18n, que
+// carrega DEPOIS deste aqui. _applyLang() já roda logo em seguida (no
+// DOMContentLoaded) e corrige pro idioma certo se for o caso — não precisa
+// (nem dá) pra adivinhar aqui.
+var _u2=_u2_pt;
+var _cp2_pt=["<strong style='color:#fff'>Dashboard Analitico</strong> — Visao consolidada de abastecimentos reais, cobertura por UF e evolucao de precos.","<strong style='color:#fff'>Consulta por Rota</strong> — Mapa interativo com os melhores postos ANP ao longo da rota, com precos e distancias.","<strong style='color:#fff'>Assistente IA</strong> — Converse em linguagem natural com IA especializada em frotas.","<strong style='color:#fff'>Rotograma de Seguranca</strong> — Mapeie riscos, paradas e contatos de emergencia."];var _cp2_en=["<strong style='color:#fff'>Analytics Dashboard</strong> — Consolidated view of real fueling data, coverage by state and real-time ANP price comparison.","<strong style='color:#fff'>Route Search</strong> — Interactive map with the best ANP stations along the route, with prices and distances.","<strong style='color:#fff'>AI Assistant</strong> — Chat in natural language with AI specialized in fleet management.","<strong style='color:#fff'>Safety Map</strong> — Map risks, stops and emergency contacts. Export as PDF."];var _cp2=_cp2_pt;
 var _c2=0,_t2;
 function sd(i){
   clearInterval(_t2);_c2=i;
@@ -884,20 +861,16 @@ function _applyLang() {
     var k = el.getAttribute("data-i18n-html");
     el.innerHTML = _t(k);
   });
-  // Demo captions dinâmicos
-  if (typeof _cp2 !== "undefined") {
-    _cp2 = [_t("demo_cap0"), _t("demo_cap1"), _t("demo_cap2"), _t("demo_cap3")];
-    var c = document.getElementById("demo-cap2");
-    if (c) c.innerHTML = _cp2[typeof _c2 !== "undefined" ? _c2 : 0];
-  }
-  // Atualiza captions do demo
+  // Atualiza captions e URL do mock browser do demo animado (índice atual
+  // guardado em _c2, ver o outro <script> logo acima). typeof _c2 porque
+  // esse outro script já roda antes deste, mas por segurança contra ordem.
+  var _idxDemo = typeof _c2 !== "undefined" ? _c2 : 0;
   var _cp2_atual = _lang === "en" ? _cp2_en : _cp2_pt;
   var _capEl = document.getElementById("demo-cap2");
-  if (_capEl) _capEl.innerHTML = _cp2_atual[typeof _c2 !== "undefined" ? _c2 : 0];
-  // Atualiza URLs do mock browser
+  if (_capEl && _cp2_atual) _capEl.innerHTML = _cp2_atual[_idxDemo];
   var _urlEl = document.getElementById("demo-url2");
   var _u2_atual = _lang === "en" ? _u2_en : _u2_pt;
-  if (_urlEl && typeof _c2 !== "undefined") _urlEl.textContent = _u2_atual[_c2];
+  if (_urlEl && _u2_atual) _urlEl.textContent = _u2_atual[_idxDemo];
   // Botões de idioma
   document.getElementById("btn-pt") && document.getElementById("btn-pt").classList.toggle("lang-active", _lang==="pt");
   document.getElementById("btn-en") && document.getElementById("btn-en").classList.toggle("lang-active", _lang==="en");
