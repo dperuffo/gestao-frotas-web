@@ -4,6 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { criarFrete } from "../actions";
 import { CampoLocalFrete } from "./CampoLocalFrete";
 import { CampoEnderecoCompleto } from "./CampoEnderecoCompleto";
+import { GRUPOS_VEICULO, CARROCERIAS_FRETE } from "@/lib/fretesVeiculos";
 
 type MotoristaOpcao = { id: string; nome: string; origem: "proprio" | "parceiro" };
 
@@ -95,6 +96,41 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
         </div>
         <CampoEnderecoCompleto titulo="📍 Coleta" prefixo="coleta" />
         <CampoEnderecoCompleto titulo="📍 Entrega" prefixo="entrega" />
+      </section>
+
+      <section className="card p-6">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900">Veículo e carroceria</h2>
+        <p className="mb-4 text-xs text-slate-500">
+          Opcional — se não marcar nada, o frete aparece pra qualquer motorista. Marcando, só motoristas com veículo
+          compatível veem esse frete na busca deles.
+        </p>
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-medium text-slate-500">Veículos aceitos</p>
+          {GRUPOS_VEICULO.map((g) => (
+            <div key={g.grupo} className="mb-2">
+              <p className="mb-1 text-[11px] uppercase tracking-wide text-slate-400">{g.grupo}</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {g.opcoes.map((v) => (
+                  <label key={v} className="flex items-center gap-1.5 text-sm text-slate-700">
+                    <input type="checkbox" name="veiculos_aceitos" value={v} className="h-4 w-4 rounded border-slate-300" />
+                    {v}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div>
+          <p className="mb-2 text-xs font-medium text-slate-500">Carrocerias aceitas</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {CARROCERIAS_FRETE.map((c) => (
+              <label key={c} className="flex items-center gap-1.5 text-sm text-slate-700">
+                <input type="checkbox" name="carrocerias_aceitas" value={c} className="h-4 w-4 rounded border-slate-300" />
+                {c}
+              </label>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="card p-6">

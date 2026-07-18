@@ -93,6 +93,10 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
   // (cards antigos, apps que não foram atualizados) não ficar sem nada.
   const dataSaida = coletaData;
   const prazoEntrega = entregaData;
+  // Fase Fretes-Dados-Completos-2 — checkboxes de mesmo `name` chegam como
+  // múltiplos valores no FormData; getAll() traz todos marcados.
+  const veiculosAceitos = formData.getAll("veiculos_aceitos").map(String);
+  const carroceriasAceitas = formData.getAll("carrocerias_aceitas").map(String);
 
   if (!titulo) return { erro: "Título é obrigatório." };
   if (!origemLabel || !Number.isFinite(origemLat) || !Number.isFinite(origemLon)) {
@@ -180,6 +184,8 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
     carga_comprimento_m: cargaComprimento,
     carga_largura_m: cargaLargura,
     carga_altura_m: cargaAltura,
+    veiculos_aceitos: veiculosAceitos,
+    carrocerias_aceitas: carroceriasAceitas,
   });
   if (error) return { erro: `Não foi possível publicar o frete: ${error.message}` };
 

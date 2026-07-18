@@ -934,6 +934,8 @@ export interface Database {
           carga_comprimento_m: number | null;
           carga_largura_m: number | null;
           carga_altura_m: number | null;
+          veiculos_aceitos: string[];
+          carrocerias_aceitas: string[];
         };
         Insert: Partial<Database["public"]["Tables"]["fretes"]["Row"]> & {
           empresa_id: string;

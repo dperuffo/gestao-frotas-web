@@ -1,17 +1,22 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importarPostosAnp, type ResultadoImportacaoAnp } from "../actions";
+import type { ResultadoImportacaoAnp } from "@/app/api/postos/importar-anp/route";
 
 export function ImportForm() {
   const [resultado, setResultado] = useState<ResultadoImportacaoAnp | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
 
+  // Fase corrige-bloqueio-cloudflare-waf — antes chamava a Server Action
+  // direto; agora manda um POST comum (fetch + FormData) pra rota de API,
+  // porque o protocolo de Server Actions bate na regra do WAF gerenciado da
+  // Cloudflare (CVE-2025-55183) mesmo o app já estando corrigido, e o plano
+  // gratuito não deixa criar exceção pra liberar só essa rota.
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
-      const resposta = await importarPostosAnp(undefined, formData);
+      const resposta = await fetch("/api/postos/importar-anp", { method: "POST", body: formData }).then((r) => r.json());
       setResultado(resposta);
     });
   }

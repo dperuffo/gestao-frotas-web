@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importarPostosGf, type ResultadoImportacaoPostosGf } from "../actions";
+import type { ResultadoImportacaoPostosGf } from "@/app/api/postos/importar/route";
 
 type EmpresaOpcao = { id: string; nome: string };
 
@@ -9,11 +9,16 @@ export function ImportForm({ empresas }: { empresas: EmpresaOpcao[] }) {
   const [resultado, setResultado] = useState<ResultadoImportacaoPostosGf | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
 
+  // Fase corrige-bloqueio-cloudflare-waf — antes chamava a Server Action
+  // direto; agora manda um POST comum (fetch + FormData) pra rota de API,
+  // porque o protocolo de Server Actions bate na regra do WAF gerenciado da
+  // Cloudflare (CVE-2025-55183) mesmo o app já estando corrigido, e o plano
+  // gratuito não deixa criar exceção pra liberar só essa rota.
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
-      const resposta = await importarPostosGf(undefined, formData);
+      const resposta = await fetch("/api/postos/importar", { method: "POST", body: formData }).then((r) => r.json());
       setResultado(resposta);
     });
   }
