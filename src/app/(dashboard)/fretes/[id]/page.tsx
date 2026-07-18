@@ -20,6 +20,31 @@ type FreteDetalhe = {
   km_estimado: number | null;
   valor_oferecido: number;
   motorista_id: string | null;
+  coleta_rua: string | null;
+  coleta_numero: string | null;
+  coleta_bairro: string | null;
+  coleta_cidade: string | null;
+  coleta_uf: string | null;
+  coleta_cep: string | null;
+  coleta_referencia: string | null;
+  coleta_data: string | null;
+  coleta_hora: string | null;
+  coleta_contato_nome: string | null;
+  coleta_contato_telefone: string | null;
+  entrega_rua: string | null;
+  entrega_numero: string | null;
+  entrega_bairro: string | null;
+  entrega_cidade: string | null;
+  entrega_uf: string | null;
+  entrega_cep: string | null;
+  entrega_referencia: string | null;
+  entrega_data: string | null;
+  entrega_hora: string | null;
+  entrega_contato_nome: string | null;
+  entrega_contato_telefone: string | null;
+  carga_comprimento_m: number | null;
+  carga_largura_m: number | null;
+  carga_altura_m: number | null;
 };
 
 const LABEL_STATUS: Record<string, string> = {
@@ -46,7 +71,7 @@ export default async function FreteDetalhePage({
   const { data: frete } = await supabase
     .from("fretes")
     .select(
-      "id, empresa_id, titulo, descricao, status, origem_label, destino_label, tipo_carga, peso_carga_kg, data_saida_prevista, prazo_entrega, km_estimado, valor_oferecido, motorista_id"
+      "id, empresa_id, titulo, descricao, status, origem_label, destino_label, tipo_carga, peso_carga_kg, data_saida_prevista, prazo_entrega, km_estimado, valor_oferecido, motorista_id, coleta_rua, coleta_numero, coleta_bairro, coleta_cidade, coleta_uf, coleta_cep, coleta_referencia, coleta_data, coleta_hora, coleta_contato_nome, coleta_contato_telefone, entrega_rua, entrega_numero, entrega_bairro, entrega_cidade, entrega_uf, entrega_cep, entrega_referencia, entrega_data, entrega_hora, entrega_contato_nome, entrega_contato_telefone, carga_comprimento_m, carga_largura_m, carga_altura_m"
     )
     .eq("id", id)
     .maybeSingle();
@@ -148,7 +173,46 @@ export default async function FreteDetalhePage({
           )}
         </div>
         {freteTipado.descricao && <p className="mt-4 text-sm text-slate-600">{freteTipado.descricao}</p>}
+        {(freteTipado.carga_comprimento_m || freteTipado.carga_largura_m || freteTipado.carga_altura_m) && (
+          <p className="mt-3 text-xs text-slate-500">
+            📐 Dimensões: {freteTipado.carga_comprimento_m ?? "—"}m × {freteTipado.carga_largura_m ?? "—"}m ×{" "}
+            {freteTipado.carga_altura_m ?? "—"}m (C×L×A)
+          </p>
+        )}
       </div>
+
+      {(freteTipado.coleta_rua || freteTipado.entrega_rua) && (
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <BlocoEndereco
+            titulo="📍 Coleta"
+            rua={freteTipado.coleta_rua}
+            numero={freteTipado.coleta_numero}
+            bairro={freteTipado.coleta_bairro}
+            cidade={freteTipado.coleta_cidade}
+            uf={freteTipado.coleta_uf}
+            cep={freteTipado.coleta_cep}
+            referencia={freteTipado.coleta_referencia}
+            data={freteTipado.coleta_data}
+            hora={freteTipado.coleta_hora}
+            contatoNome={freteTipado.coleta_contato_nome}
+            contatoTelefone={freteTipado.coleta_contato_telefone}
+          />
+          <BlocoEndereco
+            titulo="📍 Entrega"
+            rua={freteTipado.entrega_rua}
+            numero={freteTipado.entrega_numero}
+            bairro={freteTipado.entrega_bairro}
+            cidade={freteTipado.entrega_cidade}
+            uf={freteTipado.entrega_uf}
+            cep={freteTipado.entrega_cep}
+            referencia={freteTipado.entrega_referencia}
+            data={freteTipado.entrega_data}
+            hora={freteTipado.entrega_hora}
+            contatoNome={freteTipado.entrega_contato_nome}
+            contatoTelefone={freteTipado.entrega_contato_telefone}
+          />
+        </div>
+      )}
 
       {freteTipado.status === "aguardando_confirmacao" && (
         <p className="card mb-6 p-4 text-sm text-slate-600">
@@ -234,6 +298,62 @@ export default async function FreteDetalhePage({
             </p>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+function BlocoEndereco({
+  titulo,
+  rua,
+  numero,
+  bairro,
+  cidade,
+  uf,
+  cep,
+  referencia,
+  data,
+  hora,
+  contatoNome,
+  contatoTelefone,
+}: {
+  titulo: string;
+  rua: string | null;
+  numero: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  cep: string | null;
+  referencia: string | null;
+  data: string | null;
+  hora: string | null;
+  contatoNome: string | null;
+  contatoTelefone: string | null;
+}) {
+  const linhaEndereco = [rua && numero ? `${rua}, ${numero}` : rua, bairro, cidade && uf ? `${cidade}/${uf}` : cidade]
+    .filter(Boolean)
+    .join(" — ");
+
+  return (
+    <div className="card p-5">
+      <h3 className="mb-2 text-sm font-semibold text-slate-900">{titulo}</h3>
+      {linhaEndereco ? (
+        <p className="text-sm text-slate-700">{linhaEndereco}</p>
+      ) : (
+        <p className="text-sm text-slate-400">Endereço não informado.</p>
+      )}
+      {cep && <p className="text-xs text-slate-500">CEP {cep}</p>}
+      {referencia && <p className="text-xs text-slate-500">Referência: {referencia}</p>}
+      {(data || hora) && (
+        <p className="mt-2 text-xs text-slate-600">
+          🗓️ {data ? new Date(`${data}T00:00:00`).toLocaleDateString("pt-BR") : "Data não informada"}
+          {hora ? ` às ${hora.slice(0, 5)}` : ""}
+        </p>
+      )}
+      {(contatoNome || contatoTelefone) && (
+        <p className="mt-1 text-xs text-slate-600">
+          👤 {contatoNome ?? "Contato"} {contatoTelefone ? `— ${contatoTelefone}` : ""}
+        </p>
       )}
     </div>
   );

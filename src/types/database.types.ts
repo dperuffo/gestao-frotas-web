@@ -909,6 +909,31 @@ export interface Database {
           criado_por: string | null;
           criado_em: string;
           atualizado_em: string;
+          coleta_rua: string | null;
+          coleta_numero: string | null;
+          coleta_bairro: string | null;
+          coleta_cidade: string | null;
+          coleta_uf: string | null;
+          coleta_cep: string | null;
+          coleta_referencia: string | null;
+          coleta_data: string | null;
+          coleta_hora: string | null;
+          coleta_contato_nome: string | null;
+          coleta_contato_telefone: string | null;
+          entrega_rua: string | null;
+          entrega_numero: string | null;
+          entrega_bairro: string | null;
+          entrega_cidade: string | null;
+          entrega_uf: string | null;
+          entrega_cep: string | null;
+          entrega_referencia: string | null;
+          entrega_data: string | null;
+          entrega_hora: string | null;
+          entrega_contato_nome: string | null;
+          entrega_contato_telefone: string | null;
+          carga_comprimento_m: number | null;
+          carga_largura_m: number | null;
+          carga_altura_m: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["fretes"]["Row"]> & {
           empresa_id: string;
@@ -3450,6 +3475,18 @@ export interface Database {
           status: string;
           convidado_em: string;
           respondido_em: string | null;
+          // Fase Fretes-Dados-Completos — cartão de reputação, ver
+          // _reputacao_motorista().
+          media_estrelas: number | null;
+          total_avaliacoes: number;
+          fretes_concluidos: number;
+          taxa_conclusao: number | null;
+          cnh_valida: boolean;
+          cnh_vencimento: string | null;
+          telefone_verificado: boolean;
+          seguranca_2fa_ativo: boolean;
+          dias_cadastro: number | null;
+          selo_verificado: boolean;
         }[];
       };
       // Fase Fretes — negociação e listagem.
@@ -3465,6 +3502,16 @@ export interface Database {
           ultimo_valor: number;
           ultimo_autor: string;
           criado_em: string;
+          media_estrelas: number | null;
+          total_avaliacoes: number;
+          fretes_concluidos: number;
+          taxa_conclusao: number | null;
+          cnh_valida: boolean;
+          cnh_vencimento: string | null;
+          telefone_verificado: boolean;
+          seguranca_2fa_ativo: boolean;
+          dias_cadastro: number | null;
+          selo_verificado: boolean;
         }[];
       };
       meus_fretes_empresa: {

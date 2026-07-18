@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ConvidarParceiroForm } from "./_components/ConvidarParceiroForm";
+import { CartaoReputacaoMotorista, type ReputacaoMotorista } from "../fretes/_components/CartaoReputacaoMotorista";
 
 // Rede de motoristas parceiros (Fase Fretes) — motoristas de fora da
 // empresa (agregados/terceiros) com quem o cliente já tem relação, pra
@@ -16,7 +17,7 @@ type ParceiroRow = {
   status: string;
   convidado_em: string;
   respondido_em: string | null;
-};
+} & ReputacaoMotorista;
 
 const LABEL_STATUS: Record<string, string> = {
   convidado: "Convidado (aguardando resposta)",
@@ -89,7 +90,10 @@ export default async function MotoristasParceirosPage({
               <tbody className="divide-y divide-slate-100">
                 {parceiros.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-900">{p.nome_completo}</td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-slate-900">{p.nome_completo}</p>
+                      <CartaoReputacaoMotorista reputacao={p} />
+                    </td>
                     <td className="px-4 py-3 text-slate-600">{p.telefone ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span

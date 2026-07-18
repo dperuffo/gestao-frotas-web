@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { aceitarPropostaAcao, recusarPropostaAcao, contraporPropostaAcao } from "../actions";
+import { CartaoReputacaoMotorista, type ReputacaoMotorista } from "./CartaoReputacaoMotorista";
 
 export type Proposta = {
   negociacao_id: string;
@@ -13,7 +14,7 @@ export type Proposta = {
   ultimo_valor: number;
   ultimo_autor: string;
   criado_em: string;
-};
+} & ReputacaoMotorista;
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -84,6 +85,7 @@ function LinhaProposta({ empresaId, proposta, freteAberto }: { empresaId: string
         <div>
           <p className="text-sm font-medium text-slate-900">{proposta.nome_motorista}</p>
           <p className="text-xs text-slate-500">{proposta.telefone_motorista ?? "—"}</p>
+          <CartaoReputacaoMotorista reputacao={proposta} />
         </div>
         <div className="text-right">
           <p className="text-lg font-semibold text-slate-900">{formatoMoeda.format(proposta.ultimo_valor)}</p>

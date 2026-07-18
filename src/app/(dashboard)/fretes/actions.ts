@@ -49,12 +49,50 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
   const tipoCarga = String(formData.get("tipo_carga") ?? "").trim() || null;
   const pesoCargaRaw = String(formData.get("peso_carga_kg") ?? "").trim();
   const pesoCarga = pesoCargaRaw ? Number(pesoCargaRaw) : null;
-  const dataSaida = String(formData.get("data_saida_prevista") ?? "").trim() || null;
-  const prazoEntrega = String(formData.get("prazo_entrega") ?? "").trim() || null;
   const kmEstimadoRaw = String(formData.get("km_estimado") ?? "").trim();
   const kmEstimado = kmEstimadoRaw ? Number(kmEstimadoRaw) : null;
   const valorOferecido = Number(formData.get("valor_oferecido") ?? "");
   const motoristaId = String(formData.get("motorista_id") ?? "").trim() || null;
+
+  // Fase Fretes-Dados-Completos — pedido do Daniel: motorista precisa de
+  // endereço completo, horário exato e dimensões pra decidir se aceita o
+  // frete. Campos estruturados (não mais um texto livre de origem/destino
+  // só pra cidade, que continua existindo pro cálculo de km/mapa).
+  const campoTexto = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
+  const campoNumero = (nome: string) => {
+    const raw = String(formData.get(nome) ?? "").trim();
+    return raw ? Number(raw) : null;
+  };
+  const coletaRua = campoTexto("coleta_rua");
+  const coletaNumero = campoTexto("coleta_numero");
+  const coletaBairro = campoTexto("coleta_bairro");
+  const coletaCidade = campoTexto("coleta_cidade");
+  const coletaUf = campoTexto("coleta_uf");
+  const coletaCep = campoTexto("coleta_cep");
+  const coletaReferencia = campoTexto("coleta_referencia");
+  const coletaData = campoTexto("coleta_data");
+  const coletaHora = campoTexto("coleta_hora");
+  const coletaContatoNome = campoTexto("coleta_contato_nome");
+  const coletaContatoTelefone = campoTexto("coleta_contato_telefone");
+  const entregaRua = campoTexto("entrega_rua");
+  const entregaNumero = campoTexto("entrega_numero");
+  const entregaBairro = campoTexto("entrega_bairro");
+  const entregaCidade = campoTexto("entrega_cidade");
+  const entregaUf = campoTexto("entrega_uf");
+  const entregaCep = campoTexto("entrega_cep");
+  const entregaReferencia = campoTexto("entrega_referencia");
+  const entregaData = campoTexto("entrega_data");
+  const entregaHora = campoTexto("entrega_hora");
+  const entregaContatoNome = campoTexto("entrega_contato_nome");
+  const entregaContatoTelefone = campoTexto("entrega_contato_telefone");
+  const cargaComprimento = campoNumero("carga_comprimento_m");
+  const cargaLargura = campoNumero("carga_largura_m");
+  const cargaAltura = campoNumero("carga_altura_m");
+  // data_saida_prevista/prazo_entrega (colunas antigas, só DATA) continuam
+  // preenchidas a partir da coleta/entrega novas, pra quem ainda lê elas
+  // (cards antigos, apps que não foram atualizados) não ficar sem nada.
+  const dataSaida = coletaData;
+  const prazoEntrega = entregaData;
 
   if (!titulo) return { erro: "Título é obrigatório." };
   if (!origemLabel || !Number.isFinite(origemLat) || !Number.isFinite(origemLon)) {
@@ -117,6 +155,31 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
     motorista_id: motoristaId,
     status: motoristaId ? "aguardando_confirmacao" : "disponivel",
     criado_por: user?.email ?? null,
+    coleta_rua: coletaRua,
+    coleta_numero: coletaNumero,
+    coleta_bairro: coletaBairro,
+    coleta_cidade: coletaCidade,
+    coleta_uf: coletaUf,
+    coleta_cep: coletaCep,
+    coleta_referencia: coletaReferencia,
+    coleta_data: coletaData,
+    coleta_hora: coletaHora,
+    coleta_contato_nome: coletaContatoNome,
+    coleta_contato_telefone: coletaContatoTelefone,
+    entrega_rua: entregaRua,
+    entrega_numero: entregaNumero,
+    entrega_bairro: entregaBairro,
+    entrega_cidade: entregaCidade,
+    entrega_uf: entregaUf,
+    entrega_cep: entregaCep,
+    entrega_referencia: entregaReferencia,
+    entrega_data: entregaData,
+    entrega_hora: entregaHora,
+    entrega_contato_nome: entregaContatoNome,
+    entrega_contato_telefone: entregaContatoTelefone,
+    carga_comprimento_m: cargaComprimento,
+    carga_largura_m: cargaLargura,
+    carga_altura_m: cargaAltura,
   });
   if (error) return { erro: `Não foi possível publicar o frete: ${error.message}` };
 
