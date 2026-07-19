@@ -108,7 +108,9 @@ export default async function IntegracoesPage() {
 
   // Fase Integracoes-Abas — pedido do Daniel: "Solicito que coloque 1 aba
   // para cada meio de pagamento: Pró-Frotas, TicketLog, Rede Frota, Veloe e
-  // outras que virão. Organizar esta tela". Hoje só a Pró-Frotas tem
+  // outras que virão. Organizar esta tela" + depois "tem o meio de pagamento
+  // Valecard também para o próximo desenvolvimento" — Valecard entrou como
+  // 5ª aba, mesmo padrão genérico dos outros 3. Hoje só a Pró-Frotas tem
   // integração NATIVA (sync automático via token JWT, tabela
   // profrotas_api_keys) — os demais meios de pagamento entram pelo Hub
   // genérico (chave de API com escopo "Abastecimentos", campo "provedor"
@@ -158,6 +160,11 @@ export default async function IntegracoesPage() {
       id: "veloe",
       label: "⚡ Veloe",
       conteudo: <SecaoProvedorGenerico nome="Veloe" slug="veloe" />,
+    },
+    {
+      id: "valecard",
+      label: "💳 Valecard",
+      conteudo: <SecaoProvedorGenerico nome="Valecard" slug="valecard" />,
     },
     {
       id: "hub",
@@ -321,7 +328,7 @@ function SecaoHub({
             <p className="mb-4 text-xs text-slate-400">
               <code>provedor</code> é texto livre — identifica de qual meio de pagamento veio o
               abastecimento (ex: <code>ticket_log</code>, <code>rede_frota</code>, <code>veloe</code>,
-              <code> profrotas</code>). Cada meio de pagamento tem uma aba própria acima com este mesmo
+              <code> valecard</code>, <code>profrotas</code>). Cada meio de pagamento tem uma aba própria acima com este mesmo
               exemplo já preenchido.
             </p>
 
