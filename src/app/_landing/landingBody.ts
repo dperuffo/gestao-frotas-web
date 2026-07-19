@@ -11,6 +11,21 @@
 // <script>" vale só para innerHTML setado via JS depois do load, não para
 // HTML que já vem embutido na resposta do servidor, que é o caso aqui).
 //
+// Achado real (19/07) — "toggle EN não funciona, nem após deploy Railway +
+// limpeza de cache Cloudflare": testei o script inteiro rodando de verdade
+// (jsdom simulando um navegador) e ele funciona perfeitamente — o problema
+// não é o código, é o CLOUDFLARE. O Rocket Loader (recurso de otimização do
+// Cloudflare, ligado por padrão em muitas zonas) reescreve e ADIA a
+// execução de <script> inline pra depois do carregamento da página — o que
+// quebra estes dois blocos, já que um declara variáveis (_u2_pt, _lang) que
+// o outro depende existir antes de rodar. Sem gerar nenhum erro visível: o
+// Rocket Loader só reordena a execução, então o sintoma é exatamente "não
+// muda nada, sem erro no console". Corrigido com `data-cfasync="false"` nos
+// dois <script> abaixo — atributo oficial do Cloudflare pra dizer "não
+// mexe neste script, deixa rodar normal, inline, na ordem". Se ainda assim
+// não funcionar, vale desligar o Rocket Loader direto no painel Cloudflare
+// (Speed > Optimization) pra esta zona.
+//
 // Ajustes feitos ao portar (ver README Fase 26):
 // - Links que apontavam pra https://app.fxgestaodefrotasonline.com viraram
 //   /login (Acessar Plataforma) ou /cadastro (todos os CTAs de "começar").
@@ -613,7 +628,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 .dtab2:hover{border-color:#00e5ff;color:#00e5ff}
 .dtab2.dtab-on{background:rgba(0,229,255,0.12);border-color:#00e5ff;color:#00e5ff}
 </style>
-<script>
+<script data-cfasync="false">
 var _u2_pt=["fxgestaodefrotasonline.com - Dashboard Analítico","fxgestaodefrotasonline.com - Consulta por Rota","fxgestaodefrotasonline.com - Assistente IA","fxgestaodefrotasonline.com - Rotograma de Segurança","fxgestaodefrotasonline.com - Marketplace de Fretes","fxgestaodefrotasonline.com - Reputação do Motorista","fxgestaodefrotasonline.com - Missões e Fidelidade","fxgestaodefrotasonline.com - Antifraude","fxgestaodefrotasonline.com - App do Motorista"];var _u2_en=["fxgestaodefrotasonline.com - Analytics Dashboard","fxgestaodefrotasonline.com - Route Search","fxgestaodefrotasonline.com - AI Assistant","fxgestaodefrotasonline.com - Safety Map","fxgestaodefrotasonline.com - Freight Marketplace","fxgestaodefrotasonline.com - Driver Reputation","fxgestaodefrotasonline.com - Missions & Loyalty","fxgestaodefrotasonline.com - Fraud Prevention","fxgestaodefrotasonline.com - Driver App"];
 // Fase corrige-toggle-idioma-landing — começa sempre em PT: a variável
 // _lang (idioma salvo no localStorage) só existe no script de i18n, que
@@ -788,7 +803,7 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   </div>
 </footer>
 
-<script>
+<script data-cfasync="false">
 var _i18n = {
   pt: {
     // Nav
