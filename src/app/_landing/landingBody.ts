@@ -1196,4 +1196,7 @@ document.addEventListener("DOMContentLoaded", _applyLang);
 
 <!-- deploy 2026-06-22T23:49:22.035829 -->
 <!-- redeploy 2026-06-24T13:30:53.745311 -->
+<!-- redeploy 2026-07-19T20:11:29.850350Z — forçar rebuild após checagem do
+     toggle PT/EN (testado via jsdom, sem erros; suspeita é cache/deploy
+     atrasado, não bug de código — ver commit) -->
 `;
