@@ -18,32 +18,10 @@ import { DashboardPosto } from "./_components/DashboardPosto";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { PRODUTOS_POSTO } from "@/lib/constants";
+import { LogoProvedor } from "@/components/LogoProvedor";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-// Fase 27.133 — mesmas cores/rótulo por provedor usados em /abastecimentos,
-// só pra manter a leitura visual consistente entre as telas.
-const CORES_PROVEDOR: Record<string, string> = {
-  profrotas: "bg-blue-100 text-blue-700",
-  Valecard: "bg-purple-100 text-purple-700",
-  RedeFrota: "bg-orange-100 text-orange-700",
-  TicketLog: "bg-teal-100 text-teal-700",
-  Veloe: "bg-pink-100 text-pink-700",
-};
-
-function nomeProvedor(provedor: string) {
-  return provedor === "profrotas" ? "PróFrotas" : provedor;
-}
-
-function BadgeProvedor({ provedor }: { provedor: string }) {
-  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 text-slate-600";
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${classe}`}>
-      {nomeProvedor(provedor)}
-    </span>
-  );
 }
 
 function inicioDoMes(data: Date) {
@@ -551,7 +529,7 @@ export default async function DashboardPage({
           <div className="flex flex-wrap gap-2">
             {listaProvedoresMes.map(([provedor, valor]) => (
               <span key={provedor} className="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                <BadgeProvedor provedor={provedor} /> {formatarMoeda(valor)}
+                <LogoProvedor provedor={provedor} className="h-4 w-auto" /> {formatarMoeda(valor)}
               </span>
             ))}
           </div>

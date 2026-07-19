@@ -331,7 +331,7 @@ export default async function AbastecimentosPage({
           <div className="flex flex-wrap gap-2">
             {listaResumoProvedores.map(([provedor, valor]) => (
               <span key={provedor} className="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                <BadgeProvedor provedor={provedor} /> {formatarMoeda(valor)}
+                <LogoProvedor provedor={provedor} className="h-4 w-auto" /> {formatarMoeda(valor)}
               </span>
             ))}
           </div>
