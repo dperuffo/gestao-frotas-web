@@ -47,7 +47,7 @@ export const PASSOS_TOUR_FROTA: PassoTour[] = [
   {
     alvo: "menu-operacao",
     titulo: "Operação",
-    texto: "Abastecimentos, roteirização inteligente, rotogramas, manutenção preditiva, relatórios e integrações com outros sistemas.",
+    texto: "Abastecimentos, roteirização inteligente, rotogramas, manutenção preditiva, relatórios e integrações com outros sistemas. Também é aqui que fica Fretes — contrate frete pra rede toda negociar (estilo Uber) ou atribua direto a um motorista próprio ou parceiro, com adiantamento configurável na aceitação.",
   },
   // Fase 27.114 — pedido do Daniel: "Ajustar Central de Ajuda e Permissoes
   // com as novas abas no menu para todas as visoes". A seção Administração
