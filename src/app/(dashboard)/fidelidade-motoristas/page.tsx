@@ -100,7 +100,12 @@ export default async function FidelidadeMotoristasPage({
         <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver os indicadores dele.</p>
       ) : (
         <>
-          <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* Pedido do Daniel (19/07): missões (de engajamento + padrão) no topo
+              da tela — é o que o cliente mais mexe (criar/editar/inativar
+              missão), não faz sentido rolar a página toda pra achar. */}
+          <MissoesGestao empresaId={empresaSelecionada} missoesIniciais={missoes} />
+
+          <div className="mb-4 mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="card p-4">
               <p className="text-xs uppercase text-slate-500">Motoristas aderidos</p>
               <p className="mt-1 text-2xl font-semibold text-slate-900">
@@ -174,8 +179,6 @@ export default async function FidelidadeMotoristasPage({
               </tbody>
             </table>
           </div>
-
-          <MissoesGestao empresaId={empresaSelecionada} missoesIniciais={missoes} />
         </>
       )}
     </div>
