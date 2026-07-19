@@ -37,7 +37,7 @@ export function LembretePwaBanner() {
           <span className="text-2xl">📱</span>
           <p className="text-sm text-slate-700">
             <strong className="font-semibold text-slate-900">Gestão de frotas na palma da mão.</strong> Instale o
-            app no seu celular pra ter mais agilidade — acompanhe tudo de onde estiver, sem precisar do computador.
+            app no seu celular pra ter mais agilidade e compartilhe o app do motorista com a sua equipe.
           </p>
         </div>
         <div className="flex items-center gap-3">
