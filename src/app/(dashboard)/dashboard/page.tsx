@@ -110,15 +110,20 @@ export default async function DashboardPage({
   // lado do posto, agora do lado do cliente/frota (só o "lado" da consulta
   // muda — ver resumoAjustesAbastecimentos). Só faz sentido com um cliente
   // selecionado (ajustes são sempre por empresa_cliente_id específica).
+  // Fase Perf-19-07 (achado do Daniel: "lentidão excessiva em muitos
+  // pontos") — antes este `await` rodava sozinho, ANTES do Promise.all logo
+  // abaixo, como um round-trip extra sequencial. Não depende de nada que o
+  // Promise.all busca, então agora entra junto nele (ver item
+  // `resumoAjustesPromise`).
   const JANELA_AJUSTES_DIAS = 30;
   const desdeAjustesIso = new Date(Date.now() - JANELA_AJUSTES_DIAS * 24 * 60 * 60 * 1000).toISOString();
-  const resumoAjustes = empresaSelecionada
-    ? await resumoAjustesAbastecimentos(supabase, {
+  const resumoAjustesPromise = empresaSelecionada
+    ? resumoAjustesAbastecimentos(supabase, {
         lado: "cliente",
         empresaId: empresaSelecionada,
         desde: desdeAjustesIso,
       })
-    : null;
+    : Promise.resolve(null);
 
   let queryMotoristasTotal = supabase.from("motoristas").select("id", { count: "exact", head: true });
   let queryMotoristasAtivos = supabase
@@ -151,6 +156,7 @@ export default async function DashboardPage({
     { data: cnhVencendo },
     { data: abastecimentosRecentes },
     { data: veiculosDaEmpresa },
+    resumoAjustes,
   ] = await Promise.all([
     supabase.from("empresas").select("id", { count: "exact", head: true }),
     supabase.from("empresas").select("id", { count: "exact", head: true }).eq("status", "ativo"),
@@ -193,6 +199,7 @@ export default async function DashboardPage({
     empresaSelecionada
       ? buscarTodosVeiculosDaEmpresa(supabase, empresaSelecionada)
       : Promise.resolve({ data: null }),
+    resumoAjustesPromise,
   ]);
 
   const totalVeiculos = empresaSelecionada ? (veiculosDaEmpresa ?? []).length : totalVeiculosGlobal;
@@ -264,10 +271,12 @@ export default async function DashboardPage({
   // ranking). Troca pela RPC SECURITY DEFINER `nome_empresa_publico` (mesma
   // já usada em negociacoesPostos.ts), que só devolve o nome — nada sensível
   // — bypassando essa RLS de propósito.
-  const nomesTop = await Promise.all(
-    idsTop.map((id) => supabase.rpc("nome_empresa_publico", { p_empresa_id: id }))
-  );
-  const nomePorEmpresaId = new Map(idsTop.map((id, i) => [id, nomesTop[i].data as string | null]));
+  // Fase Perf-19-07 — antes eram até 5 chamadas RPC individuais (uma por
+  // cliente do ranking, em `Promise.all`, mas ainda assim 5 round-trips
+  // separados ao banco). `nomes_empresas_publico` resolve todos de uma vez.
+  const { data: nomesTopRows } =
+    idsTop.length > 0 ? await supabase.rpc("nomes_empresas_publico", { p_empresa_ids: idsTop }) : { data: [] };
+  const nomePorEmpresaId = new Map((nomesTopRows ?? []).map((r) => [r.id as string, r.nome as string | null]));
   const topClientes = idsTop.map((id) => ({ nome: nomePorEmpresaId.get(id) ?? id, valor: gastoPorEmpresa.get(id)! }));
 
   // Mês selecionado no seletor único no topo da página — direciona, junto
@@ -292,32 +301,16 @@ export default async function DashboardPage({
     opcoesMes.push({ ano: data.getFullYear(), mes: data.getMonth() + 1, label: `${NOMES_MES[data.getMonth()]} ${data.getFullYear()}` });
   }
 
-  // Indicadores por centro de custo — mesmo cliente e mês selecionados acima.
-  const { data: indicadoresCentroCusto, error: erroCentroCusto } = empresaSelecionada
-    ? await supabase.rpc("indicadores_centro_custo", {
-        p_empresa_id: empresaSelecionada,
-        p_data_inicio: dataInicioInd,
-        p_data_fim: dataFimInd,
-      })
-    : { data: null, error: null };
-
-  const totaisCentroCusto = (indicadoresCentroCusto ?? []).reduce(
-    (acc, c) => ({
-      veiculos: acc.veiculos + (c.qtd_veiculos ?? 0),
-      abastecimento: acc.abastecimento + (c.custo_abastecimento ?? 0),
-      manutencao: acc.manutencao + (c.custo_manutencao ?? 0),
-    }),
-    { veiculos: 0, abastecimento: 0, manutencao: 0 }
-  );
-
-  // Manutenção preditiva — mesmo cliente selecionado acima, indicadores
-  // agregados (não a lista inteira) vindos de manutencao_preditiva_kpis.
-  const { data: manutencaoKpisRows } = empresaSelecionada
-    ? await supabase.rpc("manutencao_preditiva_kpis", { p_empresa_id: empresaSelecionada })
-    : { data: null };
-  const manutencaoKpis = manutencaoKpisRows?.[0];
-
+  // Fase Perf-19-07 (achado do Daniel: "lentidão excessiva em muitos
+  // pontos") — indicadores de centro de custo e manutenção preditiva não
+  // dependem um do outro nem dos 7 indicadores avançados logo abaixo (todos
+  // só precisam de empresaSelecionada/dataInicioInd/dataFimInd, já
+  // calculados). Antes eram 2 `await`s sequenciais + um Promise.all de 7 —
+  // 3 round-trips completos, um atrás do outro. Agora tudo entra num único
+  // Promise.all de 9.
   const [
+    { data: indicadoresCentroCusto, error: erroCentroCusto },
+    { data: manutencaoKpisRows },
     { data: variacaoPrecos },
     { data: consumoDiario },
     { data: padraoDiaSemanaRows },
@@ -327,6 +320,12 @@ export default async function DashboardPage({
     { data: eficienciaVeiculos },
   ] = empresaSelecionada
     ? await Promise.all([
+        supabase.rpc("indicadores_centro_custo", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+        }),
+        supabase.rpc("manutencao_preditiva_kpis", { p_empresa_id: empresaSelecionada }),
         supabase.rpc("indicador_variacao_precos", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
@@ -369,7 +368,28 @@ export default async function DashboardPage({
           p_data_fim: dataFimInd,
         }),
       ])
-    : [{ data: null }, { data: null }, { data: null }, { data: null }, { data: null }, { data: null }, { data: null }];
+    : [
+        { data: null, error: null },
+        { data: null },
+        { data: null },
+        { data: null },
+        { data: null },
+        { data: null },
+        { data: null },
+        { data: null },
+        { data: null },
+      ];
+
+  const totaisCentroCusto = (indicadoresCentroCusto ?? []).reduce(
+    (acc, c) => ({
+      veiculos: acc.veiculos + (c.qtd_veiculos ?? 0),
+      abastecimento: acc.abastecimento + (c.custo_abastecimento ?? 0),
+      manutencao: acc.manutencao + (c.custo_manutencao ?? 0),
+    }),
+    { veiculos: 0, abastecimento: 0, manutencao: 0 }
+  );
+
+  const manutencaoKpis = manutencaoKpisRows?.[0];
 
   // Indicador 2 — Previsão de consumo: dias reais + projeção calibrada por
   // dia da semana (só projeta se o mês selecionado for o atual e ainda

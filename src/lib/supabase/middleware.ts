@@ -83,12 +83,21 @@ export async function updateSession(request: NextRequest) {
       path.startsWith("/assinatura") || path.startsWith("/chamados") || path.startsWith("/mfa-setup");
 
     if (!rotaLiberadaSuspenso) {
-      const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+      // Fase Perf-19-07 (achado do Daniel: "lentidão excessiva em muitos
+      // pontos") — este middleware roda em TODA navegação autenticada.
+      // `perfil_usuario_atual` e `empresas_do_usuario` não dependem um do
+      // outro (o 2º só precisa do e-mail, não do resultado do 1º), mas
+      // rodavam em sequência — 2 round-trips ao Supabase em série antes
+      // mesmo da página começar a carregar. Agora rodam em paralelo; o
+      // pequeno custo de sempre buscar `empresaIds` mesmo pro raro caso de
+      // time interno é insignificante perto do ganho pra todo mundo mais.
+      const [{ data: perfil }, { data: empresaIds }] = await Promise.all([
+        supabase.rpc("perfil_usuario_atual"),
+        supabase.rpc("empresas_do_usuario", { p_email: user.email ?? "" }),
+      ]);
       const ehTimeInterno = perfil === "admin" || user.email === "d.peruffo@gmail.com";
 
       if (!ehTimeInterno) {
-        const { data: empresaIds } = await supabase.rpc("empresas_do_usuario", { p_email: user.email ?? "" });
-
         if (empresaIds && empresaIds.length > 0) {
           const { data: empresas } = await supabase.from("empresas").select("status").in("id", empresaIds);
           const todasSuspensas = (empresas?.length ?? 0) > 0 && empresas!.every((e) => e.status === "suspenso");

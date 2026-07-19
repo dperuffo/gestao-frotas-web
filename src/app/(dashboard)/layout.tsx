@@ -241,8 +241,13 @@ export default async function DashboardLayout({
   // getAuthenticatorAssuranceLevel sozinho não força o cadastro inicial (se o
   // usuário não tem nenhum fator, nextLevel fica igual a currentLevel), então
   // também checamos se existe algum fator TOTP verificado.
-  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  const { data: factors } = await supabase.auth.mfa.listFactors();
+  // Fase Perf-19-07 (achado do Daniel: "lentidão excessiva em muitos
+  // pontos") — este layout envolve TODA página do dashboard. As duas
+  // chamadas não dependem uma da outra, mas rodavam em sequência.
+  const [{ data: aal }, { data: factors }] = await Promise.all([
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+    supabase.auth.mfa.listFactors(),
+  ]);
   const temFatorVerificado = factors?.totp?.some((f) => f.status === "verified") ?? false;
   const precisaSubirNivel = aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2";
 
