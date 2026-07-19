@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { verificarAcessoFretes, MENSAGEM_FRETES_BLOQUEADO } from "@/lib/limitePlano";
+import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
 import { CancelarFreteButton } from "./_components/CancelarFreteButton";
 import { ReabrirFreteButton } from "./_components/ReabrirFreteButton";
 
@@ -62,6 +63,10 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
 
   const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
+  const negociacao = fretes.filter((f) => f.status === "disponivel" || f.status === "aguardando_confirmacao");
+  const andamento = fretes.filter((f) => f.status === "aceito" || f.status === "em_andamento");
+  const concluidos = fretes.filter((f) => f.status === "concluido" || f.status === "cancelado" || f.status === "recusado");
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -116,45 +121,93 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
           Nenhum frete publicado ainda. Clique em &quot;+ Publicar frete&quot; pra começar.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {fretes.map((f) => (
-            <div key={f.id} className="card flex flex-col gap-3 p-5">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold text-slate-900">{f.titulo}</h3>
-                <span className={COR_STATUS[f.status] ?? "badge-inativo"}>{LABEL_STATUS[f.status] ?? f.status}</span>
-              </div>
-              <p className="text-sm text-slate-600">
-                {f.origem_label} → {f.destino_label}
-              </p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-slate-900">{formatoMoeda.format(f.valor_oferecido)}</span>
-                {f.km_estimado && <span className="text-slate-500">{f.km_estimado.toLocaleString("pt-BR")} km</span>}
-              </div>
-              {f.nome_motorista && (
-                <p className="text-xs text-slate-500">
-                  Motorista: <span className="font-medium text-slate-700">{f.nome_motorista}</span>
-                </p>
-              )}
-
-              <div className="mt-auto flex items-center gap-3 border-t border-dashed border-slate-300 pt-2 text-xs">
-                {f.status !== "cancelado" && f.status !== "recusado" && (
-                  <Link href={`/fretes/${f.id}?empresa=${empresaSelecionada}`} className="font-medium text-frota-600 hover:underline">
-                    {f.status === "disponivel"
-                      ? "Ver propostas"
-                      : f.status === "concluido"
-                        ? "Ver fotos e avaliar"
-                        : "Ver detalhes"}
-                  </Link>
-                )}
-                {(f.status === "disponivel" || f.status === "aguardando_confirmacao" || f.status === "aceito") && (
-                  <CancelarFreteButton id={f.id} empresaId={empresaSelecionada} />
-                )}
-                {f.status === "recusado" && <ReabrirFreteButton id={f.id} empresaId={empresaSelecionada} />}
-              </div>
-            </div>
-          ))}
-        </div>
+        <AbasPainel
+          abas={[
+            {
+              id: "negociacao",
+              label: `Em Negociação${negociacao.length > 0 ? ` (${negociacao.length})` : ""}`,
+              conteudo: renderGrid(
+                negociacao,
+                empresaSelecionada,
+                formatoMoeda,
+                "Nenhum frete em negociação no momento.",
+              ),
+            },
+            {
+              id: "andamento",
+              label: `Aceitos/Em Andamento${andamento.length > 0 ? ` (${andamento.length})` : ""}`,
+              conteudo: renderGrid(
+                andamento,
+                empresaSelecionada,
+                formatoMoeda,
+                "Nenhum frete aceito ou em andamento agora.",
+              ),
+            },
+            {
+              id: "concluidos",
+              label: `Concluídos${concluidos.length > 0 ? ` (${concluidos.length})` : ""}`,
+              conteudo: renderGrid(concluidos, empresaSelecionada, formatoMoeda, "Nenhum frete concluído ainda."),
+            },
+          ]}
+        />
       )}
+    </div>
+  );
+}
+
+// Fase Fretes-Cliente-3-Abas (19/07) — pedido do Daniel: mesma divisão em 3
+// abas já feita no PWA Motorista (ver estrada-que-cuida/fretes_screen.dart),
+// agora na visão do cliente: Em Negociação (mercado aberto + aguardando
+// confirmação do motorista), Aceitos/Em Andamento e Concluídos (inclui
+// cancelado/recusado, pra não sumir do histórico).
+function renderGrid(
+  lista: FreteRow[],
+  empresaSelecionada: string,
+  formatoMoeda: Intl.NumberFormat,
+  mensagemVazio: string,
+) {
+  if (lista.length === 0) {
+    return <div className="card p-8 text-center text-sm text-slate-400">{mensagemVazio}</div>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {lista.map((f) => (
+        <div key={f.id} className="card flex flex-col gap-3 p-5">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-semibold text-slate-900">{f.titulo}</h3>
+            <span className={COR_STATUS[f.status] ?? "badge-inativo"}>{LABEL_STATUS[f.status] ?? f.status}</span>
+          </div>
+          <p className="text-sm text-slate-600">
+            {f.origem_label} → {f.destino_label}
+          </p>
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-semibold text-slate-900">{formatoMoeda.format(f.valor_oferecido)}</span>
+            {f.km_estimado && <span className="text-slate-500">{f.km_estimado.toLocaleString("pt-BR")} km</span>}
+          </div>
+          {f.nome_motorista && (
+            <p className="text-xs text-slate-500">
+              Motorista: <span className="font-medium text-slate-700">{f.nome_motorista}</span>
+            </p>
+          )}
+
+          <div className="mt-auto flex items-center gap-3 border-t border-dashed border-slate-300 pt-2 text-xs">
+            {f.status !== "cancelado" && f.status !== "recusado" && (
+              <Link href={`/fretes/${f.id}?empresa=${empresaSelecionada}`} className="font-medium text-frota-600 hover:underline">
+                {f.status === "disponivel"
+                  ? "Ver propostas"
+                  : f.status === "concluido"
+                    ? "Ver fotos e avaliar"
+                    : "Ver detalhes"}
+              </Link>
+            )}
+            {(f.status === "disponivel" || f.status === "aguardando_confirmacao" || f.status === "aceito") && (
+              <CancelarFreteButton id={f.id} empresaId={empresaSelecionada} />
+            )}
+            {f.status === "recusado" && <ReabrirFreteButton id={f.id} empresaId={empresaSelecionada} />}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
