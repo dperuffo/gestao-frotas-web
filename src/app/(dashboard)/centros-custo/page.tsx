@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 
 type SearchParams = { empresa?: string };
 
@@ -90,6 +91,27 @@ export default async function CentrosCustoPage({
             <Indicador label="Total de centros" valor={totalCentros} />
             <Indicador label="Ativos" valor={totalAtivos} />
             <Indicador label="Veículos alocados" valor={totalVeiculosAlocados} ajudaChave="centros_custo.veiculos_alocados" />
+          </div>
+
+          <div className="mb-4 flex justify-end">
+            <BotaoExportarTabela
+              nomeArquivo="centros-de-custo"
+              titulo="Centros de Custo"
+              colunas={[
+                { header: "Nome", chave: "nome" },
+                { header: "Código", chave: "codigo" },
+                { header: "Responsável", chave: "responsavel" },
+                { header: "Veículos alocados", chave: "veiculos" },
+                { header: "Status", chave: "status" },
+              ]}
+              linhas={centros.map((c) => ({
+                nome: c.nome,
+                codigo: c.codigo ?? "—",
+                responsavel: c.responsavel ?? "—",
+                veiculos: c.cadastro_veiculos?.[0]?.count ?? 0,
+                status: c.ativo ? "Ativo" : "Inativo",
+              }))}
+            />
           </div>
 
           <div className="card overflow-x-auto">

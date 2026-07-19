@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { ToggleAtivoUsuario } from "./_components/ToggleAtivoUsuario";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 
 export default async function UsuariosPage({
   searchParams,
@@ -67,15 +68,39 @@ export default async function UsuariosPage({
         <Indicador label="Com MFA habilitado" valor={totalMfa} />
       </div>
 
-      <form className="mb-4">
-        <input
-          type="search"
-          name="q"
-          defaultValue={q ?? ""}
-          placeholder="Buscar por nome ou e-mail..."
-          className="input max-w-sm"
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+        <form>
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Buscar por nome ou e-mail..."
+            className="input max-w-sm"
+          />
+        </form>
+        <BotaoExportarTabela
+          nomeArquivo="usuarios"
+          titulo="Usuários"
+          colunas={[
+            { header: "Nome", chave: "nome" },
+            { header: "E-mail", chave: "email" },
+            { header: "Perfil", chave: "perfil" },
+            { header: "Segmento", chave: "segmento" },
+            { header: "Cliente(s)", chave: "clientes" },
+            { header: "MFA", chave: "mfa" },
+            { header: "Status", chave: "status" },
+          ]}
+          linhas={(usuarios ?? []).map((u) => ({
+            nome: u.nome ?? "(sem nome)",
+            email: u.email,
+            perfil: PERFIL_LABEL[u.perfil as Perfil] ?? u.perfil,
+            segmento: u.segmento ?? "—",
+            clientes: (empresasPorEmail.get(u.email) ?? []).join(", ") || "—",
+            mfa: u.mfa_habilitado ? "Habilitado" : "Pendente",
+            status: u.ativo ? "Ativo" : "Inativo",
+          }))}
         />
-      </form>
+      </div>
 
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar usuários: {error.message}</p>}

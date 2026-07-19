@@ -10,6 +10,7 @@ import { TendenciaSazonalidade } from "../inteligencia-rede/_components/Tendenci
 import MapaDensidadeLazy from "../inteligencia-rede/_components/MapaDensidadeLazy";
 import { ScoreFrota } from "./_components/ScoreFrota";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 
 const TAMANHO_PAGINA = 50;
 
@@ -241,16 +242,32 @@ async function ViewRede({
   if (uf) query = query.eq("uf", uf);
   if (q) query = query.or(`razao_social.ilike.%${q}%,municipio.ilike.%${q}%,cnpj.ilike.%${q}%`);
 
-  const [{ data: postos, count: totalFiltrado, error }, { count: totalRede }, { count: totalBloqueados }] =
-    await Promise.all([
-      query,
-      supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }).eq("empresa_id", empresaId),
-      supabase
-        .from("postos_gf")
-        .select("cnpj", { count: "exact", head: true })
-        .eq("empresa_id", empresaId)
-        .eq("ativo", false),
-    ]);
+  // Fase Exportar-Cadastros — a exportação (PDF/XLSX) precisa da rede
+  // INTEIRA que bate com o filtro atual, não só os 50 postos da página em
+  // tela (query acima tem .range()) — mesmos filtros de q/uf, sem paginação.
+  let queryExportacao = supabase
+    .from("postos_gf")
+    .select("razao_social, cnpj, municipio, uf, bandeira, ativo")
+    .eq("empresa_id", empresaId)
+    .order("razao_social");
+  if (uf) queryExportacao = queryExportacao.eq("uf", uf);
+  if (q) queryExportacao = queryExportacao.or(`razao_social.ilike.%${q}%,municipio.ilike.%${q}%,cnpj.ilike.%${q}%`);
+
+  const [
+    { data: postos, count: totalFiltrado, error },
+    { count: totalRede },
+    { count: totalBloqueados },
+    { data: postosExportacao },
+  ] = await Promise.all([
+    query,
+    supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }).eq("empresa_id", empresaId),
+    supabase
+      .from("postos_gf")
+      .select("cnpj", { count: "exact", head: true })
+      .eq("empresa_id", empresaId)
+      .eq("ativo", false),
+    queryExportacao,
+  ]);
 
   const totalPaginas = Math.max(1, Math.ceil((totalFiltrado ?? 0) / TAMANHO_PAGINA));
 
@@ -260,6 +277,27 @@ async function ViewRede({
         <Indicador label="Postos na rede" valor={totalRede ?? 0} />
         <Indicador label="Liberados para abastecimento" valor={(totalRede ?? 0) - (totalBloqueados ?? 0)} />
         <Indicador label="Bloqueados pelo gestor" valor={totalBloqueados ?? 0} />
+      </div>
+
+      <div className="mb-4 flex justify-end">
+        <BotaoExportarTabela
+          nomeArquivo="postos-revendedores"
+          titulo="Postos Revendedores"
+          colunas={[
+            { header: "Razão Social", chave: "razaoSocial" },
+            { header: "CNPJ", chave: "cnpj" },
+            { header: "Município/UF", chave: "municipioUf" },
+            { header: "Bandeira", chave: "bandeira" },
+            { header: "Status", chave: "status" },
+          ]}
+          linhas={(postosExportacao ?? []).map((p) => ({
+            razaoSocial: p.razao_social ?? p.cnpj,
+            cnpj: p.cnpj,
+            municipioUf: [p.municipio, p.uf].filter(Boolean).join("/") || "—",
+            bandeira: p.bandeira ?? "—",
+            status: p.ativo ? "Ativo" : "Bloqueado",
+          }))}
+        />
       </div>
 
       <div className="card overflow-x-auto">

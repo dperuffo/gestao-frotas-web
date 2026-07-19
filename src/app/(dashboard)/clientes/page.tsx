@@ -5,6 +5,7 @@ import { formatCNPJ } from "@/lib/utils";
 import { ToggleAtivoCliente } from "./_components/ToggleAtivoCliente";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { marcarAcessosClientesVistosAcao } from "./actions";
+import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 
 function badgeClasse(status: string) {
   if (status === "ativo" || status === "trial") return "badge-ativo";
@@ -88,15 +89,37 @@ export default async function ClientesPage({
         <Indicador label="Outros status" valor={(totalGeral ?? 0) - (totalAtivos ?? 0)} />
       </div>
 
-      <form className="mb-4">
-        <input
-          type="search"
-          name="q"
-          defaultValue={q ?? ""}
-          placeholder="Buscar por Razão Social ou CNPJ..."
-          className="input max-w-sm"
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+        <form>
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Buscar por Razão Social ou CNPJ..."
+            className="input max-w-sm"
+          />
+        </form>
+        <BotaoExportarTabela
+          nomeArquivo="clientes"
+          titulo="Clientes"
+          colunas={[
+            { header: "Razão Social", chave: "nome" },
+            { header: "CNPJ", chave: "cnpj" },
+            { header: "UF", chave: "uf" },
+            { header: "Segmento", chave: "segmento" },
+            { header: "Plano", chave: "plano" },
+            { header: "Status", chave: "status" },
+          ]}
+          linhas={(clientes ?? []).map((c) => ({
+            nome: c.nome,
+            cnpj: formatCNPJ(c.cnpj),
+            uf: c.uf ?? "—",
+            segmento: c.segmento_transporte ?? "—",
+            plano: c.plano,
+            status: STATUS_EMPRESA_LABEL[c.status as StatusEmpresa] ?? c.status,
+          }))}
         />
-      </form>
+      </div>
 
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar clientes: {error.message}</p>}

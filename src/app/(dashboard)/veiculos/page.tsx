@@ -5,6 +5,7 @@ import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { ToggleAtivoVeiculo } from "./_components/ToggleAtivoVeiculo";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
+import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 
 const POR_PAGINA = 30;
 
@@ -143,22 +144,49 @@ export default async function VeiculosPage({
             <Indicador label="Inativos" valor={totalGeral - totalAtivos} />
           </div>
 
-          <form className="mb-4">
-            {/* Fase 27.31 — achado real: este form é SEPARADO do form do
-                seletor de Cliente acima. Como cada <form> só envia os
-                próprios campos ao submeter (mesmo estando na mesma página),
-                buscar aqui derrubava o ?empresa= da URL e a tela voltava a
-                pedir a seleção do cliente. Mesmo bug corrigido em
-                /abastecimentos e /motoristas. */}
-            <input type="hidden" name="empresa" value={empresaParam ?? ""} />
-            <input
-              type="search"
-              name="q"
-              defaultValue={q ?? ""}
-              placeholder="Buscar por placa, marca ou modelo..."
-              className="input max-w-sm"
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <form>
+              {/* Fase 27.31 — achado real: este form é SEPARADO do form do
+                  seletor de Cliente acima. Como cada <form> só envia os
+                  próprios campos ao submeter (mesmo estando na mesma página),
+                  buscar aqui derrubava o ?empresa= da URL e a tela voltava a
+                  pedir a seleção do cliente. Mesmo bug corrigido em
+                  /abastecimentos e /motoristas. */}
+              <input type="hidden" name="empresa" value={empresaParam ?? ""} />
+              <input
+                type="search"
+                name="q"
+                defaultValue={q ?? ""}
+                placeholder="Buscar por placa, marca ou modelo..."
+                className="input max-w-sm"
+              />
+            </form>
+            <BotaoExportarTabela
+              nomeArquivo="veiculos"
+              titulo="Veículos"
+              subtitulo={nomeEmpresaSelecionada ?? "Fleet Network Intelligence"}
+              colunas={[
+                { header: "Placa", chave: "placa" },
+                { header: "Marca/Modelo", chave: "marcaModelo" },
+                { header: "Tipo Veículo", chave: "tipoVeiculo" },
+                { header: "Tipo", chave: "tipo" },
+                { header: "Classificação", chave: "classificacao" },
+                { header: "Centro de custo", chave: "centroCusto" },
+                { header: "Localização", chave: "localizacao" },
+                { header: "Status", chave: "status" },
+              ]}
+              linhas={veiculosFiltrados.map((v) => ({
+                placa: v.placa,
+                marcaModelo: [v.marca, v.modelo].filter(Boolean).join(" ") || "—",
+                tipoVeiculo: v.tipo_veiculo ?? "—",
+                tipo: v.tipo ?? "—",
+                classificacao: v.classificacao ?? "—",
+                centroCusto: v.centro_custo_nome ?? "—",
+                localizacao: [v.municipio, v.uf_veiculo].filter(Boolean).join("/") || "—",
+                status: v.ativo ? "Ativo" : "Inativo",
+              }))}
             />
-          </form>
+          </div>
 
           <div className="card overflow-x-auto">
             {error && <p className="p-4 text-sm text-red-600">Erro ao carregar veículos: {error.message}</p>}

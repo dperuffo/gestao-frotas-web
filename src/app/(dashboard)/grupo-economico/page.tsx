@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 
 export default async function GrupoEconomicoPage() {
   const supabase = await createClient();
@@ -36,6 +37,25 @@ export default async function GrupoEconomicoPage() {
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Indicador label="Total de grupos" valor={totalGrupos} />
         <Indicador label="Ativos" valor={totalAtivos} />
+      </div>
+
+      <div className="mb-4 flex justify-end">
+        <BotaoExportarTabela
+          nomeArquivo="grupo-economico"
+          titulo="Grupo Econômico"
+          colunas={[
+            { header: "Nome", chave: "nome" },
+            { header: "CNPJ Matriz", chave: "cnpjMatriz" },
+            { header: "Clientes vinculados", chave: "vinculados" },
+            { header: "Status", chave: "status" },
+          ]}
+          linhas={(grupos ?? []).map((g) => ({
+            nome: g.nome,
+            cnpjMatriz: g.cnpj_matriz ?? "—",
+            vinculados: (g.grupos_economicos_empresas as unknown as { count: number }[])?.[0]?.count ?? 0,
+            status: g.ativo ? "Ativo" : "Inativo",
+          }))}
+        />
       </div>
 
       <div className="card overflow-x-auto">

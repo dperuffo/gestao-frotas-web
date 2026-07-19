@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/utils";
 import { ToggleAtivoMotorista } from "./_components/ToggleAtivoMotorista";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
+import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 
 const POR_PAGINA = 30;
 
@@ -45,20 +46,30 @@ export default async function MotoristasPage({
     .select("id, nome_completo, cpf, telefone, classificacao, status, cnh_vencimento, empresas(nome)")
     .order("nome_completo");
   let queryContagemFiltrada = supabase.from("motoristas").select("id", { count: "exact", head: true });
+  // Fase Exportar-Cadastros — a exportação (PDF/XLSX) precisa da lista
+  // INTEIRA que bate com o filtro atual, não só os 30 da página em tela
+  // (queryPagina tem .range()) — mesmos filtros de q/empresa, sem paginação.
+  let queryExportacao = supabase
+    .from("motoristas")
+    .select("nome_completo, cpf, telefone, classificacao, status, cnh_vencimento, empresas(nome)")
+    .order("nome_completo");
 
   if (q) {
     queryPagina = queryPagina.or(`nome_completo.ilike.%${q}%,cpf.ilike.%${q}%`);
     queryContagemFiltrada = queryContagemFiltrada.or(`nome_completo.ilike.%${q}%,cpf.ilike.%${q}%`);
+    queryExportacao = queryExportacao.or(`nome_completo.ilike.%${q}%,cpf.ilike.%${q}%`);
   }
   if (empresaSelecionada) {
     queryPagina = queryPagina.eq("empresa_id", empresaSelecionada);
     queryContagemFiltrada = queryContagemFiltrada.eq("empresa_id", empresaSelecionada);
+    queryExportacao = queryExportacao.eq("empresa_id", empresaSelecionada);
   }
   queryPagina = queryPagina.range(offset, offset + POR_PAGINA - 1);
 
   let totalAtivos = 0;
   let totalGeral = 0;
   let motoristas: Motorista[] = [];
+  let motoristasExportacao: Omit<Motorista, "id">[] = [];
   let error: { message: string } | null = null;
   let totalFiltrado = 0;
 
@@ -69,16 +80,18 @@ export default async function MotoristasPage({
       queryAtivos = queryAtivos.eq("empresa_id", empresaSelecionada);
       queryGeral = queryGeral.eq("empresa_id", empresaSelecionada);
     }
-    const [{ count: ativos }, { count: geral }, { count: filtrado }, { data, error: queryError }] = await Promise.all([
-      queryAtivos,
-      queryGeral,
-      queryContagemFiltrada,
-      queryPagina,
-    ]);
+    const [
+      { count: ativos },
+      { count: geral },
+      { count: filtrado },
+      { data, error: queryError },
+      { data: dadosExportacao },
+    ] = await Promise.all([queryAtivos, queryGeral, queryContagemFiltrada, queryPagina, queryExportacao]);
     totalAtivos = ativos ?? 0;
     totalGeral = geral ?? 0;
     totalFiltrado = filtrado ?? 0;
     motoristas = (data ?? []) as unknown as Motorista[];
+    motoristasExportacao = (dadosExportacao ?? []) as unknown as Omit<Motorista, "id">[];
     error = queryError;
   }
 
@@ -135,22 +148,47 @@ export default async function MotoristasPage({
             <Indicador label="Inativos" valor={totalGeral - totalAtivos} />
           </div>
 
-          <form className="mb-4">
-            {/* Fase 27.31 — achado real: este form é SEPARADO do form do
-                seletor de Cliente acima. Como cada <form> só envia os
-                próprios campos ao submeter (mesmo estando na mesma página),
-                buscar aqui derrubava o ?empresa= da URL e a tela voltava a
-                pedir a seleção do cliente. Mesmo bug corrigido em
-                /abastecimentos e /veiculos. */}
-            <input type="hidden" name="empresa" value={empresaParam ?? ""} />
-            <input
-              type="search"
-              name="q"
-              defaultValue={q ?? ""}
-              placeholder="Buscar por nome ou CPF..."
-              className="input max-w-sm"
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <form>
+              {/* Fase 27.31 — achado real: este form é SEPARADO do form do
+                  seletor de Cliente acima. Como cada <form> só envia os
+                  próprios campos ao submeter (mesmo estando na mesma página),
+                  buscar aqui derrubava o ?empresa= da URL e a tela voltava a
+                  pedir a seleção do cliente. Mesmo bug corrigido em
+                  /abastecimentos e /veiculos. */}
+              <input type="hidden" name="empresa" value={empresaParam ?? ""} />
+              <input
+                type="search"
+                name="q"
+                defaultValue={q ?? ""}
+                placeholder="Buscar por nome ou CPF..."
+                className="input max-w-sm"
+              />
+            </form>
+            <BotaoExportarTabela
+              nomeArquivo="motoristas"
+              titulo="Motoristas"
+              subtitulo={nomeEmpresaSelecionada ?? "Fleet Network Intelligence"}
+              colunas={[
+                { header: "Nome", chave: "nome" },
+                { header: "CPF", chave: "cpf" },
+                { header: "Telefone", chave: "telefone" },
+                { header: "Classificação", chave: "classificacao" },
+                { header: "CNH vence em", chave: "cnhVencimento" },
+                { header: "Cliente", chave: "cliente" },
+                { header: "Status", chave: "status" },
+              ]}
+              linhas={motoristasExportacao.map((m) => ({
+                nome: m.nome_completo,
+                cpf: m.cpf,
+                telefone: m.telefone ?? "—",
+                classificacao: m.classificacao,
+                cnhVencimento: formatDate(m.cnh_vencimento),
+                cliente: m.empresas?.nome ?? "—",
+                status: m.status,
+              }))}
             />
-          </form>
+          </div>
 
           <div className="card overflow-x-auto">
             {error && <p className="p-4 text-sm text-red-600">Erro ao carregar motoristas: {error.message}</p>}
