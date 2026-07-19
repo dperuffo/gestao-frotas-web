@@ -17,6 +17,7 @@ import { PrimeirosPassos } from "./_components/PrimeirosPassos";
 import { DashboardPosto } from "./_components/DashboardPosto";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { PRODUTOS_POSTO } from "@/lib/constants";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -62,14 +63,19 @@ const NOMES_MES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-type SearchParams = { empresa?: string; mesAno?: string };
+type SearchParams = { empresa?: string; mesAno?: string; combustivel?: string };
 
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { empresa: empresaParam, mesAno: mesAnoParam } = await searchParams;
+  const { empresa: empresaParam, mesAno: mesAnoParam, combustivel: combustivelParam } = await searchParams;
+  // Fase Dashboard-Filtro-Combustivel (19/07) — pedido do Daniel: seletor de
+  // combustível pros indicadores 2 (previsão de consumo), 3 (evolução do
+  // preço médio, derivado do mesmo indicador 2) e 4/5 (volume por posto).
+  // "" ou ausente = todos os combustíveis (comportamento de sempre).
+  const combustivelSelecionado = combustivelParam && combustivelParam.length > 0 ? combustivelParam : null;
   const supabase = await createClient();
   const agora = new Date();
   const inicioMesAtual = inicioDoMes(agora);
@@ -330,12 +336,18 @@ export default async function DashboardPage({
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
+          p_combustivel: combustivelSelecionado,
         }),
-        supabase.rpc("indicador_padrao_dia_semana", { p_empresa_id: empresaSelecionada, p_dias_lookback: 90 }),
+        supabase.rpc("indicador_padrao_dia_semana", {
+          p_empresa_id: empresaSelecionada,
+          p_dias_lookback: 90,
+          p_combustivel: combustivelSelecionado,
+        }),
         supabase.rpc("indicador_volume_postos", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
+          p_combustivel: combustivelSelecionado,
         }),
         supabase.rpc("indicador_ranking_veiculos", {
           p_empresa_id: empresaSelecionada,
@@ -463,6 +475,7 @@ export default async function DashboardPage({
             </p>
           </div>
           <form className="flex items-end gap-2">
+            {combustivelSelecionado && <input type="hidden" name="combustivel" value={combustivelSelecionado} />}
             {empresas.length > 1 && (
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
@@ -695,9 +708,37 @@ export default async function DashboardPage({
       )}
 
       <div id="indicadores-avancados" className="mt-8 scroll-mt-4">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">Indicadores avançados</h2>
-          <p className="text-sm text-slate-500">Preços, consumo e rankings do período selecionado no topo da página.</p>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Indicadores avançados</h2>
+            <p className="text-sm text-slate-500">Preços, consumo e rankings do período selecionado no topo da página.</p>
+          </div>
+          {/* Fase Dashboard-Filtro-Combustivel (19/07) — pedido do Daniel:
+              seletor de combustível pros indicadores 2 (previsão de
+              consumo), 3 (evolução do preço médio) e 4/5 (volume por
+              posto). Campos ocultos preservam cliente/período já
+              selecionados no topo da página (senão o submit deste form
+              perderia esses filtros). */}
+          {empresaSelecionada && (
+            <form className="flex items-end gap-2">
+              <input type="hidden" name="empresa" value={empresaSelecionada} />
+              <input type="hidden" name="mesAno" value={`${indAno}-${indMes}`} />
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500">Combustível</label>
+                <select name="combustivel" defaultValue={combustivelSelecionado ?? ""} className="input text-sm">
+                  <option value="">Todos os combustíveis</option>
+                  {PRODUTOS_POSTO.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button type="submit" className="btn-secondary text-sm">
+                Filtrar
+              </button>
+            </form>
+          )}
         </div>
 
         {!empresaSelecionada && (
@@ -708,6 +749,15 @@ export default async function DashboardPage({
 
         {empresaSelecionada && (
           <div className="space-y-6">
+            {combustivelSelecionado && (
+              <p className="rounded-lg bg-frota-50 px-4 py-2.5 text-sm text-frota-700">
+                Indicadores 2, 3, 4 e 5 filtrados por <strong>{combustivelSelecionado}</strong>. O indicador 1 (Variação
+                de preços) já compara todos os combustíveis lado a lado e continua mostrando todos.{" "}
+                <Link href={`?empresa=${empresaSelecionada}&mesAno=${indAno}-${indMes}`} className="underline">
+                  Limpar filtro
+                </Link>
+              </p>
+            )}
             <div className="card p-4">
               <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">1. Variação de preços por combustível <AjudaIcon chave="dashboard.variacao_precos" /></h3>
               <p className="mb-3 text-xs text-slate-500">

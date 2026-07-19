@@ -3801,15 +3801,15 @@ export interface Database {
         }[];
       };
       indicador_consumo_diario: {
-        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string; p_combustivel?: string | null };
         Returns: { dia: string; litros: number; valor: number }[];
       };
       indicador_padrao_dia_semana: {
-        Args: { p_empresa_id: string; p_dias_lookback?: number | null };
+        Args: { p_empresa_id: string; p_dias_lookback?: number | null; p_combustivel?: string | null };
         Returns: { dia_semana: number; media_litros: number }[];
       };
       indicador_volume_postos: {
-        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string; p_combustivel?: string | null };
         Returns: { posto_cnpj: string; posto_nome: string | null; dia: string; litros: number }[];
       };
       indicador_ranking_veiculos: {
