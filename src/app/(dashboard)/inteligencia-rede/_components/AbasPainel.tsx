@@ -5,7 +5,7 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 // ajudaChave (Fase 24, opcional) — quando informado, mostra o ícone "?" ao
 // lado da barra de abas explicando a aba ativa no momento.
-export type Aba = { id: string; label: string; conteudo: ReactNode; ajudaChave?: string };
+export type Aba = { id: string; label: ReactNode; conteudo: ReactNode; ajudaChave?: string };
 
 // Abas simples client-side — a página inteira já vem pronta do server
 // component (todo o fetch acontece lá), aqui só decide qual bloco mostrar.

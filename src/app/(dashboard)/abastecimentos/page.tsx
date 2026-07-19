@@ -4,6 +4,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
 import { AbastecimentosPosto } from "./_components/AbastecimentosPosto";
+import { LogoProvedor } from "@/components/LogoProvedor";
 
 const POR_PAGINA = 30;
 
@@ -364,7 +365,13 @@ export default async function AbastecimentosPage({
 
       {/* Fase 27.147 — pedido do Daniel: filtro por meio de pagamento ao
           lado dos demais, mesmo padrão visual do filtro de combustível já
-          usado na visão do posto. */}
+          usado na visão do posto.
+          Fase Provedores-Logos — pedido do Daniel: "os icones na frente das
+          logos também não precisa, somente a logo" — cada opção agora é só
+          a logo do provedor (LogoProvedor já cai pro texto sozinho se um
+          provedor novo ainda não tiver logo cadastrada), com um contorno
+          pra marcar qual está selecionada. "Todos" continua texto — não é
+          um provedor específico, não tem logo própria. */}
       {provedoresOpcoes.length > 1 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
           <span className="font-medium text-slate-500">Meio de pagamento:</span>
@@ -378,9 +385,12 @@ export default async function AbastecimentosPage({
             <Link
               key={p}
               href={linkFiltro({ provedor: p })}
-              className={`rounded-full px-3 py-1 font-medium ${provedor === p ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              title={nomeProvedor(p)}
+              className={`flex items-center rounded-lg border-2 px-2 py-1 ${
+                provedor === p ? "border-frota-600 bg-white" : "border-transparent bg-slate-100 opacity-60 hover:opacity-100"
+              }`}
             >
-              {nomeProvedor(p)}
+              <LogoProvedor provedor={p} className="h-4 w-auto" />
             </Link>
           ))}
         </div>

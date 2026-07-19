@@ -18,31 +18,9 @@ import { FormularioCustoFixo } from "./_components/FormularioCustoFixo";
 import { TabelaOrcamento, type LinhaOrcamento } from "./_components/TabelaOrcamento";
 import { TabelaCustosFixos, type LinhaCustoFixo } from "./_components/TabelaCustosFixos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { LogoProvedor } from "@/components/LogoProvedor";
 
 type SearchParams = { empresa?: string };
-
-// Fase 27.133 — mesmas cores/rótulo por provedor usados em /abastecimentos e
-// /dashboard, pra manter a leitura visual consistente entre as telas.
-const CORES_PROVEDOR: Record<string, string> = {
-  profrotas: "bg-blue-100 text-blue-700",
-  Valecard: "bg-purple-100 text-purple-700",
-  RedeFrota: "bg-orange-100 text-orange-700",
-  TicketLog: "bg-teal-100 text-teal-700",
-  Veloe: "bg-pink-100 text-pink-700",
-};
-
-function nomeProvedor(provedor: string) {
-  return provedor === "profrotas" ? "PróFrotas" : provedor;
-}
-
-function BadgeProvedor({ provedor }: { provedor: string }) {
-  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 text-slate-600";
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${classe}`}>
-      {nomeProvedor(provedor)}
-    </span>
-  );
-}
 
 // Painel Financeiro do cliente (Fase 22): consolida o que já existia
 // espalhado (custo de combustível e manutenção, já rastreados desde as
@@ -416,7 +394,7 @@ export default async function FinanceiroPage({
                   {indicadoresPorProvedor.map((p) => (
                     <tr key={p.provedor}>
                       <td className="py-2.5 pr-4">
-                        <BadgeProvedor provedor={p.provedor} />
+                        <LogoProvedor provedor={p.provedor} className="h-5 w-auto" />
                       </td>
                       <td className="py-2.5 pr-4 text-slate-600">{p.qtd_abastecimentos}</td>
                       <td className="py-2.5 pr-4 text-slate-600">{p.litros.toLocaleString("pt-BR")}</td>

@@ -7,6 +7,7 @@ import { FormularioNovaChaveCustosFixos } from "./_components/FormularioNovaChav
 import { ListaChavesCustosFixos } from "./_components/ListaChavesCustosFixos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { AbasPainel, type Aba } from "../inteligencia-rede/_components/AbasPainel";
+import { LogoProvedor } from "@/components/LogoProvedor";
 
 type ChaveCustosFixosRow = {
   id: string;
@@ -126,7 +127,7 @@ export default async function IntegracoesPage() {
   const abas: Aba[] = [
     {
       id: "profrotas",
-      label: "🔗 Pró-Frotas",
+      label: <LogoProvedor provedor="profrotas" className="h-5 w-auto" />,
       conteudo: (
         <div>
           <p className="mb-4 text-sm text-slate-500">
@@ -148,22 +149,22 @@ export default async function IntegracoesPage() {
     },
     {
       id: "ticketlog",
-      label: "🎫 TicketLog",
+      label: <LogoProvedor provedor="ticket_log" className="h-5 w-auto" />,
       conteudo: <SecaoProvedorGenerico nome="TicketLog" slug="ticket_log" />,
     },
     {
       id: "redefrota",
-      label: "🚛 Rede Frota",
+      label: <LogoProvedor provedor="rede_frota" className="h-5 w-auto" />,
       conteudo: <SecaoProvedorGenerico nome="Rede Frota" slug="rede_frota" />,
     },
     {
       id: "veloe",
-      label: "⚡ Veloe",
+      label: <LogoProvedor provedor="veloe" className="h-5 w-auto" />,
       conteudo: <SecaoProvedorGenerico nome="Veloe" slug="veloe" />,
     },
     {
       id: "valecard",
-      label: "💳 Valecard",
+      label: <LogoProvedor provedor="valecard" className="h-5 w-auto" />,
       conteudo: <SecaoProvedorGenerico nome="Valecard" slug="valecard" />,
     },
     {
