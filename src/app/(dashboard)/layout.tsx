@@ -17,6 +17,7 @@ import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
 import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
 import { buscarLogoutInatividadeMinutos } from "@/lib/configuracoesSistema";
 import { MonitorInatividade } from "./_components/MonitorInatividade";
+import { LembretePwaBanner } from "@/components/pwa/LembretePwaBanner";
 
 // Fase 27.15 — o ícone da "Assistente FNI" é a logo (imagem), bem mais larga
 // que um emoji, então precisa de tratamento especial no render (ver
@@ -639,7 +640,13 @@ export default async function DashboardLayout({
           <BotaoSair />
         </div>
       </aside>
-      <main className="flex-1 bg-slate-50 p-8">{children}</main>
+      <main className="flex-1 bg-slate-50 p-8">
+        {/* Pedido do Daniel (19/07): lembrete sobre a PWA mobile nas visões
+            de cliente e posto — não pro admin (time interno FNI), que não é
+            o público desse benefício. */}
+        {!ehAdmin && <LembretePwaBanner />}
+        {children}
+      </main>
     </div>
     <MonitorInatividade minutos={logoutInatividadeMinutos} />
     </TourProvider>
