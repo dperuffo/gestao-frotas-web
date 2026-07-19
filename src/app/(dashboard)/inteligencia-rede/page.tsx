@@ -110,7 +110,7 @@ export default async function InteligenciaRedePage({
           <h1 className="text-xl font-semibold text-slate-900">Inteligência de Rede</h1>
           <p className="mt-1 text-sm text-slate-500">Selecione a empresa pra ver a rede de postos dela.</p>
         </div>
-        <form className="card flex flex-wrap items-end gap-3 p-4">
+        <form className="mb-4 flex items-end gap-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
             <select name="empresa" defaultValue="" className="input text-sm">
@@ -124,8 +124,8 @@ export default async function InteligenciaRedePage({
               ))}
             </select>
           </div>
-          <button type="submit" className="btn-secondary">
-            Ver
+          <button type="submit" className="btn-secondary text-sm">
+            Trocar
           </button>
         </form>
       </div>
@@ -496,10 +496,10 @@ export default async function InteligenciaRedePage({
       </div>
 
       {!ehAdmin && empresas.length > 1 && (
-        <form className="mb-4 flex items-end gap-2 text-sm">
+        <form className="mb-4 flex items-end gap-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
-            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.nome}
@@ -507,7 +507,7 @@ export default async function InteligenciaRedePage({
               ))}
             </select>
           </div>
-          <button type="submit" className="btn-secondary">
+          <button type="submit" className="btn-secondary text-sm">
             Trocar
           </button>
         </form>

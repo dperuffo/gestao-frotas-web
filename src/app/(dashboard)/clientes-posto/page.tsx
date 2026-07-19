@@ -59,8 +59,12 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
         </div>
       </div>
 
+      {/* Este seletor troca qual POSTO (empresa própria) está ativo — não é
+          um filtro de "cliente" (as transportadoras listadas abaixo são o
+          conteúdo em si, não o que este select filtra). Por isso mantém o
+          rótulo "Empresa"/"Trocar" em vez do padrão "Cliente"/"Filtrar". */}
       {empresas.length > 1 && (
-        <form className="mb-6 flex items-end gap-2">
+        <form className="mb-4 flex items-end gap-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
@@ -73,7 +77,7 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
             </select>
           </div>
           <button type="submit" className="btn-secondary text-sm">
-            Aplicar
+            Trocar
           </button>
         </form>
       )}

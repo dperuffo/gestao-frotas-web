@@ -60,11 +60,11 @@ export default async function CentrosCustoPage({
       </div>
 
       {empresas.length > 1 && (
-        <form className="mb-6 flex items-end gap-3">
+        <form className="mb-4 flex items-end gap-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
-            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
-              <option value="">Nenhum selecionado</option>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.nome}
@@ -72,8 +72,8 @@ export default async function CentrosCustoPage({
               ))}
             </select>
           </div>
-          <button type="submit" className="btn-secondary">
-            Selecionar
+          <button type="submit" className="btn-secondary text-sm">
+            Filtrar
           </button>
         </form>
       )}

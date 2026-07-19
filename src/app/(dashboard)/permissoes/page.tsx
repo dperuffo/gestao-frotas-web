@@ -116,41 +116,40 @@ export default async function PermissoesPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Permissões por Perfil</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Controla o que cada perfil de usuário pode ver e fazer no sistema. Clique no
-            interruptor para permitir ou negar o acesso de um perfil a uma funcionalidade.
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-slate-900">Permissões por Perfil</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Controla o que cada perfil de usuário pode ver e fazer no sistema. Clique no
+          interruptor para permitir ou negar o acesso de um perfil a uma funcionalidade.
+        </p>
+        {!souAdmin && (
+          <p className="mt-2 text-sm text-frota-700">
+            Você está vendo apenas os perfis do seu nível de gestão ou abaixo, para{" "}
+            {nomeEmpresaSelecionada ? <strong>{nomeEmpresaSelecionada}</strong> : "sua empresa"}.
+            Permissões do Administrador e de outros clientes não ficam visíveis nem editáveis
+            por aqui.
           </p>
-          {!souAdmin && (
-            <p className="mt-2 text-sm text-frota-700">
-              Você está vendo apenas os perfis do seu nível de gestão ou abaixo, para{" "}
-              {nomeEmpresaSelecionada ? <strong>{nomeEmpresaSelecionada}</strong> : "sua empresa"}.
-              Permissões do Administrador e de outros clientes não ficam visíveis nem editáveis
-              por aqui.
-            </p>
-          )}
-        </div>
-        {!souAdmin && empresas.length > 1 && (
-          <form className="flex items-end gap-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
-              <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
-                <option value="">Selecione um cliente...</option>
-                {empresas.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" className="btn-secondary text-sm">
-              Aplicar
-            </button>
-          </form>
         )}
       </div>
+
+      {!souAdmin && empresas.length > 1 && (
+        <form className="mb-4 flex items-end gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">Selecione um cliente...</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn-secondary text-sm">
+            Filtrar
+          </button>
+        </form>
+      )}
 
       <div className="card overflow-x-auto">
         {error && (

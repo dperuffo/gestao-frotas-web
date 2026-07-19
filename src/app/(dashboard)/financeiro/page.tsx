@@ -340,34 +340,33 @@ export default async function FinanceiroPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Painel Financeiro</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {mostrarFni
-              ? "Indicadores financeiros da FNI — planos, cobrança e MRR. Selecione um cliente ao lado para ver o painel de custo dele."
-              : `Custo de combustível, manutenção, custos fixos e orçamento — ${NOMES_MES[agora.getMonth()]}/${agora.getFullYear()}.`}
-          </p>
-        </div>
-        {empresas.length > 1 && (
-          <form className="flex items-end gap-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
-              <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
-                <option value="">{ehAdmin ? "Indicadores da FNI" : "Nenhum selecionado"}</option>
-                {empresas.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" className="btn-secondary">
-              Selecionar
-            </button>
-          </form>
-        )}
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-slate-900">Painel Financeiro</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          {mostrarFni
+            ? "Indicadores financeiros da FNI — planos, cobrança e MRR. Selecione um cliente abaixo para ver o painel de custo dele."
+            : `Custo de combustível, manutenção, custos fixos e orçamento — ${NOMES_MES[agora.getMonth()]}/${agora.getFullYear()}.`}
+        </p>
       </div>
+
+      {empresas.length > 1 && (
+        <form className="mb-4 flex items-end gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">{ehAdmin ? "Indicadores da FNI" : "Selecione um cliente..."}</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn-secondary text-sm">
+            Filtrar
+          </button>
+        </form>
+      )}
 
       {mostrarFni && <IndicadoresFinanceirosFni />}
 

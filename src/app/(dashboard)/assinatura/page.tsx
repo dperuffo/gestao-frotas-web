@@ -125,30 +125,29 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Minha Assinatura</h1>
-          <p className="mt-1 text-sm text-slate-500">Plano atual, uso e histórico de cobrança.</p>
-        </div>
-        {empresas.length > 1 && (
-          <form className="flex items-end gap-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
-              <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
-                <option value="">Nenhum selecionado</option>
-                {empresas.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" className="btn-secondary">
-              Selecionar
-            </button>
-          </form>
-        )}
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-slate-900">Minha Assinatura</h1>
+        <p className="mt-1 text-sm text-slate-500">Plano atual, uso e histórico de cobrança.</p>
       </div>
+
+      {empresas.length > 1 && (
+        <form className="mb-4 flex items-end gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">Selecione um cliente...</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn-secondary text-sm">
+            Filtrar
+          </button>
+        </form>
+      )}
 
       {bloqueado === "1" && (
         <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">

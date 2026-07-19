@@ -98,14 +98,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
         </Link>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Indicador label="Abertos" valor={totalAbertos} corDestaque="text-amber-600" ajudaChave="chamados.status" />
-        <Indicador label="Em análise" valor={totalEmAnalise} corDestaque="text-blue-600" ajudaChave="chamados.status" />
-        <Indicador label="Resolvidos" valor={totalResolvidos} corDestaque="text-emerald-600" ajudaChave="chamados.status" />
-        <Indicador label="Com atualização não vista" valor={totalNaoVistos} corDestaque="text-red-600" />
-      </div>
-
-      <form className="mb-6 flex flex-wrap items-end gap-3">
+      <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
@@ -156,6 +149,13 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
           Filtrar
         </button>
       </form>
+
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Indicador label="Abertos" valor={totalAbertos} corDestaque="text-amber-600" ajudaChave="chamados.status" />
+        <Indicador label="Em análise" valor={totalEmAnalise} corDestaque="text-blue-600" ajudaChave="chamados.status" />
+        <Indicador label="Resolvidos" valor={totalResolvidos} corDestaque="text-emerald-600" ajudaChave="chamados.status" />
+        <Indicador label="Com atualização não vista" valor={totalNaoVistos} corDestaque="text-red-600" />
+      </div>
 
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar chamados: {error.message}</p>}

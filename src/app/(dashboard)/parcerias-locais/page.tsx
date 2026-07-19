@@ -129,7 +129,7 @@ export default async function ParceriasLocaisPage({
             </select>
           </div>
           <button type="submit" className="btn-secondary text-sm">
-            Filtrar
+            Trocar
           </button>
         </form>
       )}

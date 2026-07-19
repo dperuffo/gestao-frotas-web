@@ -95,12 +95,12 @@ export default async function ManutencaoPreditivaPage({
         </p>
       </div>
 
-      <form className="mb-4 flex flex-wrap items-end gap-3">
+      <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
-            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
-              <option value="">Nenhum selecionado</option>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.nome}
@@ -116,13 +116,13 @@ export default async function ManutencaoPreditivaPage({
             name="busca"
             defaultValue={busca ?? ""}
             placeholder="Placa, marca ou modelo..."
-            className="input"
+            className="input text-sm"
           />
         </div>
         {(centrosCusto?.length ?? 0) > 0 && (
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Centro de custo</label>
-            <select name="centroCusto" defaultValue={centroCusto ?? ""} className="input">
+            <select name="centroCusto" defaultValue={centroCusto ?? ""} className="input text-sm">
               <option value="">Todos</option>
               {centrosCusto!.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -134,7 +134,7 @@ export default async function ManutencaoPreditivaPage({
         )}
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Status</label>
-          <select name="status" defaultValue={status ?? ""} className="input">
+          <select name="status" defaultValue={status ?? ""} className="input text-sm">
             <option value="">Todos</option>
             <option value="critico">🔴 Crítico</option>
             <option value="alerta">🟡 Alerta</option>
@@ -143,13 +143,13 @@ export default async function ManutencaoPreditivaPage({
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Ordenar por</label>
-          <select name="ordenar" defaultValue={ordenar} className="input">
+          <select name="ordenar" defaultValue={ordenar} className="input text-sm">
             <option value="score">Pior estado primeiro</option>
             <option value="km">Maior km</option>
             <option value="placa">Placa A→Z</option>
           </select>
         </div>
-        <button type="submit" className="btn-primary">
+        <button type="submit" className="btn-secondary text-sm">
           Filtrar
         </button>
       </form>

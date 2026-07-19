@@ -53,20 +53,30 @@ export default async function NotasFiscaisPage({
   if (!empresaSelecionada) {
     return (
       <div>
-        <h1 className="mb-4 text-xl font-semibold text-slate-900">Notas Fiscais</h1>
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-slate-900">Notas Fiscais</h1>
+        </div>
         {empresas.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhuma empresa disponível.</p>
         ) : (
-          <div className="card p-4">
-            <p className="mb-3 text-sm text-slate-600">Selecione a empresa:</p>
-            <div className="flex flex-wrap gap-2">
-              {empresas.map((e) => (
-                <Link key={e.id} href={`/notas-fiscais?empresa=${e.id}`} className="btn-secondary">
-                  {e.nome}
-                </Link>
-              ))}
+          <form className="mb-4 flex items-end gap-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+              <select name="empresa" defaultValue="" className="input text-sm">
+                <option value="" disabled>
+                  Selecione...
+                </option>
+                {empresas.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.nome}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
+            <button type="submit" className="btn-secondary text-sm">
+              Trocar
+            </button>
+          </form>
         )}
       </div>
     );
@@ -166,17 +176,28 @@ export default async function NotasFiscaisPage({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Notas Fiscais</h1>
-          {nomeEmpresaSelecionada && <p className="mt-1 text-sm text-slate-500">{nomeEmpresaSelecionada}</p>}
-        </div>
-        {empresas.length > 1 && (
-          <Link href="/notas-fiscais" className="text-sm text-frota-600 hover:underline">
-            Trocar empresa
-          </Link>
-        )}
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-slate-900">Notas Fiscais</h1>
+        {nomeEmpresaSelecionada && <p className="mt-1 text-sm text-slate-500">{nomeEmpresaSelecionada}</p>}
       </div>
+
+      {empresas.length > 1 && (
+        <form className="mb-4 flex items-end gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <select name="empresa" defaultValue={empresaSelecionada} className="input text-sm">
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn-secondary text-sm">
+            Trocar
+          </button>
+        </form>
+      )}
 
       <RecolhaPorCiclo
         ciclos={ciclos}

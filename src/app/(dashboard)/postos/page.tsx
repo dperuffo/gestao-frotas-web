@@ -97,6 +97,53 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
           consultar preços — não é verdade, a aba "Explorar universo ANP"
           já cobre isso. Aviso informativo, só na visão "rede" (onde faz
           sentido, é onde o cliente ainda não tem nada carregado). */}
+      <form className="mb-4 flex flex-wrap items-end gap-2">
+        <input type="hidden" name="visao" value={visao} />
+        {empresas.length > 1 && (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">Selecione um cliente...</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500">UF</label>
+          <select name="uf" defaultValue={uf ?? ""} className="input text-sm">
+            <option value="">Todas</option>
+            {UFS.map((sigla) => (
+              <option key={sigla} value={sigla}>
+                {sigla}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1">
+          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Razão social, município ou CNPJ..."
+            className="input text-sm"
+          />
+        </div>
+        {visao === "universo" && (
+          <label className="mb-2 flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" name="somenteAtivos" value="1" defaultChecked={somenteAtivos === "1"} />
+            Só &quot;Gestão de Frotas&quot;
+          </label>
+        )}
+        <button type="submit" className="btn-secondary text-sm">
+          Filtrar
+        </button>
+      </form>
+
       {visao === "rede" && (
         <p className="mb-4 rounded-lg bg-blue-50 px-4 py-2.5 text-xs text-blue-800">
           💡 Ainda não carregou os postos do seu relacionamento? Sem problema: a Roteirização e a
@@ -126,53 +173,6 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
           </span>
         </div>
       )}
-
-      <form className="mb-4 flex flex-wrap items-end gap-3">
-        <input type="hidden" name="visao" value={visao} />
-        {empresas.length > 1 && (
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
-            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
-              <option value="">Nenhum selecionado</option>
-              {empresas.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">UF</label>
-          <select name="uf" defaultValue={uf ?? ""} className="input">
-            <option value="">Todas</option>
-            {UFS.map((sigla) => (
-              <option key={sigla} value={sigla}>
-                {sigla}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
-          <input
-            type="search"
-            name="q"
-            defaultValue={q ?? ""}
-            placeholder="Razão social, município ou CNPJ..."
-            className="input"
-          />
-        </div>
-        {visao === "universo" && (
-          <label className="mb-2 flex items-center gap-2 text-sm text-slate-600">
-            <input type="checkbox" name="somenteAtivos" value="1" defaultChecked={somenteAtivos === "1"} />
-            Só &quot;Gestão de Frotas&quot;
-          </label>
-        )}
-        <button type="submit" className="btn-secondary">
-          Filtrar
-        </button>
-      </form>
 
       {!empresaSelecionada && (
         <p className="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">

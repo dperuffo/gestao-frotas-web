@@ -44,10 +44,10 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
           <h1 className="text-xl font-semibold text-slate-900">Documentos</h1>
         </div>
         {semEmpresaEscolhida ? (
-          <form className="mb-4 flex items-end gap-2 text-sm">
+          <form className="mb-4 flex items-end gap-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
-              <select name="empresa" className="input">
+              <select name="empresa" className="input text-sm">
                 <option value="">Selecione...</option>
                 {empresas.map((e) => (
                   <option key={e.id} value={e.id}>
@@ -56,8 +56,8 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
                 ))}
               </select>
             </div>
-            <button type="submit" className="btn-secondary">
-              Selecionar
+            <button type="submit" className="btn-secondary text-sm">
+              Trocar
             </button>
           </form>
         ) : (
@@ -101,10 +101,10 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
       </div>
 
       {empresas.length > 1 && (
-        <form className="mb-4 flex items-end gap-2 text-sm">
+        <form className="mb-4 flex items-end gap-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
-            <select name="empresa" defaultValue={empresaSelecionada} className="input">
+            <select name="empresa" defaultValue={empresaSelecionada} className="input text-sm">
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.nome}
@@ -112,7 +112,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
               ))}
             </select>
           </div>
-          <button type="submit" className="btn-secondary">
+          <button type="submit" className="btn-secondary text-sm">
             Trocar
           </button>
         </form>

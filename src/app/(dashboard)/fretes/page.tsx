@@ -85,22 +85,12 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
         )}
       </div>
 
-      {empresaSelecionada && !acessoLiberado && (
-        <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          {MENSAGEM_FRETES_BLOQUEADO}{" "}
-          <Link href={`/assinatura?empresa=${empresaSelecionada}`} className="font-medium underline">
-            Ver planos
-          </Link>
-          . Fretes já publicados continuam visíveis abaixo.
-        </div>
-      )}
-
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
-              <option value="">Selecione...</option>
+              <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.nome}
@@ -112,6 +102,16 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
             Filtrar
           </button>
         </form>
+      )}
+
+      {empresaSelecionada && !acessoLiberado && (
+        <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {MENSAGEM_FRETES_BLOQUEADO}{" "}
+          <Link href={`/assinatura?empresa=${empresaSelecionada}`} className="font-medium underline">
+            Ver planos
+          </Link>
+          . Fretes já publicados continuam visíveis abaixo.
+        </div>
       )}
 
       {!empresaSelecionada ? (

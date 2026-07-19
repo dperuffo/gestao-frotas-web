@@ -37,7 +37,7 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
         <form className="mb-4 flex items-end gap-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
-            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input max-w-sm">
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input max-w-sm text-sm">
               <option value="">Todos os clientes</option>
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -47,7 +47,7 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
             </select>
           </div>
           <button type="submit" className="btn-secondary text-sm">
-            Aplicar
+            Filtrar
           </button>
         </form>
       )}

@@ -164,33 +164,32 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Relatórios</h1>
-          <p className="text-sm text-slate-500">
-            Relatório executivo, performance por posto, score × utilização, anomalias e relatórios
-            personalizados — {nomeEmpresaSelecionada}.
-          </p>
-        </div>
-        {empresas.length > 1 && (
-          <form className="flex items-end gap-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
-              <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
-                <option value="">{perfil === "admin" ? "Rede inteira (todos os clientes)" : "Todas as empresas do meu grupo"}</option>
-                {empresas.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" className="btn-secondary">
-              Filtrar
-            </button>
-          </form>
-        )}
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-slate-900">Relatórios</h1>
+        <p className="text-sm text-slate-500">
+          Relatório executivo, performance por posto, score × utilização, anomalias e relatórios
+          personalizados — {nomeEmpresaSelecionada}.
+        </p>
       </div>
+
+      {empresas.length > 1 && (
+        <form className="mb-4 flex items-end gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">{perfil === "admin" ? "Rede inteira (todos os clientes)" : "Todas as empresas do meu grupo"}</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn-secondary text-sm">
+            Filtrar
+          </button>
+        </form>
+      )}
 
       <AbasPainel
         abas={[

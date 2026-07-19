@@ -53,6 +53,40 @@ export default async function RoteirizacaoUfPage({
         </p>
       </div>
 
+      <form className="mb-4 flex flex-wrap items-end gap-2">
+        {empresas.length > 1 && (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">Selecione um cliente...</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500">UF</label>
+          <select name="uf" defaultValue={uf ?? ""} className="input text-sm">
+            <option value="">Selecione...</option>
+            {UFS.map((sigla) => (
+              <option key={sigla} value={sigla}>
+                {sigla}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1">
+          <label className="mb-1 block text-xs font-medium text-slate-500">Município</label>
+          <input type="text" name="municipio" defaultValue={municipio ?? ""} placeholder="Opcional" className="input text-sm" />
+        </div>
+        <button type="submit" className="btn-secondary text-sm">
+          Filtrar
+        </button>
+      </form>
+
       {/* Fase 27.35 — achado real: cliente novo achava que precisava
           carregar a rede própria de postos ANTES de conseguir consultar
           rota/posto. Não é verdade — a consulta já funciona com a base
@@ -70,40 +104,6 @@ export default async function RoteirizacaoUfPage({
       </p>
 
       <AbasRoteirizacao ativo="uf" />
-
-      <form className="mb-4 flex flex-wrap items-end gap-3">
-        {empresas.length > 1 && (
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
-            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
-              <option value="">Nenhum selecionado</option>
-              {empresas.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">UF</label>
-          <select name="uf" defaultValue={uf ?? ""} className="input">
-            <option value="">Selecione...</option>
-            {UFS.map((sigla) => (
-              <option key={sigla} value={sigla}>
-                {sigla}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Município</label>
-          <input type="text" name="municipio" defaultValue={municipio ?? ""} placeholder="Opcional" className="input" />
-        </div>
-        <button type="submit" className="btn-primary">
-          Buscar
-        </button>
-      </form>
 
       {!empresaSelecionada && (
         <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">

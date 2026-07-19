@@ -58,11 +58,13 @@ export default async function PrecosPostosPage({
       </div>
 
       {empresas.length > 1 && (
-        <form className="mb-6 flex items-end gap-2">
+        <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">
+              {souPosto ? "Empresa" : "Cliente"}
+            </label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
-              <option value="">Selecione...</option>
+              <option value="">{souPosto ? "Selecione..." : "Selecione um cliente..."}</option>
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.nome}
@@ -71,7 +73,7 @@ export default async function PrecosPostosPage({
             </select>
           </div>
           <button type="submit" className="btn-secondary text-sm">
-            Aplicar
+            {souPosto ? "Trocar" : "Filtrar"}
           </button>
         </form>
       )}

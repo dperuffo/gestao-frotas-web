@@ -305,8 +305,12 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
         </div>
       </div>
 
+      {/* Este seletor troca qual POSTO (empresa própria) está ativo — não é
+          um filtro de "cliente" de terceiros. Mantém "Empresa"/"Trocar" em
+          vez do padrão "Cliente"/"Filtrar" (mesmo raciocínio de
+          clientes-posto/meu-posto). */}
       {empresas.length > 1 && (
-        <form className="mb-6 flex items-end gap-2">
+        <form className="mb-4 flex items-end gap-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
@@ -319,7 +323,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
             </select>
           </div>
           <button type="submit" className="btn-secondary text-sm">
-            Aplicar
+            Trocar
           </button>
         </form>
       )}
