@@ -5,6 +5,7 @@ import { FormPostoRecomendado } from "../_components/FormPostoRecomendado";
 import { RemoverPostoRecomendadoButton } from "../_components/RemoverPostoRecomendadoButton";
 import { AvaliarMotoristaForm } from "../_components/AvaliarMotoristaForm";
 import { FretesDocumentos, type CteRow, type CiotRow } from "../_components/FretesDocumentos";
+import { PagamentosFrete, type PagamentoFrete } from "../_components/PagamentosFrete";
 
 type FreteDetalhe = {
   id: string;
@@ -108,6 +109,16 @@ export default async function FreteDetalhePage({
       .eq("ativo", true),
     supabase.from("fretes_avaliacoes").select("avaliador, estrelas, comentario").eq("frete_id", id),
   ]);
+
+  // Fase Fretes-Adiantamento-Combustível (19/07) — parcelas de pagamento
+  // (adiantamento/saldo_final), geradas automaticamente pelo banco quando
+  // o frete vira "aceito" (ver trg_gerar_pagamentos_frete).
+  const { data: pagamentosData } = await supabase
+    .from("fretes_pagamentos")
+    .select("id, tipo, percentual, valor, status, pago_em")
+    .eq("frete_id", id)
+    .order("tipo");
+  const pagamentos = (pagamentosData ?? []) as PagamentoFrete[];
 
   // Fase Fretes-CIOT-CTe (18/07) — documentos registrados pro frete (não
   // emitidos por aqui, ver comentário em src/lib/cte.ts). Bucket
@@ -286,6 +297,8 @@ export default async function FreteDetalhePage({
           />
         </div>
       )}
+
+      <PagamentosFrete freteId={id} freteConcluido={freteTipado.status === "concluido"} pagamentos={pagamentos} />
 
       <FretesDocumentos freteId={id} empresaId={empresaId} ctes={ctes} ciots={ciots} />
 

@@ -936,6 +936,10 @@ export interface Database {
           carga_altura_m: number | null;
           veiculos_aceitos: string[];
           carrocerias_aceitas: string[];
+          // Fase Fretes-Adiantamento-Combustível (19/07).
+          percentual_adiantamento: number;
+          saldo_combustivel_tipo: "Valor" | "Volume" | null;
+          saldo_combustivel_alocado: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["fretes"]["Row"]> & {
           empresa_id: string;
@@ -1110,6 +1114,32 @@ export interface Database {
           numero_ciot: string;
         };
         Update: Partial<Database["public"]["Tables"]["fretes_ciot"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase Fretes-Adiantamento-Combustível (19/07) — parcelas de
+      // pagamento do frete (entrada + saldo final), geradas automaticamente
+      // quando o frete é aceito (ver trg_gerar_pagamentos_frete).
+      fretes_pagamentos: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          frete_id: string;
+          tipo: "adiantamento" | "saldo_final";
+          percentual: number;
+          valor: number;
+          status: "pendente" | "pago";
+          pago_em: string | null;
+          pago_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_pagamentos"]["Row"]> & {
+          empresa_id: string;
+          frete_id: string;
+          tipo: "adiantamento" | "saldo_final";
+          percentual: number;
+          valor: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_pagamentos"]["Row"]>;
         Relationships: [];
       };
       fidelidade_dependentes: {
@@ -3618,6 +3648,11 @@ export interface Database {
       avaliar_frete: {
         Args: { p_frete_id: string; p_estrelas: number; p_comentario?: string | null };
         Returns: undefined;
+      };
+      // Fase Fretes-Adiantamento-Combustível (19/07).
+      marcar_pagamento_frete: {
+        Args: { p_frete_id: string; p_tipo: string };
+        Returns: Json;
       };
       resgates_beneficios_empresa: {
         Args: { p_empresa_id: string };

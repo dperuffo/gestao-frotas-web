@@ -107,7 +107,25 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
   const veiculosAceitos = formData.getAll("veiculos_aceitos").map(String);
   const carroceriasAceitas = formData.getAll("carrocerias_aceitas").map(String);
 
+  // Fase Fretes-Adiantamento-Combustível (19/07) — pedido do Daniel:
+  // entrada/saldo final (default 30/70, gerado automaticamente quando o
+  // frete é aceito — ver trigger trg_gerar_pagamentos_frete) e, opcional,
+  // uma reserva de combustível que o motorista consome primeiro (antes da
+  // cota do veículo — ver alocar_abastecimento_saldo).
+  const percentualAdiantamentoRaw = String(formData.get("percentual_adiantamento") ?? "").trim();
+  const percentualAdiantamento = percentualAdiantamentoRaw ? Number(percentualAdiantamentoRaw) : 30;
+  const saldoCombustivelTipoRaw = String(formData.get("saldo_combustivel_tipo") ?? "").trim();
+  const saldoCombustivelTipo = saldoCombustivelTipoRaw === "Valor" || saldoCombustivelTipoRaw === "Volume" ? saldoCombustivelTipoRaw : null;
+  const saldoCombustivelAlocadoRaw = String(formData.get("saldo_combustivel_alocado") ?? "").trim();
+  const saldoCombustivelAlocado = saldoCombustivelTipo && saldoCombustivelAlocadoRaw ? Number(saldoCombustivelAlocadoRaw) : null;
+
   if (!titulo) return { erro: "Título é obrigatório." };
+  if (!Number.isFinite(percentualAdiantamento) || percentualAdiantamento < 0 || percentualAdiantamento > 100) {
+    return { erro: "Percentual de adiantamento precisa estar entre 0 e 100." };
+  }
+  if (saldoCombustivelTipo && (!Number.isFinite(saldoCombustivelAlocado) || (saldoCombustivelAlocado as number) <= 0)) {
+    return { erro: "Informe um valor válido pra reserva de combustível." };
+  }
   if (!origemLabel || !Number.isFinite(origemLat) || !Number.isFinite(origemLon)) {
     return { erro: "Escolha a origem na lista de sugestões." };
   }
@@ -195,6 +213,9 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
     carga_altura_m: cargaAltura,
     veiculos_aceitos: veiculosAceitos,
     carrocerias_aceitas: carroceriasAceitas,
+    percentual_adiantamento: percentualAdiantamento,
+    saldo_combustivel_tipo: saldoCombustivelTipo,
+    saldo_combustivel_alocado: saldoCombustivelAlocado,
   });
   if (error) return { erro: `Não foi possível publicar o frete: ${error.message}` };
 
@@ -279,6 +300,17 @@ export async function removerPostoRecomendadoAcao(id: string, freteId: string, e
   if (!(await empresaPertenceAoUsuario(supabase, empresaId))) return;
   await supabase.from("fretes_postos_recomendados").delete().eq("id", id);
   revalidatePath(`/fretes/${freteId}`);
+}
+
+// Fase Fretes-Adiantamento-Combustível (19/07) — confirma o pagamento de
+// uma parcela (adiantamento ou saldo_final). A regra "saldo_final só após
+// concluído" é aplicada no banco (marcar_pagamento_frete), aqui só repassa.
+export async function marcarPagamentoAcao(freteId: string, tipo: "adiantamento" | "saldo_final") {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("marcar_pagamento_frete", { p_frete_id: freteId, p_tipo: tipo });
+  if (error) return { erro: error.message };
+  revalidatePath(`/fretes/${freteId}`);
+  return { status: (data as { status?: string })?.status };
 }
 
 export async function avaliarMotoristaAcao(

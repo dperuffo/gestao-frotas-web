@@ -13,6 +13,7 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
   const [isPending, startTransition] = useTransition();
   const [modo, setModo] = useState<"mercado" | "direto">("mercado");
   const [motoristaId, setMotoristaId] = useState("");
+  const [tipoSaldoCombustivel, setTipoSaldoCombustivel] = useState<"" | "Valor" | "Volume">("");
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -129,6 +130,55 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
                 {c}
               </label>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="card p-6">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900">Adiantamento e combustível</h2>
+        <p className="mb-4 text-xs text-slate-500">
+          Condições financeiras do frete — pagamento em duas parcelas e, se quiser, uma reserva de combustível pro
+          motorista abastecer durante o frete (consumida antes da cota normal do veículo).
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Adiantamento na aceitação (%)</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              name="percentual_adiantamento"
+              defaultValue={30}
+              className="input"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              O motorista aceita o frete → você paga esse % de entrada. O restante fica pra pagar na conclusão.
+            </p>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Reserva de combustível</label>
+            <select
+              name="saldo_combustivel_tipo"
+              value={tipoSaldoCombustivel}
+              onChange={(e) => setTipoSaldoCombustivel(e.target.value as "" | "Valor" | "Volume")}
+              className="input"
+            >
+              <option value="">Sem reserva de combustível</option>
+              <option value="Valor">Em R$</option>
+              <option value="Volume">Em litros</option>
+            </select>
+            {tipoSaldoCombustivel && (
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                name="saldo_combustivel_alocado"
+                required
+                placeholder={tipoSaldoCombustivel === "Valor" ? "Ex.: 500 (R$)" : "Ex.: 100 (litros)"}
+                className="input mt-2"
+              />
+            )}
           </div>
         </div>
       </section>
