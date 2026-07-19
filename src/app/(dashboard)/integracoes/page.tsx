@@ -6,15 +6,25 @@ import { ListaChaves } from "./_components/ListaChaves";
 import { FormularioNovaChaveCustosFixos } from "./_components/FormularioNovaChaveCustosFixos";
 import { ListaChavesCustosFixos } from "./_components/ListaChavesCustosFixos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { AbasPainel, type Aba } from "../inteligencia-rede/_components/AbasPainel";
+
+type ChaveCustosFixosRow = {
+  id: string;
+  nome: string;
+  ativa: boolean | null;
+  criada_em: string | null;
+  ultimo_uso: string | null;
+  escopos: string[];
+  empresa_nome: string | null;
+};
 
 export default async function IntegracoesPage() {
   const supabase = await createClient();
 
   // Fase 27.50 — um posto revendedor (perfil "posto") também acessa esta
   // tela, mas só pra gerar/gerenciar a própria chave de Negociação — o sync
-  // ProFrotas e os demais escopos do Hub (custos fixos, abastecimentos,
-  // manutenções, cadastros) são específicos do lado Frota e ficam
-  // escondidos pra esse perfil.
+  // ProFrotas e os demais meios de pagamento (TicketLog, Rede Frota, Veloe
+  // etc.) são específicos do lado Frota e ficam escondidos pra esse perfil.
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -52,53 +62,205 @@ export default async function IntegracoesPage() {
   // Chaves do Hub de Integrações (Fase 22, generalizado na Fase 25) — lista
   // todo mundo que o usuário enxerga via RLS (própria empresa, ou todas se
   // for admin) e a lista de empresas disponíveis pra gerar uma chave nova.
-  // Cada chave agora carrega um array de escopos granulares (ex:
-  // "abastecimentos:write", "veiculos:read") em vez de servir só pra
-  // custos fixos.
+  // Cada chave carrega um array de escopos granulares (ex:
+  // "abastecimentos:write", "veiculos:read") em vez de ser presa a um único
+  // provedor — a mesma chave serve pra qualquer meio de pagamento, o
+  // provedor é identificado pelo campo "provedor" no corpo de cada chamada.
   const { empresas } = await resolverEmpresaAtual(supabase);
   const { data: chavesCustosFixos, error: erroChavesCustosFixos } = await supabase
     .from("api_keys")
     .select("id, nome, ativa, criada_em, ultimo_uso, escopos, empresas(nome)")
     .order("criada_em", { ascending: false });
 
-  return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Integrações</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {ehPosto
-            ? "Gere uma chave de API pra enviar propostas de negociação aos seus clientes e acompanhar/responder o andamento, direto do sistema do seu posto."
-            : "Conecte a frota de um cliente à API da PróFrotas para que os abastecimentos cheguem automaticamente, sem lançamento manual."}
-        </p>
-      </div>
+  const chavesHub: ChaveCustosFixosRow[] = (chavesCustosFixos ?? []).map((c) => ({
+    id: c.id,
+    nome: c.nome,
+    ativa: c.ativa,
+    criada_em: c.criada_em,
+    ultimo_uso: c.ultimo_uso,
+    escopos: Array.isArray(c.escopos) ? (c.escopos as string[]) : [],
+    empresa_nome: c.empresas?.nome ?? null,
+  }));
 
-      {!ehPosto && (
-        <>
+  // Posto: nenhum meio de pagamento de combustível se aplica (quem compra
+  // combustível é o cliente/frota, não o posto) — mantém a tela como
+  // sempre foi, só com o Hub genérico (escopo de Negociação/Notas
+  // Fiscais/Abastecimentos Fornecidos).
+  if (ehPosto) {
+    return (
+      <div>
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-slate-900">Integrações</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Gere uma chave de API pra enviar propostas de negociação aos seus clientes e acompanhar/responder
+            o andamento, direto do sistema do seu posto.
+          </p>
+        </div>
+        <SecaoHub
+          ehPosto
+          empresas={empresas}
+          chaves={chavesHub}
+          erro={erroChavesCustosFixos ? erroChavesCustosFixos.message : null}
+        />
+      </div>
+    );
+  }
+
+  // Fase Integracoes-Abas — pedido do Daniel: "Solicito que coloque 1 aba
+  // para cada meio de pagamento: Pró-Frotas, TicketLog, Rede Frota, Veloe e
+  // outras que virão. Organizar esta tela". Hoje só a Pró-Frotas tem
+  // integração NATIVA (sync automático via token JWT, tabela
+  // profrotas_api_keys) — os demais meios de pagamento entram pelo Hub
+  // genérico (chave de API com escopo "Abastecimentos", campo "provedor"
+  // livre no corpo da chamada — ver /api/integracoes/abastecimentos).
+  // Cada aba de provedor já deixa isso explícito e mostra o exemplo de
+  // chamada pronto com o nome do provedor preenchido; quando um provedor
+  // ganhar uma integração nativa própria (como a Pró-Frotas), a aba dele
+  // troca de conteúdo sem afetar as demais. "Outras que virão" não precisa
+  // de aba nova pra funcionar — o campo "provedor" é texto livre, então
+  // qualquer parceiro novo já consegue integrar hoje pela aba "Outros
+  // Sistemas / Hub"; uma aba dedicada só compensa quando (e se) ganhar
+  // sincronização automática própria.
+  const abas: Aba[] = [
+    {
+      id: "profrotas",
+      label: "🔗 Pró-Frotas",
+      conteudo: (
+        <div>
+          <p className="mb-4 text-sm text-slate-500">
+            Conecte a frota de um cliente à API da PróFrotas para que os abastecimentos cheguem
+            automaticamente, sem lançamento manual.
+          </p>
           <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
             <Indicador label="Clientes conectados" valor={total} />
             <Indicador label="Ativos" valor={totalAtivas} />
             <Indicador label="Registros sincronizados" valor={totalRegistros} />
           </div>
-
           <div className="mb-6">
             <NovaChaveForm />
           </div>
-
           {error && <p className="mb-4 text-sm text-red-600">Erro ao carregar chaves: {error.message}</p>}
           <ListaChaves chaves={chavesComAvisoLimite} />
-        </>
-      )}
+        </div>
+      ),
+    },
+    {
+      id: "ticketlog",
+      label: "🎫 TicketLog",
+      conteudo: <SecaoProvedorGenerico nome="TicketLog" slug="ticket_log" />,
+    },
+    {
+      id: "redefrota",
+      label: "🚛 Rede Frota",
+      conteudo: <SecaoProvedorGenerico nome="Rede Frota" slug="rede_frota" />,
+    },
+    {
+      id: "veloe",
+      label: "⚡ Veloe",
+      conteudo: <SecaoProvedorGenerico nome="Veloe" slug="veloe" />,
+    },
+    {
+      id: "hub",
+      label: "🧩 Outros Sistemas / Hub",
+      ajudaChave: "integracoes.chave_api",
+      conteudo: (
+        <SecaoHub
+          ehPosto={false}
+          empresas={empresas}
+          chaves={chavesHub}
+          erro={erroChavesCustosFixos ? erroChavesCustosFixos.message : null}
+        />
+      ),
+    },
+  ];
 
-      <div className="mb-6 mt-10 border-t border-slate-200 pt-6">
-        <h2 className="flex items-center gap-1.5 text-lg font-semibold text-slate-900">
-          Hub de Integrações <AjudaIcon chave="integracoes.chave_api" />
-        </h2>
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-slate-900">Integrações</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {ehPosto
-            ? 'Gere uma chave marcando as permissões de "Negociação com Postos" abaixo — é ela que o sistema do seu posto vai usar pra chamar a API.'
-            : "Gere uma chave de API pra um sistema externo do cliente (cartão combustível/pedágio, ERP financeiro, oficina, corretora de seguro, rastreador) enviar dados pra dentro da FNI, ou pra consultar os cadastros do cliente (veículos, motoristas, centros de custo, postos, usuários). Cada chave carrega só as permissões marcadas abaixo."}
+          Cada meio de pagamento tem a própria aba abaixo — Pró-Frotas já sincroniza automático; os demais
+          (e qualquer parceiro novo) entram pelo Hub genérico até ganharem integração nativa própria.
         </p>
       </div>
+      <AbasPainel abas={abas} />
+    </div>
+  );
+}
+
+// Aba de um meio de pagamento que ainda não tem sync nativo próprio (todos,
+// exceto Pró-Frotas, por enquanto) — explica o caminho de hoje (Hub +
+// escopo Abastecimentos) e já entrega o exemplo de chamada com o provedor
+// preenchido, pra não obrigar o time do parceiro a adivinhar o valor certo
+// do campo "provedor".
+function SecaoProvedorGenerico({ nome, slug }: { nome: string; slug: string }) {
+  return (
+    <div className="card p-6">
+      <h2 className="text-sm font-semibold text-slate-900">Integração com {nome}</h2>
+      <p className="mt-2 text-sm text-slate-500">
+        Ainda não existe uma sincronização automática nativa com a {nome} (como a que já existe com a
+        Pró-Frotas) — está no roadmap. Por enquanto, a integração acontece pelo Hub de Integrações
+        genérico: gere uma chave na aba <strong>Outros Sistemas / Hub</strong> marcando o escopo{" "}
+        <strong>Abastecimentos (escrita)</strong> e envie cada abastecimento informando{" "}
+        <code>&quot;provedor&quot;: &quot;{slug}&quot;</code> no corpo da chamada.
+      </p>
+
+      <p className="mb-1 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Lançar abastecimento da {nome} (escopo abastecimentos:write)
+      </p>
+      <pre className="overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+{`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/abastecimentos \\
+  -H "Authorization: Bearer fni_..." \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "provedor": "${slug}",
+    "placa": "ABC1D23",
+    "data_abastecimento": "2026-07-03T14:30:00Z",
+    "quantidade": 45.5,
+    "valor_total": 318.85,
+    "combustivel": "diesel",
+    "posto_nome": "Posto Alvorada",
+    "transacao_externa_id": "${slug.toUpperCase()}-998877"
+  }'`}
+      </pre>
+      <p className="mt-3 text-xs text-slate-400">
+        <code>transacao_externa_id</code> é o identificador da transação no sistema da {nome} — reenviar o
+        mesmo id (com o mesmo provedor) nunca duplica o abastecimento, então é seguro reprocessar em caso
+        de retry.
+      </p>
+    </div>
+  );
+}
+
+// Fase 25 — Hub de Integrações genérico, com chaves de escopo granular.
+// Reaproveitado tanto na visão do posto (sem abas, categoria só de
+// Negociação) quanto na aba "Outros Sistemas / Hub" da visão do cliente —
+// pra não duplicar o formulário/lista/documentação em dois lugares.
+function SecaoHub({
+  ehPosto,
+  empresas,
+  chaves,
+  erro,
+}: {
+  ehPosto: boolean;
+  empresas: { id: string; nome: string }[];
+  chaves: ChaveCustosFixosRow[];
+  erro: string | null;
+}) {
+  return (
+    <div>
+      {!ehPosto && (
+        <div className="mb-6">
+          <h2 className="flex items-center gap-1.5 text-lg font-semibold text-slate-900">Hub de Integrações</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Gere uma chave de API pra um sistema externo do cliente (cartão combustível/pedágio, ERP
+            financeiro, oficina, corretora de seguro, rastreador) enviar dados pra dentro da FNI, ou pra
+            consultar os cadastros do cliente (veículos, motoristas, centros de custo, postos, usuários).
+            Cada chave carrega só as permissões marcadas abaixo — a mesma chave pode ser usada por
+            qualquer meio de pagamento (Pró-Frotas à parte, que tem fluxo próprio na aba dela).
+          </p>
+        </div>
+      )}
 
       <div className="mb-4">
         <FormularioNovaChaveCustosFixos
@@ -107,20 +269,8 @@ export default async function IntegracoesPage() {
         />
       </div>
 
-      {erroChavesCustosFixos && (
-        <p className="mb-4 text-sm text-red-600">Erro ao carregar chaves: {erroChavesCustosFixos.message}</p>
-      )}
-      <ListaChavesCustosFixos
-        chaves={(chavesCustosFixos ?? []).map((c) => ({
-          id: c.id,
-          nome: c.nome,
-          ativa: c.ativa,
-          criada_em: c.criada_em,
-          ultimo_uso: c.ultimo_uso,
-          escopos: Array.isArray(c.escopos) ? (c.escopos as string[]) : [],
-          empresa_nome: c.empresas?.nome ?? null,
-        }))}
-      />
+      {erro && <p className="mb-4 text-sm text-red-600">Erro ao carregar chaves: {erro}</p>}
+      <ListaChavesCustosFixos chaves={chaves} />
 
       <div className="card mt-6 p-6">
         <h2 className="mb-3 text-sm font-semibold text-slate-900">Como usar as APIs do Hub</h2>
@@ -151,14 +301,14 @@ export default async function IntegracoesPage() {
             </p>
 
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Lançar abastecimento (escopo abastecimentos:write)
+              Lançar abastecimento — qualquer meio de pagamento (escopo abastecimentos:write)
             </p>
             <pre className="mb-4 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
 {`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/abastecimentos \\
   -H "Authorization: Bearer fni_..." \\
   -H "Content-Type: application/json" \\
   -d '{
-    "provedor": "ticket-log",
+    "provedor": "ticket_log",
     "placa": "ABC1D23",
     "data_abastecimento": "2026-07-03T14:30:00Z",
     "quantidade": 45.5,
@@ -168,6 +318,12 @@ export default async function IntegracoesPage() {
     "transacao_externa_id": "TL-998877"
   }'`}
             </pre>
+            <p className="mb-4 text-xs text-slate-400">
+              <code>provedor</code> é texto livre — identifica de qual meio de pagamento veio o
+              abastecimento (ex: <code>ticket_log</code>, <code>rede_frota</code>, <code>veloe</code>,
+              <code> profrotas</code>). Cada meio de pagamento tem uma aba própria acima com este mesmo
+              exemplo já preenchido.
+            </p>
 
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
               Lançar manutenção (escopo manutencoes:write)
