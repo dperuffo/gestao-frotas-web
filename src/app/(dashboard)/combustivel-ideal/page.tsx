@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { ListaVeiculosCombustivelIdeal } from "./_components/ListaVeiculosCombustivelIdeal";
 
 // Fase Onda-2 (benchmark TicketLog, item #6 — "Comparador combustível ideal
 // por região") — pedido do Daniel: "Etanol ou gasolina, conforme o
@@ -97,92 +98,8 @@ export default async function CombustivelIdealPage({
             </p>
           )}
 
-          {!error && linhas.length === 0 && (
-            <div className="card p-8 text-center text-sm text-slate-400">
-              Nenhum veículo flex encontrado para este cliente.
-            </div>
-          )}
+          {!error && <ListaVeiculosCombustivelIdeal itens={linhas} />}
 
-          {!error && linhas.length > 0 && (
-            <div className="card overflow-x-auto p-0">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
-                    <th className="px-4 py-3">Placa</th>
-                    <th className="px-4 py-3">Veículo</th>
-                    <th className="px-4 py-3">UF</th>
-                    <th className="px-4 py-3">Gasolina</th>
-                    <th className="px-4 py-3">Etanol</th>
-                    <th className="px-4 py-3">Custo/km gasolina</th>
-                    <th className="px-4 py-3">Custo/km etanol</th>
-                    <th className="px-4 py-3">Recomendação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {linhas.map((l) => (
-                    <tr key={l.placa} className="border-b border-slate-50 last:border-0">
-                      <td className="px-4 py-3 font-mono text-xs">{l.placa}</td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {l.marca || l.modelo ? `${l.marca ?? ""} ${l.modelo ?? ""}`.trim() : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">{l.uf ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {l.preco_gasolina != null ? (
-                          <>
-                            R$ {l.preco_gasolina.toFixed(3)}
-                            {l.rendimento_gasolina != null && (
-                              <span className="ml-1 text-xs text-slate-400">({l.rendimento_gasolina} km/l)</span>
-                            )}
-                          </>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {l.preco_etanol != null ? (
-                          <>
-                            R$ {l.preco_etanol.toFixed(3)}
-                            {l.rendimento_etanol != null && (
-                              <span className="ml-1 text-xs text-slate-400">({l.rendimento_etanol} km/l)</span>
-                            )}
-                          </>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {l.custo_km_gasolina != null ? `R$ ${l.custo_km_gasolina.toFixed(3)}` : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {l.custo_km_etanol != null ? `R$ ${l.custo_km_etanol.toFixed(3)}` : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        {l.recomendacao ? (
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              l.recomendacao === "etanol"
-                                ? "bg-emerald-50 text-emerald-700"
-                                : "bg-amber-50 text-amber-700"
-                            }`}
-                          >
-                            {l.recomendacao === "etanol" ? "🌱 Etanol" : "⛽ Gasolina"}
-                            {l.economia_pct != null ? ` (${l.economia_pct}% mais barato)` : ""}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-400">Dados insuficientes</span>
-                        )}
-                        {l.rendimento_estimado && l.recomendacao && (
-                          <span className="ml-1 text-xs text-slate-400" title="Rendimento de um dos combustíveis foi estimado (sem histórico suficiente)">
-                            (estimado)
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
           {semDados > 0 && (
             <p className="mt-3 text-xs text-slate-400">
               {semDados} veículo(s) sem dados suficientes de preço regional ou histórico de abastecimento pra
