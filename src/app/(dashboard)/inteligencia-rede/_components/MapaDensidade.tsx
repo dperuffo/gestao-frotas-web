@@ -33,7 +33,7 @@ export function MapaDensidade({ pontos }: { pontos: PontoDensidade[] }) {
 
   if (pontos.length === 0) {
     return (
-      <div className="flex h-[420px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-400">
+      <div className="flex h-[680px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-400">
         Nenhum posto com coordenadas cadastradas para exibir no mapa.
       </div>
     );
@@ -42,7 +42,7 @@ export function MapaDensidade({ pontos }: { pontos: PontoDensidade[] }) {
   const centro: [number, number] = [-15.78, -47.93];
 
   return (
-    <div className="relative h-[520px] overflow-hidden rounded-lg border border-slate-200">
+    <div className="relative h-[680px] overflow-hidden rounded-lg border border-slate-200">
       <MapContainer center={centro} zoom={4} style={{ height: "100%", width: "100%" }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

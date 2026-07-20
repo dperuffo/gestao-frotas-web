@@ -38,7 +38,7 @@ export function MapaFrotaReal({ pontos }: { pontos: PontoFrotaReal[] }) {
 
   if (pontos.length === 0) {
     return (
-      <div className="flex h-[420px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-400">
+      <div className="flex h-[640px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-400">
         Nenhum abastecimento com coordenada do posto no período.
       </div>
     );
@@ -47,7 +47,7 @@ export function MapaFrotaReal({ pontos }: { pontos: PontoFrotaReal[] }) {
   const centro: [number, number] = [-15.78, -47.93];
 
   return (
-    <div className="relative h-[480px] overflow-hidden rounded-lg border border-slate-200">
+    <div className="relative h-[640px] overflow-hidden rounded-lg border border-slate-200">
       <MapContainer center={centro} zoom={4} style={{ height: "100%", width: "100%" }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

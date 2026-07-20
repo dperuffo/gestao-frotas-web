@@ -60,7 +60,7 @@ function AjustarLimites({ pontos }: { pontos: [number, number][] }) {
 export default function MapaRota({
   marcadores,
   rota,
-  alturaClasse = "h-[420px]",
+  alturaClasse = "h-[600px]",
 }: {
   marcadores: MarcadorMapa[];
   rota?: { lat: number; lon: number }[];
