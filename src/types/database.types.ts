@@ -4052,6 +4052,34 @@ export interface Database {
           atualizado_em: string | null;
         }[];
       };
+      comparador_combustivel_ideal: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          placa: string;
+          marca: string | null;
+          modelo: string | null;
+          uf: string | null;
+          rendimento_gasolina: number | null;
+          rendimento_etanol: number | null;
+          rendimento_estimado: boolean | null;
+          preco_gasolina: number | null;
+          preco_etanol: number | null;
+          preco_fonte: string | null;
+          custo_km_gasolina: number | null;
+          custo_km_etanol: number | null;
+          recomendacao: string | null;
+          economia_pct: number | null;
+        }[];
+      };
+      pegada_carbono_periodo: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          categoria: string;
+          litros_total: number;
+          fator_kg_co2_por_litro: number | null;
+          co2_estimado_kg: number | null;
+        }[];
+      };
       liberar_bloqueio_abastecimento: {
         Args: { p_bloqueio_id: number };
         Returns: undefined;

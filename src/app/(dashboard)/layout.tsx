@@ -99,12 +99,20 @@ const menuOperacao = [
   { href: "/motoristas-parceiros", label: "🤝 Motoristas Parceiros" },
   { href: "/negociacoes", label: "🤝 Negociações com Postos" },
   { href: "/precos-postos", label: "💲 Preços dos Postos Parceiros" },
+  // Fase Onda-2 (benchmark TicketLog, item #6) — pedido do Daniel: comparador
+  // de combustível ideal por veículo/região, reaproveitando os preços
+  // regionais já usados no índice público de preços.
+  { href: "/combustivel-ideal", label: "⛽🌱 Combustível Ideal" },
   { href: "/manutencao-preditiva", label: "🔧 Manutenção Preditiva" },
   // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
   // soluções de automação/meios de pagamento integrados via API (Hub de
   // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
   { href: "/parametros-uso", label: "🎛️ Parâmetros de Uso" },
   { href: "/relatorios", label: "📈 Relatórios" },
+  // Fase Onda-3 (benchmark TicketLog, item #10) — pedido do Daniel: estimativa
+  // de CO2 emitido pela frota a partir dos litros já registrados nos
+  // abastecimentos (fatores de emissão em fatores_emissao_co2).
+  { href: "/pegada-carbono", label: "🌍 Pegada de Carbono" },
   { href: "/integracoes", label: "🔌 Integrações" },
 ];
 
