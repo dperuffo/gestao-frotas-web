@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ListaVeiculosCombustivelIdeal } from "./_components/ListaVeiculosCombustivelIdeal";
+import { ListaVeiculosDieselIdeal } from "./_components/ListaVeiculosDieselIdeal";
 
 // Fase Onda-2 (benchmark TicketLog, item #6 — "Comparador combustível ideal
 // por região") — pedido do Daniel: "Etanol ou gasolina, conforme o
@@ -27,14 +28,21 @@ export default async function CombustivelIdealPage({
   const ehAdmin = perfil === "admin";
   const semClienteEscolhido = empresas.length > 1 && !empresaSelecionada;
 
-  const { data: linhasRaw, error } = empresaSelecionada
-    ? await supabase.rpc("comparador_combustivel_ideal", { p_empresa_id: empresaSelecionada })
-    : { data: [], error: null };
+  const [{ data: linhasRaw, error }, { data: linhasDieselRaw, error: erroDiesel }] = empresaSelecionada
+    ? await Promise.all([
+        supabase.rpc("comparador_combustivel_ideal", { p_empresa_id: empresaSelecionada }),
+        supabase.rpc("comparador_diesel_ideal", { p_empresa_id: empresaSelecionada }),
+      ])
+    : [{ data: [], error: null }, { data: [], error: null }];
 
   const linhas = linhasRaw ?? [];
   const totalEtanol = linhas.filter((l) => l.recomendacao === "etanol").length;
   const totalGasolina = linhas.filter((l) => l.recomendacao === "gasolina").length;
   const semDados = linhas.filter((l) => !l.recomendacao).length;
+
+  const linhasDiesel = linhasDieselRaw ?? [];
+  const totalAditivadoCompensa = linhasDiesel.filter((l) => l.recomendacao === "aditivado").length;
+  const totalComumCompensa = linhasDiesel.filter((l) => l.recomendacao === "comum").length;
 
   return (
     <div>
@@ -92,6 +100,8 @@ export default async function CombustivelIdealPage({
             </p>
           </div>
 
+          <h2 className="mb-3 text-sm font-semibold text-slate-700">🌱⛽ Veículos flex — etanol × gasolina</h2>
+
           {error && (
             <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
               Erro ao carregar o comparador: {error.message}
@@ -106,6 +116,31 @@ export default async function CombustivelIdealPage({
               recomendar.
             </p>
           )}
+
+          <div className="mt-10">
+            <h2 className="mb-1 text-sm font-semibold text-slate-700">🛢️✨ Veículos a diesel — comum × aditivado</h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Diferente do etanol × gasolina, não existe uma razão física universal pra estimar se o aditivado
+              compensa — a recomendação só aparece quando a placa já tem histórico de rendimento com os dois. Sem
+              isso, mostramos o prêmio de preço do aditivado pra você decidir.
+            </p>
+
+            {linhasDiesel.length > 0 && (
+              <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <Indicador label="Veículo × família" valor={String(linhasDiesel.length)} />
+                <Indicador label="Aditivado compensa" valor={String(totalAditivadoCompensa)} destaque />
+                <Indicador label="Comum compensa" valor={String(totalComumCompensa)} />
+              </div>
+            )}
+
+            {erroDiesel && (
+              <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                Erro ao carregar o comparador de diesel: {erroDiesel.message}
+              </p>
+            )}
+
+            {!erroDiesel && <ListaVeiculosDieselIdeal itens={linhasDiesel} />}
+          </div>
         </>
       )}
     </div>

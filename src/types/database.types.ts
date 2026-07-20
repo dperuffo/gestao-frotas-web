@@ -4052,6 +4052,25 @@ export interface Database {
           atualizado_em: string | null;
         }[];
       };
+      comparador_diesel_ideal: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          placa: string;
+          marca: string | null;
+          modelo: string | null;
+          uf: string | null;
+          familia: string;
+          preco_comum: number | null;
+          preco_aditivado: number | null;
+          preco_fonte: string | null;
+          rendimento_comum: number | null;
+          rendimento_aditivado: number | null;
+          custo_km_comum: number | null;
+          custo_km_aditivado: number | null;
+          recomendacao: string | null;
+          premio_aditivado_pct: number | null;
+        }[];
+      };
       comparador_combustivel_ideal: {
         Args: { p_empresa_id: string };
         Returns: {
