@@ -632,6 +632,34 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["configuracoes_sistema"]["Row"]>;
         Relationships: [];
       };
+      // Fase Central-Treinamento (20/07/2026) — conteúdo de ajuda contextual
+      // (ícone "?", tipo='contextual') e lições da Central de Treinamento
+      // (tipo='licao'), editável via /administracao/central-conteudo.
+      conteudo_ajuda: {
+        Row: {
+          id: number;
+          chave: string;
+          tipo: string;
+          modulo: string | null;
+          ordem: number;
+          titulo: string;
+          texto: string;
+          imagem_path: string | null;
+          perfis: string[] | null;
+          ativo: boolean;
+          criado_em: string;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["conteudo_ajuda"]["Row"]> & {
+          chave: string;
+          tipo: string;
+          titulo: string;
+          texto: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["conteudo_ajuda"]["Row"]>;
+        Relationships: [];
+      };
       grupos_economicos: {
         Row: {
           id: string;

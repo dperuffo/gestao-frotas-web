@@ -32,6 +32,11 @@ import { LembretePwaBanner } from "@/components/pwa/LembretePwaBanner";
 const menuVisaoGeral = [
   { href: "/dashboard", label: "📊 Dashboard" },
   { href: "/assistente", label: "Assistente FNI", logo: true },
+  // Fase Central-Treinamento (20/07/2026) — pedido do Daniel: treinamento
+  // interativo com lições por módulo, screenshots reais e (via Assistente
+  // FNI) tira-dúvidas de uso — reduz dependência de time comercial/
+  // treinamento humano num produto self-service.
+  { href: "/treinamento", label: "🎓 Central de Treinamento" },
   { href: "/assinatura", label: "💳 Minha Assinatura" },
   { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
   { href: "/financeiro", label: "💰 Painel Financeiro" },
@@ -149,6 +154,7 @@ const menuPostoGestao = [
   // em Administração, pra visão global do admin sobre todas as redes.
   { href: "/rede-postos", label: "🔗 Rede de Postos" },
   { href: "/assistente", label: "Assistente FNI", logo: true },
+  { href: "/treinamento", label: "🎓 Central de Treinamento" },
   { href: "/assinatura", label: "💳 Minha Assinatura" },
   { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
   { href: "/financeiro-posto", label: "💰 Financeiro" },
@@ -216,6 +222,10 @@ const menuAdministracao = [
   // simulado (v1, sem parceiros reais) + fila de resgates pra cumprimento
   // manual. Ver PROPOSTA-FIDELIDADE-MOTORISTA.md.
   { href: "/fidelidade", label: "🎁 Catálogo de Fidelidade" },
+  // Fase Central-Treinamento (20/07/2026) — pedido do Daniel: treinamento
+  // interativo sem depender de time comercial/técnico. CRUD do conteúdo
+  // que alimenta o ícone "?" e a Central de Treinamento (/treinamento).
+  { href: "/administracao/central-conteudo", label: "🎓 Central de Conteúdo" },
 ];
 
 // Alvos do tour de boas-vindas (Fase 24) — só os 3 itens de menu citados no

@@ -2,18 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AJUDA } from "@/lib/ajuda/conteudo";
+import { useItemAjuda } from "@/lib/ajuda/useConteudoAjuda";
 
 const LARGURA_CARD = 256; // w-64
 const MARGEM_VIEWPORT = 8;
 
 // Ícone "?" reutilizável (Fase 24) — ao lado de um indicador, painel ou
 // botão não óbvio, mostra um popover com título + explicação (o que é,
-// pra que serve, como é calculado). O texto vive centralizado em
-// src/lib/ajuda/conteudo.ts; aqui só cuida da interação (abrir/fechar).
-// Se a chave não existir no dicionário, não renderiza nada (em vez de
-// quebrar a tela) — só avisa no console em dev, pra pegar erro de digitação
-// cedo sem arriscar produção.
+// pra que serve, como é calculado). O texto vem da tabela conteudo_ajuda
+// no Supabase (Fase Central-Treinamento, 20/07/2026 — antes era hardcoded
+// em src/lib/ajuda/conteudo.ts; movido pro banco pra ser editável via tela
+// de admin sem precisar de deploy) via useItemAjuda, que cacheia todo o
+// conteúdo em memória na primeira vez que qualquer ícone da página monta.
+// Se a chave não existir (ou ainda não carregou), não renderiza nada em
+// vez de quebrar a tela — mesmo comportamento fail-safe de antes.
 //
 // Fase 27.148 — achado do Daniel (print da coluna "Score" em Roteirização,
 // 1ª coluna da tabela): o card abria com `position: absolute` DENTRO do
@@ -30,7 +32,7 @@ export function AjudaIcon({ chave, className }: { chave: string; className?: str
   const [aberto, setAberto] = useState(false);
   const [posicao, setPosicao] = useState<{ top: number; left: number } | null>(null);
   const botaoRef = useRef<HTMLButtonElement>(null);
-  const item = AJUDA[chave];
+  const item = useItemAjuda(chave);
 
   useEffect(() => {
     if (!aberto || !botaoRef.current) return;
@@ -53,9 +55,10 @@ export function AjudaIcon({ chave, className }: { chave: string; className?: str
   }, [aberto]);
 
   if (!item) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(`AjudaIcon: chave "${chave}" não encontrada em src/lib/ajuda/conteudo.ts`);
-    }
+    // Cobre tanto "ainda carregando" quanto "chave não existe na tabela
+    // conteudo_ajuda" — em produção não dá pra distinguir os dois sem uma
+    // segunda flag de loading, e não vale a complexidade extra pra um
+    // ícone de ajuda opcional (na pior hipótese ele só demora a aparecer).
     return null;
   }
 

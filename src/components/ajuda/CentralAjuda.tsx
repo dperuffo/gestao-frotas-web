@@ -35,9 +35,17 @@ export function CentralAjuda() {
               — ele explica o que aquele número significa e como é calculado.
             </p>
             <p className="mt-2 text-sm text-slate-600">
-              Pra dúvidas livres sobre os dados da sua frota, use o{" "}
+              Pra dúvidas livres sobre os dados da sua frota — ou sobre como usar qualquer tela da
+              plataforma — use o{" "}
               <Link href="/assistente" className="text-frota-600 hover:underline" onClick={() => setAberto(false)}>
                 Assistente FNI
+              </Link>
+              .
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              E, pra um passo a passo mais completo por módulo (com imagens de tela), veja a{" "}
+              <Link href="/treinamento" className="text-frota-600 hover:underline" onClick={() => setAberto(false)}>
+                Central de Treinamento
               </Link>
               .
             </p>

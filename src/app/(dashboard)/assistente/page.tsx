@@ -16,8 +16,9 @@ export default async function AssistenteFniPage() {
         Assistente FNI <AjudaIcon chave="assistente.pergunta" />
       </h1>
       <p className="mb-6 text-sm text-slate-500">
-        Converse em linguagem natural sobre a sua operação de frota. O assistente consulta os dados em tempo real
-        e só enxerga as empresas às quais você tem acesso.
+        Converse em linguagem natural sobre a sua operação de frota, ou tire dúvidas de como usar a plataforma. O
+        assistente consulta os dados em tempo real (só enxerga as empresas às quais você tem acesso) e o conteúdo
+        oficial de treinamento — sem inventar respostas.
       </p>
       <ChatAssistente usuarioEmail={user?.email} />
     </div>

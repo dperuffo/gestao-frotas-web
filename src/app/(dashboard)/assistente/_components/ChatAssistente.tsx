@@ -13,6 +13,8 @@ const PERGUNTAS_SUGERIDAS = [
   "Quais os 5 veículos com maior custo de manutenção este ano?",
   "Quantos motoristas ativos temos por centro de custo?",
   "Qual veículo está sem manutenção registrada há mais tempo?",
+  "Como funciona a integração com o Pró-Frotas?",
+  "O que preciso configurar pra abastecimentos aparecerem certo nos indicadores?",
 ];
 
 // Chat do Assistente FNI: mantém o histórico só em memória (sem persistir no
@@ -67,7 +69,8 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
           <div>
             <p className="mb-3 text-sm text-slate-500">
               Pergunte sobre abastecimentos, custos, veículos, motoristas, manutenção ou centros de custo da sua
-              operação. Exemplos:
+              operação — ou sobre como usar qualquer tela da plataforma (integrações, roteirização, assinatura
+              etc.). Exemplos:
             </p>
             <div className="flex flex-wrap gap-2">
               {PERGUNTAS_SUGERIDAS.map((sugestao) => (

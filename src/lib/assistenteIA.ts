@@ -25,11 +25,29 @@ const MAX_RODADAS_FERRAMENTA = 6;
 // anp_postos, integrações, permissões) não são mencionadas de propósito —
 // mesmo que o modelo tente consultá-las, o RLS por trás do
 // ia_executar_select decide o que ele realmente enxerga.
-const SYSTEM_PROMPT = `Você é o Assistente FNI, um analista de dados especializado em gestão de frotas
-que responde, em português do Brasil, perguntas sobre a operação do usuário logado
-na plataforma Fleet Network Intelligence (FNI).
+const SYSTEM_PROMPT = `Você é o Assistente FNI, um assistente que responde, em português do Brasil,
+tanto perguntas sobre a operação de frota do usuário logado (dados reais, via SQL)
+quanto perguntas sobre como usar a plataforma Fleet Network Intelligence (FNI) —
+"onde fica X", "como faço Y", "o que significa esse indicador", "quais integrações
+existem", etc. São dois tipos de pergunta bem diferentes; identifique qual é o caso
+antes de escolher a ferramenta.
 
-## Como você consulta dados
+## Pergunta sobre COMO USAR a plataforma (dúvida de uso, não de dados)
+
+Use a ferramenta "buscar_ajuda_treinamento" para procurar no conteúdo oficial de
+ajuda/treinamento da plataforma (o mesmo conteúdo que aparece nos ícones "?" de
+cada tela e na Central de Treinamento em /treinamento). Baseie sua resposta NESSE
+conteúdo — não invente passos de uso que não estão lá. Se a busca não retornar
+nada relevante, diga que não encontrou aquele tópico no material de treinamento e
+sugira que o usuário explore a Central de Treinamento (/treinamento) ou fale com o
+suporte, em vez de adivinhar como a tela funciona.
+Isso é especialmente importante para perguntas sobre integrações (meios de
+pagamento, Pró-Frotas, ERPs, automação de posto, NF-e, carga de preços) — é uma
+área onde é fácil o usuário presumir que algo é automático quando na verdade
+depende de configuração ou lançamento manual, e o conteúdo de treinamento tem o
+cuidado de deixar isso explícito.
+
+## Pergunta sobre DADOS reais da operação (números, listas, rankings)
 
 Você tem uma ferramenta chamada "consultar_banco" que executa uma consulta SQL
 somente leitura (SELECT ou WITH ... SELECT) direto no banco Postgres do produto.
@@ -98,9 +116,14 @@ id (uuid), nome, cnpj, ativo.
   inventar uma resposta.
 - Se a pergunta for ambígua (ex.: "esse mês" sem dizer qual mês), assuma o mês
   atual e informe essa suposição na resposta.
-- Se a pergunta estiver fora do escopo de dados de frota (schema acima), explique
+- Se a pergunta de dados estiver fora do escopo do schema acima, explique
   educadamente que você só responde sobre abastecimentos/custos, veículos,
-  motoristas, manutenção e centros de custo.`;
+  motoristas, manutenção e centros de custo — mas lembre que dúvidas sobre COMO
+  USAR outras telas da plataforma (roteirização, fretes, integrações, assinatura
+  etc.) você pode responder via buscar_ajuda_treinamento.
+- Ao responder com base em buscar_ajuda_treinamento, cite o título da lição/tópico
+  usado e, quando fizer sentido, mencione que o usuário pode ver o conteúdo
+  completo (às vezes com imagens) na Central de Treinamento, em /treinamento.`;
 
 const FERRAMENTA_SQL: Anthropic.Tool = {
   name: "consultar_banco",
@@ -117,6 +140,34 @@ const FERRAMENTA_SQL: Anthropic.Tool = {
     required: ["sql"],
   },
 };
+
+// Segunda ferramenta do Assistente FNI (Fase Central-Treinamento, 20/07/2026):
+// busca no conteúdo oficial de ajuda/treinamento (conteudo_ajuda), o mesmo
+// conteúdo dos ícones "?" e da Central de Treinamento — mantém as respostas
+// sobre "como usar a plataforma" fiéis ao que realmente existe, em vez do
+// modelo inventar passos. Usa o supabase.from() normal (não uma RPC própria)
+// porque a RLS de conteudo_ajuda já libera select de linhas ativo=true pra
+// qualquer usuário autenticado — não precisa de nenhum privilégio especial.
+const FERRAMENTA_AJUDA: Anthropic.Tool = {
+  name: "buscar_ajuda_treinamento",
+  description:
+    "Busca no conteúdo oficial de ajuda/treinamento da plataforma FNI (tooltips contextuais e lições da Central de Treinamento) por um termo ou tema. Use para responder dúvidas de 'como usar', 'onde fica', 'o que significa' ou 'quais integrações existem' — nunca para dados da operação do usuário (para isso use consultar_banco).",
+  input_schema: {
+    type: "object",
+    properties: {
+      termo: {
+        type: "string",
+        description:
+          "Termo ou tema a buscar (ex.: 'integração pró-frotas', 'excedente de veículos', 'roteirização', 'manutenção preditiva').",
+      },
+    },
+    required: ["termo"],
+  },
+};
+
+function escaparTermoIlike(termo: string): string {
+  return termo.replace(/[%_]/g, (c) => `\\${c}`);
+}
 
 function clienteAnthropic(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -152,7 +203,7 @@ export async function perguntarAssistente(
       model: MODELO,
       max_tokens: 2000,
       system: SYSTEM_PROMPT,
-      tools: [FERRAMENTA_SQL],
+      tools: [FERRAMENTA_SQL, FERRAMENTA_AJUDA],
       messages: mensagens,
     });
 
@@ -172,6 +223,51 @@ export async function perguntarAssistente(
 
     const resultadosFerramenta: Anthropic.ToolResultBlockParam[] = [];
     for (const bloco of blocosFerramenta) {
+      if (bloco.name === "buscar_ajuda_treinamento") {
+        const entrada = bloco.input as { termo?: unknown };
+        const termo = typeof entrada.termo === "string" ? entrada.termo.trim() : "";
+
+        if (!termo) {
+          resultadosFerramenta.push({
+            type: "tool_result",
+            tool_use_id: bloco.id,
+            content: "Termo de busca vazio — informe um termo ou tema.",
+            is_error: true,
+          });
+          continue;
+        }
+
+        const padrao = `%${escaparTermoIlike(termo)}%`;
+        const { data, error } = await supabase
+          .from("conteudo_ajuda")
+          .select("chave, tipo, modulo, titulo, texto")
+          .eq("ativo", true)
+          .or(`titulo.ilike.${padrao},texto.ilike.${padrao},modulo.ilike.${padrao}`)
+          .limit(5);
+
+        if (error) {
+          resultadosFerramenta.push({
+            type: "tool_result",
+            tool_use_id: bloco.id,
+            content: `Erro ao buscar no conteúdo de ajuda: ${error.message}`,
+            is_error: true,
+          });
+        } else if (!data || data.length === 0) {
+          resultadosFerramenta.push({
+            type: "tool_result",
+            tool_use_id: bloco.id,
+            content: "Nenhum resultado encontrado no conteúdo de ajuda/treinamento para esse termo.",
+          });
+        } else {
+          resultadosFerramenta.push({
+            type: "tool_result",
+            tool_use_id: bloco.id,
+            content: JSON.stringify(data),
+          });
+        }
+        continue;
+      }
+
       const entrada = bloco.input as { sql?: unknown };
       const sql = typeof entrada.sql === "string" ? entrada.sql.trim() : "";
 
