@@ -147,7 +147,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     <li><a href="#postos" data-i18n="nav_postos">Para Postos</a></li>
     <li><a href="#como" data-i18n="nav_como">Como funciona</a></li>
     <li><a href="#precos" data-i18n="nav_precos">Preços</a></li>
-    <li><a href="/indice-precos" style="color:var(--cyan);font-weight:600;">📊 Índice GF de Preços</a></li>
+    <li><a href="/indice-precos" style="color:var(--cyan);font-weight:600;white-space:nowrap;">💹 Índice GF de Preços</a></li>
   </ul>
   <a href="/login" style="color:var(--white);text-decoration:none;font-size:0.88rem;font-weight:600;padding:9px 20px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.35);margin-right:8px;transition:all 0.2s;background:rgba(255,255,255,0.06);" onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.borderColor='rgba(255,255,255,0.6)'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='rgba(255,255,255,0.35)'" data-i18n="nav_acessar">🔐 Acessar Plataforma</a><a href="/cadastro" class="nav-cta" data-i18n="nav_comecar">Começar grátis →</a>
 </nav>
