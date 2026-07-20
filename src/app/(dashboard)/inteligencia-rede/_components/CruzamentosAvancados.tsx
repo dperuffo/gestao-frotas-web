@@ -485,8 +485,8 @@ function FrotaReal({ postosVisitados, dieselAnpPorUf }: { postosVisitados: Posto
   if (postosVisitados.length === 0) {
     return (
       <p className="p-4 text-sm text-slate-400">
-        Ainda não há abastecimentos com coordenada do posto — conecte a integração PróFrotas em Integrações para
-        acumular esse histórico.
+        Ainda não há abastecimentos com coordenada do posto — conecte alguma integração de abastecimento (Pró-Frotas,
+        TicketLog, Rede Frota, Veloe, Valecard) em Integrações para acumular esse histórico.
       </p>
     );
   }

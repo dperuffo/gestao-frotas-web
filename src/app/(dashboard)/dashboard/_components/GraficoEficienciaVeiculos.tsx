@@ -61,8 +61,8 @@ export function GraficoEficienciaVeiculos({ dados }: { dados: ItemEficienciaVeic
   if (dados.length === 0) {
     return (
       <p className="p-4 text-sm text-slate-400">
-        Sem abastecimentos com placa no período. Conecte a integração PróFrotas ou lance abastecimentos manuais para
-        acumular esse histórico.
+        Sem abastecimentos com placa no período. Conecte alguma integração de abastecimento (Pró-Frotas, TicketLog,
+        Rede Frota, Veloe, Valecard) ou lance abastecimentos manuais para acumular esse histórico.
       </p>
     );
   }

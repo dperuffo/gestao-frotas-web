@@ -812,8 +812,8 @@ export default async function DashboardPage({
             <div className="card p-4">
               <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">8. Eficiência real por veículo <AjudaIcon chave="dashboard.eficiencia_veiculos" /></h3>
               <p className="mb-3 text-xs text-slate-500">
-                KM rodado e km/L calculados a partir de hodômetros consecutivos reais dos abastecimentos da
-                integração PróFrotas. Não inclui comparação com rota planejada — sem dado real de GPS/trajetória,
+                KM rodado e km/L calculados a partir de hodômetros consecutivos reais dos abastecimentos, de qualquer
+                meio de pagamento integrado (GF). Não inclui comparação com rota planejada — sem dado real de GPS/trajetória,
                 essa parte não é confiável para exibir aqui.
               </p>
               <GraficoEficienciaVeiculos dados={itensEficienciaVeiculos} />

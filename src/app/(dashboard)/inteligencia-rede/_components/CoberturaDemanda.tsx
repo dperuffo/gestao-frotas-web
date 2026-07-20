@@ -38,9 +38,10 @@ function formatarInt(v: number) {
 }
 
 // Cruza cobertura da rede GF (postos cadastrados por UF) com demanda real da
-// frota (abastecimentos de verdade, via integração PróFrotas — não inclui
-// rotas planejadas/sugeridas pelo otimizador da aplicação, que não são GPS
-// real). Gap Score = demanda_normalizada × (1 − cobertura_normalizada).
+// frota (abastecimentos de verdade, de qualquer meio de pagamento integrado —
+// Pró-Frotas, TicketLog, Rede Frota, Veloe, Valecard — não inclui rotas
+// planejadas/sugeridas pelo otimizador da aplicação, que não são GPS real).
+// Gap Score = demanda_normalizada × (1 − cobertura_normalizada).
 export function CoberturaDemanda({ postosPorUf, demandaPorUf }: { postosPorUf: Record<string, number>; demandaPorUf: Record<string, number> }) {
   const linhas = useMemo(() => {
     const ufs = Object.keys(UF_CENTROIDES);
@@ -96,9 +97,9 @@ export function CoberturaDemanda({ postosPorUf, demandaPorUf }: { postosPorUf: R
   if (demandaTotal === 0) {
     return (
       <p className="p-4 text-sm text-slate-400">
-        Ainda não há abastecimentos reais suficientes (via integração PróFrotas) para medir demanda por UF. Sem
-        esse histórico, o Gap Score ficaria só na cobertura, então preferimos não exibir números que pareçam mais
-        confiáveis do que realmente são.
+        Ainda não há abastecimentos reais suficientes (de nenhum meio de pagamento integrado — GF) para medir demanda
+        por UF. Sem esse histórico, o Gap Score ficaria só na cobertura, então preferimos não exibir números que
+        pareçam mais confiáveis do que realmente são.
       </p>
     );
   }
@@ -106,9 +107,10 @@ export function CoberturaDemanda({ postosPorUf, demandaPorUf }: { postosPorUf: R
   return (
     <div>
       <div className="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-xs text-amber-800">
-        ⚠️ <strong>Demanda aqui = abastecimentos reais da frota</strong> (integração PróFrotas), contados por UF do
-        posto visitado. Não inclui rotas planejadas/sugeridas pelo otimizador da aplicação — essas são sugestões
-        de roteirização, não GPS real, então foram deliberadamente deixadas de fora desse cálculo.
+        ⚠️ <strong>Demanda aqui = abastecimentos reais da frota</strong> (qualquer meio de pagamento integrado — GF:
+        Pró-Frotas, TicketLog, Rede Frota, Veloe, Valecard), contados por UF do posto visitado. Não inclui rotas
+        planejadas/sugeridas pelo otimizador da aplicação — essas são sugestões de roteirização, não GPS real, então
+        foram deliberadamente deixadas de fora desse cálculo.
       </div>
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -154,7 +156,7 @@ export function CoberturaDemanda({ postosPorUf, demandaPorUf }: { postosPorUf: R
           <p>
             <strong>Gap Score</strong> = demanda_normalizada × (1 − cobertura_normalizada)
           </p>
-          <p>Demanda: quantidade de abastecimentos reais da frota (via PróFrotas) na UF do posto visitado.</p>
+          <p>Demanda: quantidade de abastecimentos reais da frota (qualquer meio de pagamento integrado — GF) na UF do posto visitado.</p>
           <p>Cobertura: número de postos GF cadastrados na UF.</p>
           <p>Ambos normalizados pelo maior valor do conjunto (escala 0–1).</p>
           <p>Gap próximo de 1,0 = alta demanda real + quase nenhuma cobertura GF → prioridade máxima de expansão.</p>
