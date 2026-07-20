@@ -17,6 +17,12 @@ import type { Json } from "@/types/database.types";
 // (alimenta o badge no menu de "Antifraude" e, na Fase seguinte, dispara um
 // e-mail de aviso) pra o cliente saber que aquele abastecimento específico
 // não foi checado e possa investigar antes do próximo.
+//
+// Fase Bloqueio-por-Anomalia — esta mesma rota também nega abastecimentos
+// para placas/motoristas em bloqueios_abastecimento (ver
+// /acoes-sugeridas/restricoes) — reaproveitada em vez de criar uma segunda
+// rota, pra um ERP externo continuar fazendo UMA chamada só no ato do
+// abastecimento.
 export const runtime = "nodejs";
 
 type CorpoRequisicao = {
@@ -98,6 +104,39 @@ export async function POST(request: Request) {
     const hoje = dataHora.slice(0, 10);
     const inicioDoDia = `${hoje}T00:00:00`;
     const fimDoDiaExclusivo = new Date(new Date(`${hoje}T00:00:00Z`).getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+    // Fase Bloqueio-por-Anomalia — pedido do Daniel: quando uma ação sugerida
+    // (CNH vencida, hodômetro fora do padrão, volume acima do tanque, postos
+    // distantes, preço fora da média) é aprovada E o cliente tem essa
+    // restrição ligada (ver /acoes-sugeridas/restricoes), a placa/motorista
+    // fica registrada em bloqueios_abastecimento até alguém liberar
+    // manualmente. Checado ANTES das regras_antifraude porque é um bloqueio
+    // mais direto (originado de uma ação já aprovada por um gestor, não uma
+    // regra genérica) — mas o efeito é o mesmo: nega a autorização.
+    if (placa || motoristaCpf) {
+      const { data: bloqueiosRaw, error: erroBloqueios } = await supabase
+        .from("bloqueios_abastecimento")
+        .select("id, alvo_tipo, alvo_ref, alvo_label, tipo_origem, motivo")
+        .eq("empresa_id", chave.empresaId)
+        .eq("ativo", true);
+
+      if (erroBloqueios) throw new Error(erroBloqueios.message);
+
+      const bloqueioAplicavel = (bloqueiosRaw ?? []).find((b) => {
+        if (b.alvo_tipo === "veiculo") return placa !== null && normalizarPlaca(b.alvo_ref) === placa;
+        if (b.alvo_tipo === "motorista") return motoristaCpf !== null && b.alvo_ref === motoristaCpf;
+        return false;
+      });
+
+      if (bloqueioAplicavel) {
+        await marcarUsoChaveApi(supabase, chave.id);
+        return NextResponse.json({
+          autorizado: false,
+          motivo: bloqueioAplicavel.motivo ?? `Abastecimento restrito (${bloqueioAplicavel.alvo_label ?? bloqueioAplicavel.alvo_ref}).`,
+          bloqueio_id: bloqueioAplicavel.id,
+        });
+      }
+    }
 
     const { data: regrasRaw, error: erroRegras } = await supabase
       .from("regras_antifraude")

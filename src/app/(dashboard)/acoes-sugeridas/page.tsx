@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
@@ -96,9 +97,17 @@ export default async function AcoesSugeridasPage({
             regra){nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
           </p>
         </div>
-        {!semClienteEscolhido && (
-          <BotaoDetectarAcoes empresaId={empresaSelecionada} todasEmpresas={ehAdmin && !empresaSelecionada} />
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href={`/acoes-sugeridas/restricoes${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`}
+            className="btn-secondary text-sm"
+          >
+            ⚙️ Restrições automáticas
+          </Link>
+          {!semClienteEscolhido && (
+            <BotaoDetectarAcoes empresaId={empresaSelecionada} todasEmpresas={ehAdmin && !empresaSelecionada} />
+          )}
+        </div>
       </div>
 
       {empresas.length > 1 && (
