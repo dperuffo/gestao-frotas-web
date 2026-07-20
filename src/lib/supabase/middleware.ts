@@ -44,6 +44,10 @@ export async function updateSession(request: NextRequest) {
     "/privacidade-en",
     "/sobre",
     "/sobre-en",
+    // Fase Índice-Público-de-Preço — página de marketing/institucional
+    // (item de alta prioridade do benchmark TicketLog), dados agregados e
+    // anônimos, sem necessidade de login.
+    "/indice-precos",
   ]);
   const isRotaPublica =
     path.startsWith("/login") ||
