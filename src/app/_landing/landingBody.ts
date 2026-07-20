@@ -715,6 +715,8 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   </div>
 </section>
 
+<!-- INDICE_PRECOS_PLACEHOLDER -->
+
 <section class="section" id="como" style="background:rgba(255,255,255,0.012)">
   <div class="sec-lbl" data-i18n="como_lbl">Como funciona</div>
   <div class="sec-title" data-i18n="como_title">Comece em minutos</div>
