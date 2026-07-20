@@ -3705,8 +3705,23 @@ export interface Database {
       // de combustível por provedor/meio de pagamento (Pró-Frotas, Valecard,
       // RedeFrota, TicketLog, Veloe...), pro painel "Consolidado por meio de
       // pagamento" em /financeiro.
+      dashboard_evolucao_mensal: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null };
+        Returns: {
+          mes: string;
+          litros: number;
+          valor: number;
+        }[];
+      };
+      dashboard_top_clientes_gasto: {
+        Args: { p_data_inicio?: string | null; p_limit?: number };
+        Returns: {
+          empresa_id: string;
+          valor: number;
+        }[];
+      };
       indicadores_financeiros_por_provedor: {
-        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
         Returns: {
           provedor: string;
           custo_combustivel: number;

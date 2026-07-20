@@ -132,7 +132,9 @@ export default async function DashboardPage({
     { count: veiculosAtivosGlobal },
     { count: totalPostosProprios },
     { data: cnhVencendo },
-    { data: abastecimentosRecentes },
+    { data: indicadoresPorProvedorMes },
+    { data: evolucaoMensalRaw },
+    { data: topClientesRaw },
     { data: veiculosDaEmpresa },
     resumoAjustes,
   ] = await Promise.all([
@@ -151,17 +153,33 @@ export default async function DashboardPage({
       ? supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }).eq("empresa_id", empresaSelecionada)
       : Promise.resolve({ count: 0 }),
     queryCnhVencendo,
-    // Fase 27.133 — pedido do Daniel: trazer a origem/meio de pagamento
-    // (Pró-Frotas, Valecard, RedeFrota, TicketLog, Veloe...) nos indicadores
-    // e dashboards. Troca de profrotas_abastecimentos pra
-    // abastecimentos_unificado (view que já une PróFrotas + outros
-    // provedores, Fase 25) — aqui só usamos colunas agregadas (litros,
-    // valor, data, empresa, provedor), sem precisar do id de nenhuma linha.
-    supabase
-      .from("abastecimentos_unificado")
-      .select("data_abastecimento, litros, valor_total, empresa_id, provedor")
-      .gte("data_abastecimento", seisMesesAtras.toISOString())
-      .limit(5000),
+    // Fase Dashboard-Provedores-Bug — pedido do Daniel: "Todos os meios de
+    // pagamento (Pró-Frotas, Valecard, Rede Frota, TicketLog e Veloe) foram
+    // utilizados... e a aplicação registra tudo como Pró-Frotas". Causa
+    // raiz: esta página buscava até 5000 linhas CRUAS de
+    // abastecimentos_unificado (sem ORDER BY) e agregava tudo em JS — só a
+    // Pró-Frotas já tem 9000+ linhas nos últimos 6 meses (rede toda), então
+    // o cap de 5000 estourava antes de qualquer linha dos outros provedores
+    // (que vêm DEPOIS na UNION ALL da view) ser lida. Trocado por 3 RPCs que
+    // agregam (GROUP BY) inteiramente no banco, sem trazer linha nenhuma pro
+    // client — mesmo espírito das Fases 27.38/27.69/27.70 (mesma classe de
+    // bug, em outras telas). Ver migration dashboard_agregacoes_sem_cap_de_linhas.
+    supabase.rpc("indicadores_financeiros_por_provedor", {
+      p_empresa_id: empresaSelecionada,
+      p_data_inicio: paraDataISO(inicioMesAtual),
+      p_data_fim: paraDataISO(agora),
+    }),
+    supabase.rpc("dashboard_evolucao_mensal", {
+      p_empresa_id: empresaSelecionada,
+      p_data_inicio: paraDataISO(seisMesesAtras),
+    }),
+    // Sempre em nível de rede (compara clientes entre si), independente do
+    // cliente selecionado no seletor do topo — por isso não recebe
+    // p_empresa_id.
+    supabase.rpc("dashboard_top_clientes_gasto", {
+      p_data_inicio: paraDataISO(seisMesesAtras),
+      p_limit: 5,
+    }),
     // cadastro_veiculos não tem empresa_id — o vínculo é por cnpj_frota,
     // comparado com empresas.cnpj de forma normalizada (só alfanuméricos,
     // maiúsculo). Comparar direto via .eq("cnpj_frota", empresas.cnpj)
@@ -185,60 +203,43 @@ export default async function DashboardPage({
     ? (veiculosDaEmpresa ?? []).filter((v) => v.ativo).length
     : veiculosAtivosGlobal;
 
-  // Abastecimentos usados nos cards e no gráfico de consumo respeitam o
-  // cliente selecionado; o array bruto (sem filtro) continua disponível
-  // pra alimentar o Top 5 clientes por gasto, que compara clientes entre si.
-  const abastecimentosCliente = empresaSelecionada
-    ? (abastecimentosRecentes ?? []).filter((a) => a.empresa_id === empresaSelecionada)
-    : (abastecimentosRecentes ?? []);
-
-  // Indicadores do mês atual, calculados em memória a partir dos últimos 6 meses já buscados.
-  const doMesAtual = abastecimentosCliente.filter(
-    (a) => a.data_abastecimento && new Date(a.data_abastecimento) >= inicioMesAtual
-  );
-  const litrosMes = doMesAtual.reduce((soma, a) => soma + (a.litros ?? 0), 0);
-  const valorMes = doMesAtual.reduce((soma, a) => soma + (a.valor_total ?? 0), 0);
+  // Fase Dashboard-Provedores-Bug — litros/valor do mês e o consolidado por
+  // meio de pagamento agora vêm agregados direto do banco (RPC
+  // indicadores_financeiros_por_provedor, já escopada por empresaSelecionada
+  // e pelo mês atual), sem trazer linha nenhuma de abastecimento pro client.
+  const listaProvedoresMes: [string, number][] = (indicadoresPorProvedorMes ?? []).map((r) => [
+    r.provedor,
+    r.custo_combustivel,
+  ]);
+  const litrosMes = (indicadoresPorProvedorMes ?? []).reduce((soma, r) => soma + (r.litros ?? 0), 0);
+  const valorMes = (indicadoresPorProvedorMes ?? []).reduce((soma, r) => soma + (r.custo_combustivel ?? 0), 0);
   const custoMedioLitroMes = litrosMes > 0 ? valorMes / litrosMes : 0;
 
-  // Fase 27.133 — consolidado por meio de pagamento do cliente selecionado
-  // (mês atual), pro card "Meios de pagamento" abaixo dos indicadores.
-  const valorPorProvedorMes = new Map<string, number>();
-  for (const a of doMesAtual) {
-    if (!a.provedor) continue;
-    valorPorProvedorMes.set(a.provedor, (valorPorProvedorMes.get(a.provedor) ?? 0) + (a.valor_total ?? 0));
-  }
-  const listaProvedoresMes = Array.from(valorPorProvedorMes.entries()).sort((a, b) => b[1] - a[1]);
-
-  // Gráfico: agrupa por mês (últimos 6 meses).
+  // Gráfico: 6 meses fixos (mesmo os sem abastecimento nenhum aparecem
+  // zerados) preenchidos com o que a RPC dashboard_evolucao_mensal trouxe
+  // já agregado por mês.
   const porMes = new Map<string, PontoConsumo>();
   for (let i = 5; i >= 0; i--) {
     const data = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
     const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
     porMes.set(chave, { mes: rotuloMes(data), litros: 0, valor: 0 });
   }
-  for (const a of abastecimentosCliente) {
-    if (!a.data_abastecimento) continue;
-    const data = new Date(a.data_abastecimento);
+  for (const r of evolucaoMensalRaw ?? []) {
+    const data = new Date(`${r.mes}T00:00:00`);
     const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
     const ponto = porMes.get(chave);
     if (ponto) {
-      ponto.litros += a.litros ?? 0;
-      ponto.valor += a.valor_total ?? 0;
+      ponto.litros = r.litros ?? 0;
+      ponto.valor = r.valor ?? 0;
     }
   }
   const dadosGrafico = Array.from(porMes.values()).map((p) => ({ ...p, litros: Math.round(p.litros) }));
 
-  // Top 5 clientes por gasto (últimos 6 meses) — sempre em nível de rede,
-  // usa o array sem filtro de cliente mesmo com um cliente selecionado.
-  const gastoPorEmpresa = new Map<string, number>();
-  for (const a of abastecimentosRecentes ?? []) {
-    if (!a.empresa_id) continue;
-    gastoPorEmpresa.set(a.empresa_id, (gastoPorEmpresa.get(a.empresa_id) ?? 0) + (a.valor_total ?? 0));
-  }
-  const idsTop = Array.from(gastoPorEmpresa.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([id]) => id);
+  // Top 5 clientes por gasto (últimos 6 meses) — sempre em nível de rede
+  // (RPC dashboard_top_clientes_gasto não recebe empresa, agrega por
+  // empresa_id direto no banco), independente do cliente selecionado.
+  const idsTop = (topClientesRaw ?? []).map((r) => r.empresa_id);
+  const valorPorEmpresaTop = new Map((topClientesRaw ?? []).map((r) => [r.empresa_id, r.valor ?? 0]));
   // Fase 27.128 — achado real (Daniel: painel mostrando UUID em vez do nome
   // do cliente): mesma causa raiz já corrigida na Fase 27.51 (negociações)
   // — um join direto em `empresas` falha em silêncio pra qualquer linha que
@@ -255,7 +256,7 @@ export default async function DashboardPage({
   const { data: nomesTopRows } =
     idsTop.length > 0 ? await supabase.rpc("nomes_empresas_publico", { p_empresa_ids: idsTop }) : { data: [] };
   const nomePorEmpresaId = new Map((nomesTopRows ?? []).map((r) => [r.id as string, r.nome as string | null]));
-  const topClientes = idsTop.map((id) => ({ nome: nomePorEmpresaId.get(id) ?? id, valor: gastoPorEmpresa.get(id)! }));
+  const topClientes = idsTop.map((id) => ({ nome: nomePorEmpresaId.get(id) ?? id, valor: valorPorEmpresaTop.get(id)! }));
 
   // Mês selecionado no seletor único no topo da página — direciona, junto
   // com o cliente (já resolvido acima), os indicadores de centro de custo e
