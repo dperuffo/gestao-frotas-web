@@ -15,18 +15,21 @@ export function RegistrarManutencaoForm({
 }) {
   const [erro, setErro] = useState<string | undefined>();
   const [sucesso, setSucesso] = useState(false);
+  const [avisoFotos, setAvisoFotos] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErro(undefined);
     setSucesso(false);
+    setAvisoFotos(undefined);
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       const resultado = await registrarManutencaoAcao(empresaId, undefined, formData);
       if (resultado?.erro) setErro(resultado.erro);
       else {
         setSucesso(true);
+        setAvisoFotos(resultado?.avisoFotos);
         (e.target as HTMLFormElement).reset();
       }
     });
@@ -40,6 +43,7 @@ export function RegistrarManutencaoForm({
           Manutenção registrada com sucesso.
         </div>
       )}
+      {avisoFotos && <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">{avisoFotos}</div>}
       <input type="hidden" name="placa" value={placa} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -90,6 +94,13 @@ export function RegistrarManutencaoForm({
       <div>
         <label className="mb-1 block text-sm font-medium text-slate-700">Observações</label>
         <textarea name="obs_gerais" rows={3} className="input" placeholder="Condições, peças substituídas, pendências..." />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-slate-700">
+          Fotos do serviço <span className="font-normal text-slate-400">(opcional — evidência pra compliance)</span>
+        </label>
+        <input type="file" name="fotos" accept="image/*" multiple className="input" />
       </div>
 
       <div className="flex justify-end">

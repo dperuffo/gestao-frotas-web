@@ -12,6 +12,10 @@ type Registro = {
   oficina: string | null;
   custo_total: number | null;
   criado_por: string | null;
+  // Fase Checklist-Digital-Manutenção — URLs assinadas (resolvidas no
+  // Server Component, ver [placa]/page.tsx) das fotos anexadas como
+  // evidência do serviço. Nunca é a URL pública direta do bucket (privado).
+  fotosUrls?: { url: string; nome: string }[];
 };
 
 export function HistoricoManutencoes({ placa, registros }: { placa: string; registros: Registro[] }) {
@@ -42,6 +46,7 @@ export function HistoricoManutencoes({ placa, registros }: { placa: string; regi
             <th className="py-2 pr-4">Itens</th>
             <th className="py-2 pr-4">Oficina</th>
             <th className="py-2 pr-4">Custo</th>
+            <th className="py-2 pr-4">Fotos</th>
             <th className="py-2"></th>
           </tr>
         </thead>
@@ -58,6 +63,27 @@ export function HistoricoManutencoes({ placa, registros }: { placa: string; regi
               <td className="py-2.5 pr-4 align-top text-slate-600">{r.oficina ?? "—"}</td>
               <td className="py-2.5 pr-4 align-top tabular-nums text-slate-600">
                 {r.custo_total ? r.custo_total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
+              </td>
+              <td className="py-2.5 pr-4 align-top">
+                {r.fotosUrls && r.fotosUrls.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {r.fotosUrls.map((f, i) => (
+                      <a
+                        key={i}
+                        href={f.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={f.nome}
+                        className="block h-10 w-10 overflow-hidden rounded border border-slate-200"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element -- miniatura de arquivo no Storage, com signed URL de curta duração; next/image exigiria configurar domínio remoto pra uma URL que muda a cada load. */}
+                        <img src={f.url} alt={f.nome} className="h-full w-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-slate-300">—</span>
+                )}
               </td>
               <td className="py-2.5 align-top">
                 <button

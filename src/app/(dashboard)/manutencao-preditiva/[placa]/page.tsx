@@ -71,12 +71,30 @@ export default async function DetalheManutencaoPreditivaPage({
 
   const recomendacoes = gerarRecomendacoes(componentes, primeiro.degradacao, primeiro.idade_anos);
 
-  const { data: historico } = await supabase
+  const { data: historicoRaw } = await supabase
     .from("manutencoes_realizadas")
-    .select("id, data_manutencao, hodometro, itens_realizados, oficina, custo_total, criado_por")
+    .select("id, data_manutencao, hodometro, itens_realizados, oficina, custo_total, criado_por, fotos")
     .eq("placa", placa)
     .order("data_manutencao", { ascending: false })
     .limit(100);
+
+  // Fase Checklist-Digital-Manutenção — o bucket é privado (evidência de
+  // manutenção não é dado público), então resolvemos uma signed URL de
+  // curta duração pra cada foto aqui no servidor, mesmo padrão já usado em
+  // chamados/[id]/page.tsx pros anexos de chamado.
+  const historico = await Promise.all(
+    (historicoRaw ?? []).map(async (r) => {
+      const caminhos = r.fotos ?? [];
+      if (caminhos.length === 0) return { ...r, fotosUrls: [] };
+      const fotosUrls = await Promise.all(
+        caminhos.map(async (caminho) => {
+          const { data } = await supabase.storage.from("manutencao-evidencias").createSignedUrl(caminho, 3600);
+          return { url: data?.signedUrl ?? "", nome: caminho.split("/").pop() ?? caminho };
+        })
+      );
+      return { ...r, fotosUrls: fotosUrls.filter((f) => f.url) };
+    })
+  );
 
   return (
     <div>

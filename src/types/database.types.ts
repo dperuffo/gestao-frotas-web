@@ -2024,6 +2024,7 @@ export interface Database {
           atualizado_em: string;
           empresa_id: string | null;
           origem: string;
+          fotos: string[] | null;
         };
         Insert: Partial<Database["public"]["Tables"]["manutencoes_realizadas"]["Row"]> & {
           cnpj_frota: string;
@@ -3943,6 +3944,33 @@ export interface Database {
         Returns: undefined;
       };
       rejeitar_acao_sugerida: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
+      };
+      // Fase Ações-Sugeridas-Completa — fecha os 3 tipos que faltavam pra
+      // cobrir tudo que Anomalias detecta (ver migration
+      // acoes_sugeridas_completa_tipos_anomalias).
+      detectar_acoes_volume_tanque: {
+        Args: { p_empresa_id?: string | null; p_minimo_ocorrencias?: number | null };
+        Returns: number;
+      };
+      detectar_acoes_geo_distancia: {
+        Args: { p_empresa_id?: string | null; p_minimo_ocorrencias?: number | null };
+        Returns: number;
+      };
+      detectar_acoes_preco_regiao: {
+        Args: { p_empresa_id?: string | null; p_minimo_ocorrencias?: number | null };
+        Returns: number;
+      };
+      executar_acao_limitar_volume_diario: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
+      };
+      executar_acao_limitar_intervalo: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
+      };
+      executar_acao_revisar_preco_regiao: {
         Args: { p_acao_id: number };
         Returns: undefined;
       };
