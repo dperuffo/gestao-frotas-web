@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
-import { LIMITES_PLANO, PLANO_LABEL, STATUS_EMPRESA_LABEL, type Plano, type StatusEmpresa } from "@/lib/constants";
+import { FAIXA_VEICULOS_PLANO, LIMITES_PLANO, PLANO_LABEL, STATUS_EMPRESA_LABEL, type Plano, type StatusEmpresa } from "@/lib/constants";
 import { buscarPrecosPlanos, formatarPrecoPlano } from "@/lib/planosPrecos";
 import { BotaoAssinarPlano } from "./_components/BotaoAssinarPlano";
 import { BotaoPortalPagamento } from "./_components/BotaoPortalPagamento";
@@ -107,6 +107,17 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
       : null;
 
   const limitesDoPlano = empresa ? LIMITES_PLANO[empresa.plano as Plano] : undefined;
+
+  // Calibração de preços de 20/07/2026 — faixa de veículos inclusa no valor
+  // BASE do plano atual + estimativa do excedente (cobrança ainda manual,
+  // ver comentário em src/lib/constants.ts). Só exibição, não bloqueia nada.
+  const faixaVeiculosAtual = empresa ? FAIXA_VEICULOS_PLANO[empresa.plano as Plano] : undefined;
+  const veiculosExcedentes =
+    faixaVeiculosAtual?.veiculos_inclusos != null ? Math.max(0, qtdVeiculos - faixaVeiculosAtual.veiculos_inclusos) : 0;
+  const valorExcedenteEstimadoCentavos =
+    veiculosExcedentes > 0 && faixaVeiculosAtual?.preco_excedente_centavos != null
+      ? veiculosExcedentes * faixaVeiculosAtual.preco_excedente_centavos
+      : 0;
   // Preço real de cada plano, buscado direto do Stripe (via Edge Function
   // planos-precos) — nunca hardcoded aqui, pra não desatualizar se o preço
   // mudar no Stripe.
@@ -200,6 +211,19 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
             </div>
           )}
 
+          {veiculosExcedentes > 0 && (
+            <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Sua frota tem {veiculosExcedentes} veículo{veiculosExcedentes === 1 ? "" : "s"} acima da faixa
+              inclusa no plano {PLANO_LABEL[empresa!.plano as Plano]} ({faixaVeiculosAtual?.veiculos_inclusos}{" "}
+              inclusos). Excedente estimado:{" "}
+              <strong>
+                {(valorExcedenteEstimadoCentavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês
+              </strong>
+              . Essa cobrança ainda é negociada manualmente — fale com a gente pelo chamado ou considere
+              subir de plano.
+            </div>
+          )}
+
           <div className="card mb-6 p-6">
             <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
               Planos disponíveis <AjudaIcon chave="assinatura.termo_adesao" />
@@ -216,6 +240,7 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {(["basico", "profissional", "enterprise"] as const).map((plano) => {
                 const limites = LIMITES_PLANO[plano];
+                const faixaVeiculos = FAIXA_VEICULOS_PLANO[plano];
                 const ehAtual = empresa!.plano === plano && empresa!.status === "ativo";
                 const ehRecomendado = empresa!.segmento === "Revenda" && !ehAtual && plano === planoRecomendadoRede;
                 return (
@@ -240,6 +265,13 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
                         </>
                       )}
                     </p>
+                    {faixaVeiculos.veiculos_inclusos != null && faixaVeiculos.preco_excedente_centavos != null && (
+                      <p className="mt-1 text-xs text-slate-400">
+                        Inclui {faixaVeiculos.veiculos_inclusos} veículos no valor base ·{" "}
+                        {(faixaVeiculos.preco_excedente_centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        /veículo excedente
+                      </p>
+                    )}
                     {ehAtual ? (
                       <span className="badge-ativo mt-3 inline-block">Plano atual</span>
                     ) : (

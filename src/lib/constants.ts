@@ -34,6 +34,23 @@ export const LIMITES_PLANO: Record<Plano, { max_usuarios: number; max_veiculos: 
   enterprise: { max_usuarios: -1, max_veiculos: -1 },
 };
 
+// Calibração de preços de 20/07/2026 (análise de MRR + custo de
+// infraestrutura pedida pelo Daniel): faixa de veículos incluída no valor
+// BASE de cada plano pago + valor por veículo excedente. Isso é diferente
+// de LIMITES_PLANO acima (que é o limite TÉCNICO de enforcement, ex.:
+// verificarLimiteFrota) — aqui é só o corte que define a partir de quando
+// o excedente passa a ser cobrado. Por enquanto a cobrança do excedente é
+// MANUAL/negociada (o Stripe conectado não expõe metered billing/usage
+// records ainda), então estes valores só alimentam a exibição na tela de
+// Assinatura e na landing — nenhum bloqueio nem cobrança automática usa
+// isso ainda. Gratuito não cobra excedente (upgrade é o caminho normal).
+export const FAIXA_VEICULOS_PLANO: Record<Plano, { veiculos_inclusos: number | null; preco_excedente_centavos: number | null }> = {
+  gratuito: { veiculos_inclusos: null, preco_excedente_centavos: null },
+  basico: { veiculos_inclusos: 20, preco_excedente_centavos: 450 },
+  profissional: { veiculos_inclusos: 60, preco_excedente_centavos: 350 },
+  enterprise: { veiculos_inclusos: 150, preco_excedente_centavos: 250 },
+};
+
 // Duração do trial self-service (cadastro público em /cadastro) — precisa
 // bater com a régua de e-mails da Edge Function email-trials (D+3, D+7,
 // aviso em D+12 => expira por volta do D+14).
