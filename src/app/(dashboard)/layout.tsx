@@ -9,6 +9,7 @@ import { contarAcessosClientesNaoVistosAcao } from "./clientes/actions";
 import { contarAnomaliasNaoRevisadasAcao } from "./anomalias/actions";
 import { contarNegociacoesPendentesAcao } from "./negociacoes/actions";
 import { contarAjustesAbastecimentosPendentesAcao } from "./abastecimentos/actions";
+import { contarAcoesSugeridasPendentesAcao } from "./acoes-sugeridas/actions";
 import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
 import { contarFalhasVerificacaoAntifraudeAcao } from "./antifraude/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
@@ -66,6 +67,12 @@ const menuOperacao = [
   // + indicador de % de recolha, do lado do cliente.
   { href: "/notas-fiscais", label: "📄 Notas Fiscais" },
   { href: "/anomalias", label: "🚨 Anomalias" },
+  // Fase Motor-de-Ação-Automática — pedido do Daniel após o benchmark com a
+  // TicketLog: central que fecha o ciclo sugestão -> aprovação -> execução
+  // real (bloquear motorista com CNH vencida, remover posto acima da média,
+  // cadastrar regra de hodômetro), reaproveitando o que Anomalias/CNH/
+  // Inteligência de Rede já detectavam só como alerta.
+  { href: "/acoes-sugeridas", label: "🤖 Ações Sugeridas" },
   // Fase 27.15x — diferente de Anomalias (detecta DEPOIS do abastecimento),
   // aqui o cliente cadastra regras que um sistema externo consulta ANTES de
   // autorizar — ver POST /api/integracoes/antifraude/verificar.
@@ -278,6 +285,7 @@ export default async function DashboardLayout({
     ajustesAbastecimentosPendentes,
     documentosPendentes,
     falhasVerificacaoAntifraude,
+    acoesSugeridasPendentes,
     logoutInatividadeMinutos,
   ] = await Promise.all([
       contarChamadosNaoVistosAcao().catch((e) => {
@@ -319,6 +327,13 @@ export default async function DashboardLayout({
       // mesma blindagem "falha vira 0" das demais contagens.
       contarFalhasVerificacaoAntifraudeAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar falhas de verificação antifraude (ignorado):", e);
+        return 0;
+      }),
+      // Fase Motor-de-Ação-Automática — bolinha de ações sugeridas pendentes
+      // (CNH vencida, posto acima da média, hodômetro fora do padrão),
+      // mesma blindagem "falha vira 0" das demais contagens.
+      contarAcoesSugeridasPendentesAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar ações sugeridas pendentes (ignorado):", e);
         return 0;
       }),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
@@ -573,6 +588,11 @@ export default async function DashboardLayout({
                   {item.href === "/antifraude" && falhasVerificacaoAntifraude > 0 && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                       {falhasVerificacaoAntifraude}
+                    </span>
+                  )}
+                  {item.href === "/acoes-sugeridas" && acoesSugeridasPendentes > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                      {acoesSugeridasPendentes}
                     </span>
                   )}
                 </Link>

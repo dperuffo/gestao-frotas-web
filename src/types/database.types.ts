@@ -1704,6 +1704,46 @@ export interface Database {
       // (abastecimento/manutenção) — seguro, IPVA, licenciamento,
       // rastreamento, multas. origem="api" quando veio de
       // /api/integracoes/custos-fixos em vez de lançamento manual.
+      acoes_sugeridas: {
+        Row: {
+          id: number;
+          empresa_id: string;
+          tipo: string;
+          alvo_tipo: string;
+          alvo_ref: string;
+          alvo_label: string;
+          titulo: string;
+          descricao: string;
+          impacto_estimado: Json;
+          severidade: string;
+          status: string;
+          detectado_em: string;
+          decidido_em: string | null;
+          decidido_por: string | null;
+          executado_em: string | null;
+          erro_execucao: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["acoes_sugeridas"]["Row"]> & {
+          empresa_id: string;
+          tipo: string;
+          alvo_tipo: string;
+          alvo_ref: string;
+          alvo_label: string;
+          titulo: string;
+          descricao: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["acoes_sugeridas"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "acoes_sugeridas_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       abastecimentos_externos: {
         Row: {
           id: number;
@@ -3875,6 +3915,36 @@ export interface Database {
           preco_medio: number | null;
           custo_total: number | null;
         }[];
+      };
+      // Fase Motor-de-Ação-Automática — central de ações sugeridas (ver
+      // migration acoes_sugeridas_motor_de_acao_automatica).
+      detectar_acoes_cnh_vencida: {
+        Args: { p_empresa_id?: string | null };
+        Returns: number;
+      };
+      detectar_acoes_posto_caro: {
+        Args: { p_empresa_id?: string | null; p_threshold?: number | null };
+        Returns: number;
+      };
+      detectar_acoes_hodometro: {
+        Args: { p_empresa_id?: string | null; p_minimo_ocorrencias?: number | null };
+        Returns: number;
+      };
+      executar_acao_bloquear_motorista: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
+      };
+      executar_acao_remover_posto_rede: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
+      };
+      executar_acao_ajustar_hodometro: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
+      };
+      rejeitar_acao_sugerida: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;
