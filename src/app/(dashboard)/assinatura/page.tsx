@@ -219,8 +219,8 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
               <strong>
                 {(valorExcedenteEstimadoCentavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês
               </strong>
-              . Essa cobrança ainda é negociada manualmente — fale com a gente pelo chamado ou considere
-              subir de plano.
+              . Isso já é cobrado automaticamente e aparece na sua próxima fatura — considere subir de
+              plano se a faixa inclusa costuma ficar pequena pra sua frota.
             </div>
           )}
 

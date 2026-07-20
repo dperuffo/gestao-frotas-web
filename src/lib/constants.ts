@@ -39,9 +39,11 @@ export const LIMITES_PLANO: Record<Plano, { max_usuarios: number; max_veiculos: 
 // BASE de cada plano pago + valor por veículo excedente. Isso é diferente
 // de LIMITES_PLANO acima (que é o limite TÉCNICO de enforcement, ex.:
 // verificarLimiteFrota) — aqui é só o corte que define a partir de quando
-// o excedente passa a ser cobrado. Por enquanto a cobrança do excedente é
-// MANUAL/negociada (o Stripe conectado não expõe metered billing/usage
-// records ainda), então estes valores só alimentam a exibição na tela de
+// o excedente passa a ser cobrado. A cobrança do excedente já é
+// AUTOMÁTICA via Stripe (produto "Veículo Excedente", medidor
+// veiculo_excedente, agregação "last") — a Edge Function
+// reportar-excedente-veiculos roda todo dia (cron) e reporta a contagem
+// real de cada empresa. Estes valores também alimentam a exibição na tela de
 // Assinatura e na landing — nenhum bloqueio nem cobrança automática usa
 // isso ainda. Gratuito não cobra excedente (upgrade é o caminho normal).
 export const FAIXA_VEICULOS_PLANO: Record<Plano, { veiculos_inclusos: number | null; preco_excedente_centavos: number | null }> = {
