@@ -6,7 +6,6 @@ import { BotaoSair } from "./_components/BotaoSair";
 import { contarChamadosNaoVistosAcao } from "./chamados/actions";
 import { contarAvaliacoesPendentesAcao } from "./avaliacoes/actions";
 import { contarAcessosClientesNaoVistosAcao } from "./clientes/actions";
-import { contarAnomaliasNaoRevisadasAcao } from "./anomalias/actions";
 import { contarNegociacoesPendentesAcao } from "./negociacoes/actions";
 import { contarAjustesAbastecimentosPendentesAcao } from "./abastecimentos/actions";
 import { contarAcoesSugeridasPendentesAcao } from "./acoes-sugeridas/actions";
@@ -66,14 +65,17 @@ const menuOperacao = [
   // Fase 27.94/27.95 — status de NF-e por abastecimento (emitida/pendente)
   // + indicador de % de recolha, do lado do cliente.
   { href: "/notas-fiscais", label: "📄 Notas Fiscais" },
-  { href: "/anomalias", label: "🚨 Anomalias" },
   // Fase Motor-de-Ação-Automática — pedido do Daniel após o benchmark com a
   // TicketLog: central que fecha o ciclo sugestão -> aprovação -> execução
   // real (bloquear motorista com CNH vencida, remover posto acima da média,
   // cadastrar regra de hodômetro), reaproveitando o que Anomalias/CNH/
-  // Inteligência de Rede já detectavam só como alerta.
+  // Inteligência de Rede já detectavam só como alerta. Fase
+  // Ações-Sugeridas-Completa: passou a cobrir os 4 tipos que o antigo painel
+  // de Anomalias detectava, então Anomalias saiu do menu (testado em
+  // produção pelo Daniel) — a rota /anomalias continua existindo só como
+  // redirect pra cá, pra não quebrar favoritos.
   { href: "/acoes-sugeridas", label: "🤖 Ações Sugeridas" },
-  // Fase 27.15x — diferente de Anomalias (detecta DEPOIS do abastecimento),
+  // Fase 27.15x — diferente de Ações Sugeridas (detecta DEPOIS do abastecimento),
   // aqui o cliente cadastra regras que um sistema externo consulta ANTES de
   // autorizar — ver POST /api/integracoes/antifraude/verificar.
   { href: "/antifraude", label: "🕵️ Antifraude" },
@@ -280,7 +282,6 @@ export default async function DashboardLayout({
     chamadosNaoVistos,
     avaliacoesPendentes,
     acessosClientesNaoVistos,
-    anomaliasNaoRevisadas,
     negociacoesPendentes,
     ajustesAbastecimentosPendentes,
     documentosPendentes,
@@ -298,10 +299,6 @@ export default async function DashboardLayout({
       }),
       contarAcessosClientesNaoVistosAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar acessos de clientes não vistos (ignorado):", e);
-        return 0;
-      }),
-      contarAnomaliasNaoRevisadasAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar anomalias não revisadas (ignorado):", e);
         return 0;
       }),
       contarNegociacoesPendentesAcao().catch((e) => {
@@ -570,11 +567,6 @@ export default async function DashboardLayout({
                   className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
                   <span>{item.label}</span>
-                  {item.href === "/anomalias" && anomaliasNaoRevisadas > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                      {anomaliasNaoRevisadas}
-                    </span>
-                  )}
                   {item.href === "/negociacoes" && negociacoesPendentes > 0 && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                       {negociacoesPendentes}

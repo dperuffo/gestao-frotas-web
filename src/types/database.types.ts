@@ -1744,6 +1744,68 @@ export interface Database {
           },
         ];
       };
+      // Fase Bloqueio-por-Anomalia — configuração por tipo (liga/desliga
+      // bloqueio de abastecimento quando uma ação sugerida desse tipo é
+      // aprovada) e o registro dos bloqueios ativos consultados pela API de
+      // Antifraude no ato do abastecimento (ver migration
+      // bloqueio_abastecimento_por_anomalia).
+      acoes_sugeridas_config_restricao: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          tipo: string;
+          restringir_abastecimento: boolean;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["acoes_sugeridas_config_restricao"]["Row"]> & {
+          empresa_id: string;
+          tipo: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["acoes_sugeridas_config_restricao"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "acoes_sugeridas_config_restricao_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      bloqueios_abastecimento: {
+        Row: {
+          id: number;
+          empresa_id: string;
+          alvo_tipo: string;
+          alvo_ref: string;
+          alvo_label: string | null;
+          tipo_origem: string;
+          motivo: string | null;
+          acao_sugerida_id: number | null;
+          ativo: boolean;
+          criado_em: string;
+          criado_por: string | null;
+          liberado_em: string | null;
+          liberado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["bloqueios_abastecimento"]["Row"]> & {
+          empresa_id: string;
+          alvo_tipo: string;
+          alvo_ref: string;
+          tipo_origem: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["bloqueios_abastecimento"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "bloqueios_abastecimento_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       abastecimentos_externos: {
         Row: {
           id: number;
@@ -3973,6 +4035,40 @@ export interface Database {
       executar_acao_revisar_preco_regiao: {
         Args: { p_acao_id: number };
         Returns: undefined;
+      };
+      // Fase Índice-Público-de-Preço — agregado/anônimo, sem auth (grant a
+      // anon), consumido pela página pública /indice-precos.
+      indice_publico_precos_uf: {
+        Args: Record<string, never>;
+        Returns: {
+          uf: string;
+          combustivel: string;
+          preco_medio_rede: number;
+          preco_min_rede: number;
+          preco_max_rede: number;
+          qtd_postos: number;
+          preco_medio_anp: number | null;
+          data_referencia_anp: string | null;
+          atualizado_em: string | null;
+        }[];
+      };
+      liberar_bloqueio_abastecimento: {
+        Args: { p_bloqueio_id: number };
+        Returns: undefined;
+      };
+      indice_publico_precos_brasil: {
+        Args: Record<string, never>;
+        Returns: {
+          combustivel: string;
+          preco_medio_rede: number;
+          preco_min_rede: number;
+          preco_max_rede: number;
+          qtd_postos: number;
+          qtd_ufs: number;
+          preco_medio_anp: number | null;
+          data_referencia_anp: string | null;
+          atualizado_em: string | null;
+        }[];
       };
     };
     Enums: Record<string, never>;

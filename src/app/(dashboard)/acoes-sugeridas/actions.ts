@@ -15,6 +15,18 @@ export type ResultadoDeteccaoAcoes = { erro?: string; inseridas?: number };
 export async function executarDeteccaoAcoesSugeridasAcao(empresaId: string | null): Promise<ResultadoDeteccaoAcoes> {
   const supabase = await createClient();
 
+  // Fase Ações-Sugeridas-Completa — com o painel de Anomalias fora do menu,
+  // ninguém mais chama detectar_anomalias_abastecimento() manualmente (era o
+  // botão "Detectar agora" de lá). volume_tanque/geo_distancia/hodometro/
+  // preco_regiao só existem em acoes_sugeridas a partir de linhas em
+  // anomalias_abastecimento, então rodamos essa detecção de base aqui
+  // primeiro — sem isso, os 4 tipos ficariam presos nos dados do último dia
+  // em que alguém abriu a tela antiga.
+  const anomalias = await supabase.rpc("detectar_anomalias_abastecimento", { p_empresa_id: empresaId });
+  if (anomalias.error) {
+    return { erro: `Não foi possível rodar a detecção base de anomalias: ${anomalias.error.message}` };
+  }
+
   const [cnh, posto, hodometro, volumeTanque, geoDistancia, precoRegiao] = await Promise.all([
     supabase.rpc("detectar_acoes_cnh_vencida", { p_empresa_id: empresaId }),
     supabase.rpc("detectar_acoes_posto_caro", { p_empresa_id: empresaId }),
@@ -95,4 +107,48 @@ export async function contarAcoesSugeridasPendentesAcao(): Promise<number> {
     .eq("status", "pendente");
 
   return count ?? 0;
+}
+
+// Fase Bloqueio-por-Anomalia — pedido do Daniel: "colocar um seletor para o
+// tipo de anomalia para que o usuário selecione para restringir o
+// abastecimento". Upsert simples (RLS já garante que só quem tem acesso à
+// empresa consegue gravar aqui — ver policy acoes_sugeridas_config_restricao_tenant_all).
+export async function salvarConfigRestricaoAcao(
+  empresaId: string,
+  tipo: string,
+  restringirAbastecimento: boolean
+): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase.from("acoes_sugeridas_config_restricao").upsert(
+    {
+      empresa_id: empresaId,
+      tipo,
+      restringir_abastecimento: restringirAbastecimento,
+      atualizado_em: new Date().toISOString(),
+      atualizado_por: user?.email ?? null,
+    },
+    { onConflict: "empresa_id,tipo" }
+  );
+
+  if (error) {
+    return { erro: `Não foi possível salvar: ${error.message}` };
+  }
+
+  revalidatePath("/acoes-sugeridas/restricoes");
+  return {};
+}
+
+export async function liberarBloqueioAbastecimentoAcao(id: number): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("liberar_bloqueio_abastecimento", { p_bloqueio_id: id });
+  if (error) {
+    return { erro: `Não foi possível liberar: ${error.message}` };
+  }
+
+  revalidatePath("/acoes-sugeridas/restricoes");
+  return {};
 }
