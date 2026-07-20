@@ -20,11 +20,18 @@ const LOGOS: Record<string, { src: string; width: number; height: number; nome: 
 
 // O campo "provedor" é texto livre (quem envia é o sistema externo — ver
 // /api/integracoes/abastecimentos) — normaliza variações razoáveis de
-// grafia (maiúscula/minúscula, espaço, hífen) antes de procurar no mapa,
-// pra não depender de todo mundo mandar exatamente "ticket_log".
+// grafia antes de procurar no mapa, pra não depender de todo mundo mandar
+// exatamente "ticket_log". Achado real: os dados reais em
+// abastecimentos_unificado vêm como "TicketLog"/"RedeFrota" — camelCase,
+// SEM espaço nem hífen entre as palavras — então só baixar pra minúsculo
+// não bastava (virava "ticketlog"/"redefrota", que não batiam com as
+// chaves do mapa abaixo). A troca abaixo insere "_" antes de toda letra
+// maiúscula que vem depois de uma minúscula (limite de camelCase) ANTES de
+// baixar pra minúsculo — "TicketLog" -> "Ticket_Log" -> "ticket_log".
 function normalizarSlug(provedor: string): string {
   return provedor
     .trim()
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
     .toLowerCase()
     .replace(/[\s-]+/g, "_");
 }
