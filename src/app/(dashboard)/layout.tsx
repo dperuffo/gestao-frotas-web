@@ -378,7 +378,14 @@ export default async function DashboardLayout({
       passos={ehPosto ? PASSOS_TOUR_POSTO : passosTourFrota}
     >
     <div className="flex min-h-screen">
-      <aside className="flex w-64 shrink-0 flex-col bg-frota-950 text-slate-100">
+      {/* Pedido do Daniel: "desacoplar o menu da tela de informações" — em
+          telas com muito conteúdo, o <aside> (menu lateral) rolava junto com
+          o <main>, saindo de vista quando o usuário descia a página. Fixado
+          com sticky top-0 h-screen: o menu fica preso ao viewport (nunca sai
+          de vista ao rolar o conteúdo) e ganha scroll PRÓPRIO
+          (overflow-y-auto) pro caso do menu em si ser mais alto que a tela
+          (perfil admin, com todas as seções abertas). */}
+      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col overflow-y-auto bg-frota-950 text-slate-100">
         <div data-tour="logo" className="border-b border-white/10 px-5 py-6">
           <div className="rounded-xl border border-white/10 bg-white/95 p-3 shadow-lg shadow-frota-950/30">
             <Image
