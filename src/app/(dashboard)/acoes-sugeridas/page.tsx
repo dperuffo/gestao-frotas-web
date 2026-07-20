@@ -10,6 +10,9 @@ const TIPO_LABEL: Record<string, string> = {
   cnh_vencida: "CNH vencida",
   posto_acima_media: "Posto acima da média",
   hodometro_fora_padrao: "Hodômetro fora do padrão",
+  volume_tanque: "Volume acima do tanque",
+  geo_distancia: "Postos distantes no mesmo dia",
+  preco_regiao: "Preço fora da média regional",
 };
 
 // Fase Motor-de-Ação-Automática — pedido do Daniel após o benchmark com a
@@ -88,7 +91,8 @@ export default async function AcoesSugeridasPage({
           <h1 className="text-xl font-semibold text-slate-900">Ações Sugeridas</h1>
           <p className="mt-1 text-sm text-slate-500">
             Oportunidades detectadas automaticamente — CNH vencida, posto acima da média regional, hodômetro fora do
-            padrão. Aprovar executa a ação de verdade no sistema (bloquear motorista, remover posto da rede, cadastrar
+            padrão, volume acima do tanque, postos distantes no mesmo dia e preço fora da média regional. Aprovar
+            executa a ação de verdade no sistema (bloquear motorista, remover posto da rede, cadastrar
             regra){nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
           </p>
         </div>

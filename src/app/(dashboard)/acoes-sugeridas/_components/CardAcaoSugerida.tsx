@@ -29,6 +29,9 @@ const CONFIRMACAO_POR_TIPO: Record<string, string> = {
   cnh_vencida: "Bloquear este motorista agora? O status dele vai para Inativo até você reverter manualmente.",
   posto_acima_media: "Remover este posto da rede negociada agora? Ele deixa de contar como posto ativo da empresa.",
   hodometro_fora_padrao: "Cadastrar esse limite de variação de hodômetro para a placa agora?",
+  volume_tanque: "Cadastrar esse limite de volume diário para a placa agora?",
+  geo_distancia: "Cadastrar esse intervalo mínimo entre abastecimentos para a placa agora?",
+  preco_regiao: "Marcar todos os abastecimentos com preço fora da média desta placa como revisados?",
 };
 
 export function CardAcaoSugerida({ acao }: { acao: AcaoSugerida }) {

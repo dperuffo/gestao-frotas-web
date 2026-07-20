@@ -15,29 +15,44 @@ export type ResultadoDeteccaoAcoes = { erro?: string; inseridas?: number };
 export async function executarDeteccaoAcoesSugeridasAcao(empresaId: string | null): Promise<ResultadoDeteccaoAcoes> {
   const supabase = await createClient();
 
-  const [cnh, posto, hodometro] = await Promise.all([
+  const [cnh, posto, hodometro, volumeTanque, geoDistancia, precoRegiao] = await Promise.all([
     supabase.rpc("detectar_acoes_cnh_vencida", { p_empresa_id: empresaId }),
     supabase.rpc("detectar_acoes_posto_caro", { p_empresa_id: empresaId }),
     supabase.rpc("detectar_acoes_hodometro", { p_empresa_id: empresaId }),
+    supabase.rpc("detectar_acoes_volume_tanque", { p_empresa_id: empresaId }),
+    supabase.rpc("detectar_acoes_geo_distancia", { p_empresa_id: empresaId }),
+    supabase.rpc("detectar_acoes_preco_regiao", { p_empresa_id: empresaId }),
   ]);
 
-  const erro = cnh.error ?? posto.error ?? hodometro.error;
+  const erro = cnh.error ?? posto.error ?? hodometro.error ?? volumeTanque.error ?? geoDistancia.error ?? precoRegiao.error;
   if (erro) {
     return { erro: `Não foi possível rodar a detecção: ${erro.message}` };
   }
 
-  const inseridas = (cnh.data ?? 0) + (posto.data ?? 0) + (hodometro.data ?? 0);
+  const inseridas =
+    (cnh.data ?? 0) +
+    (posto.data ?? 0) +
+    (hodometro.data ?? 0) +
+    (volumeTanque.data ?? 0) +
+    (geoDistancia.data ?? 0) +
+    (precoRegiao.data ?? 0);
   revalidatePath("/acoes-sugeridas");
   return { inseridas };
 }
 
 // Mapa tipo -> RPC de execução específica (cada tipo grava numa tabela
-// diferente — motoristas, postos_gf, parametros_variacao_hodometro — por
-// isso não dá pra ter uma única RPC genérica de "aprovar").
+// diferente — motoristas, postos_gf, parametros_variacao_hodometro,
+// parametros_volume_diario_veiculo, parametros_intervalo_abastecimento, ou
+// revisa em lote as anomalias de preço — por isso não dá pra ter uma única
+// RPC genérica de "aprovar". Fase Ações-Sugeridas-Completa: fecha os 3 tipos
+// que faltavam pra cobrir tudo que Anomalias detecta.
 const RPC_EXECUCAO: Record<string, string> = {
   cnh_vencida: "executar_acao_bloquear_motorista",
   posto_acima_media: "executar_acao_remover_posto_rede",
   hodometro_fora_padrao: "executar_acao_ajustar_hodometro",
+  volume_tanque: "executar_acao_limitar_volume_diario",
+  geo_distancia: "executar_acao_limitar_intervalo",
+  preco_regiao: "executar_acao_revisar_preco_regiao",
 };
 
 export async function aprovarEExecutarAcaoAcao(id: number, tipo: string): Promise<{ erro?: string }> {
