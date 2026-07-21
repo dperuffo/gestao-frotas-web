@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ListaVeiculosCombustivelIdeal } from "./_components/ListaVeiculosCombustivelIdeal";
 import { ListaVeiculosDieselIdeal } from "./_components/ListaVeiculosDieselIdeal";
+import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
 
 // Fase Onda-2 (benchmark TicketLog, item #6 — "Comparador combustível ideal
 // por região") — pedido do Daniel: "Etanol ou gasolina, conforme o
@@ -80,68 +81,87 @@ export default async function CombustivelIdealPage({
       )}
 
       {!semClienteEscolhido && (
-        <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Indicador label="Veículos" valor={String(linhas.length)} />
-            <Indicador label="Etanol compensa" valor={String(totalEtanol)} destaque />
-            <Indicador label="Gasolina compensa" valor={String(totalGasolina)} />
-          </div>
+        // Pedido do Daniel: "ter um filtro para selecionar Veículos Flex ou
+        // Veículos Diesel para facilitar a busca pelo usuário" — antes as
+        // duas seções ficavam sempre empilhadas na mesma página (rolagem
+        // longa, sobretudo em frotas grandes). Reaproveita o mesmo
+        // AbasPainel já usado em Fretes/Relatórios/Inteligência de Rede/
+        // Integrações/Postos, espelhando as abas "Flex"/"Diesel" que o PWA
+        // Cliente já tinha (DefaultTabController em combustivel_ideal_screen.dart).
+        <AbasPainel
+          abas={[
+            {
+              id: "flex",
+              label: "🌱⛽ Flex",
+              conteudo: (
+                <>
+                  <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    <Indicador label="Veículos" valor={String(linhas.length)} />
+                    <Indicador label="Etanol compensa" valor={String(totalEtanol)} destaque />
+                    <Indicador label="Gasolina compensa" valor={String(totalGasolina)} />
+                  </div>
 
-          <div className="card mb-6 p-4 text-xs leading-relaxed text-slate-500">
-            <p className="mb-1 font-medium text-slate-700">Como funciona a conta:</p>
-            <p>
-              <strong>Custo por km = preço do litro ÷ rendimento (km/l)</strong>. O rendimento real de cada
-              veículo vem do histórico de abastecimentos dele (distância percorrida entre um abastecimento e o
-              próximo, dividida pelos litros postos). Quando a placa ainda não abasteceu com os dois
-              combustíveis, o que falta é estimado a partir do outro pela regra física padrão (etanol ≈ 70% do
-              rendimento da gasolina) — essas linhas aparecem com o selo &quot;estimado&quot;. O preço regional
-              usa a rede própria do cliente na UF do veículo, com fallback para a média da ANP no estado quando
-              a rede não tem postos suficientes ali.
-            </p>
-          </div>
+                  <div className="card mb-6 p-4 text-xs leading-relaxed text-slate-500">
+                    <p className="mb-1 font-medium text-slate-700">Como funciona a conta:</p>
+                    <p>
+                      <strong>Custo por km = preço do litro ÷ rendimento (km/l)</strong>. O rendimento real de
+                      cada veículo vem do histórico de abastecimentos dele (distância percorrida entre um
+                      abastecimento e o próximo, dividida pelos litros postos). Quando a placa ainda não
+                      abasteceu com os dois combustíveis, o que falta é estimado a partir do outro pela regra
+                      física padrão (etanol ≈ 70% do rendimento da gasolina) — essas linhas aparecem com o selo
+                      &quot;estimado&quot;. O preço regional usa a rede própria do cliente na UF do veículo, com
+                      fallback para a média da ANP no estado quando a rede não tem postos suficientes ali.
+                    </p>
+                  </div>
 
-          <h2 className="mb-3 text-sm font-semibold text-slate-700">🌱⛽ Veículos flex — etanol × gasolina</h2>
+                  {error && (
+                    <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                      Erro ao carregar o comparador: {error.message}
+                    </p>
+                  )}
 
-          {error && (
-            <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-              Erro ao carregar o comparador: {error.message}
-            </p>
-          )}
+                  {!error && <ListaVeiculosCombustivelIdeal itens={linhas} />}
 
-          {!error && <ListaVeiculosCombustivelIdeal itens={linhas} />}
+                  {semDados > 0 && (
+                    <p className="mt-3 text-xs text-slate-400">
+                      {semDados} veículo(s) sem dados suficientes de preço regional ou histórico de abastecimento
+                      pra recomendar.
+                    </p>
+                  )}
+                </>
+              ),
+            },
+            {
+              id: "diesel",
+              label: "🛢️✨ Diesel",
+              conteudo: (
+                <>
+                  <p className="mb-3 text-xs text-slate-500">
+                    Diferente do etanol × gasolina, não existe uma razão física universal pra estimar se o
+                    aditivado compensa — a recomendação só aparece quando a placa já tem histórico de rendimento
+                    com os dois. Sem isso, mostramos o prêmio de preço do aditivado pra você decidir.
+                  </p>
 
-          {semDados > 0 && (
-            <p className="mt-3 text-xs text-slate-400">
-              {semDados} veículo(s) sem dados suficientes de preço regional ou histórico de abastecimento pra
-              recomendar.
-            </p>
-          )}
+                  {linhasDiesel.length > 0 && (
+                    <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                      <Indicador label="Veículo × família" valor={String(linhasDiesel.length)} />
+                      <Indicador label="Aditivado compensa" valor={String(totalAditivadoCompensa)} destaque />
+                      <Indicador label="Comum compensa" valor={String(totalComumCompensa)} />
+                    </div>
+                  )}
 
-          <div className="mt-10">
-            <h2 className="mb-1 text-sm font-semibold text-slate-700">🛢️✨ Veículos a diesel — comum × aditivado</h2>
-            <p className="mb-3 text-xs text-slate-500">
-              Diferente do etanol × gasolina, não existe uma razão física universal pra estimar se o aditivado
-              compensa — a recomendação só aparece quando a placa já tem histórico de rendimento com os dois. Sem
-              isso, mostramos o prêmio de preço do aditivado pra você decidir.
-            </p>
+                  {erroDiesel && (
+                    <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                      Erro ao carregar o comparador de diesel: {erroDiesel.message}
+                    </p>
+                  )}
 
-            {linhasDiesel.length > 0 && (
-              <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                <Indicador label="Veículo × família" valor={String(linhasDiesel.length)} />
-                <Indicador label="Aditivado compensa" valor={String(totalAditivadoCompensa)} destaque />
-                <Indicador label="Comum compensa" valor={String(totalComumCompensa)} />
-              </div>
-            )}
-
-            {erroDiesel && (
-              <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                Erro ao carregar o comparador de diesel: {erroDiesel.message}
-              </p>
-            )}
-
-            {!erroDiesel && <ListaVeiculosDieselIdeal itens={linhasDiesel} />}
-          </div>
-        </>
+                  {!erroDiesel && <ListaVeiculosDieselIdeal itens={linhasDiesel} />}
+                </>
+              ),
+            },
+          ]}
+        />
       )}
     </div>
   );
