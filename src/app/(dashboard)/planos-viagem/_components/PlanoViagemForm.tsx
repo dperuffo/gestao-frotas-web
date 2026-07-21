@@ -394,57 +394,67 @@ export function PlanoViagemForm({
             rota&quot; (se houver Rota salva vinculada) ou clique em &quot;+ Praça&quot; pra adicionar manualmente.
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {pedagios.map((p, i) => (
-              <div key={i} className="relative flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Nome da praça"
-                  value={p.praca_nome}
-                  onChange={(e) => handlePracaNomeChange(i, e.target.value)}
-                  onFocus={() => setLinhaComSugestoes(i)}
-                  onBlur={() => setTimeout(() => setLinhaComSugestoes(null), 150)}
-                  autoComplete="off"
-                  className="input flex-1"
-                />
-                {linhaComSugestoes === i && sugestoesPraca.length > 0 && (
-                  <ul className="absolute top-full left-0 z-10 mt-1 max-h-56 w-[calc(100%-8.5rem)] overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
-                    {sugestoesPraca.map((s) => (
-                      <li key={s.id}>
-                        <button
-                          type="button"
-                          onMouseDown={() => selecionarSugestaoPraca(i, s)}
-                          className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-slate-50"
-                        >
-                          <span className="font-medium text-slate-800">
-                            {s.nome} {s.uf ? `— ${s.uf}` : ""}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            {s.concessionaria ?? "—"}
-                            {s.valorCarro != null ? ` · carro ${formatarMoeda(s.valorCarro)}` : ""}
-                            {s.valorCaminhaoEixo != null ? ` · caminhão ${formatarMoeda(s.valorCaminhaoEixo)}/eixo` : ""}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="Valor"
-                  value={p.valor}
-                  onChange={(e) => atualizarPedagio(i, "valor", e.target.value)}
-                  className="input w-32"
-                />
-                <button
-                  type="button"
-                  onClick={() => removerPedagio(i)}
-                  className="text-sm text-red-600 hover:underline"
-                >
-                  Remover
-                </button>
+              <div key={i} className="rounded-lg border border-slate-200 p-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px_auto] sm:items-end">
+                  <div className="relative">
+                    <label className="mb-1 block text-xs font-medium text-slate-500">Nome da praça</label>
+                    <input
+                      type="text"
+                      placeholder="Buscar na base de pedágios..."
+                      value={p.praca_nome}
+                      onChange={(e) => handlePracaNomeChange(i, e.target.value)}
+                      onFocus={() => setLinhaComSugestoes(i)}
+                      onBlur={() => setTimeout(() => setLinhaComSugestoes(null), 150)}
+                      autoComplete="off"
+                      className="input w-full"
+                    />
+                    {linhaComSugestoes === i && sugestoesPraca.length > 0 && (
+                      <ul className="absolute top-full left-0 z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                        {sugestoesPraca.map((s) => (
+                          <li key={s.id}>
+                            <button
+                              type="button"
+                              onMouseDown={() => selecionarSugestaoPraca(i, s)}
+                              className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-slate-50"
+                            >
+                              <span className="font-medium text-slate-800">
+                                {s.nome} {s.uf ? `— ${s.uf}` : ""}
+                              </span>
+                              <span className="text-xs text-slate-500">
+                                {s.concessionaria ?? "—"}
+                                {s.valorCarro != null ? ` · carro ${formatarMoeda(s.valorCarro)}` : ""}
+                                {s.valorCaminhaoEixo != null
+                                  ? ` · caminhão ${formatarMoeda(s.valorCaminhaoEixo)}/eixo`
+                                  : ""}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-500">Valor (R$)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="0,00"
+                      value={p.valor}
+                      onChange={(e) => atualizarPedagio(i, "valor", e.target.value)}
+                      className="input w-full"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removerPedagio(i)}
+                    className="text-sm text-red-600 hover:underline sm:pb-2.5"
+                  >
+                    Remover
+                  </button>
+                </div>
               </div>
             ))}
           </div>
