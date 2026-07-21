@@ -645,6 +645,7 @@ export interface Database {
           titulo: string;
           texto: string;
           imagem_path: string | null;
+          video_path: string | null;
           perfis: string[] | null;
           ativo: boolean;
           criado_em: string;

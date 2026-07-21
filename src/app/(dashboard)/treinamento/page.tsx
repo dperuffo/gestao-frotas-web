@@ -18,7 +18,7 @@ export default async function TreinamentoPage() {
 
   const { data: licoes } = await supabase
     .from("conteudo_ajuda")
-    .select("id, modulo, ordem, titulo, texto, imagem_path, perfis")
+    .select("id, modulo, ordem, titulo, texto, imagem_path, video_path, perfis")
     .eq("tipo", "licao")
     .eq("ativo", true)
     .order("modulo", { ascending: true })

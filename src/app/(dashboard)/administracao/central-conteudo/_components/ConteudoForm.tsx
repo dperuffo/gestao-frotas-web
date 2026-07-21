@@ -3,7 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import { criarConteudoAcao, atualizarConteudoAcao } from "../actions";
 import { PERFIS, PERFIL_LABEL } from "@/lib/constants";
-import { urlImagemTreinamento } from "@/lib/ajuda/imagemTreinamento";
+import { urlImagemTreinamento, urlVideoTreinamento } from "@/lib/ajuda/imagemTreinamento";
 import type { Database } from "@/types/database.types";
 
 type ConteudoAjuda = Database["public"]["Tables"]["conteudo_ajuda"]["Row"];
@@ -34,6 +34,7 @@ export function ConteudoForm({ conteudo }: { conteudo?: ConteudoAjuda }) {
   const [isPending, startTransition] = useTransition();
   const [tipo, setTipo] = useState(conteudo?.tipo ?? "contextual");
   const urlAtual = urlImagemTreinamento(conteudo?.imagem_path ?? null);
+  const urlVideoAtual = urlVideoTreinamento(conteudo?.video_path ?? null);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -120,6 +121,29 @@ export function ConteudoForm({ conteudo }: { conteudo?: ConteudoAjuda }) {
           <input type="file" name="imagem" accept="image/*" className="input" />
         </Campo>
       </section>
+
+      {tipo === "licao" && (
+        <section className="card p-6">
+          <h2 className="mb-1 text-sm font-semibold text-slate-900">Vídeo (opcional)</h2>
+          <p className="mb-4 text-xs text-slate-500">
+            Anexa uma pílula de vídeo curto à lição — aparece com um indicador &quot;🎥 Vídeo&quot; na lista e um
+            player logo abaixo do texto. Só disponível pra lições da Central de Treinamento (não pra ajuda
+            contextual). Tamanho máximo: 200MB.
+          </p>
+          {urlVideoAtual && (
+            <div className="mb-3">
+              <video src={urlVideoAtual} controls className="max-h-64 rounded-lg border border-slate-200" />
+              <label className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                <input type="checkbox" name="remover_video" className="rounded border-slate-300" />
+                Remover este vídeo
+              </label>
+            </div>
+          )}
+          <Campo label={urlVideoAtual ? "Substituir por outro vídeo" : "Enviar vídeo"}>
+            <input type="file" name="video" accept="video/mp4,video/webm,video/quicktime,video/x-msvideo" className="input" />
+          </Campo>
+        </section>
+      )}
 
       <section className="card p-6">
         <div className="flex items-center justify-between">

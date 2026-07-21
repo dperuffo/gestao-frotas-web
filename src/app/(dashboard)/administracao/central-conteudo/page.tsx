@@ -26,7 +26,7 @@ export default async function CentralConteudoPage() {
 
   const { data: itens } = await supabase
     .from("conteudo_ajuda")
-    .select("id, chave, tipo, modulo, ordem, titulo, ativo")
+    .select("id, chave, tipo, modulo, ordem, titulo, ativo, video_path")
     .order("tipo", { ascending: true })
     .order("modulo", { ascending: true, nullsFirst: true })
     .order("ordem", { ascending: true });
@@ -60,7 +60,14 @@ function Secao({
   itens,
 }: {
   titulo: string;
-  itens: { id: number; chave: string; modulo: string | null; titulo: string; ativo: boolean }[];
+  itens: {
+    id: number;
+    chave: string;
+    modulo: string | null;
+    titulo: string;
+    ativo: boolean;
+    video_path: string | null;
+  }[];
 }) {
   return (
     <div className="card mb-6 overflow-x-auto p-6">
@@ -79,7 +86,14 @@ function Secao({
           {itens.map((item) => (
             <tr key={item.id}>
               <td className="px-4 py-3 text-slate-600">{item.modulo ?? "—"}</td>
-              <td className="px-4 py-3 font-medium text-slate-900">{item.titulo}</td>
+              <td className="px-4 py-3 font-medium text-slate-900">
+                {item.titulo}
+                {item.video_path && (
+                  <span className="ml-2 rounded-full bg-frota-50 px-2 py-0.5 text-[10px] font-semibold text-frota-700">
+                    🎥 Vídeo
+                  </span>
+                )}
+              </td>
               <td className="px-4 py-3 font-mono text-xs text-slate-400">{item.chave}</td>
               <td className="px-4 py-3">
                 <span className={item.ativo ? "badge-ativo" : "badge-inativo"}>{item.ativo ? "Ativo" : "Inativo"}</span>
