@@ -16,6 +16,18 @@ export type LinhaCustoFixo = {
   editavel: boolean;
 };
 
+// Fase Financeiro-Fretes — pedido do Daniel: "Parcelas de fretes pagos
+// popular painel financeiro em despesas". Lançamentos com origem 'frete'
+// vêm de marcar_pagamento_frete (adiantamento/saldo final confirmados como
+// pagos em Fretes) — mesmo badge visual de "Integração" pros demais
+// automáticos (origem 'api'), mas com rótulo e cor próprios pra deixar
+// claro de onde veio.
+function badgeOrigem(origem: string) {
+  if (origem === "frete") return { classe: "badge-ativo", label: "Frete" };
+  if (origem === "api") return { classe: "badge-ativo", label: "Integração" };
+  return { classe: "badge-atencao", label: "Manual" };
+}
+
 // Tabela "Últimos custos fixos lançados" com edição/exclusão inline — só
 // habilitada pra lançamentos do mês vigente (flag `editavel`, calculada em
 // page.tsx comparando a competência com o mês/ano atuais). Fora do mês
@@ -105,6 +117,7 @@ export function TabelaCustosFixos({ linhas }: { linhas: LinhaCustoFixo[] }) {
         <tbody className="divide-y divide-slate-100">
           {linhas.map((l) => {
             const emEdicao = editandoId === l.id && rascunho;
+            const origem = badgeOrigem(l.origem);
             return (
               <tr key={l.id}>
                 {emEdicao ? (
@@ -157,9 +170,7 @@ export function TabelaCustosFixos({ linhas }: { linhas: LinhaCustoFixo[] }) {
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <span className={l.origem === "api" ? "badge-ativo" : "badge-atencao"}>
-                        {l.origem === "api" ? "Integração" : "Manual"}
-                      </span>
+                      <span className={origem.classe}>{origem.label}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
@@ -190,9 +201,7 @@ export function TabelaCustosFixos({ linhas }: { linhas: LinhaCustoFixo[] }) {
                     <td className="px-4 py-3 text-slate-600">{formatarDataSemFuso(l.competencia)}</td>
                     <td className="px-4 py-3 text-slate-600">{formatarMoeda(l.valor)}</td>
                     <td className="px-4 py-3">
-                      <span className={l.origem === "api" ? "badge-ativo" : "badge-atencao"}>
-                        {l.origem === "api" ? "Integração" : "Manual"}
-                      </span>
+                      <span className={origem.classe}>{origem.label}</span>
                     </td>
                     <td className="px-4 py-3">
                       {l.editavel ? (

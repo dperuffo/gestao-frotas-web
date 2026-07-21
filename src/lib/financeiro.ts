@@ -2,7 +2,11 @@
 // página do cliente, os formulários de orçamento/custos fixos e a API
 // externa de custos fixos.
 
-export const TIPOS_CUSTO_FIXO = ["seguro", "ipva", "licenciamento", "rastreamento", "multa", "pedagio", "outro"] as const;
+// Fase Financeiro-Fretes — pedido do Daniel: "Parcelas de fretes pagos
+// popular painel financeiro em despesas". `marcar_pagamento_frete` agora
+// insere em custos_fixos com tipo/origem 'frete' quando uma parcela
+// (adiantamento ou saldo final) é confirmada como paga.
+export const TIPOS_CUSTO_FIXO = ["seguro", "ipva", "licenciamento", "rastreamento", "multa", "pedagio", "frete", "outro"] as const;
 export type TipoCustoFixo = (typeof TIPOS_CUSTO_FIXO)[number];
 
 export const TIPO_CUSTO_FIXO_LABEL: Record<TipoCustoFixo, string> = {
@@ -12,6 +16,7 @@ export const TIPO_CUSTO_FIXO_LABEL: Record<TipoCustoFixo, string> = {
   rastreamento: "Rastreamento",
   multa: "Multa",
   pedagio: "Pedágio",
+  frete: "Frete",
   outro: "Outro",
 };
 
