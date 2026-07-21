@@ -406,18 +406,33 @@ export default async function DashboardPage({
     }));
 
   // Indicadores 4 e 5 — evolutivo e ranking dos Top 5 postos por volume.
+  //
+  // Fase Correção-Gráfico-Evolutivo-Postos (achado do Daniel: "gráfico
+  // estranho", linha cortando no meio e eixo X voltando pro início) — a RPC
+  // indicador_volume_postos ordena por (posto_nome, dia), não por dia global
+  // (cada posto pode ter uma faixa de dias diferente). O bug: o Map abaixo
+  // era chaveado pelo diaLabel (string "DD/MM") na ordem em que as LINHAS
+  // chegavam — então os dias do 1º posto (alfabético) entravam primeiro no
+  // Map, e quando o 2º posto trazia um dia ainda não visto (ex.: um dia
+  // anterior aos do 1º posto), ele era inserido no FIM da ordem de iteração
+  // do Map, quebrando a ordem cronológica do eixo X. Corrigido chaveando
+  // pelo v.dia (ISO "AAAA-MM-DD", ordenável lexicograficamente = ordenável
+  // cronologicamente) e ordenando o array final antes de virar pontos do
+  // gráfico.
   const postosNomes = Array.from(new Set((volumePostos ?? []).map((v) => v.posto_nome ?? v.posto_cnpj)));
   const porDiaPostos = new Map<string, PontoEvolutivoPostos>();
   const totalPorPosto = new Map<string, number>();
   for (const v of volumePostos ?? []) {
     const nome = v.posto_nome ?? v.posto_cnpj;
     const diaLabel = new Date(`${v.dia}T00:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-    const ponto = porDiaPostos.get(diaLabel) ?? { diaLabel };
+    const ponto = porDiaPostos.get(v.dia) ?? { diaLabel };
     ponto[nome] = v.litros;
-    porDiaPostos.set(diaLabel, ponto);
+    porDiaPostos.set(v.dia, ponto);
     totalPorPosto.set(nome, (totalPorPosto.get(nome) ?? 0) + v.litros);
   }
-  const dadosEvolutivoPostos = Array.from(porDiaPostos.values());
+  const dadosEvolutivoPostos = Array.from(porDiaPostos.entries())
+    .sort(([diaA], [diaB]) => diaA.localeCompare(diaB))
+    .map(([, ponto]) => ponto);
   const dadosTopPostos = Array.from(totalPorPosto.entries())
     .map(([posto, litros]) => ({ posto, litros: Math.round(litros * 10) / 10 }))
     .sort((a, b) => b.litros - a.litros);
