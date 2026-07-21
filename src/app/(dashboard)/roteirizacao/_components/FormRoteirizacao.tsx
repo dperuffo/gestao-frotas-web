@@ -299,10 +299,27 @@ export function FormRoteirizacao({
               <p className="mt-1 text-2xl font-semibold text-slate-900">{resultado.litrosTotal} L</p>
             </div>
             <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Custo total</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Custo combustível</p>
               <p className="mt-1 text-2xl font-semibold text-slate-900">{formatarMoeda(resultado.custoTotal)}</p>
             </div>
           </div>
+
+          {resultado.pracasPedagio.length > 0 && (
+            <div className="mb-6 card p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-slate-900">
+                  🎫 {resultado.pracasPedagio.length} praça{resultado.pracasPedagio.length > 1 ? "s" : ""} de pedágio no
+                  trajeto
+                </p>
+                <p className="text-sm text-slate-600">
+                  Estimado (carro/utilitário): <strong className="text-slate-900">{formatarMoeda(resultado.custoPedagioEstimado)}</strong>
+                </p>
+              </div>
+              <p className="mt-1 text-xs text-slate-400">
+                Caminhão paga por eixo — veja o valor por eixo de cada praça no mapa ou na aba Resumo.
+              </p>
+            </div>
+          )}
 
           {resultado.candidatosEncontrados === 0 && (
             <p className="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -367,6 +384,21 @@ export function FormRoteirizacao({
                     infoExtra: `Parada ${i + 1} · ${p.litrosSugeridos} L · ${formatarMoeda(p.custoAbastecimento)}`,
                     cor: corPorBandeira(p.bandeira),
                     legendaLabel: p.bandeira ?? "Sem bandeira",
+                  })),
+                  ...resultado.pracasPedagio.map((praca) => ({
+                    lat: praca.lat,
+                    lon: praca.lon,
+                    label: praca.nome,
+                    pedagio: true,
+                    popup: [
+                      praca.concessionaria,
+                      praca.valorCarro != null ? `Carro: ${formatarMoeda(praca.valorCarro)}` : null,
+                      praca.valorCaminhaoEixo != null
+                        ? `Caminhão: ${formatarMoeda(praca.valorCaminhaoEixo)}/eixo`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · "),
                   })),
                 ]}
               />
@@ -503,8 +535,55 @@ export function FormRoteirizacao({
                   <p className="text-slate-500">
                     ⛽ Paradas: <span className="font-medium text-slate-900">{resultado.paradas.length || "Nenhuma"}</span>
                   </p>
+                  {resultado.pracasPedagio.length > 0 && (
+                    <>
+                      <p className="text-slate-500">
+                        🎫 Pedágio estimado (carro):{" "}
+                        <span className="font-medium text-slate-900">{formatarMoeda(resultado.custoPedagioEstimado)}</span>
+                      </p>
+                      <p className="text-slate-500">
+                        💰 Total (combustível + pedágio):{" "}
+                        <span className="font-medium text-slate-900">
+                          {formatarMoeda(resultado.custoTotal + resultado.custoPedagioEstimado)}
+                        </span>
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
+
+              {resultado.pracasPedagio.length > 0 && (
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="mb-2 text-sm font-semibold text-slate-900">🎫 Praças de pedágio no trajeto</p>
+                  <table className="w-full border-separate border-spacing-0 text-left text-sm">
+                    <thead className="text-xs uppercase text-slate-500">
+                      <tr>
+                        <th className="py-1.5 pr-4">Praça</th>
+                        <th className="whitespace-nowrap py-1.5 pr-4">Km</th>
+                        <th className="whitespace-nowrap py-1.5 pr-4">Carro</th>
+                        <th className="whitespace-nowrap py-1.5">Caminhão/eixo</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {resultado.pracasPedagio.map((praca) => (
+                        <tr key={praca.id}>
+                          <td className="py-1.5 pr-4 text-slate-700">
+                            {praca.nome}
+                            {praca.concessionaria && <span className="text-slate-400"> — {praca.concessionaria}</span>}
+                          </td>
+                          <td className="py-1.5 pr-4 whitespace-nowrap text-slate-600">{praca.kmNaRota.toFixed(0)} km</td>
+                          <td className="py-1.5 pr-4 whitespace-nowrap text-slate-600">
+                            {praca.valorCarro != null ? formatarMoeda(praca.valorCarro) : "—"}
+                          </td>
+                          <td className="py-1.5 whitespace-nowrap text-slate-600">
+                            {praca.valorCaminhaoEixo != null ? formatarMoeda(praca.valorCaminhaoEixo) : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <div className="border-t border-slate-100 pt-4">
                 <p className="mb-2 text-sm font-semibold text-slate-900">Exportações</p>
@@ -558,12 +637,25 @@ export function FormRoteirizacao({
                         origem: origem.label,
                         destino: destino.label,
                         placa: placa || undefined,
-                        paradas: resultado.paradas.map((p) => ({
-                          local: p.label,
-                          categoria: "abastecimento",
-                          descricao: [p.bandeira, `R$ ${p.preco.toFixed(3)}/L`].filter(Boolean).join(" · "),
-                          km: Math.round(p.km * 10) / 10,
-                        })),
+                        paradas: [
+                          ...resultado.paradas.map((p) => ({
+                            local: p.label,
+                            categoria: "abastecimento",
+                            descricao: [p.bandeira, `R$ ${p.preco.toFixed(3)}/L`].filter(Boolean).join(" · "),
+                            km: Math.round(p.km * 10) / 10,
+                          })),
+                          ...resultado.pracasPedagio.map((praca) => ({
+                            local: praca.nome,
+                            categoria: "pedagio",
+                            descricao: [
+                              praca.concessionaria,
+                              praca.valorCarro != null ? `R$ ${praca.valorCarro.toFixed(2)} (carro)` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · "),
+                            km: Math.round(praca.kmNaRota * 10) / 10,
+                          })),
+                        ],
                       })
                     )}`}
                     className="btn-secondary"

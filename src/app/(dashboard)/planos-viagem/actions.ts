@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_PLANO_VIAGEM, type StatusPlanoViagem } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
+import { calcularRotaOsrm, distanciasAcumuladas, type Ponto } from "@/lib/geo";
+import { buscarPracasPedagioNaRota } from "@/lib/pedagio";
 
 type PlanoViagemUpdate = Database["public"]["Tables"]["planos_viagem"]["Update"];
 
@@ -264,4 +266,69 @@ export async function revisarCombustivelRealAcao(planoId: string): Promise<Resul
 
   revalidatePath(`/planos-viagem/${planoId}/editar`);
   return { litros, valor };
+}
+
+// ── Pedágios: base real (Fase Pedágios) ──────────────────────────────
+// Substitui a digitação 100% manual de nome/valor da praça (que existia
+// desde a Fase 27.48) por busca na base real `pracas_pedagio` — pedido do
+// Daniel: integrar essa base também nos Planos de Viagem, não só na
+// Roteirização e no Rotograma.
+
+export type SugestaoPedagio = {
+  id: number;
+  nome: string;
+  concessionaria: string | null;
+  uf: string | null;
+  valorCarro: number | null;
+  valorCaminhaoEixo: number | null;
+};
+
+// Autocomplete por nome/rodovia — usado no campo de praça do formulário em
+// vez do texto livre puro.
+export async function buscarPracasPedagioPorNomeAcao(termo: string): Promise<SugestaoPedagio[]> {
+  const q = termo.trim();
+  if (q.length < 2) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("pracas_pedagio")
+    .select("id, nome, concessionaria, uf, valor_carro, valor_caminhao_eixo")
+    .or(`nome.ilike.%${q}%,rodovia.ilike.%${q}%,concessionaria.ilike.%${q}%`)
+    .order("nome")
+    .limit(15);
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    nome: p.nome,
+    concessionaria: p.concessionaria,
+    uf: p.uf,
+    valorCarro: p.valor_carro,
+    valorCaminhaoEixo: p.valor_caminhao_eixo,
+  }));
+}
+
+export type SugestaoPedagioRota = { pracaNome: string; valor: number };
+
+// Auto-preenchimento a partir da "Rota salva" vinculada ao plano (mesmo
+// registro que a Roteirização grava em `rotas_salvas`, tipos "roteirizacao"
+// ou "rota" — os dois guardam origem/destino/paradas). Recalcula a rota via
+// OSRM (mesma função usada na Roteirização) e busca as praças de pedágio no
+// corredor — resultado é só uma SUGESTÃO: o usuário decide se aceita, edita
+// o valor ou remove, igual à lista manual de sempre.
+export async function sugerirPedagiosDaRotaAcao(rotaSalvaId: string): Promise<{ erro?: string; sugestoes?: SugestaoPedagioRota[] }> {
+  const supabase = await createClient();
+  const { data: rota, error } = await supabase.from("rotas_salvas").select("dados").eq("id", rotaSalvaId).maybeSingle();
+  if (error || !rota) return { erro: "Rota salva não encontrada." };
+
+  const d = rota.dados as Record<string, unknown> | null;
+  const origem = d?.origem as Ponto | undefined;
+  const destino = d?.destino as Ponto | undefined;
+  if (!origem || !destino) return { erro: "Essa rota salva não tem origem/destino gravados." };
+  const paradas = ((d?.paradas as Ponto[] | undefined) ?? []).filter((p) => p && p.lat && p.lon);
+
+  const rotaCalculada = await calcularRotaOsrm(origem, destino, paradas);
+  const acumuladas = distanciasAcumuladas(rotaCalculada.coordenadas);
+  const pracas = await buscarPracasPedagioNaRota(supabase, rotaCalculada.coordenadas, acumuladas);
+
+  return {
+    sugestoes: pracas.map((p) => ({ pracaNome: p.nome, valor: p.valorCarro ?? 0 })),
+  };
 }

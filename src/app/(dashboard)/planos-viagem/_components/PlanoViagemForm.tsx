@@ -1,8 +1,15 @@
 "use client";
 
-import { useMemo, useState, useTransition, type FormEvent } from "react";
+import { useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { criarPlanoViagem, atualizarPlanoViagem, revisarCombustivelRealAcao } from "../actions";
+import {
+  criarPlanoViagem,
+  atualizarPlanoViagem,
+  revisarCombustivelRealAcao,
+  buscarPracasPedagioPorNomeAcao,
+  sugerirPedagiosDaRotaAcao,
+  type SugestaoPedagio,
+} from "../actions";
 import { STATUS_PLANO_VIAGEM, STATUS_PLANO_VIAGEM_LABEL } from "@/lib/constants";
 import { formatarMoeda } from "@/lib/financeiro";
 import type { Database } from "@/types/database.types";
@@ -50,6 +57,15 @@ export function PlanoViagemForm({
   const [consumoKmL, setConsumoKmL] = useState(plano?.consumo_km_l ?? 0);
   const [precoCombustivel, setPrecoCombustivel] = useState(plano?.preco_combustivel ?? 0);
   const [pedagios, setPedagios] = useState<Pedagio[]>(pedagiosIniciais ?? []);
+  const [rotaSalvaId, setRotaSalvaId] = useState(plano?.rota_salva_id ?? "");
+  // Fase Pedágios — autocomplete do campo "Nome da praça" (busca na base
+  // real pracas_pedagio em vez de texto 100% livre) e sugestão automática a
+  // partir da Rota salva vinculada.
+  const [linhaComSugestoes, setLinhaComSugestoes] = useState<number | null>(null);
+  const [sugestoesPraca, setSugestoesPraca] = useState<SugestaoPedagio[]>([]);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [sugerindoDaRota, setSugerindoDaRota] = useState(false);
+  const [erroSugestaoRota, setErroSugestaoRota] = useState<string | undefined>();
   const [nDiarias, setNDiarias] = useState(plano?.n_diarias ?? 0);
   const [valorRefeicao, setValorRefeicao] = useState(plano?.valor_refeicao_dia ?? 0);
   const [valorPernoite, setValorPernoite] = useState(plano?.valor_pernoite_dia ?? 0);
@@ -101,6 +117,57 @@ export function PlanoViagemForm({
     setPedagios((atual) =>
       atual.map((p, i) => (i === indice ? { ...p, [campo]: campo === "valor" ? Number(valor) || 0 : valor } : p))
     );
+  }
+
+  // Autocomplete do nome da praça — busca na base real com debounce (evita
+  // 1 consulta por tecla digitada). Continua sendo texto livre: quem não
+  // achar a praça na base pode digitar o nome na mão do mesmo jeito de
+  // antes, só não tem o valor pré-preenchido.
+  function handlePracaNomeChange(indice: number, valor: string) {
+    atualizarPedagio(indice, "praca_nome", valor);
+    setLinhaComSugestoes(indice);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (valor.trim().length < 2) {
+      setSugestoesPraca([]);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      const resultado = await buscarPracasPedagioPorNomeAcao(valor);
+      setSugestoesPraca(resultado);
+    }, 300);
+  }
+
+  function selecionarSugestaoPraca(indice: number, sugestao: SugestaoPedagio) {
+    setPedagios((atual) =>
+      atual.map((p, i) => (i === indice ? { praca_nome: sugestao.nome, valor: sugestao.valorCarro ?? p.valor } : p))
+    );
+    setLinhaComSugestoes(null);
+    setSugestoesPraca([]);
+  }
+
+  // Sugere as praças de pedágio no corredor da Rota salva vinculada —
+  // recalcula a rota (OSRM) e busca na base pracas_pedagio, igual ao mapa da
+  // Roteirização. Só ACRESCENTA praças que ainda não estão na lista (por
+  // nome) — não sobrescreve o que o usuário já ajustou manualmente.
+  function sugerirDaRota() {
+    if (!rotaSalvaId) return;
+    setErroSugestaoRota(undefined);
+    setSugerindoDaRota(true);
+    startTransition(async () => {
+      const resultado = await sugerirPedagiosDaRotaAcao(rotaSalvaId);
+      setSugerindoDaRota(false);
+      if (resultado.erro) {
+        setErroSugestaoRota(resultado.erro);
+        return;
+      }
+      const jaExistentes = new Set(pedagios.map((p) => p.praca_nome.trim().toLowerCase()));
+      const novas = (resultado.sugestoes ?? []).filter((s) => !jaExistentes.has(s.pracaNome.trim().toLowerCase()));
+      if (novas.length === 0) {
+        setErroSugestaoRota("Nenhuma praça de pedágio nova encontrada no corredor dessa rota.");
+        return;
+      }
+      setPedagios((atual) => [...atual, ...novas.map((s) => ({ praca_nome: s.pracaNome, valor: s.valor }))]);
+    });
   }
 
   function handleRevisarCombustivel() {
@@ -198,7 +265,12 @@ export function PlanoViagemForm({
             </select>
           </Campo>
           <Campo label="Rota salva (Roteirização, opcional)">
-            <select name="rota_salva_id" defaultValue={plano?.rota_salva_id ?? ""} className="input">
+            <select
+              name="rota_salva_id"
+              value={rotaSalvaId}
+              onChange={(e) => setRotaSalvaId(e.target.value)}
+              className="input"
+            >
               <option value="">— Nenhuma —</option>
               {rotasSalvas.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -296,28 +368,67 @@ export function PlanoViagemForm({
       </section>
 
       <section className="card p-6">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Pedágios</h2>
-          <button type="button" onClick={adicionarPedagio} className="btn-secondary text-sm">
-            + Praça
-          </button>
+          <div className="flex items-center gap-2">
+            {rotaSalvaId && (
+              <button
+                type="button"
+                onClick={sugerirDaRota}
+                disabled={sugerindoDaRota}
+                className="btn-secondary text-sm disabled:opacity-50"
+              >
+                {sugerindoDaRota ? "Buscando..." : "🎫 Sugerir da rota"}
+              </button>
+            )}
+            <button type="button" onClick={adicionarPedagio} className="btn-secondary text-sm">
+              + Praça
+            </button>
+          </div>
         </div>
+        {erroSugestaoRota && <p className="mb-3 text-xs text-amber-700">{erroSugestaoRota}</p>}
 
         {pedagios.length === 0 ? (
           <p className="text-sm italic text-slate-400">
-            Nenhuma praça de pedágio adicionada. Clique em &quot;+ Praça&quot; para adicionar.
+            Nenhuma praça de pedágio adicionada. Digite o nome pra buscar na base real, use &quot;Sugerir da
+            rota&quot; (se houver Rota salva vinculada) ou clique em &quot;+ Praça&quot; pra adicionar manualmente.
           </p>
         ) : (
           <div className="space-y-2">
             {pedagios.map((p, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="relative flex items-center gap-2">
                 <input
                   type="text"
                   placeholder="Nome da praça"
                   value={p.praca_nome}
-                  onChange={(e) => atualizarPedagio(i, "praca_nome", e.target.value)}
+                  onChange={(e) => handlePracaNomeChange(i, e.target.value)}
+                  onFocus={() => setLinhaComSugestoes(i)}
+                  onBlur={() => setTimeout(() => setLinhaComSugestoes(null), 150)}
+                  autoComplete="off"
                   className="input flex-1"
                 />
+                {linhaComSugestoes === i && sugestoesPraca.length > 0 && (
+                  <ul className="absolute top-full left-0 z-10 mt-1 max-h-56 w-[calc(100%-8.5rem)] overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                    {sugestoesPraca.map((s) => (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          onMouseDown={() => selecionarSugestaoPraca(i, s)}
+                          className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-slate-50"
+                        >
+                          <span className="font-medium text-slate-800">
+                            {s.nome} {s.uf ? `— ${s.uf}` : ""}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {s.concessionaria ?? "—"}
+                            {s.valorCarro != null ? ` · carro ${formatarMoeda(s.valorCarro)}` : ""}
+                            {s.valorCaminhaoEixo != null ? ` · caminhão ${formatarMoeda(s.valorCaminhaoEixo)}/eixo` : ""}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <input
                   type="number"
                   min={0}

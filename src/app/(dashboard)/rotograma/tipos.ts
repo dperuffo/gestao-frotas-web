@@ -11,7 +11,7 @@
 // coluna correspondente da tabela `rotogramas`.
 
 export type CategoriaRisco = "perigo" | "crime" | "radar";
-export type CategoriaParada = "abastecimento" | "alimentacao" | "pernoite";
+export type CategoriaParada = "abastecimento" | "alimentacao" | "pernoite" | "pedagio";
 
 export type RotogramaRisco = {
   local: string; // ex.: "BR-381 km 120 — Itatiaia/MG"
@@ -37,6 +37,10 @@ export const CATEGORIAS_PARADA: { valor: CategoriaParada; label: string; icone: 
   { valor: "abastecimento", label: "Abastecimento", icone: "⛽" },
   { valor: "alimentacao", label: "Alimentação", icone: "🍽️" },
   { valor: "pernoite", label: "Pernoite", icone: "🛏️" },
+  // Fase Pedágios — pedido do Daniel: praças de pedágio também aparecendo
+  // na linha do tempo do Rotograma (mesmo emoji 🎫 usado no mapa da
+  // Roteirização, ver iconePedagio em roteirizacao/_components/MapaRota.tsx).
+  { valor: "pedagio", label: "Pedágio", icone: "🎫" },
 ];
 
 export const CORES_RISCO: Record<CategoriaRisco, { bg: string; text: string; border: string; dot: string }> = {

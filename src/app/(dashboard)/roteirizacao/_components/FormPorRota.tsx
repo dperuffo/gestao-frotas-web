@@ -142,6 +142,10 @@ export function FormPorRota({
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Postos no corredor</p>
               <p className="mt-1 text-2xl font-semibold text-slate-900">{resultado.postosProximos.length}</p>
             </div>
+            <div className="card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">🎫 Pedágios na rota</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">{resultado.pracasPedagio.length}</p>
+            </div>
           </div>
 
           {resultado.linhaReta && (
@@ -168,6 +172,19 @@ export function FormPorRota({
                   infoExtra: `${p.desvioKm} km da rota · km ${p.kmNaRota}`,
                   cor: corPorBandeira(p.bandeira),
                   legendaLabel: p.bandeira ?? "Sem bandeira",
+                })),
+                ...resultado.pracasPedagio.map((praca) => ({
+                  lat: praca.lat,
+                  lon: praca.lon,
+                  label: praca.nome,
+                  pedagio: true as const,
+                  popup: [
+                    praca.concessionaria,
+                    praca.valorCarro != null ? `Carro: R$ ${praca.valorCarro.toFixed(2)}` : null,
+                    praca.valorCaminhaoEixo != null ? `Caminhão: R$ ${praca.valorCaminhaoEixo.toFixed(2)}/eixo` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · "),
                 })),
               ]}
             />

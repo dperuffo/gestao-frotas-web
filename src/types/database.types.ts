@@ -2125,6 +2125,36 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["manutencoes_realizadas"]["Row"]>;
         Relationships: [];
       };
+      // Fase Pedágios — base pública nacional de praças de pedágio (federais
+      // + estaduais), sem empresa_id, mesmo padrão de anp_postos acima.
+      // Fonte: OpenStreetMap (barrier=toll_booth) + ANTT (metadados oficiais
+      // de rodovia/uf/km quando dá pra cruzar por proximidade geográfica).
+      pracas_pedagio: {
+        Row: {
+          id: number;
+          nome: string;
+          concessionaria: string | null;
+          rodovia: string | null;
+          uf: string | null;
+          km: number | null;
+          municipio: string | null;
+          lat: number;
+          lon: number;
+          valor_carro: number | null;
+          valor_moto: number | null;
+          valor_caminhao_eixo: number | null;
+          fonte: string;
+          atualizado_em: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pracas_pedagio"]["Row"]> & {
+          nome: string;
+          lat: number;
+          lon: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["pracas_pedagio"]["Row"]>;
+        Relationships: [];
+      };
       anp_postos: {
         Row: {
           id: number;

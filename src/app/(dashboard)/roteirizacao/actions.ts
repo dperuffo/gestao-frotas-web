@@ -17,6 +17,7 @@ import { otimizarAbastecimento, type ParadaSugerida, type CandidatoAbastecimento
 import { resolverPrecosVigentes, type PrecoResolvido } from "@/lib/precoVigente";
 import { PRODUTO_PARA_CATEGORIA_ANP, UF_PARA_ESTADO_ANP } from "@/lib/constants";
 import { normalizarTexto } from "@/lib/utils";
+import { buscarPracasPedagioNaRota, custoPedagioTotal, type PracaPedagioNaRota } from "@/lib/pedagio";
 
 // Os 10 campos booleanos de serviço que existem em postos_gf — usados como
 // denominador fixo do score (mesma contagem do Streamlit: n_servicos_max).
@@ -423,6 +424,10 @@ export type ResultadoRotaCalculada = {
   linhaReta: boolean;
   coordenadas: Ponto[];
   postosProximos: PostoComScore[];
+  // Fase Pedágios — praças de pedágio encontradas no corredor da rota
+  // (mesmo raio/técnica de bounding box usada pra achar postos), pra
+  // plotar no mapa e mostrar como referência de custo ao usuário.
+  pracasPedagio: PracaPedagioNaRota[];
 };
 
 // ── Modo "Por Rota" ───────────────────────────────────────────────────
@@ -500,12 +505,15 @@ export async function calcularRotaEPostosAcao(params: {
     };
   });
 
+  const pracasPedagio = await buscarPracasPedagioNaRota(supabase, rota.coordenadas, acumuladas);
+
   return {
     distanciaKm: Math.round(rota.distanciaKm * 10) / 10,
     duracaoMin: Math.round(rota.duracaoMin),
     linhaReta: rota.linhaReta,
     coordenadas: rota.coordenadas,
     postosProximos,
+    pracasPedagio,
   };
 }
 
@@ -546,6 +554,15 @@ export type ResultadoRoteirizacao = {
   // rede própria tem candidatos mas a base ANP completa com mais opções no
   // mesmo corredor (ver comentário completo em calcularRoteirizacaoAcao).
   usouFallbackAnp: boolean;
+  // Fase Pedágios — praças de pedágio no corredor da rota, pra plotar no
+  // mapa e somar ao custo total da viagem. `custoPedagioEstimado` usa a
+  // tarifa de carro/utilitário (`valor_carro`) — o cadastro de veículo desta
+  // tela ainda não informa nº de eixos, então caminhões (tarifado por eixo,
+  // normalmente mais caro) não têm estimativa exata aqui ainda; a lista
+  // completa de praças (com valor por eixo também) fica disponível pra quem
+  // quiser calcular à mão.
+  pracasPedagio: PracaPedagioNaRota[];
+  custoPedagioEstimado: number;
 };
 
 // ── Modo "Roteirização" (planejamento com veículo) ────────────────────
@@ -875,6 +892,9 @@ export async function calcularRoteirizacaoAcao(params: {
     precoReferenciaAnp = refAnp?.preco_medio ?? null;
   }
 
+  const pracasPedagio = await buscarPracasPedagioNaRota(supabase, rota.coordenadas, acumuladas);
+  const custoPedagioEstimado = Math.round(custoPedagioTotal(pracasPedagio, "carro") * 100) / 100;
+
   return {
     distanciaKm: Math.round(rota.distanciaKm * 10) / 10,
     duracaoMin: Math.round(rota.duracaoMin),
@@ -889,6 +909,8 @@ export async function calcularRoteirizacaoAcao(params: {
     precoReferenciaAnp,
     ufReferencia,
     usouFallbackAnp,
+    pracasPedagio,
+    custoPedagioEstimado,
   };
 }
 

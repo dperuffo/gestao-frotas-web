@@ -29,6 +29,20 @@ function icone(cor: CorMarcador = "azul") {
   });
 }
 
+// Fase Pedágios — pedido do Daniel: praças de pedágio no mapa da
+// Roteirização com um emoji diferente das bolinhas de posto/combustível
+// (que usam `icone()` acima), pra não confundir os dois tipos de parada de
+// relance. 🎫 em vez de 🚧/⛽ porque já é usado como emoji de pedágio no
+// Rotograma (CATEGORIAS_PARADA, ver src/app/(dashboard)/rotograma/tipos.ts)
+// — mantém o mesmo símbolo nas 3 telas pedidas (roteirização, planos de
+// viagem, rotograma).
+const iconePedagio = L.divIcon({
+  className: "",
+  html: `<div style="font-size:18px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))">🎫</div>`,
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
+
 export type MarcadorMapa = {
   lat: number;
   lon: number;
@@ -45,6 +59,11 @@ export type MarcadorMapa = {
   // Nome mostrado na legenda do mapa (normalmente a bandeira/distribuidora
   // do posto) — só marcadores de posto (com `cnpj`) entram na legenda.
   legendaLabel?: string;
+  // Fase Pedágios — quando true, o marcador é uma praça de pedágio: usa o
+  // emoji 🎫 (iconePedagio) em vez da bolinha colorida, e o popup mostra só
+  // nome/concessionária/valor (sem a busca de preço vigente que os postos
+  // fazem em PostoPopupContent).
+  pedagio?: boolean;
 };
 
 function AjustarLimites({ pontos }: { pontos: [number, number][] }) {
@@ -117,7 +136,14 @@ export default function MapaRota({
           <Polyline positions={rota.map((p) => [p.lat, p.lon])} pathOptions={{ color: "#2563eb", weight: 4 }} />
         )}
         {marcadores.map((m, i) =>
-          m.cnpj ? (
+          m.pedagio ? (
+            <Marker key={i} position={[m.lat, m.lon]} icon={iconePedagio}>
+              <Popup>
+                <strong>🎫 {m.label}</strong>
+                {m.popup && <div className="mt-1 text-xs">{m.popup}</div>}
+              </Popup>
+            </Marker>
+          ) : m.cnpj ? (
             <Marker
               key={i}
               position={[m.lat, m.lon]}
