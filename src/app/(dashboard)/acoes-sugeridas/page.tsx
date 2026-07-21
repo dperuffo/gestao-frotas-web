@@ -14,6 +14,9 @@ const TIPO_LABEL: Record<string, string> = {
   volume_tanque: "Volume acima do tanque",
   geo_distancia: "Postos distantes no mesmo dia",
   preco_regiao: "Preço fora da média regional",
+  // Fase Antifraude→Ações-Sugeridas — migrado do tipo "localizacao_posto"
+  // de Antifraude.
+  posto_nao_autorizado: "Posto não autorizado",
 };
 
 // Fase Motor-de-Ação-Automática — pedido do Daniel após o benchmark com a

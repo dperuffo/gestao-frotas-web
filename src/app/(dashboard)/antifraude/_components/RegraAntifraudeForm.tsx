@@ -8,8 +8,6 @@ type CondicoesRaw = {
   valor_max_abastecimento?: number;
   intervalo_minimo_horas?: number;
   horario_permitido?: { inicio?: string | null; fim?: string | null };
-  postos_permitidos_cnpj?: string[];
-  distancia_maxima_km_da_rota?: number;
 };
 
 type RegraExistente = {
@@ -29,7 +27,6 @@ type MotoristaOpcao = { id: string; nome_completo: string; cpf: string };
 const TIPOS = [
   { valor: "limite_valor_quantidade", label: "Limite de valor/quantidade" },
   { valor: "janela_tempo_frequencia", label: "Janela de tempo/frequência" },
-  { valor: "localizacao_posto", label: "Localização/posto" },
 ] as const;
 
 export function RegraAntifraudeForm({
@@ -225,31 +222,6 @@ export function RegraAntifraudeForm({
             <p className="sm:col-span-3 text-xs text-slate-500">
               Preencha o intervalo mínimo, o horário permitido, ou os dois.
             </p>
-          </div>
-        )}
-
-        {tipo === "localizacao_posto" && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Campo label="CNPJs de postos permitidos (separados por vírgula)">
-              <textarea
-                name="postos_permitidos_cnpj"
-                rows={2}
-                defaultValue={(regra?.condicoes.postos_permitidos_cnpj ?? []).join(", ")}
-                placeholder="12345678000100, 98765432000100"
-                className="input"
-              />
-            </Campo>
-            <Campo label="Distância máxima da rota planejada (km)">
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                name="distancia_maxima_km_da_rota"
-                defaultValue={regra?.condicoes.distancia_maxima_km_da_rota ?? ""}
-                className="input"
-              />
-            </Campo>
-            <p className="sm:col-span-2 text-xs text-slate-500">Preencha ao menos um dos dois campos acima.</p>
           </div>
         )}
       </section>

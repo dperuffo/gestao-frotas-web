@@ -13,12 +13,17 @@ import { AvisoFalhasVerificacao } from "./_components/AvisoFalhasVerificacao";
 // /parametros-uso (Fase 27.120): abas trocadas via ?tipo= (Link), filtro de
 // status via ?status=, tudo Server Component (sem useState pra navegação).
 
-type TipoRegra = "limite_valor_quantidade" | "janela_tempo_frequencia" | "localizacao_posto";
+// Fase Antifraude→Ações-Sugeridas — o tipo "localizacao_posto" foi migrado
+// pra Ações Sugeridas (novo tipo "posto_nao_autorizado", ver
+// /acoes-sugeridas), reaproveitando parametros_postos_permitidos como fonte
+// da lista de postos autorizados e ganhando o toggle informativo/restritivo
+// já existente lá. Linhas antigas desse tipo em regras_antifraude continuam
+// no banco (não migradas/removidas), só não aparecem mais aqui.
+type TipoRegra = "limite_valor_quantidade" | "janela_tempo_frequencia";
 
 const ABAS: { tipo: TipoRegra; label: string }[] = [
   { tipo: "limite_valor_quantidade", label: "Limite de valor/quantidade" },
   { tipo: "janela_tempo_frequencia", label: "Janela de tempo/frequência" },
-  { tipo: "localizacao_posto", label: "Localização/posto" },
 ];
 
 const LABEL_ESCOPO: Record<string, string> = {

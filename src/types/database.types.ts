@@ -4146,6 +4146,16 @@ export interface Database {
         Args: { p_empresa_id?: string | null; p_minimo_ocorrencias?: number | null };
         Returns: number;
       };
+      // Fase Antifraude→Ações-Sugeridas — migrado do tipo "localizacao_posto"
+      // de Antifraude (ver migration migrar_localizacao_posto_para_acoes_sugeridas).
+      detectar_acoes_posto_nao_autorizado: {
+        Args: { p_empresa_id?: string | null };
+        Returns: number;
+      };
+      executar_acao_posto_nao_autorizado: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
+      };
       executar_acao_limitar_volume_diario: {
         Args: { p_acao_id: number };
         Returns: undefined;

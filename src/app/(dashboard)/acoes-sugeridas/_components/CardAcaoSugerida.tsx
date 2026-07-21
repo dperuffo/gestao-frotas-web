@@ -32,6 +32,8 @@ const CONFIRMACAO_POR_TIPO: Record<string, string> = {
   volume_tanque: "Cadastrar esse limite de volume diário para a placa agora?",
   geo_distancia: "Cadastrar esse intervalo mínimo entre abastecimentos para a placa agora?",
   preco_regiao: "Marcar todos os abastecimentos com preço fora da média desta placa como revisados?",
+  posto_nao_autorizado:
+    "Confirmar esta ação agora? Se a restrição automática estiver ligada, o veículo fica bloqueado até você liberar manualmente.",
 };
 
 export function CardAcaoSugerida({ acao }: { acao: AcaoSugerida }) {

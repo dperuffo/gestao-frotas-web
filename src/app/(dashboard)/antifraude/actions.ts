@@ -9,19 +9,25 @@ import type { Json } from "@/types/database.types";
 // vigência) que um sistema externo (bandeira de cartão, posto, gateway de
 // pagamento) consulta ANTES de autorizar um abastecimento, via
 // POST /api/integracoes/antifraude/verificar. Mesmo padrão estrutural de
-// /parametros-uso (Fase 27.120), com uma diferença: aqui os 3 tipos de regra
-// (limite_valor_quantidade, janela_tempo_frequencia, localizacao_posto)
-// moram todos na MESMA tabela (regras_antifraude, condições em jsonb), em
-// vez de uma tabela por tipo — são poucos campos por tipo, não compensa
-// criar 3 tabelas.
+// /parametros-uso (Fase 27.120), com uma diferença: aqui os tipos de regra
+// (limite_valor_quantidade, janela_tempo_frequencia) moram todos na MESMA
+// tabela (regras_antifraude, condições em jsonb), em vez de uma tabela por
+// tipo — são poucos campos por tipo, não compensa criar tabelas separadas.
+//
+// Fase Antifraude→Ações-Sugeridas — o tipo "localizacao_posto" que existia
+// aqui foi migrado pra Ações Sugeridas (tipo "posto_nao_autorizado", ver
+// /acoes-sugeridas/actions.ts). Removido de eTipoValido/montarCondicoes pra
+// não aceitar mais criação/edição desse tipo por aqui; linhas antigas desse
+// tipo continuam no banco (não migradas/removidas), só não são mais
+// acessíveis por esta tela.
 
 export type RegraAntifraudeFormState = { erro?: string } | undefined;
 
-type TipoRegraAntifraude = "limite_valor_quantidade" | "janela_tempo_frequencia" | "localizacao_posto";
+type TipoRegraAntifraude = "limite_valor_quantidade" | "janela_tempo_frequencia";
 type EscopoRegraAntifraude = "motorista" | "veiculo" | "empresa";
 
 function eTipoValido(v: string): v is TipoRegraAntifraude {
-  return v === "limite_valor_quantidade" || v === "janela_tempo_frequencia" || v === "localizacao_posto";
+  return v === "limite_valor_quantidade" || v === "janela_tempo_frequencia";
 }
 function eEscopoValido(v: string): v is EscopoRegraAntifraude {
   return v === "motorista" || v === "veiculo" || v === "empresa";
@@ -52,27 +58,13 @@ function montarCondicoes(formData: FormData, tipo: string): Record<string, Json>
     return condicoes;
   }
 
-  if (tipo === "janela_tempo_frequencia") {
-    const condicoes: Record<string, Json> = {};
-    const intervaloMinimoHoras = numeroOuIndefinido(formData.get("intervalo_minimo_horas"));
-    const horaInicio = textoOuIndefinido(formData.get("horario_inicio"));
-    const horaFim = textoOuIndefinido(formData.get("horario_fim"));
-    if (intervaloMinimoHoras !== undefined) condicoes.intervalo_minimo_horas = intervaloMinimoHoras;
-    if (horaInicio || horaFim) condicoes.horario_permitido = { inicio: horaInicio ?? null, fim: horaFim ?? null };
-    return condicoes;
-  }
-
-  // localizacao_posto
+  // janela_tempo_frequencia
   const condicoes: Record<string, Json> = {};
-  const postosTexto = String(formData.get("postos_permitidos_cnpj") ?? "").trim();
-  if (postosTexto) {
-    condicoes.postos_permitidos_cnpj = postosTexto
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-  const distanciaMaximaKm = numeroOuIndefinido(formData.get("distancia_maxima_km_da_rota"));
-  if (distanciaMaximaKm !== undefined) condicoes.distancia_maxima_km_da_rota = distanciaMaximaKm;
+  const intervaloMinimoHoras = numeroOuIndefinido(formData.get("intervalo_minimo_horas"));
+  const horaInicio = textoOuIndefinido(formData.get("horario_inicio"));
+  const horaFim = textoOuIndefinido(formData.get("horario_fim"));
+  if (intervaloMinimoHoras !== undefined) condicoes.intervalo_minimo_horas = intervaloMinimoHoras;
+  if (horaInicio || horaFim) condicoes.horario_permitido = { inicio: horaInicio ?? null, fim: horaFim ?? null };
   return condicoes;
 }
 

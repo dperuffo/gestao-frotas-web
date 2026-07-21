@@ -42,17 +42,12 @@ type CondicoesJanelaTempoFrequencia = {
   intervalo_minimo_horas?: number;
   horario_permitido?: { inicio?: string | null; fim?: string | null };
 };
-type CondicoesLocalizacaoPosto = {
-  postos_permitidos_cnpj?: string[];
-  distancia_maxima_km_da_rota?: number;
-};
-
 type RegraRow = {
   id: string;
-  tipo: "limite_valor_quantidade" | "janela_tempo_frequencia" | "localizacao_posto";
+  tipo: "limite_valor_quantidade" | "janela_tempo_frequencia";
   escopo: "motorista" | "veiculo" | "empresa";
   escopo_referencia: string | null;
-  condicoes: CondicoesLimiteValorQuantidade & CondicoesJanelaTempoFrequencia & CondicoesLocalizacaoPosto;
+  condicoes: CondicoesLimiteValorQuantidade & CondicoesJanelaTempoFrequencia;
 };
 
 function normalizarPlaca(placa: string): string {
@@ -91,7 +86,6 @@ export async function POST(request: Request) {
 
   const placa = corpo.placa?.trim() ? normalizarPlaca(corpo.placa) : null;
   const motoristaCpf = corpo.motorista_cpf?.trim() || null;
-  const postoCnpj = corpo.posto_cnpj?.trim() || null;
   const dataHora = corpo.data_hora?.trim() || new Date().toISOString();
   const litros = Number(corpo.litros ?? 0);
   const valorTotal = Number(corpo.valor_total ?? 0);
@@ -244,20 +238,6 @@ export async function POST(request: Request) {
         }
       }
 
-      if (regra.tipo === "localizacao_posto") {
-        const { postos_permitidos_cnpj } = regra.condicoes;
-        // Nota: "distancia_maxima_km_da_rota" ainda não é avaliada — depende
-        // de dados de rota planejada que este endpoint não recebe hoje.
-        if (postos_permitidos_cnpj && postos_permitidos_cnpj.length > 0 && postoCnpj) {
-          if (!postos_permitidos_cnpj.includes(postoCnpj)) {
-            return NextResponse.json({
-              autorizado: false,
-              motivo: `Posto (CNPJ ${postoCnpj}) não está na lista de postos permitidos para esta regra.`,
-              regra_id: regra.id,
-            });
-          }
-        }
-      }
     }
 
     await marcarUsoChaveApi(supabase, chave.id);

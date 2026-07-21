@@ -44,6 +44,13 @@ const TIPOS: { tipo: string; label: string; descricao: string }[] = [
     label: "Preço fora da média regional",
     descricao: "Bloqueia o veículo (por placa) além de marcar as anomalias como revisadas.",
   },
+  {
+    tipo: "posto_nao_autorizado",
+    label: "Posto não autorizado",
+    // Fase Antifraude→Ações-Sugeridas — migrado do tipo "localizacao_posto"
+    // de Antifraude, agora com o mesmo toggle informativo/restritivo.
+    descricao: "Bloqueia o veículo (por placa) que abasteceu fora da lista de postos autorizados.",
+  },
 ];
 
 type ConfigRow = { tipo: string; restringir_abastecimento: boolean };
