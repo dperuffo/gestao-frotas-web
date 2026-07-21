@@ -477,6 +477,40 @@ function SecaoHub({
               vez de trazer a lista inteira.
             </p>
 
+            {/* Fase 27.140 — Parâmetros de NF: preferências de emissão de
+                nota fiscal configuradas pelo cliente por CNPJ da frota (ver
+                /parametros-nf). Escopo próprio, fora de "Parâmetros de Uso"
+                porque não é sobre autorizar o abastecimento, e sim sobre
+                como a NF daquela venda deve ser emitida. */}
+            <p className="mb-1 mt-6 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Consultar Parâmetros de NF (escopo parametros_nf:read)
+            </p>
+            <pre className="overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+{`curl "https://SEU-DOMINIO-FNI.com.br/api/integracoes/parametros-nf?cnpj_frota=12345678000199" \\
+  -H "Authorization: Bearer fni_..."
+
+# resposta (paginada, filtros opcionais por querystring):
+# {
+#   "total": 1, "limit": 100, "offset": 0,
+#   "dados": [{
+#     "cnpj_frota": "12345678000199",
+#     "exige_nota_fiscal": "Sim",
+#     "separar_nf_combustivel": "Sim",
+#     "forma_emissao": "Nota no ato do abastecimento",
+#     "local_destino": "Empresa em que o veículo está cadastrado",
+#     "cnpj_destino_personalizado": null,
+#     "dados_adicionais": "Incluir centro de custo no campo de observação da NF",
+#     "status": "Ativo"
+#   }]
+# }`}
+            </pre>
+            <p className="mt-3 text-xs text-slate-400">
+              Sem <code>cnpj_frota</code> na querystring, retorna todas as regras ativas do cliente
+              (inclusive a regra padrão, com <code>cnpj_frota: null</code>, que vale quando não existe
+              regra específica para o CNPJ da nota). Emita a nota seguindo a regra mais específica
+              disponível para aquele CNPJ.
+            </p>
+
             {/* Fase 27.15x — Regras Antifraude: diferente de Parâmetros de
                 Uso acima (o sistema externo consulta os dados crus e decide
                 sozinho), aqui a FNI já avalia as regras e devolve o

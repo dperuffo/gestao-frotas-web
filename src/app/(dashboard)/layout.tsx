@@ -113,6 +113,9 @@ const menuOperacao = [
   // soluções de automação/meios de pagamento integrados via API (Hub de
   // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
   { href: "/parametros-uso", label: "🎛️ Parâmetros de Uso" },
+  // Fase 27.140 — preferências de emissão de nota fiscal por CNPJ da frota,
+  // consultadas por ERPs/automação de posto via API (Hub de Integrações).
+  { href: "/parametros-nf", label: "🧾 Parâmetros de NF" },
   { href: "/relatorios", label: "📈 Relatórios" },
   // Fase Onda-3 (benchmark TicketLog, item #10) — pedido do Daniel: estimativa
   // de CO2 emitido pela frota a partir dos litros já registrados nos

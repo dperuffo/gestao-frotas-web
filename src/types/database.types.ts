@@ -1421,6 +1421,40 @@ export interface Database {
           },
         ];
       };
+      // Parâmetros de NF — regra de emissão de nota fiscal por
+      // empresa/CNPJ da frota, consultável por ERPs/automação de posto via
+      // API (ver src/app/api/integracoes/parametros-nf/route.ts).
+      parametros_nota_fiscal: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          cnpj_frota: string | null;
+          exige_nota_fiscal: "Sim" | "Não" | "Sem preferência";
+          separar_nf_combustivel: "Sim" | "Não" | "Sem preferência";
+          forma_emissao:
+            | "Nota única por abastecimento"
+            | "Nota aglomerada com mais de um abastecimento"
+            | "Nota no ato do abastecimento";
+          local_destino:
+            | "Matriz"
+            | "Empresa em que o veículo está cadastrado"
+            | "Personalizado CNPJ por Posto"
+            | "Personalizado CNPJ por Estado"
+            | "Personalizado CNPJ por Abastecimento";
+          cnpj_destino_personalizado: string | null;
+          dados_adicionais: string | null;
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_nota_fiscal"]["Row"]> & {
+          empresa_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_nota_fiscal"]["Row"]>;
+        Relationships: [];
+      };
       parametros_variacao_hodometro: {
         Row: {
           id: string;

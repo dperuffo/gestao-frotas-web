@@ -91,6 +91,13 @@ export const ESCOPO_PARAMETROS_COTAS_READ = "parametros_cotas:read";
 // tabela e são avaliadas juntas numa chamada só.
 export const ESCOPO_ANTIFRAUDE_VERIFICAR = "antifraude:verificar";
 
+// Fase 27.140 — Parâmetros de NF: preferências de emissão de nota fiscal
+// configuradas pelo cliente frotista (exige NF, separa combustível de
+// produtos/serviços, forma de emissão, destino da nota), por CNPJ da frota
+// ou regra padrão — consultadas por ERPs e sistemas de automação de posto
+// antes de emitir a nota, mesmo racional de Parâmetros de Uso.
+export const ESCOPO_PARAMETROS_NF_READ = "parametros_nf:read";
+
 // Catálogo central dos escopos disponíveis — usado tanto pela UI de geração
 // de chave (/integracoes, pra montar os checkboxes) quanto pela documentação
 // da API. Adicionar um escopo novo aqui é o único lugar a mudar pra ele
@@ -238,5 +245,12 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
     label: "Verificação antifraude",
     descricao:
       "Consultar, antes de autorizar um abastecimento, se ele passa nas regras antifraude cadastradas pelo cliente.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_NF_READ,
+    categoria: "Parâmetros de NF",
+    label: "Parâmetros de NF (leitura)",
+    descricao:
+      "Consultar as preferências de emissão de nota fiscal do cliente (exige NF, forma de emissão, destino) por CNPJ da frota.",
   },
 ];
