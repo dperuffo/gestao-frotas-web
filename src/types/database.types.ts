@@ -1455,6 +1455,35 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["parametros_nota_fiscal"]["Row"]>;
         Relationships: [];
       };
+      // Exceções por UF de "Personalizado CNPJ por Estado" — pedido do
+      // Daniel (mockup "Configuração de Envio de Nota Personalizado por
+      // Estado"): dentro de uma regra de Parâmetros de NF, cada UF pode
+      // apontar pra um CNPJ de destino diferente do CNPJ padrão da regra
+      // (parametros_nota_fiscal.cnpj_destino_personalizado).
+      parametros_nota_fiscal_destino_uf: {
+        Row: {
+          id: string;
+          parametro_nf_id: string;
+          uf: string;
+          cnpj_destino: string;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_nota_fiscal_destino_uf"]["Row"]> & {
+          parametro_nf_id: string;
+          uf: string;
+          cnpj_destino: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_nota_fiscal_destino_uf"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_nota_fiscal_destino_uf_parametro_nf_id_fkey";
+            columns: ["parametro_nf_id"];
+            isOneToOne: false;
+            referencedRelation: "parametros_nota_fiscal";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       parametros_variacao_hodometro: {
         Row: {
           id: string;

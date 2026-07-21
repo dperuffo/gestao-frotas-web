@@ -486,7 +486,7 @@ function SecaoHub({
               Consultar Parâmetros de NF (escopo parametros_nf:read)
             </p>
             <pre className="overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
-{`curl "https://SEU-DOMINIO-FNI.com.br/api/integracoes/parametros-nf?cnpj_frota=12345678000199" \\
+{`curl "https://SEU-DOMINIO-FNI.com.br/api/integracoes/parametros-nf?cnpj_frota=12345678000199&uf=SP" \\
   -H "Authorization: Bearer fni_..."
 
 # resposta (paginada, filtros opcionais por querystring):
@@ -497,8 +497,13 @@ function SecaoHub({
 #     "exige_nota_fiscal": "Sim",
 #     "separar_nf_combustivel": "Sim",
 #     "forma_emissao": "Nota no ato do abastecimento",
-#     "local_destino": "Empresa em que o veículo está cadastrado",
-#     "cnpj_destino_personalizado": null,
+#     "local_destino": "Personalizado CNPJ por Estado",
+#     "cnpj_destino_personalizado": "11.111.111/0001-11",
+#     "destino_por_uf": [
+#       { "uf": "SP", "cnpj_destino": "22.222.222/0001-22" },
+#       { "uf": "RJ", "cnpj_destino": "22.222.222/0001-22" }
+#     ],
+#     "cnpj_destino_resolvido": "22.222.222/0001-22",
 #     "dados_adicionais": "Incluir centro de custo no campo de observação da NF",
 #     "status": "Ativo"
 #   }]
@@ -507,8 +512,11 @@ function SecaoHub({
             <p className="mt-3 text-xs text-slate-400">
               Sem <code>cnpj_frota</code> na querystring, retorna todas as regras ativas do cliente
               (inclusive a regra padrão, com <code>cnpj_frota: null</code>, que vale quando não existe
-              regra específica para o CNPJ da nota). Emita a nota seguindo a regra mais específica
-              disponível para aquele CNPJ.
+              regra específica para o CNPJ da nota). Quando <code>local_destino</code> é
+              &quot;Personalizado CNPJ por Estado&quot;, use o parâmetro <code>uf</code> (sigla do estado do
+              abastecimento) para receber também <code>cnpj_destino_resolvido</code> já calculado — é a
+              exceção daquela UF em <code>destino_por_uf</code>, ou o <code>cnpj_destino_personalizado</code>
+              (padrão da regra) quando o estado não tem exceção cadastrada.
             </p>
 
             {/* Fase 27.15x — Regras Antifraude: diferente de Parâmetros de

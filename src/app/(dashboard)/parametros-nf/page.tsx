@@ -67,7 +67,7 @@ async function ConteudoParametrosNF({ empresaId }: { empresaId: string }) {
     supabase
       .from("parametros_nota_fiscal")
       .select(
-        "id, cnpj_frota, exige_nota_fiscal, separar_nf_combustivel, forma_emissao, local_destino, cnpj_destino_personalizado, dados_adicionais, status, observacao"
+        "id, cnpj_frota, exige_nota_fiscal, separar_nf_combustivel, forma_emissao, local_destino, cnpj_destino_personalizado, dados_adicionais, status, observacao, parametros_nota_fiscal_destino_uf(uf, cnpj_destino)"
       )
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false }),

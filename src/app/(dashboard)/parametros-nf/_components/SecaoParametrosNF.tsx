@@ -4,6 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { ModalRegra } from "../../parametros-uso/_components/ModalRegra";
 import { ToggleStatusRegra, ExcluirRegra } from "../../parametros-uso/_components/AcoesRegra";
 import { criarParametroNF, alternarStatusParametroNF, excluirParametroNF } from "../actions";
+import { ModalDestinoEstado, type ExcecaoUfPlano } from "./ModalDestinoEstado";
 
 const OPCOES_SIM_NAO = ["Sem preferência", "Sim", "Não"] as const;
 const OPCOES_FORMA_EMISSAO = [
@@ -30,6 +31,7 @@ type Linha = {
   dados_adicionais: string | null;
   status: string;
   observacao: string | null;
+  parametros_nota_fiscal_destino_uf?: { uf: string; cnpj_destino: string }[];
 };
 
 export function SecaoParametrosNF({
@@ -46,16 +48,32 @@ export function SecaoParametrosNF({
   const [localDestino, setLocalDestino] = useState<string>(OPCOES_LOCAL_DESTINO[0]);
   const [isPending, startTransition] = useTransition();
 
+  // Fase 27.141 — "Personalizado CNPJ por Estado" usa o sub-modal
+  // ModalDestinoEstado (CNPJ padrão + exceções por UF) em vez do campo de
+  // texto simples usado pelos outros 2 tipos "Personalizado".
+  const [modalEstadoAberto, setModalEstadoAberto] = useState(false);
+  const [planoEstado, setPlanoEstado] = useState<ExcecaoUfPlano | null>(null);
+
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErro(undefined);
     const formData = new FormData(e.currentTarget);
+    if (localDestino === "Personalizado CNPJ por Estado") {
+      if (!planoEstado) {
+        setErro('Clique em "Configurar destino por Estado" para escolher o CNPJ padrão.');
+        return;
+      }
+      formData.set("cnpj_destino_personalizado", planoEstado.cnpjPadrao);
+      const excecoesAchatadas = planoEstado.grupos.flatMap((g) => g.ufs.map((uf) => ({ uf, cnpj: g.cnpj })));
+      formData.set("excecoes_uf", JSON.stringify(excecoesAchatadas));
+    }
     startTransition(async () => {
       const resultado = await criarParametroNF(undefined, formData);
       if (resultado?.erro) setErro(resultado.erro);
       else {
         setModalAberto(false);
         setLocalDestino(OPCOES_LOCAL_DESTINO[0]);
+        setPlanoEstado(null);
       }
     });
   }
@@ -106,6 +124,9 @@ export function SecaoParametrosNF({
                 <td className="px-4 py-3 text-slate-600">
                   {l.local_destino}
                   {l.cnpj_destino_personalizado ? ` (${l.cnpj_destino_personalizado})` : ""}
+                  {l.parametros_nota_fiscal_destino_uf && l.parametros_nota_fiscal_destino_uf.length > 0
+                    ? ` — ${l.parametros_nota_fiscal_destino_uf.length} exceção(ões) por UF`
+                    : ""}
                 </td>
                 <td className="px-4 py-3">
                   <span className={l.status === "Ativo" ? "badge-ativo" : "badge-inativo"}>{l.status}</span>
@@ -185,7 +206,10 @@ export function SecaoParametrosNF({
             <select
               name="local_destino"
               value={localDestino}
-              onChange={(e) => setLocalDestino(e.target.value)}
+              onChange={(e) => {
+                setLocalDestino(e.target.value);
+                setPlanoEstado(null);
+              }}
               className="input"
             >
               {OPCOES_LOCAL_DESTINO.map((o) => (
@@ -196,7 +220,18 @@ export function SecaoParametrosNF({
             </select>
           </div>
 
-          {localDestino.startsWith("Personalizado") && (
+          {localDestino === "Personalizado CNPJ por Estado" && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Destino por Estado</label>
+              <button type="button" onClick={() => setModalEstadoAberto(true)} className="btn-secondary w-full">
+                {planoEstado
+                  ? `Padrão: ${planoEstado.cnpjPadrao} · ${planoEstado.grupos.length} exceção(ões)`
+                  : "Configurar destino por Estado"}
+              </button>
+            </div>
+          )}
+
+          {localDestino !== "Personalizado CNPJ por Estado" && localDestino.startsWith("Personalizado") && (
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">CNPJ de destino personalizado</label>
               <input name="cnpj_destino_personalizado" placeholder="00.000.000/0000-00" className="input" />
@@ -220,6 +255,17 @@ export function SecaoParametrosNF({
           </div>
         </form>
       </ModalRegra>
+
+      <ModalDestinoEstado
+        aberto={modalEstadoAberto}
+        onFechar={() => setModalEstadoAberto(false)}
+        cnpjsFrota={cnpjsFrota}
+        valorInicial={planoEstado}
+        onConfirmar={(plano) => {
+          setPlanoEstado(plano);
+          setModalEstadoAberto(false);
+        }}
+      />
     </div>
   );
 }
