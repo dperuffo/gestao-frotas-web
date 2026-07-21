@@ -18,6 +18,7 @@ import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
 import { buscarCiclosAbertos, agruparCiclosPorContraparte } from "@/lib/ciclosAbertos";
 import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
 import { VisaoCiclosPorContraparte } from "../_components/VisaoCiclosPorContraparte";
+import { LogoProvedor } from "@/components/LogoProvedor";
 import { GraficoFluxoCaixaPosto, type PontoFluxoCaixaPosto } from "./_components/GraficoFluxoCaixaPosto";
 import { FormularioDespesaPosto } from "./_components/FormularioDespesaPosto";
 import { BotaoAcaoFinanceiraPosto } from "./_components/BotaoAcaoFinanceiraPosto";
@@ -27,29 +28,12 @@ type SearchParams = { empresa?: string; periodo?: string; inicio?: string; fim?:
 
 // Fase 27.134/27.135 — pedido do Daniel: o "Consolidado por meio de
 // pagamento" (Fase 27.133, em /financeiro) também precisa aparecer na
-// visão do posto. Mesmas cores/rótulo por provedor das outras telas — sem
-// separar PróFrotas do resto, é um provedor igual aos demais na mesma
-// lista/tabela.
-const CORES_PROVEDOR: Record<string, string> = {
-  profrotas: "bg-blue-100 text-blue-700",
-  Valecard: "bg-purple-100 text-purple-700",
-  RedeFrota: "bg-orange-100 text-orange-700",
-  TicketLog: "bg-teal-100 text-teal-700",
-  Veloe: "bg-pink-100 text-pink-700",
-};
-
-function nomeProvedor(provedor: string) {
-  return provedor === "profrotas" ? "PróFrotas" : provedor;
-}
-
-function BadgeProvedor({ provedor }: { provedor: string }) {
-  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 text-slate-600";
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${classe}`}>
-      {nomeProvedor(provedor)}
-    </span>
-  );
-}
+// visão do posto. Sem separar PróFrotas do resto, é um provedor igual aos
+// demais na mesma lista/tabela.
+// Fase Provedores-Logos — trocado o badge colorido de texto pelas logos
+// reais dos provedores (componente LogoProvedor compartilhado), mesmo
+// padrão já aplicado em /financeiro, /abastecimentos, /integracoes e
+// /dashboard.
 
 type FaturaRow = {
   id: string;
@@ -400,7 +384,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
                   {indicadoresPorProvedor.map((p) => (
                     <tr key={p.provedor}>
                       <td className="py-2.5 pr-4">
-                        <BadgeProvedor provedor={p.provedor} />
+                        <LogoProvedor provedor={p.provedor} className="h-5 w-auto" />
                       </td>
                       <td className="py-2.5 pr-4 text-slate-600">{p.qtdAbastecimentos}</td>
                       <td className="py-2.5 pr-4 text-slate-600">{p.litros.toLocaleString("pt-BR")}</td>
