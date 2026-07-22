@@ -104,6 +104,12 @@ export default async function FiscalPage({
               simulador nunca autoriza produção, de propósito). Os XMLs de teste de CT-e ficam em{" "}
               <code className="rounded bg-slate-100 px-1">scripts/gerar-exemplos-cte-teste.mjs</code>.
             </p>
+            <p className="mt-2 text-xs text-slate-500">
+              Fase P0.2 (emissão de CT-e pela tela do frete): use o CNPJ{" "}
+              <code className="rounded bg-slate-100 px-1">11111111111111</code> como tomador ou destinatário pra
+              simular rejeição da SEFAZ, ou valor da prestação zero/negativo. Cancelamento e carta de correção
+              exigem justificativa/texto com pelo menos 15 caracteres — mesma regra real da SEFAZ.
+            </p>
           </div>
         </div>
       )}

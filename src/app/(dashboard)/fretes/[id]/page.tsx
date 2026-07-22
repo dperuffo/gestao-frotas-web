@@ -5,6 +5,7 @@ import { FormPostoRecomendado } from "../_components/FormPostoRecomendado";
 import { RemoverPostoRecomendadoButton } from "../_components/RemoverPostoRecomendadoButton";
 import { AvaliarMotoristaForm } from "../_components/AvaliarMotoristaForm";
 import { FretesDocumentos, type CteRow, type CiotRow } from "../_components/FretesDocumentos";
+import type { ParceiroSalvo } from "../_components/CteEmissaoForm";
 import { PagamentosFrete, type PagamentoFrete } from "../_components/PagamentosFrete";
 
 type FreteDetalhe = {
@@ -124,10 +125,12 @@ export default async function FreteDetalhePage({
   // emitidos por aqui, ver comentário em src/lib/cte.ts). Bucket
   // fretes-documentos é privado, então geramos signed URL por arquivo (1h),
   // mesmo padrão já usado pras fotos de evidência acima.
-  const [{ data: ctesData }, { data: ciotsData }] = await Promise.all([
+  const [{ data: ctesData }, { data: ciotsData }, { data: fiscalData }, { data: parceirosData }] = await Promise.all([
     supabase
       .from("fretes_cte")
-      .select("id, numero_cte, serie, protocolo_autorizacao, valor_prestacao, data_emissao, xml_storage_path")
+      .select(
+        "id, numero_cte, serie, protocolo_autorizacao, valor_prestacao, data_emissao, xml_storage_path, origem, status, motivo_rejeicao"
+      )
       .eq("frete_id", id)
       .order("criado_em", { ascending: false }),
     supabase
@@ -135,7 +138,30 @@ export default async function FreteDetalhePage({
       .select("id, numero_ciot, rntrc, placa_veiculo, valor_frete, data_emissao, observacao, anexo_storage_path")
       .eq("frete_id", id)
       .order("criado_em", { ascending: false }),
+    // Fase P0.2 — CT-e só pode ser emitido pela plataforma se o emitente já
+    // estiver cadastrado no provedor fiscal (Fase P0.1, tela /fiscal).
+    supabase.from("empresas_fiscal").select("provedor_ref").eq("empresa_id", empresaId).maybeSingle(),
+    // Fase P0.2 — remetente/destinatário/tomador reutilizáveis entre fretes.
+    supabase
+      .from("cadastros_parceiros")
+      .select(
+        "papel, cnpj_cpf, razao_social, ie, endereco_logradouro, endereco_numero, endereco_bairro, endereco_municipio, endereco_uf, endereco_cep"
+      )
+      .eq("empresa_id", empresaId),
   ]);
+
+  const parceiros: ParceiroSalvo[] = (parceirosData ?? []).map((p) => ({
+    papel: p.papel as ParceiroSalvo["papel"],
+    cnpjCpf: p.cnpj_cpf,
+    razaoSocial: p.razao_social,
+    ie: p.ie,
+    logradouro: p.endereco_logradouro,
+    numero: p.endereco_numero,
+    bairro: p.endereco_bairro,
+    municipio: p.endereco_municipio,
+    uf: p.endereco_uf,
+    cep: p.endereco_cep,
+  }));
 
   const ctes: CteRow[] = await Promise.all(
     (ctesData ?? []).map(async (c): Promise<CteRow> => {
@@ -152,6 +178,9 @@ export default async function FreteDetalhePage({
         valor_prestacao: c.valor_prestacao,
         data_emissao: c.data_emissao,
         xmlUrl,
+        origem: c.origem,
+        status: c.status,
+        motivoRejeicao: c.motivo_rejeicao,
       };
     })
   );
@@ -300,7 +329,18 @@ export default async function FreteDetalhePage({
 
       <PagamentosFrete freteId={id} freteConcluido={freteTipado.status === "concluido"} pagamentos={pagamentos} />
 
-      <FretesDocumentos freteId={id} empresaId={empresaId} ctes={ctes} ciots={ciots} />
+      <FretesDocumentos
+        freteId={id}
+        empresaId={empresaId}
+        ctes={ctes}
+        ciots={ciots}
+        fiscalConfigurado={Boolean(fiscalData?.provedor_ref)}
+        municipioInicioPadrao={freteTipado.coleta_cidade ?? ""}
+        ufInicioPadrao={freteTipado.coleta_uf ?? ""}
+        municipioFimPadrao={freteTipado.entrega_cidade ?? ""}
+        ufFimPadrao={freteTipado.entrega_uf ?? ""}
+        parceiros={parceiros}
+      />
 
       {freteTipado.status === "aguardando_confirmacao" && (
         <p className="card mb-6 p-4 text-sm text-slate-600">

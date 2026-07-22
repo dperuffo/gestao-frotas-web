@@ -33,6 +33,79 @@ export type ResultadoTesteConexao =
   | { ok: true; mensagem: string }
   | { ok: false; erro: string };
 
+// Fase P0.2 — tipos de emissão de CT-e. "Tomador" é quem PAGA o frete (nem
+// sempre é o remetente nem o destinatário — pode ser um terceiro); por isso
+// tem um campo `papel` próprio (CT-e chama isso de "toma" — 0 a 4).
+export type DadosEndereco = {
+  logradouro: string;
+  numero: string;
+  bairro: string;
+  municipio: string;
+  uf: string;
+  cep: string;
+};
+
+export type DadosParceiro = {
+  cnpjCpf: string;
+  razaoSocial: string;
+  ie?: string | null;
+  endereco: DadosEndereco;
+};
+
+export type PapelTomador = "remetente" | "expedidor" | "recebedor" | "destinatario" | "outros";
+
+export type DadosIcmsCte = {
+  cst: string;
+  baseCalculo: number;
+  aliquota: number;
+  valor: number;
+};
+
+export type DadosEmissaoCte = {
+  provedorRef: string;
+  ambiente: AmbienteFiscal;
+  serie: number;
+  numero: number;
+  naturezaOperacao: string;
+  cfop: string;
+  municipioInicio: string;
+  ufInicio: string;
+  municipioFim: string;
+  ufFim: string;
+  valorPrestacao: number;
+  valorReceber: number;
+  remetente: DadosParceiro;
+  destinatario: DadosParceiro;
+  tomador: DadosParceiro & { papel: PapelTomador };
+  chavesNfe: string[];
+  icms: DadosIcmsCte;
+};
+
+// autorizado/rejeitado são os dois desfechos de NEGÓCIO (a SEFAZ recebeu e
+// validou); `ok: false` é reservado pra falha de COMUNICAÇÃO/infra (fora do
+// ar, timeout etc.) — distinção importante pra tela saber se pode tentar de
+// novo (infra) ou se precisa corrigir os dados (rejeição).
+export type ResultadoEmissaoCte =
+  | {
+      ok: true;
+      situacao: "autorizado";
+      chaveAcesso: string;
+      numeroCte: string;
+      serieCte: string;
+      protocoloAutorizacao: string;
+      dataAutorizacao: string;
+    }
+  | { ok: true; situacao: "rejeitado"; motivoRejeicao: string }
+  | { ok: false; erro: string };
+
+export type ResultadoConsultaCte =
+  | { ok: true; situacao: "autorizado" | "cancelado" | "rejeitado" | "processando"; motivoRejeicao?: string }
+  | { ok: false; erro: string };
+
+export type ResultadoCancelamentoCte = { ok: true; protocoloCancelamento: string } | { ok: false; erro: string };
+
+export type ResultadoCartaCorrecaoCte = { ok: true; sequencia: number; protocolo: string } | { ok: false; erro: string };
+
 export interface ProvedorFiscal {
   nome: ProvedorNome;
 
@@ -52,7 +125,11 @@ export interface ProvedorFiscal {
   // (credenciais válidas, certificado aceito etc.).
   testarConexao(provedorRef: string, ambiente: AmbienteFiscal): Promise<ResultadoTesteConexao>;
 
-  // P0.2 (próxima fase) estende esta interface com:
-  // emitirCte / consultarCte / cancelarCte / cartaCorrecaoCte
+  // Fase P0.2 — emissão/consulta/cancelamento/carta de correção de CT-e.
+  emitirCte(dados: DadosEmissaoCte): Promise<ResultadoEmissaoCte>;
+  consultarCte(provedorRef: string, chaveAcesso: string): Promise<ResultadoConsultaCte>;
+  cancelarCte(provedorRef: string, chaveAcesso: string, justificativa: string): Promise<ResultadoCancelamentoCte>;
+  cartaCorrecaoCte(provedorRef: string, chaveAcesso: string, textoCorrecao: string): Promise<ResultadoCartaCorrecaoCte>;
+
   // P0.3: emitirMdfe / encerrarMdfe / cancelarMdfe
 }

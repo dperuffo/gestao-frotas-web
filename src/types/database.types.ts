@@ -1164,7 +1164,11 @@ export interface Database {
         Row: {
           id: string;
           frete_id: string;
-          chave_acesso: string;
+          // Fase P0.2 — nula enquanto o CT-e emitido pelo FNI não é
+          // autorizado pela SEFAZ (status 'rascunho'/'enviando'); o
+          // caminho de upload sempre grava com chave (só aceita XML já
+          // autorizado).
+          chave_acesso: string | null;
           numero_cte: string | null;
           serie: string | null;
           protocolo_autorizacao: string | null;
@@ -1175,10 +1179,29 @@ export interface Database {
           xml_storage_path: string | null;
           criado_por: string | null;
           criado_em: string;
+          // Fase P0.2 — 'upload' (caminho original) ou 'emitido' (CT-e
+          // emitido pelo FNI via provedor fiscal).
+          origem: string;
+          status: string;
+          motivo_rejeicao: string | null;
+          tomador_cnpj: string | null;
+          tomador_nome: string | null;
+          tomador_papel: string | null;
+          cfop: string | null;
+          natureza_operacao: string | null;
+          icms_cst: string | null;
+          icms_base: number | null;
+          icms_aliquota: number | null;
+          icms_valor: number | null;
+          chaves_nfe: string[];
+          provedor_ref: string | null;
+          provedor_nome: string | null;
+          ambiente: string | null;
+          dacte_storage_path: string | null;
+          atualizado_em: string;
         };
         Insert: Partial<Database["public"]["Tables"]["fretes_cte"]["Row"]> & {
           frete_id: string;
-          chave_acesso: string;
         };
         Update: Partial<Database["public"]["Tables"]["fretes_cte"]["Row"]>;
         Relationships: [];
@@ -1202,6 +1225,37 @@ export interface Database {
           numero_ciot: string;
         };
         Update: Partial<Database["public"]["Tables"]["fretes_ciot"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase P0.2 — cadastro reutilizável de remetente/destinatário/tomador
+      // pra emissão de CT-e (evita recadastrar tudo em todo frete).
+      cadastros_parceiros: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          papel: "remetente" | "destinatario" | "tomador";
+          cnpj_cpf: string;
+          razao_social: string;
+          ie: string | null;
+          endereco_logradouro: string | null;
+          endereco_numero: string | null;
+          endereco_bairro: string | null;
+          endereco_municipio: string | null;
+          endereco_uf: string | null;
+          endereco_cep: string | null;
+          telefone: string | null;
+          email: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["cadastros_parceiros"]["Row"]> & {
+          empresa_id: string;
+          papel: "remetente" | "destinatario" | "tomador";
+          cnpj_cpf: string;
+          razao_social: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["cadastros_parceiros"]["Row"]>;
         Relationships: [];
       };
       // Fase Fretes-Adiantamento-Combustível (19/07) — parcelas de
