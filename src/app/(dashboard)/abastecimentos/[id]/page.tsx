@@ -137,6 +137,7 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
         meuLado={meuLado}
         ajusteAberto={ajusteAberto ?? null}
         rodadas={rodadas ?? []}
+        cicloFechado={abastecimento.fatura_posto_id != null}
         valoresAtuais={{
           data_abastecimento: abastecimento.data_abastecimento,
           hodometro: abastecimento.hodometro,

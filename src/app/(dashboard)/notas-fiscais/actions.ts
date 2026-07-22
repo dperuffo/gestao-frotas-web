@@ -228,6 +228,25 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
   }
   const nfe = parse.nfe;
 
+  // Nova regra do Daniel (ajuste de abastecimento): quando um ajuste é
+  // aceito e o abastecimento já tinha NFe vinculada, ela é removida de
+  // notas_fiscais_abastecimento e arquivada em
+  // notas_fiscais_abastecimento_historico (ver decidir_ajuste_abastecimento)
+  // — a MESMA nota (mesma chave_acesso) não pode ser reenviada depois disso;
+  // o posto precisa emitir/subir uma NF-e nova pro abastecimento ajustado.
+  const { data: notaHistorico } = await supabase
+    .from("notas_fiscais_abastecimento_historico")
+    .select("id, motivo_exclusao")
+    .eq("chave_acesso", nfe.chaveAcesso)
+    .maybeSingle();
+  if (notaHistorico) {
+    return {
+      status: "erro",
+      mensagem:
+        "Esta NF-e já foi removida por causa de um ajuste aceito neste abastecimento e não pode ser reenviada. Envie a NF-e nova referente ao abastecimento ajustado.",
+    };
+  }
+
   const { data: existente } = await supabase
     .from("notas_fiscais_abastecimento")
     .select("id, abastecimento_id, abastecimento_externo_id")

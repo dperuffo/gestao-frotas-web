@@ -7367,3 +7367,81 @@ chave secreta que nunca pode ir pro bundle do app. Criada uma rota nova, só pra
   tela).
 
 Validado: `tsc --noEmit` limpo (rota nova incluída).
+
+## Fase P0.0 — Hardening de Segurança (início do roadmap TMS/ERP)
+
+Primeira fase do plano `FNI_Plano_Implementacao_P0.md` (pasta Projetos). Inventário completo
+de `pg_policies` antes de qualquer mudança, com dois achados que mudaram o escopo previsto:
+
+- **Bypass de admin por e-mail fixo: JÁ RESOLVIDO.** A pendência registrada na Fase 5
+  (~27 tabelas com `d.peruffo@gmail.com` como única condição de admin) não existe mais:
+  as 88 tabelas que citam o e-mail têm TODAS a condição `perfil_usuario_atual() = 'admin'`
+  junto (conferido: zero policies com o e-mail sem a checagem de perfil). O e-mail fixo
+  permanece como condição aditiva, sem risco.
+- **Policies "permitir tudo": o problema real eram 4, não dezenas.** A maioria das policies
+  `USING (true)` é `TO service_role` (inofensiva — service_role já ignora RLS; só redundância
+  de padrão). Mas 4 policies `_service_total` estavam `TO public` por engano, dando leitura E
+  escrita total a qualquer papel (anon incluído): `abastecimentos_alocacoes`,
+  `empresas_documentos`, `empresas_socios` e `fretes_pagamentos`. **Corrigido** (migration
+  `p0_0_hardening_service_total_policies_para_service_role`): `ALTER POLICY ... TO
+  service_role`. O acesso legítimo de usuários segue pelas policies por tenant que essas
+  tabelas já tinham (`empresas_do_usuario` + perfil admin + leitura própria do motorista).
+
+Verificação pós-mudança (via SQL, espelhando os advisors):
+
+- Nenhuma tabela do schema public com RLS desligado.
+- Nenhuma policy de escrita aberta restante. As permissivas que sobraram são SELECT de dados
+  de referência para `authenticated` (ANP, praças de pedágio, fatores CO2, catálogo/missões
+  de fidelidade, configurações), leitura pública intencional de `historico_precos_anp` (série
+  ANP para página pública) e o INSERT de `security_logs` para anon (log pré-login) — todas
+  por design, mantidas.
+- 8 tabelas com RLS ligado e nenhuma policy (`abastecimentos_mobile`, `audit_logs`,
+  `notas_posto`, `postos_favoritos`, `solicitacoes_acesso`, `user_preferences`,
+  `webhook_logs`, `webhook_registrations`): ficam em "negar tudo" para não-service_role —
+  fail closed, seguro; nenhuma tela atual depende delas via usuário autenticado.
+
+**Pendência controlada (única restante da fase):** a view `abastecimentos_unificado` é
+SECURITY DEFINER — quem a consulta enxerga as tabelas de origem SEM o RLS delas. A correção
+(`ALTER VIEW ... SET (security_invoker = true)`) é simples, mas pode esconder dados em telas
+que hoje dependem desse bypass (Parâmetros de Uso usa a view pro "consumido" de cotas) —
+testar com o app rodando localmente antes de aplicar, não aplicar às cegas em produção.
+Registrado também: o relatório completo dos advisors do Supabase (291kb) não pôde ser lido
+nesta sessão; os itens de nível de tabela foram verificados por SQL equivalente, mas avisos
+menores (ex: search_path de funções) ficam pra conferir no painel.
+
+## Fase P0.1 — Cadastro fiscal do emitente + provedor fiscal com simulador
+
+Segunda fase do roadmap TMS/ERP (`FNI_Plano_Implementacao_P0.md`). Decisão do Daniel: as fases
+P0 são desenvolvidas inteiras com o "motor de testes" (sem empresa registrada, sem certificado
+A1, sem cliente-piloto) — por isso o primeiro provedor fiscal implementado é um SIMULADOR.
+
+- **Migration `p0_1_empresas_fiscal_e_webhook_eventos`**: `empresas_fiscal` (1:1 com
+  `empresas` — IE, RNTRC, regime tributário, série/numeração de CT-e e MDF-e, ambiente
+  homologação/produção, provedor, `provedor_ref`, vencimento do certificado, último teste de
+  conexão) e `fiscal_webhook_eventos` (callback bruto do provedor gravado ANTES de processar,
+  padrão `stripe_events`). RLS: tenant por `empresas_do_usuario` + perfil admin
+  (padrão `empresas_documentos`); eventos de webhook são service_role + SELECT de admin.
+- **Camada de provedor (`src/lib/fiscal/`)**: interface `ProvedorFiscal` (`provider.ts`) com
+  `cadastrarEmitente`/`enviarCertificado`/`testarConexao` — telas e actions só conhecem esta
+  fronteira; trocar de fornecedor não muda nada fora de `src/lib/fiscal/` (lição do caso Nuvem
+  Fiscal, que anunciou desativação pra 31/07/2026). `mock.ts` é o simulador: determinístico,
+  sem rede; cenários de erro por valores especiais (senha "senha-errada" → senha inválida;
+  .pfx < 100 bytes → corrompido; ambiente producao → NUNCA passa, de propósito). Focus
+  NFe/PlugNotas entram na P0.2 junto com a emissão real do primeiro CT-e.
+- **Tela `/fiscal`** (menu Geral, "🧾 Fiscal (CT-e/MDF-e)"): seleção de cliente no padrão
+  `resolverEmpresaAtual` (?empresa=), formulário dos dados fiscais (salvar = upsert +
+  cadastro do emitente no provedor; se o provedor recusar, nada é persistido), envio do
+  certificado A1 (o .pfx passa em memória direto pro provedor — NUNCA é gravado em
+  banco/Storage, só o vencimento volta) e teste de conexão com último status registrado
+  na própria linha.
+- **Webhook `/api/webhooks/fiscal`** (POST): protegido por `FISCAL_WEBHOOK_SECRET` (header
+  `x-webhook-secret`, mesmo espírito do CRON_SECRET) — grava o evento bruto em
+  `fiscal_webhook_eventos` e responde; o processamento (status de CT-e/MDF-e) chega na P0.2.
+- Tipos novos em `database.types.ts` (`empresas_fiscal`, `fiscal_webhook_eventos`).
+
+**Pendências desta fase (para a P0.2):** adicionar `FISCAL_WEBHOOK_SECRET` ao `.env.local` e
+ao ambiente de produção; registrar a aba nova em Permissões por Perfil/Central de Ajuda
+(mesmo movimento da Fase 27.114); implementar o provedor Focus NFe real e a emissão de CT-e
+usando a massa de `scripts/gerar-exemplos-cte-teste.mjs` como base de QA.
+
+Validado: `npx tsc --noEmit` limpo.

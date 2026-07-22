@@ -40,6 +40,9 @@ const menuVisaoGeral = [
   { href: "/assinatura", label: "💳 Minha Assinatura" },
   { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
   { href: "/financeiro", label: "💰 Painel Financeiro" },
+  // Fase P0.1 (roadmap TMS/ERP) — configuração do emitente de CT-e/MDF-e
+  // (dados fiscais, certificado A1 via provedor, teste de conexão).
+  { href: "/fiscal", label: "🧾 Fiscal (CT-e/MDF-e)" },
   // Fase 27.149 — upload de documentação societária/cadastral (Contrato
   // Social, docs dos sócios, comprovante de endereço), aprovada pelo admin
   // em /documentos-empresas — pré-requisito pra criar/aderir a Redes de

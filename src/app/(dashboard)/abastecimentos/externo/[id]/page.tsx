@@ -115,6 +115,7 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
           meuLado={meuLado}
           ajusteAberto={ajusteAberto ?? null}
           rodadas={rodadas ?? []}
+          cicloFechado={abastecimento.fatura_posto_id != null}
           // Fase 27.142 — a rodada de ajuste usa os mesmos nomes de campo
           // genéricos (item_nome/item_quantidade/...) tanto pra
           // profrotas_abastecimentos quanto pra abastecimentos_externos

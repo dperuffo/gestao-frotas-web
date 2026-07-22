@@ -69,6 +69,7 @@ export function PainelAjusteAbastecimento({
   ajusteAberto,
   rodadas,
   valoresAtuais,
+  cicloFechado = false,
 }: {
   identificador: IdentificadorAbastecimento;
   empresaClienteId: string;
@@ -77,6 +78,12 @@ export function PainelAjusteAbastecimento({
   ajusteAberto: { id: string; status: string } | null;
   rodadas: Rodada[];
   valoresAtuais: ValoresAjuste;
+  // Nova regra do Daniel: abastecimento já alocado numa fatura (ciclo
+  // realmente fechado, faturado) não pode mais ser ajustado — o botão de
+  // "Solicitar ajuste" fica desabilitado/escondido neste caso. Não afeta um
+  // ajuste JÁ em andamento (aceitar/recusar/cancelar continuam liberados —
+  // ver decidir_ajuste_abastecimento, que tem a mesma trava na aceitação).
+  cicloFechado?: boolean;
 }) {
   const [erro, setErro] = useState<string | undefined>();
   const [contrapropondo, setContrapropondo] = useState(false);
@@ -86,17 +93,34 @@ export function PainelAjusteAbastecimento({
     return (
       <div className="card p-6">
         <h2 className="mb-1 text-sm font-semibold text-slate-900">Ajuste de registro</h2>
-        <p className="mb-4 text-xs text-slate-500">
-          Encontrou um erro neste abastecimento? Solicite um ajuste — a outra parte (cliente ou posto)
-          recebe uma notificação para aprovar ou recusar antes de qualquer mudança valer.
-        </p>
-        <FormularioSolicitarAjuste
-          identificador={identificador}
-          empresaClienteId={empresaClienteId}
-          empresaPostoId={empresaPostoId}
-          autor={meuLado}
-          valoresAtuais={valoresAtuais}
-        />
+        {cicloFechado ? (
+          <>
+            <p className="mb-4 text-xs text-slate-500">
+              Encontrou um erro neste abastecimento? Solicite um ajuste — a outra parte (cliente ou posto)
+              recebe uma notificação para aprovar ou recusar antes de qualquer mudança valer.
+            </p>
+            <button type="button" disabled className="btn-secondary cursor-not-allowed opacity-50">
+              Solicitar ajuste
+            </button>
+            <p className="mt-2 text-xs text-amber-700">
+              Este abastecimento já está em um ciclo fechado (faturado) e não pode mais ser ajustado.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="mb-4 text-xs text-slate-500">
+              Encontrou um erro neste abastecimento? Solicite um ajuste — a outra parte (cliente ou posto)
+              recebe uma notificação para aprovar ou recusar antes de qualquer mudança valer.
+            </p>
+            <FormularioSolicitarAjuste
+              identificador={identificador}
+              empresaClienteId={empresaClienteId}
+              empresaPostoId={empresaPostoId}
+              autor={meuLado}
+              valoresAtuais={valoresAtuais}
+            />
+          </>
+        )}
       </div>
     );
   }

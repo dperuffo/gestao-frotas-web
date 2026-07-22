@@ -185,6 +185,65 @@ export interface Database {
           },
         ];
       };
+      // Fase P0.1 — cadastro fiscal do emitente (1:1 com empresas): dados
+      // pra emissão de CT-e/MDF-e via provedor de API fiscal. O certificado
+      // A1 NUNCA é armazenado — só o vencimento retornado pelo provedor.
+      empresas_fiscal: {
+        Row: {
+          empresa_id: string;
+          inscricao_estadual: string | null;
+          rntrc: string | null;
+          regime_tributario: string;
+          serie_cte: number;
+          proximo_numero_cte: number;
+          serie_mdfe: number;
+          proximo_numero_mdfe: number;
+          ambiente: string;
+          provedor: string;
+          provedor_ref: string | null;
+          certificado_vencimento: string | null;
+          certificado_enviado_em: string | null;
+          status_conexao: string | null;
+          status_conexao_em: string | null;
+          criado_em: string;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["empresas_fiscal"]["Row"]> & {
+          empresa_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["empresas_fiscal"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "empresas_fiscal_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: true;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase P0.1 — callbacks do provedor fiscal gravados brutos antes de
+      // qualquer processamento (mesmo padrão de stripe_events).
+      fiscal_webhook_eventos: {
+        Row: {
+          id: string;
+          provedor: string;
+          tipo_evento: string | null;
+          referencia: string | null;
+          payload: Json;
+          processado: boolean;
+          processado_em: string | null;
+          erro_processamento: string | null;
+          recebido_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fiscal_webhook_eventos"]["Row"]> & {
+          provedor: string;
+          payload: Json;
+        };
+        Update: Partial<Database["public"]["Tables"]["fiscal_webhook_eventos"]["Row"]>;
+        Relationships: [];
+      };
       // Fase 27.73 — tabela já existia desde a Fase 20 (histórico de
       // cobrança, gravada pelo stripe-webhook em invoice.payment_succeeded/
       // failed com status "pago"/"falhou"), mas nunca tinha sido adicionada
@@ -2347,6 +2406,48 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      // Regra de ajuste de abastecimento (Fase seguinte a 27.152) — arquivo
+      // da NFe removida quando um ajuste é aceito num abastecimento que já
+      // tinha nota vinculada (ver decidir_ajuste_abastecimento). Sem
+      // política de INSERT/UPDATE — toda escrita passa por essa RPC
+      // SECURITY DEFINER; o tipo aqui é só pra leitura (.select()) usada em
+      // notas-fiscais/actions.ts pra bloquear reenvio da mesma chave_acesso.
+      notas_fiscais_abastecimento_historico: {
+        Row: {
+          id: string;
+          nota_id_original: string;
+          abastecimento_id: number | null;
+          abastecimento_externo_id: number | null;
+          empresa_posto_id: string | null;
+          empresa_cliente_id: string | null;
+          chave_acesso: string;
+          numero_nf: number | null;
+          serie_nf: string | null;
+          modelo: string | null;
+          data_emissao: string | null;
+          cnpj_emitente: string | null;
+          nome_emitente: string | null;
+          cnpj_destinatario: string | null;
+          nome_destinatario: string | null;
+          produto_nome_xml: string | null;
+          produto_codigo_anp: string | null;
+          produto_descricao_anp: string | null;
+          quantidade: number | null;
+          valor_unitario: number | null;
+          valor_total: number | null;
+          valor_nf_total: number | null;
+          xml_storage_path: string | null;
+          enviado_por: string | null;
+          criado_em: string | null;
+          ajuste_id: string | null;
+          motivo_exclusao: string;
+          excluido_em: string;
+          excluido_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["notas_fiscais_abastecimento_historico"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["notas_fiscais_abastecimento_historico"]["Row"]>;
+        Relationships: [];
       };
       // Fase 27.99 — log de tentativas de upload de NF-e rejeitadas (motivo
       // + dados extraídos do XML pra diagnóstico). Sem política de
