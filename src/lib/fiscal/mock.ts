@@ -1,13 +1,18 @@
 import type {
   AmbienteFiscal,
   DadosEmissaoCte,
+  DadosEmissaoMdfe,
   DadosEmitente,
   ProvedorFiscal,
   ResultadoCadastroEmitente,
   ResultadoCancelamentoCte,
+  ResultadoCancelamentoMdfe,
   ResultadoCartaCorrecaoCte,
   ResultadoConsultaCte,
+  ResultadoConsultaMdfe,
   ResultadoEmissaoCte,
+  ResultadoEmissaoMdfe,
+  ResultadoEncerramentoMdfe,
   ResultadoEnvioCertificado,
   ResultadoTesteConexao,
 } from "./provider";
@@ -57,20 +62,30 @@ function digitoVerificadorModulo11(chave43: string): number {
   return resto < 2 ? 0 : 11 - resto;
 }
 
-function gerarChaveAcessoCte(dados: DadosEmissaoCte): string {
+// Compartilhado entre CT-e (modelo 57) e MDF-e (modelo 58) — mesmo layout
+// nacional de chave de 44 dígitos, só o código do modelo muda.
+function construirChaveAcesso(params: { cnpjEmitente: string; modelo: "57" | "58"; serie: number; numero: number }): string {
   const agora = new Date();
   const aamm = `${String(agora.getFullYear()).slice(2)}${String(agora.getMonth() + 1).padStart(2, "0")}`;
   const cUF = "35"; // código IBGE de UF — simulado (SP); não afeta a validação estrutural do mock
-  const cnpj = dados.remetente.cnpjCpf.replace(/\D/g, "").padStart(14, "0").slice(0, 14);
-  const modelo = "57";
-  const serie = String(dados.serie).padStart(3, "0");
-  const numero = String(dados.numero).padStart(9, "0");
+  const cnpj = params.cnpjEmitente.replace(/\D/g, "").padStart(14, "0").slice(0, 14);
+  const serie = String(params.serie).padStart(3, "0");
+  const numero = String(params.numero).padStart(9, "0");
   const tpEmis = "1";
-  const cCT = String(Math.floor(Math.random() * 1e8)).padStart(8, "0");
-  const chave43 = `${cUF}${aamm}${cnpj}${modelo}${serie}${numero}${tpEmis}${cCT}`;
+  const codigoAleatorio = String(Math.floor(Math.random() * 1e8)).padStart(8, "0");
+  const chave43 = `${cUF}${aamm}${cnpj}${params.modelo}${serie}${numero}${tpEmis}${codigoAleatorio}`;
   const dv = digitoVerificadorModulo11(chave43);
   return `${chave43}${dv}`;
 }
+
+function gerarChaveAcessoCte(dados: DadosEmissaoCte): string {
+  return construirChaveAcesso({ cnpjEmitente: dados.cnpjEmitente, modelo: "57", serie: dados.serie, numero: dados.numero });
+}
+
+// Fase P0.3 — trigger value do MDF-e: placa reservada pra QA exercitar a
+// rejeição (mesmo espírito do CNPJ de teste do CT-e acima).
+export const MOCK_PLACA_REJEITAR_MDFE = "REJ0000";
+const JUSTIFICATIVA_CANCELAMENTO_MDFE_MINIMO = 15;
 
 function motivoRejeicaoSimulado(dados: DadosEmissaoCte): string | null {
   if (dados.tomador.cnpjCpf.replace(/\D/g, "") === MOCK_CNPJ_REJEITAR_CTE) {
@@ -201,5 +216,68 @@ export const provedorMock: ProvedorFiscal = {
       };
     }
     return { ok: true, sequencia: 1, protocolo: `MOCKCCE${Date.now()}` };
+  },
+
+  async emitirMdfe(dados: DadosEmissaoMdfe): Promise<ResultadoEmissaoMdfe> {
+    if (dados.ambiente === "producao") {
+      return {
+        ok: false,
+        erro:
+          "O provedor simulado não emite em PRODUÇÃO — de propósito. Configure um provedor real (Focus NFe/PlugNotas) com certificado A1 verdadeiro.",
+      };
+    }
+    if (dados.chavesCte.length === 0) {
+      return { ok: true, situacao: "rejeitado", motivoRejeicao: "MDF-e sem nenhum CT-e a bordo — inclua ao menos um CT-e autorizado." };
+    }
+    if (dados.placaVeiculo.trim().toUpperCase() === MOCK_PLACA_REJEITAR_MDFE) {
+      return {
+        ok: true,
+        situacao: "rejeitado",
+        motivoRejeicao: `Rejeição simulada: placa "${MOCK_PLACA_REJEITAR_MDFE}" consta com pendência no RENAVAM (placa de teste).`,
+      };
+    }
+
+    // CNPJ do emitente do MDF-e (transportadora) vem embutido no
+    // provedorRef no formato "mock-<8 primeiros chars do empresa_id>" — o
+    // mock não conhece o CNPJ de verdade aqui, então usa a própria
+    // provedorRef como semente da chave (mesma robustez, sem precisar
+    // encanar mais um campo só pro simulador).
+    return {
+      ok: true,
+      situacao: "autorizado",
+      chaveAcesso: construirChaveAcesso({ cnpjEmitente: dados.provedorRef, modelo: "58", serie: dados.serie, numero: dados.numero }),
+      numeroMdfe: String(dados.numero),
+      serieMdfe: String(dados.serie),
+      protocoloAutorizacao: `MOCKMDFE${Date.now()}`,
+      dataAutorizacao: new Date().toISOString(),
+    };
+  },
+
+  async consultarMdfe(provedorRef: string, chaveAcesso: string): Promise<ResultadoConsultaMdfe> {
+    if (!provedorRef) return { ok: false, erro: "Emitente ainda não cadastrado no provedor." };
+    if (chaveAcesso.length !== 44 || !/^\d{44}$/.test(chaveAcesso)) {
+      return { ok: false, erro: `Chave de acesso inválida (esperado 44 dígitos, veio "${chaveAcesso}").` };
+    }
+    return { ok: true, situacao: "autorizado" };
+  },
+
+  async encerrarMdfe(_provedorRef: string, chaveAcesso: string): Promise<ResultadoEncerramentoMdfe> {
+    if (chaveAcesso.length !== 44 || !/^\d{44}$/.test(chaveAcesso)) {
+      return { ok: false, erro: `Chave de acesso inválida (esperado 44 dígitos, veio "${chaveAcesso}").` };
+    }
+    return { ok: true, protocoloEncerramento: `MOCKENC${Date.now()}` };
+  },
+
+  async cancelarMdfe(_provedorRef: string, chaveAcesso: string, justificativa: string): Promise<ResultadoCancelamentoMdfe> {
+    if (chaveAcesso.length !== 44 || !/^\d{44}$/.test(chaveAcesso)) {
+      return { ok: false, erro: `Chave de acesso inválida (esperado 44 dígitos, veio "${chaveAcesso}").` };
+    }
+    if (justificativa.trim().length < JUSTIFICATIVA_CANCELAMENTO_MDFE_MINIMO) {
+      return {
+        ok: false,
+        erro: `A justificativa do cancelamento precisa ter pelo menos ${JUSTIFICATIVA_CANCELAMENTO_MDFE_MINIMO} caracteres (regra real da SEFAZ).`,
+      };
+    }
+    return { ok: true, protocoloCancelamento: `MOCKMDFECANC${Date.now()}` };
   },
 };

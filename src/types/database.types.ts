@@ -1258,6 +1258,65 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["cadastros_parceiros"]["Row"]>;
         Relationships: [];
       };
+      // Fase P0.3 — MDF-e: 1 viagem (aqui, 1 frete) = 1 MDF-e por veículo,
+      // agrupando N CT-e (ver mdfe_documentos).
+      mdfe: {
+        Row: {
+          id: string;
+          frete_id: string;
+          empresa_id: string;
+          veiculo_id: string | null;
+          placa_veiculo: string;
+          motorista_id: string | null;
+          condutor_nome: string | null;
+          condutor_cpf: string | null;
+          condutor_adicional_nome: string | null;
+          condutor_adicional_cpf: string | null;
+          uf_carregamento: string;
+          uf_descarregamento: string;
+          percurso_uf: string[];
+          numero_mdfe: string | null;
+          serie: string | null;
+          chave_acesso: string | null;
+          protocolo_autorizacao: string | null;
+          status: string;
+          motivo_rejeicao: string | null;
+          provedor_ref: string | null;
+          provedor_nome: string | null;
+          ambiente: string | null;
+          data_emissao: string | null;
+          encerrado_em: string | null;
+          cancelado_em: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["mdfe"]["Row"]> & {
+          frete_id: string;
+          empresa_id: string;
+          placa_veiculo: string;
+          uf_carregamento: string;
+          uf_descarregamento: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["mdfe"]["Row"]>;
+        Relationships: [];
+      };
+      mdfe_documentos: {
+        Row: {
+          id: string;
+          mdfe_id: string;
+          tipo: "cte" | "nfe";
+          chave_acesso: string;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["mdfe_documentos"]["Row"]> & {
+          mdfe_id: string;
+          tipo: "cte" | "nfe";
+          chave_acesso: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["mdfe_documentos"]["Row"]>;
+        Relationships: [];
+      };
       // Fase Fretes-Adiantamento-Combustível (19/07) — parcelas de
       // pagamento do frete (entrada + saldo final), geradas automaticamente
       // quando o frete é aceito (ver trg_gerar_pagamentos_frete).

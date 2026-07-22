@@ -6,6 +6,7 @@ import { RemoverPostoRecomendadoButton } from "../_components/RemoverPostoRecome
 import { AvaliarMotoristaForm } from "../_components/AvaliarMotoristaForm";
 import { FretesDocumentos, type CteRow, type CiotRow } from "../_components/FretesDocumentos";
 import type { ParceiroSalvo } from "../_components/CteEmissaoForm";
+import { MdfeCard, type MdfeAtivo, type VeiculoOpcao } from "../_components/MdfeCard";
 import { PagamentosFrete, type PagamentoFrete } from "../_components/PagamentosFrete";
 
 type FreteDetalhe = {
@@ -125,7 +126,7 @@ export default async function FreteDetalhePage({
   // emitidos por aqui, ver comentário em src/lib/cte.ts). Bucket
   // fretes-documentos é privado, então geramos signed URL por arquivo (1h),
   // mesmo padrão já usado pras fotos de evidência acima.
-  const [{ data: ctesData }, { data: ciotsData }, { data: fiscalData }, { data: parceirosData }] = await Promise.all([
+  const [{ data: ctesData }, { data: ciotsData }, { data: fiscalData }, { data: parceirosData }, { data: mdfeData }, { data: veiculosData }, { data: motoristaData }] = await Promise.all([
     supabase
       .from("fretes_cte")
       .select(
@@ -148,7 +149,44 @@ export default async function FreteDetalhePage({
         "papel, cnpj_cpf, razao_social, ie, endereco_logradouro, endereco_numero, endereco_bairro, endereco_municipio, endereco_uf, endereco_cep"
       )
       .eq("empresa_id", empresaId),
+    // Fase P0.3 — MDF-e mais recente deste frete (qualquer status, pra
+    // mostrar histórico/estado atual).
+    supabase
+      .from("mdfe")
+      .select("id, status, placa_veiculo, condutor_nome, uf_carregamento, uf_descarregamento, chave_acesso, protocolo_autorizacao, numero_mdfe, motivo_rejeicao, criado_em")
+      .eq("frete_id", id)
+      .order("criado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // Fase P0.3 — lista de veículos da empresa pra selecionar no "Iniciar
+    // viagem" (mesma RPC paginada usada no resto do app).
+    supabase.rpc("veiculos_da_empresa", { p_empresa_id: empresaId }).select("id, placa"),
+    freteTipado.motorista_id
+      ? supabase.from("motoristas").select("nome_completo, cpf").eq("id", freteTipado.motorista_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
+
+  const veiculos: VeiculoOpcao[] = (veiculosData ?? []).map((v: { id: string; placa: string }) => ({ id: v.id, placa: v.placa }));
+
+  const mdfeAtivo: MdfeAtivo | null = mdfeData
+    ? {
+        id: mdfeData.id,
+        status: mdfeData.status,
+        placaVeiculo: mdfeData.placa_veiculo,
+        condutorNome: mdfeData.condutor_nome,
+        ufCarregamento: mdfeData.uf_carregamento,
+        ufDescarregamento: mdfeData.uf_descarregamento,
+        chaveAcesso: mdfeData.chave_acesso,
+        protocoloAutorizacao: mdfeData.protocolo_autorizacao,
+        numeroMdfe: mdfeData.numero_mdfe,
+        motivoRejeicao: mdfeData.motivo_rejeicao,
+        criadoEm: mdfeData.criado_em,
+      }
+    : null;
+  // "mdfeAtivo" só deve travar a tela de "Iniciar viagem" enquanto o MDF-e
+  // anterior ainda está em curso — um encerrado/cancelado/rejeitado libera
+  // iniciar uma viagem nova.
+  const mdfeBloqueiaNovaViagem = mdfeAtivo && ["enviando", "autorizado"].includes(mdfeAtivo.status) ? mdfeAtivo : null;
 
   const parceiros: ParceiroSalvo[] = (parceirosData ?? []).map((p) => ({
     papel: p.papel as ParceiroSalvo["papel"],
@@ -340,6 +378,19 @@ export default async function FreteDetalhePage({
         municipioFimPadrao={freteTipado.entrega_cidade ?? ""}
         ufFimPadrao={freteTipado.entrega_uf ?? ""}
         parceiros={parceiros}
+      />
+
+      <MdfeCard
+        freteId={id}
+        empresaId={empresaId}
+        fiscalConfigurado={Boolean(fiscalData?.provedor_ref)}
+        temCteAutorizado={ctes.some((c) => c.status === "autorizado")}
+        veiculos={veiculos}
+        condutorNomePadrao={motoristaData?.nome_completo ?? ""}
+        condutorCpfPadrao={motoristaData?.cpf ?? ""}
+        ufCarregamentoPadrao={freteTipado.coleta_uf ?? ""}
+        ufDescarregamentoPadrao={freteTipado.entrega_uf ?? ""}
+        mdfeAtivo={mdfeBloqueiaNovaViagem}
       />
 
       {freteTipado.status === "aguardando_confirmacao" && (

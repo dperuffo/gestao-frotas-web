@@ -203,6 +203,7 @@ export async function emitirCteAcao(
   const dados: DadosEmissaoCte = {
     provedorRef: fiscal.provedor_ref,
     ambiente: fiscal.ambiente as "homologacao" | "producao",
+    cnpjEmitente: empresa.cnpj,
     serie,
     numero,
     naturezaOperacao,

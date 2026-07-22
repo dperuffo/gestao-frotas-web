@@ -64,6 +64,9 @@ export type DadosIcmsCte = {
 export type DadosEmissaoCte = {
   provedorRef: string;
   ambiente: AmbienteFiscal;
+  // CNPJ de quem EMITE o CT-e (a transportadora/empresa, não o remetente da
+  // carga) — é esse CNPJ que compõe a chave de acesso, mesma regra da NF-e.
+  cnpjEmitente: string;
   serie: number;
   numero: number;
   naturezaOperacao: string;
@@ -106,6 +109,45 @@ export type ResultadoCancelamentoCte = { ok: true; protocoloCancelamento: string
 
 export type ResultadoCartaCorrecaoCte = { ok: true; sequencia: number; protocolo: string } | { ok: false; erro: string };
 
+// Fase P0.3 — tipos de emissão de MDF-e. "1 viagem = 1 MDF-e por veículo,
+// agrupando N CT-e" (e, quando a carga é fracionada, N NF-e também).
+export type DadosEmissaoMdfe = {
+  provedorRef: string;
+  ambiente: AmbienteFiscal;
+  serie: number;
+  numero: number;
+  ufCarregamento: string;
+  ufDescarregamento: string;
+  percursoUf: string[];
+  placaVeiculo: string;
+  condutorNome: string;
+  condutorCpf: string;
+  condutorAdicionalNome?: string | null;
+  condutorAdicionalCpf?: string | null;
+  chavesCte: string[];
+  chavesNfe: string[];
+};
+
+export type ResultadoEmissaoMdfe =
+  | {
+      ok: true;
+      situacao: "autorizado";
+      chaveAcesso: string;
+      numeroMdfe: string;
+      serieMdfe: string;
+      protocoloAutorizacao: string;
+      dataAutorizacao: string;
+    }
+  | { ok: true; situacao: "rejeitado"; motivoRejeicao: string }
+  | { ok: false; erro: string };
+
+export type ResultadoConsultaMdfe =
+  | { ok: true; situacao: "autorizado" | "encerrado" | "cancelado" | "rejeitado" | "processando" }
+  | { ok: false; erro: string };
+
+export type ResultadoEncerramentoMdfe = { ok: true; protocoloEncerramento: string } | { ok: false; erro: string };
+export type ResultadoCancelamentoMdfe = { ok: true; protocoloCancelamento: string } | { ok: false; erro: string };
+
 export interface ProvedorFiscal {
   nome: ProvedorNome;
 
@@ -131,5 +173,9 @@ export interface ProvedorFiscal {
   cancelarCte(provedorRef: string, chaveAcesso: string, justificativa: string): Promise<ResultadoCancelamentoCte>;
   cartaCorrecaoCte(provedorRef: string, chaveAcesso: string, textoCorrecao: string): Promise<ResultadoCartaCorrecaoCte>;
 
-  // P0.3: emitirMdfe / encerrarMdfe / cancelarMdfe
+  // Fase P0.3 — emissão/consulta/encerramento/cancelamento de MDF-e.
+  emitirMdfe(dados: DadosEmissaoMdfe): Promise<ResultadoEmissaoMdfe>;
+  consultarMdfe(provedorRef: string, chaveAcesso: string): Promise<ResultadoConsultaMdfe>;
+  encerrarMdfe(provedorRef: string, chaveAcesso: string): Promise<ResultadoEncerramentoMdfe>;
+  cancelarMdfe(provedorRef: string, chaveAcesso: string, justificativa: string): Promise<ResultadoCancelamentoMdfe>;
 }

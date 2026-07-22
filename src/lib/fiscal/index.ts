@@ -20,6 +20,7 @@ export function obterProvedorFiscal(nome: ProvedorNome): ProvedorFiscal {
 export type {
   AmbienteFiscal,
   DadosEmissaoCte,
+  DadosEmissaoMdfe,
   DadosEmitente,
   DadosEndereco,
   DadosParceiro,
@@ -28,7 +29,11 @@ export type {
   ProvedorNome,
   ResultadoCadastroEmitente,
   ResultadoCancelamentoCte,
+  ResultadoCancelamentoMdfe,
   ResultadoCartaCorrecaoCte,
   ResultadoConsultaCte,
+  ResultadoConsultaMdfe,
   ResultadoEmissaoCte,
+  ResultadoEmissaoMdfe,
+  ResultadoEncerramentoMdfe,
 } from "./provider";
