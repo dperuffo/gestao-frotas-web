@@ -24,7 +24,7 @@ export function CentralAjuda() {
       </button>
 
       {aberto && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-frota-950/70 p-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-frota-950/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">
             <h2 className="text-sm font-semibold text-slate-900">Central de Ajuda</h2>
             <p className="mt-2 text-sm text-slate-600">
