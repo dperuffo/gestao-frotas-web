@@ -1,6 +1,49 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  LayoutDashboard,
+  GraduationCap,
+  CreditCard,
+  Star,
+  DollarSign,
+  Receipt,
+  Folder,
+  Network,
+  Lock,
+  Building2,
+  GitBranch,
+  Users,
+  IdCard,
+  Car,
+  Fuel,
+  FileText,
+  Sparkles,
+  ShieldAlert,
+  Gift,
+  Route,
+  Shield,
+  Luggage,
+  Truck,
+  Calculator,
+  ClipboardList,
+  Handshake,
+  Tag,
+  Leaf,
+  Wrench,
+  SlidersHorizontal,
+  BarChart3,
+  Globe,
+  Plug,
+  MapPin,
+  Landmark,
+  KeyRound,
+  FolderOpen,
+  FileSearch,
+  Settings,
+  Scale,
+  Ticket,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
 import { contarChamadosNaoVistosAcao } from "./chamados/actions";
@@ -29,50 +72,55 @@ import { LembretePwaBanner } from "@/components/pwa/LembretePwaBanner";
 // textos GERAL". Esta lista passou a usar o mesmo formato label com emoji
 // embutido (em vez de icone/label separados) pra ficar visualmente idêntica
 // às demais seções, e ganhou o cabeçalho "Geral" (ver render abaixo).
+// Fase Ícones-PWA — pedido do Daniel: alinhar os ícones do menu web com os
+// mesmos usados no PWA Cliente/Posto (Flutter, que usa Material Icons, nunca
+// emoji). Trocamos o emoji embutido no label por um componente `icon`
+// (lucide-react) equivalente ao Icons.xxx do Flutter — ver mapeamento por
+// item nos comentários abaixo quando o nome não é óbvio.
 const menuVisaoGeral = [
-  { href: "/dashboard", label: "📊 Dashboard" },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }, // PWA: Icons.dashboard
   { href: "/assistente", label: "Assistente FNI", logo: true },
   // Fase Central-Treinamento (20/07/2026) — pedido do Daniel: treinamento
   // interativo com lições por módulo, screenshots reais e (via Assistente
   // FNI) tira-dúvidas de uso — reduz dependência de time comercial/
   // treinamento humano num produto self-service.
-  { href: "/treinamento", label: "🎓 Central de Treinamento" },
-  { href: "/assinatura", label: "💳 Minha Assinatura" },
-  { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
-  { href: "/financeiro", label: "💰 Painel Financeiro" },
+  { href: "/treinamento", label: "Central de Treinamento", icon: GraduationCap },
+  { href: "/assinatura", label: "Minha Assinatura", icon: CreditCard }, // PWA: Icons.credit_card
+  { href: "/avaliar", label: "Avaliar Plataforma", icon: Star }, // PWA: Icons.star
+  { href: "/financeiro", label: "Painel Financeiro", icon: DollarSign }, // PWA: Icons.attach_money
   // Fase P0.1 (roadmap TMS/ERP) — configuração do emitente de CT-e/MDF-e
   // (dados fiscais, certificado A1 via provedor, teste de conexão).
-  { href: "/fiscal", label: "🧾 Fiscal (CT-e/MDF-e)" },
+  { href: "/fiscal", label: "Fiscal (CT-e/MDF-e)", icon: Receipt },
   // Fase 27.149 — upload de documentação societária/cadastral (Contrato
   // Social, docs dos sócios, comprovante de endereço), aprovada pelo admin
   // em /documentos-empresas — pré-requisito pra criar/aderir a Redes de
   // Postos/Grupos Econômicos e aceitar/criar negociações.
-  { href: "/documentos", label: "📁 Documentos" },
+  { href: "/documentos", label: "Documentos", icon: Folder }, // PWA: Icons.folder
   // Fase 27.151 — pedido do Daniel: "faz todo o sentido deixar na visão do
   // cliente [Inteligência de Rede]". A tela (que já era admin-only) passou
   // a aceitar também o perfil cliente, mostrando só a rede da PRÓPRIA
   // empresa (nunca a de outros clientes — ver comentário em
   // inteligencia-rede/page.tsx). Continua também em Administração, com
   // visão consolidada de toda a plataforma pro admin.
-  { href: "/inteligencia-rede", label: "🌐 Inteligência de Rede" },
-  { href: "/lgpd", label: "🔒 Privacidade (LGPD)" },
+  { href: "/inteligencia-rede", label: "Inteligência de Rede", icon: Network }, // PWA: Icons.hub
+  { href: "/lgpd", label: "Privacidade (LGPD)", icon: Lock }, // PWA: Icons.lock
 ];
 
 const menuCadastros = [
-  { href: "/clientes", label: "🏢 Clientes" },
-  { href: "/grupo-economico", label: "🔗 Grupo Econômico" },
-  { href: "/usuarios", label: "👥 Usuários" },
-  { href: "/motoristas", label: "🪪 Motoristas" },
-  { href: "/veiculos", label: "🚗 Veículos" },
-  { href: "/centros-custo", label: "🧾 Centros de Custo" },
-  { href: "/postos", label: "⛽ Postos Revendedores" },
+  { href: "/clientes", label: "Clientes", icon: Building2 }, // PWA: Icons.business
+  { href: "/grupo-economico", label: "Grupo Econômico", icon: GitBranch }, // PWA: Icons.account_tree
+  { href: "/usuarios", label: "Usuários", icon: Users }, // PWA: Icons.people
+  { href: "/motoristas", label: "Motoristas", icon: IdCard }, // PWA: Icons.badge
+  { href: "/veiculos", label: "Veículos", icon: Car }, // PWA: Icons.directions_car
+  { href: "/centros-custo", label: "Centros de Custo", icon: Receipt }, // PWA: Icons.receipt_long
+  { href: "/postos", label: "Postos Revendedores", icon: Fuel }, // PWA: Icons.local_gas_station
 ];
 
 const menuOperacao = [
-  { href: "/abastecimentos", label: "🛢️ Abastecimentos" },
+  { href: "/abastecimentos", label: "Abastecimentos", icon: Fuel }, // PWA: Icons.local_gas_station
   // Fase 27.94/27.95 — status de NF-e por abastecimento (emitida/pendente)
   // + indicador de % de recolha, do lado do cliente.
-  { href: "/notas-fiscais", label: "📄 Notas Fiscais" },
+  { href: "/notas-fiscais", label: "Notas Fiscais", icon: FileText }, // PWA: Icons.description
   // Fase Motor-de-Ação-Automática — pedido do Daniel após o benchmark com a
   // TicketLog: central que fecha o ciclo sugestão -> aprovação -> execução
   // real (bloquear motorista com CNH vencida, remover posto acima da média,
@@ -82,58 +130,58 @@ const menuOperacao = [
   // de Anomalias detectava, então Anomalias saiu do menu (testado em
   // produção pelo Daniel) — a rota /anomalias continua existindo só como
   // redirect pra cá, pra não quebrar favoritos.
-  { href: "/acoes-sugeridas", label: "🤖 Ações Sugeridas" },
+  { href: "/acoes-sugeridas", label: "Ações Sugeridas", icon: Sparkles }, // PWA: Icons.auto_awesome
   // Fase 27.15x — diferente de Ações Sugeridas (detecta DEPOIS do abastecimento),
   // aqui o cliente cadastra regras que um sistema externo consulta ANTES de
   // autorizar — ver POST /api/integracoes/antifraude/verificar.
-  { href: "/antifraude", label: "🕵️ Antifraude" },
+  { href: "/antifraude", label: "Antifraude", icon: ShieldAlert }, // PWA: Icons.gpp_maybe_outlined
   // Fase 27.130 — indicadores do programa "Estrada que Cuida" (app próprio
   // do motorista) por motorista, mesmo padrão de seleção de cliente do
   // Antifraude acima; RPC indicadores_fidelidade_motoristas já checa
   // autorização por empresa/admin internamente.
-  { href: "/fidelidade-motoristas", label: "🎁 Fidelidade dos Motoristas" },
+  { href: "/fidelidade-motoristas", label: "Fidelidade dos Motoristas", icon: Gift },
   // Fase Parcerias Locais (17/07) — o cliente cria seus próprios benefícios
   // (treinamentos, marketplace, telemedicina etc.) no catálogo de
   // fidelidade; mesma tela também vive em menuPostoOperacao (ver abaixo).
-  { href: "/parcerias-locais", label: "🎟️ Parcerias Locais" },
-  { href: "/roteirizacao", label: "🗺️ Roteirização" },
-  { href: "/rotograma", label: "🛡️ Rotograma" },
-  { href: "/planos-viagem", label: "🧳 Planos de Viagem" },
+  { href: "/parcerias-locais", label: "Parcerias Locais", icon: Gift }, // PWA: Icons.card_giftcard
+  { href: "/roteirizacao", label: "Roteirização", icon: Route }, // PWA: Icons.route
+  { href: "/rotograma", label: "Rotograma", icon: Shield }, // PWA: Icons.shield_outlined
+  { href: "/planos-viagem", label: "Planos de Viagem", icon: Luggage }, // PWA: Icons.card_travel
   // Fase Fretes — contratação de frete entre cliente e motorista, estilo
   // Uber (mercado aberto com negociação) ou atribuição direta a um
   // motorista próprio/parceiro. Motoristas Parceiros é o cadastro de
   // terceiros/agregados usado pelo modo direto.
-  { href: "/fretes", label: "🚚 Fretes" },
+  { href: "/fretes", label: "Fretes", icon: Truck }, // PWA: Icons.local_shipping
   // Fase P0.5 (plano FNI_Plano_Implementacao_P0.md) — cotações simulam o
   // frete a partir das Tabelas de Frete (frete-peso/ad valorem/GRIS/ICMS)
   // e do piso mínimo ANTT, e convertem em frete com um clique.
-  { href: "/cotacoes", label: "🧮 Cotações" },
-  { href: "/tabelas-frete", label: "📋 Tabelas de Frete" },
+  { href: "/cotacoes", label: "Cotações", icon: Calculator },
+  { href: "/tabelas-frete", label: "Tabelas de Frete", icon: ClipboardList },
   // Fase P0.6 — faturamento de fretes (agrupa CT-es autorizados por
   // tomador/período) + contas a receber genérico (ver seção nova em
   // /financeiro).
-  { href: "/faturas-fretes", label: "🧾 Faturas de Frete" },
-  { href: "/motoristas-parceiros", label: "🤝 Motoristas Parceiros" },
-  { href: "/negociacoes", label: "🤝 Negociações com Postos" },
-  { href: "/precos-postos", label: "💲 Preços dos Postos Parceiros" },
+  { href: "/faturas-fretes", label: "Faturas de Frete", icon: Receipt },
+  { href: "/motoristas-parceiros", label: "Motoristas Parceiros", icon: Handshake }, // PWA: Icons.handshake_outlined
+  { href: "/negociacoes", label: "Negociações com Postos", icon: Handshake }, // PWA: Icons.handshake
+  { href: "/precos-postos", label: "Preços dos Postos Parceiros", icon: Tag }, // PWA: Icons.sell
   // Fase Onda-2 (benchmark TicketLog, item #6) — pedido do Daniel: comparador
   // de combustível ideal por veículo/região, reaproveitando os preços
   // regionais já usados no índice público de preços.
-  { href: "/combustivel-ideal", label: "⛽🌱 Combustível Ideal" },
-  { href: "/manutencao-preditiva", label: "🔧 Manutenção Preditiva" },
+  { href: "/combustivel-ideal", label: "Combustível Ideal", icon: Leaf }, // PWA: Icons.eco
+  { href: "/manutencao-preditiva", label: "Manutenção Preditiva", icon: Wrench }, // PWA: Icons.build
   // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
   // soluções de automação/meios de pagamento integrados via API (Hub de
   // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
-  { href: "/parametros-uso", label: "🎛️ Parâmetros de Uso" },
+  { href: "/parametros-uso", label: "Parâmetros de Uso", icon: SlidersHorizontal }, // PWA: Icons.tune
   // Fase 27.140 — preferências de emissão de nota fiscal por CNPJ da frota,
   // consultadas por ERPs/automação de posto via API (Hub de Integrações).
-  { href: "/parametros-nf", label: "🧾 Parâmetros de NF" },
-  { href: "/relatorios", label: "📈 Relatórios" },
+  { href: "/parametros-nf", label: "Parâmetros de NF", icon: Receipt }, // PWA: Icons.receipt_long
+  { href: "/relatorios", label: "Relatórios", icon: BarChart3 }, // PWA: Icons.bar_chart
   // Fase Onda-3 (benchmark TicketLog, item #10) — pedido do Daniel: estimativa
   // de CO2 emitido pela frota a partir dos litros já registrados nos
   // abastecimentos (fatores de emissão em fatores_emissao_co2).
-  { href: "/pegada-carbono", label: "🌍 Pegada de Carbono" },
-  { href: "/integracoes", label: "🔌 Integrações" },
+  { href: "/pegada-carbono", label: "Pegada de Carbono", icon: Globe }, // PWA: Icons.public
+  { href: "/integracoes", label: "Integrações", icon: Plug },
 ];
 
 // Fase 27.50 — menu do posto revendedor (perfil "posto", tenant segmento
@@ -154,33 +202,33 @@ const menuOperacao = [
 // Fase 27.56 — "Dashboard" entra em Gestão (mesmo lugar que ocupa no
 // menuVisaoGeral da Frota): todo mundo cai em /dashboard depois do login.
 const menuPostoGestao = [
-  { href: "/dashboard", label: "🏠 Dashboard" },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }, // PWA: Icons.dashboard
   // Fase 27.137 — pedido do Daniel: cadastro do estabelecimento (CNPJ,
   // razão social, endereço, contatos, lat/long) logo na adesão do posto,
   // comparado com a base ANP pra evitar registro duplicado/sobreposto —
   // perto do topo do menu de propósito, é o primeiro passo esperado de
   // quem acabou de aderir.
-  { href: "/meu-posto", label: "📍 Meu Posto" },
+  { href: "/meu-posto", label: "Meu Posto", icon: MapPin }, // PWA: Icons.place
   // Fase 27.139 — pedido do Daniel: "Rede de Posto tem que estar na visão
   // do posto para criação e gestão". Volta pro menu do posto (tinha ido
   // só pra Administração na Fase 27.129, quando a escrita ainda era
   // 100% admin-only) — RLS/código agora permitem que um posto crie e
   // gerencie sua própria Rede (ver gruposEconomicos.ts). Continua também
   // em Administração, pra visão global do admin sobre todas as redes.
-  { href: "/rede-postos", label: "🔗 Rede de Postos" },
+  { href: "/rede-postos", label: "Rede de Postos", icon: Network }, // PWA: Icons.hub
   { href: "/assistente", label: "Assistente FNI", logo: true },
-  { href: "/treinamento", label: "🎓 Central de Treinamento" },
-  { href: "/assinatura", label: "💳 Minha Assinatura" },
-  { href: "/avaliar", label: "⭐ Avaliar Plataforma" },
-  { href: "/financeiro-posto", label: "💰 Financeiro" },
-  { href: "/lgpd", label: "🔒 Privacidade (LGPD)" },
+  { href: "/treinamento", label: "Central de Treinamento", icon: GraduationCap },
+  { href: "/assinatura", label: "Minha Assinatura", icon: CreditCard },
+  { href: "/avaliar", label: "Avaliar Plataforma", icon: Star },
+  { href: "/financeiro-posto", label: "Financeiro", icon: DollarSign }, // PWA: Icons.attach_money
+  { href: "/lgpd", label: "Privacidade (LGPD)", icon: Lock },
   // Fase 27.92 — self-service: cadastro da chave PIX usada como cedente no
   // boleto/documento de cobrança enviado aos clientes.
-  { href: "/minha-empresa", label: "🏦 Meus Dados / PIX" },
+  { href: "/minha-empresa", label: "Meus Dados / PIX", icon: Landmark }, // PWA: Icons.account_balance
   // Fase 27.149 — mesmo item de /documentos do lado Frota (menuVisaoGeral,
   // ver acima), agora também disponível pro posto.
-  { href: "/documentos", label: "📁 Documentos" },
-  { href: "/usuarios", label: "👥 Usuários" },
+  { href: "/documentos", label: "Documentos", icon: Folder },
+  { href: "/usuarios", label: "Usuários", icon: Users },
 ];
 
 // Fase 27.130 — o dia a dia operacional do posto: negociar com clientes
@@ -188,62 +236,62 @@ const menuPostoGestao = [
 // via API), registrar abastecimentos, acompanhar o cliente/preço/nota fiscal
 // de cada relação comercial, e gerar a própria chave de API.
 const menuPostoOperacao = [
-  { href: "/negociacoes", label: "🤝 Negociações" },
-  { href: "/abastecimentos", label: "🛢️ Abastecimentos" },
+  { href: "/negociacoes", label: "Negociações", icon: Handshake },
+  { href: "/abastecimentos", label: "Abastecimentos", icon: Fuel },
   // Fase Parcerias Locais (17/07) — o posto cria seus próprios benefícios
   // (vale-refeição, banho, estacionamento, lavagem/troca de óleo, produtos
   // da conveniência etc.) no catálogo de fidelidade "Estrada que Cuida",
   // publicados pra rede toda de motoristas resgatar. Mesma tela do lado
   // cliente (ver menuOperacao acima) — RLS escopa por criador_empresa_id.
-  { href: "/parcerias-locais", label: "🎟️ Parcerias Locais" },
+  { href: "/parcerias-locais", label: "Parcerias Locais", icon: Gift },
   // Fase 27.72 — cadastro dos clientes que já negociaram com o posto
   // (qualquer status), com ciclo de abastecimento/pagamento por cliente.
-  { href: "/clientes-posto", label: "🏢 Clientes" },
-  { href: "/precos-postos", label: "💲 Meus Preços" },
+  { href: "/clientes-posto", label: "Clientes", icon: Building2 },
+  { href: "/precos-postos", label: "Meus Preços", icon: Tag },
   // Fase 27.94/27.95 — upload de NF-e (XML) por abastecimento + indicador
   // de % de recolha, do lado do posto.
-  { href: "/notas-fiscais", label: "📄 Notas Fiscais" },
-  { href: "/integracoes", label: "🔌 Integrações" },
+  { href: "/notas-fiscais", label: "Notas Fiscais", icon: FileText },
+  { href: "/integracoes", label: "Integrações", icon: Plug },
 ];
 
 const menuAdministracao = [
-  { href: "/permissoes", label: "🔑 Permissões por Perfil" },
+  { href: "/permissoes", label: "Permissões por Perfil", icon: KeyRound }, // PWA: Icons.vpn_key
   // Fase 27.149 — fila de revisão da documentação societária/cadastral
   // enviada por postos e clientes em /documentos (Contrato Social, docs
   // dos sócios, comprovante de endereço).
-  { href: "/documentos-empresas", label: "📁 Aprovação de Documentos" },
+  { href: "/documentos-empresas", label: "Aprovação de Documentos", icon: FolderOpen }, // PWA: Icons.folder_open
   // Fase 27.161 — pedido do Daniel: "remover a duplicidade, pois ja esta
   // dentro de Gestão" — o admin via "Inteligência de Rede" 2x (aqui E em
   // Gestão, ver comentário da Fase 27.151 em menuVisaoGeral). O item
   // continua existindo com visão consolidada da rede toda pro admin
   // (inteligencia-rede/page.tsx), só o link duplicado saiu daqui.
-  { href: "/assinaturas", label: "💳 Assinaturas (todos os clientes)" },
-  { href: "/avaliacoes", label: "⭐ Avaliações dos Clientes" },
+  { href: "/assinaturas", label: "Assinaturas (todos os clientes)", icon: CreditCard },
+  { href: "/avaliacoes", label: "Avaliações dos Clientes", icon: Star }, // PWA: Icons.star_outline
   // Fase 27.129 — pedido do Daniel: "Rede de Postos nao faz sentido estar na
   // visao do cliente". Escrita já era admin-only em código
   // (gruposEconomicos.ts::ehAdminOuSuperusuario), então deixava o item no
   // menu do cliente sem nenhuma ação que ele pudesse de fato realizar ali —
   // movido pra Administração, junto de Grupo Econômico/Assinaturas/etc.
-  { href: "/rede-postos", label: "🔗 Rede de Postos" },
+  { href: "/rede-postos", label: "Rede de Postos", icon: Network },
   // Fase 27.137 — fila de revisão dos possíveis duplicados sinalizados pela
   // checagem de "Meu Posto" contra a base ANP (endereço/coordenadas muito
   // próximos de outro posto, CNPJ diferente) — nunca bloqueia o posto, só
   // sinaliza pra um admin decidir aqui.
-  { href: "/postos-duplicados", label: "🔍 Possíveis Duplicados (Postos)" },
+  { href: "/postos-duplicados", label: "Possíveis Duplicados (Postos)", icon: FileSearch }, // PWA: Icons.find_in_page
   // Fase 27.86 — parâmetros globais do sistema (hoje só o timeout de
   // logout por inatividade; ver /configuracoes).
-  { href: "/configuracoes", label: "⚙️ Configurações do Sistema" },
+  { href: "/configuracoes", label: "Configurações do Sistema", icon: Settings },
   // Programa "Estrada que Cuida" (app do motorista) — catálogo de resgate
   // simulado (v1, sem parceiros reais) + fila de resgates pra cumprimento
   // manual. Ver PROPOSTA-FIDELIDADE-MOTORISTA.md.
-  { href: "/fidelidade", label: "🎁 Catálogo de Fidelidade" },
+  { href: "/fidelidade", label: "Catálogo de Fidelidade", icon: Gift },
   // Fase Central-Treinamento (20/07/2026) — pedido do Daniel: treinamento
   // interativo sem depender de time comercial/técnico. CRUD do conteúdo
   // que alimenta o ícone "?" e a Central de Treinamento (/treinamento).
-  { href: "/administracao/central-conteudo", label: "🎓 Central de Conteúdo" },
+  { href: "/administracao/central-conteudo", label: "Central de Conteúdo", icon: GraduationCap },
   // Fase P0.5 — piso mínimo ANTT (Res. 5.867/2020), tabela nacional
   // importável via XLSX, só admin.
-  { href: "/administracao/pisos-antt", label: "⚖️ Piso Mínimo ANTT" },
+  { href: "/administracao/pisos-antt", label: "Piso Mínimo ANTT", icon: Scale },
 ];
 
 // Alvos do tour de boas-vindas (Fase 24) — só os 3 itens de menu citados no
@@ -471,16 +519,17 @@ export default async function DashboardLayout({
                     data-tour={TOUR_POR_HREF_POSTO[item.href]}
                     className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                   >
-                    <span>
+                    <span className="flex items-center gap-2">
                       {item.logo && (
                         <Image
                           src="/logo-fni.png"
                           alt=""
                           width={24}
                           height={9}
-                          className="mr-1.5 inline-block h-auto w-5 align-middle object-contain"
+                          className="inline-block h-auto w-5 align-middle object-contain"
                         />
                       )}
+                      {item.icon && <item.icon className="h-4 w-4 shrink-0 text-slate-300" />}
                       {item.label}
                     </span>
                   </Link>
@@ -491,7 +540,10 @@ export default async function DashboardLayout({
                   href="/chamados"
                   className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
-                  <span>🎫 Chamados</span>
+                  <span className="flex items-center gap-2">
+                    <Ticket className="h-4 w-4 shrink-0 text-slate-300" />
+                    Chamados
+                  </span>
                   {chamadosNaoVistos > 0 && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                       {chamadosNaoVistos}
@@ -512,7 +564,10 @@ export default async function DashboardLayout({
                     data-tour={TOUR_POR_HREF_POSTO[item.href]}
                     className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                   >
-                    <span>{item.label}</span>
+                    <span className="flex items-center gap-2">
+                      <item.icon className="h-4 w-4 shrink-0 text-slate-300" />
+                      {item.label}
+                    </span>
                     {item.href === "/negociacoes" && negociacoesPendentes > 0 && (
                       <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                         {negociacoesPendentes}
@@ -541,16 +596,17 @@ export default async function DashboardLayout({
                   data-tour={TOUR_POR_HREF[item.href]}
                   className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
-                  <span>
+                  <span className="flex items-center gap-2">
                     {item.logo && (
                       <Image
                         src="/logo-fni.png"
                         alt=""
                         width={24}
                         height={9}
-                        className="mr-1.5 inline-block h-auto w-5 align-middle object-contain"
+                        className="inline-block h-auto w-5 align-middle object-contain"
                       />
                     )}
+                    {item.icon && <item.icon className="h-4 w-4 shrink-0 text-slate-300" />}
                     {item.label}
                   </span>
                 </Link>
@@ -561,7 +617,10 @@ export default async function DashboardLayout({
                 href="/chamados"
                 className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
               >
-                <span>🎫 Chamados</span>
+                <span className="flex items-center gap-2">
+                  <Ticket className="h-4 w-4 shrink-0 text-slate-300" />
+                  Chamados
+                </span>
                 {chamadosNaoVistos > 0 && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                     {chamadosNaoVistos}
@@ -581,7 +640,10 @@ export default async function DashboardLayout({
                   href={item.href}
                   className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
-                  <span>{item.label}</span>
+                  <span className="flex items-center gap-2">
+                    <item.icon className="h-4 w-4 shrink-0 text-slate-300" />
+                    {item.label}
+                  </span>
                   {item.href === "/clientes" && acessosClientesNaoVistos > 0 && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                       {acessosClientesNaoVistos}
@@ -602,7 +664,10 @@ export default async function DashboardLayout({
                   href={item.href}
                   className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
-                  <span>{item.label}</span>
+                  <span className="flex items-center gap-2">
+                    <item.icon className="h-4 w-4 shrink-0 text-slate-300" />
+                    {item.label}
+                  </span>
                   {item.href === "/negociacoes" && negociacoesPendentes > 0 && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                       {negociacoesPendentes}
@@ -648,7 +713,10 @@ export default async function DashboardLayout({
                     href="/permissoes"
                     className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                   >
-                    <span>🔑 Permissões</span>
+                    <span className="flex items-center gap-2">
+                      <KeyRound className="h-4 w-4 shrink-0 text-slate-300" />
+                      Permissões
+                    </span>
                   </Link>
                 </li>
               </ul>
@@ -675,7 +743,10 @@ export default async function DashboardLayout({
                       href={item.href}
                       className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                     >
-                      <span>{item.label}</span>
+                      <span className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4 shrink-0 text-slate-300" />
+                        {item.label}
+                      </span>
                       {item.href === "/avaliacoes" && avaliacoesPendentes > 0 && (
                         <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                           {avaliacoesPendentes}
