@@ -1124,6 +1124,8 @@ export interface Database {
           // `fretes-evidencias` (obrigatório em abasteceu/chegou_destino/
           // concluido/ocorrencia, opcional nos demais tipos).
           foto_path: string | null;
+          // Fase P0.4 — obrigatório quando tipo_evento='ocorrencia'.
+          codigo_ocorrencia: "atraso" | "avaria" | "recusa" | "reentrega" | "devolucao" | null;
         };
         Insert: Partial<Database["public"]["Tables"]["fretes_eventos"]["Row"]> & {
           frete_id: string;
@@ -1315,6 +1317,61 @@ export interface Database {
           chave_acesso: string;
         };
         Update: Partial<Database["public"]["Tables"]["mdfe_documentos"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase P0.4 — canhoto digital (POD), 1 por frete, gravado via
+      // confirmar_entrega_frete.
+      fretes_entregas: {
+        Row: {
+          id: string;
+          frete_id: string;
+          nome_recebedor: string;
+          documento_recebedor: string | null;
+          foto_canhoto_path: string;
+          assinatura_path: string;
+          lat: number | null;
+          lon: number | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_entregas"]["Row"]> & {
+          frete_id: string;
+          nome_recebedor: string;
+          foto_canhoto_path: string;
+          assinatura_path: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_entregas"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase P0.4 — romaneio: NF-e do embarcador vinculadas ao frete.
+      fretes_nfe: {
+        Row: {
+          id: string;
+          frete_id: string;
+          chave_acesso: string;
+          numero_nf: number | null;
+          serie_nf: string | null;
+          natureza_operacao: string | null;
+          data_emissao: string | null;
+          cnpj_emitente: string | null;
+          nome_emitente: string | null;
+          cnpj_destinatario: string | null;
+          nome_destinatario: string | null;
+          valor_nf: number | null;
+          peso_bruto_kg: number | null;
+          peso_liquido_kg: number | null;
+          quantidade_volumes: number | null;
+          especie_volume: string | null;
+          origem: string;
+          xml_storage_path: string | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_nfe"]["Row"]> & {
+          frete_id: string;
+          chave_acesso: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_nfe"]["Row"]>;
         Relationships: [];
       };
       // Fase Fretes-Adiantamento-Combustível (19/07) — parcelas de

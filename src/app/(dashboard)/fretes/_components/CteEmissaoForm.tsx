@@ -190,6 +190,7 @@ export function CteEmissaoForm({
   municipioFimPadrao,
   ufFimPadrao,
   parceiros,
+  chavesNfePadrao,
 }: {
   freteId: string;
   empresaId: string;
@@ -199,6 +200,7 @@ export function CteEmissaoForm({
   municipioFimPadrao: string;
   ufFimPadrao: string;
   parceiros: ParceiroSalvo[];
+  chavesNfePadrao: string;
 }) {
   const [aberto, setAberto] = useState(false);
   const [remetente, setRemetente] = useState(BLOCO_VAZIO);
@@ -302,7 +304,8 @@ export function CteEmissaoForm({
 
       <div>
         <label className="mb-1 block text-xs text-slate-500">Chaves de NF-e da carga (uma por linha ou separadas por vírgula)</label>
-        <textarea name="chaves_nfe" rows={2} className="input w-full text-xs" placeholder="44 dígitos cada" />
+        <textarea name="chaves_nfe" rows={2} defaultValue={chavesNfePadrao} className="input w-full text-xs" placeholder="44 dígitos cada" />
+        {chavesNfePadrao && <p className="mt-1 text-[11px] text-slate-400">Pré-preenchido com as NF-e do romaneio deste frete.</p>}
       </div>
 
       <button type="submit" disabled={isPending} className="btn-primary w-full text-xs">

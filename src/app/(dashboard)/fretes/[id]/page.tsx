@@ -7,6 +7,8 @@ import { AvaliarMotoristaForm } from "../_components/AvaliarMotoristaForm";
 import { FretesDocumentos, type CteRow, type CiotRow } from "../_components/FretesDocumentos";
 import type { ParceiroSalvo } from "../_components/CteEmissaoForm";
 import { MdfeCard, type MdfeAtivo, type VeiculoOpcao } from "../_components/MdfeCard";
+import { RomaneioCard, type NfeCargaRow } from "../_components/RomaneioCard";
+import { EntregaCard, type EntregaConfirmada } from "../_components/EntregaCard";
 import { PagamentosFrete, type PagamentoFrete } from "../_components/PagamentosFrete";
 
 type FreteDetalhe = {
@@ -101,7 +103,7 @@ export default async function FreteDetalhePage({
       .order("ordem"),
     supabase
       .from("fretes_eventos")
-      .select("id, tipo_evento, observacao, criado_em, foto_path")
+      .select("id, tipo_evento, observacao, criado_em, foto_path, codigo_ocorrencia")
       .eq("frete_id", id)
       .order("criado_em"),
     supabase
@@ -126,7 +128,7 @@ export default async function FreteDetalhePage({
   // emitidos por aqui, ver comentário em src/lib/cte.ts). Bucket
   // fretes-documentos é privado, então geramos signed URL por arquivo (1h),
   // mesmo padrão já usado pras fotos de evidência acima.
-  const [{ data: ctesData }, { data: ciotsData }, { data: fiscalData }, { data: parceirosData }, { data: mdfeData }, { data: veiculosData }, { data: motoristaData }] = await Promise.all([
+  const [{ data: ctesData }, { data: ciotsData }, { data: fiscalData }, { data: parceirosData }, { data: mdfeData }, { data: veiculosData }, { data: motoristaData }, { data: nfesCargaData }, { data: entregaData }] = await Promise.all([
     supabase
       .from("fretes_cte")
       .select(
@@ -164,9 +166,53 @@ export default async function FreteDetalhePage({
     freteTipado.motorista_id
       ? supabase.from("motoristas").select("nome_completo, cpf").eq("id", freteTipado.motorista_id).maybeSingle()
       : Promise.resolve({ data: null }),
+    // Fase P0.4 — romaneio (NF-e da carga) deste frete.
+    supabase
+      .from("fretes_nfe")
+      .select("id, numero_nf, serie_nf, nome_emitente, valor_nf, peso_bruto_kg, quantidade_volumes, chave_acesso, origem")
+      .eq("frete_id", id)
+      .order("criado_em", { ascending: false }),
+    // Fase P0.4 — canhoto digital (POD) confirmado pelo motorista, se houver.
+    supabase
+      .from("fretes_entregas")
+      .select("nome_recebedor, documento_recebedor, foto_canhoto_path, assinatura_path, criado_em")
+      .eq("frete_id", id)
+      .maybeSingle(),
   ]);
 
   const veiculos: VeiculoOpcao[] = (veiculosData ?? []).map((v: { id: string; placa: string }) => ({ id: v.id, placa: v.placa }));
+
+  const nfesCarga: NfeCargaRow[] = (nfesCargaData ?? []).map((n) => ({
+    id: n.id,
+    numeroNf: n.numero_nf,
+    serieNf: n.serie_nf,
+    nomeEmitente: n.nome_emitente,
+    valorNf: n.valor_nf,
+    pesoBrutoKg: n.peso_bruto_kg,
+    quantidadeVolumes: n.quantidade_volumes,
+    chaveAcesso: n.chave_acesso,
+    origem: n.origem,
+  }));
+  // Fase P0.4 — sugestão pronta pro campo "chaves de NF-e" da tela de
+  // emissão de CT-e (P0.2), pra não precisar redigitar.
+  const chavesNfeRomaneio = nfesCarga.map((n) => n.chaveAcesso).join("\n");
+
+  // Fase P0.4 — canhoto digital (POD): mesmo bucket privado
+  // fretes-evidencias já usado pelas fotos de checkpoint do motorista.
+  let entrega: EntregaConfirmada | null = null;
+  if (entregaData) {
+    const [{ data: fotoAssinada }, { data: assinaturaAssinada }] = await Promise.all([
+      supabase.storage.from("fretes-evidencias").createSignedUrl(entregaData.foto_canhoto_path, 3600),
+      supabase.storage.from("fretes-evidencias").createSignedUrl(entregaData.assinatura_path, 3600),
+    ]);
+    entrega = {
+      nomeRecebedor: entregaData.nome_recebedor,
+      documentoRecebedor: entregaData.documento_recebedor,
+      criadoEm: entregaData.criado_em,
+      fotoCanhotoUrl: fotoAssinada?.signedUrl ?? null,
+      assinaturaUrl: assinaturaAssinada?.signedUrl ?? null,
+    };
+  }
 
   const mdfeAtivo: MdfeAtivo | null = mdfeData
     ? {
@@ -269,6 +315,16 @@ export default async function FreteDetalhePage({
     concluido: "Concluiu o frete",
   };
 
+  // Fase P0.4 — classificação estruturada da ocorrência (antes só existia
+  // como texto livre em observacao).
+  const LABEL_CODIGO_OCORRENCIA: Record<string, string> = {
+    atraso: "Atraso",
+    avaria: "Avaria",
+    recusa: "Recusa",
+    reentrega: "Reentrega",
+    devolucao: "Devolução",
+  };
+
   const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
@@ -367,6 +423,8 @@ export default async function FreteDetalhePage({
 
       <PagamentosFrete freteId={id} freteConcluido={freteTipado.status === "concluido"} pagamentos={pagamentos} />
 
+      <RomaneioCard freteId={id} empresaId={empresaId} nfes={nfesCarga} />
+
       <FretesDocumentos
         freteId={id}
         empresaId={empresaId}
@@ -378,6 +436,7 @@ export default async function FreteDetalhePage({
         municipioFimPadrao={freteTipado.entrega_cidade ?? ""}
         ufFimPadrao={freteTipado.entrega_uf ?? ""}
         parceiros={parceiros}
+        chavesNfePadrao={chavesNfeRomaneio}
       />
 
       <MdfeCard
@@ -441,6 +500,11 @@ export default async function FreteDetalhePage({
               <div key={e.id} className="flex items-center justify-between border-b border-dashed border-slate-200 pb-2">
                 <span className="flex items-center gap-2 text-slate-700">
                   {LABEL_EVENTO[e.tipo_evento] ?? e.tipo_evento}
+                  {e.codigo_ocorrencia && (
+                    <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">
+                      {LABEL_CODIGO_OCORRENCIA[e.codigo_ocorrencia] ?? e.codigo_ocorrencia}
+                    </span>
+                  )}
                   {e.observacao && <span className="text-xs text-slate-500">— {e.observacao}</span>}
                   {e.fotoUrl && (
                     <a href={e.fotoUrl} target="_blank" rel="noopener noreferrer" title="Ver foto do motorista">
@@ -458,6 +522,15 @@ export default async function FreteDetalhePage({
             ))}
           </div>
         </div>
+      )}
+
+      {entrega && (
+        <EntregaCard
+          freteTitulo={freteTipado.titulo}
+          origemLabel={freteTipado.origem_label}
+          destinoLabel={freteTipado.destino_label}
+          entrega={entrega}
+        />
       )}
 
       {freteTipado.status === "concluido" && (

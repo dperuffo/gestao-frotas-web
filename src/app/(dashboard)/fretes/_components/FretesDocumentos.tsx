@@ -58,6 +58,7 @@ export function FretesDocumentos({
   municipioFimPadrao,
   ufFimPadrao,
   parceiros,
+  chavesNfePadrao,
 }: {
   freteId: string;
   empresaId: string;
@@ -69,6 +70,7 @@ export function FretesDocumentos({
   municipioFimPadrao: string;
   ufFimPadrao: string;
   parceiros: ParceiroSalvo[];
+  chavesNfePadrao: string;
 }) {
   return (
     <div className="card mb-6 p-6">
@@ -119,6 +121,7 @@ export function FretesDocumentos({
               municipioFimPadrao={municipioFimPadrao}
               ufFimPadrao={ufFimPadrao}
               parceiros={parceiros}
+              chavesNfePadrao={chavesNfePadrao}
             />
           </div>
         </div>
