@@ -1374,6 +1374,127 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["fretes_nfe"]["Row"]>;
         Relationships: [];
       };
+      // Fase P0.5 — tabela de frete (cabeçalho), por cliente-tomador ou
+      // geral. Componentes fixos (ad valorem/GRIS/TDE/TDA/despacho/pedágio/
+      // ICMS "por dentro") ficam aqui; as faixas de peso (frete-peso) vivem
+      // em tabelas_frete_faixas.
+      tabelas_frete: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          cliente_tomador_id: string | null;
+          nome: string;
+          ativo: boolean;
+          uf_origem: string | null;
+          cidade_origem: string | null;
+          uf_destino: string | null;
+          cidade_destino: string | null;
+          percentual_ad_valorem: number;
+          percentual_gris: number;
+          valor_tde: number;
+          valor_tda: number;
+          valor_despacho: number;
+          valor_pedagio: number;
+          percentual_icms: number;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["tabelas_frete"]["Row"]> & {
+          empresa_id: string;
+          nome: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tabelas_frete"]["Row"]>;
+        Relationships: [];
+      };
+      tabelas_frete_faixas: {
+        Row: {
+          id: string;
+          tabela_frete_id: string;
+          peso_min_kg: number;
+          peso_max_kg: number | null;
+          valor_por_kg: number;
+          valor_minimo: number;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["tabelas_frete_faixas"]["Row"]> & {
+          tabela_frete_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tabelas_frete_faixas"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase P0.5 — piso mínimo de frete (Res. ANTT 5.867/2020), tabela
+      // NACIONAL (sem empresa_id) importável via XLSX por admin.
+      pisos_antt: {
+        Row: {
+          id: string;
+          tipo_carga: string;
+          numero_eixos: number;
+          coeficiente_deslocamento: number;
+          coeficiente_carga_descarga: number;
+          vigencia_inicio: string;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pisos_antt"]["Row"]> & {
+          tipo_carga: string;
+          numero_eixos: number;
+          coeficiente_deslocamento: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["pisos_antt"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase P0.5 — cotações: simula (tabelas_frete + pisos_antt), salva, e
+      // converte em frete com um clique.
+      cotacoes: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          tabela_frete_id: string | null;
+          cliente_tomador_id: string | null;
+          origem_label: string;
+          origem_lat: number;
+          origem_lon: number;
+          destino_label: string;
+          destino_lat: number;
+          destino_lon: number;
+          km_estimado: number | null;
+          peso_kg: number;
+          valor_carga: number;
+          tipo_carga: string | null;
+          numero_eixos: number | null;
+          valor_frete_peso: number;
+          valor_ad_valorem: number;
+          valor_gris: number;
+          valor_tde: number;
+          valor_tda: number;
+          valor_despacho: number;
+          valor_pedagio: number;
+          valor_icms: number;
+          valor_total: number;
+          piso_antt_valor: number | null;
+          piso_antt_alerta: boolean;
+          status: "simulada" | "convertida" | "descartada";
+          frete_id: string | null;
+          observacoes: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["cotacoes"]["Row"]> & {
+          empresa_id: string;
+          origem_label: string;
+          origem_lat: number;
+          origem_lon: number;
+          destino_label: string;
+          destino_lat: number;
+          destino_lon: number;
+          peso_kg: number;
+          valor_carga: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["cotacoes"]["Row"]>;
+        Relationships: [];
+      };
       // Fase Fretes-Adiantamento-Combustível (19/07) — parcelas de
       // pagamento do frete (entrada + saldo final), geradas automaticamente
       // quando o frete é aceito (ver trg_gerar_pagamentos_frete).

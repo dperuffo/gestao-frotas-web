@@ -104,6 +104,11 @@ const menuOperacao = [
   // motorista próprio/parceiro. Motoristas Parceiros é o cadastro de
   // terceiros/agregados usado pelo modo direto.
   { href: "/fretes", label: "🚚 Fretes" },
+  // Fase P0.5 (plano FNI_Plano_Implementacao_P0.md) — cotações simulam o
+  // frete a partir das Tabelas de Frete (frete-peso/ad valorem/GRIS/ICMS)
+  // e do piso mínimo ANTT, e convertem em frete com um clique.
+  { href: "/cotacoes", label: "🧮 Cotações" },
+  { href: "/tabelas-frete", label: "📋 Tabelas de Frete" },
   { href: "/motoristas-parceiros", label: "🤝 Motoristas Parceiros" },
   { href: "/negociacoes", label: "🤝 Negociações com Postos" },
   { href: "/precos-postos", label: "💲 Preços dos Postos Parceiros" },
@@ -232,6 +237,9 @@ const menuAdministracao = [
   // interativo sem depender de time comercial/técnico. CRUD do conteúdo
   // que alimenta o ícone "?" e a Central de Treinamento (/treinamento).
   { href: "/administracao/central-conteudo", label: "🎓 Central de Conteúdo" },
+  // Fase P0.5 — piso mínimo ANTT (Res. 5.867/2020), tabela nacional
+  // importável via XLSX, só admin.
+  { href: "/administracao/pisos-antt", label: "⚖️ Piso Mínimo ANTT" },
 ];
 
 // Alvos do tour de boas-vindas (Fase 24) — só os 3 itens de menu citados no
