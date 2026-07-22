@@ -30,9 +30,10 @@ const TIPO_LABEL: Record<string, string> = {
 export default async function AcoesSugeridasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string; status?: string; empresa?: string; page?: string }>;
+  searchParams: Promise<{ tipo?: string; status?: string; empresa?: string; page?: string; busca?: string }>;
 }) {
-  const { tipo, status, empresa: empresaParam, page: pageParam } = await searchParams;
+  const { tipo, status, empresa: empresaParam, page: pageParam, busca } = await searchParams;
+  const buscaLimpa = busca?.trim() || undefined;
   const supabase = await createClient();
 
   const { perfil, empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(
@@ -50,6 +51,10 @@ export default async function AcoesSugeridasPage({
     if (tipo) query = query.eq("tipo", tipo);
     if (statusAtual === "pendentes") query = query.eq("status", "pendente");
     if (statusAtual === "decididas") query = query.neq("status", "pendente");
+    // Pedido do Daniel: com listas grandes (600+ pendências), fica difícil
+    // achar uma ação pontual de um posto específico — busca por nome no
+    // alvo (posto, placa ou motorista, dependendo do tipo da ação).
+    if (buscaLimpa) query = query.ilike("alvo_label", `%${buscaLimpa}%`);
     return query;
   }
 
@@ -146,6 +151,13 @@ export default async function AcoesSugeridasPage({
 
           <form className="mb-4 flex flex-wrap gap-3">
             <input type="hidden" name="empresa" value={empresaParam ?? ""} />
+            <input
+              type="text"
+              name="busca"
+              defaultValue={busca ?? ""}
+              placeholder="Buscar por posto, placa ou motorista..."
+              className="input text-sm sm:w-72"
+            />
             <select name="tipo" defaultValue={tipo ?? ""} className="input text-sm">
               <option value="">Todos os tipos</option>
               {Object.entries(TIPO_LABEL).map(([valor, label]) => (
@@ -189,7 +201,7 @@ export default async function AcoesSugeridasPage({
               totalRegistros={totalRegistros}
               porPagina={POR_PAGINA}
               basePath="/acoes-sugeridas"
-              paramsAtuais={{ tipo, status: statusAtual, empresa: empresaParam }}
+              paramsAtuais={{ tipo, status: statusAtual, empresa: empresaParam, busca }}
             />
           </div>
         </>
