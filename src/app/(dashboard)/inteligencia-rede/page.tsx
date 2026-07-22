@@ -17,6 +17,7 @@ import { EvolucaoTemporal } from "./_components/EvolucaoTemporal";
 import { Operacional } from "./_components/Operacional";
 import { CruzamentosAvancados } from "./_components/CruzamentosAvancados";
 import { CoberturaDemanda } from "./_components/CoberturaDemanda";
+import { PrecosPorMeioPagamento } from "./_components/PrecosPorMeioPagamento";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 // Macrorregiões brasileiras (agrupamento IBGE) e total de municípios de cada
@@ -163,6 +164,7 @@ export default async function InteligenciaRedePage({
     { data: desvioAnpRaw },
     { data: servicosPostoRaw },
     { data: postosVisitadosRaw },
+    { data: precosPorMeioPagamentoRaw },
   ] = await Promise.all([
     supabase.rpc("postos_gf_por_uf"),
     supabase.rpc("anp_postos_por_uf"),
@@ -190,6 +192,7 @@ export default async function InteligenciaRedePage({
     supabase.rpc("postos_gf_desvio_anp", { p_empresa_id: empresaIdFiltro }),
     supabase.rpc("postos_gf_servicos", { p_empresa_id: empresaIdFiltro }),
     supabase.rpc("abastecimentos_postos_visitados"),
+    supabase.rpc("preco_medio_por_meio_pagamento", { p_empresa_id: empresaIdFiltro }),
   ]);
 
   // Preço do diesel S10 por estado (ANP) — usado só no score de oportunidade
@@ -475,6 +478,19 @@ export default async function InteligenciaRedePage({
     if (!p.uf) continue;
     demandaPorUf[p.uf] = (demandaPorUf[p.uf] ?? 0) + p.visitas;
   }
+
+  // Meios de Pagamento — pedido do Daniel: "painel de preços médios com os
+  // preços praticados nos abastecimentos nos diversos meios de pagamento".
+  const precosPorMeioPagamento = (precosPorMeioPagamentoRaw ?? []).map((r) => ({
+    provedor: r.provedor,
+    uf: r.uf,
+    regiao: r.regiao,
+    combustivel: r.combustivel,
+    precoMedio: r.preco_medio,
+    litrosTotal: r.litros_total,
+    valorTotal: r.valor_total,
+    qtd: r.qtd_abastecimentos,
+  }));
 
   return (
     <div>
@@ -843,6 +859,13 @@ export default async function InteligenciaRedePage({
                 </p>
                 <Operacional precosMapa={precosMapaOperacional} desvios={desvioAnp} servicos={servicosPosto} />
               </div>
+            ),
+          },
+          {
+            id: "meios-pagamento",
+            label: "💳 Meios de Pagamento",
+            conteudo: (
+              <PrecosPorMeioPagamento dados={precosPorMeioPagamento} />
             ),
           },
           {

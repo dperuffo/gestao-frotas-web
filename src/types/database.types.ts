@@ -3546,6 +3546,19 @@ export interface Database {
         Args: { p_empresa_id?: string | null };
         Returns: { combustivel: string; preco_medio: number; qtd_postos: number }[];
       };
+      preco_medio_por_meio_pagamento: {
+        Args: { p_empresa_id?: string | null };
+        Returns: {
+          provedor: string;
+          uf: string | null;
+          regiao: string | null;
+          combustivel: string;
+          preco_medio: number;
+          litros_total: number;
+          valor_total: number;
+          qtd_abastecimentos: number;
+        }[];
+      };
       postos_gf_top_municipios: {
         Args: { p_limit?: number };
         Returns: { municipio: string; uf: string; total: number }[];
