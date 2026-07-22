@@ -27,11 +27,33 @@ export async function marcarFaturaPagaAcao(faturaId: string): Promise<{ erro?: s
     })
     .eq("id", faturaId)
     .eq("status", "a_vencer")
-    .select("empresa_cliente_id")
+    .select("empresa_cliente_id, valor_total")
     .maybeSingle();
 
   if (error) return { erro: error.message };
+
+  // Fase P0.6 — espelha a baixa no título genérico de contas_receber (best
+  // effort: a fatura já foi marcada paga acima, isso só mantém o ERP
+  // financeiro em dia; se o título nem existir ainda — fatura antiga
+  // anterior ao backfill — a RPC só não encontra nada e não quebra nada).
+  if (data) {
+    const { data: conta } = await supabase
+      .from("contas_receber")
+      .select("id, valor_original, valor_pago")
+      .eq("origem", "fatura_posto")
+      .eq("referencia_id", faturaId)
+      .maybeSingle();
+    if (conta && conta.valor_original > conta.valor_pago) {
+      await supabase.rpc("baixar_conta_receber", {
+        p_conta_id: conta.id,
+        p_valor: conta.valor_original - conta.valor_pago,
+        p_forma: "manual",
+      });
+    }
+  }
+
   revalidatePath("/financeiro-posto");
+  revalidatePath("/financeiro");
   // Fase 27.85 — "Marcar como paga" agora também é acionável a partir do
   // drill-down /clientes-posto/[clienteId] (a lista plana que só existia
   // em /financeiro-posto foi substituída pela visão agrupada por cliente),
@@ -56,7 +78,21 @@ export async function cancelarFaturaAcao(faturaId: string): Promise<{ erro?: str
     .maybeSingle();
 
   if (error) return { erro: error.message };
+
+  // Fase P0.6 — cancela o título espelhado em contas_receber junto (best
+  // effort, mesma lógica da baixa acima).
+  if (data) {
+    const { data: conta } = await supabase
+      .from("contas_receber")
+      .select("id")
+      .eq("origem", "fatura_posto")
+      .eq("referencia_id", faturaId)
+      .maybeSingle();
+    if (conta) await supabase.rpc("cancelar_conta_receber", { p_conta_id: conta.id });
+  }
+
   revalidatePath("/financeiro-posto");
+  revalidatePath("/financeiro");
   if (data?.empresa_cliente_id) revalidatePath(`/clientes-posto/${data.empresa_cliente_id}`);
   return {};
 }

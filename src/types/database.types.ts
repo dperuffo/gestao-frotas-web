@@ -244,6 +244,27 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["fiscal_webhook_eventos"]["Row"]>;
         Relationships: [];
       };
+      // Fase P0.6 — mesmo padrão de fiscal_webhook_eventos, pro webhook do
+      // provedor de cobrança (Asaas/Cora/simulado).
+      cobranca_webhook_eventos: {
+        Row: {
+          id: string;
+          provedor: string;
+          tipo_evento: string | null;
+          referencia: string | null;
+          payload: Json;
+          processado: boolean;
+          processado_em: string | null;
+          erro_processamento: string | null;
+          recebido_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["cobranca_webhook_eventos"]["Row"]> & {
+          provedor: string;
+          payload: Json;
+        };
+        Update: Partial<Database["public"]["Tables"]["cobranca_webhook_eventos"]["Row"]>;
+        Relationships: [];
+      };
       // Fase 27.73 — tabela já existia desde a Fase 20 (histórico de
       // cobrança, gravada pelo stripe-webhook em invoice.payment_succeeded/
       // failed com status "pago"/"falhou"), mas nunca tinha sido adicionada
@@ -1201,6 +1222,9 @@ export interface Database {
           ambiente: string | null;
           dacte_storage_path: string | null;
           atualizado_em: string;
+          // Fase P0.6 — preenchida quando o CT-e entra numa faturas_fretes
+          // (impede incluir o mesmo CT-e em duas faturas).
+          fatura_frete_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["fretes_cte"]["Row"]> & {
           frete_id: string;
@@ -1493,6 +1517,112 @@ export interface Database {
           valor_carga: number;
         };
         Update: Partial<Database["public"]["Tables"]["cotacoes"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase P0.6 — faturas de frete: agrupa CT-es autorizados por tomador e
+      // período (espelha faturas_postos).
+      faturas_fretes: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          tomador_cnpj: string;
+          tomador_nome: string | null;
+          numero_fatura: number;
+          periodo_inicio: string;
+          periodo_fim: string;
+          vencimento: string;
+          valor_total: number;
+          quantidade_ctes: number;
+          status: "aberta" | "paga" | "cancelada";
+          pago_em: string | null;
+          observacoes: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["faturas_fretes"]["Row"]> & {
+          empresa_id: string;
+          tomador_cnpj: string;
+          periodo_inicio: string;
+          periodo_fim: string;
+          vencimento: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["faturas_fretes"]["Row"]>;
+        Relationships: [];
+      };
+      faturas_fretes_itens: {
+        Row: {
+          id: string;
+          fatura_frete_id: string;
+          frete_cte_id: string;
+          frete_id: string;
+          valor_prestacao: number;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["faturas_fretes_itens"]["Row"]> & {
+          fatura_frete_id: string;
+          frete_cte_id: string;
+          frete_id: string;
+          valor_prestacao: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["faturas_fretes_itens"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase P0.6 — contas a receber genérico (origem: fatura_frete/
+      // fatura_posto/avulso). Primeiro passo do ERP financeiro.
+      contas_receber: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          origem: "fatura_frete" | "fatura_posto" | "avulso";
+          referencia_id: string | null;
+          devedor_nome: string | null;
+          devedor_cnpj: string | null;
+          descricao: string | null;
+          parcela_numero: number;
+          parcela_total: number;
+          valor_original: number;
+          percentual_multa: number;
+          percentual_juros_mes: number;
+          vencimento: string;
+          valor_pago: number;
+          status: "aberto" | "pago" | "cancelado" | "baixado_parcial";
+          pago_em: string | null;
+          gateway_nome: string | null;
+          gateway_ref: string | null;
+          gateway_linha_digitavel: string | null;
+          gateway_pix_copia_cola: string | null;
+          observacoes: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["contas_receber"]["Row"]> & {
+          empresa_id: string;
+          origem: "fatura_frete" | "fatura_posto" | "avulso";
+          valor_original: number;
+          vencimento: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["contas_receber"]["Row"]>;
+        Relationships: [];
+      };
+      contas_receber_baixas: {
+        Row: {
+          id: string;
+          conta_receber_id: string;
+          valor: number;
+          forma: string | null;
+          gateway_ref: string | null;
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["contas_receber_baixas"]["Row"]> & {
+          conta_receber_id: string;
+          valor: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["contas_receber_baixas"]["Row"]>;
         Relationships: [];
       };
       // Fase Fretes-Adiantamento-Combustível (19/07) — parcelas de
@@ -4261,6 +4391,23 @@ export interface Database {
       };
       responder_frete_direto: {
         Args: { p_frete_id: string; p_aceitar: boolean };
+        Returns: undefined;
+      };
+      // Fase P0.6 — baixa (parcial ou total) de um título em contas_receber;
+      // chamada tanto pelo botão "Marcar como paga" quanto pelo webhook de
+      // cobrança (service role).
+      baixar_conta_receber: {
+        Args: {
+          p_conta_id: string;
+          p_valor: number;
+          p_forma?: string | null;
+          p_gateway_ref?: string | null;
+          p_observacao?: string | null;
+        };
+        Returns: undefined;
+      };
+      cancelar_conta_receber: {
+        Args: { p_conta_id: string };
         Returns: undefined;
       };
       // Fase Fretes B.

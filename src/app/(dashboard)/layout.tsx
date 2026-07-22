@@ -109,6 +109,10 @@ const menuOperacao = [
   // e do piso mínimo ANTT, e convertem em frete com um clique.
   { href: "/cotacoes", label: "🧮 Cotações" },
   { href: "/tabelas-frete", label: "📋 Tabelas de Frete" },
+  // Fase P0.6 — faturamento de fretes (agrupa CT-es autorizados por
+  // tomador/período) + contas a receber genérico (ver seção nova em
+  // /financeiro).
+  { href: "/faturas-fretes", label: "🧾 Faturas de Frete" },
   { href: "/motoristas-parceiros", label: "🤝 Motoristas Parceiros" },
   { href: "/negociacoes", label: "🤝 Negociações com Postos" },
   { href: "/precos-postos", label: "💲 Preços dos Postos Parceiros" },

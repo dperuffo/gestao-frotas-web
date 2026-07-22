@@ -12,6 +12,7 @@ import { buscarCiclosAbertos, agruparCiclosPorContraparte } from "@/lib/ciclosAb
 import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
 import { IndicadoresFinanceirosFni } from "../_components/IndicadoresFinanceirosFni";
 import { CobrancaEmAberto, type FaturaCobranca } from "./_components/CobrancaEmAberto";
+import { SecaoContasReceberFretes } from "./_components/SecaoContasReceberFretes";
 import { GraficoEvolucaoFinanceira, type PontoFinanceiro } from "./_components/GraficoEvolucaoFinanceira";
 import { FormularioOrcamento } from "./_components/FormularioOrcamento";
 import { FormularioCustoFixo } from "./_components/FormularioCustoFixo";
@@ -472,6 +473,8 @@ export default async function FinanceiroPage({
             empresaId={empresaSelecionada}
             ciclosAbertos={ciclosAbertosDoCliente}
           />
+
+          <SecaoContasReceberFretes empresaId={empresaSelecionada} />
 
           {resumoAjustes && (
             <div className="mt-6">
