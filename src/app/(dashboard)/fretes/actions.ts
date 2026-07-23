@@ -62,6 +62,12 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
   const kmEstimado = kmEstimadoRaw ? Number(kmEstimadoRaw) : null;
   const valorOferecido = Number(formData.get("valor_oferecido") ?? "");
   const motoristaId = String(formData.get("motorista_id") ?? "").trim() || null;
+  // Fase Fretes-Público-Alvo (23/07/26) — no mercado aberto o cliente
+  // escolhe o alvo da solicitação: fora da base (rede/parceiros) ou base
+  // (motoristas próprios). No modo direto o campo não vem — default
+  // fora_base, irrelevante (visibilidade é pelo motorista_id).
+  const publicoAlvoRaw = String(formData.get("publico_alvo") ?? "").trim();
+  const publicoAlvo = publicoAlvoRaw === "base" || publicoAlvoRaw === "fora_base" ? publicoAlvoRaw : "fora_base";
 
   // Fase Fretes-Dados-Completos — pedido do Daniel: motorista precisa de
   // endereço completo, horário exato e dimensões pra decidir se aceita o
@@ -185,6 +191,7 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
     valor_oferecido: valorOferecido,
     motorista_id: motoristaId,
     status: motoristaId ? "aguardando_confirmacao" : "disponivel",
+    publico_alvo: publicoAlvo,
     criado_por: user?.email ?? null,
     coleta_rua: coletaRua,
     coleta_numero: coletaNumero,
@@ -240,6 +247,33 @@ export async function reabrirFreteParaMercado(id: string, empresaId: string) {
     .update({ motorista_id: null, status: "disponivel", atualizado_em: new Date().toISOString() })
     .eq("id", id);
   revalidatePath("/fretes");
+}
+
+// Fase Fretes-Público-Alvo (23/07/26) — frete fora da base sem candidato
+// (ou recusado) pode ser recolocado pra base: aberto pra todos os
+// motoristas próprios (motoristaId null) ou atribuído direto a um deles.
+// Validações (dono, status, motorista da base) e o encerramento das
+// propostas abertas acontecem no banco (recolocar_frete_para_base).
+export async function recolocarFreteParaBaseAcao(freteId: string, empresaId: string, motoristaId: string | null) {
+  const supabase = await createClient();
+  if (!(await empresaPertenceAoUsuario(supabase, empresaId))) return { erro: "Sem permissão." };
+  const { data, error } = await supabase.rpc("recolocar_frete_para_base", {
+    p_frete_id: freteId,
+    p_motorista_id: motoristaId,
+  });
+  if (error) return { erro: error.message };
+  const status = (data as { status?: string })?.status;
+  if (status !== "recolocado") {
+    const mensagens: Record<string, string> = {
+      nao_encontrado: "Frete não encontrado.",
+      sem_permissao: "Sem permissão.",
+      status_invalido: "Esse frete não está mais em situação de ser recolocado (só disponível ou recusado).",
+      motorista_fora_da_base: "Esse motorista não é da sua base (precisa ser motorista próprio ativo).",
+    };
+    return { erro: mensagens[status ?? ""] ?? "Não foi possível recolocar o frete." };
+  }
+  revalidatePath("/fretes");
+  revalidatePath(`/fretes/${freteId}`);
 }
 
 export async function aceitarPropostaAcao(negociacaoId: string, empresaId: string) {

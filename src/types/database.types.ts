@@ -1014,6 +1014,9 @@ export interface Database {
             | "cancelado"
             | "recusado";
           motorista_id: string | null;
+          // Fase Fretes-Público-Alvo (23/07/26) — alvo da solicitação no
+          // mercado aberto: fora_base (rede/parceiros) ou base (próprios).
+          publico_alvo: "base" | "fora_base";
           negociacao_aceita_id: string | null;
           criado_por: string | null;
           criado_em: string;

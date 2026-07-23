@@ -12,6 +12,10 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const [modo, setModo] = useState<"mercado" | "direto">("mercado");
+  // Fase Fretes-Público-Alvo (23/07/26) — pedido do Daniel: ao publicar no
+  // mercado aberto, o cliente DECIDE se a solicitação vai pra motoristas de
+  // fora da base (rede/parceiros) ou da própria base (motoristas próprios).
+  const [publicoAlvo, setPublicoAlvo] = useState<"fora_base" | "base">("fora_base");
   const [motoristaId, setMotoristaId] = useState("");
   const [tipoSaldoCombustivel, setTipoSaldoCombustivel] = useState<"" | "Valor" | "Volume">("");
 
@@ -206,6 +210,46 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
             Atribuir a um motorista
           </button>
         </div>
+
+        {modo === "mercado" && (
+          <div className="mb-4 rounded-lg bg-slate-50 p-4">
+            <p className="mb-2 text-sm font-medium text-slate-700">
+              Enviar a solicitação para<span className="text-red-500"> *</span>
+            </p>
+            <input type="hidden" name="publico_alvo" value={publicoAlvo} />
+            <label className="mb-2 flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="radio"
+                name="publico_alvo_opcao"
+                checked={publicoAlvo === "fora_base"}
+                onChange={() => setPublicoAlvo("fora_base")}
+                className="mt-0.5 h-4 w-4"
+              />
+              <span>
+                <span className="font-medium">Motoristas de fora da base</span>
+                <span className="block text-xs text-slate-500">
+                  Rede e parceiros — seus motoristas próprios não veem esta solicitação. Se ninguém pegar (ou você
+                  recusar as propostas), dá pra recolocar depois pra sua base.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="radio"
+                name="publico_alvo_opcao"
+                checked={publicoAlvo === "base"}
+                onChange={() => setPublicoAlvo("base")}
+                className="mt-0.5 h-4 w-4"
+              />
+              <span>
+                <span className="font-medium">Motoristas da minha base</span>
+                <span className="block text-xs text-slate-500">
+                  Só os motoristas próprios da sua empresa veem e podem aceitar/propor valor.
+                </span>
+              </span>
+            </label>
+          </div>
+        )}
 
         {modo === "direto" && (
           <div>

@@ -10,6 +10,7 @@ import { MdfeCard, type MdfeAtivo, type VeiculoOpcao } from "../_components/Mdfe
 import { RomaneioCard, type NfeCargaRow } from "../_components/RomaneioCard";
 import { EntregaCard, type EntregaConfirmada } from "../_components/EntregaCard";
 import { PagamentosFrete, type PagamentoFrete } from "../_components/PagamentosFrete";
+import { RecolocarParaBaseCard } from "../_components/RecolocarParaBaseCard";
 
 type FreteDetalhe = {
   id: string;
@@ -17,6 +18,9 @@ type FreteDetalhe = {
   titulo: string;
   descricao: string | null;
   status: string;
+  // Fase Fretes-Público-Alvo (23/07/26) — alvo da solicitação no mercado
+  // aberto: fora_base (rede/parceiros) ou base (motoristas próprios).
+  publico_alvo: string;
   origem_label: string;
   destino_label: string;
   tipo_carga: string | null;
@@ -79,7 +83,7 @@ export default async function FreteDetalhePage({
   const { data: frete } = await supabase
     .from("fretes")
     .select(
-      "id, empresa_id, titulo, descricao, status, origem_label, destino_label, tipo_carga, peso_carga_kg, data_saida_prevista, prazo_entrega, km_estimado, valor_oferecido, motorista_id, coleta_rua, coleta_numero, coleta_bairro, coleta_cidade, coleta_uf, coleta_cep, coleta_referencia, coleta_data, coleta_hora, coleta_contato_nome, coleta_contato_telefone, entrega_rua, entrega_numero, entrega_bairro, entrega_cidade, entrega_uf, entrega_cep, entrega_referencia, entrega_data, entrega_hora, entrega_contato_nome, entrega_contato_telefone, carga_comprimento_m, carga_largura_m, carga_altura_m, veiculos_aceitos, carrocerias_aceitas"
+      "id, empresa_id, titulo, descricao, status, publico_alvo, origem_label, destino_label, tipo_carga, peso_carga_kg, data_saida_prevista, prazo_entrega, km_estimado, valor_oferecido, motorista_id, coleta_rua, coleta_numero, coleta_bairro, coleta_cidade, coleta_uf, coleta_cep, coleta_referencia, coleta_data, coleta_hora, coleta_contato_nome, coleta_contato_telefone, entrega_rua, entrega_numero, entrega_bairro, entrega_cidade, entrega_uf, entrega_cep, entrega_referencia, entrega_data, entrega_hora, entrega_contato_nome, entrega_contato_telefone, carga_comprimento_m, carga_largura_m, carga_altura_m, veiculos_aceitos, carrocerias_aceitas"
     )
     .eq("id", id)
     .maybeSingle();
@@ -327,6 +331,24 @@ export default async function FreteDetalhePage({
 
   const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
+  // Fase Fretes-Público-Alvo (23/07/26) — frete fora da base ainda
+  // disponível (ninguém pegou / propostas recusadas) ou recusado no modo
+  // direto pode ser recolocado pra base. Lista de motoristas próprios
+  // ativos só é buscada quando o card vai aparecer.
+  const podeRecolocarParaBase =
+    (freteTipado.status === "disponivel" && freteTipado.publico_alvo === "fora_base") ||
+    freteTipado.status === "recusado";
+  let motoristasBase: { id: string; nome: string }[] = [];
+  if (podeRecolocarParaBase) {
+    const { data: proprios } = await supabase
+      .from("motoristas")
+      .select("id, nome_completo")
+      .eq("empresa_id", freteTipado.empresa_id)
+      .eq("status", "Ativo")
+      .order("nome_completo");
+    motoristasBase = (proprios ?? []).map((m) => ({ id: m.id, nome: m.nome_completo }));
+  }
+
   return (
     <div>
       <Link href={`/fretes?empresa=${empresaId}`} className="mb-4 inline-block text-sm text-frota-600 hover:underline">
@@ -336,7 +358,11 @@ export default async function FreteDetalhePage({
       <div className="card mb-6 p-6">
         <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
           <h1 className="text-xl font-semibold text-slate-900">{freteTipado.titulo}</h1>
-          <span className="text-xs font-medium text-slate-500">{LABEL_STATUS[freteTipado.status] ?? freteTipado.status}</span>
+          <span className="text-xs font-medium text-slate-500">
+            {LABEL_STATUS[freteTipado.status] ?? freteTipado.status}
+            {freteTipado.status === "disponivel" &&
+              (freteTipado.publico_alvo === "base" ? " — minha base" : " — fora da base")}
+          </span>
         </div>
         <p className="mb-4 text-sm text-slate-600">
           {freteTipado.origem_label} → {freteTipado.destino_label}
@@ -456,6 +482,10 @@ export default async function FreteDetalhePage({
         <p className="card mb-6 p-4 text-sm text-slate-600">
           Frete atribuído diretamente — aguardando o motorista aceitar ou recusar no app dele.
         </p>
+      )}
+
+      {podeRecolocarParaBase && (
+        <RecolocarParaBaseCard freteId={id} empresaId={empresaId} motoristas={motoristasBase} />
       )}
 
       {(freteTipado.status === "disponivel" || (propostas ?? []).length > 0) && (

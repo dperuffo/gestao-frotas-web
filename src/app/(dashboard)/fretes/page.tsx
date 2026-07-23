@@ -16,6 +16,9 @@ type FreteRow = {
   id: string;
   titulo: string;
   status: string;
+  // Fase Fretes-Público-Alvo (23/07/26) — alvo da solicitação no mercado
+  // aberto: fora_base (rede/parceiros) ou base (motoristas próprios).
+  publico_alvo: string;
   origem_label: string;
   destino_label: string;
   valor_oferecido: number;
@@ -176,7 +179,13 @@ function renderGrid(
         <div key={f.id} className="card flex flex-col gap-3 p-5">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-slate-900">{f.titulo}</h3>
-            <span className={COR_STATUS[f.status] ?? "badge-inativo"}>{LABEL_STATUS[f.status] ?? f.status}</span>
+            <span className={COR_STATUS[f.status] ?? "badge-inativo"}>
+              {f.status === "disponivel"
+                ? f.publico_alvo === "base"
+                  ? "Disponível — minha base"
+                  : "Disponível — fora da base"
+                : LABEL_STATUS[f.status] ?? f.status}
+            </span>
           </div>
           <p className="text-sm text-slate-600">
             {f.origem_label} → {f.destino_label}
@@ -205,6 +214,17 @@ function renderGrid(
               <CancelarFreteButton id={f.id} empresaId={empresaSelecionada} />
             )}
             {f.status === "recusado" && <ReabrirFreteButton id={f.id} empresaId={empresaSelecionada} />}
+            {/* Fase Fretes-Público-Alvo — caminho pra recolocar pra base:
+                frete fora da base ainda disponível ou recusado no direto
+                (o card de recolocação fica na página de detalhe). */}
+            {((f.status === "disponivel" && f.publico_alvo === "fora_base") || f.status === "recusado") && (
+              <Link
+                href={`/fretes/${f.id}?empresa=${empresaSelecionada}`}
+                className="font-medium text-amber-700 hover:underline"
+              >
+                Recolocar pra base
+              </Link>
+            )}
           </div>
         </div>
       ))}
