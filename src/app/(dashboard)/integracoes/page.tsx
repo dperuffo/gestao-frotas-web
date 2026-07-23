@@ -223,6 +223,8 @@ function SecaoProvedorGenerico({ nome, slug }: { nome: string; slug: string }) {
   -d '{
     "provedor": "${slug}",
     "placa": "ABC1D23",
+    "motorista_nome": "João da Silva",
+    "motorista_cpf": "123.456.789-00",
     "data_abastecimento": "2026-07-03T14:30:00Z",
     "quantidade": 45.5,
     "valor_total": 318.85,
@@ -234,7 +236,8 @@ function SecaoProvedorGenerico({ nome, slug }: { nome: string; slug: string }) {
       <p className="mt-3 text-xs text-slate-400">
         <code>transacao_externa_id</code> é o identificador da transação no sistema da {nome} — reenviar o
         mesmo id (com o mesmo provedor) nunca duplica o abastecimento, então é seguro reprocessar em caso
-        de retry.
+        de retry. <code>motorista_cpf</code> é opcional mas recomendado: é o que identifica o motorista
+        com certeza no programa de fidelidade/gamificação (nome sozinho falha com homônimos).
       </p>
     </div>
   );
@@ -318,6 +321,8 @@ function SecaoHub({
   -d '{
     "provedor": "ticket_log",
     "placa": "ABC1D23",
+    "motorista_nome": "João da Silva",
+    "motorista_cpf": "123.456.789-00",
     "data_abastecimento": "2026-07-03T14:30:00Z",
     "quantidade": 45.5,
     "valor_total": 318.85,
@@ -330,7 +335,8 @@ function SecaoHub({
               <code>provedor</code> é texto livre — identifica de qual meio de pagamento veio o
               abastecimento (ex: <code>ticket_log</code>, <code>rede_frota</code>, <code>veloe</code>,
               <code> valecard</code>, <code>profrotas</code>). Cada meio de pagamento tem uma aba própria acima com este mesmo
-              exemplo já preenchido.
+              exemplo já preenchido. <code>motorista_cpf</code> é opcional mas recomendado — identifica o
+              motorista com certeza no programa de fidelidade/gamificação (aceito com ou sem pontuação).
             </p>
 
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -408,6 +414,7 @@ function SecaoHub({
     "sistema": "tanknomia",
     "placa": "ABC1D23",
     "motorista_nome": "João da Silva",
+    "motorista_cpf": "123.456.789-00",
     "data_abastecimento": "2026-07-12T14:30:00Z",
     "hodometro": 82500,
     "combustivel": "Diesel S-10 Comum",

@@ -2385,6 +2385,10 @@ export interface Database {
           provedor: string;
           placa: string;
           motorista_nome: string | null;
+          // Fase fidelidade-por-CPF (23/07/26) — CPF do motorista (dígitos
+          // puros), opcional, vindo das APIs de integração; identifica o
+          // motorista com certeza na fidelidade/gamificação.
+          motorista_cpf: string | null;
           data_abastecimento: string;
           hodometro: number | null;
           posto_nome: string | null;

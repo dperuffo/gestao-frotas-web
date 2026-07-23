@@ -32,6 +32,7 @@ type CorpoRequisicao = {
   sistema?: string;
   placa?: string;
   motorista_nome?: string;
+  motorista_cpf?: string;
   data_abastecimento?: string;
   hodometro?: number;
   combustivel?: string;
@@ -91,6 +92,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: '"valor_total" precisa ser um número maior ou igual a zero.' }, { status: 400 });
   }
 
+  // Fase fidelidade-por-CPF (23/07/26) — mesmo campo do endpoint Fase 25
+  // (lado frota): CPF opcional do motorista pra identificação determinística
+  // na fidelidade/gamificação. Dígitos puros no banco.
+  let motoristaCpf: string | null = null;
+  if (corpo.motorista_cpf != null && String(corpo.motorista_cpf).trim() !== "") {
+    motoristaCpf = String(corpo.motorista_cpf).replace(/\D/g, "");
+    if (motoristaCpf.length !== 11) {
+      return NextResponse.json(
+        { erro: '"motorista_cpf" precisa ter 11 dígitos (com ou sem pontuação, ex: "708.033.260-50").' },
+        { status: 400 }
+      );
+    }
+  }
+
   // Fase 27.144 — resolve o cliente (CNPJ -> empresa_id) ignorando a RLS de
   // `empresas` (SECURITY DEFINER, mesma RPC já usada em
   // /abastecimentos/[id] pra resolver o posto a partir do lado cliente —
@@ -116,6 +131,7 @@ export async function POST(request: Request) {
       provedor: sistema,
       placa,
       motorista_nome: corpo.motorista_nome?.trim() || null,
+      motorista_cpf: motoristaCpf,
       data_abastecimento: dataAbastecimento.toISOString(),
       hodometro: corpo.hodometro != null ? Number(corpo.hodometro) : null,
       posto_nome: posto?.nome ?? null,

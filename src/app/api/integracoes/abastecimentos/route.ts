@@ -18,6 +18,7 @@ type CorpoRequisicao = {
   provedor?: string;
   placa?: string;
   motorista_nome?: string;
+  motorista_cpf?: string;
   data_abastecimento?: string;
   hodometro?: number;
   posto_nome?: string;
@@ -74,6 +75,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: '"valor_total" precisa ser um número maior ou igual a zero.' }, { status: 400 });
   }
 
+  // Fase fidelidade-por-CPF (23/07/26) — CPF do motorista, opcional mas
+  // recomendado: é o que permite ao programa de fidelidade/gamificação
+  // identificar o motorista com certeza (nome é texto livre e falha com
+  // homônimos/grafia). Aceita com ou sem pontuação; armazena dígitos puros.
+  let motoristaCpf: string | null = null;
+  if (corpo.motorista_cpf != null && String(corpo.motorista_cpf).trim() !== "") {
+    motoristaCpf = String(corpo.motorista_cpf).replace(/\D/g, "");
+    if (motoristaCpf.length !== 11) {
+      return NextResponse.json(
+        { erro: '"motorista_cpf" precisa ter 11 dígitos (com ou sem pontuação, ex: "708.033.260-50").' },
+        { status: 400 }
+      );
+    }
+  }
+
   const { data: registro, error: erroInsert } = await supabase
     .from("abastecimentos_externos")
     .insert({
@@ -81,6 +97,7 @@ export async function POST(request: Request) {
       provedor,
       placa,
       motorista_nome: corpo.motorista_nome?.trim() || null,
+      motorista_cpf: motoristaCpf,
       data_abastecimento: dataAbastecimento.toISOString(),
       hodometro: corpo.hodometro != null ? Number(corpo.hodometro) : null,
       posto_nome: corpo.posto_nome?.trim() || null,
