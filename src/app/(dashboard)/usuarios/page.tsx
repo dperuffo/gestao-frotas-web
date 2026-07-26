@@ -13,6 +13,25 @@ export default async function UsuariosPage({
   const { q } = await searchParams;
   const supabase = await createClient();
 
+  // Achado real de segurança (26/07/2026) — esta tela lista/gerencia
+  // usuários de TODAS as empresas; a RLS de usuarios_app já restringe a
+  // leitura da lista completa a admin/analista (usuarios_app_select), mas
+  // o menu mostrava o link pra qualquer perfil, e as Server Actions de
+  // escrita usam o cliente admin sem checar quem chama (ver actions.ts) —
+  // esta guarda evita a tela quebrada (via RLS) pra quem nem deveria estar
+  // aqui. Mesmo padrão de /administracao/pisos-antt.
+  const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
+  if (perfilAtual !== "admin" && perfilAtual !== "analista") {
+    return (
+      <div className="card p-6">
+        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          Esta tela é exclusiva do time interno (perfil administrador ou analista).
+        </p>
+      </div>
+    );
+  }
+
   let query = supabase
     .from("usuarios_app")
     .select("email, nome, perfil, segmento, ativo, mfa_habilitado")

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ImportForm } from "./_components/ImportForm";
 import { BotaoExcluirPiso } from "./_components/BotaoExcluirPiso";
+import { TabelaPisoAntt } from "../../_components/TabelaPisoAntt";
 
 // Fase P0.5 (plano FNI_Plano_Implementacao_P0.md) — piso mínimo de frete
 // (Res. ANTT 5.867/2020). Tabela NACIONAL (não é por tenant, ver migração
@@ -29,13 +30,6 @@ export default async function PisosAnttPage() {
     .order("tipo_carga", { ascending: true })
     .order("numero_eixos", { ascending: true });
 
-  const porTipo = new Map<string, typeof pisos>();
-  for (const p of pisos ?? []) {
-    const lista = porTipo.get(p.tipo_carga) ?? [];
-    lista.push(p);
-    porTipo.set(p.tipo_carga, lista);
-  }
-
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -55,41 +49,7 @@ export default async function PisosAnttPage() {
         <ImportForm />
       </div>
 
-      {Array.from(porTipo.entries()).map(([tipo, linhas]) => (
-        <div key={tipo} className="card mb-6 overflow-x-auto p-6">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">{tipo}</h2>
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Nº de eixos</th>
-                <th className="px-4 py-3">Coef. deslocamento (R$/km)</th>
-                <th className="px-4 py-3">Coef. carga/descarga (R$)</th>
-                <th className="px-4 py-3">Vigência</th>
-                <th className="px-4 py-3">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {(linhas ?? []).map((p) => (
-                <tr key={p.id}>
-                  <td className="px-4 py-3 text-slate-600">{p.numero_eixos}</td>
-                  <td className="px-4 py-3 font-medium text-slate-900">{p.coeficiente_deslocamento.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
-                  <td className="px-4 py-3 text-slate-600">{p.coeficiente_carga_descarga.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
-                  <td className="px-4 py-3 text-slate-500">{new Date(`${p.vigencia_inicio}T00:00:00`).toLocaleDateString("pt-BR")}</td>
-                  <td className="px-4 py-3">
-                    <BotaoExcluirPiso id={p.id} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
-
-      {(pisos ?? []).length === 0 && (
-        <div className="card p-6 text-center text-sm text-slate-400">
-          Nenhum piso ANTT cadastrado ainda — importe a planilha acima.
-        </div>
-      )}
+      <TabelaPisoAntt pisos={pisos ?? []} acoes={(p) => <BotaoExcluirPiso id={p.id} />} />
 
       <div className="mt-2">
         <Link href="/cotacoes" className="text-sm text-frota-600 hover:underline">

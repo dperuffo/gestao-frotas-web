@@ -7,11 +7,33 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type UsuarioFormState = { erro?: string } | undefined;
 
+// Achado real de segurança (26/07/2026, investigando um 404 reportado pelo
+// Daniel): estas actions usam o cliente ADMIN (bypassa RLS) pra convidar/
+// criar usuário, mas nunca checavam quem estava chamando — qualquer perfil
+// autenticado (inclusive "gestor_frota" ou "posto", que nem deveriam ver
+// esta tela) conseguia criar um usuário novo com perfil "admin" pra
+// QUALQUER empresa, escalando privilégio. A RLS de usuarios_app já deixa
+// claro que só admin/analista podem enxergar a lista toda
+// (usuarios_app_select) — esta função replica a mesma regra nas escritas,
+// que hoje não passam por RLS nenhuma. Mesmo padrão de guarda usado em
+// /administracao/pisos-antt (perfil_usuario_atual()).
+async function exigirGerenciadorDeUsuarios(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | null> {
+  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  if (perfil !== "admin" && perfil !== "analista") {
+    return "Esta ação é exclusiva do time interno (perfil administrador ou analista).";
+  }
+  return null;
+}
+
 // Cria o usuário em três passos:
 // 1) convida por e-mail no Supabase Auth (ele recebe um link para definir a senha)
 // 2) cria o registro de perfil em usuarios_app
 // 3) vincula o usuário à empresa escolhida em usuarios_empresas
 export async function criarUsuario(_prev: UsuarioFormState, formData: FormData): Promise<UsuarioFormState> {
+  const supabaseSessao = await createClient();
+  const erroPermissao = await exigirGerenciadorDeUsuarios(supabaseSessao);
+  if (erroPermissao) return { erro: erroPermissao };
+
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const nome = String(formData.get("nome") ?? "").trim();
   const cpf = String(formData.get("cpf") ?? "").trim() || null;
@@ -65,6 +87,8 @@ export async function atualizarUsuario(
   formData: FormData
 ): Promise<UsuarioFormState> {
   const supabase = await createClient();
+  const erroPermissao = await exigirGerenciadorDeUsuarios(supabase);
+  if (erroPermissao) return { erro: erroPermissao };
 
   const nome = String(formData.get("nome") ?? "").trim();
   const cpf = String(formData.get("cpf") ?? "").trim() || null;
@@ -91,7 +115,11 @@ export async function atualizarUsuario(
 
 export async function alternarAtivoUsuario(email: string, ativo: boolean) {
   const supabase = await createClient();
+  const erroPermissao = await exigirGerenciadorDeUsuarios(supabase);
+  if (erroPermissao) return { erro: erroPermissao };
+
   await supabase.from("usuarios_app").update({ ativo }).eq("email", email);
   await supabase.from("usuarios_empresas").update({ ativo }).eq("user_email", email);
   revalidatePath("/usuarios");
+  return {};
 }

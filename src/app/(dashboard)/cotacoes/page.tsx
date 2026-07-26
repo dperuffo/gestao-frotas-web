@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { AbasPainel, type Aba } from "../inteligencia-rede/_components/AbasPainel";
+import { TabelaPisoAntt } from "../_components/TabelaPisoAntt";
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -45,12 +47,23 @@ export default async function CotacoesPage({ searchParams }: { searchParams: Pro
     cotacoes = data ?? [];
   }
 
-  return (
+  // Fase Financeiro-ERP (26/07/2026, pedido do Daniel) — "Aba de Piso
+  // mínimo ANTT tem que estar na visão do cliente, web e PWA". Tabela
+  // NACIONAL (não é por tenant), sempre a mesma pra qualquer cliente —
+  // busca independe de empresaSelecionada. Só leitura aqui (quem
+  // importa/exclui a planilha oficial continua sendo só o time interno em
+  // /administracao/pisos-antt).
+  const { data: pisosAntt } = await supabase
+    .from("pisos_antt")
+    .select("id, tipo_carga, numero_eixos, coeficiente_deslocamento, coeficiente_carga_descarga, vigencia_inicio")
+    .order("tipo_carga", { ascending: true })
+    .order("numero_eixos", { ascending: true });
+
+  const conteudoCotacoes = (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">🧮 Cotações</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="text-sm text-slate-500">
             Simule o frete com base nas suas{" "}
             <Link href="/tabelas-frete" className="text-frota-600 hover:underline">
               Tabelas de Frete
@@ -116,6 +129,31 @@ export default async function CotacoesPage({ searchParams }: { searchParams: Pro
           ))}
         </div>
       )}
+    </div>
+  );
+
+  const conteudoPisoAntt = (
+    <div>
+      <p className="mb-4 text-sm text-slate-500">
+        Res. ANTT 5.867/2020 — piso = distância (km) × coeficiente de deslocamento + coeficiente de
+        carga/descarga, por tipo de carga e nº de eixos. É o valor mínimo legal usado pra alertar quando uma
+        cotação simulada fica abaixo do piso.
+      </p>
+      <TabelaPisoAntt pisos={pisosAntt ?? []} />
+    </div>
+  );
+
+  const abas: Aba[] = [
+    { id: "cotacoes", label: "🧮 Cotações", conteudo: conteudoCotacoes },
+    { id: "piso-antt", label: "Piso Mínimo ANTT", conteudo: conteudoPisoAntt },
+  ];
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-slate-900">🧮 Cotações</h1>
+      </div>
+      <AbasPainel abas={abas} />
     </div>
   );
 }

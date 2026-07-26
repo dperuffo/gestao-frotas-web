@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lerPlanilhaComoTexto } from "@/lib/xlsx";
 import { normalizarCNPJ } from "@/lib/utils";
@@ -23,6 +24,17 @@ export async function importarUsuarios(
   _prev: ResultadoImportacao | undefined,
   formData: FormData
 ): Promise<ResultadoImportacao> {
+  // Achado real de segurança (26/07/2026) — mesma falha de criarUsuario em
+  // ../actions.ts: esta importação em lote usa o cliente ADMIN (bypassa
+  // RLS) sem checar quem está chamando. Sem esta guarda, qualquer perfil
+  // conseguia importar uma planilha inteira de usuários "admin" pra
+  // qualquer cliente.
+  const supabaseSessao = await createClient();
+  const { data: perfilChamador } = await supabaseSessao.rpc("perfil_usuario_atual");
+  if (perfilChamador !== "admin" && perfilChamador !== "analista") {
+    return { erro: "Esta ação é exclusiva do time interno (perfil administrador ou analista)." };
+  }
+
   const arquivo = formData.get("arquivo");
 
   if (!(arquivo instanceof File) || arquivo.size === 0) {

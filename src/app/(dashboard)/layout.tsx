@@ -460,6 +460,17 @@ export default async function DashboardLayout({
   // menu bem mais enxuto, sem nenhuma das telas de gestão de frota.
   const ehPosto = perfilUsuario?.perfil === "posto";
 
+  // Achado real de segurança (26/07/2026, investigando um 404 reportado
+  // pelo Daniel ao criar um usuário): a RLS de usuarios_app só deixa
+  // admin/analista (time interno) enxergarem outros usuários — mas o link
+  // "Usuários" aparecia no menu pra QUALQUER perfil (gestor_frota, posto),
+  // que conseguia até criar convites (a Server Action usava o cliente
+  // admin sem checar quem chamava, já corrigido em usuarios/actions.ts).
+  // Tira o item do menu pra quem não pode mesmo usar a tela.
+  const podeGerenciarUsuarios = ehAdmin || perfilUsuario?.perfil === "analista";
+  const itensCadastrosFiltrados = podeGerenciarUsuarios ? menuCadastros : menuCadastros.filter((i) => i.href !== "/usuarios");
+  const itensPostoGestaoFiltrados = podeGerenciarUsuarios ? menuPostoGestao : menuPostoGestao.filter((i) => i.href !== "/usuarios");
+
   // Fase 27.114 — o passo "menu-administracao" só existe no DOM quando
   // ehAdmin (ver bloco {ehAdmin && (...)} abaixo, Fase 27.110); filtra ele
   // fora do tour pra quem não é admin, senão o tour aponta pra um elemento
@@ -512,7 +523,7 @@ export default async function DashboardLayout({
               Gestão
             </p>
             <ul className="space-y-1">
-              {menuPostoGestao.map((item) => (
+              {itensPostoGestaoFiltrados.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
@@ -634,7 +645,7 @@ export default async function DashboardLayout({
             Cadastros
           </p>
           <ul className="space-y-1">
-            {menuCadastros.map((item) => (
+            {itensCadastrosFiltrados.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
