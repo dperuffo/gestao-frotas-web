@@ -4433,6 +4433,12 @@ export interface Database {
         Args: { p_frete_id: string; p_estrelas: number; p_comentario?: string | null };
         Returns: undefined;
       };
+      // Fase Fretes-Público-Alvo (23/07/26) — faltava no arquivo hand-curated
+      // (achado ao rodar tsc, RPC já existe de verdade no banco).
+      recolocar_frete_para_base: {
+        Args: { p_frete_id: string; p_motorista_id?: string | null };
+        Returns: Json;
+      };
       // Fase Fretes-Adiantamento-Combustível (19/07).
       marcar_pagamento_frete: {
         Args: { p_frete_id: string; p_tipo: string };

@@ -31,13 +31,16 @@
 //   /login (Acessar Plataforma) ou /cadastro (todos os CTAs de "começar").
 // - Links de termos.html/privacidade.html/sobre.html viraram rotas do Next
 //   (/termos, /privacidade, /sobre, com variante -en).
-// - Preços da seção de planos atualizados pra bater com o Stripe real
-//   (Básico R9, Profissional R9, Enterprise R29 — Fase 23.3), inclusive
-//   os textos de fallback do dicionário de i18n (senão o script de troca de
-//   idioma sobrescrevia o texto certo pelo antigo "Sob consulta"/"Falar com
-//   vendas"). O card "Gratuito" foi mantido de propósito — ele reflete o
-//   plano "gratuito" real do trial self-service (1 usuário, 10 veículos,
-//   ver LIMITES_PLANO em src/lib/constants.ts), não é um valor inventado.
+// - Preços da seção de planos atualizados pra bater com o Stripe real.
+//   Calibração TMS/ERP (23/07/2026, pedido do Daniel): Essencial R$249,
+//   Profissional R$549 (agora com Gestão de Fretes/TMS até 30/mês, CT-e/
+//   MDF-e, Cotações e Tabelas de Frete), Enterprise R$1.099 (TMS ilimitado)
+//   — mesmos valores/nomes de PLANO_LABEL/FEATURES_PLANO em
+//   src/lib/constants.ts e da Cláusula 3ª por plano em src/lib/
+//   termoAdesao.ts. O card "Gratuito" foi mantido de propósito — ele
+//   reflete o plano "gratuito" real do trial self-service (1 usuário, 10
+//   veículos, ver LIMITES_PLANO em src/lib/constants.ts), não é um valor
+//   inventado.
 export const LANDING_BODY_HTML = `
 <style>
 :root{--navy:#04112e;--blue:#0d2d6b;--electric:#1a56f0;--cyan:#00b4d8;--cyan2:#00c2ff;--gold:#f5a623;--white:#ffffff;--gray:#8a9bb5;}
@@ -775,9 +778,9 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   </div>
   <div class="pgrid">
     <div class="pc"><div class="pn" data-i18n="plan0_n">Gratuito</div><div class="pp"><sup>R$</sup>0<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan0_d">Para começar</div><ul class="pf"><li data-i18n="plan0_f1">1 usuário</li><li data-i18n="plan0_f2">10 veículos</li><li data-i18n="plan0_f3">2 postos</li><li class="off" data-i18n="plan_anp_hist">Histórico ANP</li><li class="off">Excel</li><li class="off">API</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan0_btn">Começar grátis</a></div>
-    <div class="pc"><div class="pn" data-i18n="plan1_n">Básico</div><div class="pp"><sup>R$</sup>149<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan1_d">Pequenas frotas</div><ul class="pf"><li data-i18n="plan1_f1">5 usuários</li><li data-i18n="plan1_f2">20 veículos inclusos (+R$4,50/excedente)</li><li data-i18n="plan1_f3">10 postos</li><li data-i18n="plan1_f4">ANP 30 dias</li><li data-i18n="plan1_f5">Exportação Excel</li><li class="off">API</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan1_btn">Assinar Básico</a></div>
-    <div class="pc feat"><div class="pbadge" data-i18n="plan_popular">Mais popular</div><div class="pn" data-i18n="plan2_n">Profissional</div><div class="pp"><sup>R$</sup>299<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan2_d">Frotas em crescimento</div><ul class="pf"><li data-i18n="plan2_f1">20 usuários</li><li data-i18n="plan2_f2">60 veículos inclusos (+R$3,50/excedente)</li><li data-i18n="plan2_f3">Postos ilimitados</li><li data-i18n="plan2_f4">ANP 365 dias</li><li data-i18n="plan2_f5">Relatórios avançados</li><li data-i18n="plan2_f6">API + Webhooks</li></ul><a href="/cadastro" class="pbtn p" data-i18n="plan2_btn">Trial grátis 14 dias</a></div>
-    <div class="pc"><div class="pn" data-i18n="plan3_n">Enterprise</div><div class="pp"><sup>R$</sup>599<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan3_d">Grandes operações</div><ul class="pf"><li data-i18n="plan3_f1">150 veículos inclusos (+R$2,50/excedente)</li><li>SSO SAML</li><li>SLA 99,95%</li><li>TOTVS/SAP</li><li data-i18n="plan3_f5">Gerente dedicado</li><li data-i18n="plan3_f6">Suporte 24/7</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan3_btn">Assinar Enterprise</a></div>
+    <div class="pc"><div class="pn" data-i18n="plan1_n">Essencial</div><div class="pp"><sup>R$</sup>249<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan1_d">Pequenas frotas</div><ul class="pf"><li data-i18n="plan1_f1">5 usuários</li><li data-i18n="plan1_f2">20 veículos inclusos (+R$4,50/excedente)</li><li data-i18n="plan1_f3">Roteirização, Rotograma e Planos de Viagem</li><li data-i18n="plan1_f4">Inteligência de Rede</li><li data-i18n="plan1_f5">Exportação Excel</li><li class="off">Gestão de Fretes (TMS)</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan1_btn">Assinar Essencial</a></div>
+    <div class="pc feat"><div class="pbadge" data-i18n="plan_popular">Mais popular</div><div class="pn" data-i18n="plan2_n">Profissional</div><div class="pp"><sup>R$</sup>549<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan2_d">TMS para transportadoras</div><ul class="pf"><li data-i18n="plan2_f1">20 usuários</li><li data-i18n="plan2_f2">60 veículos inclusos (+R$3,50/excedente)</li><li data-i18n="plan2_f3">Gestão de Fretes (TMS) — até 30/mês</li><li data-i18n="plan2_f4">Emissão de CT-e/MDF-e</li><li data-i18n="plan2_f5">Cotações e Tabelas de Frete</li><li data-i18n="plan2_f6">API + Webhooks</li></ul><a href="/cadastro" class="pbtn p" data-i18n="plan2_btn">Trial grátis 14 dias</a></div>
+    <div class="pc"><div class="pn" data-i18n="plan3_n">Enterprise</div><div class="pp"><sup>R$</sup>1.099<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan3_d">Grandes operações e TMS ilimitado</div><ul class="pf"><li data-i18n="plan3_f1">150 veículos inclusos (+R$2,50/excedente)</li><li data-i18n="plan3_f2">Gestão de Fretes (TMS) ilimitada</li><li>SSO SAML</li><li>SLA 99,95%</li><li data-i18n="plan3_f5">Gerente dedicado</li><li data-i18n="plan3_f6">Suporte 24/7</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan3_btn">Assinar Enterprise</a></div>
   </div>
 </section>
 

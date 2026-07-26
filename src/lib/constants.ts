@@ -14,11 +14,50 @@ export const STATUS_EMPRESA_LABEL: Record<StatusEmpresa, string> = {
 export const PLANOS = ["gratuito", "basico", "profissional", "enterprise"] as const;
 export type Plano = (typeof PLANOS)[number];
 
+// Calibração TMS/ERP (23/07/2026, pedido do Daniel): o plano 'basico' passa
+// a ser exibido como "Essencial" — a chave interna continua 'basico' (bate
+// com a CHECK constraint do banco, com PLANO_PARA_PRICE_ID nas Edge
+// Functions e com todo o resto do código), só o rótulo mudou. Mantido em
+// sincronia manual com o mesmo PLANO_LABEL da Edge Function
+// stripe-webhook/index.ts (não existe em planos-precos/create-checkout-
+// session, que não precisam do label, só do price_id).
 export const PLANO_LABEL: Record<Plano, string> = {
   gratuito: "Gratuito",
-  basico: "Básico",
+  basico: "Essencial",
   profissional: "Profissional",
   enterprise: "Enterprise",
+};
+
+// Calibração TMS/ERP (23/07/2026): destaques de cada plano pago, mostrados
+// nos cards de /assinatura (Minha Assinatura) — reflete o posicionamento da
+// plataforma como TMS/ERP pra transportadoras (não só hub de meios de
+// pagamento). Cuidado ao editar: cada item aqui precisa ser algo que o
+// plano REALMENTE libera hoje no código (ver verificarAcessoFretes em
+// src/lib/limitePlano.ts) — não é só texto de marketing solto. Gestão de
+// Fretes (TMS) é liberada a partir do Profissional (até 30 fretes/mês) e
+// ilimitada no Enterprise; emissão de CT-e/MDF-e e faturamento de fretes
+// dependem de ter acesso a Fretes, então seguem a mesma régua.
+export const FEATURES_PLANO: Record<"basico" | "profissional" | "enterprise", string[]> = {
+  basico: [
+    "Roteirização, Rotograma e Planos de Viagem",
+    "Consulta de preços ANP e Inteligência de Rede",
+    "Cadastros de frota, motoristas e centros de custo",
+    "Suporte em até 48h",
+  ],
+  profissional: [
+    "Tudo do Essencial",
+    "Gestão de Fretes (TMS) — até 30 fretes/mês",
+    "Emissão de CT-e/MDF-e e faturamento de fretes",
+    "Cotações e Tabelas de Frete (piso ANTT)",
+    "Suporte em até 24h",
+  ],
+  enterprise: [
+    "Tudo do Profissional",
+    "Gestão de Fretes (TMS) ilimitada",
+    "API, integrações e webhooks",
+    "SLA 99,95% e suporte 24x7",
+    "Negociável para frotas acima de 500 veículos",
+  ],
 };
 
 // Espelha EXATAMENTE o mapa PLANOS da Edge Function supabase/functions/

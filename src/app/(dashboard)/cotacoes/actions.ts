@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { verificarAcessoFretes, MENSAGEM_FRETES_BLOQUEADO } from "@/lib/limitePlano";
+import { verificarAcessoFretes, mensagemAcessoFretesBloqueado } from "@/lib/limitePlano";
 import { calcularFrete, calcularPisoAntt, verificarAlertaPiso, type FaixaPesoFrete } from "@/lib/freteCalculo";
 
 // Fase P0.5 (plano FNI_Plano_Implementacao_P0.md) — cotações: simula (via
@@ -33,7 +33,7 @@ export async function criarCotacao(empresaId: string, _prev: CotacaoFormState, f
   }
 
   const acesso = await verificarAcessoFretes(supabase, empresaId);
-  if (!acesso.ok) return { erro: MENSAGEM_FRETES_BLOQUEADO };
+  if (!acesso.ok) return { erro: mensagemAcessoFretesBloqueado(acesso) };
 
   const campoTexto = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
   const campoNumero = (nome: string) => {
@@ -175,7 +175,7 @@ export async function converterCotacaoEmFreteAcao(id: string, empresaId: string)
   if (!(await empresaPertenceAoUsuario(supabase, empresaId))) return { erro: "Sem permissão." };
 
   const acesso = await verificarAcessoFretes(supabase, empresaId);
-  if (!acesso.ok) return { erro: MENSAGEM_FRETES_BLOQUEADO };
+  if (!acesso.ok) return { erro: mensagemAcessoFretesBloqueado(acesso) };
 
   const { data: cotacao } = await supabase.from("cotacoes").select("*").eq("id", id).eq("empresa_id", empresaId).maybeSingle();
   if (!cotacao) return { erro: "Cotação não encontrada." };

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
-import { FAIXA_VEICULOS_PLANO, LIMITES_PLANO, PLANO_LABEL, STATUS_EMPRESA_LABEL, type Plano, type StatusEmpresa } from "@/lib/constants";
+import { FAIXA_VEICULOS_PLANO, FEATURES_PLANO, LIMITES_PLANO, PLANO_LABEL, STATUS_EMPRESA_LABEL, type Plano, type StatusEmpresa } from "@/lib/constants";
 import { buscarPrecosPlanos, formatarPrecoPlano } from "@/lib/planosPrecos";
 import { BotaoAssinarPlano } from "./_components/BotaoAssinarPlano";
 import { BotaoPortalPagamento } from "./_components/BotaoPortalPagamento";
@@ -272,6 +272,14 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
                         /veículo excedente
                       </p>
                     )}
+                    <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+                      {FEATURES_PLANO[plano].map((feature) => (
+                        <li key={feature} className="flex items-start gap-1.5 text-xs text-slate-600">
+                          <span className="mt-0.5 text-frota-600">✓</span>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
                     {ehAtual ? (
                       <span className="badge-ativo mt-3 inline-block">Plano atual</span>
                     ) : (

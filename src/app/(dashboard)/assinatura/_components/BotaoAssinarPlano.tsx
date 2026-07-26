@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { PLANO_LABEL, type Plano } from "@/lib/constants";
-import { HASH_TERMO_ADESAO } from "@/lib/termoAdesao";
+import { PLANO_LABEL } from "@/lib/constants";
+import { HASH_TERMO_ADESAO_POR_PLANO, montarParagrafosTermoAdesao, type PlanoComTermo } from "@/lib/termoAdesao";
 import { ModalTermoAdesao } from "./ModalTermoAdesao";
 
 // Antes de chamar o checkout, o usuário precisa aceitar o Termo de Adesão
@@ -29,7 +29,7 @@ export function BotaoAssinarPlano({
   precoLabel,
 }: {
   empresaId: string;
-  plano: Plano;
+  plano: PlanoComTermo;
   nomeEmpresa: string;
   cnpj: string | null;
   email: string;
@@ -38,6 +38,10 @@ export function BotaoAssinarPlano({
   const [modalAberto, setModalAberto] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Calibração TMS/ERP (23/07/2026) — cada plano tem sua própria Cláusula 3ª
+  // (ver src/lib/termoAdesao.ts), então os parágrafos e o hash já saem
+  // prontos pro plano específico deste botão.
+  const paragrafosTermo = montarParagrafosTermoAdesao(plano);
 
   async function confirmarAceite() {
     setErro(null);
@@ -70,7 +74,8 @@ export function BotaoAssinarPlano({
           precoLabel={precoLabel}
           dataHoraAceite={new Date().toLocaleString("pt-BR")}
           ip={null}
-          hashTermo={data.hash_termo ?? HASH_TERMO_ADESAO}
+          hashTermo={data.hash_termo ?? HASH_TERMO_ADESAO_POR_PLANO[plano]}
+          paragrafos={paragrafosTermo}
         />
       ).toBlob();
 
@@ -113,6 +118,7 @@ export function BotaoAssinarPlano({
         aberto={modalAberto}
         planoLabel={PLANO_LABEL[plano]}
         precoLabel={precoLabel}
+        paragrafos={paragrafosTermo}
         carregando={carregando}
         erro={erro}
         onFechar={() => {

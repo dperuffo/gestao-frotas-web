@@ -1,5 +1,5 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { TERMO_ADESAO_PARAGRAFOS, VERSAO_TERMO_ADESAO } from "@/lib/termoAdesao";
+import { VERSAO_TERMO_ADESAO } from "@/lib/termoAdesao";
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 9, fontFamily: "Helvetica", color: "#1e293b" },
@@ -29,6 +29,7 @@ export function TermoAdesaoPdf({
   dataHoraAceite,
   ip,
   hashTermo,
+  paragrafos,
 }: {
   nomeEmpresa: string;
   cnpj: string | null;
@@ -38,8 +39,9 @@ export function TermoAdesaoPdf({
   dataHoraAceite: string;
   ip: string | null;
   hashTermo: string;
+  paragrafos: string[];
 }) {
-  // Cada item de TERMO_ADESAO_PARAGRAFOS que começa com "PARTE" é tratado
+  // Cada item de `paragrafos` (montarParagrafosTermoAdesao) que começa com "PARTE" é tratado
   // como um título de seção (fonte maior, cor de destaque); os demais são
   // parágrafos normais. Linhas vazias viram um pequeno espaçamento.
   return (
@@ -87,7 +89,7 @@ export function TermoAdesaoPdf({
           </View>
         </View>
 
-        {TERMO_ADESAO_PARAGRAFOS.map((p, i) =>
+        {paragrafos.map((p, i) =>
           p === "" ? (
             <View key={i} style={{ height: 4 }} />
           ) : p.startsWith("PARTE") ? (

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
-import { verificarAcessoFretes, MENSAGEM_FRETES_BLOQUEADO } from "@/lib/limitePlano";
+import { verificarAcessoFretes, mensagemAcessoFretesBloqueado, type AcessoFretesResultado } from "@/lib/limitePlano";
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
 import { CancelarFreteButton } from "./_components/CancelarFreteButton";
 import { ReabrirFreteButton } from "./_components/ReabrirFreteButton";
@@ -55,14 +55,14 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
   let fretes: FreteRow[] = [];
-  let acessoLiberado = true;
+  let acesso: AcessoFretesResultado = { ok: true };
   if (empresaSelecionada) {
     const { data } = await supabase.rpc("meus_fretes_empresa", { p_empresa_id: empresaSelecionada });
     fretes = (data ?? []) as unknown as FreteRow[];
 
-    const acesso = await verificarAcessoFretes(supabase, empresaSelecionada);
-    acessoLiberado = acesso.ok;
+    acesso = await verificarAcessoFretes(supabase, empresaSelecionada);
   }
+  const acessoLiberado = acesso.ok;
 
   const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -107,9 +107,9 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
         </form>
       )}
 
-      {empresaSelecionada && !acessoLiberado && (
+      {empresaSelecionada && !acesso.ok && (
         <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          {MENSAGEM_FRETES_BLOQUEADO}{" "}
+          {mensagemAcessoFretesBloqueado(acesso)}{" "}
           <Link href={`/assinatura?empresa=${empresaSelecionada}`} className="font-medium underline">
             Ver planos
           </Link>

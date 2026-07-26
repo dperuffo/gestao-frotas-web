@@ -60,12 +60,24 @@ export function mensagemLimiteExcedido(r: Extract<LimiteFrotaResultado, { ok: fa
 // Enterprise — com uma exceção: continua liberada durante o período de
 // trial self-service (status "trial", plano "gratuito" nesse momento — ver
 // /cadastro/actions.ts), pra quem está avaliando a plataforma não perder a
-// funcionalidade antes de decidir por um plano pago. Fora do trial, só
-// Enterprise. Mesmo padrão de "best-effort" de verificarLimiteFrota acima:
-// falha ao resolver a empresa não bloqueia (outra camada já barra isso).
+// funcionalidade antes de decidir por um plano pago.
+//
+// Calibração TMS/ERP (23/07/2026, ajuste pedido pelo Daniel): o Profissional
+// passa a incluir Gestão de Fretes também, só que com um limite de 30 fretes
+// CRIADOS por mês (conta todo `fretes` com `criado_em` dentro do mês
+// corrente, qualquer status — é um limite de uso/criação, não de fretes
+// "ativos"). Enterprise continua ilimitado. Básico (Essencial) continua sem
+// acesso nenhum, mesmo padrão de antes. Mesmo padrão de "best-effort" de
+// verificarLimiteFrota acima: falha ao resolver a empresa não bloqueia
+// (outra camada já barra isso).
 export type AcessoFretesResultado =
   | { ok: true }
-  | { ok: false; plano: string; status: string };
+  | { ok: false; motivo: "plano"; plano: string; status: string }
+  | { ok: false; motivo: "limite_mensal"; quantidade: number; limite: number };
+
+// Quantos fretes o plano Profissional pode CRIAR por mês antes de bloquear
+// (calibração TMS/ERP de 23/07/2026) — Enterprise não usa este limite.
+export const LIMITE_FRETES_MENSAL_PROFISSIONAL = 30;
 
 export async function verificarAcessoFretes(
   supabase: SupabaseClient<Database>,
@@ -80,8 +92,39 @@ export async function verificarAcessoFretes(
   if (error || !empresa) return { ok: true };
   if (empresa.plano === "enterprise" || empresa.status === "trial") return { ok: true };
 
-  return { ok: false, plano: empresa.plano, status: empresa.status };
+  if (empresa.plano === "profissional") {
+    const inicioMes = new Date();
+    inicioMes.setDate(1);
+    inicioMes.setHours(0, 0, 0, 0);
+
+    const { count, error: erroContagem } = await supabase
+      .from("fretes")
+      .select("id", { count: "exact", head: true })
+      .eq("empresa_id", empresaId)
+      .gte("criado_em", inicioMes.toISOString());
+
+    // Falha ao contar não deve travar quem tem direito de usar — best-effort,
+    // mesmo espírito de verificarLimiteFrota acima.
+    if (erroContagem || count === null) return { ok: true };
+
+    if (count >= LIMITE_FRETES_MENSAL_PROFISSIONAL) {
+      return { ok: false, motivo: "limite_mensal", quantidade: count, limite: LIMITE_FRETES_MENSAL_PROFISSIONAL };
+    }
+    return { ok: true };
+  }
+
+  return { ok: false, motivo: "plano", plano: empresa.plano, status: empresa.status };
 }
 
-export const MENSAGEM_FRETES_BLOQUEADO =
-  "Gestão de Fretes é exclusiva do plano Enterprise (ou liberada durante o período de trial). Faça upgrade em Minha Assinatura para publicar novos fretes.";
+export function mensagemAcessoFretesBloqueado(r: Extract<AcessoFretesResultado, { ok: false }>): string {
+  if (r.motivo === "limite_mensal") {
+    return (
+      `Seu plano Profissional já usou ${r.quantidade} de ${r.limite} fretes disponíveis este mês. ` +
+      `O limite renova no início do próximo mês — ou faça upgrade para Enterprise em Minha Assinatura para fretes ilimitados.`
+    );
+  }
+  return (
+    "Gestão de Fretes é liberada a partir do plano Profissional (até 30 fretes/mês) ou Enterprise (ilimitado), " +
+    "além do período de trial. Faça upgrade em Minha Assinatura para publicar novos fretes."
+  );
+}

@@ -1,17 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { TERMO_ADESAO_PARAGRAFOS, VERSAO_TERMO_ADESAO } from "@/lib/termoAdesao";
+import { VERSAO_TERMO_ADESAO } from "@/lib/termoAdesao";
 
 // Modal de aceite do Termo de Adesão — aparece ANTES de qualquer chamada ao
 // checkout do Stripe. O botão de confirmação só habilita depois que a
 // pessoa marca a caixa de "li e aceito"; o texto do checkbox já deixa
 // explícito que aceitar este termo também vale como aceite dos Termos de
 // Uso gerais da plataforma (pedido do Daniel — um aceite só, não dois).
+//
+// Calibração TMS/ERP (23/07/2026) — o termo passou a ter uma Cláusula 3ª
+// específica por plano (ver src/lib/termoAdesao.ts), então os parágrafos já
+// vêm prontos do chamador (`montarParagrafosTermoAdesao(plano)`) em vez de
+// serem importados fixos daqui.
 export function ModalTermoAdesao({
   aberto,
   planoLabel,
   precoLabel,
+  paragrafos,
   carregando,
   erro,
   onFechar,
@@ -20,6 +26,7 @@ export function ModalTermoAdesao({
   aberto: boolean;
   planoLabel: string;
   precoLabel: string;
+  paragrafos: string[];
   carregando: boolean;
   erro: string | null;
   onFechar: () => void;
@@ -40,7 +47,7 @@ export function ModalTermoAdesao({
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 text-sm text-slate-700">
-          {TERMO_ADESAO_PARAGRAFOS.map((p, i) =>
+          {paragrafos.map((p, i) =>
             p === "" ? (
               <div key={i} className="h-2" />
             ) : p.startsWith("PARTE") ? (
