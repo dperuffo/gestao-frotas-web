@@ -369,7 +369,10 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
             <div className="card mb-6 overflow-x-auto p-6">
               <h2 className="mb-4 text-sm font-semibold text-slate-900">Consolidado por meio de pagamento</h2>
               <p className="mb-3 text-xs text-slate-500">
-                Abastecimentos que você forneceu no período, por meio de pagamento usado pelo cliente.
+                Abastecimentos que você forneceu no período, por meio de pagamento usado pelo cliente. Só
+                informativo — quem cobra o cliente por essas vendas é o próprio meio de pagamento (Ticket
+                Log, Edenred, Veloe...), fora do FNI. O quadro &quot;Ciclos por cliente&quot; abaixo mostra
+                só a cobrança que o FNI de fato calcula (negociação direta).
               </p>
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase text-slate-500">

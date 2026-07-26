@@ -68,15 +68,29 @@ export function VisaoCiclosPorContraparte({
 
   return (
     <div className="mb-6 card">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-        <h2 className="text-sm font-semibold text-slate-900">Ciclos por {rotuloColuna.toLowerCase()}</h2>
-        <input
-          type="text"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder={`Buscar ${rotuloColuna.toLowerCase()}...`}
-          className="input w-full max-w-[240px] text-sm"
-        />
+      <div className="border-b border-slate-100 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-slate-900">Ciclos por {rotuloColuna.toLowerCase()}</h2>
+          <input
+            type="text"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder={`Buscar ${rotuloColuna.toLowerCase()}...`}
+            className="input w-full max-w-[240px] text-sm"
+          />
+        </div>
+        {/* Fase Financeiro-ERP (26/07/2026) — pedido do Daniel: deixar claro
+            que este quadro é só sobre negociação DIRETA dentro da
+            plataforma (o FNI calcula o ciclo e emite a cobrança). Abastecimento
+            vindo de um meio de pagamento externo (Ticket Log, Edenred, Veloe,
+            RedeFrota, Valecard...) não entra aqui — o próprio provedor já
+            fecha e cobra a fatura fora do FNI, que só registra isso como
+            contas a pagar/receber (ver seção "Contas a Pagar/Receber"). */}
+        <p className="mt-2 text-xs text-slate-400">
+          Cobrança calculada pelo FNI, só para negociação combinada direto na plataforma. Abastecimento pago
+          por um meio de pagamento externo (Ticket Log, Edenred, Veloe...) é cobrado pelo próprio provedor —
+          aparece como contas a pagar/receber, não como ciclo aqui.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2 px-4 pt-3">

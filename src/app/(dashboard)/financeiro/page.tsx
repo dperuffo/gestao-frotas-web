@@ -383,6 +383,11 @@ export default async function FinanceiroPage({
           {indicadoresPorProvedor.length > 0 && (
             <div className="card mb-6 overflow-x-auto p-6">
               <h2 className="mb-4 text-sm font-semibold text-slate-900">Consolidado por meio de pagamento</h2>
+              <p className="mb-3 text-xs text-slate-500">
+                Combustível abastecido no mês, por meio de pagamento. Ticket Log, Edenred, Veloe... cobram
+                você diretamente, fora do FNI — veja essas faturas em &quot;Contas a Pagar&quot; mais abaixo.
+                &quot;Cobrança em aberto&quot; (negociação direta com posto) é um quadro à parte.
+              </p>
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase text-slate-500">
                   <tr>
