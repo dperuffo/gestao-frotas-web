@@ -92,6 +92,72 @@ export const FAIXA_VEICULOS_PLANO: Record<Plano, { veiculos_inclusos: number | n
   enterprise: { veiculos_inclusos: 150, preco_excedente_centavos: 250 },
 };
 
+// Fase Posto/Rede (26/07/2026, pedido do Daniel): planos de assinatura
+// específicos pro segmento Revenda (postos revendedores) — completamente
+// separados dos planos de frotista acima (PLANOS/PLANO_LABEL/etc., que só
+// se aplicam a empresas.segmento='Frota'). Preços aprovados pelo Daniel:
+// Essencial R$99, Profissional R$159, Enterprise R$599.
+//
+// Diferença chave de arquitetura (decisão do Daniel: "criar assinatura
+// única por rede — matriz paga por todos"): um posto SEM Rede de Postos
+// (grupos_economicos.segmento='Revenda') assina individualmente, igual ao
+// padrão de frotista — usa 'posto_essencial' direto em empresas.plano. Já
+// um posto DENTRO de uma rede tem sua assinatura na REDE, não nele: quem
+// paga é grupos_economicos (plano/status/stripe_customer_id — ver migração
+// billing_grupo_economico_posto), administrada pela empresa apontada em
+// grupos_economicos.empresa_administradora_id (por padrão, quem criou a
+// rede via criar_rede_posto_self_service). O valor espelhado em
+// empresas.plano de cada posto membro serve só pra gating/exibição.
+export const PLANOS_POSTO = ["posto_essencial", "posto_profissional", "posto_enterprise"] as const;
+export type PlanoPosto = (typeof PLANOS_POSTO)[number];
+
+export const PLANO_POSTO_LABEL: Record<PlanoPosto, string> = {
+  posto_essencial: "Essencial",
+  posto_profissional: "Profissional",
+  posto_enterprise: "Enterprise",
+};
+
+// Destaques de cada plano de posto, mesmo espírito de FEATURES_PLANO acima
+// — mostrados nos cards de /assinatura quando segmento='Revenda' e na
+// landing. Essencial não permite Rede de Postos (posto avulso); Profissional
+// e Enterprise liberam criar/entrar em rede com assinatura única pela matriz.
+export const FEATURES_PLANO_POSTO: Record<PlanoPosto, string[]> = {
+  posto_essencial: [
+    "Gestão de faturas e conciliação de abastecimentos",
+    "Financeiro: contas a receber e inadimplência",
+    "Cadastro de bicos, produtos e preços",
+    "1 posto (sem Rede de Postos)",
+    "Suporte em até 48h",
+  ],
+  posto_profissional: [
+    "Tudo do Essencial",
+    "Rede de Postos — até 5 postos inclusos numa assinatura só (matriz paga por todos)",
+    "Inteligência de Rede e Antifraude",
+    "Posto excedente: R$35/mês cada, acima da faixa inclusa",
+    "Suporte em até 24h",
+  ],
+  posto_enterprise: [
+    "Tudo do Profissional",
+    "Rede de Postos — até 20 postos inclusos numa assinatura só (matriz paga por todos)",
+    "Posto excedente: R$20/mês cada, acima da faixa inclusa",
+    "API, integrações e webhooks",
+    "Gerente de conta dedicado e SLA 99,95%",
+  ],
+};
+
+// Faixa de postos inclusa em cada plano de rede + valor do posto excedente
+// — mesmo padrão de FAIXA_VEICULOS_PLANO, mas contando POSTOS membros de
+// uma grupos_economicos (segmento='Revenda'), não veículos. Só se aplica a
+// Profissional/Enterprise (quem tem Rede de Postos); Essencial é sempre 1
+// posto avulso, sem excedente. Cobrança automática via Stripe: produto
+// "Posto Excedente", medidor posto_excedente, agregação "last" — reportado
+// pela Edge Function reportar-excedente-postos (cron diário).
+export const FAIXA_POSTOS_PLANO: Record<PlanoPosto, { postos_inclusos: number | null; preco_excedente_centavos: number | null }> = {
+  posto_essencial: { postos_inclusos: null, preco_excedente_centavos: null },
+  posto_profissional: { postos_inclusos: 5, preco_excedente_centavos: 3500 },
+  posto_enterprise: { postos_inclusos: 20, preco_excedente_centavos: 2000 },
+};
+
 // Duração do trial self-service (cadastro público em /cadastro) — precisa
 // bater com a régua de e-mails da Edge Function email-trials (D+3, D+7,
 // aviso em D+12 => expira por volta do D+14).

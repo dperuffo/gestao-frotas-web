@@ -2,9 +2,24 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { PLANO_LABEL } from "@/lib/constants";
-import { HASH_TERMO_ADESAO_POR_PLANO, montarParagrafosTermoAdesao, type PlanoComTermo } from "@/lib/termoAdesao";
+import { PLANO_LABEL, PLANO_POSTO_LABEL } from "@/lib/constants";
+import {
+  HASH_TERMO_ADESAO_POR_PLANO,
+  HASH_TERMO_ADESAO_POSTO_POR_PLANO,
+  montarParagrafosTermoAdesao,
+  montarParagrafosTermoAdesaoPosto,
+  type PlanoComTermo,
+  type PlanoPostoComTermo,
+} from "@/lib/termoAdesao";
 import { ModalTermoAdesao } from "./ModalTermoAdesao";
+
+function ehPlanoPosto(plano: PlanoComTermo | PlanoPostoComTermo): plano is PlanoPostoComTermo {
+  return plano.startsWith("posto_");
+}
+
+function rotuloDoPlano(plano: PlanoComTermo | PlanoPostoComTermo): string {
+  return ehPlanoPosto(plano) ? PLANO_POSTO_LABEL[plano] : PLANO_LABEL[plano];
+}
 
 // Antes de chamar o checkout, o usuário precisa aceitar o Termo de Adesão
 // (Fase 23, pedido do Daniel). Fluxo do clique em "Assinar":
@@ -22,6 +37,7 @@ import { ModalTermoAdesao } from "./ModalTermoAdesao";
 //    inofensivo, o usuário pode tentar de novo).
 export function BotaoAssinarPlano({
   empresaId,
+  grupoEconomicoId,
   plano,
   nomeEmpresa,
   cnpj,
@@ -29,7 +45,12 @@ export function BotaoAssinarPlano({
   precoLabel,
 }: {
   empresaId: string;
-  plano: PlanoComTermo;
+  // Fase Posto/Rede (26/07/2026) — quando informado, a assinatura é da REDE
+  // (matriz paga por todos): empresaId continua sendo a empresa
+  // administradora que clica em "Assinar", mas o Stripe cobra o
+  // grupo_economico_id, não a empresa isolada. Ver create-checkout-session.
+  grupoEconomicoId?: string;
+  plano: PlanoComTermo | PlanoPostoComTermo;
   nomeEmpresa: string;
   cnpj: string | null;
   email: string;
@@ -38,10 +59,18 @@ export function BotaoAssinarPlano({
   const [modalAberto, setModalAberto] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  // Calibração TMS/ERP (23/07/2026) — cada plano tem sua própria Cláusula 3ª
-  // (ver src/lib/termoAdesao.ts), então os parágrafos e o hash já saem
-  // prontos pro plano específico deste botão.
-  const paragrafosTermo = montarParagrafosTermoAdesao(plano);
+  const planoPosto = ehPlanoPosto(plano);
+  const planoLabel = rotuloDoPlano(plano);
+  // Calibração TMS/ERP (23/07/2026) e Fase Posto/Rede (26/07/2026) — cada
+  // plano (frotista ou posto) tem sua própria Cláusula 3ª (ver
+  // src/lib/termoAdesao.ts), então os parágrafos e o hash já saem prontos
+  // pro plano específico deste botão.
+  const paragrafosTermo = planoPosto
+    ? montarParagrafosTermoAdesaoPosto(plano)
+    : montarParagrafosTermoAdesao(plano);
+  const hashTermoFallback = planoPosto
+    ? HASH_TERMO_ADESAO_POSTO_POR_PLANO[plano]
+    : HASH_TERMO_ADESAO_POR_PLANO[plano];
 
   async function confirmarAceite() {
     setErro(null);
@@ -54,7 +83,14 @@ export function BotaoAssinarPlano({
       hash_termo?: string;
       versao_termo?: string;
       erro?: string;
-    }>("create-checkout-session", { body: { empresa_id: empresaId, plano, aceite_termo: true } });
+    }>("create-checkout-session", {
+      body: {
+        empresa_id: empresaId,
+        ...(grupoEconomicoId ? { grupo_economico_id: grupoEconomicoId } : {}),
+        plano,
+        aceite_termo: true,
+      },
+    });
 
     if (error || !data?.url || !data.termo_id) {
       setErro(data?.erro ?? "Não foi possível registrar o aceite. Tente novamente.");
@@ -70,11 +106,11 @@ export function BotaoAssinarPlano({
           nomeEmpresa={nomeEmpresa}
           cnpj={cnpj}
           email={email}
-          planoLabel={PLANO_LABEL[plano]}
+          planoLabel={planoLabel}
           precoLabel={precoLabel}
           dataHoraAceite={new Date().toLocaleString("pt-BR")}
           ip={null}
-          hashTermo={data.hash_termo ?? HASH_TERMO_ADESAO_POR_PLANO[plano]}
+          hashTermo={data.hash_termo ?? hashTermoFallback}
           paragrafos={paragrafosTermo}
         />
       ).toBlob();
@@ -110,13 +146,13 @@ export function BotaoAssinarPlano({
           }}
           className="btn-primary w-full justify-center"
         >
-          Assinar {PLANO_LABEL[plano]}
+          Assinar {planoLabel}
         </button>
       </div>
 
       <ModalTermoAdesao
         aberto={modalAberto}
-        planoLabel={PLANO_LABEL[plano]}
+        planoLabel={planoLabel}
         precoLabel={precoLabel}
         paragrafos={paragrafosTermo}
         carregando={carregando}

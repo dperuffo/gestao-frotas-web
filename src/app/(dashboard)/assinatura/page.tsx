@@ -1,10 +1,24 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
-import { FAIXA_VEICULOS_PLANO, FEATURES_PLANO, LIMITES_PLANO, PLANO_LABEL, STATUS_EMPRESA_LABEL, type Plano, type StatusEmpresa } from "@/lib/constants";
+import {
+  FAIXA_VEICULOS_PLANO,
+  FEATURES_PLANO,
+  LIMITES_PLANO,
+  PLANO_LABEL,
+  STATUS_EMPRESA_LABEL,
+  PLANOS_POSTO,
+  PLANO_POSTO_LABEL,
+  FEATURES_PLANO_POSTO,
+  FAIXA_POSTOS_PLANO,
+  type Plano,
+  type PlanoPosto,
+  type StatusEmpresa,
+} from "@/lib/constants";
 import { buscarPrecosPlanos, formatarPrecoPlano } from "@/lib/planosPrecos";
 import { BotaoAssinarPlano } from "./_components/BotaoAssinarPlano";
 import { BotaoPortalPagamento } from "./_components/BotaoPortalPagamento";
+import { CriarRedeForm } from "./_components/CriarRedeForm";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 type SearchParams = { empresa?: string; checkout?: string; bloqueado?: string };
@@ -33,7 +47,23 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
   } | null = null;
   let qtdUsuarios = 0;
   let qtdVeiculos = 0;
-  let qtdPostosNaRede: number | null = null;
+  // Fase Posto/Rede (26/07/2026) — substitui o cálculo antigo de "plano
+  // recomendado" (Fase 27.125, que reaproveitava basico/profissional/
+  // enterprise de frotista). Agora há planos de posto de verdade
+  // (posto_essencial/profissional/enterprise) e a decisão do Daniel de
+  // "assinatura única por rede (matriz paga por todos)": se este posto
+  // pertence a uma Rede de Postos, é a REDE (grupos_economicos) quem tem
+  // plano/status próprios, não a empresa — a empresa só espelha o valor.
+  type RedeDoPosto = {
+    id: string;
+    nome: string;
+    empresa_administradora_id: string | null;
+    plano: string | null;
+    status: string | null;
+  };
+  let redeDoPosto: RedeDoPosto | null = null;
+  let qtdPostosNaRede = 0;
+  let ehAdministradoraDaRede = false;
   let invoices: { id: string; valor_cents: number | null; status: string; criado_em: string; periodo_inicio: string | null; periodo_fim: string | null }[] = [];
 
   if (empresaSelecionada) {
@@ -73,30 +103,33 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
     qtdVeiculos = veiculosCount ?? 0;
     invoices = invoicesData ?? [];
 
-    // Fase 27.125 — pedido do Daniel: pra posto revendedor (segmento
-    // "Revenda"), o critério de qual plano faz sentido não é
-    // usuários/veículos (isso é conceito de frota) — é o tamanho da Rede de
-    // Postos (grupo econômico) a que ele pertence. Conta quantos postos
-    // existem em qualquer rede (segmento "Revenda") da qual esta empresa é
-    // membro — reaproveita a mesma tabela de junção da Fase 27.87
-    // (grupos_economicos_empresas), sem precisar de RPC nova.
+    // Fase Posto/Rede (26/07/2026) — pra posto revendedor (segmento
+    // "Revenda"), descobre se a empresa pertence a uma Rede de Postos
+    // (grupos_economicos.segmento="Revenda") — se sim, é a REDE quem tem
+    // plano/status/assinatura (matriz paga por todos), não a empresa
+    // isolada. Uma empresa participa de no máximo uma rede de posto na
+    // prática (sem constraint de unicidade no banco, mas é assim que a UI
+    // de criação/entrada em rede foi desenhada).
     if (empresaData?.segmento === "Revenda") {
-      const { data: redesDoPosto } = await supabase
+      const { data: membroRede } = await supabase
         .from("grupos_economicos_empresas")
-        .select("grupo_economico_id, grupos_economicos!inner(segmento)")
+        .select("grupo_economico_id, grupos_economicos!inner(id, nome, segmento, empresa_administradora_id, plano, status)")
         .eq("empresa_id", empresaSelecionada)
-        .eq("grupos_economicos.segmento", "Revenda");
+        .eq("grupos_economicos.segmento", "Revenda")
+        .limit(1)
+        .maybeSingle();
 
-      const idsRedes = (redesDoPosto ?? []).map((r) => r.grupo_economico_id).filter((id): id is string => !!id);
-      if (idsRedes.length > 0) {
+      const grupo = (membroRede as unknown as { grupos_economicos: RedeDoPosto } | null)?.grupos_economicos ?? null;
+      if (grupo) {
+        redeDoPosto = grupo;
+        ehAdministradoraDaRede = grupo.empresa_administradora_id === empresaSelecionada;
         const { count } = await supabase
           .from("grupos_economicos_empresas")
           .select("empresa_id", { count: "exact", head: true })
-          .in("grupo_economico_id", idsRedes);
-        qtdPostosNaRede = count ?? 0;
+          .eq("grupo_economico_id", grupo.id);
+        qtdPostosNaRede = count ?? 1;
       } else {
-        // Não está em nenhuma rede — conta como 1 (o próprio posto).
-        qtdPostosNaRede = 1;
+        qtdPostosNaRede = 1; // posto avulso, sem rede
       }
     }
   }
@@ -106,12 +139,16 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
       ? Math.ceil((new Date(empresa.trial_ends_at).getTime() - Date.now()) / 86400000)
       : null;
 
-  const limitesDoPlano = empresa ? LIMITES_PLANO[empresa.plano as Plano] : undefined;
+  const ehPosto = empresa?.segmento === "Revenda";
+
+  const limitesDoPlano = empresa && !ehPosto ? LIMITES_PLANO[empresa.plano as Plano] : undefined;
 
   // Calibração de preços de 20/07/2026 — faixa de veículos inclusa no valor
   // BASE do plano atual + estimativa do excedente (cobrança ainda manual,
   // ver comentário em src/lib/constants.ts). Só exibição, não bloqueia nada.
-  const faixaVeiculosAtual = empresa ? FAIXA_VEICULOS_PLANO[empresa.plano as Plano] : undefined;
+  // Só se aplica a FROTISTA (empresa.segmento="Frota") — posto usa a faixa
+  // de POSTOS (FAIXA_POSTOS_PLANO), calculada mais abaixo.
+  const faixaVeiculosAtual = empresa && !ehPosto ? FAIXA_VEICULOS_PLANO[empresa.plano as Plano] : undefined;
   const veiculosExcedentes =
     faixaVeiculosAtual?.veiculos_inclusos != null ? Math.max(0, qtdVeiculos - faixaVeiculosAtual.veiculos_inclusos) : 0;
   const valorExcedenteEstimadoCentavos =
@@ -120,19 +157,29 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
       : 0;
   // Preço real de cada plano, buscado direto do Stripe (via Edge Function
   // planos-precos) — nunca hardcoded aqui, pra não desatualizar se o preço
-  // mudar no Stripe.
+  // mudar no Stripe. O mesmo objeto já traz tanto os planos de frotista
+  // quanto os de posto (planos-precos mescla os dois mapas).
   const precos = empresa ? await buscarPrecosPlanos() : null;
 
-  // Fase 27.125 — régua combinada com o Daniel: 1 a 10 postos na rede =
-  // Básico, 11 a 50 = Profissional, acima de 50 = Enterprise.
-  const planoRecomendadoRede: Plano | null =
-    qtdPostosNaRede === null
-      ? null
-      : qtdPostosNaRede <= 10
-        ? "basico"
-        : qtdPostosNaRede <= 50
-          ? "profissional"
-          : "enterprise";
+  // Fase Posto/Rede (26/07/2026) — decisão do Daniel: "assinatura única por
+  // rede (matriz paga por todos)". Quando o posto pertence a uma rede, o
+  // plano/status "de verdade" é o da REDE (redeDoPosto), não o espelhado em
+  // empresas.plano — mas ambos deveriam bater (o webhook propaga um pro
+  // outro), então cai pro plano da empresa como fallback só por segurança.
+  const planoAtualPosto = (redeDoPosto?.plano ?? empresa?.plano ?? null) as PlanoPosto | null;
+  const statusAtualPosto = redeDoPosto?.status ?? empresa?.status ?? null;
+  const faixaPostosAtual = planoAtualPosto ? FAIXA_POSTOS_PLANO[planoAtualPosto] : undefined;
+  const postosExcedentes =
+    faixaPostosAtual?.postos_inclusos != null ? Math.max(0, qtdPostosNaRede - faixaPostosAtual.postos_inclusos) : 0;
+  const valorExcedentePostoCentavos =
+    postosExcedentes > 0 && faixaPostosAtual?.preco_excedente_centavos != null
+      ? postosExcedentes * faixaPostosAtual.preco_excedente_centavos
+      : 0;
+  // Rede administrada por outra empresa: só a Profissional/Enterprise fazem
+  // sentido pra assinar em nome da rede (Essencial é sempre posto avulso).
+  const planosPostoParaExibir = redeDoPosto
+    ? (["posto_profissional", "posto_enterprise"] as const)
+    : PLANOS_POSTO;
 
   return (
     <div>
@@ -189,18 +236,39 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
       {empresa && (
         <>
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <Indicador label="Plano atual" valor={PLANO_LABEL[empresa.plano as Plano] ?? empresa.plano} ajudaChave="assinatura.plano_atual" />
-            <Indicador label="Status" valor={STATUS_EMPRESA_LABEL[empresa.status as StatusEmpresa] ?? empresa.status} />
-            <Indicador
-              label="Usuários"
-              valor={`${qtdUsuarios} / ${limitesDoPlano && limitesDoPlano.max_usuarios >= 0 ? limitesDoPlano.max_usuarios : "∞"}`}
-              ajudaChave="assinatura.saldo_uso"
-            />
-            <Indicador
-              label="Veículos"
-              valor={`${qtdVeiculos} / ${limitesDoPlano && limitesDoPlano.max_veiculos >= 0 ? limitesDoPlano.max_veiculos : "∞"}`}
-              ajudaChave="assinatura.saldo_uso"
-            />
+            {ehPosto ? (
+              <>
+                <Indicador
+                  label="Plano atual"
+                  valor={planoAtualPosto ? (PLANO_POSTO_LABEL[planoAtualPosto] ?? planoAtualPosto) : "Sem plano"}
+                  ajudaChave="assinatura.plano_atual"
+                />
+                <Indicador
+                  label="Status"
+                  valor={statusAtualPosto ? (STATUS_EMPRESA_LABEL[statusAtualPosto as StatusEmpresa] ?? statusAtualPosto) : "—"}
+                />
+                <Indicador label="Postos na rede" valor={`${qtdPostosNaRede}`} />
+                <Indicador
+                  label="Administração"
+                  valor={redeDoPosto ? (ehAdministradoraDaRede ? "Você (matriz)" : redeDoPosto.nome) : "Posto avulso"}
+                />
+              </>
+            ) : (
+              <>
+                <Indicador label="Plano atual" valor={PLANO_LABEL[empresa.plano as Plano] ?? empresa.plano} ajudaChave="assinatura.plano_atual" />
+                <Indicador label="Status" valor={STATUS_EMPRESA_LABEL[empresa.status as StatusEmpresa] ?? empresa.status} />
+                <Indicador
+                  label="Usuários"
+                  valor={`${qtdUsuarios} / ${limitesDoPlano && limitesDoPlano.max_usuarios >= 0 ? limitesDoPlano.max_usuarios : "∞"}`}
+                  ajudaChave="assinatura.saldo_uso"
+                />
+                <Indicador
+                  label="Veículos"
+                  valor={`${qtdVeiculos} / ${limitesDoPlano && limitesDoPlano.max_veiculos >= 0 ? limitesDoPlano.max_veiculos : "∞"}`}
+                  ajudaChave="assinatura.saldo_uso"
+                />
+              </>
+            )}
           </div>
 
           {diasRestantesTrial !== null && (
@@ -211,7 +279,7 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
             </div>
           )}
 
-          {veiculosExcedentes > 0 && (
+          {!ehPosto && veiculosExcedentes > 0 && (
             <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
               Sua frota tem {veiculosExcedentes} veículo{veiculosExcedentes === 1 ? "" : "s"} acima da faixa
               inclusa no plano {PLANO_LABEL[empresa!.plano as Plano]} ({faixaVeiculosAtual?.veiculos_inclusos}{" "}
@@ -224,46 +292,107 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
             </div>
           )}
 
+          {ehPosto && ehAdministradoraDaRede && postosExcedentes > 0 && (
+            <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Sua rede tem {postosExcedentes} posto{postosExcedentes === 1 ? "" : "s"} acima da faixa
+              inclusa no plano {planoAtualPosto ? PLANO_POSTO_LABEL[planoAtualPosto] : ""} (
+              {faixaPostosAtual?.postos_inclusos} inclusos). Excedente estimado:{" "}
+              <strong>
+                {(valorExcedentePostoCentavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês
+              </strong>
+              . Isso já é cobrado automaticamente (você, como administradora, é quem recebe a fatura) e
+              aparece na próxima fatura da rede.
+            </div>
+          )}
+
+          {ehPosto && !redeDoPosto && (
+            <div className="card mb-6 p-6">
+              <h2 className="mb-1 text-sm font-semibold text-slate-900">Rede de Postos</h2>
+              <p className="text-xs text-slate-500">
+                Junte vários postos numa assinatura só, paga por você (a empresa administradora) em nome
+                de todos. Disponível a partir do plano Profissional.
+              </p>
+              <CriarRedeForm empresaId={empresa.id} />
+            </div>
+          )}
+
+          {ehPosto && redeDoPosto && !ehAdministradoraDaRede && (
+            <div className="card mb-6 p-6">
+              <h2 className="mb-1 text-sm font-semibold text-slate-900">Rede de Postos</h2>
+              <p className="text-sm text-slate-600">
+                Este posto faz parte da rede <strong>{redeDoPosto.nome}</strong>. A assinatura é única e
+                gerenciada pela empresa administradora da rede — fale com ela para alterar o plano.
+              </p>
+            </div>
+          )}
+
+          {(!ehPosto || (ehPosto && (!redeDoPosto || ehAdministradoraDaRede))) && (
           <div className="card mb-6 p-6">
             <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
               Planos disponíveis <AjudaIcon chave="assinatura.termo_adesao" />
             </h2>
-            {/* Fase 27.125 — pra posto revendedor, o dimensionamento de plano
-                é pelo tamanho da Rede de Postos, não por usuários/veículos
-                (conceito de frota). */}
-            {empresa!.segmento === "Revenda" && qtdPostosNaRede !== null && (
-              <p className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                Sua rede tem {qtdPostosNaRede} posto{qtdPostosNaRede === 1 ? "" : "s"} — recomendamos o
-                plano <strong>{PLANO_LABEL[planoRecomendadoRede!]}</strong> (destacado abaixo).
-              </p>
-            )}
+            {ehPosto ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {planosPostoParaExibir.map((plano) => {
+                  const faixaPostos = FAIXA_POSTOS_PLANO[plano];
+                  const ehAtual = planoAtualPosto === plano && statusAtualPosto === "ativo";
+                  return (
+                    <div
+                      key={plano}
+                      className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : "border-slate-200"}`}
+                    >
+                      <p className="text-sm font-semibold text-slate-900">{PLANO_POSTO_LABEL[plano]}</p>
+                      <p className="mt-1 text-lg font-semibold text-frota-700">{formatarPrecoPlano(precos?.[plano])}</p>
+                      {faixaPostos.postos_inclusos != null && faixaPostos.preco_excedente_centavos != null ? (
+                        <p className="mt-1 text-xs text-slate-500">
+                          Inclui {faixaPostos.postos_inclusos} postos na rede ·{" "}
+                          {(faixaPostos.preco_excedente_centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          /posto excedente
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-slate-500">1 posto (sem Rede de Postos)</p>
+                      )}
+                      <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+                        {FEATURES_PLANO_POSTO[plano].map((feature) => (
+                          <li key={feature} className="flex items-start gap-1.5 text-xs text-slate-600">
+                            <span className="mt-0.5 text-frota-600">✓</span>
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {ehAtual ? (
+                        <span className="badge-ativo mt-3 inline-block">Plano atual</span>
+                      ) : (
+                        <BotaoAssinarPlano
+                          empresaId={empresa!.id}
+                          grupoEconomicoId={redeDoPosto?.id}
+                          plano={plano}
+                          nomeEmpresa={empresa!.nome}
+                          cnpj={empresa!.cnpj}
+                          email={user?.email ?? ""}
+                          precoLabel={formatarPrecoPlano(precos?.[plano])}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {(["basico", "profissional", "enterprise"] as const).map((plano) => {
                 const limites = LIMITES_PLANO[plano];
                 const faixaVeiculos = FAIXA_VEICULOS_PLANO[plano];
                 const ehAtual = empresa!.plano === plano && empresa!.status === "ativo";
-                const ehRecomendado = empresa!.segmento === "Revenda" && !ehAtual && plano === planoRecomendadoRede;
                 return (
                   <div
                     key={plano}
-                    className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : ehRecomendado ? "border-frota-400 bg-frota-50/40" : "border-slate-200"}`}
+                    className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : "border-slate-200"}`}
                   >
-                    {ehRecomendado && (
-                      <span className="mb-2 inline-block rounded-full bg-frota-600 px-2 py-0.5 text-xs font-medium text-white">
-                        Recomendado
-                      </span>
-                    )}
                     <p className="text-sm font-semibold text-slate-900">{PLANO_LABEL[plano]}</p>
                     <p className="mt-1 text-lg font-semibold text-frota-700">{formatarPrecoPlano(precos?.[plano])}</p>
                     <p className="mt-1 text-xs text-slate-500">
-                      {empresa!.segmento === "Revenda" ? (
-                        <>Até {limites.max_usuarios < 0 ? "usuários ilimitados" : `${limites.max_usuarios} usuário(s)`}</>
-                      ) : (
-                        <>
-                          Até {limites.max_usuarios < 0 ? "usuários ilimitados" : `${limites.max_usuarios} usuário(s)`} ·{" "}
-                          {limites.max_veiculos < 0 ? "veículos ilimitados" : `${limites.max_veiculos} veículos`}
-                        </>
-                      )}
+                      Até {limites.max_usuarios < 0 ? "usuários ilimitados" : `${limites.max_usuarios} usuário(s)`} ·{" "}
+                      {limites.max_veiculos < 0 ? "veículos ilimitados" : `${limites.max_veiculos} veículos`}
                     </p>
                     {faixaVeiculos.veiculos_inclusos != null && faixaVeiculos.preco_excedente_centavos != null && (
                       <p className="mt-1 text-xs text-slate-400">
@@ -296,7 +425,9 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
                 );
               })}
             </div>
+            )}
           </div>
+          )}
 
           <div className="card mb-6 p-6">
             <div className="mb-4 flex items-center justify-between">

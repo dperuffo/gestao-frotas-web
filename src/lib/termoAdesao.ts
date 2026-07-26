@@ -105,3 +105,56 @@ export function montarParagrafosTermoAdesao(plano: PlanoComTermo): string[] {
 export function textoCanonicoTermoAdesao(plano: PlanoComTermo): string {
   return montarParagrafosTermoAdesao(plano).join("\n");
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// Fase Posto/Rede (26/07/2026, pedido do Daniel) — Termo de Adesão para os
+// planos do segmento Revenda (postos revendedores), estrutura irmã da
+// acima mas com Objeto (Cláusula 2ª) e Cláusula 3ª próprios — este termo
+// fala de gestão de posto/rede de postos, não de frota. PARTE II em diante
+// (pagamento, LGPD, confidencialidade etc.) é genérica o bastante pra valer
+// pros dois segmentos, então RODAPE_COMUM acima é reaproveitado tal e qual.
+// Mesmo aviso do bloco de frotista: hash calculado uma única vez sobre
+// montarParagrafosTermoAdesaoPosto(plano).join("\n"), hardcoded de forma
+// idêntica na Edge Function create-checkout-session.
+export type PlanoPostoComTermo = "posto_essencial" | "posto_profissional" | "posto_enterprise";
+
+export const HASH_TERMO_ADESAO_POSTO_POR_PLANO: Record<PlanoPostoComTermo, string> = {
+  posto_essencial: "a14b437c47fcb7299c25e2c74b08276e64c9aa6dfcbcb584f300333a46fccc6b",
+  posto_profissional: "c636411c696e5624b57833750560ca3fbeaf4568e8f9874593721ce8fe8c75c7",
+  posto_enterprise: "acfac8bb337f313e7e042f7d20690db9667d5e2f67f7724d476ed317d7d4fb07",
+};
+
+const CABECALHO_COMUM_POSTO = [
+  "FLEET NETWORK INTELLIGENCE — FNI Gestão de Frotas (fxgestaodefrotasonline.com)",
+  "",
+  "PARTE I — DAS PARTES E DO OBJETO",
+  "Cláusula 1ª — Das Partes. 1.1. CONTRATADA: FLEET NETWORK INTELLIGENCE LTDA. (FNI), operadora da plataforma SaaS FNI Gestão de Frotas, acessível em fxgestaodefrotasonline.com. 1.2. CONTRATANTE: posto revendedor de combustíveis, pessoa física ou jurídica, que realiza a adesão eletrônica, doravante denominado CLIENTE.",
+  "Cláusula 2ª — Do Objeto. 2.1. Prestação de serviços de Software como Serviço (SaaS) voltado à gestão de postos revendedores de combustíveis, nos limites do plano contratado. 2.2. Recursos gerais da plataforma: gestão de faturas e conciliação de abastecimentos; financeiro (contas a receber e inadimplência); cadastro de bicos, produtos e preços; dashboard analítico e relatórios exportáveis em PDF e Excel; Assistente IA. 2.3. Nos planos que o incluem (ver Cláusula 3ª), o CONTRATANTE pode ainda administrar ou integrar uma Rede de Postos — agrupamento de múltiplos postos revendedores sob uma única assinatura, paga integralmente pela empresa administradora da rede (matriz) em nome de todos os postos membros.",
+  "",
+];
+
+// Cláusula 3ª — específica por plano de posto, mesmo espírito do bloco de
+// frotista acima. Precisa continuar batendo com FEATURES_PLANO_POSTO/
+// FAIXA_POSTOS_PLANO (src/lib/constants.ts) — se um desses mudar, revisar
+// o texto aqui também (e recalcular o hash do plano afetado).
+const CLAUSULA_3_POR_PLANO_POSTO: Record<PlanoPostoComTermo, string> = {
+  posto_essencial:
+    "Cláusula 3ª — Plano Contratado: ESSENCIAL (POSTO). 3.1. Aplicável a 1 (um) posto revendedor avulso, sem possibilidade de vincular-se a uma Rede de Postos. 3.2. Recursos inclusos: gestão de faturas e conciliação de abastecimentos; financeiro (contas a receber e inadimplência); cadastro de bicos, produtos e preços. 3.3. Suporte técnico em até 48 (quarenta e oito) horas úteis.",
+  posto_profissional:
+    "Cláusula 3ª — Plano Contratado: PROFISSIONAL (POSTO). 3.1. Recursos inclusos: todos os recursos do plano Essencial, mais Inteligência de Rede e Antifraude. 3.2. Rede de Postos: o CLIENTE pode criar ou integrar uma Rede de Postos de até 5 (cinco) postos inclusos numa única assinatura, cuja cobrança é única e de responsabilidade exclusiva da empresa administradora da rede (matriz), indicada no momento da criação da rede — postos excedentes à faixa inclusa são cobrados automaticamente à razão de R$ 35,00 (trinta e cinco reais) por posto/mês, também de responsabilidade da matriz. 3.3. Suporte técnico em até 24 (vinte e quatro) horas úteis.",
+  posto_enterprise:
+    "Cláusula 3ª — Plano Contratado: ENTERPRISE (POSTO). 3.1. Recursos inclusos: todos os recursos do plano Profissional, mais API, integrações e webhooks, e gerente de conta dedicado. 3.2. Rede de Postos: o CLIENTE pode criar ou integrar uma Rede de Postos de até 20 (vinte) postos inclusos numa única assinatura, cuja cobrança é única e de responsabilidade exclusiva da empresa administradora da rede (matriz), indicada no momento da criação da rede — postos excedentes à faixa inclusa são cobrados automaticamente à razão de R$ 20,00 (vinte reais) por posto/mês, também de responsabilidade da matriz. 3.3. SLA (Service Level Agreement) de disponibilidade de 99,95% e suporte técnico 24x7 (24 horas por dia, 7 dias por semana).",
+};
+
+export function montarParagrafosTermoAdesaoPosto(plano: PlanoPostoComTermo): string[] {
+  return [
+    `TERMO DE ADESÃO E CONTRATO DE PRESTAÇÃO DE SERVIÇOS — Versão ${VERSAO_TERMO_ADESAO}`,
+    ...CABECALHO_COMUM_POSTO,
+    CLAUSULA_3_POR_PLANO_POSTO[plano],
+    ...RODAPE_COMUM,
+  ];
+}
+
+export function textoCanonicoTermoAdesaoPosto(plano: PlanoPostoComTermo): string {
+  return montarParagrafosTermoAdesaoPosto(plano).join("\n");
+}

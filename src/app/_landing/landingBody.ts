@@ -41,6 +41,14 @@
 //   reflete o plano "gratuito" real do trial self-service (1 usuário, 10
 //   veículos, ver LIMITES_PLANO em src/lib/constants.ts), não é um valor
 //   inventado.
+// - Fase Posto/Rede (26/07/2026, pedido do Daniel): nova seção
+//   .pricing#precos-postos com os 3 planos de posto revendedor (Essencial
+//   R$99, Profissional R$159, Enterprise R$599) — antes a seção #postos só
+//   tinha texto de marketing e dizia (incorretamente, após esta fase) que
+//   postos assinavam "os mesmos planos usados pelos clientes de frota".
+//   Texto/preços em sincronia manual com PLANOS_POSTO/PLANO_POSTO_LABEL/
+//   FEATURES_PLANO_POSTO/FAIXA_POSTOS_PLANO em src/lib/constants.ts e a
+//   Cláusula 3ª por plano de posto em src/lib/termoAdesao.ts.
 export const LANDING_BODY_HTML = `
 <style>
 :root{--navy:#04112e;--blue:#0d2d6b;--electric:#1a56f0;--cyan:#00b4d8;--cyan2:#00c2ff;--gold:#f5a623;--white:#ffffff;--gray:#8a9bb5;}
@@ -707,15 +715,16 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
 <section class="section" id="postos">
   <div class="sec-lbl" data-i18n="postos_lbl">Para Postos Revendedores</div>
   <div class="sec-title" data-i18n="postos_title">Sua rede de postos também opera na FNI</div>
-  <p class="sec-sub" data-i18n="postos_sub">Se sua rede já abastece frotas que usam a FNI, você pode negociar preço e volume direto com esses clientes dentro da plataforma — sem planilha, sem WhatsApp perdido. Comece com 14 dias grátis e, depois, assine um dos mesmos planos usados pelos nossos clientes de frota.</p>
+  <p class="sec-sub" data-i18n="postos_sub">Se sua rede já abastece frotas que usam a FNI, você pode negociar preço e volume direto com esses clientes dentro da plataforma — sem planilha, sem WhatsApp perdido. Comece com 14 dias grátis num plano próprio para postos revendedores, com preços a partir de R$99/mês.</p>
   <div class="grid">
     <div class="card"><div class="icon">🤝</div><div class="ct" data-i18n="pocard0_t">Negocie direto com frotas</div><div class="cd" data-i18n="pocard0_d">Receba e responda propostas de preço e volume mínimo mensal direto na plataforma, sem intermediário.</div></div>
     <div class="card"><div class="icon">🧾</div><div class="ct" data-i18n="pocard1_t">Conciliação automática</div><div class="cd" data-i18n="pocard1_d">Abastecimentos e NF-e conciliados automaticamente com o ciclo de faturamento acordado com cada cliente.</div></div>
-    <div class="card"><div class="icon">🌐</div><div class="ct" data-i18n="pocard2_t">Rede de Postos</div><div class="cd" data-i18n="pocard2_d">Agrupe todos os postos da sua bandeira ou grupo econômico em uma única visão, com um plano por rede.</div></div>
-    <div class="card"><div class="icon">💳</div><div class="ct" data-i18n="pocard3_t">Mesmos planos, sem letra miúda</div><div class="cd" data-i18n="pocard3_d">Trial de 14 dias grátis e depois os mesmos planos e valores usados pelos clientes de frota — sem plano especial escondido.</div></div>
+    <div class="card"><div class="icon">🌐</div><div class="ct" data-i18n="pocard2_t">Rede de Postos</div><div class="cd" data-i18n="pocard2_d">Agrupe todos os postos da sua bandeira ou grupo econômico numa assinatura única, paga pela matriz em nome de todos.</div></div>
+    <div class="card"><div class="icon">💳</div><div class="ct" data-i18n="pocard3_t">Planos próprios para postos</div><div class="cd" data-i18n="pocard3_d">Trial de 14 dias grátis e depois planos e preços pensados pra revenda de combustíveis — não é o mesmo plano de frota com outro nome.</div></div>
   </div>
   <div style="text-align:center;margin-top:40px">
-    <a href="mailto:contato@fxgestaodefrotasonline.com" class="btn-s" data-i18n="postos_cta">💬 Quero cadastrar meu posto</a>
+    <a href="#precos-postos" class="btn-p" data-i18n="postos_cta_precos">Ver planos para postos →</a>
+    <a href="mailto:contato@fxgestaodefrotasonline.com" class="btn-s" data-i18n="postos_cta">💬 Falar com um especialista</a>
   </div>
 </section>
 
@@ -781,6 +790,28 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
     <div class="pc"><div class="pn" data-i18n="plan1_n">Essencial</div><div class="pp"><sup>R$</sup>249<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan1_d">Pequenas frotas</div><ul class="pf"><li data-i18n="plan1_f1">5 usuários</li><li data-i18n="plan1_f2">20 veículos inclusos (+R$4,50/excedente)</li><li data-i18n="plan1_f3">Roteirização, Rotograma e Planos de Viagem</li><li data-i18n="plan1_f4">Inteligência de Rede</li><li data-i18n="plan1_f5">Exportação Excel</li><li class="off">Gestão de Fretes (TMS)</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan1_btn">Assinar Essencial</a></div>
     <div class="pc feat"><div class="pbadge" data-i18n="plan_popular">Mais popular</div><div class="pn" data-i18n="plan2_n">Profissional</div><div class="pp"><sup>R$</sup>549<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan2_d">TMS para transportadoras</div><ul class="pf"><li data-i18n="plan2_f1">20 usuários</li><li data-i18n="plan2_f2">60 veículos inclusos (+R$3,50/excedente)</li><li data-i18n="plan2_f3">Gestão de Fretes (TMS) — até 30/mês</li><li data-i18n="plan2_f4">Emissão de CT-e/MDF-e</li><li data-i18n="plan2_f5">Cotações e Tabelas de Frete</li><li data-i18n="plan2_f6">API + Webhooks</li></ul><a href="/cadastro" class="pbtn p" data-i18n="plan2_btn">Trial grátis 14 dias</a></div>
     <div class="pc"><div class="pn" data-i18n="plan3_n">Enterprise</div><div class="pp"><sup>R$</sup>1.099<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan3_d">Grandes operações e TMS ilimitado</div><ul class="pf"><li data-i18n="plan3_f1">150 veículos inclusos (+R$2,50/excedente)</li><li data-i18n="plan3_f2">Gestão de Fretes (TMS) ilimitada</li><li>SSO SAML</li><li>SLA 99,95%</li><li data-i18n="plan3_f5">Gerente dedicado</li><li data-i18n="plan3_f6">Suporte 24/7</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan3_btn">Assinar Enterprise</a></div>
+  </div>
+</section>
+
+<!-- Fase Posto/Rede (26/07/2026, pedido do Daniel) — seção de preços
+     dedicada a postos revendedores, separada da seção .pricing#precos
+     acima (que é só de frotista). Mesmos valores/planos de
+     PLANOS_POSTO/PLANO_POSTO_LABEL/FEATURES_PLANO_POSTO/FAIXA_POSTOS_PLANO
+     em src/lib/constants.ts e da Cláusula 3ª por plano de posto em
+     src/lib/termoAdesao.ts — se um mudar, revisar o outro. Diferente do
+     card de frotista, aqui "Rede de Postos" é a feature central de
+     Profissional/Enterprise: uma assinatura única, paga pela empresa
+     administradora (matriz) em nome de todos os postos membros. -->
+<section class="pricing" id="precos-postos" style="background:transparent">
+  <div style="text-align:center">
+    <div class="sec-lbl">Planos para Postos Revendedores</div>
+    <div class="sec-title">Preços pensados pra revenda de combustíveis</div>
+    <p class="sec-sub" style="margin:0 auto">Sem cartão de crédito. Cancele quando quiser. Rede de Postos com assinatura única, paga pela matriz.</p>
+  </div>
+  <div class="pgrid">
+    <div class="pc"><div class="pn">Essencial</div><div class="pp"><sup>R$</sup>99<span>/mês</span></div><div class="pd">Posto avulso</div><ul class="pf"><li>1 posto (sem Rede de Postos)</li><li>Gestão de faturas e conciliação de abastecimentos</li><li>Financeiro: contas a receber e inadimplência</li><li>Cadastro de bicos, produtos e preços</li><li class="off">Rede de Postos</li><li class="off">Inteligência de Rede e Antifraude</li></ul><a href="/cadastro" class="pbtn o">Assinar Essencial</a></div>
+    <div class="pc feat"><div class="pbadge">Mais popular</div><div class="pn">Profissional</div><div class="pp"><sup>R$</sup>159<span>/mês</span></div><div class="pd">Redes pequenas e médias</div><ul class="pf"><li>Tudo do Essencial</li><li>Rede de Postos — até 5 postos inclusos</li><li>Assinatura única, paga pela matriz (+R$35/posto excedente)</li><li>Inteligência de Rede e Antifraude</li><li>Suporte em até 24h</li></ul><a href="/cadastro" class="pbtn p">Trial grátis 14 dias</a></div>
+    <div class="pc"><div class="pn">Enterprise</div><div class="pp"><sup>R$</sup>599<span>/mês</span></div><div class="pd">Grandes redes de postos</div><ul class="pf"><li>Tudo do Profissional</li><li>Rede de Postos — até 20 postos inclusos</li><li>Assinatura única, paga pela matriz (+R$20/posto excedente)</li><li>API, integrações e webhooks</li><li>Gerente de conta dedicado e SLA 99,95%</li></ul><a href="/cadastro" class="pbtn o">Assinar Enterprise</a></div>
   </div>
 </section>
 
