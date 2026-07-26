@@ -1628,6 +1628,90 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["contas_receber_baixas"]["Row"]>;
         Relationships: [];
       };
+      // Fase Financeiro-ERP (26/07/2026, pedido do Daniel) — substitui,
+      // pra abastecimento vindo de um meio de pagamento de verdade (Ticket
+      // Log, Edenred, Veloe, RedeFrota, Valecard...), o modelo antigo de
+      // ciclos/faturas_postos calculados pela FNI (que continua existindo,
+      // mas só pra negociação DIRETA posto↔frotista — ver
+      // gerar_faturas_postos_robo() e negociacoes_postos). Mesmo desenho de
+      // contas_receber, espelhado pro lado "a pagar": origem +
+      // referencia_id apontam pra faturas_recebidas quando vier de
+      // integração (origem = "fatura_meio_pagamento"), ou null pra
+      // lançamento manual avulso.
+      contas_pagar: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          origem: "fatura_meio_pagamento" | "avulso";
+          referencia_id: string | null;
+          credor_nome: string | null;
+          credor_cnpj: string | null;
+          descricao: string | null;
+          valor_original: number;
+          valor_pago: number;
+          vencimento: string;
+          status: "aberto" | "pago" | "cancelado" | "baixado_parcial";
+          pago_em: string | null;
+          observacoes: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["contas_pagar"]["Row"]> & {
+          empresa_id: string;
+          origem: "fatura_meio_pagamento" | "avulso";
+          valor_original: number;
+          vencimento: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["contas_pagar"]["Row"]>;
+        Relationships: [];
+      };
+      contas_pagar_baixas: {
+        Row: {
+          id: string;
+          conta_pagar_id: string;
+          valor: number;
+          forma: string | null;
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["contas_pagar_baixas"]["Row"]> & {
+          conta_pagar_id: string;
+          valor: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["contas_pagar_baixas"]["Row"]>;
+        Relationships: [];
+      };
+      // Cabeçalho da fatura enviada pelo meio de pagamento (Hub de
+      // Integrações — POST /api/integracoes/faturas-meio-pagamento), com os
+      // abastecimentos atrelados (ver abastecimentos_externos.fatura_recebida_id).
+      // Sem coluna "status" de propósito — contas_pagar (origem =
+      // "fatura_meio_pagamento", referencia_id = este id) é a única fonte
+      // de verdade sobre pagamento, pra não duplicar estado.
+      faturas_recebidas: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          provedor: string;
+          numero_fatura_externa: string | null;
+          periodo_inicio: string | null;
+          periodo_fim: string | null;
+          vencimento: string;
+          valor_total: number;
+          quantidade_abastecimentos: number;
+          observacoes: string | null;
+          recebida_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["faturas_recebidas"]["Row"]> & {
+          empresa_id: string;
+          provedor: string;
+          vencimento: string;
+          valor_total: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["faturas_recebidas"]["Row"]>;
+        Relationships: [];
+      };
       // Fase Fretes-Adiantamento-Combustível (19/07) — parcelas de
       // pagamento do frete (entrada + saldo final), geradas automaticamente
       // quando o frete é aceito (ver trg_gerar_pagamentos_frete).
@@ -2412,6 +2496,11 @@ export interface Database {
           // profrotas_abastecimentos.codigo_abastecimento). Não é
           // inserível/atualizável.
           codigo_abastecimento: string;
+          // Fase Financeiro-ERP (26/07/2026) — preenchido quando este
+          // abastecimento veio dentro de uma fatura enviada pelo meio de
+          // pagamento (ver faturas_recebidas) em vez de acumulado pelo robô
+          // de negociação direta (fatura_posto_id).
+          fatura_recebida_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["abastecimentos_externos"]["Row"]> & {
           empresa_id: string;
@@ -2428,6 +2517,13 @@ export interface Database {
             columns: ["empresa_id"];
             isOneToOne: false;
             referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "abastecimentos_externos_fatura_recebida_id_fkey";
+            columns: ["fatura_recebida_id"];
+            isOneToOne: false;
+            referencedRelation: "faturas_recebidas";
             referencedColumns: ["id"];
           },
         ];
@@ -4414,6 +4510,17 @@ export interface Database {
         Returns: undefined;
       };
       cancelar_conta_receber: {
+        Args: { p_conta_id: string };
+        Returns: undefined;
+      };
+      // Fase Financeiro-ERP (26/07/2026) — mesmo par baixar/cancelar,
+      // espelhado pro lado contas_pagar (sem gateway_ref — não tem
+      // cobrança própria, é só registro do que já foi cobrado por fora).
+      baixar_conta_pagar: {
+        Args: { p_conta_id: string; p_valor: number; p_forma?: string | null; p_observacao?: string | null };
+        Returns: undefined;
+      };
+      cancelar_conta_pagar: {
         Args: { p_conta_id: string };
         Returns: undefined;
       };

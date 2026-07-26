@@ -339,6 +339,54 @@ function SecaoHub({
               motorista com certeza no programa de fidelidade/gamificação (aceito com ou sem pontuação).
             </p>
 
+            {/* Fase Financeiro-ERP (26/07/2026) — substitui, pra quem já é
+                um meio de pagamento de verdade, o modelo antigo de ciclos/
+                faturas_postos calculados pela FNI: o provedor já fecha a
+                própria fatura e só empurra ela (+ os abastecimentos
+                atrelados) pra virar contas a pagar no ERP financeiro do
+                cliente, sem a FNI recalcular nada. */}
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Enviar fatura fechada, com os abastecimentos (escopo faturas_meio_pagamento:write)
+            </p>
+            <pre className="mb-1 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+{`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/faturas-meio-pagamento \\
+  -H "Authorization: Bearer fni_..." \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "provedor": "ticket_log",
+    "numero_fatura_externa": "TL-FAT-000123",
+    "periodo_inicio": "2026-07-01",
+    "periodo_fim": "2026-07-31",
+    "vencimento": "2026-08-10",
+    "valor_total": 12480.55,
+    "abastecimentos": [
+      {
+        "transacao_externa_id": "TL-998877",
+        "placa": "ABC1D23",
+        "motorista_cpf": "123.456.789-00",
+        "data_abastecimento": "2026-07-03T14:30:00Z",
+        "combustivel": "diesel",
+        "quantidade": 45.5,
+        "valor_unitario": 7.00,
+        "valor_total": 318.85,
+        "posto_nome": "Posto Alvorada",
+        "posto_cnpj": "98.765.432/0001-00"
+      }
+    ]
+  }'`}
+            </pre>
+            <p className="mb-4 text-xs text-slate-400">
+              Use isto (em vez de lançar cada abastecimento avulso pelo endpoint acima) quando o seu sistema
+              já fecha a fatura do período e vai cobrar o cliente diretamente — a FNI não recalcula nada,
+              só registra a fatura como contas a pagar do cliente (com aging e baixa manual em{" "}
+              <strong>Financeiro</strong>) e os abastecimentos atrelados a ela. <code>numero_fatura_externa</code>{" "}
+              garante idempotência (reenviar a mesma fatura nunca duplica); cada item de{" "}
+              <code>abastecimentos</code> também precisa de <code>transacao_externa_id</code> único —
+              itens sem ele são ignorados (a resposta lista os índices ignorados em{" "}
+              <code>itens_sem_transacao_externa_id</code>). Se <code>valor_total</code> não for informado,
+              é calculado pela soma dos itens.
+            </p>
+
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
               Lançar manutenção (escopo manutencoes:write)
             </p>

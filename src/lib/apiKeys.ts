@@ -98,6 +98,19 @@ export const ESCOPO_ANTIFRAUDE_VERIFICAR = "antifraude:verificar";
 // antes de emitir a nota, mesmo racional de Parâmetros de Uso.
 export const ESCOPO_PARAMETROS_NF_READ = "parametros_nf:read";
 
+// Fase Financeiro-ERP (26/07/2026, pedido do Daniel) — o modelo antigo
+// (ciclos calculados pela FNI + boleto próprio via ProvedorCobranca) só
+// faz sentido pra negociação DIRETA posto↔frotista dentro da plataforma.
+// Pra abastecimento que já passa por um meio de pagamento de verdade
+// (Ticket Log, Edenred, Veloe, RedeFrota, Valecard...), é o PRÓPRIO
+// provedor quem já fecha e cobra a fatura fora da FNI — este escopo deixa
+// ele empurrar essa fatura (+ os abastecimentos atrelados a ela) pra
+// dentro do ERP financeiro do cliente como contas a pagar, em vez da FNI
+// recalcular tudo do zero. Mesmo padrão de posse de chave de
+// ESCOPO_ABASTECIMENTOS_WRITE: quem gera a chave é o CLIENTE (frotista) e
+// entrega pro seu provedor configurar — nunca o provedor de posse própria.
+export const ESCOPO_FATURAS_MEIO_PAGAMENTO_WRITE = "faturas_meio_pagamento:write";
+
 // Catálogo central dos escopos disponíveis — usado tanto pela UI de geração
 // de chave (/integracoes, pra montar os checkboxes) quanto pela documentação
 // da API. Adicionar um escopo novo aqui é o único lugar a mudar pra ele
@@ -252,5 +265,12 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
     label: "Parâmetros de NF (leitura)",
     descricao:
       "Consultar as preferências de emissão de nota fiscal do cliente (exige NF, forma de emissão, destino) por CNPJ da frota.",
+  },
+  {
+    escopo: ESCOPO_FATURAS_MEIO_PAGAMENTO_WRITE,
+    categoria: "Financeiro (Contas a Pagar)",
+    label: "Faturas de meio de pagamento (escrita)",
+    descricao:
+      "Enviar a fatura já fechada pelo meio de pagamento (Ticket Log, Edenred, Veloe...), com os abastecimentos atrelados — vira contas a pagar no ERP financeiro do cliente.",
   },
 ];

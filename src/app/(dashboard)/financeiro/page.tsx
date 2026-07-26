@@ -13,6 +13,7 @@ import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecim
 import { IndicadoresFinanceirosFni } from "../_components/IndicadoresFinanceirosFni";
 import { CobrancaEmAberto, type FaturaCobranca } from "./_components/CobrancaEmAberto";
 import { SecaoContasReceberFretes } from "./_components/SecaoContasReceberFretes";
+import { SecaoContasPagar } from "./_components/SecaoContasPagar";
 import { GraficoEvolucaoFinanceira, type PontoFinanceiro } from "./_components/GraficoEvolucaoFinanceira";
 import { FormularioOrcamento } from "./_components/FormularioOrcamento";
 import { FormularioCustoFixo } from "./_components/FormularioCustoFixo";
@@ -475,6 +476,8 @@ export default async function FinanceiroPage({
           />
 
           <SecaoContasReceberFretes empresaId={empresaSelecionada} />
+
+          <SecaoContasPagar empresaId={empresaSelecionada} />
 
           {resumoAjustes && (
             <div className="mt-6">

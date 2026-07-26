@@ -1,0 +1,204 @@
+import { createClient } from "@/lib/supabase/server";
+import { FAIXAS_AGING, diasEmAtraso } from "@/lib/financeiroPostos";
+import { FormularioContaPagarAvulsa } from "./FormularioContaPagarAvulsa";
+import { BotaoBaixarContaPagar, BotaoCancelarContaPagar } from "./BotaoBaixarContaPagar";
+
+const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+function formatarDataBr(dataIso: string): string {
+  const [ano, mes, dia] = dataIso.slice(0, 10).split("-");
+  return `${dia}/${mes}/${ano}`;
+}
+
+// Fase Financeiro-ERP (26/07/2026, pedido do Daniel) — substitui o modelo
+// antigo de ciclos/faturas_postos calculados pela FNI pra tudo que vem de
+// um meio de pagamento de verdade (Ticket Log, Edenred, Veloe, RedeFrota,
+// Valecard...): o provedor já fecha e envia a própria fatura pronta (ver
+// POST /api/integracoes/faturas-meio-pagamento), a FNI só registra como
+// contas a pagar. Mesmo desenho visual/matemático de SecaoContasReceberFretes
+// (aging + agrupamento), espelhado pro lado "a pagar" — aqui agrupado por
+// CREDOR (o meio de pagamento ou fornecedor) em vez de devedor, e com ações
+// de baixa/cancelamento (contas_receber não precisa disso: é baixada pelo
+// webhook do gateway de cobrança, contas_pagar não tem gateway próprio).
+export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
+  const supabase = await createClient();
+  const hojeIso = new Date().toISOString().slice(0, 10);
+  const inicioMesIso = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+  const { data: contas } = await supabase
+    .from("contas_pagar")
+    .select("id, origem, credor_nome, credor_cnpj, descricao, valor_original, valor_pago, vencimento, status")
+    .eq("empresa_id", empresaId)
+    .in("status", ["aberto", "baixado_parcial"])
+    .order("vencimento", { ascending: true })
+    .limit(500);
+
+  const abertas = contas ?? [];
+
+  const { data: contasDaEmpresa } = await supabase.from("contas_pagar").select("id").eq("empresa_id", empresaId);
+  const idsContas = (contasDaEmpresa ?? []).map((c) => c.id);
+  let pagoNoMes = 0;
+  if (idsContas.length > 0) {
+    const { data: baixas } = await supabase
+      .from("contas_pagar_baixas")
+      .select("valor, criado_em")
+      .in("conta_pagar_id", idsContas)
+      .gte("criado_em", inicioMesIso);
+    pagoNoMes = (baixas ?? []).reduce((s, b) => s + b.valor, 0);
+  }
+
+  const totalEmAberto = abertas.reduce((s, c) => s + (c.valor_original - c.valor_pago), 0);
+  const vencidas = abertas.filter((c) => c.vencimento < hojeIso);
+  const totalVencido = vencidas.reduce((s, c) => s + (c.valor_original - c.valor_pago), 0);
+
+  const aging = FAIXAS_AGING.map((faixa) => {
+    const linhas = vencidas.filter((c) => {
+      const dias = diasEmAtraso(c.vencimento, hojeIso);
+      return dias >= faixa.min && dias <= faixa.max;
+    });
+    return { ...faixa, valor: linhas.reduce((s, c) => s + (c.valor_original - c.valor_pago), 0), quantidade: linhas.length };
+  });
+
+  const porCredor = new Map<string, { nome: string; quantidade: number; valor: number }>();
+  for (const c of vencidas) {
+    const chave = c.credor_cnpj ?? c.credor_nome ?? "sem-identificacao";
+    const atual = porCredor.get(chave);
+    if (atual) {
+      atual.quantidade += 1;
+      atual.valor += c.valor_original - c.valor_pago;
+    } else {
+      porCredor.set(chave, { nome: c.credor_nome ?? c.credor_cnpj ?? "Credor não identificado", quantidade: 1, valor: c.valor_original - c.valor_pago });
+    }
+  }
+  const inadimplenciaPorCredor = Array.from(porCredor.values()).sort((a, b) => b.valor - a.valor);
+
+  return (
+    <div className="mt-6">
+      <div className="mb-4">
+        <h2 className="text-sm font-semibold text-slate-900">💳 Contas a Pagar — Meios de Pagamento</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Faturas enviadas pelos meios de pagamento (Ticket Log, Edenred, Veloe, RedeFrota, Valecard...) com
+          os abastecimentos atrelados, mais lançamentos avulsos. Veja{" "}
+          <a href="/integracoes" className="text-frota-600 hover:underline">
+            Integrações
+          </a>{" "}
+          para conectar um novo meio de pagamento.
+        </p>
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="card p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">A pagar (em aberto)</p>
+          <p className="mt-1 text-xl font-semibold text-slate-900">{formatoMoeda.format(totalEmAberto)}</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Vencido</p>
+          <p className="mt-1 text-xl font-semibold text-red-600">{formatoMoeda.format(totalVencido)}</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Pago no mês</p>
+          <p className="mt-1 text-xl font-semibold text-status-ativo">{formatoMoeda.format(pagoNoMes)}</p>
+        </div>
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="card p-4">
+          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Aging de vencidas</h3>
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase text-slate-400">
+              <tr>
+                <th className="py-1">Faixa</th>
+                <th className="py-1 text-right">Qtd.</th>
+                <th className="py-1 text-right">Valor</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {aging.map((f) => (
+                <tr key={f.chave}>
+                  <td className="py-1.5 text-slate-600">{f.label}</td>
+                  <td className="py-1.5 text-right text-slate-600">{f.quantidade}</td>
+                  <td className="py-1.5 text-right font-medium text-slate-900">{formatoMoeda.format(f.valor)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="card p-4">
+          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Vencidas por credor</h3>
+          {inadimplenciaPorCredor.length === 0 ? (
+            <p className="text-sm text-slate-400">Nenhuma conta vencida no momento.</p>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs uppercase text-slate-400">
+                <tr>
+                  <th className="py-1">Credor</th>
+                  <th className="py-1 text-right">Qtd.</th>
+                  <th className="py-1 text-right">Valor</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {inadimplenciaPorCredor.map((d) => (
+                  <tr key={d.nome}>
+                    <td className="py-1.5 text-slate-600">{d.nome}</td>
+                    <td className="py-1.5 text-right text-slate-600">{d.quantidade}</td>
+                    <td className="py-1.5 text-right font-medium text-red-600">{formatoMoeda.format(d.valor)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      <div className="card mb-4 overflow-x-auto p-4">
+        <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Contas a pagar em aberto</h3>
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs uppercase text-slate-400">
+            <tr>
+              <th className="py-1.5 pr-3">Credor</th>
+              <th className="py-1.5 pr-3">Descrição</th>
+              <th className="py-1.5 pr-3">Vencimento</th>
+              <th className="py-1.5 pr-3 text-right">Saldo</th>
+              <th className="py-1.5 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {abertas.map((c) => {
+              const saldo = c.valor_original - c.valor_pago;
+              const vencida = c.vencimento < hojeIso;
+              return (
+                <tr key={c.id} className="hover:bg-slate-50">
+                  <td className="py-2 pr-3 text-slate-700">{c.credor_nome ?? "—"}</td>
+                  <td className="py-2 pr-3 text-slate-500">{c.descricao ?? "—"}</td>
+                  <td className={`py-2 pr-3 ${vencida ? "font-medium text-red-600" : "text-slate-500"}`}>
+                    {formatarDataBr(c.vencimento)}
+                  </td>
+                  <td className="py-2 pr-3 text-right font-medium text-slate-900">{formatoMoeda.format(saldo)}</td>
+                  <td className="py-2 text-right">
+                    <div className="flex justify-end gap-3">
+                      <BotaoBaixarContaPagar id={c.id} saldoEmAberto={saldo} />
+                      <BotaoCancelarContaPagar id={c.id} />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {abertas.length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-6 text-center text-slate-400">
+                  Nenhuma conta a pagar em aberto.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="card p-4">
+        <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Lançar conta a pagar avulsa</h3>
+        <FormularioContaPagarAvulsa empresaId={empresaId} />
+      </div>
+    </div>
+  );
+}

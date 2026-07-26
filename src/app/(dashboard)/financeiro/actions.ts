@@ -186,3 +186,78 @@ export async function atualizarCustoFixoAcao(
   revalidatePath("/financeiro");
   return {};
 }
+
+// Fase Financeiro-ERP (26/07/2026) — contas a pagar geradas por fatura de
+// meio de pagamento (ver /api/integracoes/faturas-meio-pagamento) ou
+// lançadas avulsas. Baixa/cancelamento passam pelas RPCs
+// baixar_conta_pagar/cancelar_conta_pagar (mesmo padrão de
+// baixar_conta_receber/cancelar_conta_receber) — a transição de status
+// (aberto → baixado_parcial/pago, ou cancelado) fica centralizada no banco,
+// não duplicada aqui.
+export async function darBaixaContaPagarAcao(
+  contaId: string,
+  valor: number,
+  observacao: string | null
+): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  if (!Number.isFinite(valor) || valor <= 0) return { erro: "Informe um valor de baixa maior que zero." };
+
+  const { error } = await supabase.rpc("baixar_conta_pagar", {
+    p_conta_id: contaId,
+    p_valor: valor,
+    p_forma: "manual",
+    p_observacao: observacao,
+  });
+
+  if (error) return { erro: error.message };
+  revalidatePath("/financeiro");
+  return {};
+}
+
+export async function cancelarContaPagarAcao(contaId: string): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancelar_conta_pagar", { p_conta_id: contaId });
+  if (error) return { erro: error.message };
+  revalidatePath("/financeiro");
+  return {};
+}
+
+// Lançamento avulso (origem="avulso") — mesmo espírito de
+// salvarCustoFixoAcao, mas em contas_pagar (com aging/baixa parcial), pra
+// dívidas que não vêm de nenhuma integração (ex: acordo verbal com um
+// posto que ainda não manda fatura pela API).
+export async function lancarContaPagarAvulsaAcao(
+  _prev: FinanceiroFormState,
+  formData: FormData
+): Promise<FinanceiroFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) return { erro: "Sessão expirada, faça login novamente." };
+
+  const empresaId = String(formData.get("empresa_id") ?? "").trim();
+  const credorNome = String(formData.get("credor_nome") ?? "").trim() || null;
+  const descricao = String(formData.get("descricao") ?? "").trim() || null;
+  const valorOriginal = Number(formData.get("valor_original"));
+  const vencimento = String(formData.get("vencimento") ?? "").trim();
+
+  if (!empresaId) return { erro: "Selecione o cliente." };
+  if (!Number.isFinite(valorOriginal) || valorOriginal <= 0) return { erro: "Valor inválido." };
+  if (!vencimento) return { erro: "Informe o vencimento." };
+
+  const { error } = await supabase.from("contas_pagar").insert({
+    empresa_id: empresaId,
+    origem: "avulso",
+    credor_nome: credorNome,
+    descricao,
+    valor_original: valorOriginal,
+    vencimento,
+    criado_por: user.email,
+  });
+
+  if (error) return { erro: `Não foi possível lançar: ${error.message}` };
+
+  revalidatePath("/financeiro");
+  return { sucesso: "Conta a pagar lançada." };
+}
