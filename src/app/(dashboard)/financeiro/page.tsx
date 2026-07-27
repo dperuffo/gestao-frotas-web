@@ -19,6 +19,7 @@ import { FormularioOrcamento } from "./_components/FormularioOrcamento";
 import { FormularioCustoFixo } from "./_components/FormularioCustoFixo";
 import { TabelaOrcamento, type LinhaOrcamento } from "./_components/TabelaOrcamento";
 import { TabelaCustosFixos, type LinhaCustoFixo } from "./_components/TabelaCustosFixos";
+import { SecaoDreFrota, type DreFrotaDados } from "./_components/SecaoDreFrota";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { LogoProvedor } from "@/components/LogoProvedor";
 
@@ -177,6 +178,13 @@ export default async function FinanceiroPage({
     litros: number;
     qtd_abastecimentos: number;
   }[] = [];
+  // Fase DRE-Gerencial (26/07/2026) — o DRE de Frota só faz sentido pra
+  // quem fatura frete pros próprios clientes (decisão confirmada com o
+  // Daniel: "só quem fatura frete"). Gate = existe ao menos 1
+  // faturas_fretes histórica não cancelada; sem isso, dre_frota() sempre
+  // devolveria receita zero e a seção não diria nada.
+  let dreFrota: DreFrotaDados | null = null;
+  let temReceitaDeFrete = false;
 
   if (empresaSelecionada) {
     const [
@@ -187,6 +195,7 @@ export default async function FinanceiroPage({
       { data: orcamentosData },
       { data: indicadoresPorCentroData },
       { data: indicadoresPorProvedorData },
+      { data: faturaFreteExistente },
     ] = await Promise.all([
         supabase
           .rpc("indicadores_financeiros", {
@@ -226,6 +235,14 @@ export default async function FinanceiroPage({
           p_data_inicio: paraISO(inicioMesAtual),
           p_data_fim: paraISO(fimMesAtual),
         }),
+        // Fase DRE-Gerencial — gate do DRE de Frota (ver comentário acima).
+        supabase
+          .from("faturas_fretes")
+          .select("id")
+          .eq("empresa_id", empresaSelecionada)
+          .neq("status", "cancelada")
+          .limit(1)
+          .maybeSingle(),
       ]);
 
     indicadores = indicadoresData;
@@ -240,6 +257,18 @@ export default async function FinanceiroPage({
     orcamentosDoMes = orcamentosData ?? [];
     indicadoresPorCentro = indicadoresPorCentroData ?? [];
     indicadoresPorProvedor = indicadoresPorProvedorData ?? [];
+    temReceitaDeFrete = !!faturaFreteExistente;
+
+    if (temReceitaDeFrete) {
+      const { data: dreFrotaData } = await supabase
+        .rpc("dre_frota", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: paraISO(inicioMesAtual),
+          p_data_fim: paraISO(fimMesAtual),
+        })
+        .single();
+      dreFrota = dreFrotaData ?? null;
+    }
   }
 
   // Orçamento "geral" (sem centro de custo — vale pra frota inteira) compara
@@ -412,6 +441,8 @@ export default async function FinanceiroPage({
               </table>
             </div>
           )}
+
+          {dreFrota && <SecaoDreFrota dados={dreFrota} />}
 
           <div className="card mb-6 p-6">
             <div className="mb-4 flex items-center justify-between">

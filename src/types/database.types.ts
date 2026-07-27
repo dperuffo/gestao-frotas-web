@@ -4626,6 +4626,42 @@ export interface Database {
           qtd_abastecimentos: number;
         }[];
       };
+      // Fase DRE-Gerencial (26/07/2026, pedido do Daniel: "Faz sentido
+      // criarmos um modelo de DRE para clientes e postos?") — DRE gerencial
+      // por competência. dre_posto usa despesas_postos.competencia +
+      // faturas_postos.periodo_fim; dre_frota usa faturas_fretes.
+      // periodo_fim + abastecimentos_unificado.data_abastecimento +
+      // manutencoes_realizadas.data_manutencao + custos_fixos.competencia
+      // (mesmos campos já usados por indicadores_financeiros). Sem
+      // SECURITY DEFINER — roda com RLS de quem chama.
+      dre_posto: {
+        Args: { p_empresa_posto_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          receita_bruta: number;
+          cmv_combustivel: number;
+          lucro_bruto: number;
+          despesa_salarios: number;
+          despesa_manutencao: number;
+          despesa_aluguel: number;
+          despesa_energia: number;
+          despesa_outras: number;
+          despesas_operacionais: number;
+          ebitda: number;
+          impostos: number;
+          lucro_liquido: number;
+        }[];
+      };
+      dre_frota: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          receita_bruta_fretes: number;
+          custo_combustivel: number;
+          custo_manutencao: number;
+          resultado_bruto: number;
+          custos_fixos: number;
+          ebitda: number;
+        }[];
+      };
       manutencao_preditiva_base: {
         Args: { p_empresa_id: string; p_placa?: string | null };
         Returns: {

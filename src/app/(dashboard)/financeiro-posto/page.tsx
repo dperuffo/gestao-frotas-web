@@ -22,6 +22,7 @@ import { LogoProvedor } from "@/components/LogoProvedor";
 import { GraficoFluxoCaixaPosto, type PontoFluxoCaixaPosto } from "./_components/GraficoFluxoCaixaPosto";
 import { FormularioDespesaPosto } from "./_components/FormularioDespesaPosto";
 import { BotaoAcaoFinanceiraPosto } from "./_components/BotaoAcaoFinanceiraPosto";
+import { SecaoDrePosto, type DrePostoDados } from "./_components/SecaoDrePosto";
 import { marcarDespesaPagaAcao, excluirDespesaAcao } from "./actions";
 
 type SearchParams = { empresa?: string; periodo?: string; inicio?: string; fim?: string };
@@ -184,6 +185,19 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   // devolve tudo que o usuário pode ver).
   const todosCiclosAbertos = empresaSelecionada ? await buscarCiclosAbertos(supabase) : [];
   const ciclosAbertosDoPosto = todosCiclosAbertos.filter((c) => c.empresa_posto_id === empresaSelecionada);
+
+  // Fase DRE-Gerencial (26/07/2026) — DRE do posto no mesmo período (inicio/
+  // fim, retrospectivo) já selecionado nesta tela. RPC dre_posto() roda com
+  // a RLS de quem chama, mesmo padrão de indicadores_financeiros().
+  let dre: DrePostoDados | null = null;
+  if (empresaSelecionada && segmentoSelecionado === "Revenda") {
+    const { data: dreData } = await supabase.rpc("dre_posto", {
+      p_empresa_posto_id: empresaSelecionada,
+      p_data_inicio: inicio,
+      p_data_fim: fim,
+    });
+    dre = dreData?.[0] ?? null;
+  }
 
   // Fase 27.85 — pedido do Daniel: "um posto pode ter muitos ciclos... com
   // muitos clientes" — a lista plana de faturas não escala. Busca as
@@ -398,6 +412,8 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
               </table>
             </div>
           )}
+
+          {dre && <SecaoDrePosto dados={dre} />}
 
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="card p-4 lg:col-span-2">
