@@ -21,7 +21,7 @@ import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
 
 const POR_PAGINA = 30;
 
-type SearchParams = { empresa?: string; status?: string; tipo?: string; prioridade?: string; page?: string };
+type SearchParams = { empresa?: string; status?: string; tipo?: string; prioridade?: string; q?: string; page?: string };
 
 // Página de Gestão de Chamados: indicadores + listagem. Admin vê os
 // chamados de todos os clientes por padrão (com filtro opcional pra um
@@ -29,7 +29,7 @@ type SearchParams = { empresa?: string; status?: string; tipo?: string; priorida
 // nos dois casos o RLS já garante isso, o filtro aqui é só uma conveniência
 // de navegação, igual ao padrão já usado em /relatorios.
 export default async function ChamadosPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { empresa: empresaParam, status: statusParam, tipo: tipoParam, prioridade: prioridadeParam, page: pageParam } = await searchParams;
+  const { empresa: empresaParam, status: statusParam, tipo: tipoParam, prioridade: prioridadeParam, q, page: pageParam } = await searchParams;
   const supabase = await createClient();
 
   const { papel } = await resolverPapelAtual(supabase);
@@ -68,7 +68,18 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
   if (prioridadeParam) query = query.eq("prioridade", prioridadeParam as TicketPrioridade);
 
   const { data: chamadosRaw, error } = await query;
-  const chamados = chamadosRaw ?? [];
+  const chamadosDoFiltro = chamadosRaw ?? [];
+
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas que crescem com o tempo — chamados se acumulam a cada
+  // atendimento) — filtra por título ou número, além dos filtros de
+  // status/tipo/prioridade já existentes.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const chamados = termoBusca
+    ? chamadosDoFiltro.filter(
+        (c) => c.titulo?.toLowerCase().includes(termoBusca) || String(c.numero).includes(termoBusca)
+      )
+    : chamadosDoFiltro;
 
   const totalAbertos = chamados.filter((c) => c.status === "aberto").length;
   const totalEmAnalise = chamados.filter((c) => c.status === "em_analise").length;
@@ -145,6 +156,16 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
             ))}
           </select>
         </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Título ou número..."
+            className="input text-sm"
+          />
+        </div>
         <button type="submit" className="btn-secondary text-sm">
           Filtrar
         </button>
@@ -204,7 +225,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
             {chamados.length === 0 && (
               <tr>
                 <td colSpan={empresas.length > 1 ? 7 : 6} className="px-4 py-8 text-center text-slate-400">
-                  Nenhum chamado encontrado.
+                  {termoBusca ? `Nenhum chamado encontrado para "${q}".` : "Nenhum chamado encontrado."}
                 </td>
               </tr>
             )}
@@ -217,7 +238,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
             totalRegistros={chamados.length}
             porPagina={POR_PAGINA}
             basePath="/chamados"
-            paramsAtuais={{ empresa: empresaParam, status: statusParam, tipo: tipoParam, prioridade: prioridadeParam }}
+            paramsAtuais={{ empresa: empresaParam, status: statusParam, tipo: tipoParam, prioridade: prioridadeParam, q }}
           />
         </div>
       </div>

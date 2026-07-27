@@ -9,7 +9,12 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 // acesso já usado em /inteligencia-rede e /assinaturas (perfil_usuario_atual()
 // como 2ª camada de defesa, já que RLS de `avaliacoes` também restringe
 // SELECT geral ao admin).
-export default async function AvaliacoesAdminPage() {
+export default async function AvaliacoesAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   const supabase = await createClient();
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
 
@@ -30,10 +35,25 @@ export default async function AvaliacoesAdminPage() {
     .select("id, user_email, estrelas, comentario, resposta_admin, respondido_por, respondido_em, criado_em, empresas(nome)")
     .order("criado_em", { ascending: false });
 
-  const lista = avaliacoes ?? [];
-  const total = lista.length;
-  const notaMedia = total > 0 ? lista.reduce((soma, a) => soma + a.estrelas, 0) / total : 0;
-  const pendentes = lista.filter((a) => !a.resposta_admin).length;
+  const listaCompleta = avaliacoes ?? [];
+  const total = listaCompleta.length;
+  const notaMedia = total > 0 ? listaCompleta.reduce((soma, a) => soma + a.estrelas, 0) / total : 0;
+  const pendentes = listaCompleta.filter((a) => !a.resposta_admin).length;
+
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas que crescem com o tempo — avaliações se acumulam a cada
+  // feedback enviado por qualquer cliente da rede) — os indicadores acima
+  // continuam olhando pra lista inteira; só a lista renderizada abaixo é
+  // filtrada pela busca.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const lista = termoBusca
+    ? listaCompleta.filter(
+        (a) =>
+          a.empresas?.nome?.toLowerCase().includes(termoBusca) ||
+          a.user_email?.toLowerCase().includes(termoBusca) ||
+          a.comentario?.toLowerCase().includes(termoBusca)
+      )
+    : listaCompleta;
 
   return (
     <div>
@@ -65,6 +85,18 @@ export default async function AvaliacoesAdminPage() {
           <p className="mt-1 text-xl font-semibold text-slate-900">{pendentes}</p>
         </div>
       </div>
+
+      {listaCompleta.length > 0 && (
+        <form className="mb-4">
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Buscar por cliente, e-mail ou comentário..."
+            className="input max-w-sm"
+          />
+        </form>
+      )}
 
       <div className="space-y-3">
         {lista.map((a) => (
@@ -100,7 +132,9 @@ export default async function AvaliacoesAdminPage() {
           </div>
         ))}
         {lista.length === 0 && (
-          <p className="card p-8 text-center text-sm text-slate-400">Nenhuma avaliação recebida ainda.</p>
+          <p className="card p-8 text-center text-sm text-slate-400">
+            {termoBusca ? `Nenhuma avaliação encontrada para "${q}".` : "Nenhuma avaliação recebida ainda."}
+          </p>
         )}
       </div>
     </div>

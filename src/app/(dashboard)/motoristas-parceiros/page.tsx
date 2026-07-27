@@ -29,17 +29,26 @@ const LABEL_STATUS: Record<string, string> = {
 export default async function MotoristasParceirosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ empresa?: string }>;
+  searchParams: Promise<{ empresa?: string; q?: string }>;
 }) {
-  const { empresa: empresaParam } = await searchParams;
+  const { empresa: empresaParam, q } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
-  let parceiros: ParceiroRow[] = [];
+  let parceirosRaw: ParceiroRow[] = [];
   if (empresaSelecionada) {
     const { data } = await supabase.rpc("meus_parceiros_empresa", { p_empresa_id: empresaSelecionada });
-    parceiros = (data ?? []) as unknown as ParceiroRow[];
+    parceirosRaw = (data ?? []) as unknown as ParceiroRow[];
   }
+
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas que crescem com o tempo — a rede de parceiros aumenta junto com
+  // a rede de motoristas agregados) — mesmo padrão ?q= já usado em
+  // /motoristas.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const parceiros = termoBusca
+    ? parceirosRaw.filter((p) => p.nome_completo?.toLowerCase().includes(termoBusca))
+    : parceirosRaw;
 
   return (
     <div>
@@ -76,6 +85,19 @@ export default async function MotoristasParceirosPage({
       ) : (
         <div className="space-y-6">
           <ConvidarParceiroForm empresaId={empresaSelecionada} />
+
+          {parceirosRaw.length > 0 && (
+            <form>
+              <input type="hidden" name="empresa" value={empresaSelecionada} />
+              <input
+                type="search"
+                name="q"
+                defaultValue={q ?? ""}
+                placeholder="Buscar por motorista..."
+                className="input max-w-sm"
+              />
+            </form>
+          )}
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -114,7 +136,7 @@ export default async function MotoristasParceirosPage({
                 {parceiros.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
-                      Nenhum parceiro convidado ainda.
+                      {termoBusca ? `Nenhum parceiro encontrado para "${q}".` : "Nenhum parceiro convidado ainda."}
                     </td>
                   </tr>
                 )}

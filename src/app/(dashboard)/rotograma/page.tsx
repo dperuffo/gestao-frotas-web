@@ -3,10 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
 
-type SearchParams = { empresa?: string };
+type SearchParams = { empresa?: string; q?: string };
 
 export default async function RotogramaListaPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { empresa: empresaParam } = await searchParams;
+  const { empresa: empresaParam, q } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
@@ -17,7 +17,20 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
 
   if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
 
-  const { data: rotogramas, error } = await query;
+  const { data: rotogramasRaw, error } = await query;
+
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas que, com o tempo, acumulam muitos registros — um Rotograma é
+  // gerado a cada viagem planejada, cresce sem limite natural) — mesmo
+  // padrão ?q= já usado em /veiculos, /motoristas etc.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const rotogramas = termoBusca
+    ? (rotogramasRaw ?? []).filter((r) =>
+        [r.origem, r.destino, r.motorista, r.placa]
+          .filter((v): v is string => !!v)
+          .some((v) => v.toLowerCase().includes(termoBusca))
+      )
+    : (rotogramasRaw ?? []);
 
   return (
     <div>
@@ -52,6 +65,17 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
         </form>
       )}
 
+      <form className="mb-4">
+        <input type="hidden" name="empresa" value={empresaParam ?? ""} />
+        <input
+          type="search"
+          name="q"
+          defaultValue={q ?? ""}
+          placeholder="Buscar por origem, destino, motorista ou placa..."
+          className="input max-w-sm"
+        />
+      </form>
+
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar Rotogramas: {error.message}</p>}
         <table className="w-full text-left text-sm">
@@ -67,7 +91,7 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rotogramas?.map((r) => (
+            {rotogramas.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3 text-slate-500">{r.numero}</td>
                 <td className="px-4 py-3">

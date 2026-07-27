@@ -13,12 +13,16 @@ const COR_STATUS: Record<string, string> = {
 
 // Fase P0.6 (plano FNI_Plano_Implementacao_P0.md) — faturas de frete:
 // agrupa CT-es autorizados por tomador e período.
-export default async function FaturasFretesPage({ searchParams }: { searchParams: Promise<{ empresa?: string }> }) {
-  const { empresa: empresaParam } = await searchParams;
+export default async function FaturasFretesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ empresa?: string; q?: string }>;
+}) {
+  const { empresa: empresaParam, q } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
-  let faturas: {
+  let faturasRaw: {
     id: string;
     numero_fatura: number;
     tomador_nome: string | null;
@@ -38,8 +42,22 @@ export default async function FaturasFretesPage({ searchParams }: { searchParams
       .eq("empresa_id", empresaSelecionada)
       .order("criado_em", { ascending: false })
       .limit(200);
-    faturas = data ?? [];
+    faturasRaw = data ?? [];
   }
+
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas que, com o tempo, acumulam muitos registros — uma fatura de
+  // frete é gerada por período/tomador, cresce mês a mês sem limite
+  // natural) — mesmo padrão ?q= já usado em /veiculos, /motoristas etc.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const faturas = termoBusca
+    ? faturasRaw.filter(
+        (f) =>
+          f.tomador_nome?.toLowerCase().includes(termoBusca) ||
+          f.tomador_cnpj?.toLowerCase().includes(termoBusca) ||
+          String(f.numero_fatura).includes(termoBusca)
+      )
+    : faturasRaw;
 
   return (
     <div>
@@ -76,12 +94,27 @@ export default async function FaturasFretesPage({ searchParams }: { searchParams
         </form>
       )}
 
+      {empresaSelecionada && faturasRaw.length > 0 && (
+        <form className="mb-4">
+          <input type="hidden" name="empresa" value={empresaSelecionada} />
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Buscar por tomador, CNPJ ou número..."
+            className="input max-w-sm"
+          />
+        </form>
+      )}
+
       {!empresaSelecionada ? (
         <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e gerar faturas de frete.</p>
-      ) : faturas.length === 0 ? (
+      ) : faturasRaw.length === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">
           Nenhuma fatura gerada ainda. Clique em &quot;+ Gerar fatura&quot; pra começar.
         </div>
+      ) : faturas.length === 0 ? (
+        <div className="card p-8 text-center text-sm text-slate-400">Nenhuma fatura encontrada para &quot;{q}&quot;.</div>
       ) : (
         <div className="card overflow-x-auto p-2">
           <table className="w-full text-left text-sm">

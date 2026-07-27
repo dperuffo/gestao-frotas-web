@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { LABEL_STATUS_DOCUMENTACAO, STATUS_DOCUMENTACAO, type StatusDocumentacao } from "@/lib/empresasDocumentos";
 
-type SearchParams = { status?: string };
+type SearchParams = { status?: string; q?: string };
 
 const COR_STATUS: Record<StatusDocumentacao, string> = {
   nao_iniciada: "bg-slate-100 text-slate-600",
@@ -28,7 +28,7 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
     );
   }
 
-  const { status: statusParam } = await searchParams;
+  const { status: statusParam, q } = await searchParams;
   const status: StatusDocumentacao = (STATUS_DOCUMENTACAO as readonly string[]).includes(statusParam ?? "")
     ? (statusParam as StatusDocumentacao)
     : "pendente";
@@ -46,6 +46,16 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
     StatusDocumentacao,
     number
   >;
+
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas que crescem com o tempo — a fila de documentação aumenta junto
+  // com a base de clientes/postos cadastrados) — filtra em memória por
+  // nome ou CNPJ, mantendo o filtro de status já existente.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const listaCompleta = lista ?? [];
+  const listaFiltrada = termoBusca
+    ? listaCompleta.filter((e) => e.nome?.toLowerCase().includes(termoBusca) || e.cnpj?.toLowerCase().includes(termoBusca))
+    : listaCompleta;
 
   return (
     <div>
@@ -69,6 +79,19 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
         ))}
       </div>
 
+      {listaCompleta.length > 0 && (
+        <form className="mb-4">
+          <input type="hidden" name="status" value={status} />
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Buscar por empresa ou CNPJ..."
+            className="input max-w-sm"
+          />
+        </form>
+      )}
+
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
@@ -82,7 +105,7 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {(lista ?? []).map((e) => (
+            {listaFiltrada.map((e) => (
               <tr key={e.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3 font-medium text-slate-800">{e.nome}</td>
                 <td className="px-4 py-3 text-slate-600">{e.cnpj ?? "—"}</td>
@@ -102,10 +125,12 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
                 </td>
               </tr>
             ))}
-            {(lista ?? []).length === 0 && (
+            {listaFiltrada.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                  Nenhuma empresa com documentação &quot;{LABEL_STATUS_DOCUMENTACAO[status].toLowerCase()}&quot;.
+                  {termoBusca
+                    ? `Nenhuma empresa encontrada para "${q}".`
+                    : `Nenhuma empresa com documentação "${LABEL_STATUS_DOCUMENTACAO[status].toLowerCase()}".`}
                 </td>
               </tr>
             )}

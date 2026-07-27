@@ -21,12 +21,16 @@ const COR_STATUS: Record<string, string> = {
 // Fase P0.5 (plano FNI_Plano_Implementacao_P0.md) — cotações: simula (via
 // Tabelas de Frete + piso mínimo ANTT), salva, e converte em frete com um
 // clique.
-export default async function CotacoesPage({ searchParams }: { searchParams: Promise<{ empresa?: string }> }) {
-  const { empresa: empresaParam } = await searchParams;
+export default async function CotacoesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ empresa?: string; q?: string }>;
+}) {
+  const { empresa: empresaParam, q } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
-  let cotacoes: {
+  let cotacoesRaw: {
     id: string;
     origem_label: string;
     destino_label: string;
@@ -44,8 +48,19 @@ export default async function CotacoesPage({ searchParams }: { searchParams: Pro
       .eq("empresa_id", empresaSelecionada)
       .order("criado_em", { ascending: false })
       .limit(100);
-    cotacoes = data ?? [];
+    cotacoesRaw = data ?? [];
   }
+
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas que crescem com o tempo — uma cotação é gerada por simulação de
+  // frete, cresce mês a mês) — mesmo padrão ?q= já usado em /veiculos,
+  // /motoristas etc.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const cotacoes = termoBusca
+    ? cotacoesRaw.filter(
+        (c) => c.origem_label?.toLowerCase().includes(termoBusca) || c.destino_label?.toLowerCase().includes(termoBusca)
+      )
+    : cotacoesRaw;
 
   // Fase Financeiro-ERP (26/07/2026, pedido do Daniel) — "Aba de Piso
   // mínimo ANTT tem que estar na visão do cliente, web e PWA". Tabela
@@ -97,12 +112,27 @@ export default async function CotacoesPage({ searchParams }: { searchParams: Pro
         </form>
       )}
 
+      {empresaSelecionada && cotacoesRaw.length > 0 && (
+        <form className="mb-4">
+          <input type="hidden" name="empresa" value={empresaSelecionada} />
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Buscar por origem ou destino..."
+            className="input max-w-sm"
+          />
+        </form>
+      )}
+
       {!empresaSelecionada ? (
         <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e simular cotações.</p>
-      ) : cotacoes.length === 0 ? (
+      ) : cotacoesRaw.length === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">
           Nenhuma cotação simulada ainda. Clique em &quot;+ Nova cotação&quot; pra começar.
         </div>
+      ) : cotacoes.length === 0 ? (
+        <div className="card p-8 text-center text-sm text-slate-400">Nenhuma cotação encontrada para &quot;{q}&quot;.</div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cotacoes.map((c) => (

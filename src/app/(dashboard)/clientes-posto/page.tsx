@@ -4,7 +4,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatCNPJ } from "@/lib/utils";
 import { STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
 
-type SearchParams = { empresa?: string };
+type SearchParams = { empresa?: string; q?: string };
 
 // Fase 27.72 — pedido do Daniel: aba própria "Clientes" no menu do posto,
 // pra ele ver o cadastro de TODOS os clientes que já negociaram (qualquer
@@ -18,7 +18,7 @@ type SearchParams = { empresa?: string };
 // com quem o posto chamador já tem uma negociação real, nunca a base
 // inteira.
 export default async function ClientesPostoPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { empresa: empresaParam } = await searchParams;
+  const { empresa: empresaParam, q } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
@@ -45,7 +45,16 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
     ? await supabase.rpc("clientes_do_posto", { p_empresa_posto_id: empresaSelecionada })
     : { data: null, error: null };
 
-  const clientes = clientesData ?? [];
+  const clientesRaw = clientesData ?? [];
+
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas que crescem com o tempo — o cadastro de clientes de um posto
+  // aumenta a cada nova negociação) — mesmo padrão ?q= já usado em
+  // /veiculos, /motoristas etc.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const clientes = termoBusca
+    ? clientesRaw.filter((c) => c.nome?.toLowerCase().includes(termoBusca) || c.cnpj?.toLowerCase().includes(termoBusca))
+    : clientesRaw;
 
   return (
     <div>
@@ -89,6 +98,19 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
       ) : (
         <>
           {error && <p className="mb-4 text-sm text-red-600">Erro ao carregar clientes: {error.message}</p>}
+
+          {clientesRaw.length > 0 && (
+            <form className="mb-4">
+              <input type="hidden" name="empresa" value={empresaSelecionada} />
+              <input
+                type="search"
+                name="q"
+                defaultValue={q ?? ""}
+                placeholder="Buscar por cliente ou CNPJ..."
+                className="input max-w-sm"
+              />
+            </form>
+          )}
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -134,7 +156,7 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
                 {clientes.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
-                      Nenhum cliente negociou com este posto ainda.
+                      {termoBusca ? `Nenhum cliente encontrado para "${q}".` : "Nenhum cliente negociou com este posto ainda."}
                     </td>
                   </tr>
                 )}
