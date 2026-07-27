@@ -39,6 +39,14 @@ const GRADE_PESO: Record<string, number> = { A: 1.0, B: 0.75, C: 0.5, D: 0.25 };
 // Nível mínimo de segurança no tanque: nunca planeja deixar o tanque abaixo
 // disso (25% da capacidade).
 const NIVEL_MINIMO_PCT = 0.25;
+// Fase corrige-minimas-paradas (27/07/2026, bug reportado pelo Daniel: numa
+// rota de 3834,8 km, o perfil "Mínimas Paradas" sugeriu só 4 paradas
+// somando 26L/R$168 — um caminhão não anda 3800km com 26L). Reserva menor
+// específica desse perfil (10% em vez de 25%) — ele tolera rodar o tanque
+// mais perto do vazio antes de exigir parada, o que aumenta o alcance
+// efetivo por tanque e reduz o número de vezes que precisa parar (ver
+// comentário mais abaixo sobre o que estava errado no cálculo de litros).
+const NIVEL_MINIMO_PCT_MINIMAS_PARADAS = 0.1;
 // Abaixo de 65% do tanque + posto não é mais barato que o último → não vale
 // parar de novo (evita paradas desnecessárias).
 const PCT_BAIXO = 0.65;
@@ -72,7 +80,7 @@ export function otimizarAbastecimento(params: {
 
   if (candidatos.length === 0 || raut <= 0 || rcap <= 0) return [];
 
-  const rmin = rcap * NIVEL_MINIMO_PCT;
+  const rmin = rcap * (fillMode === "minimo" ? NIVEL_MINIMO_PCT_MINIMAS_PARADAS : NIVEL_MINIMO_PCT);
   const alcanceEfetivoKm = (rcap - rmin) * raut;
 
   const precos = candidatos.map((c) => c.preco).filter((p) => Number.isFinite(p));
@@ -152,17 +160,17 @@ export function otimizarAbastecimento(params: {
     const distRestante = rd - best.km;
     let litrosNecessarios: number;
 
-    if (fillMode === "minimo") {
-      const proximoObrigatorio = candidatos
-        .filter((c) => c.km > best.km && !vistos.has(c.cnpj))
-        .sort((a, b) => a.km - b.km)[0];
-      if (proximoObrigatorio) {
-        const distProx = proximoObrigatorio.km - best.km;
-        litrosNecessarios = (distProx / raut) * 1.1 + rmin - fuelChegada;
-      } else {
-        litrosNecessarios = (distRestante / raut) * 1.15 + rmin - fuelChegada;
-      }
-    } else if (fillAlvoKm) {
+    // Fase corrige-minimas-paradas — o "minimo" ANTES mirava só na
+    // distância até o próximo posto candidato (não no quanto o tanque
+    // aguenta), o que faz o oposto do pretendido: com postos espaçados,
+    // vira parada curta e frequente, e em rotas longas o algoritmo podia
+    // nem chegar ao destino (batia no limite de `maxParadas` no meio do
+    // caminho, sem avisar). Corrigido: "Mínimas Paradas" agora enche o
+    // tanque igual aos outros perfis (reaproveita a mesma lógica abaixo) —
+    // a diferença que efetivamente reduz o número de paradas é a reserva
+    // menor (`NIVEL_MINIMO_PCT_MINIMAS_PARADAS`), que aumenta o alcance por
+    // tanque.
+    if (fillAlvoKm) {
       const distAlvo = fillAlvoKm - best.km;
       litrosNecessarios = (distAlvo / raut) * 1.1 + rmin - fuelChegada;
     } else if (distRestante <= alcanceEfetivoKm) {
