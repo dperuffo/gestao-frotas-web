@@ -251,6 +251,52 @@ export async function removerColegaAcao(empresaId: string, email: string): Promi
   return { sucesso: `${email} removido(a) da equipe.` };
 }
 
+// Fase melhora-fluxo-convite (27/07/2026, achado real: uma colaboradora
+// convidada caiu na landing page em vez de conseguir criar a senha —
+// template antigo do "Invite user" no Supabase, já corrigido agora — mas
+// ATUALIZAR o template não reenvia nada pra quem já foi convidado antes;
+// só afeta convites novos daqui pra frente). "Convidar colega"
+// (convidarColega, acima) de propósito NÃO reenvia e-mail pra quem já tem
+// linha em usuarios_app (esse fluxo é pra VINCULAR alguém que já tem conta
+// a uma empresa nova, não pra reenviar convite) — esta ação nova cobre
+// exatamente o caso que faltava: colega que ficou travado no meio do
+// convite (nunca chegou a definir senha).
+export async function reenviarConviteColegaAcao(empresaId: string, email: string): Promise<EditarColegaState> {
+  const supabase = await createClient();
+  const erroPermissao = await exigirDonoDeEquipe(supabase);
+  if (erroPermissao) return { erro: erroPermissao };
+
+  const alvo = await buscarMembro(supabase, empresaId, email);
+  if (alvo?.perfil !== "colaborador") {
+    return { erro: "Só é possível reenviar convite para colaboradores da sua equipe." };
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return { erro: e instanceof Error ? e.message : "Erro ao inicializar cliente administrativo." };
+  }
+
+  const { error } = await admin.auth.admin.inviteUserByEmail(email);
+  if (error) {
+    // Supabase recusa reenviar convite pra quem já concluiu o cadastro (já
+    // definiu senha e entrou pelo menos uma vez) — mensagem própria nesse
+    // caso, apontando o caminho certo (recuperação de senha), em vez de só
+    // repassar o erro técnico do Supabase.
+    if (error.message.toLowerCase().includes("already been registered")) {
+      return {
+        erro:
+          "Este colega já concluiu o cadastro (já definiu senha). Não é possível reenviar convite — " +
+          "peça pra ele usar \"Esqueci minha senha\" na tela de login.",
+      };
+    }
+    return { erro: `Não foi possível reenviar o convite: ${error.message}` };
+  }
+
+  return { sucesso: `Convite reenviado para ${email}.` };
+}
+
 export async function alternarAtivoColega(empresaId: string, email: string, ativo: boolean) {
   const supabase = await createClient();
   const erroPermissao = await exigirDonoDeEquipe(supabase);

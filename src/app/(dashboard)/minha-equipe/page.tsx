@@ -9,6 +9,7 @@ import { PromoverColegaButton } from "./_components/PromoverColegaButton";
 import { DeixarDeSerGestorButton } from "./_components/DeixarDeSerGestorButton";
 import { EditarColegaButton } from "./_components/EditarColegaButton";
 import { ExcluirColegaButton } from "./_components/ExcluirColegaButton";
+import { ReenviarConviteButton } from "./_components/ReenviarConviteButton";
 
 type SearchParams = { empresa?: string };
 
@@ -186,6 +187,7 @@ async function ConteudoEquipe({
                     <div className="flex flex-col items-end gap-1.5">
                       <div className="flex flex-wrap items-center justify-end gap-x-3">
                         <EditarColegaButton empresaId={empresaId} email={m.user_email} nomeAtual={m.nome} />
+                        <ReenviarConviteButton empresaId={empresaId} email={m.user_email} />
                         <PromoverColegaButton empresaId={empresaId} email={m.user_email} rotuloDestino={rotuloDestino} />
                         <ToggleAtivoColega empresaId={empresaId} email={m.user_email} ativo={m.ativo} />
                         <ExcluirColegaButton empresaId={empresaId} email={m.user_email} />
