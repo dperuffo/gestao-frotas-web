@@ -4550,7 +4550,15 @@ export interface Database {
         Args: { p_conta_id: string };
         Returns: undefined;
       };
-      // Fase Fretes B.
+      // Fase Fretes B. Fase corrige-ambiguidade-frete (27/07/2026) — este
+      // tipo estava desatualizado (só tinha os 6 parâmetros originais); o
+      // banco já tinha ganho p_foto_path e p_codigo_ocorrencia em
+      // migrações anteriores sem que este arquivo hand-curated fosse
+      // atualizado junto — e, pior, cada uma tinha virado um OVERLOAD novo
+      // em vez de substituir o anterior (3 versões coexistindo, causando
+      // "Could not choose the best candidate function" no PWA Motorista).
+      // Migração corrige-ambiguidade-frete removeu as 2 versões antigas;
+      // só resta esta, de 8 parâmetros.
       registrar_evento_frete: {
         Args: {
           p_frete_id: string;
@@ -4559,6 +4567,8 @@ export interface Database {
           p_observacao?: string | null;
           p_lat?: number | null;
           p_lon?: number | null;
+          p_foto_path?: string | null;
+          p_codigo_ocorrencia?: string | null;
         };
         Returns: undefined;
       };
