@@ -5,6 +5,8 @@ import { verificarLimiteUsuarios } from "@/lib/limitePlano";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { ConvidarColegaForm } from "./_components/ConvidarColegaForm";
 import { ToggleAtivoColega } from "./_components/ToggleAtivoColega";
+import { PromoverColegaButton } from "./_components/PromoverColegaButton";
+import { DeixarDeSerGestorButton } from "./_components/DeixarDeSerGestorButton";
 
 type SearchParams = { empresa?: string };
 
@@ -77,7 +79,7 @@ export default async function MinhaEquipePage({ searchParams }: { searchParams: 
           {empresas.length > 1 ? "Selecione uma empresa acima." : "Nenhuma empresa vinculada diretamente ao seu usuário."}
         </p>
       ) : (
-        <ConteudoEquipe supabase={supabase} empresaId={empresaSelecionada.id} />
+        <ConteudoEquipe supabase={supabase} empresaId={empresaSelecionada.id} segmento={empresaSelecionada.segmento} />
       )}
     </div>
   );
@@ -86,17 +88,34 @@ export default async function MinhaEquipePage({ searchParams }: { searchParams: 
 async function ConteudoEquipe({
   supabase,
   empresaId,
+  segmento,
 }: {
   supabase: Awaited<ReturnType<typeof createClient>>;
   empresaId: string;
+  segmento: string | null;
 }) {
-  const [limite, { data: membrosData }] = await Promise.all([
+  const [
+    limite,
+    { data: membrosData },
+    {
+      data: { user },
+    },
+  ] = await Promise.all([
     verificarLimiteUsuarios(supabase, empresaId),
     // RPC dedicada (não um select direto) — RLS de usuarios_app não libera
     // ver nome/perfil de colegas pra quem não é admin/analista; ver
     // comentário na migração equipe_da_empresa_rpc.
     supabase.rpc("equipe_da_empresa", { p_empresa_id: empresaId }),
+    supabase.auth.getUser(),
   ]);
+
+  const meuEmail = user?.email ?? "";
+  // Fase Convite-Self-Service — "transferência de gestão" (pedido do
+  // Daniel): um dono promove um colega (vira co-dono) e, depois, se
+  // auto-rebaixa — nunca um passo único, pra empresa nunca ficar sem
+  // ninguém no comando. Rebaixar OUTRO dono continua exclusivo de /usuarios
+  // (decisão confirmada via AskUserQuestion).
+  const rotuloDestino = segmento === "Revenda" ? "Posto" : "Gestor de Frota";
 
   const membros: MembroEquipe[] = (membrosData ?? []).map((m) => ({
     user_email: m.email,
@@ -162,7 +181,13 @@ async function ConteudoEquipe({
                 </td>
                 <td className="px-4 py-3 text-right">
                   {m.perfil === "colaborador" && (
-                    <ToggleAtivoColega empresaId={empresaId} email={m.user_email} ativo={m.ativo} />
+                    <div className="flex flex-col items-end gap-1.5">
+                      <PromoverColegaButton empresaId={empresaId} email={m.user_email} rotuloDestino={rotuloDestino} />
+                      <ToggleAtivoColega empresaId={empresaId} email={m.user_email} ativo={m.ativo} />
+                    </div>
+                  )}
+                  {(m.perfil === "gestor_frota" || m.perfil === "posto") && m.user_email === meuEmail && (
+                    <DeixarDeSerGestorButton empresaId={empresaId} />
                   )}
                 </td>
               </tr>

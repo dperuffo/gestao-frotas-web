@@ -4,8 +4,25 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verificarLimiteUsuarios, mensagemLimiteUsuariosExcedido } from "@/lib/limitePlano";
+import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 
 export type ConvidarColegaState = { erro?: string; sucesso?: string } | undefined;
+
+// Fase Convite-Self-Service — a leitura direta de usuarios_app pra checar o
+// perfil de OUTRO usuário (ex.: "esse e-mail já é colaborador?") não
+// funciona com o client de sessão: a RLS de usuarios_app só libera
+// admin/analista ou a própria linha (email = auth.jwt()->>'email'). A RPC
+// equipe_da_empresa (SECURITY DEFINER, criada junto com esta feature) é o
+// jeito correto de ler nome/perfil de colegas da MESMA empresa — usada em
+// toda ação abaixo que precisa saber o perfil de outra pessoa.
+async function buscarMembro(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  empresaId: string,
+  email: string
+) {
+  const { data: equipe } = await supabase.rpc("equipe_da_empresa", { p_empresa_id: empresaId });
+  return (equipe ?? []).find((m) => m.email === email) ?? null;
+}
 
 // Fase Convite-Self-Service (26/07/2026, pedido do Daniel: "criar um
 // convite self-service, cliente convida dentro do próprio plano de
@@ -128,7 +145,7 @@ export async function alternarAtivoColega(empresaId: string, email: string, ativ
   // Só mexe em quem é "colaborador" — nunca em admin/analista/gestor_frota/
   // posto por esta tela, mesmo que por algum motivo apareçam vinculados
   // (ex.: o próprio dono, listado só pra contexto).
-  const { data: alvo } = await supabase.from("usuarios_app").select("perfil").eq("email", email).maybeSingle();
+  const alvo = await buscarMembro(supabase, empresaId, email);
   if (alvo?.perfil !== "colaborador") {
     return { erro: "Só é possível ativar/inativar colaboradores por aqui." };
   }
@@ -136,4 +153,114 @@ export async function alternarAtivoColega(empresaId: string, email: string, ativ
   await supabase.from("usuarios_empresas").update({ ativo }).eq("user_email", email).eq("empresa_id", empresaId);
   revalidatePath("/minha-equipe");
   return {};
+}
+
+export type PromoverColegaState = { erro?: string; sucesso?: string } | undefined;
+
+// Fase Convite-Self-Service (26/07/2026, pedido do Daniel: "qual seria sua
+// proposta... transferência de gestão interna?") — decisão confirmada via
+// AskUserQuestion: um dono só pode promover colegas e rebaixar A SI MESMO;
+// rebaixar OUTRO dono fica exclusivo do time interno (/usuarios), pra uma
+// disputa de governança interna da empresa cliente não virar um golpe de
+// acesso dentro do sistema. "Transferência" completa = promover o sucessor
+// (esta função) + o dono antigo se auto-rebaixar depois
+// (autoRebaixarParaColaborador, abaixo) — nunca um passo único, pra nunca
+// existir um instante em que a empresa fica sem nenhum dono.
+export async function promoverColega(empresaId: string, email: string): Promise<PromoverColegaState> {
+  const supabase = await createClient();
+  const erroPermissao = await exigirDonoDeEquipe(supabase);
+  if (erroPermissao) return { erro: erroPermissao };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: vinculo } = await supabase
+    .from("usuarios_empresas")
+    .select("empresa_id")
+    .eq("user_email", user?.email ?? "")
+    .eq("empresa_id", empresaId)
+    .eq("ativo", true)
+    .maybeSingle();
+  if (!vinculo) return { erro: "Empresa inválida para o seu usuário." };
+
+  const alvo = await buscarMembro(supabase, empresaId, email);
+  if (alvo?.perfil !== "colaborador") {
+    return { erro: "Só é possível promover colaboradores da sua equipe." };
+  }
+
+  const { data: empresaInfo } = await supabase.from("empresas").select("segmento").eq("id", empresaId).maybeSingle();
+  const novoPerfil: Perfil = empresaInfo?.segmento === "Revenda" ? "posto" : "gestor_frota";
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return { erro: e instanceof Error ? e.message : "Erro ao inicializar cliente administrativo." };
+  }
+
+  // usuarios_app.perfil é um campo GLOBAL (não por empresa) — se este
+  // e-mail tiver vínculo com mais de uma empresa (raro pra um colaborador
+  // recém-convidado, mas possível), a promoção muda o perfil dele em
+  // TODAS. Aceitável pro caso comum (colaborador vinculado só a esta
+  // empresa); não há hoje um modelo de perfil por empresa no sistema.
+  const { error: erroPerfil } = await admin.from("usuarios_app").update({ perfil: novoPerfil }).eq("email", email);
+  if (erroPerfil) return { erro: `Não foi possível promover: ${erroPerfil.message}` };
+
+  await admin.from("usuarios_empresas").update({ role: novoPerfil }).eq("user_email", email).eq("empresa_id", empresaId);
+
+  revalidatePath("/minha-equipe");
+  return { sucesso: `${email} agora é ${PERFIL_LABEL[novoPerfil]}.` };
+}
+
+// Fase Convite-Self-Service — o dono se auto-rebaixa a colaborador (nunca
+// mexe em outra pessoa). Bloqueado se ele for o ÚNICO dono ativo da
+// empresa (a empresa nunca pode ficar sem ninguém no comando) ou se seu
+// e-mail estiver vinculado a mais de uma empresa (perfil é global — mudar
+// aqui mudaria o acesso dele nas outras também; esse caso mais raro segue
+// pro time interno).
+export async function autoRebaixarParaColaborador(empresaId: string): Promise<PromoverColegaState> {
+  const supabase = await createClient();
+  const erroPermissao = await exigirDonoDeEquipe(supabase);
+  if (erroPermissao) return { erro: erroPermissao };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const meuEmail = user?.email ?? "";
+
+  const { count: qtdEmpresas } = await supabase
+    .from("usuarios_empresas")
+    .select("empresa_id", { count: "exact", head: true })
+    .eq("user_email", meuEmail)
+    .eq("ativo", true);
+  if ((qtdEmpresas ?? 0) > 1) {
+    return {
+      erro: "Seu usuário está vinculado a mais de uma empresa — deixar de ser gestor mudaria seu acesso em todas elas. Peça ajuda ao suporte para esse caso.",
+    };
+  }
+
+  const { data: equipe } = await supabase.rpc("equipe_da_empresa", { p_empresa_id: empresaId });
+  const membros = equipe ?? [];
+  const outrosDonosAtivos = membros.filter(
+    (m) => m.email !== meuEmail && m.ativo && (m.perfil === "gestor_frota" || m.perfil === "posto")
+  );
+  if (outrosDonosAtivos.length === 0) {
+    return {
+      erro: "Você é o único dono desta empresa — promova outro colega antes de deixar de ser gestor, para a empresa não ficar sem ninguém no comando.",
+    };
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return { erro: e instanceof Error ? e.message : "Erro ao inicializar cliente administrativo." };
+  }
+
+  const { error } = await admin.from("usuarios_app").update({ perfil: "colaborador" }).eq("email", meuEmail);
+  if (error) return { erro: `Não foi possível concluir: ${error.message}` };
+  await admin.from("usuarios_empresas").update({ role: "colaborador" }).eq("user_email", meuEmail).eq("empresa_id", empresaId);
+
+  revalidatePath("/minha-equipe");
+  return { sucesso: "Você agora é colaborador nesta empresa." };
 }
