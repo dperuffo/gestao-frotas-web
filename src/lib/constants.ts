@@ -62,10 +62,13 @@ export const FEATURES_PLANO: Record<"basico" | "profissional" | "enterprise", st
 
 // Espelha EXATAMENTE o mapa PLANOS da Edge Function supabase/functions/
 // stripe-webhook/index.ts — os limites de cada plano são aplicados por ela
-// quando um checkout/upgrade é confirmado. Não há uma tabela de referência
-// única no banco pra isso (decisão da Fase 20: reaproveitar os planos como
-// já estavam configurados no Stripe/webhook em vez de remodelar agora) —
-// se um limite mudar de um lado, precisa mudar dos dois. -1 = ilimitado.
+// quando um checkout/upgrade é confirmado. Atualização (26/07/2026): a
+// fonte de VERDADE agora é a tabela `limites_plano` no banco + o trigger
+// `trg_sincronizar_limites_plano_*` em `empresas` (migração
+// limites_plano_trava_estrutural) — ele recalcula max_usuarios/max_veiculos
+// toda vez que `plano` muda, não importa a origem da escrita. Esta
+// constante continua existindo só pro lado TS (exibição, formulários) —
+// se um limite mudar, precisa atualizar os dois lados. -1 = ilimitado.
 export const LIMITES_PLANO: Record<Plano, { max_usuarios: number; max_veiculos: number }> = {
   gratuito: { max_usuarios: 1, max_veiculos: 10 },
   basico: { max_usuarios: 5, max_veiculos: 50 },
@@ -115,6 +118,26 @@ export const PLANO_POSTO_LABEL: Record<PlanoPosto, string> = {
   posto_essencial: "Essencial",
   posto_profissional: "Profissional",
   posto_enterprise: "Enterprise",
+};
+
+// Achado real (26/07/2026, investigando por que uma empresa em plano
+// enterprise aparecia travada em "1/1 vaga" em /minha-equipe): os limites
+// de posto viviam SÓ dentro da Edge Function stripe-webhook, sem nenhuma
+// fonte no app — e nada no banco garantia que empresas.max_usuarios/
+// max_veiculos ficassem em dia se `plano` mudasse por qualquer caminho
+// fora do webhook (3 empresas foram promovidas manualmente e ficaram presas
+// nos limites do gratuito). Correção estrutural: tabela `limites_plano` no
+// banco (fonte única, cobre Frota e Posto) + trigger que recalcula
+// max_usuarios/max_veiculos toda vez que `plano` muda, não importa a
+// origem. Esta constante só espelha a tabela pro lado TS, pra quem for
+// mexer no código não precisar consultar o banco pra saber os valores —
+// se um dia mudar o preço/limite de um plano de posto, atualizar os dois
+// lados (aqui e a tabela `limites_plano`, migração
+// limites_plano_trava_estrutural).
+export const LIMITES_PLANO_POSTO: Record<PlanoPosto, { max_usuarios: number; max_veiculos: number }> = {
+  posto_essencial: { max_usuarios: 5, max_veiculos: -1 },
+  posto_profissional: { max_usuarios: 20, max_veiculos: -1 },
+  posto_enterprise: { max_usuarios: -1, max_veiculos: -1 },
 };
 
 // Destaques de cada plano de posto, mesmo espírito de FEATURES_PLANO acima
