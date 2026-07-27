@@ -49,8 +49,8 @@ const COR_STATUS: Record<string, string> = {
   recusado: "badge-inativo",
 };
 
-export default async function FretesPage({ searchParams }: { searchParams: Promise<{ empresa?: string }> }) {
-  const { empresa: empresaParam } = await searchParams;
+export default async function FretesPage({ searchParams }: { searchParams: Promise<{ empresa?: string; q?: string }> }) {
+  const { empresa: empresaParam, q } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
@@ -66,9 +66,24 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
 
   const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-  const negociacao = fretes.filter((f) => f.status === "disponivel" || f.status === "aguardando_confirmacao");
-  const andamento = fretes.filter((f) => f.status === "aceito" || f.status === "em_andamento");
-  const concluidos = fretes.filter((f) => f.status === "concluido" || f.status === "cancelado" || f.status === "recusado");
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas com muitos registros) — filtra por título, origem/destino ou
+  // motorista antes de dividir nas 3 abas, mesmo padrão de ?q= já usado em
+  // /veiculos, /motoristas etc.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const fretesFiltrados = termoBusca
+    ? fretes.filter((f) =>
+        [f.titulo, f.origem_label, f.destino_label, f.nome_motorista]
+          .filter((v): v is string => !!v)
+          .some((v) => v.toLowerCase().includes(termoBusca))
+      )
+    : fretes;
+
+  const negociacao = fretesFiltrados.filter((f) => f.status === "disponivel" || f.status === "aguardando_confirmacao");
+  const andamento = fretesFiltrados.filter((f) => f.status === "aceito" || f.status === "em_andamento");
+  const concluidos = fretesFiltrados.filter(
+    (f) => f.status === "concluido" || f.status === "cancelado" || f.status === "recusado"
+  );
 
   return (
     <div>
@@ -117,12 +132,27 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
         </div>
       )}
 
+      {empresaSelecionada && fretes.length > 0 && (
+        <form className="mb-4">
+          <input type="hidden" name="empresa" value={empresaSelecionada} />
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Buscar por título, origem, destino ou motorista..."
+            className="input max-w-sm"
+          />
+        </form>
+      )}
+
       {!empresaSelecionada ? (
         <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e publicar fretes.</p>
       ) : fretes.length === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">
           Nenhum frete publicado ainda. Clique em &quot;+ Publicar frete&quot; pra começar.
         </div>
+      ) : fretesFiltrados.length === 0 ? (
+        <div className="card p-8 text-center text-sm text-slate-400">Nenhum frete encontrado para &quot;{q}&quot;.</div>
       ) : (
         <AbasPainel
           abas={[

@@ -4,7 +4,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { STATUS_NEGOCIACAO, STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
 import { formatarDataBr, formatarDataHoraBr } from "@/lib/utils";
 
-type SearchParams = { empresa?: string; status?: string };
+type SearchParams = { empresa?: string; status?: string; q?: string };
 
 // Fase 27.54 — "Vigentes" não é um status de verdade (é sempre "aceita" no
 // banco); é um filtro derivado que também exige a vigência estar em curso
@@ -23,7 +23,7 @@ export default async function NegociacoesPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { empresa: empresaParam, status } = await searchParams;
+  const { empresa: empresaParam, status, q } = await searchParams;
   const supabase = await createClient();
 
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
@@ -115,6 +115,18 @@ export default async function NegociacoesPage({
     (n) => n.status === (souPosto ? "pendente_posto" : "pendente_cliente")
   ).length;
 
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas com muitos registros) — filtra em memória pelo nome da
+  // contraparte (cliente ou posto, dependendo de quem está olhando) ou pelo
+  // CNPJ do posto, mesmo padrão de ?q= já usado em /veiculos e /motoristas.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const negociacoesFiltradas = termoBusca
+    ? negociacoes.filter((n) => {
+        const nomeContraparte = (souPosto ? n.cliente_nome : n.posto_nome) ?? "";
+        return nomeContraparte.toLowerCase().includes(termoBusca) || n.posto_cnpj?.toLowerCase().includes(termoBusca);
+      })
+    : negociacoes;
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -195,6 +207,21 @@ export default async function NegociacoesPage({
 
           {erro && <p className="mb-4 text-sm text-red-600">Erro ao carregar negociações: {erro}</p>}
 
+          <form className="mb-4">
+            {/* Fase busca-generica-listas — form próprio, com cliente/empresa e
+                status atuais em campos ocultos pra não se perderem da URL ao
+                buscar (mesmo cuidado da Fase 27.31 em /veiculos). */}
+            <input type="hidden" name="empresa" value={empresaSelecionada ?? ""} />
+            <input type="hidden" name="status" value={status ?? ""} />
+            <input
+              type="search"
+              name="q"
+              defaultValue={q ?? ""}
+              placeholder={souPosto ? "Buscar por cliente..." : "Buscar por posto ou CNPJ..."}
+              className="input max-w-sm"
+            />
+          </form>
+
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase text-slate-500">
@@ -209,7 +236,7 @@ export default async function NegociacoesPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {negociacoes.map((n) => {
+                {negociacoesFiltradas.map((n) => {
                   const hojeNaVigencia =
                     n.status === "aceita" &&
                     n.vigencia_inicio !== null &&
@@ -257,10 +284,10 @@ export default async function NegociacoesPage({
                     </tr>
                   );
                 })}
-                {negociacoes.length === 0 && (
+                {negociacoesFiltradas.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
-                      Nenhuma negociação encontrada.
+                      {termoBusca ? `Nenhuma negociação encontrada para "${q}".` : "Nenhuma negociação encontrada."}
                     </td>
                   </tr>
                 )}

@@ -18,7 +18,7 @@ async function resolverNomesPorEmail(
   return Object.fromEntries((data ?? []).map((u) => [u.email, u.nome || u.email]));
 }
 
-type SearchParams = { empresa?: string };
+type SearchParams = { empresa?: string; q?: string };
 
 // Fase 27.57 — Preços de combustíveis do posto. Uma única tela serve os
 // dois lados (mesmo espírito de /negociacoes e /abastecimentos-postos): o
@@ -32,7 +32,7 @@ export default async function PrecosPostosPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { empresa: empresaParam } = await searchParams;
+  const { empresa: empresaParam, q } = await searchParams;
   const supabase = await createClient();
 
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
@@ -85,7 +85,12 @@ export default async function PrecosPostosPage({
       ) : souPosto ? (
         <PainelPosto empresaPostoId={empresaSelecionada} />
       ) : (
-        <PainelCliente empresaClienteId={empresaSelecionada} nomeEmpresaSelecionada={nomeEmpresaSelecionada} />
+        <PainelCliente
+          empresaClienteId={empresaSelecionada}
+          nomeEmpresaSelecionada={nomeEmpresaSelecionada}
+          empresaParam={empresaParam}
+          q={q}
+        />
       )}
     </div>
   );
@@ -110,9 +115,13 @@ async function PainelPosto({ empresaPostoId }: { empresaPostoId: string }) {
 async function PainelCliente({
   empresaClienteId,
   nomeEmpresaSelecionada,
+  empresaParam,
+  q,
 }: {
   empresaClienteId: string;
   nomeEmpresaSelecionada?: string;
+  empresaParam?: string;
+  q?: string;
 }) {
   const supabase = await createClient();
 
@@ -156,10 +165,44 @@ async function PainelCliente({
     porPosto.set(p.empresa_posto_id, lista);
   }
 
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: "quando tiver
+  // muitos registros, ficará inviável ficar navegando para encontrar o posto
+  // necessário") — mesmo padrão de busca via ?q= já usado em /veiculos,
+  // /motoristas, /usuarios etc.: filtra em memória (a lista inteira já foi
+  // buscada acima) por nome do posto OU por combustível informado por ele,
+  // pra achar rápido também quem lembra só do combustível, não do posto.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const idsPostosFiltrados = termoBusca
+    ? idsPostos.filter((idPosto) => {
+        const nomePosto = (postosMap.get(idPosto) ?? "").toLowerCase();
+        if (nomePosto.includes(termoBusca)) return true;
+        return (porPosto.get(idPosto) ?? []).some((p) => p.combustivel.toLowerCase().includes(termoBusca));
+      })
+    : idsPostos;
+
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-600">Erro ao carregar preços: {error.message}</p>}
-      {idsPostos.map((idPosto) => {
+
+      <form>
+        {/* Fase busca-generica-listas — form próprio (separado do form do seletor
+            de Cliente acima), com o cliente atual em campo oculto pra não se
+            perder da URL ao buscar (mesmo cuidado da Fase 27.31 em /veiculos). */}
+        <input type="hidden" name="empresa" value={empresaParam ?? ""} />
+        <input
+          type="search"
+          name="q"
+          defaultValue={q ?? ""}
+          placeholder="Buscar por posto ou combustível..."
+          className="input max-w-sm"
+        />
+      </form>
+
+      {idsPostosFiltrados.length === 0 && (
+        <p className="p-4 text-sm text-slate-400">Nenhum posto encontrado para &quot;{q}&quot;.</p>
+      )}
+
+      {idsPostosFiltrados.map((idPosto) => {
         const lista = porPosto.get(idPosto) ?? [];
         return (
           <div key={idPosto} className="card overflow-x-auto">

@@ -50,11 +50,72 @@ function mesRef(data: string | null) {
   return data.slice(0, 7); // YYYY-MM
 }
 
+// Fase filtro-periodo-relatorios (27/07/2026, pedido do Daniel: "poderia dar
+// a opção de dias, semana, quinzena, mes e personalizado para que o usuario
+// escolha o periodo desejado do relatorio") — duas coisas independentes:
+// (1) GRANULARIDADE de agrupamento da dimensão "Período" (dia/semana/
+// quinzena/mês, ver periodoRef abaixo) e (2) um FILTRO de intervalo de
+// datas que reduz quais linhas entram no relatório antes de agrupar (ver
+// calcularIntervaloPeriodo). Os dois usam o mesmo campo "data", presente em
+// igual formato (YYYY-MM-DD ou timestamp começando assim) nos 3 tipos de
+// linha — por isso dataOf() é genérico em vez de repetir o cast por fonte.
+type Granularidade = "dia" | "semana" | "quinzena" | "mes";
+const GRANULARIDADE_LABEL: Record<Granularidade, string> = {
+  dia: "por dia",
+  semana: "por semana",
+  quinzena: "por quinzena",
+  mes: "por mês",
+};
+
+type PeriodoPreset = "hoje" | "7d" | "15d" | "mes" | "12m" | "personalizado";
+
+function dataOf(r: LinhaBase): string | null {
+  return (r as { data: string | null }).data;
+}
+
+// Rótulo de agrupamento por período, de acordo com a granularidade
+// escolhida. "Semana" usa a segunda-feira daquela semana como referência;
+// "quinzena" divide o mês em 1-15 e 16-fim.
+function periodoRef(dataIso: string | null, gran: Granularidade): string {
+  if (!dataIso) return "—";
+  const iso = dataIso.slice(0, 10);
+  if (gran === "dia") return iso;
+  if (gran === "mes") return iso.slice(0, 7);
+  const d = new Date(`${iso}T00:00:00`);
+  if (gran === "semana") {
+    const diaSemana = (d.getDay() + 6) % 7; // 0 = segunda-feira
+    const inicioSemana = new Date(d);
+    inicioSemana.setDate(d.getDate() - diaSemana);
+    return `Semana de ${inicioSemana.toLocaleDateString("pt-BR")}`;
+  }
+  const quinzena = d.getDate() <= 15 ? "1ª quinzena" : "2ª quinzena";
+  return `${iso.slice(0, 7)} — ${quinzena}`;
+}
+
+// Converte o preset (ou as datas personalizadas) num intervalo [inicio, fim]
+// em formato YYYY-MM-DD. "12m" devolve null/null — sem filtro adicional,
+// mantém o comportamento padrão de sempre (usa tudo que já veio do
+// servidor, que já busca só os últimos 365 dias, ver relatorios/page.tsx).
+function calcularIntervaloPeriodo(
+  preset: PeriodoPreset,
+  inicioPersonalizado: string,
+  fimPersonalizado: string
+): { inicio: string | null; fim: string | null } {
+  if (preset === "12m") return { inicio: null, fim: null };
+  if (preset === "personalizado") return { inicio: inicioPersonalizado || null, fim: fimPersonalizado || null };
+  const hoje = new Date();
+  const fim = hoje.toISOString().slice(0, 10);
+  const diasParaVoltar = preset === "hoje" ? 0 : preset === "7d" ? 6 : preset === "15d" ? 14 : 29;
+  const inicioData = new Date(hoje);
+  inicioData.setDate(inicioData.getDate() - diasParaVoltar);
+  return { inicio: inicioData.toISOString().slice(0, 10), fim };
+}
+
 // Dimensões disponíveis por fonte — cada uma extrai a chave de agrupamento
 // (usada tanto pra "group by" quanto pro rótulo mostrado no gráfico/tabela).
 const DIMENSOES: Record<Fonte, { id: string; label: string; extrator: (r: LinhaBase) => string }[]> = {
   abastecimentos: [
-    { id: "periodo_mes", label: "Período (por mês)", extrator: (r) => mesRef((r as AbastecimentoBruto).data) },
+    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as AbastecimentoBruto).data) },
     { id: "produto", label: "Combustível", extrator: (r) => (r as AbastecimentoBruto).produto || "—" },
     { id: "placa", label: "Veículo (Placa)", extrator: (r) => (r as AbastecimentoBruto).placa || "—" },
     { id: "motorista", label: "Motorista", extrator: (r) => (r as AbastecimentoBruto).motorista || "—" },
@@ -62,12 +123,12 @@ const DIMENSOES: Record<Fonte, { id: string; label: string; extrator: (r: LinhaB
     { id: "uf_posto", label: "Estado (UF)", extrator: (r) => (r as AbastecimentoBruto).ufPosto || "—" },
   ],
   manutencao: [
-    { id: "periodo_mes", label: "Período (por mês)", extrator: (r) => mesRef((r as ManutencaoBruto).data) },
+    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as ManutencaoBruto).data) },
     { id: "placa", label: "Veículo (Placa)", extrator: (r) => (r as ManutencaoBruto).placa || "—" },
     { id: "oficina", label: "Oficina", extrator: (r) => (r as ManutencaoBruto).oficina || "—" },
   ],
   custos_fixos: [
-    { id: "periodo_mes", label: "Período (por mês)", extrator: (r) => mesRef((r as CustoFixoBruto).data) },
+    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as CustoFixoBruto).data) },
     {
       id: "tipo",
       label: "Tipo de custo",
@@ -238,6 +299,10 @@ export function RelatoriosPersonalizados({
   const [dimensaoId, setDimensaoId] = useState(DIMENSOES.abastecimentos[0].id);
   const [metricaIds, setMetricaIds] = useState<string[]>([METRICAS.abastecimentos[0].id]);
   const [tipoGrafico, setTipoGrafico] = useState<"bar" | "bar_h" | "line" | "pie" | "table">("bar");
+  const [periodoGranularidade, setPeriodoGranularidade] = useState<Granularidade>("mes");
+  const [periodoPreset, setPeriodoPreset] = useState<PeriodoPreset>("12m");
+  const [dataInicioPersonalizada, setDataInicioPersonalizada] = useState("");
+  const [dataFimPersonalizada, setDataFimPersonalizada] = useState("");
   const chartWrapRef = useRef<HTMLDivElement>(null);
 
   const dimensoesDisponiveis = DIMENSOES[fonte];
@@ -245,14 +310,39 @@ export function RelatoriosPersonalizados({
   const dimensaoAtual = dimensoesDisponiveis.find((d) => d.id === dimensaoId) ?? dimensoesDisponiveis[0];
   const metricasAtuais = metricasDisponiveis.filter((m) => metricaIds.includes(m.id));
   const metricaOrdenacao = metricasAtuais[0] ?? metricasDisponiveis[0];
+  const ehDimensaoPeriodo = dimensaoAtual.id === "periodo_mes";
+  // Rótulo mostrado de fato (na tela, no CSV e no PDF) — quando a dimensão é
+  // "Período", inclui a granularidade escolhida (ex.: "Período (por semana)").
+  const dimensaoLabelAtual = ehDimensaoPeriodo ? `Período (${GRANULARIDADE_LABEL[periodoGranularidade]})` : dimensaoAtual.label;
 
   const dadosBase: LinhaBase[] =
     fonte === "abastecimentos" ? abastecimentos : fonte === "manutencao" ? manutencoes : custosFixos;
 
+  // Filtro de intervalo de datas — reduz as linhas ANTES de agrupar. "12m"
+  // (padrão) não filtra nada, mantendo o comportamento de sempre (usa tudo
+  // que a página já buscou do servidor, ver relatorios/page.tsx).
+  const dadosFiltradosPorPeriodo = useMemo(() => {
+    const { inicio, fim } = calcularIntervaloPeriodo(periodoPreset, dataInicioPersonalizada, dataFimPersonalizada);
+    if (!inicio && !fim) return dadosBase;
+    return dadosBase.filter((r) => {
+      const d = dataOf(r);
+      if (!d) return false;
+      const iso = d.slice(0, 10);
+      if (inicio && iso < inicio) return false;
+      if (fim && iso > fim) return false;
+      return true;
+    });
+  }, [dadosBase, periodoPreset, dataInicioPersonalizada, dataFimPersonalizada]);
+
+  const extratorAtual = useMemo(
+    () => (ehDimensaoPeriodo ? (r: LinhaBase) => periodoRef(dataOf(r), periodoGranularidade) : dimensaoAtual.extrator),
+    [ehDimensaoPeriodo, dimensaoAtual, periodoGranularidade]
+  );
+
   const resultado = useMemo(() => {
     const grupos = new Map<string, LinhaBase[]>();
-    for (const r of dadosBase) {
-      const chave = dimensaoAtual.extrator(r);
+    for (const r of dadosFiltradosPorPeriodo) {
+      const chave = extratorAtual(r);
       if (!grupos.has(chave)) grupos.set(chave, []);
       grupos.get(chave)!.push(r);
     }
@@ -263,9 +353,26 @@ export function RelatoriosPersonalizados({
         return { chave, valores, qtdLinhas: linhas.length };
       })
       .sort((a, b) => (b.valores[metricaOrdenacao.id] ?? 0) - (a.valores[metricaOrdenacao.id] ?? 0));
-  }, [dadosBase, dimensaoAtual, metricasAtuais, metricaOrdenacao]);
+  }, [dadosFiltradosPorPeriodo, extratorAtual, metricasAtuais, metricaOrdenacao]);
 
   const dadosGrafico = resultado.slice(0, 25).map((r, i) => ({ chave: r.chave, cor: CORES[i % CORES.length], ...r.valores }));
+
+  // Fase totalizadores-relatorios (27/07/2026, pedido do Daniel: "totalizadores,
+  // somas e medias, ao final de cada consulta") — o "total geral" é calculado
+  // chamando m.calcular() direto sobre TODAS as linhas filtradas (não soma os
+  // valores já agrupados), porque pra métricas que já são médias (Ticket
+  // Médio, Preço Médio) somar os grupos daria um número sem sentido; chamando
+  // de novo a mesma função de cálculo sobre o conjunto inteiro, o resultado é
+  // sempre correto pra cada tipo de métrica. "Média por grupo" é só esse
+  // total dividido pela quantidade de grupos exibidos.
+  const totalizadores = useMemo(() => {
+    if (metricasAtuais.length === 0 || dadosFiltradosPorPeriodo.length === 0 || resultado.length === 0) return null;
+    const totalGeral: Record<string, number> = {};
+    for (const m of metricasAtuais) totalGeral[m.id] = m.calcular(dadosFiltradosPorPeriodo);
+    const mediaPorGrupo: Record<string, number> = {};
+    for (const m of metricasAtuais) mediaPorGrupo[m.id] = totalGeral[m.id] / resultado.length;
+    return { totalGeral, mediaPorGrupo, totalRegistros: dadosFiltradosPorPeriodo.length };
+  }, [dadosFiltradosPorPeriodo, metricasAtuais, resultado.length]);
 
   function trocarFonte(novaFonte: Fonte) {
     setFonte(novaFonte);
@@ -345,6 +452,50 @@ export function RelatoriosPersonalizados({
         <p className="text-sm text-white/70">Combine fonte, dimensão, uma ou mais métricas e tipo de gráfico — exporte em CSV.</p>
       </div>
 
+      {/* Fase filtro-periodo-relatorios — atalhos de intervalo de datas (aplicados
+          antes de agrupar) + campo "Personalizado" com data de início/fim. "Últimos
+          12 meses" é o padrão e mantém o comportamento de sempre (usa tudo que já
+          veio do servidor, sem filtro adicional). */}
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500">Período dos dados</label>
+          <select
+            value={periodoPreset}
+            onChange={(e) => setPeriodoPreset(e.target.value as PeriodoPreset)}
+            className="input text-sm"
+          >
+            <option value="hoje">Hoje</option>
+            <option value="7d">Últimos 7 dias</option>
+            <option value="15d">Últimos 15 dias</option>
+            <option value="mes">Últimos 30 dias</option>
+            <option value="12m">Últimos 12 meses (padrão)</option>
+            <option value="personalizado">Personalizado</option>
+          </select>
+        </div>
+        {periodoPreset === "personalizado" && (
+          <>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
+              <input
+                type="date"
+                value={dataInicioPersonalizada}
+                onChange={(e) => setDataInicioPersonalizada(e.target.value)}
+                className="input text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
+              <input
+                type="date"
+                value={dataFimPersonalizada}
+                onChange={(e) => setDataFimPersonalizada(e.target.value)}
+                className="input text-sm"
+              />
+            </div>
+          </>
+        )}
+      </div>
+
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Fonte</label>
@@ -363,6 +514,18 @@ export function RelatoriosPersonalizados({
               </option>
             ))}
           </select>
+          {ehDimensaoPeriodo && (
+            <select
+              value={periodoGranularidade}
+              onChange={(e) => setPeriodoGranularidade(e.target.value as Granularidade)}
+              className="input mt-1.5 text-sm"
+            >
+              <option value="dia">Agrupar por dia</option>
+              <option value="semana">Agrupar por semana</option>
+              <option value="quinzena">Agrupar por quinzena</option>
+              <option value="mes">Agrupar por mês</option>
+            </select>
+          )}
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Métricas</label>
@@ -385,13 +548,15 @@ export function RelatoriosPersonalizados({
           Nenhum dado de {fonte === "abastecimentos" ? "abastecimento" : fonte === "manutencao" ? "manutenção" : "custo fixo"}{" "}
           encontrado no período (últimos 12 meses{fonte === "custos_fixos" ? ", e também os próximos 12" : ""}).
         </p>
+      ) : dadosFiltradosPorPeriodo.length === 0 ? (
+        <p className="p-4 text-sm text-slate-400">Nenhum registro no período selecionado — ajuste o filtro acima.</p>
       ) : resultado.length === 0 || metricasAtuais.length === 0 ? (
         <p className="p-4 text-sm text-slate-400">Nenhum resultado para essa combinação de dimensão/métrica.</p>
       ) : (
         <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-slate-600">
-              {metricasAtuais.map((m) => m.label).join(", ")} por {dimensaoAtual.label.toLowerCase()} — {resultado.length} grupo(s)
+              {metricasAtuais.map((m) => m.label).join(", ")} por {dimensaoLabelAtual.toLowerCase()} — {resultado.length} grupo(s)
               {resultado.length > 25 ? " (mostrando os 25 maiores no gráfico)" : ""}
             </p>
             <button
@@ -399,8 +564,24 @@ export function RelatoriosPersonalizados({
               onClick={() =>
                 baixarCsv(
                   `relatorio_${fonte}_${dimensaoAtual.id}_${metricasAtuais.map((m) => m.id).join("-")}.csv`,
-                  [dimensaoAtual.label, ...metricasAtuais.map((m) => m.label), "Nº de registros"],
-                  resultado.map((r) => [r.chave, ...metricasAtuais.map((m) => formatarValor(r.valores[m.id] ?? 0, m.formato)), r.qtdLinhas])
+                  [dimensaoLabelAtual, ...metricasAtuais.map((m) => m.label), "Nº de registros"],
+                  [
+                    ...resultado.map((r) => [r.chave, ...metricasAtuais.map((m) => formatarValor(r.valores[m.id] ?? 0, m.formato)), r.qtdLinhas]),
+                    ...(totalizadores
+                      ? [
+                          [
+                            "Total geral",
+                            ...metricasAtuais.map((m) => formatarValor(totalizadores.totalGeral[m.id] ?? 0, m.formato)),
+                            totalizadores.totalRegistros,
+                          ],
+                          [
+                            `Média por grupo (${resultado.length})`,
+                            ...metricasAtuais.map((m) => formatarValor(totalizadores.mediaPorGrupo[m.id] ?? 0, m.formato)),
+                            "",
+                          ],
+                        ]
+                      : []),
+                  ]
                 )
               }
               className="btn-secondary text-sm"
@@ -410,21 +591,37 @@ export function RelatoriosPersonalizados({
             <BotaoBaixarPdfPersonalizadoLazy
               nomeArquivo={`relatorio_personalizado_${fonte}_${dimensaoAtual.id}_${metricasAtuais.map((m) => m.id).join("-")}.pdf`}
               nomeEmpresa={nomeEmpresa}
-              titulo={`${metricasAtuais.map((m) => m.label).join(", ")} por ${dimensaoAtual.label}`}
-              subtitulo={`Fonte: ${FONTE_LABEL[fonte]} · Agrupado por ${dimensaoAtual.label.toLowerCase()} · ${resultado.length} grupo(s)`}
+              titulo={`${metricasAtuais.map((m) => m.label).join(", ")} por ${dimensaoLabelAtual}`}
+              subtitulo={`Fonte: ${FONTE_LABEL[fonte]} · Agrupado por ${dimensaoLabelAtual.toLowerCase()} · ${resultado.length} grupo(s)`}
               fonteLabel={FONTE_LABEL[fonte]}
-              dimensaoLabel={dimensaoAtual.label}
+              dimensaoLabel={dimensaoLabelAtual}
               metricasLabels={metricasAtuais.map((m) => m.label)}
               nomeUsuario={nomeUsuario}
               cargoUsuario={cargoUsuario}
               capturarGrafico={capturarGraficoComoImagem}
-              colunaChave={dimensaoAtual.label}
+              colunaChave={dimensaoLabelAtual}
               colunas={metricasAtuais.map((m) => ({ id: m.id, label: m.label }))}
-              linhas={resultado.map((r) => ({
-                chave: r.chave,
-                valores: metricasAtuais.map((m) => formatarValor(r.valores[m.id] ?? 0, m.formato)),
-                registros: String(r.qtdLinhas),
-              }))}
+              linhas={[
+                ...resultado.map((r) => ({
+                  chave: r.chave,
+                  valores: metricasAtuais.map((m) => formatarValor(r.valores[m.id] ?? 0, m.formato)),
+                  registros: String(r.qtdLinhas),
+                })),
+                ...(totalizadores
+                  ? [
+                      {
+                        chave: "Total geral",
+                        valores: metricasAtuais.map((m) => formatarValor(totalizadores.totalGeral[m.id] ?? 0, m.formato)),
+                        registros: String(totalizadores.totalRegistros),
+                      },
+                      {
+                        chave: `Média por grupo (${resultado.length})`,
+                        valores: metricasAtuais.map((m) => formatarValor(totalizadores.mediaPorGrupo[m.id] ?? 0, m.formato)),
+                        registros: "",
+                      },
+                    ]
+                  : []),
+              ]}
             />
           </div>
 
@@ -502,7 +699,7 @@ export function RelatoriosPersonalizados({
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 bg-white text-xs uppercase text-slate-500">
                 <tr>
-                  <th className="py-2 pr-3">{dimensaoAtual.label}</th>
+                  <th className="py-2 pr-3">{dimensaoLabelAtual}</th>
                   {metricasAtuais.map((m) => (
                     <th key={m.id} className="py-2 pr-3">
                       {m.label}
@@ -524,6 +721,31 @@ export function RelatoriosPersonalizados({
                   </tr>
                 ))}
               </tbody>
+              {/* Fase totalizadores-relatorios — total geral (soma/valor agregado real,
+                  calculado sobre todas as linhas filtradas) e média por grupo exibido,
+                  fixos ao fundo da tabela mesmo com rolagem (ver Fase totalizadores acima). */}
+              {totalizadores && (
+                <tfoot className="sticky bottom-0 border-t-2 border-slate-300 bg-slate-50">
+                  <tr>
+                    <td className="py-2 pr-3 font-semibold text-slate-800">Total geral</td>
+                    {metricasAtuais.map((m) => (
+                      <td key={m.id} className="py-2 pr-3 tabular-nums font-semibold text-slate-900">
+                        {formatarValor(totalizadores.totalGeral[m.id] ?? 0, m.formato)}
+                      </td>
+                    ))}
+                    <td className="py-2 tabular-nums font-semibold text-slate-700">{totalizadores.totalRegistros}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-3 text-slate-500">Média por grupo ({resultado.length})</td>
+                    {metricasAtuais.map((m) => (
+                      <td key={m.id} className="py-2 pr-3 tabular-nums text-slate-600">
+                        {formatarValor(totalizadores.mediaPorGrupo[m.id] ?? 0, m.formato)}
+                      </td>
+                    ))}
+                    <td className="py-2" />
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </>
