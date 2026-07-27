@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { autenticarRequisicaoApi, marcarUsoChaveApi } from "@/lib/apiAuth";
 import { ESCOPO_ABASTECIMENTOS_WRITE } from "@/lib/apiKeys";
+import { garantirVeiculoCadastrado, garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
 
 // API pública pra provedores de cartão de combustível (Ticket Log, Alelo
 // Fleet, Repom etc.) lançarem transações de abastecimento direto na FNI —
@@ -123,6 +124,21 @@ export async function POST(request: Request) {
   }
 
   await marcarUsoChaveApi(supabase, chave.id);
+
+  // Fase auto-cadastro-abastecimento (27/07/2026) — garante que a placa (e o
+  // motorista, se veio nome/CPF) já existam em cadastro_veiculos/motoristas,
+  // mesmo que mínimos e pendentes de revisão. Nunca bloqueia a resposta 201
+  // por conta disso (só loga, dentro dos próprios helpers).
+  const { data: empresa } = await supabase.from("empresas").select("cnpj").eq("id", chave.empresaId).maybeSingle();
+  if (empresa?.cnpj) {
+    await garantirVeiculoCadastrado(supabase, empresa.cnpj, placa);
+  }
+  if (corpo.motorista_nome?.trim()) {
+    await garantirMotoristaCadastrado(supabase, chave.empresaId, {
+      nomeCompleto: corpo.motorista_nome,
+      cpf: motoristaCpf,
+    });
+  }
 
   return NextResponse.json({ id: registro.id, status: "criado" }, { status: 201 });
 }

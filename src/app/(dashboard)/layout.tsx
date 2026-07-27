@@ -43,6 +43,7 @@ import {
   Settings,
   Scale,
   Ticket,
+  ClipboardCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -54,6 +55,7 @@ import { contarAjustesAbastecimentosPendentesAcao } from "./abastecimentos/actio
 import { contarAcoesSugeridasPendentesAcao } from "./acoes-sugeridas/actions";
 import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
 import { contarFalhasVerificacaoAntifraudeAcao } from "./antifraude/actions";
+import { contarCadastrosPendentesAcao } from "./cadastros-pendentes/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
@@ -117,6 +119,11 @@ const menuCadastros = [
   { href: "/minha-equipe", label: "Minha Equipe", icon: Users },
   { href: "/motoristas", label: "Motoristas", icon: IdCard }, // PWA: Icons.badge
   { href: "/veiculos", label: "Veículos", icon: Car }, // PWA: Icons.directions_car
+  // Fase auto-cadastro-abastecimento (27/07/2026) — veículos/motoristas
+  // criados automaticamente a partir de abastecimentos importados
+  // (origem_cadastro='importado'), ainda sem o resto do cadastro. Badge
+  // conta os dois tipos juntos (contarCadastrosPendentesAcao).
+  { href: "/cadastros-pendentes", label: "Cadastros Pendentes", icon: ClipboardCheck },
   { href: "/centros-custo", label: "Centros de Custo", icon: Receipt }, // PWA: Icons.receipt_long
   { href: "/postos", label: "Postos Revendedores", icon: Fuel }, // PWA: Icons.local_gas_station
 ];
@@ -380,6 +387,7 @@ export default async function DashboardLayout({
     documentosPendentes,
     falhasVerificacaoAntifraude,
     acoesSugeridasPendentes,
+    cadastrosPendentes,
     logoutInatividadeMinutos,
   ] = await Promise.all([
       contarChamadosNaoVistosAcao().catch((e) => {
@@ -424,6 +432,13 @@ export default async function DashboardLayout({
       // mesma blindagem "falha vira 0" das demais contagens.
       contarAcoesSugeridasPendentesAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar ações sugeridas pendentes (ignorado):", e);
+        return 0;
+      }),
+      // Fase auto-cadastro-abastecimento — bolinha de veículos/motoristas
+      // criados automaticamente por integração de abastecimento, ainda sem
+      // o resto do cadastro (mesma blindagem "falha vira 0" das demais).
+      contarCadastrosPendentesAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar cadastros pendentes (ignorado):", e);
         return 0;
       }),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
@@ -676,6 +691,11 @@ export default async function DashboardLayout({
                   {item.href === "/clientes" && acessosClientesNaoVistos > 0 && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                       {acessosClientesNaoVistos}
+                    </span>
+                  )}
+                  {item.href === "/cadastros-pendentes" && cadastrosPendentes > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                      {cadastrosPendentes}
                     </span>
                   )}
                 </Link>

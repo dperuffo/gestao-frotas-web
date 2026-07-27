@@ -21,6 +21,10 @@ type Veiculo = {
   centro_custo_nome: string | null;
   municipio: string | null;
   uf_veiculo: string | null;
+  // Fase auto-cadastro-abastecimento — true quando o registro nasceu
+  // automaticamente de uma importação de abastecimento (só placa, sem o
+  // resto do cadastro) e ainda não foi revisado/completado pelo cliente.
+  pendente_revisao: boolean;
 };
 
 export default async function VeiculosPage({
@@ -65,7 +69,7 @@ export default async function VeiculosPage({
     let query = supabase
       .from("cadastro_veiculos")
       .select(
-        "id, placa, marca, modelo, tipo_veiculo, classificacao, tipo, ativo, centro_custo_nome, municipio, uf_veiculo"
+        "id, placa, marca, modelo, tipo_veiculo, classificacao, tipo, ativo, centro_custo_nome, municipio, uf_veiculo, pendente_revisao"
       )
       .order("placa");
     const { data, error: queryError } = await query;
@@ -211,9 +215,16 @@ export default async function VeiculosPage({
                 {veiculosDaPagina.map((v) => (
                   <tr key={v.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <Link href={`/veiculos/${v.id}`} className="font-medium text-frota-600 hover:underline">
-                        {v.placa}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/veiculos/${v.id}`} className="font-medium text-frota-600 hover:underline">
+                          {v.placa}
+                        </Link>
+                        {v.pendente_revisao && (
+                          <span className="badge-atencao" title="Criado automaticamente pela integração de abastecimentos — falta completar o cadastro">
+                            Pendente
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}

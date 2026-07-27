@@ -97,9 +97,12 @@ export async function atualizarMotorista(
     }
   }
 
+  // Fase auto-cadastro-abastecimento — qualquer edição manual aqui já conta
+  // como o cliente tendo revisado/completado o cadastro, mesmo que o
+  // registro tenha nascido automaticamente de uma importação (sem CPF).
   const { error } = await supabase
     .from("motoristas")
-    .update({ ...payload, status })
+    .update({ ...payload, status, pendente_revisao: false })
     .eq("id", id);
 
   if (error) {

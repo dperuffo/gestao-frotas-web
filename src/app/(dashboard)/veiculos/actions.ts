@@ -151,7 +151,13 @@ export async function atualizarVeiculo(
     }
   }
 
-  const { error } = await supabase.from("cadastro_veiculos").update({ ...payload, ativo }).eq("id", id);
+  // Fase auto-cadastro-abastecimento — qualquer edição manual aqui já conta
+  // como o cliente tendo revisado/completado o cadastro, mesmo que o
+  // registro tenha nascido automaticamente de uma importação.
+  const { error } = await supabase
+    .from("cadastro_veiculos")
+    .update({ ...payload, ativo, pendente_revisao: false })
+    .eq("id", id);
 
   if (error) {
     if (error.code === "23505") {

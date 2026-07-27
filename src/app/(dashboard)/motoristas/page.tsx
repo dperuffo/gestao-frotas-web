@@ -12,12 +12,15 @@ const POR_PAGINA = 30;
 type Motorista = {
   id: string;
   nome_completo: string;
-  cpf: string;
+  // Fase auto-cadastro-abastecimento (27/07/2026) — cpf virou opcional no
+  // banco (motorista pode nascer só com o nome, vindo de uma importação).
+  cpf: string | null;
   telefone: string | null;
   classificacao: string;
   status: string;
   cnh_vencimento: string;
   empresas: { nome: string } | null;
+  pendente_revisao: boolean;
 };
 
 export default async function MotoristasPage({
@@ -43,7 +46,7 @@ export default async function MotoristasPage({
 
   let queryPagina = supabase
     .from("motoristas")
-    .select("id, nome_completo, cpf, telefone, classificacao, status, cnh_vencimento, empresas(nome)")
+    .select("id, nome_completo, cpf, telefone, classificacao, status, cnh_vencimento, empresas(nome), pendente_revisao")
     .order("nome_completo");
   let queryContagemFiltrada = supabase.from("motoristas").select("id", { count: "exact", head: true });
   // Fase Exportar-Cadastros — a exportação (PDF/XLSX) precisa da lista
@@ -209,11 +212,18 @@ export default async function MotoristasPage({
                 {motoristas.map((m) => (
                   <tr key={m.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <Link href={`/motoristas/${m.id}`} className="font-medium text-frota-600 hover:underline">
-                        {m.nome_completo}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/motoristas/${m.id}`} className="font-medium text-frota-600 hover:underline">
+                          {m.nome_completo}
+                        </Link>
+                        {m.pendente_revisao && (
+                          <span className="badge-atencao" title="Criado automaticamente pela integração de abastecimentos — falta completar o cadastro">
+                            Pendente
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{m.cpf}</td>
+                    <td className="px-4 py-3 text-slate-600">{m.cpf ?? "—"}</td>
                     <td className="px-4 py-3 text-slate-600">{m.telefone ?? "—"}</td>
                     <td className="px-4 py-3 text-slate-600">{m.classificacao}</td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(m.cnh_vencimento)}</td>

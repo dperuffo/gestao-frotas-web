@@ -811,6 +811,12 @@ export interface Database {
           // Vínculo automático (trigger) com usuarios_app.email quando o CPF
           // normalizado bate dentro da mesma empresa — não editar manualmente.
           usuario_app_email: string | null;
+          // Fase auto-cadastro-abastecimento (27/07/2026) — mesmo espírito de
+          // cadastro_veiculos: 'importado' = criado a partir de nome/CPF vindo
+          // de uma integração de abastecimento; pendente_revisao some quando
+          // o cliente editar e completar o cadastro.
+          origem_cadastro: "manual" | "importado";
+          pendente_revisao: boolean;
           criado_por: string | null;
           criado_em: string;
           atualizado_em: string;
@@ -2255,6 +2261,12 @@ export interface Database {
           // Fase 27.124 — porte do veículo (Leve/Pesado), distinto de
           // tipo_veiculo (carroceria) e classificacao (Próprio/Agregado).
           tipo: "Leve" | "Pesado" | null;
+          // Fase auto-cadastro-abastecimento (27/07/2026) — 'importado' =
+          // criado automaticamente a partir de placa vinda de uma integração
+          // de abastecimento (sem o resto do cadastro ainda); pendente_revisao
+          // fica true até o cliente editar e completar os dados.
+          origem_cadastro: "manual" | "importado";
+          pendente_revisao: boolean;
           criado_em: string | null;
           atualizado_em: string | null;
         };

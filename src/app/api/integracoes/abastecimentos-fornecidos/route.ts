@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { autenticarRequisicaoApi, marcarUsoChaveApi } from "@/lib/apiAuth";
 import { ESCOPO_ABASTECIMENTOS_FORNECIDOS_WRITE } from "@/lib/apiKeys";
+import { garantirVeiculoCadastrado, garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
 
 // Fase 27.144 — pedido do Daniel: "na aba de integrações na visão de
 // postos, criar o mecanismo de integração com softwares de automação de
@@ -157,6 +158,26 @@ export async function POST(request: Request) {
   }
 
   await marcarUsoChaveApi(supabase, chave.id);
+
+  // Fase auto-cadastro-abastecimento (27/07/2026) — garante que a placa (e o
+  // motorista, se veio nome/CPF) já existam em cadastro_veiculos/motoristas
+  // do CLIENTE (não do posto), mesmo que mínimos e pendentes de revisão.
+  // Busca o cnpj canônico da empresa em vez de reusar clienteCnpj cru (pode
+  // vir com formatação diferente da já usada nos veículos existentes dela).
+  const { data: clienteEmpresa } = await supabase
+    .from("empresas")
+    .select("cnpj")
+    .eq("id", empresaClienteId)
+    .maybeSingle();
+  if (clienteEmpresa?.cnpj) {
+    await garantirVeiculoCadastrado(supabase, clienteEmpresa.cnpj, placa);
+  }
+  if (corpo.motorista_nome?.trim()) {
+    await garantirMotoristaCadastrado(supabase, empresaClienteId, {
+      nomeCompleto: corpo.motorista_nome,
+      cpf: motoristaCpf,
+    });
+  }
 
   return NextResponse.json({ id: registro.id, status: "criado" }, { status: 201 });
 }

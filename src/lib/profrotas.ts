@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { normalizarCNPJ } from "@/lib/utils";
+import { garantirVeiculosCadastrados, garantirMotoristasCadastrados } from "@/lib/cadastrosAutomaticos";
 
 // ═══════════════════════════════════════════════════════════════════════
 // Integração PróFrotas — porta para TypeScript da lógica que já existia no
@@ -253,6 +254,10 @@ export async function sincronizarProfrotas(
   params: { cnpjFrota: string; token: string; dataInicio: string }
 ): Promise<ResultadoSync> {
   const cnpjFrota = normalizarCNPJ(params.cnpjFrota);
+  // Fase auto-cadastro-abastecimento — resolvido uma única vez (não muda
+  // durante a sincronização) pra criar motoristas automaticamente a cada
+  // página; veículo usa cnpj_frota direto (chave real de cadastro_veiculos).
+  const { data: empresaId } = await supabase.rpc("empresa_id_do_cnpj", { p_cnpj: cnpjFrota });
   let token = params.token;
   let pagina = 1;
   let totalSalvos = 0;
@@ -296,6 +301,17 @@ export async function sincronizarProfrotas(
     }
     const tamanhoPagina = dados.tamanhoPagina ?? TAMANHO_PAGINA_PADRAO;
     totalRegistrosApi += registros.length;
+
+    // Fase auto-cadastro-abastecimento — garante que placa/motorista desta
+    // página já existam em cadastro_veiculos/motoristas (mínimos, pendentes
+    // de revisão), antes/independente do upsert de profrotas_abastecimentos
+    // abaixo. Nunca derruba a sincronização por conta disso.
+    const placasDoLote = registros.map((r) => r.veiculo?.placa).filter((p): p is string => !!p && p.trim() !== "");
+    const nomesDoLote = registros.map((r) => r.motorista?.nome).filter((n): n is string => !!n && n.trim() !== "");
+    await garantirVeiculosCadastrados(supabase, cnpjFrota, placasDoLote);
+    if (empresaId) {
+      await garantirMotoristasCadastrados(supabase, empresaId, nomesDoLote);
+    }
 
     const linhas = registros.flatMap((r) => registroParaLinhas(cnpjFrota, r));
 
