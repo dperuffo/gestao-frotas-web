@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { autenticarRequisicaoApi, marcarUsoChaveApi } from "@/lib/apiAuth";
 import { ESCOPO_FATURAS_MEIO_PAGAMENTO_WRITE } from "@/lib/apiKeys";
+import { garantirVeiculoCadastrado, garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
 
 // Fase Financeiro-ERP (26/07/2026, pedido do Daniel) — substitui, pra quem
 // já é um meio de pagamento de verdade (Ticket Log, Edenred, Veloe,
@@ -164,6 +165,13 @@ export async function POST(request: Request) {
   // negociação direta pra serem cobrados). Upsert por (empresa_id,
   // provedor, transacao_externa_id) — mesma chave de idempotência da Fase
   // 25 — então reenviar a mesma fatura/itens é seguro.
+  // Fase auto-cadastro-abastecimento (27/07/2026) — pedido do Daniel: não é
+  // só a PróFrotas, é QUALQUER integração de meio de pagamento (Ticket Log,
+  // Edenred, Veloe, RedeFrota, Valecard...) que deve gerar cadastro
+  // automático de placa/motorista. Resolvido uma única vez fora do loop
+  // (cnpj_frota é o mesmo pra toda a fatura — não muda por item).
+  const { data: empresaFatura } = await supabase.from("empresas").select("cnpj").eq("id", chave.empresaId).maybeSingle();
+
   let itensGravados = 0;
   const itensSemTransacaoId: number[] = [];
   for (let i = 0; i < itens.length; i++) {
@@ -195,7 +203,18 @@ export async function POST(request: Request) {
       },
       { onConflict: "empresa_id,provedor,transacao_externa_id" }
     );
-    if (!erroItem) itensGravados++;
+    if (!erroItem) {
+      itensGravados++;
+      if (empresaFatura?.cnpj && item.placa?.trim()) {
+        await garantirVeiculoCadastrado(supabase, empresaFatura.cnpj, item.placa);
+      }
+      if (item.motorista_nome?.trim()) {
+        await garantirMotoristaCadastrado(supabase, chave.empresaId, {
+          nomeCompleto: item.motorista_nome,
+          cpf: item.motorista_cpf,
+        });
+      }
+    }
   }
 
   await marcarUsoChaveApi(supabase, chave.id);

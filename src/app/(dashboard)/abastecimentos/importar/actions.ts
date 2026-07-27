@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerPlanilhaComoTexto } from "@/lib/xlsx";
 import { normalizarCNPJ } from "@/lib/utils";
+import { garantirVeiculoCadastrado, garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
 
 export type LinhaResultado = {
   linha: number;
@@ -129,6 +130,14 @@ export async function importarAbastecimentos(
         pv_uf: pegar(colunas, "posto_uf") || null,
       });
       if (error) throw new Error(error.message);
+
+      // Fase auto-cadastro-abastecimento (27/07/2026) — pedido do Daniel:
+      // vale pra QUALQUER importação, não só a PróFrotas — inclusive esta
+      // carga manual via planilha. Sem CPF nesta coluna, cai no match por
+      // nome (mesmo caminho da sincronização PróFrotas).
+      const nomeMotorista = pegar(colunas, "motorista_nome");
+      if (placa) await garantirVeiculoCadastrado(supabase, empresa.cnpj, placa);
+      if (nomeMotorista) await garantirMotoristaCadastrado(supabase, empresa.id, { nomeCompleto: nomeMotorista });
 
       resultado.push({
         linha: numeroLinha,

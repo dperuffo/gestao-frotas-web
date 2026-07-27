@@ -2,14 +2,26 @@
 // uma placa e um motorista são importados atraves da integracao de
 // abastecimentos, os registros já devem ser criados no cadastro de
 // veiculos e motoristas pra o usuario cliente complementar as
-// informacoes"). Usado pelos 3 pontos de entrada de abastecimento externo
-// (src/lib/profrotas.ts, /api/integracoes/abastecimentos,
-// /api/integracoes/abastecimentos-fornecidos): cria um registro MÍNIMO
-// (só o que a importação traz — placa, ou nome/CPF do motorista) marcado
-// como origem_cadastro='importado' e pendente_revisao=true, pra aparecer
-// com o badge "Pendente" nas listas e no painel /cadastros-pendentes até o
-// cliente completar o resto do cadastro (marca/modelo, CNH, etc.) — ver
-// migração origem_cadastro_pendente_revisao.
+// informacoes" — e depois: "Nao é somente via meio de pagamento
+// Pró-Frotas e sim, qualquer outra integracao com meios de pagamento ou
+// carga via planilha"). Usado por TODO ponto de entrada que traz
+// abastecimento de fora da plataforma:
+//   - src/lib/profrotas.ts (sincronização PróFrotas, cron/manual)
+//   - /api/integracoes/abastecimentos (Hub de Integrações — cartão de
+//     combustível, lado frota)
+//   - /api/integracoes/abastecimentos-fornecidos (posto lançando em nome
+//     do cliente que atendeu)
+//   - /api/integracoes/faturas-meio-pagamento (qualquer provedor de meio
+//     de pagamento que já fecha e cobra a própria fatura — Ticket Log,
+//     Edenred, Veloe, RedeFrota, Valecard etc.)
+//   - /abastecimentos/importar (carga manual via planilha XLSX)
+// Cria um registro MÍNIMO (só o que a importação traz — placa, ou
+// nome/CPF do motorista) marcado como origem_cadastro='importado' e
+// pendente_revisao=true, pra aparecer com o badge "Pendente" nas listas e
+// no painel /cadastros-pendentes até o cliente completar o resto do
+// cadastro (marca/modelo, CNH, etc.) — ver migração
+// origem_cadastro_pendente_revisao. Qualquer NOVA integração de
+// abastecimento que vier a existir deve chamar estas mesmas funções.
 //
 // Nunca sobrescreve um registro já existente (mesmo que incompleto) — só
 // cria quando realmente não encontra nada, reaproveitando os mesmos RPCs
