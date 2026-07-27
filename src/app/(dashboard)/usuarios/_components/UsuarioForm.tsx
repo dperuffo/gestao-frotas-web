@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
-import { criarUsuario, atualizarUsuario } from "../actions";
+import { useState, useTransition, type FormEvent, type FocusEvent } from "react";
+import { criarUsuario, atualizarUsuario, verificarCpfDuplicadoUsuario } from "../actions";
 import { PERFIS, PERFIL_LABEL, SEGMENTO_USUARIO } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
 
@@ -19,6 +19,19 @@ export function UsuarioForm({
 }) {
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
+  // Fase tratamento-cnpj-cpf (27/07/2026) — aviso NÃO bloqueante: só avisa
+  // se o CPF já pertence a outra conta, não impede salvar.
+  const [avisoCpf, setAvisoCpf] = useState<string | undefined>();
+
+  function handleBlurCpf(e: FocusEvent<HTMLInputElement>) {
+    const cpf = e.target.value.trim();
+    setAvisoCpf(undefined);
+    if (!cpf) return;
+    startTransition(async () => {
+      const { duplicado } = await verificarCpfDuplicadoUsuario(cpf, usuario?.email);
+      if (duplicado) setAvisoCpf("Este CPF já está cadastrado em outra conta do sistema.");
+    });
+  }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -53,7 +66,8 @@ export function UsuarioForm({
             />
           </Campo>
           <Campo label="CPF">
-            <input name="cpf" defaultValue={usuario?.cpf ?? ""} className="input" />
+            <input name="cpf" defaultValue={usuario?.cpf ?? ""} onBlur={handleBlurCpf} className="input" />
+            {avisoCpf && <p className="mt-1 text-xs text-amber-600">{avisoCpf}</p>}
           </Campo>
           <Campo label="Telefone">
             <input name="telefone" defaultValue={usuario?.telefone ?? ""} className="input" />

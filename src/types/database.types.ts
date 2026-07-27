@@ -795,7 +795,12 @@ export interface Database {
           id: string;
           empresa_id: string;
           nome_completo: string;
-          cpf: string;
+          // Fase tratamento-cnpj-cpf (27/07/2026) — cpf virou opcional pra
+          // permitir auto-cadastro a partir da integração de abastecimentos
+          // (placa/motorista importados só têm nome, sem CPF); o cliente
+          // completa depois. Índice único (motoristas_empresa_cpf_norm_uidx)
+          // já era parcial/normalizado, então convive com NULL sem mudança.
+          cpf: string | null;
           telefone: string | null;
           email: string | null;
           status: "Ativo" | "Inativo";
@@ -803,6 +808,9 @@ export interface Database {
           cnh: string | null;
           cnh_vencimento: string | null;
           centro_custo_id: string | null;
+          // Vínculo automático (trigger) com usuarios_app.email quando o CPF
+          // normalizado bate dentro da mesma empresa — não editar manualmente.
+          usuario_app_email: string | null;
           criado_por: string | null;
           criado_em: string;
           atualizado_em: string;
@@ -810,7 +818,6 @@ export interface Database {
         Insert: Partial<Database["public"]["Tables"]["motoristas"]["Row"]> & {
           empresa_id: string;
           nome_completo: string;
-          cpf: string;
         };
         Update: Partial<Database["public"]["Tables"]["motoristas"]["Row"]>;
         Relationships: [
@@ -4127,6 +4134,13 @@ export interface Database {
       };
       motorista_duplicado: {
         Args: { p_empresa_id: string; p_cpf: string; p_excluir_id?: string | null };
+        Returns: boolean;
+      };
+      // Aviso não bloqueante (fase tratamento-cnpj-cpf, 27/07/2026): checa
+      // globalmente (SECURITY DEFINER) se já existe outra conta com o mesmo
+      // CPF normalizado em usuarios_app -- não impede o cadastro, só sinaliza.
+      usuario_app_cpf_duplicado: {
+        Args: { p_cpf: string; p_excluir_email?: string | null };
         Returns: boolean;
       };
       // Resolve o vínculo de cadastro_veiculos com uma empresa via cnpj_frota,

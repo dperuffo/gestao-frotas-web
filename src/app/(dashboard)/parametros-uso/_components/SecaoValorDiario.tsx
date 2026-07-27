@@ -12,7 +12,7 @@ type Linha = {
   observacao: string | null;
   motoristas: { nome_completo: string } | null;
 };
-type MotoristaOpcao = { id: string; nome_completo: string; cpf: string };
+type MotoristaOpcao = { id: string; nome_completo: string; cpf: string | null };
 
 export function SecaoValorDiario({
   linhas,

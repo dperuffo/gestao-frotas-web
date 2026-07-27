@@ -22,7 +22,7 @@ type RegraExistente = {
   status: string;
 };
 type VeiculoOpcao = { placa: string; marca: string | null; modelo: string | null };
-type MotoristaOpcao = { id: string; nome_completo: string; cpf: string };
+type MotoristaOpcao = { id: string; nome_completo: string; cpf: string | null };
 
 const TIPOS = [
   { valor: "limite_valor_quantidade", label: "Limite de valor/quantidade" },
@@ -113,11 +113,13 @@ export function RegraAntifraudeForm({
                 <option value="" disabled>
                   Selecione o motorista...
                 </option>
-                {motoristas.map((m) => (
-                  <option key={m.id} value={m.cpf}>
-                    {m.nome_completo} — {m.cpf}
-                  </option>
-                ))}
+                {motoristas
+                  .filter((m): m is typeof m & { cpf: string } => !!m.cpf)
+                  .map((m) => (
+                    <option key={m.id} value={m.cpf}>
+                      {m.nome_completo} — {m.cpf}
+                    </option>
+                  ))}
               </select>
             </Campo>
           )}

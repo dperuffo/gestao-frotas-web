@@ -5,8 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verificarLimiteUsuarios, mensagemLimiteUsuariosExcedido } from "@/lib/limitePlano";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
+import { cpfDuplicadoUsuarioApp } from "@/lib/duplicidade";
 
 export type ConvidarColegaState = { erro?: string; sucesso?: string } | undefined;
+
+// Fase tratamento-cnpj-cpf (27/07/2026) — aviso NÃO bloqueante, chamado do
+// formulário de convite (onBlur do campo CPF), antes de enviar o convite.
+export async function verificarCpfDuplicadoColega(cpf: string) {
+  const supabase = await createClient();
+  return { duplicado: await cpfDuplicadoUsuarioApp(supabase, cpf) };
+}
 
 // Fase Convite-Self-Service — a leitura direta de usuarios_app pra checar o
 // perfil de OUTRO usuário (ex.: "esse e-mail já é colaborador?") não

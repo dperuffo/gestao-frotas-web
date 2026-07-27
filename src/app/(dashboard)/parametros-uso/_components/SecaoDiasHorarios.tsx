@@ -19,7 +19,7 @@ type Linha = {
   motoristas: { nome_completo: string } | null;
 };
 type VeiculoOpcao = { placa: string; marca: string | null; modelo: string | null };
-type MotoristaOpcao = { id: string; nome_completo: string; cpf: string };
+type MotoristaOpcao = { id: string; nome_completo: string; cpf: string | null };
 
 export function SecaoDiasHorarios({
   linhas,

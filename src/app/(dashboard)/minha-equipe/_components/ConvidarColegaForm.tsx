@@ -1,12 +1,25 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
-import { convidarColega } from "../actions";
+import { useState, useTransition, type FormEvent, type FocusEvent } from "react";
+import { convidarColega, verificarCpfDuplicadoColega } from "../actions";
 
 export function ConvidarColegaForm({ empresaId, vagasEsgotadas }: { empresaId: string; vagasEsgotadas: boolean }) {
   const [erro, setErro] = useState<string | undefined>();
   const [sucesso, setSucesso] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
+  // Fase tratamento-cnpj-cpf (27/07/2026) — aviso NÃO bloqueante: só avisa
+  // se o CPF já pertence a outra conta, não impede o convite.
+  const [avisoCpf, setAvisoCpf] = useState<string | undefined>();
+
+  function handleBlurCpf(e: FocusEvent<HTMLInputElement>) {
+    const cpf = e.target.value.trim();
+    setAvisoCpf(undefined);
+    if (!cpf) return;
+    startTransition(async () => {
+      const { duplicado } = await verificarCpfDuplicadoColega(cpf);
+      if (duplicado) setAvisoCpf("Este CPF já está cadastrado em outra conta do sistema.");
+    });
+  }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -36,7 +49,8 @@ export function ConvidarColegaForm({ empresaId, vagasEsgotadas }: { empresaId: s
           <input type="email" name="email" required disabled={vagasEsgotadas} className="input disabled:bg-slate-100" />
         </Campo>
         <Campo label="CPF">
-          <input name="cpf" disabled={vagasEsgotadas} className="input disabled:bg-slate-100" />
+          <input name="cpf" disabled={vagasEsgotadas} onBlur={handleBlurCpf} className="input disabled:bg-slate-100" />
+          {avisoCpf && <p className="mt-1 text-xs text-amber-600">{avisoCpf}</p>}
         </Campo>
         <Campo label="Telefone">
           <input name="telefone" disabled={vagasEsgotadas} className="input disabled:bg-slate-100" />

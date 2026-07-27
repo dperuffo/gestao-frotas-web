@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { cpfDuplicadoUsuarioApp } from "@/lib/duplicidade";
 
 export type UsuarioFormState = { erro?: string } | undefined;
 
@@ -23,6 +24,14 @@ async function exigirGerenciadorDeUsuarios(supabase: Awaited<ReturnType<typeof c
     return "Esta ação é exclusiva do time interno (perfil administrador ou analista).";
   }
   return null;
+}
+
+// Fase tratamento-cnpj-cpf (27/07/2026) — aviso NÃO bloqueante: só avisa se
+// o CPF já pertence a outra conta, não impede o salvamento. Chamado do
+// formulário (onBlur do campo CPF), separado de criar/atualizar.
+export async function verificarCpfDuplicadoUsuario(cpf: string, excluirEmail?: string) {
+  const supabase = await createClient();
+  return { duplicado: await cpfDuplicadoUsuarioApp(supabase, cpf, excluirEmail) };
 }
 
 // Cria o usuário em três passos:

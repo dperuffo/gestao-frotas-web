@@ -6,7 +6,7 @@ import { SeletorAlocacaoEmMassa, type ItemAlocavel } from "./SeletorAlocacaoEmMa
 type MotoristaOpcao = {
   id: string;
   nome_completo: string;
-  cpf: string;
+  cpf: string | null;
   centro_custo_nome: string | null;
 };
 
