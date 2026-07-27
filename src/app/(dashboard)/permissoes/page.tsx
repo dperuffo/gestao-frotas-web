@@ -65,11 +65,17 @@ export default async function PermissoesPage({
   // banco, ver migração da Fase 27.39) e foi corrigida junto. Aqui: quem é
   // "posto" só vê a própria coluna; quem é do lado Frota (gestor_frota/
   // analista) nunca vê "posto".
-  const HIERARQUIA_FROTA: Perfil[] = ["gestor_frota", "analista"];
+  // Fase Convite-Self-Service (26/07/2026) — "colaborador" é o perfil dos
+  // convidados via /minha-equipe (self-service, sem nenhum poder próprio —
+  // tudo definido aqui). Entra como o degrau mais baixo das duas
+  // hierarquias (Frota e Posto), visível tanto pro gestor_frota/analista
+  // quanto pro posto — nunca pro colaborador em si (ele não convida nem
+  // configura permissão de ninguém).
+  const HIERARQUIA_FROTA: Perfil[] = ["gestor_frota", "analista", "colaborador"];
   const perfisVisiveis: Perfil[] = souAdmin
     ? [...PERFIS]
     : meuPerfil === "posto"
-      ? ["posto"]
+      ? ["posto", "colaborador"]
       : HIERARQUIA_FROTA.slice(Math.max(0, HIERARQUIA_FROTA.indexOf(meuPerfil ?? "analista")));
 
   // Admin gerencia o padrão global; os demais perfis customizam a própria

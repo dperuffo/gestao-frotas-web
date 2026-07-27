@@ -110,6 +110,11 @@ const menuCadastros = [
   { href: "/clientes", label: "Clientes", icon: Building2 }, // PWA: Icons.business
   { href: "/grupo-economico", label: "Grupo Econômico", icon: GitBranch }, // PWA: Icons.account_tree
   { href: "/usuarios", label: "Usuários", icon: Users }, // PWA: Icons.people
+  // Fase Convite-Self-Service (26/07/2026) — diferente de "Usuários" acima
+  // (exclusivo do time interno FNI, vê todas as empresas), esta tela é do
+  // próprio gestor_frota convidar colegas só pra própria empresa. Filtrado
+  // fora de itensCadastrosFiltrados abaixo pra quem não é gestor_frota.
+  { href: "/minha-equipe", label: "Minha Equipe", icon: Users },
   { href: "/motoristas", label: "Motoristas", icon: IdCard }, // PWA: Icons.badge
   { href: "/veiculos", label: "Veículos", icon: Car }, // PWA: Icons.directions_car
   { href: "/centros-custo", label: "Centros de Custo", icon: Receipt }, // PWA: Icons.receipt_long
@@ -229,6 +234,10 @@ const menuPostoGestao = [
   // ver acima), agora também disponível pro posto.
   { href: "/documentos", label: "Documentos", icon: Folder },
   { href: "/usuarios", label: "Usuários", icon: Users },
+  // Fase Convite-Self-Service (26/07/2026) — mesma ideia do lado Frota
+  // acima: o próprio posto convida colegas só pra própria empresa, sem
+  // depender do time interno FNI.
+  { href: "/minha-equipe", label: "Minha Equipe", icon: Users },
 ];
 
 // Fase 27.130 — o dia a dia operacional do posto: negociar com clientes
@@ -468,8 +477,17 @@ export default async function DashboardLayout({
   // admin sem checar quem chamava, já corrigido em usuarios/actions.ts).
   // Tira o item do menu pra quem não pode mesmo usar a tela.
   const podeGerenciarUsuarios = ehAdmin || perfilUsuario?.perfil === "analista";
-  const itensCadastrosFiltrados = podeGerenciarUsuarios ? menuCadastros : menuCadastros.filter((i) => i.href !== "/usuarios");
-  const itensPostoGestaoFiltrados = podeGerenciarUsuarios ? menuPostoGestao : menuPostoGestao.filter((i) => i.href !== "/usuarios");
+  // Fase Convite-Self-Service (26/07/2026) — "Minha Equipe" é exclusivo de
+  // quem é DONO de uma empresa própria (gestor_frota ou posto); admin/
+  // analista já têm "Usuários" (visão global) e colaborador não convida
+  // ninguém.
+  const podeConvidarEquipe = perfilUsuario?.perfil === "gestor_frota" || perfilUsuario?.perfil === "posto";
+  const itensCadastrosFiltrados = (podeGerenciarUsuarios ? menuCadastros : menuCadastros.filter((i) => i.href !== "/usuarios")).filter(
+    (i) => i.href !== "/minha-equipe" || podeConvidarEquipe
+  );
+  const itensPostoGestaoFiltrados = (podeGerenciarUsuarios ? menuPostoGestao : menuPostoGestao.filter((i) => i.href !== "/usuarios")).filter(
+    (i) => i.href !== "/minha-equipe" || podeConvidarEquipe
+  );
 
   // Fase 27.114 — o passo "menu-administracao" só existe no DOM quando
   // ehAdmin (ver bloco {ehAdmin && (...)} abaixo, Fase 27.110); filtra ele

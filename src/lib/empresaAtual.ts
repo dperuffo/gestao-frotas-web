@@ -43,3 +43,36 @@ export async function resolverEmpresaAtual(supabase: Supabase, empresaParam?: st
     nomeEmpresaSelecionada: empresas.find((e) => e.id === empresaSelecionada)?.nome,
   };
 }
+
+export type EmpresaPropria = { id: string; nome: string; segmento: string | null; plano: string; max_usuarios: number | null };
+
+// Fase Convite-Self-Service (26/07/2026) — resolve a(s) empresa(s) que o
+// usuário logado DONO DE VERDADE (vínculo direto em usuarios_empresas),
+// sem passar por empresas_do_usuario()/resolverEmpresaAtual acima. A
+// diferença importa aqui: empresas_do_usuario expande pra empresas "irmãs"
+// do mesmo grupo econômico (Rede de Postos), então um gestor_frota/posto
+// que também enxerga empresas irmãs em outras telas cairia, sem essa
+// função, na possibilidade de "convidar colega pra empresa da qual ele só
+// é irmão de rede, não dono direto" — não é a intenção de /minha-equipe.
+export async function resolverEmpresaPropria(supabase: Supabase, empresaParam?: string) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: vinculos } = await supabase
+    .from("usuarios_empresas")
+    .select("empresa_id, empresas!inner(id, nome, segmento, plano, max_usuarios)")
+    .eq("user_email", user?.email ?? "")
+    .eq("ativo", true);
+
+  const empresas: EmpresaPropria[] = (vinculos ?? []).map((v) => {
+    const e = v.empresas as unknown as EmpresaPropria;
+    return { id: e.id, nome: e.nome, segmento: e.segmento, plano: e.plano, max_usuarios: e.max_usuarios };
+  });
+
+  const empresaSelecionada: EmpresaPropria | null =
+    (empresaParam ? (empresas.find((e) => e.id === empresaParam) ?? null) : null) ??
+    (empresas.length === 1 ? empresas[0] : null);
+
+  return { user, empresas, empresaSelecionada };
+}

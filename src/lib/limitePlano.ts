@@ -56,6 +56,55 @@ export function mensagemLimiteExcedido(r: Extract<LimiteFrotaResultado, { ok: fa
   );
 }
 
+// Fase Convite-Self-Service (26/07/2026, pedido do Daniel: "criar um
+// convite self-service... respeitando max_usuarios") — mesmo espírito de
+// verificarLimiteFrota acima, só que pra usuários. Ao contrário de
+// max_veiculos (que usa uma RPC de contagem, porque a "frota real" soma
+// fontes fora de cadastro_veiculos), a contagem de usuários é direta: só
+// conta vínculos ATIVOS em usuarios_empresas da empresa exata (não expande
+// pra empresas irmãs de grupo econômico — cada empresa tem seu próprio
+// limite de assento). `max_usuarios` é lido direto de `empresas` (mantido
+// em dia pelo webhook do Stripe/bootstrap), não da constante estática
+// LIMITES_PLANO — mesma lógica de max_veiculos ser lido ao vivo.
+export type LimiteUsuariosResultado =
+  | { ok: true; quantidade: number; limite: number }
+  | { ok: false; quantidade: number; limite: number; plano: string; nomeEmpresa: string };
+
+export async function verificarLimiteUsuarios(
+  supabase: SupabaseClient<Database>,
+  empresaId: string
+): Promise<LimiteUsuariosResultado> {
+  const { data: empresa, error: erroEmpresa } = await supabase
+    .from("empresas")
+    .select("nome, plano, max_usuarios")
+    .eq("id", empresaId)
+    .single();
+
+  const { count } = await supabase
+    .from("usuarios_empresas")
+    .select("user_email", { count: "exact", head: true })
+    .eq("empresa_id", empresaId)
+    .eq("ativo", true);
+  const quantidade = count ?? 0;
+
+  if (erroEmpresa || !empresa) return { ok: true, quantidade, limite: -1 }; // sem empresa resolvida, não bloqueia — outra camada já barra isso
+
+  const limite = empresa.max_usuarios;
+  if (limite === null || limite < 0) return { ok: true, quantidade, limite: -1 }; // ilimitado (enterprise) ou sem limite configurado
+
+  if (quantidade >= limite) {
+    return { ok: false, quantidade, limite, plano: empresa.plano, nomeEmpresa: empresa.nome };
+  }
+  return { ok: true, quantidade, limite };
+}
+
+export function mensagemLimiteUsuariosExcedido(r: Extract<LimiteUsuariosResultado, { ok: false }>): string {
+  return (
+    `${r.nomeEmpresa} já usa ${r.quantidade} de ${r.limite} vaga(s) de usuário do plano atual. ` +
+    `Faça upgrade em Minha Assinatura para convidar mais colegas.`
+  );
+}
+
 // Pedido do Daniel (18/07): Gestão de Fretes vira exclusividade do plano
 // Enterprise — com uma exceção: continua liberada durante o período de
 // trial self-service (status "trial", plano "gratuito" nesse momento — ver

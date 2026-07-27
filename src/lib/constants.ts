@@ -185,7 +185,14 @@ export const CICLOS_COMBUSTIVEL = [
   { key: "flex", label: "Flex", ciclo: "Otto" },
 ] as const;
 
-export const PERFIS = ["admin", "gestor_frota", "analista", "posto"] as const;
+// Fase Convite-Self-Service (26/07/2026) — "colaborador" é o perfil dos
+// convidados via /minha-equipe (convite self-service de gestor_frota/posto
+// pra própria empresa). Nasce sem nenhum poder próprio; tudo que ele pode
+// ver/fazer é definido em /permissoes pelo dono da empresa. Ver decisão
+// registrada na migração usuarios_app_perfil_colaborador — não reaproveita
+// 'analista' porque esse perfil hoje também destrava a tela interna
+// /usuarios de gerenciar usuários de QUALQUER cliente do sistema.
+export const PERFIS = ["admin", "gestor_frota", "analista", "posto", "colaborador"] as const;
 export type Perfil = (typeof PERFIS)[number];
 
 // Sentinela usado em permissoes_perfil.empresa_id pra representar "padrão
@@ -197,6 +204,7 @@ export const PERFIL_LABEL: Record<Perfil, string> = {
   gestor_frota: "Gestor de Frota",
   analista: "Analista",
   posto: "Posto",
+  colaborador: "Colaborador",
 };
 
 export const SEGMENTO_USUARIO = ["Frota", "Revenda"] as const;

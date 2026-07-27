@@ -4662,6 +4662,21 @@ export interface Database {
           ebitda: number;
         }[];
       };
+      // Fase Convite-Self-Service (26/07/2026) — RPC dedicada pra /minha-
+      // equipe (superfície mínima: email/nome/perfil/ativo, não a linha
+      // inteira de usuarios_app, que teria CPF/telefone/mfa_secret — ver
+      // comentário na migração equipe_da_empresa_rpc). SECURITY DEFINER com
+      // checagem própria: só devolve algo se quem chama também tem vínculo
+      // direto ativo com a mesma empresa.
+      equipe_da_empresa: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          email: string;
+          nome: string | null;
+          perfil: string;
+          ativo: boolean;
+        }[];
+      };
       manutencao_preditiva_base: {
         Args: { p_empresa_id: string; p_placa?: string | null };
         Returns: {
