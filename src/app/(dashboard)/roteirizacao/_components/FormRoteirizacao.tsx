@@ -662,6 +662,28 @@ export function FormRoteirizacao({
                   >
                     🛡️ Gerar Rotograma
                   </Link>
+                  <Link
+                    href={`/planos-viagem/novo?${new URLSearchParams({
+                      ...(empresaId ? { empresa: empresaId } : {}),
+                      prefill: JSON.stringify({
+                        nome: `${origem.label} → ${destino.label}`,
+                        placa: placa || undefined,
+                        kmEstimado: Math.round(resultado.distanciaKm),
+                        consumoKmL: autonomia || undefined,
+                        precoCombustivel: (() => {
+                          const litrosTotal = resultado.paradas.reduce((s, p) => s + p.litrosSugeridos, 0);
+                          return litrosTotal > 0 ? Math.round((resultado.custoTotal / litrosTotal) * 1000) / 1000 : undefined;
+                        })(),
+                        pedagios: resultado.pracasPedagio.map((praca) => ({
+                          praca_nome: praca.nome,
+                          valor: praca.valorCaminhaoEixo ?? praca.valorCarro ?? 0,
+                        })),
+                      }),
+                    }).toString()}`}
+                    className="btn-secondary"
+                  >
+                    🧾 Criar Plano de Viagem
+                  </Link>
                 </div>
                 <div className="mt-3">
                   <BotaoGerarCardPng

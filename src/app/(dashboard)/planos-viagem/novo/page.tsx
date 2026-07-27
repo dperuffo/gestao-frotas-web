@@ -1,19 +1,36 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
-import { PlanoViagemForm } from "../_components/PlanoViagemForm";
+import { PlanoViagemForm, type PrefillPlanoViagem } from "../_components/PlanoViagemForm";
 
 // Fase 27.48 — a escolha de cliente acontece igual ao resto do app (via
 // ?empresa= já resolvido no seletor da tela de listagem), não dentro do
 // formulário — diferente do mockup original, que tinha um dropdown de
 // cliente dentro do próprio modal. Mantém a mesma navegação já usada em
 // Abastecimentos/Anomalias/Veículos.
+//
+// Fase encadeia-roteirizador-plano-viagem — quando vem do botão "Criar
+// Plano de Viagem" (na Roteirização ou no Rotograma), origem/destino não
+// existem como campo aqui (planos_viagem não guarda isso), mas
+// veículo/combustível/pedágios/vínculo com o Rotograma sim — chega como
+// JSON na query string, igual ao ?prefill= já usado em /rotograma/novo.
+function parsePrefill(bruto: string | undefined): PrefillPlanoViagem | undefined {
+  if (!bruto) return undefined;
+  try {
+    const dados = JSON.parse(bruto) as PrefillPlanoViagem;
+    return dados && typeof dados === "object" ? dados : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export default async function NovoPlanoViagemPage({
   searchParams,
 }: {
-  searchParams: Promise<{ empresa?: string }>;
+  searchParams: Promise<{ empresa?: string; prefill?: string }>;
 }) {
-  const { empresa: empresaParam } = await searchParams;
+  const { empresa: empresaParam, prefill: prefillBruto } = await searchParams;
+  const prefill = parsePrefill(prefillBruto);
   const supabase = await createClient();
   const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
@@ -57,6 +74,7 @@ export default async function NovoPlanoViagemPage({
         rotogramas={rotogramasData ?? []}
         rotasSalvas={rotasSalvasData ?? []}
         centrosCusto={centrosCustoData ?? []}
+        prefill={prefill}
       />
       {empresas.length > 1 && (
         <p className="mt-4 text-xs text-slate-400">

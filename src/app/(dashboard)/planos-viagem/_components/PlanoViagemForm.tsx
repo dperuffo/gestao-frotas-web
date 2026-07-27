@@ -23,6 +23,23 @@ export type RotogramaOpcao = { id: string; numero: number; origem: string | null
 export type RotaSalvaOpcao = { id: string; nome: string };
 export type CentroCustoOpcao = { id: string; nome: string };
 
+// Fase encadeia-roteirizador-plano-viagem (27/07/2026) — pedido do Daniel:
+// o usuário pode ir direto do Roteirizador Inteligente pro Plano de Viagem,
+// sem passar pelo Rotograma (que já tinha esse atalho pro Rotograma) — nesse
+// caso o combustível/pedágios calculados pelo otimizador vêm junto, em vez
+// de perdidos. Também usado (com menos campos) pelo botão equivalente na
+// tela do Rotograma, pra continuar a cadeia Roteirizador → Rotograma →
+// Plano de Viagem.
+export type PrefillPlanoViagem = {
+  nome?: string;
+  placa?: string;
+  kmEstimado?: number;
+  consumoKmL?: number;
+  precoCombustivel?: number;
+  pedagios?: { praca_nome: string; valor: number }[];
+  rotogramaId?: string;
+};
+
 // Fase 27.48 — formulário de Plano de Viagem, usado tanto em /novo quanto em
 // /[id]/editar. Os campos "calculado" (custo de combustível, diárias,
 // manutenção, total e margem) são recomputados ao vivo no client conforme o
@@ -38,6 +55,7 @@ export function PlanoViagemForm({
   rotogramas,
   rotasSalvas,
   centrosCusto,
+  prefill,
 }: {
   empresaId: string;
   plano?: PlanoViagem;
@@ -47,16 +65,17 @@ export function PlanoViagemForm({
   rotogramas: RotogramaOpcao[];
   rotasSalvas: RotaSalvaOpcao[];
   centrosCusto: CentroCustoOpcao[];
+  prefill?: PrefillPlanoViagem;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
-  const [placa, setPlaca] = useState(plano?.placa ?? "");
-  const [kmEstimado, setKmEstimado] = useState(plano?.km_estimado ?? 0);
-  const [consumoKmL, setConsumoKmL] = useState(plano?.consumo_km_l ?? 0);
-  const [precoCombustivel, setPrecoCombustivel] = useState(plano?.preco_combustivel ?? 0);
-  const [pedagios, setPedagios] = useState<Pedagio[]>(pedagiosIniciais ?? []);
+  const [placa, setPlaca] = useState(plano?.placa ?? prefill?.placa ?? "");
+  const [kmEstimado, setKmEstimado] = useState(plano?.km_estimado ?? prefill?.kmEstimado ?? 0);
+  const [consumoKmL, setConsumoKmL] = useState(plano?.consumo_km_l ?? prefill?.consumoKmL ?? 0);
+  const [precoCombustivel, setPrecoCombustivel] = useState(plano?.preco_combustivel ?? prefill?.precoCombustivel ?? 0);
+  const [pedagios, setPedagios] = useState<Pedagio[]>(pedagiosIniciais ?? prefill?.pedagios ?? []);
   const [rotaSalvaId, setRotaSalvaId] = useState(plano?.rota_salva_id ?? "");
   // Fase Pedágios — autocomplete do campo "Nome da praça" (busca na base
   // real pracas_pedagio em vez de texto 100% livre) e sugestão automática a
@@ -208,6 +227,14 @@ export function PlanoViagemForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
+      {!plano && prefill && (
+        <div className="rounded-lg bg-frota-50 px-3 py-2 text-sm text-frota-700">
+          Veículo, combustível{prefill.pedagios?.length ? " e pedágios" : ""} preenchidos a partir da rota calculada
+          {prefill.rotogramaId ? " (e do Rotograma vinculado)" : " na Roteirização"}. Revise e ajuste o que precisar
+          antes de salvar.
+        </div>
+      )}
+
       <section className="card p-6">
         <h2 className="mb-4 text-sm font-semibold text-slate-900">Identificação</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -215,7 +242,7 @@ export function PlanoViagemForm({
             <input
               name="nome"
               required
-              defaultValue={plano?.nome}
+              defaultValue={plano?.nome ?? prefill?.nome ?? ""}
               placeholder="Ex: SP → Curitiba — Abril/2026"
               className="input"
             />
@@ -255,7 +282,7 @@ export function PlanoViagemForm({
             </select>
           </Campo>
           <Campo label="Rotograma (opcional)">
-            <select name="rotograma_id" defaultValue={plano?.rotograma_id ?? ""} className="input">
+            <select name="rotograma_id" defaultValue={plano?.rotograma_id ?? prefill?.rotogramaId ?? ""} className="input">
               <option value="">— Nenhum —</option>
               {rotogramas.map((r) => (
                 <option key={r.id} value={r.id}>

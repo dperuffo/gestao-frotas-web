@@ -24,6 +24,32 @@ export default async function RotogramaDetalhePage({ params }: { params: Promise
   const riscos = (rotograma.riscos as RotogramaRisco[] | null) ?? [];
   const paradas = (rotograma.paradas as RotogramaParada[] | null) ?? [];
 
+  // Fase encadeia-roteirizador-plano-viagem — continua a cadeia Roteirizador
+  // → Rotograma → Plano de Viagem: leva placa e o vínculo com este Rotograma
+  // (fica pré-selecionado no campo "Rotograma (opcional)" de lá) + os
+  // pedágios já mapeados aqui. O valor do pedágio é extraído de forma
+  // best-effort do texto da descrição (formato "Concessionária · R$ X,XX
+  // (carro)", gerado pelo botão "Gerar Rotograma" da Roteirização) — se não
+  // for esse formato (ex.: parada criada/editada manualmente), entra com
+  // valor 0 pro usuário completar.
+  const pedagiosDoRotograma = paradas
+    .filter((p) => p.categoria === "pedagio")
+    .map((p) => {
+      const match = p.descricao.match(/R\$\s*([\d.,]+)/);
+      const valor = match ? Number(match[1].replace(/\./g, "").replace(",", ".")) : 0;
+      return { praca_nome: p.local, valor: Number.isFinite(valor) ? valor : 0 };
+    });
+
+  const hrefPlanoViagem = `/planos-viagem/novo?${new URLSearchParams({
+    ...(rotograma.empresa_id ? { empresa: rotograma.empresa_id } : {}),
+    prefill: JSON.stringify({
+      nome: `${rotograma.origem ?? "?"} → ${rotograma.destino ?? "?"}`,
+      placa: rotograma.placa ?? undefined,
+      rotogramaId: rotograma.id,
+      pedagios: pedagiosDoRotograma,
+    }),
+  }).toString()}`;
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -42,6 +68,9 @@ export default async function RotogramaDetalhePage({ params }: { params: Promise
         <div className="flex flex-wrap gap-2">
           <Link href={`/rotograma/${rotograma.id}/editar`} className="btn-secondary">
             Editar
+          </Link>
+          <Link href={hrefPlanoViagem} className="btn-secondary">
+            🧾 Criar Plano de Viagem
           </Link>
           <BotaoBaixarPdfRotogramaLazy
             nomeArquivo={`rotograma-${rotograma.numero}.pdf`}
