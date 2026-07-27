@@ -245,6 +245,19 @@ function LoginCard() {
           <div className="h-px flex-1 bg-white/10" />
         </div>
 
+        {/* Fase melhora-fluxo-convite (27/07/2026) — achado real com uma
+            colaboradora convidada: ela tem e-mail @gmail.com e tentou
+            "Entrar com Google" achando que era o jeito certo (seu e-mail ser
+            do Gmail não tem nada a ver com o método de login da CONTA —
+            contas criadas por convite são sempre e-mail+senha, mesmo que o
+            endereço seja @gmail.com). Só aparece pra quem ainda não tentou
+            entrar nada (evita ruído pra quem já sabe usar). */}
+        <p className="mb-3 text-center text-xs text-slate-500">
+          Recebeu um convite por e-mail? Use o link do convite pra criar sua senha e entre abaixo
+          com e-mail e senha — o botão &quot;Entrar com Google&quot; só funciona se sua conta foi
+          criada com login do Google (ter um e-mail @gmail.com não é a mesma coisa).
+        </p>
+
         <form onSubmit={handleSenhaSubmit} className="space-y-3">
           <div>
             <label className="label-dark">E-mail</label>
