@@ -144,6 +144,10 @@ export const LIMITES_PLANO_POSTO: Record<PlanoPosto, { max_usuarios: number; max
 // — mostrados nos cards de /assinatura quando segmento='Revenda' e na
 // landing. Essencial não permite Rede de Postos (posto avulso); Profissional
 // e Enterprise liberam criar/entrar em rede com assinatura única pela matriz.
+// Pedido do Daniel (27/07/2026): retirado o "Gerente de conta dedicado" do
+// Enterprise — não ofertar esse benefício por enquanto (nem pra Frota, nem
+// pra Posto). Ver mesma remoção em landingBody.ts e termoAdesao.ts
+// (Cláusula 3ª de ambos os Enterprise, com hash recalculado).
 export const FEATURES_PLANO_POSTO: Record<PlanoPosto, string[]> = {
   posto_essencial: [
     "Gestão de faturas e conciliação de abastecimentos",
@@ -164,7 +168,7 @@ export const FEATURES_PLANO_POSTO: Record<PlanoPosto, string[]> = {
     "Rede de Postos — até 20 postos inclusos numa assinatura só (matriz paga por todos)",
     "Posto excedente: R$20/mês cada, acima da faixa inclusa",
     "API, integrações e webhooks",
-    "Gerente de conta dedicado e SLA 99,95%",
+    "SLA 99,95%",
   ],
 };
 

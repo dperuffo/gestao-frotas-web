@@ -27,7 +27,7 @@ export type PlanoComTermo = "basico" | "profissional" | "enterprise";
 export const HASH_TERMO_ADESAO_POR_PLANO: Record<PlanoComTermo, string> = {
   basico: "069dae7acc7750c63d4a2ff9357d8029bd234ccbeb3a0a8f62a2a7d59a4d22ed",
   profissional: "72b2edc95d19d23daf51e2faba057291c624f10e39920254e35e419d33eba38c",
-  enterprise: "dc6c424a26850b62246786acb7598a3da144ff822b354bff2c205a52e5cf7da5",
+  enterprise: "ed8e86ac4336e94b114964afbf631c3e21eaa25eaceb74e63ab9c82f98d95ea4",
 };
 
 const CABECALHO_COMUM = [
@@ -39,6 +39,12 @@ const CABECALHO_COMUM = [
   "",
 ];
 
+// Pedido do Daniel (27/07/2026): retirado o "gerente de conta dedicado" da
+// Cláusula 3ª do Enterprise (Frota e Posto) — não ofertar esse benefício
+// por enquanto. Hash de ambos os planos recalculado (ver HASH_TERMO_ADESAO_
+// POR_PLANO.enterprise e HASH_TERMO_ADESAO_POSTO_POR_PLANO.posto_enterprise
+// abaixo) e replicado na Edge Function create-checkout-session.
+//
 // Cláusula 3ª — a única parte do termo que varia por plano. Cada plano lista
 // só as SUAS condições reais (limites de usuários/veículos, o que o plano
 // libera do módulo de Gestão de Fretes/TMS, e o prazo de suporte) — nunca os
@@ -53,7 +59,7 @@ const CLAUSULA_3_POR_PLANO: Record<PlanoComTermo, string> = {
   profissional:
     "Cláusula 3ª — Plano Contratado: PROFISSIONAL. 3.1. Limites: até 20 (vinte) usuários e até 200 (duzentos) veículos, sendo os primeiros 60 (sessenta) veículos inclusos no valor mensal desta adesão — veículos excedentes são cobrados automaticamente à razão de R$ 3,50 (três reais e cinquenta centavos) por veículo/mês. 3.2. Recursos inclusos: todos os recursos do plano Essencial, mais o módulo de Gestão de Fretes (TMS) com criação de até 30 (trinta) fretes por mês; emissão de CT-e/MDF-e e faturamento de fretes; Cotações e Tabelas de Frete com piso mínimo ANTT; relatórios avançados; API e Webhooks. 3.3. O limite de 30 fretes/mês é renovado automaticamente no início de cada mês; fretes excedentes ao limite requerem upgrade para o plano Enterprise. 3.4. Suporte técnico em até 24 (vinte e quatro) horas úteis. 3.5. Trial gratuito de 14 dias, sem necessidade de cartão de crédito, antes da confirmação desta adesão.",
   enterprise:
-    "Cláusula 3ª — Plano Contratado: ENTERPRISE. 3.1. Limites: usuários e veículos ilimitados, sendo os primeiros 150 (cento e cinquenta) veículos inclusos no valor mensal desta adesão — veículos excedentes são cobrados automaticamente à razão de R$ 2,50 (dois reais e cinquenta centavos) por veículo/mês. 3.2. Recursos inclusos: todos os recursos do plano Profissional, mais o módulo de Gestão de Fretes (TMS) sem limite de fretes criados por mês; Single Sign-On (SSO/SAML); integrações dedicadas com TOTVS/SAP; gerente de conta dedicado. 3.3. SLA (Service Level Agreement) de disponibilidade de 99,95% e suporte técnico 24x7 (24 horas por dia, 7 dias por semana). 3.4. Condições comerciais diferenciadas são negociáveis para frotas acima de 500 (quinhentos) veículos, mediante aditivo específico a este Termo.",
+    "Cláusula 3ª — Plano Contratado: ENTERPRISE. 3.1. Limites: usuários e veículos ilimitados, sendo os primeiros 150 (cento e cinquenta) veículos inclusos no valor mensal desta adesão — veículos excedentes são cobrados automaticamente à razão de R$ 2,50 (dois reais e cinquenta centavos) por veículo/mês. 3.2. Recursos inclusos: todos os recursos do plano Profissional, mais o módulo de Gestão de Fretes (TMS) sem limite de fretes criados por mês; Single Sign-On (SSO/SAML); integrações dedicadas com TOTVS/SAP. 3.3. SLA (Service Level Agreement) de disponibilidade de 99,95% e suporte técnico 24x7 (24 horas por dia, 7 dias por semana). 3.4. Condições comerciais diferenciadas são negociáveis para frotas acima de 500 (quinhentos) veículos, mediante aditivo específico a este Termo.",
 };
 
 const RODAPE_COMUM = [
@@ -121,7 +127,7 @@ export type PlanoPostoComTermo = "posto_essencial" | "posto_profissional" | "pos
 export const HASH_TERMO_ADESAO_POSTO_POR_PLANO: Record<PlanoPostoComTermo, string> = {
   posto_essencial: "a14b437c47fcb7299c25e2c74b08276e64c9aa6dfcbcb584f300333a46fccc6b",
   posto_profissional: "c636411c696e5624b57833750560ca3fbeaf4568e8f9874593721ce8fe8c75c7",
-  posto_enterprise: "acfac8bb337f313e7e042f7d20690db9667d5e2f67f7724d476ed317d7d4fb07",
+  posto_enterprise: "28bf8e5c25ebab0da0f783a31773d22fc418b9c7cc54984d2b6875ebfca49902",
 };
 
 const CABECALHO_COMUM_POSTO = [
@@ -143,7 +149,7 @@ const CLAUSULA_3_POR_PLANO_POSTO: Record<PlanoPostoComTermo, string> = {
   posto_profissional:
     "Cláusula 3ª — Plano Contratado: PROFISSIONAL (POSTO). 3.1. Recursos inclusos: todos os recursos do plano Essencial, mais Inteligência de Rede e Antifraude. 3.2. Rede de Postos: o CLIENTE pode criar ou integrar uma Rede de Postos de até 5 (cinco) postos inclusos numa única assinatura, cuja cobrança é única e de responsabilidade exclusiva da empresa administradora da rede (matriz), indicada no momento da criação da rede — postos excedentes à faixa inclusa são cobrados automaticamente à razão de R$ 35,00 (trinta e cinco reais) por posto/mês, também de responsabilidade da matriz. 3.3. Suporte técnico em até 24 (vinte e quatro) horas úteis.",
   posto_enterprise:
-    "Cláusula 3ª — Plano Contratado: ENTERPRISE (POSTO). 3.1. Recursos inclusos: todos os recursos do plano Profissional, mais API, integrações e webhooks, e gerente de conta dedicado. 3.2. Rede de Postos: o CLIENTE pode criar ou integrar uma Rede de Postos de até 20 (vinte) postos inclusos numa única assinatura, cuja cobrança é única e de responsabilidade exclusiva da empresa administradora da rede (matriz), indicada no momento da criação da rede — postos excedentes à faixa inclusa são cobrados automaticamente à razão de R$ 20,00 (vinte reais) por posto/mês, também de responsabilidade da matriz. 3.3. SLA (Service Level Agreement) de disponibilidade de 99,95% e suporte técnico 24x7 (24 horas por dia, 7 dias por semana).",
+    "Cláusula 3ª — Plano Contratado: ENTERPRISE (POSTO). 3.1. Recursos inclusos: todos os recursos do plano Profissional, mais API, integrações e webhooks. 3.2. Rede de Postos: o CLIENTE pode criar ou integrar uma Rede de Postos de até 20 (vinte) postos inclusos numa única assinatura, cuja cobrança é única e de responsabilidade exclusiva da empresa administradora da rede (matriz), indicada no momento da criação da rede — postos excedentes à faixa inclusa são cobrados automaticamente à razão de R$ 20,00 (vinte reais) por posto/mês, também de responsabilidade da matriz. 3.3. SLA (Service Level Agreement) de disponibilidade de 99,95% e suporte técnico 24x7 (24 horas por dia, 7 dias por semana).",
 };
 
 export function montarParagrafosTermoAdesaoPosto(plano: PlanoPostoComTermo): string[] {
