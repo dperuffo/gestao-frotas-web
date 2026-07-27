@@ -7445,3 +7445,35 @@ ao ambiente de produção; registrar a aba nova em Permissões por Perfil/Centra
 usando a massa de `scripts/gerar-exemplos-cte-teste.mjs` como base de QA.
 
 Validado: `npx tsc --noEmit` limpo.
+
+## Fase template-email-convite — template com a marca FNI para o e-mail de convite
+
+Pedido do Daniel (print do e-mail recebido no celular): o e-mail de convite ("You've been
+invited... Accept invitation...") ainda vinha no template genérico em inglês do Supabase, sem
+nenhuma identidade da FNI — mesmo problema que "Confirm signup"/"Reset Password" tinham antes
+da Fase 27.16.
+
+Esse é o e-mail disparado por `admin.auth.admin.inviteUserByEmail` — usado em 5 lugares:
+`minha-equipe/actions.ts` (colega convida colega, perfil "colaborador"), `usuarios/actions.ts`
+e `usuarios/importar/actions.ts` (time interno FNI convida pra qualquer empresa/perfil),
+`negociacoesPostos.ts` e `api/usuarios/convidar/route.ts` (PWA Flutter). Por isso o texto do
+template é genérico ("Você foi convidado(a) para acessar a FNI Gestão de Frotas") — não
+menciona "colaborador" nem nenhum perfil específico, já que serve todos os casos.
+
+- `email-templates/invite.html` (novo) — mesmo header/paleta/rodapé de `confirm-signup.html` e
+  `reset-password.html` (logo, navy `#04112e`/cyan `#00b4d8`), botão "Aceitar convite".
+- O link já usa `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/redefinir-senha`
+  em vez de `{{ .ConfirmationURL }}` — mesmo motivo da Fase 27.16 (o link padrão passa por
+  `/auth/callback`, que exige PKCE/cookie do mesmo navegador; convite quase sempre é aceito num
+  dispositivo diferente de quem enviou). `/auth/confirm/route.ts` já aceita `type=invite` sem
+  nenhuma mudança de código — `EmailOtpType` do Supabase já cobre esse valor. `next=/redefinir-senha`
+  reaproveita a mesma tela de "Definir nova senha" já usada na recuperação de senha (ela só exige
+  uma sessão ativa via `supabase.auth.getUser()`, que o `verifyOtp` do `/auth/confirm` já deixa
+  pronta — não precisou criar nenhuma tela nova).
+
+**Ação manual pendente do Daniel** (Supabase Dashboard → Authentication → Email Templates → aba
+"Invite user" — não dá pra editar isso por SQL/MCP): colar o conteúdo de `email-templates/invite.html`
+no campo de corpo do template. Subject sugerido: "Você foi convidado — FNI Gestão de Frotas".
+
+Validado com `npx tsc --noEmit`, ambos limpos (nenhum código do Next foi alterado — só o HTML
+novo e este documento).
