@@ -19,7 +19,6 @@ import {
   Fuel,
   FileText,
   Sparkles,
-  ShieldAlert,
   Gift,
   Route,
   Shield,
@@ -143,14 +142,19 @@ const menuOperacao = [
   // produção pelo Daniel) — a rota /anomalias continua existindo só como
   // redirect pra cá, pra não quebrar favoritos.
   { href: "/acoes-sugeridas", label: "Ações Sugeridas", icon: Sparkles }, // PWA: Icons.auto_awesome
-  // Fase 27.15x — diferente de Ações Sugeridas (detecta DEPOIS do abastecimento),
-  // aqui o cliente cadastra regras que um sistema externo consulta ANTES de
-  // autorizar — ver POST /api/integracoes/antifraude/verificar.
-  { href: "/antifraude", label: "Antifraude", icon: ShieldAlert }, // PWA: Icons.gpp_maybe_outlined
+  // Fase remove-antifraude-do-menu (27/07/2026, pedido do Daniel: "as duas
+  // regras definidas dentro da aba de Antifraude já estão contempladas nos
+  // parametros de uso do cliente... não vejo necessidade de termos a aba de
+  // antifraude na aplicacao") — tirado só do menu (opção escolhida pelo
+  // Daniel via AskUserQuestion, entre 3 alternativas). A rota /antifraude, as
+  // telas, as ações e o endpoint POST /api/integracoes/antifraude/verificar
+  // continuam funcionando normalmente (inclusive a checagem de bloqueios de
+  // Ações Sugeridas, que reaproveita essa mesma rota) — só não tem mais link
+  // visível na navegação. Nenhuma chave de API usa o escopo
+  // antifraude:verificar até hoje (confirmado no banco antes desta mudança).
   // Fase 27.130 — indicadores do programa "Estrada que Cuida" (app próprio
-  // do motorista) por motorista, mesmo padrão de seleção de cliente do
-  // Antifraude acima; RPC indicadores_fidelidade_motoristas já checa
-  // autorização por empresa/admin internamente.
+  // do motorista) por motorista; RPC indicadores_fidelidade_motoristas já
+  // checa autorização por empresa/admin internamente.
   { href: "/fidelidade-motoristas", label: "Fidelidade dos Motoristas", icon: Gift },
   // Fase Parcerias Locais (17/07) — o cliente cria seus próprios benefícios
   // (treinamentos, marketplace, telemedicina etc.) no catálogo de
