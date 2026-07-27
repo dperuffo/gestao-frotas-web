@@ -50,6 +50,98 @@ function parsearPedagios(formData: FormData): PedagioInput[] {
   }
 }
 
+export type ParadaPrePedidoInput = {
+  ordem: number;
+  posto_cnpj: string;
+  posto_nome: string | null;
+  km_previsto: number | null;
+  litros_previstos: number | null;
+  lat: number | null;
+  lon: number | null;
+};
+
+// Paradas de abastecimento sugeridas pelo Roteirizador Inteligente chegam
+// como JSON serializado num campo hidden (mesmo padrão de `pedagios_json`) —
+// só existe quando o plano nasceu de um prefill vindo da Roteirização.
+function parsearParadasPrePedido(formData: FormData): ParadaPrePedidoInput[] {
+  const raw = String(formData.get("paradas_pre_pedido_json") ?? "[]");
+  try {
+    const lista = JSON.parse(raw);
+    if (!Array.isArray(lista)) return [];
+    return lista
+      .map((p, i) => ({
+        ordem: Number.isFinite(Number(p?.ordem)) ? Number(p.ordem) : i,
+        posto_cnpj: String(p?.posto_cnpj ?? "").trim(),
+        posto_nome: p?.posto_nome ? String(p.posto_nome).trim() : null,
+        km_previsto: Number.isFinite(Number(p?.km_previsto)) ? Number(p.km_previsto) : null,
+        litros_previstos: Number.isFinite(Number(p?.litros_previstos)) ? Number(p.litros_previstos) : null,
+        lat: Number.isFinite(Number(p?.lat)) ? Number(p.lat) : null,
+        lon: Number.isFinite(Number(p?.lon)) ? Number(p.lon) : null,
+      }))
+      .filter((p) => p.posto_cnpj);
+  } catch {
+    return [];
+  }
+}
+
+// Gera o Pré-Pedido (número sequencial + paradas pré-agendadas) quando o
+// parâmetro de uso "Pré-Pedido" está habilitado pra empresa e existem
+// paradas vindas do prefill da Roteirização. Best-effort: se falhar, o
+// Plano de Viagem já foi criado normalmente — só loga pro Daniel investigar.
+async function gerarPrePedidoSeHabilitado(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  empresaId: string,
+  planoViagemId: string,
+  placa: string | null,
+  motoristaId: string | null,
+  criadoPor: string | null,
+  paradas: ParadaPrePedidoInput[]
+): Promise<void> {
+  if (paradas.length === 0) return;
+
+  const { data: parametro } = await supabase
+    .from("parametros_pre_pedido")
+    .select("habilitado")
+    .eq("empresa_id", empresaId)
+    .maybeSingle();
+
+  if (!parametro?.habilitado) return;
+
+  const { data: prePedido, error: erroPrePedido } = await supabase
+    .from("pre_pedidos")
+    .insert({
+      empresa_id: empresaId,
+      plano_viagem_id: planoViagemId,
+      placa,
+      motorista_id: motoristaId,
+      criado_por: criadoPor,
+    })
+    .select("id")
+    .single();
+
+  if (erroPrePedido || !prePedido) {
+    console.error("[planos-viagem] falha ao criar pré-pedido:", erroPrePedido?.message);
+    return;
+  }
+
+  const { error: erroParadas } = await supabase.from("pre_pedidos_paradas").insert(
+    paradas.map((p) => ({
+      pre_pedido_id: prePedido.id,
+      ordem: p.ordem,
+      posto_cnpj: p.posto_cnpj,
+      posto_nome: p.posto_nome,
+      km_previsto: p.km_previsto,
+      litros_previstos: p.litros_previstos,
+      lat: p.lat,
+      lon: p.lon,
+    }))
+  );
+
+  if (erroParadas) {
+    console.error("[planos-viagem] falha ao salvar paradas do pré-pedido:", erroParadas.message);
+  }
+}
+
 function montarPayload(formData: FormData, pedagiosTotal: number) {
   const kmEstimado = numero(formData, "km_estimado");
   const consumoKmL = numero(formData, "consumo_km_l");
@@ -147,6 +239,17 @@ export async function criarPlanoViagem(
       console.error("[planos-viagem] falha ao salvar pedágios:", erroPedagios.message);
     }
   }
+
+  const paradasPrePedido = parsearParadasPrePedido(formData);
+  await gerarPrePedidoSeHabilitado(
+    supabase,
+    empresaId,
+    data.id,
+    payload.placa,
+    payload.motorista_id,
+    user?.email ?? null,
+    paradasPrePedido
+  );
 
   revalidatePath("/planos-viagem");
   redirect(`/planos-viagem/${data.id}/editar`);

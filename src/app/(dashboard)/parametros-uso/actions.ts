@@ -505,3 +505,26 @@ export async function excluirCota(id: string) {
   await supabase.from("parametros_cota_veiculo").delete().eq("id", id);
   revalidatePath("/parametros-uso");
 }
+
+// Pré-Pedido — 1 linha por empresa (upsert por empresa_id), diferente dos
+// outros tipos que são listas de regras escopadas. Ver SecaoPrePedido.tsx.
+export async function salvarParametroPrePedidoAcao(empresaId: string, habilitado: boolean): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase.from("parametros_pre_pedido").upsert(
+    {
+      empresa_id: empresaId,
+      habilitado,
+      atualizado_em: new Date().toISOString(),
+      atualizado_por: user?.email ?? null,
+    },
+    { onConflict: "empresa_id" }
+  );
+
+  if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+  revalidatePath("/parametros-uso");
+  return {};
+}

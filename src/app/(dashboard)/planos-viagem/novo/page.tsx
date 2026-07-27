@@ -52,13 +52,17 @@ export default async function NovoPlanoViagemPage({
     { data: rotogramasData },
     { data: rotasSalvasData },
     { data: centrosCustoData },
+    { data: parametroPrePedidoData },
   ] = await Promise.all([
     supabase.rpc("veiculos_da_empresa", { p_empresa_id: empresaSelecionada }),
     supabase.from("motoristas").select("id, nome_completo").eq("empresa_id", empresaSelecionada).order("nome_completo"),
     supabase.from("rotogramas").select("id, numero, origem, destino").eq("empresa_id", empresaSelecionada).order("numero", { ascending: false }),
     supabase.from("rotas_salvas").select("id, nome").eq("empresa_id", empresaSelecionada).order("criado_em", { ascending: false }),
     supabase.from("centros_custo").select("id, nome").eq("empresa_id", empresaSelecionada).order("nome"),
+    supabase.from("parametros_pre_pedido").select("habilitado").eq("empresa_id", empresaSelecionada).maybeSingle(),
   ]);
+
+  const prePedidoHabilitado = parametroPrePedidoData?.habilitado === true;
 
   const veiculos = (veiculosData ?? [])
     .filter((v) => v.ativo !== false)
@@ -75,6 +79,7 @@ export default async function NovoPlanoViagemPage({
         rotasSalvas={rotasSalvasData ?? []}
         centrosCusto={centrosCustoData ?? []}
         prefill={prefill}
+        prePedidoHabilitado={prePedidoHabilitado}
       />
       {empresas.length > 1 && (
         <p className="mt-4 text-xs text-slate-400">

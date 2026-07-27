@@ -599,6 +599,12 @@ function SecaoHub({
 # resposta (reprovado):    { "autorizado": false, "motivo": "...", "regra_id": "..." }
 # resposta (falha nossa):  { "autorizado": true, "aviso": "..." }  — nunca bloqueia por erro nosso`}
             </pre>
+            <p className="mt-2 text-xs text-slate-500">
+              Se o cliente tiver o parâmetro de uso &quot;Pré-Pedido&quot; habilitado (ver /parametros-uso), esta
+              mesma verificação passa a exigir <code>placa</code> e <code>posto_cnpj</code> no corpo: o abastecimento
+              só é autorizado se houver um Pré-Pedido ativo daquela placa com parada pré-agendada para o
+              CNPJ informado. A parada é marcada como atendida automaticamente após a autorização.
+            </p>
             <p className="mt-3 text-xs text-slate-400">
               Chame isto <strong>antes</strong> de liberar o abastecimento — a resposta já diz se pode
               seguir. Se a verificação falhar por algum problema nosso, a resposta ainda assim autoriza

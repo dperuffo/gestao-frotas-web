@@ -14,6 +14,7 @@ import { SecaoDiasHorarios } from "./_components/SecaoDiasHorarios";
 import { SecaoPostosPermitidos } from "./_components/SecaoPostosPermitidos";
 import { SecaoLimiteServicos } from "./_components/SecaoLimiteServicos";
 import { SecaoCota } from "./_components/SecaoCota";
+import { SecaoPrePedido } from "./_components/SecaoPrePedido";
 
 // Fase 27.120/27.121 — tela de "Parâmetros de Uso" (pedido do Daniel, com
 // base num anexo de referência com 10 tipos de regra pra balizar
@@ -34,6 +35,7 @@ const ABAS: { tipo: string; label: string }[] = [
   { tipo: "postos", label: "Postos" },
   { tipo: "servicos", label: "Serviços" },
   { tipo: "cotas", label: "Cotas" },
+  { tipo: "pre-pedido", label: "Pré-Pedido" },
 ];
 
 type VinculoRow = {
@@ -265,6 +267,15 @@ async function ConteudoAba({
         </div>
       </>
     );
+  }
+
+  if (tipo === "pre-pedido") {
+    const { data: parametro } = await supabase
+      .from("parametros_pre_pedido")
+      .select("habilitado")
+      .eq("empresa_id", empresaId)
+      .maybeSingle();
+    return <SecaoPrePedido empresaId={empresaId} habilitado={parametro?.habilitado === true} />;
   }
 
   // Fase 27.121 — os outros 9 tipos: opções compartilhadas (veículos,

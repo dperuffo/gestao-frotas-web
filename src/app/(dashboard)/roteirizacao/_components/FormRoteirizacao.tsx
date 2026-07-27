@@ -678,6 +678,21 @@ export function FormRoteirizacao({
                           praca_nome: praca.nome,
                           valor: praca.valorCaminhaoEixo ?? praca.valorCarro ?? 0,
                         })),
+                        // Fase Pré-Pedido (27/07/2026) — snapshot dos pontos de
+                        // abastecimento sugeridos pelo otimizador, carregado até o
+                        // Plano de Viagem pra virar o Pré-Pedido automaticamente
+                        // (se a empresa tiver o parâmetro habilitado, ver
+                        // planos-viagem/actions.ts). Não editável no formulário —
+                        // só passa direto, igual aos pedágios sugeridos da rota.
+                        paradas: resultado.paradas.map((p, i) => ({
+                          ordem: i,
+                          posto_cnpj: p.cnpj,
+                          posto_nome: p.label,
+                          km_previsto: Math.round(p.km * 10) / 10,
+                          litros_previstos: Math.round(p.litrosSugeridos * 10) / 10,
+                          lat: p.lat,
+                          lon: p.lon,
+                        })),
                       }),
                     }).toString()}`}
                     className="btn-secondary"

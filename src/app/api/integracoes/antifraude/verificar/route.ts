@@ -240,6 +240,67 @@ export async function POST(request: Request) {
 
     }
 
+    // Fase Pré-Pedido — pedido do Daniel: quando o parâmetro de uso
+    // "Pré-Pedido" está habilitado (ver /parametros-uso), presume-se que
+    // toda viagem tem um Plano de Viagem com pontos de abastecimento
+    // pré-agendados (gerados automaticamente a partir do Roteirizador
+    // Inteligente — ver planos-viagem/actions.ts). Abastecimento só é
+    // autorizado num posto que conste como parada pendente daquela placa
+    // — checado por último, depois de bloqueios/regras, e só marca a
+    // parada como atendida na borda do sucesso (se algo acima já tivesse
+    // negado, a parada continuaria disponível pro próximo posto).
+    const { data: paramPrePedido } = await supabase
+      .from("parametros_pre_pedido")
+      .select("habilitado")
+      .eq("empresa_id", chave.empresaId)
+      .maybeSingle();
+
+    if (paramPrePedido?.habilitado) {
+      if (!placa) {
+        return NextResponse.json({
+          autorizado: false,
+          motivo: "Pré-Pedido habilitado para este cliente: é necessário informar a placa do veículo pra autorizar o abastecimento.",
+        });
+      }
+
+      const postoCnpj = corpo.posto_cnpj?.replace(/\D/g, "") ?? "";
+      if (!postoCnpj) {
+        return NextResponse.json({
+          autorizado: false,
+          motivo: "Pré-Pedido habilitado para este cliente: é necessário informar o CNPJ do posto pra autorizar o abastecimento.",
+        });
+      }
+
+      const { data: prePedidosRaw, error: erroPrePedidos } = await supabase
+        .from("pre_pedidos")
+        .select("id, pre_pedidos_paradas(id, posto_cnpj, atendido)")
+        .eq("empresa_id", chave.empresaId)
+        .eq("placa", placa)
+        .eq("status", "ativo");
+
+      if (erroPrePedidos) throw new Error(erroPrePedidos.message);
+
+      const paradaPendente = (prePedidosRaw ?? [])
+        .flatMap((pp) => pp.pre_pedidos_paradas)
+        .find((parada) => !parada.atendido && parada.posto_cnpj.replace(/\D/g, "") === postoCnpj);
+
+      if (!paradaPendente) {
+        return NextResponse.json({
+          autorizado: false,
+          motivo: "Nenhum Pré-Pedido ativo desta empresa prevê abastecimento desta placa neste posto.",
+        });
+      }
+
+      await supabase
+        .from("pre_pedidos_paradas")
+        .update({
+          atendido: true,
+          atendido_em: new Date().toISOString(),
+          abastecimento_referencia: corpo as unknown as Json,
+        })
+        .eq("id", paradaPendente.id);
+    }
+
     await marcarUsoChaveApi(supabase, chave.id);
     return NextResponse.json({ autorizado: true });
   } catch (erro) {

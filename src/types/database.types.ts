@@ -2064,6 +2064,32 @@ export interface Database {
           },
         ];
       };
+      // Parâmetro de Uso Pré-Pedido — 1 linha por empresa (PK = empresa_id).
+      // Quando habilitado=true, criar um Plano de Viagem a partir de uma
+      // rota do Roteirizador Inteligente gera um Pré-Pedido automaticamente
+      // e passa a restringir abastecimentos no antifraude/verificar (só
+      // libera se houver parada pré-agendada pra aquele CNPJ/placa).
+      parametros_pre_pedido: {
+        Row: {
+          empresa_id: string;
+          habilitado: boolean;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_pre_pedido"]["Row"]> & {
+          empresa_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_pre_pedido"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_pre_pedido_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: true;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       parametros_variacao_hodometro: {
         Row: {
           id: string;
@@ -3479,6 +3505,77 @@ export interface Database {
           },
         ];
       };
+      // Pré-Pedido — gerado automaticamente ao criar um Plano de Viagem
+      // quando parametros_pre_pedido.habilitado=true pra empresa. Guarda o
+      // número sequencial + os pontos de abastecimento pré-agendados
+      // (vindos do Roteirizador Inteligente) pra validação no
+      // antifraude/verificar e consulta pelo posto.
+      pre_pedidos: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          plano_viagem_id: string;
+          numero: number;
+          placa: string | null;
+          motorista_id: string | null;
+          status: "ativo" | "concluido" | "cancelado";
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pre_pedidos"]["Row"]> & {
+          empresa_id: string;
+          plano_viagem_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["pre_pedidos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "pre_pedidos_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pre_pedidos_plano_viagem_id_fkey";
+            columns: ["plano_viagem_id"];
+            isOneToOne: false;
+            referencedRelation: "planos_viagem";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pre_pedidos_paradas: {
+        Row: {
+          id: string;
+          pre_pedido_id: string;
+          ordem: number;
+          posto_cnpj: string;
+          posto_nome: string | null;
+          km_previsto: number | null;
+          litros_previstos: number | null;
+          lat: number | null;
+          lon: number | null;
+          atendido: boolean;
+          atendido_em: string | null;
+          abastecimento_referencia: Json | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pre_pedidos_paradas"]["Row"]> & {
+          pre_pedido_id: string;
+          posto_cnpj: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["pre_pedidos_paradas"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "pre_pedidos_paradas_pre_pedido_id_fkey";
+            columns: ["pre_pedido_id"];
+            isOneToOne: false;
+            referencedRelation: "pre_pedidos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Gestão de Chamados (tickets) — tabela que já existia no banco
       // compartilhado (usada por uma ferramenta anterior, com registros
       // reais), evoluída na Fase 19: comentarios/anexos (colunas antigas,
@@ -4717,6 +4814,25 @@ export interface Database {
       // modal de "Editar" em /minha-equipe (equipe_da_empresa, acima, não
       // expõe isso na listagem geral de propósito). Restrita a quem chama
       // sendo dono da equipe (gestor_frota/posto).
+      // SECURITY DEFINER — usada pela tela de consulta do posto. Retorna só
+      // a parada do PRÓPRIO posto chamador (nunca o itinerário completo do
+      // cliente), autorização checada internamente via empresas_do_usuario.
+      consultar_pre_pedido_para_posto: {
+        Args: { p_numero: number; p_empresa_posto_id: string };
+        Returns: {
+          pre_pedido_id: string;
+          numero: number;
+          status: string;
+          placa: string | null;
+          motorista_nome: string | null;
+          data_saida: string | null;
+          km_estimado: number | null;
+          parada_ordem: number;
+          parada_posto_nome: string | null;
+          parada_litros_previstos: number | null;
+          parada_atendida: boolean;
+        }[];
+      };
       dados_colega_para_edicao: {
         Args: { p_empresa_id: string; p_email: string };
         Returns: {

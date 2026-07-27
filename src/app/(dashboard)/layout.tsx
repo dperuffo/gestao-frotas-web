@@ -43,6 +43,7 @@ import {
   Scale,
   Ticket,
   ClipboardCheck,
+  ListChecks,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -267,6 +268,10 @@ const menuPostoOperacao = [
   // Fase 27.72 — cadastro dos clientes que já negociaram com o posto
   // (qualquer status), com ciclo de abastecimento/pagamento por cliente.
   { href: "/clientes-posto", label: "Clientes", icon: Building2 },
+  // Fase Pré-Pedido — pedido do Daniel: consulta do Pré-Pedido gerado no
+  // Plano de Viagem do cliente (número + pontos de abastecimento
+  // pré-agendados), pra o posto confirmar antes de liberar o abastecimento.
+  { href: "/pre-pedidos", label: "Pré-Pedidos", icon: ListChecks },
   { href: "/precos-postos", label: "Meus Preços", icon: Tag },
   // Fase 27.94/27.95 — upload de NF-e (XML) por abastecimento + indicador
   // de % de recolha, do lado do posto.

@@ -30,6 +30,21 @@ export type CentroCustoOpcao = { id: string; nome: string };
 // de perdidos. Também usado (com menos campos) pelo botão equivalente na
 // tela do Rotograma, pra continuar a cadeia Roteirizador → Rotograma →
 // Plano de Viagem.
+// Fase Pré-Pedido (27/07/2026) — paradas de abastecimento sugeridas pelo
+// Roteirizador, carregadas até aqui só pra alimentar a geração automática do
+// Pré-Pedido no servidor (ver criarPlanoViagem em actions.ts) — não tem UI
+// própria de edição nesta 1ª versão, é sempre um snapshot fiel do que o
+// otimizador calculou.
+export type ParadaPrePedidoPrefill = {
+  ordem: number;
+  posto_cnpj: string;
+  posto_nome: string;
+  km_previsto?: number;
+  litros_previstos?: number;
+  lat?: number;
+  lon?: number;
+};
+
 export type PrefillPlanoViagem = {
   nome?: string;
   placa?: string;
@@ -38,6 +53,7 @@ export type PrefillPlanoViagem = {
   precoCombustivel?: number;
   pedagios?: { praca_nome: string; valor: number }[];
   rotogramaId?: string;
+  paradas?: ParadaPrePedidoPrefill[];
 };
 
 // Fase 27.48 — formulário de Plano de Viagem, usado tanto em /novo quanto em
@@ -56,6 +72,7 @@ export function PlanoViagemForm({
   rotasSalvas,
   centrosCusto,
   prefill,
+  prePedidoHabilitado,
 }: {
   empresaId: string;
   plano?: PlanoViagem;
@@ -66,6 +83,10 @@ export function PlanoViagemForm({
   rotasSalvas: RotaSalvaOpcao[];
   centrosCusto: CentroCustoOpcao[];
   prefill?: PrefillPlanoViagem;
+  // Fase Pré-Pedido — só usado pra ajustar o texto do aviso abaixo; a decisão
+  // de gerar o Pré-Pedido de verdade é sempre re-checada no servidor
+  // (criarPlanoViagem), nunca confiando neste prop.
+  prePedidoHabilitado?: boolean;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | undefined>();
@@ -210,6 +231,12 @@ export function PlanoViagemForm({
     setErro(undefined);
     const formData = new FormData(e.currentTarget);
     formData.set("pedagios_json", JSON.stringify(pedagios.filter((p) => p.praca_nome.trim())));
+    // Fase Pré-Pedido — só existe na criação (prefill), nunca editado depois;
+    // o servidor decide se de fato gera o Pré-Pedido (parâmetro habilitado +
+    // paradas presentes).
+    if (!plano && prefill?.paradas?.length) {
+      formData.set("paradas_pre_pedido_json", JSON.stringify(prefill.paradas));
+    }
 
     startTransition(async () => {
       const resultado = plano
@@ -232,6 +259,23 @@ export function PlanoViagemForm({
           Veículo, combustível{prefill.pedagios?.length ? " e pedágios" : ""} preenchidos a partir da rota calculada
           {prefill.rotogramaId ? " (e do Rotograma vinculado)" : " na Roteirização"}. Revise e ajuste o que precisar
           antes de salvar.
+          {prefill.paradas?.length ? (
+            prePedidoHabilitado ? (
+              <>
+                {" "}
+                Como o parâmetro de uso &quot;Pré-Pedido&quot; está habilitado, um Pré-Pedido com as{" "}
+                {prefill.paradas.length} parada{prefill.paradas.length > 1 ? "s" : ""} de abastecimento previstas
+                será gerado automaticamente ao salvar.
+              </>
+            ) : (
+              <>
+                {" "}
+                {prefill.paradas.length} parada{prefill.paradas.length > 1 ? "s" : ""} de abastecimento da rota foram
+                calculadas, mas o parâmetro de uso &quot;Pré-Pedido&quot; não está habilitado pra esta empresa —
+                nenhum Pré-Pedido será gerado.
+              </>
+            )
+          ) : null}
         </div>
       )}
 
