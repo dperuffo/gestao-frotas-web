@@ -7,6 +7,8 @@ import { ConvidarColegaForm } from "./_components/ConvidarColegaForm";
 import { ToggleAtivoColega } from "./_components/ToggleAtivoColega";
 import { PromoverColegaButton } from "./_components/PromoverColegaButton";
 import { DeixarDeSerGestorButton } from "./_components/DeixarDeSerGestorButton";
+import { EditarColegaButton } from "./_components/EditarColegaButton";
+import { ExcluirColegaButton } from "./_components/ExcluirColegaButton";
 
 type SearchParams = { empresa?: string };
 
@@ -182,8 +184,12 @@ async function ConteudoEquipe({
                 <td className="px-4 py-3 text-right">
                   {m.perfil === "colaborador" && (
                     <div className="flex flex-col items-end gap-1.5">
-                      <PromoverColegaButton empresaId={empresaId} email={m.user_email} rotuloDestino={rotuloDestino} />
-                      <ToggleAtivoColega empresaId={empresaId} email={m.user_email} ativo={m.ativo} />
+                      <div className="flex flex-wrap items-center justify-end gap-x-3">
+                        <EditarColegaButton empresaId={empresaId} email={m.user_email} nomeAtual={m.nome} />
+                        <PromoverColegaButton empresaId={empresaId} email={m.user_email} rotuloDestino={rotuloDestino} />
+                        <ToggleAtivoColega empresaId={empresaId} email={m.user_email} ativo={m.ativo} />
+                        <ExcluirColegaButton empresaId={empresaId} email={m.user_email} />
+                      </div>
                     </div>
                   )}
                   {(m.perfil === "gestor_frota" || m.perfil === "posto") && m.user_email === meuEmail && (

@@ -11,9 +11,12 @@ export type ConvidarColegaState = { erro?: string; sucesso?: string } | undefine
 
 // Fase tratamento-cnpj-cpf (27/07/2026) — aviso NÃO bloqueante, chamado do
 // formulário de convite (onBlur do campo CPF), antes de enviar o convite.
-export async function verificarCpfDuplicadoColega(cpf: string) {
+// Fase editar-excluir-colega — reaproveitada também no modal de Editar;
+// `excluirEmail` evita o próprio colega disparar o aviso contra si mesmo
+// quando o CPF não mudou.
+export async function verificarCpfDuplicadoColega(cpf: string, excluirEmail?: string) {
   const supabase = await createClient();
-  return { duplicado: await cpfDuplicadoUsuarioApp(supabase, cpf) };
+  return { duplicado: await cpfDuplicadoUsuarioApp(supabase, cpf, excluirEmail) };
 }
 
 // Fase Convite-Self-Service — a leitura direta de usuarios_app pra checar o
@@ -143,6 +146,109 @@ export async function convidarColega(
       ? `${email} já tinha conta no sistema e foi vinculado à sua equipe.`
       : `Convite enviado para ${email} — ele(a) recebe um e-mail para criar a própria senha.`,
   };
+}
+
+// Fase editar-excluir-colega (27/07/2026, pedido do Daniel: "ter a
+// possibilidade de editar e excluir um usuario" em Minha Equipe). Busca
+// nome/cpf/telefone SÓ na hora de abrir o modal de Editar (RPC dedicada
+// dados_colega_para_edicao — equipe_da_empresa, usada na listagem, não
+// expõe CPF/telefone de propósito, ver comentário na migração).
+export type DadosColegaParaEdicao =
+  | { ok: true; nome: string; cpf: string; telefone: string }
+  | { ok: false; erro: string };
+
+export async function buscarDadosColegaParaEdicaoAcao(
+  empresaId: string,
+  email: string
+): Promise<DadosColegaParaEdicao> {
+  const supabase = await createClient();
+  const erroPermissao = await exigirDonoDeEquipe(supabase);
+  if (erroPermissao) return { ok: false, erro: erroPermissao };
+
+  const { data, error } = await supabase.rpc("dados_colega_para_edicao", {
+    p_empresa_id: empresaId,
+    p_email: email,
+  });
+  if (error) return { ok: false, erro: `Não foi possível carregar os dados: ${error.message}` };
+  const dados = data?.[0];
+  if (!dados) return { ok: false, erro: "Colega não encontrado nesta equipe." };
+  return { ok: true, nome: dados.nome ?? "", cpf: dados.cpf ?? "", telefone: dados.telefone ?? "" };
+}
+
+export type EditarColegaState = { erro?: string; sucesso?: string } | undefined;
+
+export async function editarColegaAcao(
+  empresaId: string,
+  email: string,
+  _prev: EditarColegaState,
+  formData: FormData
+): Promise<EditarColegaState> {
+  const supabase = await createClient();
+  const erroPermissao = await exigirDonoDeEquipe(supabase);
+  if (erroPermissao) return { erro: erroPermissao };
+
+  // Só mexe em "colaborador" — mesma restrição das outras ações desta
+  // tela (promover/ativar-inativar).
+  const alvo = await buscarMembro(supabase, empresaId, email);
+  if (alvo?.perfil !== "colaborador") {
+    return { erro: "Só é possível editar colaboradores da sua equipe." };
+  }
+
+  const nome = String(formData.get("nome") ?? "").trim();
+  const cpf = String(formData.get("cpf") ?? "").trim() || null;
+  const telefone = String(formData.get("telefone") ?? "").trim() || null;
+  if (!nome) return { erro: "Nome é obrigatório." };
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return { erro: e instanceof Error ? e.message : "Erro ao inicializar cliente administrativo." };
+  }
+
+  // Atualiza usuarios_app (linha global, por isso precisa do client admin —
+  // a RLS de usuarios_app só libera admin/analista ou a própria linha, ver
+  // comentário de buscarMembro acima).
+  const { error } = await admin.from("usuarios_app").update({ nome, cpf, telefone }).eq("email", email);
+  if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+
+  revalidatePath("/minha-equipe");
+  return { sucesso: `Dados de ${email} atualizados.` };
+}
+
+// Remove o VÍNCULO com esta empresa (linha de usuarios_empresas) — diferente
+// de "Inativar" (alternarAtivoColega, acima), que só marca ativo=false e
+// mantém o histórico. "Excluir" tira de vez da equipe (o colega some da
+// lista e libera a vaga do plano); mas nunca apaga o perfil global em
+// usuarios_app nem a conta de autenticação — se essa pessoa também estiver
+// vinculada a OUTRA empresa (raro, mas possível), o acesso dela lá continua
+// intacto; e caso volte a ser convidada aqui, entra como um vínculo novo.
+export async function removerColegaAcao(empresaId: string, email: string): Promise<EditarColegaState> {
+  const supabase = await createClient();
+  const erroPermissao = await exigirDonoDeEquipe(supabase);
+  if (erroPermissao) return { erro: erroPermissao };
+
+  const alvo = await buscarMembro(supabase, empresaId, email);
+  if (alvo?.perfil !== "colaborador") {
+    return { erro: "Só é possível excluir colaboradores da sua equipe." };
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return { erro: e instanceof Error ? e.message : "Erro ao inicializar cliente administrativo." };
+  }
+
+  const { error } = await admin
+    .from("usuarios_empresas")
+    .delete()
+    .eq("user_email", email)
+    .eq("empresa_id", empresaId);
+  if (error) return { erro: `Não foi possível excluir: ${error.message}` };
+
+  revalidatePath("/minha-equipe");
+  return { sucesso: `${email} removido(a) da equipe.` };
 }
 
 export async function alternarAtivoColega(empresaId: string, email: string, ativo: boolean) {

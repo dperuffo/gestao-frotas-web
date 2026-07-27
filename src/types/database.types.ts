@@ -4703,6 +4703,18 @@ export interface Database {
           ativo: boolean;
         }[];
       };
+      // Fase editar-excluir-colega (27/07/2026) — CPF/telefone só pra abrir o
+      // modal de "Editar" em /minha-equipe (equipe_da_empresa, acima, não
+      // expõe isso na listagem geral de propósito). Restrita a quem chama
+      // sendo dono da equipe (gestor_frota/posto).
+      dados_colega_para_edicao: {
+        Args: { p_empresa_id: string; p_email: string };
+        Returns: {
+          nome: string | null;
+          cpf: string | null;
+          telefone: string | null;
+        }[];
+      };
       manutencao_preditiva_base: {
         Args: { p_empresa_id: string; p_placa?: string | null };
         Returns: {
