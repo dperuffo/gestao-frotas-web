@@ -66,13 +66,31 @@ export type ResultadoBuscaAnp = {
 // Tenta baixar o arquivo da semana mais recente possível, caindo pras
 // semanas anteriores em caso de 404 (arquivo da semana atual ainda não
 // publicado). Lança erro se nenhum candidato responder.
+// Achado real (27/07/2026): o app roda no Railway (não na Vercel — cada
+// `maxDuration` deste arquivo é herança de um deploy antigo/hipotético na
+// Vercel e não tem NENHUM efeito no Railway, que só respeita o timeout do
+// seu próprio proxy de borda). O `fetch` abaixo não tinha timeout nenhum —
+// se o site do gov.br demorar demais pra responder (comum em sites públicos
+// brasileiros, e pior ainda vindo de IP de datacenter), a promise fica
+// pendurada indefinidamente. Um `await` pendurado não gera exceção nenhuma
+// (os try/catch do route.ts nunca disparam), só faz a requisição inteira
+// nunca terminar — até o proxy do Railway desistir de esperar e devolver um
+// 502 "cru" pro Cloudflare repassar, sem log nenhum do lado da aplicação
+// (bate 100% com o sintoma observado: 502 sem corpo JSON, sem nada nos logs
+// do Railway). `AbortSignal.timeout` força cada tentativa a falhar rápido
+// e de forma diagnosticável em vez de travar a requisição inteira.
+const TIMEOUT_FETCH_ANP_MS = 15_000;
+
 export async function buscarPlanilhaAnpMaisRecente(referencia: Date = new Date()): Promise<ResultadoBuscaAnp> {
   const candidatos = candidatosUrlSemanaAnp(referencia);
   const falhas: string[] = [];
 
   for (const candidato of candidatos) {
     try {
-      const resposta = await fetch(candidato.url, { cache: "no-store" });
+      const resposta = await fetch(candidato.url, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(TIMEOUT_FETCH_ANP_MS),
+      });
       if (!resposta.ok) {
         falhas.push(`${candidato.url} → HTTP ${resposta.status}`);
         continue;
