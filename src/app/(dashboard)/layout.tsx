@@ -44,6 +44,7 @@ import {
   Ticket,
   ClipboardCheck,
   ListChecks,
+  Bell,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -63,6 +64,9 @@ import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
 import { buscarLogoutInatividadeMinutos } from "@/lib/configuracoesSistema";
 import { MonitorInatividade } from "./_components/MonitorInatividade";
 import { LembretePwaBanner } from "@/components/pwa/LembretePwaBanner";
+import { AvisosSino } from "./_components/AvisosSino";
+import { AvisoBannerFixo } from "./_components/AvisoBannerFixo";
+import { listarAvisosAcao } from "./administracao/central-avisos/actions";
 
 // Fase 27.15 — o ícone da "Assistente FNI" é a logo (imagem), bem mais larga
 // que um emoji, então precisa de tratamento especial no render (ver
@@ -317,6 +321,11 @@ const menuAdministracao = [
   // Fase P0.5 — piso mínimo ANTT (Res. 5.867/2020), tabela nacional
   // importável via XLSX, só admin.
   { href: "/administracao/pisos-antt", label: "Piso Mínimo ANTT", icon: Scale },
+  // Fase Central-Avisos (28/07/2026) — pedido do Daniel: canal oficial pra
+  // comunicar novidades/correções/manutenção-indisponibilidade/avisos gerais
+  // a clientes, motoristas e postos, sem depender de e-mail/WhatsApp. CRUD
+  // do que alimenta o sino no rodapé do menu (ver <AvisosSino /> abaixo).
+  { href: "/administracao/central-avisos", label: "Central de Avisos", icon: Bell },
 ];
 
 // Alvos do tour de boas-vindas (Fase 24) — só os 3 itens de menu citados no
@@ -398,6 +407,7 @@ export default async function DashboardLayout({
     acoesSugeridasPendentes,
     cadastrosPendentes,
     logoutInatividadeMinutos,
+    avisos,
   ] = await Promise.all([
       contarChamadosNaoVistosAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar chamados não vistos (ignorado):", e);
@@ -455,6 +465,14 @@ export default async function DashboardLayout({
       // roda em TODA tela do dashboard; buscarLogoutInatividadeMinutos já
       // tem fallback interno pro padrão (30min) se a leitura falhar.
       buscarLogoutInatividadeMinutos(supabase),
+      // Fase Central-Avisos (28/07/2026) — já vem segmentada (por
+      // segmento/plano/empresa do usuário) e com `lido` calculado; o sino
+      // (badge) e o banner fixo (fixado=true) abaixo só filtram em memória,
+      // sem query extra. Mesma blindagem "falha vira 0/[]" das demais.
+      listarAvisosAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao listar avisos (ignorado):", e);
+        return [];
+      }),
     ]);
 
   // Nome e cargo/função do usuário logado, pra mostrar no lugar do texto
@@ -825,11 +843,15 @@ export default async function DashboardLayout({
           )}
         </nav>
         <div className="border-t border-white/10 px-3 py-3 space-y-1">
+          <AvisosSino avisosIniciais={avisos} />
           <CentralAjuda />
           <BotaoSair />
         </div>
       </aside>
       <main className="flex-1 bg-slate-50 p-8">
+        {/* Fase Central-Avisos — banner fixo pros avisos fixado=true (ex.:
+            manutenção em andamento), acima até do lembrete de PWA. */}
+        <AvisoBannerFixo avisos={avisos.filter((a) => a.fixado)} />
         {/* Pedido do Daniel (19/07): lembrete sobre a PWA mobile nas visões
             de cliente e posto — não pro admin (time interno FNI), que não é
             o público desse benefício. */}

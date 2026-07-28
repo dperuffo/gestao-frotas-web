@@ -741,6 +741,63 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["conteudo_ajuda"]["Row"]>;
         Relationships: [];
       };
+      // Fase Central-Comunicados — painel de comunicação (novidades,
+      // correções, manutenção/indisponibilidade, avisos gerais), publicado
+      // pelo admin (time FNI) em /administracao/central-comunicacao.
+      comunicados: {
+        Row: {
+          id: string;
+          tipo: "novidade" | "correcao" | "manutencao" | "aviso_geral";
+          urgencia: "informativo" | "atencao" | "critico";
+          titulo: string;
+          resumo: string;
+          corpo: string;
+          imagem_path: string | null;
+          segmentos_alvo: string[];
+          planos_alvo: string[];
+          empresas_alvo: string[];
+          data_publicacao: string;
+          data_expiracao: string | null;
+          fixado: boolean;
+          ativo: boolean;
+          criado_em: string;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["comunicados"]["Row"]> & {
+          tipo: "novidade" | "correcao" | "manutencao" | "aviso_geral";
+          titulo: string;
+          resumo: string;
+          corpo: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["comunicados"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase Central-Comunicados — rastreio de leitura por usuário (chave =
+      // e-mail, mesmo padrão sem FK usado em negociações/dashboard), guarda
+      // servidor-side (não localStorage) pra funcionar entre dispositivos.
+      comunicados_leituras: {
+        Row: {
+          id: string;
+          comunicado_id: string;
+          usuario_email: string;
+          lido_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["comunicados_leituras"]["Row"]> & {
+          comunicado_id: string;
+          usuario_email: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["comunicados_leituras"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "comunicados_leituras_comunicado_id_fkey";
+            columns: ["comunicado_id"];
+            isOneToOne: false;
+            referencedRelation: "comunicados";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       grupos_economicos: {
         Row: {
           id: string;
