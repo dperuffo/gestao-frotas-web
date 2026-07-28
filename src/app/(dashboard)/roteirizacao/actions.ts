@@ -629,6 +629,7 @@ async function montarCandidatosNoCorredor(
         lon: p.lon as number,
         bandeira: p.bandeira,
         uf: p.uf as string | null,
+        municipio: p.municipio as string | null,
         origem: "proprio" as const,
       };
     })
@@ -771,6 +772,7 @@ async function montarCandidatosNoCorredor(
             lon: Number(p.longitude),
             bandeira: p.bandeira,
             uf: p.uf as string | null,
+            municipio: p.municipio as string | null,
             origem: "anp" as const,
           };
         })

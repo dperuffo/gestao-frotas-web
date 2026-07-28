@@ -9,6 +9,7 @@ import { calcularRoteirizacaoAcao, type ResultadoRoteirizacao } from "../actions
 import { PERFIS_PESO, PERFIL_PADRAO } from "@/lib/roteirizacaoScore";
 import { PRODUTOS_POSTO, PRODUTOS_POR_TIPO_VEICULO } from "@/lib/constants";
 import { corPorBandeira } from "@/lib/coresBandeira";
+import { formatCNPJ } from "@/lib/utils";
 import { calcularAbastecimentoParaSelecao } from "@/lib/roteirizacaoAlgoritmo";
 import { ComparativoEstrategias } from "./ComparativoEstrategias";
 import { GraficosRota } from "./GraficosRota";
@@ -123,6 +124,21 @@ export function FormRoteirizacao({
 
   const litrosTotalAtual = paradasAtuais.paradas.reduce((s, p) => s + p.litrosSugeridos, 0);
   const custoTotalAtual = Math.round(paradasAtuais.paradas.reduce((s, p) => s + p.custoAbastecimento, 0) * 100) / 100;
+
+  // Fase Roteirização-Colunas-Extra (28/07/2026) — pedido do Daniel: os
+  // postos já escolhidos (pelo algoritmo ou ajustados pelo gestor) aparecem
+  // primeiro na tabela, pra não precisar rolar a lista inteira pra achar o
+  // que já está marcado. Dentro de cada grupo (selecionado/não selecionado),
+  // mantém a ordem por km da rota.
+  const candidatosOrdenados = useMemo(() => {
+    if (!resultado) return [];
+    return [...resultado.candidatos].sort((a, b) => {
+      const aSel = selecionados.has(a.cnpj);
+      const bSel = selecionados.has(b.cnpj);
+      if (aSel !== bSel) return aSel ? -1 : 1;
+      return a.km - b.km;
+    });
+  }, [resultado, selecionados]);
 
   function selecionarVeiculo(idPlaca: string) {
     setPlaca(idPlaca);
@@ -489,6 +505,7 @@ export function FormRoteirizacao({
                     <tr>
                       <th className="whitespace-nowrap py-2 pr-4">Selecionado</th>
                       <th className="py-2 pr-4">Posto</th>
+                      <th className="whitespace-nowrap py-2 pr-4">Cidade/UF</th>
                       <th className="whitespace-nowrap py-2 pr-4">Grade</th>
                       <th className="whitespace-nowrap py-2 pr-4">Km</th>
                       <th className="whitespace-nowrap py-2 pr-4">Preço</th>
@@ -499,7 +516,7 @@ export function FormRoteirizacao({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {resultado.candidatos.map((c) => {
+                    {candidatosOrdenados.map((c) => {
                       const selecionado = selecionados.has(c.cnpj);
                       const parada = paradasAtuais.paradas.find((p) => p.cnpj === c.cnpj);
                       return (
@@ -521,11 +538,15 @@ export function FormRoteirizacao({
                                 Base ANP
                               </span>
                             )}
+                            <p className="mt-0.5 text-xs font-normal text-slate-400">{formatCNPJ(c.cnpj)}</p>
                             {parada && (
                               <p className="mt-0.5 text-xs font-normal text-slate-400">
                                 {MOTIVO_LABEL[parada.motivo] ?? parada.motivo}
                               </p>
                             )}
+                          </td>
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                            {[c.municipio, c.uf].filter(Boolean).join(" / ") || "—"}
                           </td>
                           <td className="py-2.5 pr-4 align-top">
                             {c.grade && (

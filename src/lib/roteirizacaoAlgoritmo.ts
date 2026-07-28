@@ -15,6 +15,12 @@ export type CandidatoAbastecimento = {
   lon: number;
   bandeira?: string | null;
   uf?: string | null;
+  // Fase Roteirização-Colunas-Extra (28/07/2026) — pedido do Daniel: mostrar
+  // cidade/UF junto do posto na tabela de Abastecimento, sem precisar buscar
+  // de novo — já vem preenchido junto com o resto do candidato (postos_gf e
+  // anp_postos já traziam "municipio" na consulta, só não estava passado
+  // adiante até aqui).
+  municipio?: string | null;
   // Fase 27.140 — "proprio" (postos_gf do cliente, preço negociado/importado)
   // ou "anp" (base pública nacional, preço é a estimativa oficial ANP) — só
   // informativo pra UI, não entra em nenhum peso/cálculo aqui.

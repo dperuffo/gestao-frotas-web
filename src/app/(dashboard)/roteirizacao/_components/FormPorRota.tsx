@@ -10,6 +10,7 @@ import MapaRotaLazy from "./MapaRotaLazy";
 import { calcularRotaEPostosAcao, type ResultadoRotaCalculada } from "../actions";
 import { PRODUTOS_POSTO, PRODUTOS_POR_TIPO_VEICULO } from "@/lib/constants";
 import { corPorBandeira } from "@/lib/coresBandeira";
+import { formatCNPJ } from "@/lib/utils";
 import { calcularAbastecimentoParaSelecao } from "@/lib/roteirizacaoAlgoritmo";
 import { custoPedagioTotal } from "@/lib/pedagio";
 import type { VeiculoOpcao } from "./FormRoteirizacao";
@@ -96,6 +97,20 @@ export function FormPorRota({
 
   const litrosTotalAtual = paradasAtuais.paradas.reduce((s, p) => s + p.litrosSugeridos, 0);
   const custoTotalAtual = Math.round(paradasAtuais.paradas.reduce((s, p) => s + p.custoAbastecimento, 0) * 100) / 100;
+
+  // Fase Roteirização-Colunas-Extra (28/07/2026) — mesmo ajuste do
+  // Roteirizador Inteligente: postos já selecionados aparecem primeiro na
+  // tabela, sem precisar rolar a lista inteira pra achar o que já está
+  // marcado.
+  const candidatosOrdenados = useMemo(() => {
+    if (!resultado) return [];
+    return [...resultado.candidatos].sort((a, b) => {
+      const aSel = selecionados.has(a.cnpj);
+      const bSel = selecionados.has(b.cnpj);
+      if (aSel !== bSel) return aSel ? -1 : 1;
+      return a.km - b.km;
+    });
+  }, [resultado, selecionados]);
   // ResultadoRotaCalculada não traz o custo de pedágio pronto (diferente do
   // Roteirizador Inteligente) — calcula aqui no client com a mesma função
   // pura usada no servidor (custoPedagioTotal, src/lib/pedagio.ts).
@@ -407,6 +422,7 @@ export function FormPorRota({
                   <tr>
                     <th className="whitespace-nowrap py-2 pr-4">Selecionado</th>
                     <th className="py-2 pr-4">Posto</th>
+                    <th className="whitespace-nowrap py-2 pr-4">Cidade/UF</th>
                     <th className="whitespace-nowrap py-2 pr-4">Grade</th>
                     <th className="whitespace-nowrap py-2 pr-4">Km</th>
                     <th className="whitespace-nowrap py-2 pr-4">Preço</th>
@@ -417,7 +433,7 @@ export function FormPorRota({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {resultado.candidatos.map((c) => {
+                  {candidatosOrdenados.map((c) => {
                     const selecionado = selecionados.has(c.cnpj);
                     const parada = paradasAtuais.paradas.find((p) => p.cnpj === c.cnpj);
                     return (
@@ -436,6 +452,10 @@ export function FormPorRota({
                               Base ANP
                             </span>
                           )}
+                          <p className="mt-0.5 text-xs font-normal text-slate-400">{formatCNPJ(c.cnpj)}</p>
+                        </td>
+                        <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                          {[c.municipio, c.uf].filter(Boolean).join(" / ") || "—"}
                         </td>
                         <td className="py-2.5 pr-4 align-top">
                           {c.grade && (
