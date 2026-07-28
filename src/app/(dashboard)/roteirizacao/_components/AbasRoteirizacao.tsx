@@ -6,18 +6,22 @@ import Link from "next/link";
 // mesmo nome da seção inteira no menu lateral — confuso) passou a se chamar
 // "Roteirizador Inteligente" pra ficar clara a diferença entre ela e as
 // demais consultas.
+//
+// Fase Seleção-Manual-de-Postos (28/07/2026) — a aba "Por Rota" volta pro
+// menu, agora como "Escolher Postos Manualmente": deixou de ser só
+// informativa (postos no corredor) e virou o modo manual do abastecimento,
+// pedido por um gestor de frota — o gestor pede veículo, traça a rota e
+// escolhe ele mesmo em quais postos abastecer, sem depender do algoritmo do
+// Roteirizador Inteligente (ver FormPorRota.tsx).
 const ABAS = [
   { href: "/roteirizacao", chave: "uf", label: "Por UF/Município" },
   { href: "/roteirizacao/posto", chave: "posto", label: "Consulta por Posto" },
   { href: "/roteirizacao/planejar", chave: "planejar", label: "Roteirizador Inteligente" },
+  { href: "/roteirizacao/rota", chave: "rota", label: "Escolher Postos Manualmente" },
   { href: "/roteirizacao/salvas", chave: "salvas", label: "Rotas Salvas" },
 ] as const;
 
-// "rota" continua uma opção válida de `ativo` (não uma aba visível) porque
-// consultas do tipo "Por Rota" salvas ANTES desta mudança continuam
-// acessíveis a partir de "Rotas Salvas" — só a entrada da aba em si é que
-// saiu da navegação principal.
-export type AbaRoteirizacaoAtiva = (typeof ABAS)[number]["chave"] | "rota";
+export type AbaRoteirizacaoAtiva = (typeof ABAS)[number]["chave"];
 
 export function AbasRoteirizacao({ ativo }: { ativo: AbaRoteirizacaoAtiva }) {
   return (

@@ -423,19 +423,37 @@ export type ResultadoRotaCalculada = {
   duracaoMin: number;
   linhaReta: boolean;
   coordenadas: Ponto[];
-  postosProximos: PostoComScore[];
+  // Fase Seleção-Manual-de-Postos (28/07/2026) — antes esta função devolvia
+  // `postosProximos: PostoComScore[]` (só informativo, sem preço filtrado
+  // por combustível nem grade comparável). Pedido do Daniel: o modo "Por
+  // Rota" virou o "roteirizador manual" — o gestor clica nos postos do
+  // corredor pra montar a própria lista de paradas — e pra isso precisa do
+  // mesmo formato `CandidatoAbastecimento` usado no Roteirizador Inteligente
+  // (preço do combustível escolhido, grade, km/desvio), calculado pela MESMA
+  // função (montarCandidatosNoCorredor) — evita ter duas lógicas de
+  // montagem de candidato divergentes.
+  candidatos: CandidatoAbastecimento[];
+  usouFallbackAnp: boolean;
   // Fase Pedágios — praças de pedágio encontradas no corredor da rota
   // (mesmo raio/técnica de bounding box usada pra achar postos), pra
   // plotar no mapa e mostrar como referência de custo ao usuário.
   pracasPedagio: PracaPedagioNaRota[];
 };
 
-// ── Modo "Por Rota" ───────────────────────────────────────────────────
+// ── Modo "Por Rota" (roteirizador manual) ─────────────────────────────
+// Fase Seleção-Manual-de-Postos — pedido de um gestor de frota (via
+// Daniel): ver os postos no corredor da rota e escolher, clicando, em quais
+// o motorista vai abastecer — sem depender do algoritmo guloso do
+// Roteirizador Inteligente. Agora exige `combustivel` (precisa saber qual
+// preço comparar em cada posto) — o cálculo de litros/custo/viabilidade por
+// parada acontece 100% no client, via calcularAbastecimentoParaSelecao
+// (src/lib/roteirizacaoAlgoritmo.ts), a cada clique do gestor.
 export async function calcularRotaEPostosAcao(params: {
   empresaId: string;
   origem: Ponto;
   destino: Ponto;
   paradas?: Ponto[];
+  combustivel: string;
   raioKm?: number;
 }): Promise<ResultadoRotaCalculada> {
   const supabase = await createClient();
@@ -444,65 +462,12 @@ export async function calcularRotaEPostosAcao(params: {
   const rota = await calcularRotaOsrm(params.origem, params.destino, params.paradas ?? []);
   const acumuladas = distanciasAcumuladas(rota.coordenadas);
 
-  // Pré-filtro por bounding box (evita varrer postos longe da rota).
-  const lats = rota.coordenadas.map((p) => p.lat);
-  const lons = rota.coordenadas.map((p) => p.lon);
-  const margem = raioKm / 100; // ~1 grau ≈ 100 km, aproximação suficiente para o pré-filtro
-  const minLat = Math.min(...lats) - margem;
-  const maxLat = Math.max(...lats) + margem;
-  const minLon = Math.min(...lons) - margem;
-  const maxLon = Math.max(...lons) + margem;
-
-  const { data: postosBrutos } = await supabase
-    .from("postos_gf")
-    .select(
-      "cnpj, razao_social, municipio, uf, bandeira, lat, lon, funciona_24h, pista_caminhao, arla, conveniencia, conveniencia_am_pm, possui_restaurante, possui_banheiro, possui_estacionamento, possui_troca_oleo, possui_internet"
-    )
-    .eq("empresa_id", params.empresaId)
-    .eq("ativo", true)
-    .not("lat", "is", null)
-    .not("lon", "is", null)
-    .gte("lat", minLat)
-    .lte("lat", maxLat)
-    .gte("lon", minLon)
-    .lte("lon", maxLon)
-    .limit(3000);
-
-  const candidatos = (postosBrutos ?? [])
-    .map((p) => {
-      const { km, desvioKm } = posicaoNaRotaKm({ lat: p.lat as number, lon: p.lon as number }, rota.coordenadas, acumuladas);
-      return { ...p, km, desvioKm };
-    })
-    .filter((p) => p.desvioKm <= raioKm)
-    .sort((a, b) => a.km - b.km);
-
-  const precosPorCnpj = await carregarPrecosPorCnpj(
-    supabase,
-    candidatos.map((p) => p.cnpj)
-  );
-
-  const postosProximos: PostoComScore[] = candidatos.map((p) => {
-    const precos = precosPorCnpj.get(p.cnpj) ?? [];
-    const precoMedio = precos.length ? precos.reduce((s, x) => s + x.preco, 0) / precos.length : null;
-    return {
-      cnpj: p.cnpj,
-      razaoSocial: p.razao_social,
-      municipio: p.municipio,
-      uf: p.uf,
-      bandeira: p.bandeira,
-      lat: p.lat as number,
-      lon: p.lon as number,
-      precos,
-      desvioKm: Math.round(p.desvioKm * 10) / 10,
-      kmNaRota: Math.round(p.km * 10) / 10,
-      score: calcularScorePosto({
-        precoPosto: precoMedio,
-        precoReferenciaAnp: null,
-        servicosAtivos: contarServicos(p),
-        servicosTotal: CAMPOS_SERVICO.length,
-      }),
-      origem: "proprio",
-    };
+  const { candidatos, usouFallbackAnp } = await montarCandidatosNoCorredor(supabase, {
+    empresaId: params.empresaId,
+    coordenadasRota: rota.coordenadas,
+    acumuladas,
+    combustivel: params.combustivel,
+    raioCorredorKm: raioKm,
   });
 
   const pracasPedagio = await buscarPracasPedagioNaRota(supabase, rota.coordenadas, acumuladas);
@@ -512,7 +477,8 @@ export async function calcularRotaEPostosAcao(params: {
     duracaoMin: Math.round(rota.duracaoMin),
     linhaReta: rota.linhaReta,
     coordenadas: rota.coordenadas,
-    postosProximos,
+    candidatos,
+    usouFallbackAnp,
     pracasPedagio,
   };
 }
@@ -537,6 +503,13 @@ export type ResultadoRoteirizacao = {
   litrosTotal: number;
   custoTotal: number;
   candidatosEncontrados: number;
+  // Fase Seleção-Manual-de-Postos (28/07/2026) — lista COMPLETA de
+  // candidatos do corredor (não só os que o algoritmo escolheu), ordenada
+  // por km — o client usa pra deixar o gestor ver todos os postos e
+  // ajustar a seleção sugerida (marcar/desmarcar), recalculando ao vivo
+  // com calcularAbastecimentoParaSelecao (roteirizacaoAlgoritmo.ts), sem
+  // precisar de uma nova chamada ao servidor a cada clique.
+  candidatos: CandidatoAbastecimento[];
   // Comparativo das 4 estratégias com os mesmos candidatos (sem recalcular
   // rota/OSRM) — alimenta a aba "Custo da Viagem".
   comparativoEstrategias: ComparativoEstrategia[];
@@ -565,32 +538,31 @@ export type ResultadoRoteirizacao = {
   custoPedagioEstimado: number;
 };
 
-// ── Modo "Roteirização" (planejamento com veículo) ────────────────────
-export async function calcularRoteirizacaoAcao(params: {
-  empresaId: string;
-  origem: Ponto;
-  destino: Ponto;
-  paradas?: Ponto[];
-  veiculo: {
-    capacidadeTanqueL: number;
-    autonomiaKmPorL: number;
+// Fase Seleção-Manual-de-Postos (28/07/2026) — a lógica de "quais postos
+// existem no corredor da rota, com que preço/grade pro combustível
+// escolhido" foi extraída pra cá (antes vivia só dentro de
+// calcularRoteirizacaoAcao) pra ser compartilhada com calcularRotaEPostosAcao
+// (modo "Por Rota"/manual, ver acima) — as duas telas precisam exatamente do
+// mesmo CandidatoAbastecimento; a diferença é só quem decide onde parar: o
+// algoritmo guloso (otimizarAbastecimento) ou o próprio gestor clicando
+// (calcularAbastecimentoParaSelecao, em src/lib/roteirizacaoAlgoritmo.ts).
+async function montarCandidatosNoCorredor(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  params: {
+    empresaId: string;
+    coordenadasRota: Ponto[];
+    acumuladas: number[];
     combustivel: string;
-    combustivelInicialL?: number;
-  };
-  perfilChave: string;
-}): Promise<ResultadoRoteirizacao> {
-  const supabase = await createClient();
-  const perfil = PERFIS_PESO.find((p) => p.chave === params.perfilChave) ?? PERFIS_PESO[1];
-  const RAIO_CORREDOR_KM = 5; // fixo, igual ao Streamlit (_MAX_DEV)
-
-  const rota = await calcularRotaOsrm(params.origem, params.destino, params.paradas ?? []);
-  const acumuladas = distanciasAcumuladas(rota.coordenadas);
+    raioCorredorKm?: number;
+  }
+): Promise<{ candidatos: CandidatoAbastecimento[]; usouFallbackAnp: boolean }> {
+  const RAIO_CORREDOR_KM = params.raioCorredorKm ?? 5; // fixo, igual ao Streamlit (_MAX_DEV)
 
   // Fase 27.21 — boxes por pedaço da rota (não mais um box único cobrindo
   // do início ao fim), reaproveitados tanto na consulta de postos_gf quanto
   // no fallback ANP mais abaixo. Ver comentário de construirBoundingBoxesDaRota.
   const margem = RAIO_CORREDOR_KM / 100;
-  const boxesRota = construirBoundingBoxesDaRota(rota.coordenadas, acumuladas, margem);
+  const boxesRota = construirBoundingBoxesDaRota(params.coordenadasRota, params.acumuladas, margem);
 
   const postosBrutosPorBox = await Promise.all(
     boxesRota.map((box) =>
@@ -617,7 +589,11 @@ export async function calcularRoteirizacaoAcao(params: {
 
   const candidatosBrutos = postosBrutos
     .map((p) => {
-      const { km, desvioKm } = posicaoNaRotaKm({ lat: p.lat as number, lon: p.lon as number }, rota.coordenadas, acumuladas);
+      const { km, desvioKm } = posicaoNaRotaKm(
+        { lat: p.lat as number, lon: p.lon as number },
+        params.coordenadasRota,
+        params.acumuladas
+      );
       return { ...p, km, desvioKm };
     })
     .filter((p) => p.desvioKm <= RAIO_CORREDOR_KM);
@@ -627,13 +603,13 @@ export async function calcularRoteirizacaoAcao(params: {
     candidatosBrutos.map((p) => p.cnpj)
   );
 
-  // Só entram no algoritmo os postos que têm preço registrado para o
-  // combustível escolhido do veículo — sem preço, não dá para pontuar nem
-  // decidir se compensa parar ali.
+  // Só entram os postos que têm preço registrado para o combustível
+  // escolhido — sem preço, não dá para pontuar nem decidir se compensa
+  // parar ali (nem no algoritmo automático, nem na seleção manual).
   let candidatos: CandidatoAbastecimento[] = candidatosBrutos
     .map((p) => {
       const precoRegistrado = (precosPorCnpj.get(p.cnpj) ?? []).find(
-        (x) => x.combustivel.toLowerCase() === params.veiculo.combustivel.toLowerCase()
+        (x) => x.combustivel.toLowerCase() === params.combustivel.toLowerCase()
       );
       if (!precoRegistrado) return null;
       const score = calcularScorePosto({
@@ -676,7 +652,7 @@ export async function calcularRoteirizacaoAcao(params: {
   // rota, não só uma ou outra.
   let usouFallbackAnp = false;
   {
-    const categoriaAnp = PRODUTO_PARA_CATEGORIA_ANP[params.veiculo.combustivel];
+    const categoriaAnp = PRODUTO_PARA_CATEGORIA_ANP[params.combustivel];
     if (categoriaAnp) {
       // CNPJs já cobertos pelos candidatos "próprios" — a base ANP só
       // completa o que a rede própria ainda não tem nesse corredor, nunca
@@ -711,8 +687,8 @@ export async function calcularRoteirizacaoAcao(params: {
         .map((p) => {
           const { km, desvioKm } = posicaoNaRotaKm(
             { lat: Number(p.latitude), lon: Number(p.longitude) },
-            rota.coordenadas,
-            acumuladas
+            params.coordenadasRota,
+            params.acumuladas
           );
           return { ...p, km, desvioKm };
         })
@@ -805,6 +781,36 @@ export async function calcularRoteirizacaoAcao(params: {
       usouFallbackAnp = candidatosAnp.length > 0;
     }
   }
+
+  return { candidatos: candidatos.sort((a, b) => a.km - b.km), usouFallbackAnp };
+}
+
+// ── Modo "Roteirização" (planejamento com veículo) ────────────────────
+export async function calcularRoteirizacaoAcao(params: {
+  empresaId: string;
+  origem: Ponto;
+  destino: Ponto;
+  paradas?: Ponto[];
+  veiculo: {
+    capacidadeTanqueL: number;
+    autonomiaKmPorL: number;
+    combustivel: string;
+    combustivelInicialL?: number;
+  };
+  perfilChave: string;
+}): Promise<ResultadoRoteirizacao> {
+  const supabase = await createClient();
+  const perfil = PERFIS_PESO.find((p) => p.chave === params.perfilChave) ?? PERFIS_PESO[1];
+
+  const rota = await calcularRotaOsrm(params.origem, params.destino, params.paradas ?? []);
+  const acumuladas = distanciasAcumuladas(rota.coordenadas);
+
+  const { candidatos, usouFallbackAnp } = await montarCandidatosNoCorredor(supabase, {
+    empresaId: params.empresaId,
+    coordenadasRota: rota.coordenadas,
+    acumuladas,
+    combustivel: params.veiculo.combustivel,
+  });
 
   const paradas = otimizarAbastecimento({
     candidatos,
@@ -904,6 +910,7 @@ export async function calcularRoteirizacaoAcao(params: {
     litrosTotal: paradas.reduce((s, p) => s + p.litrosSugeridos, 0),
     custoTotal: Math.round(paradas.reduce((s, p) => s + p.custoAbastecimento, 0) * 100) / 100,
     candidatosEncontrados: candidatos.length,
+    candidatos,
     comparativoEstrategias,
     precoMedioGf,
     precoReferenciaAnp,

@@ -29,6 +29,20 @@ function icone(cor: CorMarcador = "azul") {
   });
 }
 
+// Fase Seleção-Manual-de-Postos (28/07/2026) — candidato do corredor que o
+// gestor AINDA NÃO selecionou como parada: bolinha pequena e apagada (cinza,
+// sem borda grossa), pra não competir visualmente com as paradas já
+// confirmadas (coloridas por bandeira, via `icone()` acima) mas ainda dar
+// pra clicar e adicionar.
+function iconeNaoSelecionado() {
+  return L.divIcon({
+    className: "",
+    html: `<div style="background:#cbd5e1;width:10px;height:10px;border-radius:50%;border:1.5px solid white;box-shadow:0 1px 2px rgba(0,0,0,.3)"></div>`,
+    iconSize: [10, 10],
+    iconAnchor: [5, 5],
+  });
+}
+
 // Fase Pedágios — pedido do Daniel: praças de pedágio no mapa da
 // Roteirização com um emoji diferente das bolinhas de posto/combustível
 // (que usam `icone()` acima), pra não confundir os dois tipos de parada de
@@ -64,6 +78,13 @@ export type MarcadorMapa = {
   // nome/concessionária/valor (sem a busca de preço vigente que os postos
   // fazem em PostoPopupContent).
   pedagio?: boolean;
+  // Fase Seleção-Manual-de-Postos (28/07/2026) — só relevante pra marcadores
+  // de posto (com `cnpj`) vindos de uma tela que deixa o gestor
+  // selecionar/desmarcar paradas (Roteirizador Inteligente e "Por Rota").
+  // `undefined` = tela não usa seleção (comportamento de sempre, ícone
+  // colorido normal). `true`/`false` liga o ícone apagado de candidato não
+  // selecionado e o botão de alternar no popup (via onTogglePosto).
+  selecionado?: boolean;
 };
 
 function AjustarLimites({ pontos }: { pontos: [number, number][] }) {
@@ -80,10 +101,15 @@ export default function MapaRota({
   marcadores,
   rota,
   alturaClasse = "h-[600px]",
+  onTogglePosto,
 }: {
   marcadores: MarcadorMapa[];
   rota?: { lat: number; lon: number }[];
   alturaClasse?: string;
+  // Fase Seleção-Manual-de-Postos — chamado com o CNPJ do posto quando o
+  // gestor clica em "Selecionar como parada" / "Remover parada" no popup.
+  // Sem esse prop, o popup não mostra o botão (comportamento de sempre).
+  onTogglePosto?: (cnpj: string) => void;
 }) {
   // Posto cujo popup rico está aberto no momento — controlado à parte dos
   // Markers de posto (que não têm Popup próprio) pra garantir que o
@@ -94,6 +120,7 @@ export default function MapaRota({
     lon: number;
     cnpj: string;
     infoExtra?: string;
+    selecionado?: boolean;
   } | null>(null);
 
   const centro: [number, number] =
@@ -147,9 +174,16 @@ export default function MapaRota({
             <Marker
               key={i}
               position={[m.lat, m.lon]}
-              icon={m.cor ? icone(m.cor) : iconePadrao}
+              icon={m.selecionado === false ? iconeNaoSelecionado() : m.cor ? icone(m.cor) : iconePadrao}
               eventHandlers={{
-                click: () => setPostoAberto({ lat: m.lat, lon: m.lon, cnpj: m.cnpj!, infoExtra: m.infoExtra }),
+                click: () =>
+                  setPostoAberto({
+                    lat: m.lat,
+                    lon: m.lon,
+                    cnpj: m.cnpj!,
+                    infoExtra: m.infoExtra,
+                    selecionado: m.selecionado,
+                  }),
               }}
             />
           ) : (
@@ -172,6 +206,22 @@ export default function MapaRota({
           >
             {postoAberto.infoExtra && (
               <p className="mb-1.5 text-xs font-semibold text-frota-600">{postoAberto.infoExtra}</p>
+            )}
+            {onTogglePosto && (
+              <button
+                type="button"
+                onClick={() => {
+                  onTogglePosto(postoAberto.cnpj);
+                  setPostoAberto((atual) => (atual ? { ...atual, selecionado: !atual.selecionado } : atual));
+                }}
+                className={`mb-2 w-full rounded-md px-2 py-1.5 text-xs font-semibold ${
+                  postoAberto.selecionado
+                    ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    : "bg-frota-600 text-white hover:bg-frota-700"
+                }`}
+              >
+                {postoAberto.selecionado ? "− Remover parada" : "+ Selecionar como parada"}
+              </button>
             )}
             <PostoPopupContent cnpj={postoAberto.cnpj} lat={postoAberto.lat} lon={postoAberto.lon} />
           </Popup>

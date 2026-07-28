@@ -19,6 +19,7 @@ export default function MapaRotaLazy(props: {
   marcadores: MarcadorMapa[];
   rota?: { lat: number; lon: number }[];
   alturaClasse?: string;
+  onTogglePosto?: (cnpj: string) => void;
 }) {
   return <MapaRota {...props} />;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { BuscaLocalInput, type LocalSelecionado } from "./BuscaLocalInput";
 import { SalvarConsultaForm } from "./SalvarConsultaForm";
@@ -9,6 +9,7 @@ import { calcularRoteirizacaoAcao, type ResultadoRoteirizacao } from "../actions
 import { PERFIS_PESO, PERFIL_PADRAO } from "@/lib/roteirizacaoScore";
 import { PRODUTOS_POSTO, PRODUTOS_POR_TIPO_VEICULO } from "@/lib/constants";
 import { corPorBandeira } from "@/lib/coresBandeira";
+import { calcularAbastecimentoParaSelecao } from "@/lib/roteirizacaoAlgoritmo";
 import { ComparativoEstrategias } from "./ComparativoEstrategias";
 import { GraficosRota } from "./GraficosRota";
 import { ComparativoPrecos } from "./ComparativoPrecos";
@@ -29,6 +30,16 @@ const MOTIVO_LABEL: Record<string, string> = {
   otimizado: "Melhor custo-benefício",
   estrategico: "Vale a pena esticar até aqui",
   emergencia: "Parada obrigatória (tanque no limite)",
+  // Fase Seleção-Manual-de-Postos — parada escolhida pelo próprio gestor
+  // (não pelo algoritmo), ver calcularAbastecimentoParaSelecao.
+  manual: "Selecionada pelo gestor",
+};
+
+const GRADE_COR: Record<string, string> = {
+  A: "bg-emerald-100 text-emerald-700",
+  B: "bg-sky-100 text-sky-700",
+  C: "bg-amber-100 text-amber-700",
+  D: "bg-red-100 text-red-700",
 };
 
 const ABAS_RESULTADO = [
@@ -79,6 +90,39 @@ export function FormRoteirizacao({
   const [erro, setErro] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [abaAtiva, setAbaAtiva] = useState<AbaResultado>("mapa");
+  // Fase Seleção-Manual-de-Postos (28/07/2026) — pedido de um gestor de
+  // frota: depois de calcular, ele quer ver TODOS os postos do corredor
+  // (não só os que o algoritmo escolheu) e poder marcar/desmarcar quais o
+  // motorista vai realmente usar. Começa com os CNPJs que o algoritmo
+  // sugeriu (ver calcular() abaixo) — o gestor ajusta a partir daí.
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+
+  function alternarPosto(cnpj: string) {
+    setSelecionados((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(cnpj)) novo.delete(cnpj);
+      else novo.add(cnpj);
+      return novo;
+    });
+  }
+
+  // Recalcula litros/custo/viabilidade a cada mudança de seleção — 100% no
+  // client (calcularAbastecimentoParaSelecao é pura), sem round-trip ao
+  // servidor a cada clique. Também recalcula se o gestor mudar tanque/
+  // autonomia/combustível inicial depois de já ter um resultado.
+  const paradasAtuais = useMemo(() => {
+    if (!resultado) return { paradas: [], alertas: [] };
+    return calcularAbastecimentoParaSelecao({
+      candidatosSelecionados: resultado.candidatos.filter((c) => selecionados.has(c.cnpj)),
+      capacidadeTanqueL: capacidade,
+      autonomiaKmPorL: autonomia,
+      distanciaTotalRotaKm: resultado.distanciaKm,
+      combustivelInicialL: combustivelInicial || capacidade,
+    });
+  }, [resultado, selecionados, capacidade, autonomia, combustivelInicial]);
+
+  const litrosTotalAtual = paradasAtuais.paradas.reduce((s, p) => s + p.litrosSugeridos, 0);
+  const custoTotalAtual = Math.round(paradasAtuais.paradas.reduce((s, p) => s + p.custoAbastecimento, 0) * 100) / 100;
 
   function selecionarVeiculo(idPlaca: string) {
     setPlaca(idPlaca);
@@ -135,6 +179,9 @@ export function FormRoteirizacao({
         perfilChave,
       });
       setResultado(r);
+      // A sugestão do algoritmo vira o ponto de partida da seleção — o
+      // gestor ajusta a partir daí (marca/desmarca postos).
+      setSelecionados(new Set(r.paradas.map((p) => p.cnpj)));
       setAbaAtiva("mapa");
     });
   }
@@ -291,18 +338,27 @@ export function FormRoteirizacao({
               <p className="mt-1 text-2xl font-semibold text-slate-900">{resultado.distanciaKm} km</p>
             </div>
             <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Paradas sugeridas</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{resultado.paradas.length}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Paradas selecionadas</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">{paradasAtuais.paradas.length}</p>
             </div>
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Litros totais</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{resultado.litrosTotal} L</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">{litrosTotalAtual} L</p>
             </div>
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Custo combustível</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{formatarMoeda(resultado.custoTotal)}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">{formatarMoeda(custoTotalAtual)}</p>
             </div>
           </div>
+
+          {paradasAtuais.alertas.length > 0 && (
+            <div className="mb-6 space-y-1.5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
+              <p className="font-semibold">⚠️ Verifique a seleção de postos:</p>
+              {paradasAtuais.alertas.map((alerta, i) => (
+                <p key={i}>• {alerta}</p>
+              ))}
+            </div>
+          )}
 
           {resultado.pracasPedagio.length > 0 && (
             <div className="mb-6 card p-4">
@@ -371,20 +427,32 @@ export function FormRoteirizacao({
 
           {abaAtiva === "mapa" && (
             <div className="mb-6">
+              <p className="mb-2 text-xs text-slate-500">
+                Clique num posto no mapa (ou na tabela da aba Abastecimento) pra marcar/desmarcar como parada. Postos
+                em cinza ainda não foram selecionados.
+              </p>
               <MapaRotaLazy
                 rota={resultado.coordenadas}
+                onTogglePosto={alternarPosto}
                 marcadores={[
                   { lat: origem.lat, lon: origem.lon, label: origem.label, cor: "verde" },
                   { lat: destino.lat, lon: destino.lon, label: destino.label, cor: "vermelho" },
-                  ...resultado.paradas.map((p, i) => ({
-                    lat: p.lat,
-                    lon: p.lon,
-                    label: `${i + 1}. ${p.label}`,
-                    cnpj: p.cnpj,
-                    infoExtra: `Parada ${i + 1} · ${p.litrosSugeridos} L · ${formatarMoeda(p.custoAbastecimento)}`,
-                    cor: corPorBandeira(p.bandeira),
-                    legendaLabel: p.bandeira ?? "Sem bandeira",
-                  })),
+                  ...resultado.candidatos.map((c) => {
+                    const selecionado = selecionados.has(c.cnpj);
+                    const parada = paradasAtuais.paradas.find((p) => p.cnpj === c.cnpj);
+                    return {
+                      lat: c.lat,
+                      lon: c.lon,
+                      label: c.label,
+                      cnpj: c.cnpj,
+                      selecionado,
+                      infoExtra: parada
+                        ? `${parada.litrosSugeridos} L · ${formatarMoeda(parada.custoAbastecimento)}`
+                        : `km ${c.km.toFixed(0)} · R$ ${c.preco.toFixed(3)}/L`,
+                      cor: corPorBandeira(c.bandeira),
+                      legendaLabel: c.bandeira ?? "Sem bandeira",
+                    };
+                  }),
                   ...resultado.pracasPedagio.map((praca) => ({
                     lat: praca.lat,
                     lon: praca.lon,
@@ -408,20 +476,22 @@ export function FormRoteirizacao({
           {abaAtiva === "abastecimento" && (
             <div className="card overflow-x-auto p-4">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-slate-900">Paradas sugeridas ({perfilAtual.nome})</h2>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Postos no corredor — sugestão inicial: {perfilAtual.nome}
+                </h2>
+                <p className="text-xs text-slate-500">Clique numa linha pra marcar/desmarcar como parada.</p>
               </div>
-              {resultado.paradas.length === 0 ? (
-                <p className="text-sm text-slate-400">
-                  Com o tanque informado dá para fazer essa viagem sem precisar abastecer.
-                </p>
+              {resultado.candidatos.length === 0 ? (
+                <p className="text-sm text-slate-400">Nenhum posto candidato encontrado no corredor da rota.</p>
               ) : (
                 <table className="w-full border-separate border-spacing-0 text-left text-sm">
                   <thead className="text-xs uppercase text-slate-500">
                     <tr>
-                      <th className="whitespace-nowrap py-2 pr-4">#</th>
+                      <th className="whitespace-nowrap py-2 pr-4">Selecionado</th>
                       <th className="py-2 pr-4">Posto</th>
+                      <th className="whitespace-nowrap py-2 pr-4">Grade</th>
                       <th className="whitespace-nowrap py-2 pr-4">Km</th>
-                      <th className="whitespace-nowrap py-2 pr-4">Motivo</th>
+                      <th className="whitespace-nowrap py-2 pr-4">Preço</th>
                       <th className="whitespace-nowrap py-2 pr-4">Chegada</th>
                       <th className="whitespace-nowrap py-2 pr-4">Litros</th>
                       <th className="whitespace-nowrap py-2 pr-4">Custo</th>
@@ -429,34 +499,62 @@ export function FormRoteirizacao({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {resultado.paradas.map((p, i) => (
-                      <tr key={p.cnpj}>
-                        <td className="py-2.5 pr-4 align-top text-slate-500">{i + 1}</td>
-                        <td className="py-2.5 pr-4 align-top text-slate-700">
-                          {p.label}
-                          {/* Fase 27.140 — sinaliza quando a parada veio da
-                              base pública ANP (preço estimado, não
-                              negociado) em vez da rede própria do cliente. */}
-                          {p.origem === "anp" && (
-                            <span className="ml-1.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
-                              Base ANP
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">{p.km.toFixed(0)} km</td>
-                        <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
-                          {MOTIVO_LABEL[p.motivo] ?? p.motivo}
-                        </td>
-                        <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
-                          {p.pctChegada.toFixed(0)}% tanque
-                        </td>
-                        <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">{p.litrosSugeridos} L</td>
-                        <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
-                          {formatarMoeda(p.custoAbastecimento)}
-                        </td>
-                        <td className="py-2.5 align-top whitespace-nowrap text-slate-600">{p.pctApos.toFixed(0)}% tanque</td>
-                      </tr>
-                    ))}
+                    {resultado.candidatos.map((c) => {
+                      const selecionado = selecionados.has(c.cnpj);
+                      const parada = paradasAtuais.paradas.find((p) => p.cnpj === c.cnpj);
+                      return (
+                        <tr
+                          key={c.cnpj}
+                          onClick={() => alternarPosto(c.cnpj)}
+                          className={`cursor-pointer ${selecionado ? "bg-frota-50" : "hover:bg-slate-50"}`}
+                        >
+                          <td className="py-2.5 pr-4 align-top">
+                            <input type="checkbox" checked={selecionado} readOnly className="h-4 w-4" />
+                          </td>
+                          <td className="py-2.5 pr-4 align-top text-slate-700">
+                            {c.label}
+                            {/* Fase 27.140 — sinaliza quando o posto veio da
+                                base pública ANP (preço estimado, não
+                                negociado) em vez da rede própria do cliente. */}
+                            {c.origem === "anp" && (
+                              <span className="ml-1.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
+                                Base ANP
+                              </span>
+                            )}
+                            {parada && (
+                              <p className="mt-0.5 text-xs font-normal text-slate-400">
+                                {MOTIVO_LABEL[parada.motivo] ?? parada.motivo}
+                              </p>
+                            )}
+                          </td>
+                          <td className="py-2.5 pr-4 align-top">
+                            {c.grade && (
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${GRADE_COR[c.grade] ?? ""}`}
+                              >
+                                {c.grade}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">{c.km.toFixed(0)} km</td>
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                            R$ {c.preco.toFixed(3)}
+                          </td>
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                            {parada ? `${parada.pctChegada.toFixed(0)}% tanque` : "—"}
+                          </td>
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                            {parada ? `${parada.litrosSugeridos} L` : "—"}
+                          </td>
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                            {parada ? formatarMoeda(parada.custoAbastecimento) : "—"}
+                          </td>
+                          <td className="py-2.5 align-top whitespace-nowrap text-slate-600">
+                            {parada ? `${parada.pctApos.toFixed(0)}% tanque` : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
@@ -467,7 +565,7 @@ export function FormRoteirizacao({
             <div className="card space-y-6 p-4">
               <ComparativoEstrategias comparativo={resultado.comparativoEstrategias} selecionada={perfilChave} />
               <GraficosRota
-                paradas={resultado.paradas}
+                paradas={paradasAtuais.paradas}
                 distanciaKm={resultado.distanciaKm}
                 origemLabel={origem.label}
                 destinoLabel={destino.label}
@@ -475,8 +573,8 @@ export function FormRoteirizacao({
                 autonomiaKmPorL={autonomia}
               />
               <ComparativoPrecos
-                custoTotal={resultado.custoTotal}
-                litrosTotal={resultado.litrosTotal}
+                custoTotal={custoTotalAtual}
+                litrosTotal={litrosTotalAtual}
                 precoMedioGf={resultado.precoMedioGf}
                 precoReferenciaAnp={resultado.precoReferenciaAnp}
                 ufReferencia={resultado.ufReferencia}
@@ -526,14 +624,14 @@ export function FormRoteirizacao({
                     </span>
                   </p>
                   <p className="text-slate-500">
-                    🛢 Total abastecido: <span className="font-medium text-slate-900">{resultado.litrosTotal} L</span>
+                    🛢 Total abastecido: <span className="font-medium text-slate-900">{litrosTotalAtual} L</span>
                   </p>
                   <p className="text-slate-500">
                     💰 Custo abastecimento:{" "}
-                    <span className="font-medium text-slate-900">{formatarMoeda(resultado.custoTotal)}</span>
+                    <span className="font-medium text-slate-900">{formatarMoeda(custoTotalAtual)}</span>
                   </p>
                   <p className="text-slate-500">
-                    ⛽ Paradas: <span className="font-medium text-slate-900">{resultado.paradas.length || "Nenhuma"}</span>
+                    ⛽ Paradas: <span className="font-medium text-slate-900">{paradasAtuais.paradas.length || "Nenhuma"}</span>
                   </p>
                   {resultado.pracasPedagio.length > 0 && (
                     <>
@@ -544,7 +642,7 @@ export function FormRoteirizacao({
                       <p className="text-slate-500">
                         💰 Total (combustível + pedágio):{" "}
                         <span className="font-medium text-slate-900">
-                          {formatarMoeda(resultado.custoTotal + resultado.custoPedagioEstimado)}
+                          {formatarMoeda(custoTotalAtual + resultado.custoPedagioEstimado)}
                         </span>
                       </p>
                     </>
@@ -603,8 +701,8 @@ export function FormRoteirizacao({
                         label: "Tempo estimado",
                         valor: `${Math.floor(resultado.duracaoMin / 60)}h ${String(Math.round(resultado.duracaoMin % 60)).padStart(2, "0")}min`,
                       },
-                      { label: "Paradas sugeridas", valor: String(resultado.paradas.length) },
-                      { label: "Custo total", valor: formatarMoeda(resultado.custoTotal) },
+                      { label: "Paradas selecionadas", valor: String(paradasAtuais.paradas.length) },
+                      { label: "Custo total", valor: formatarMoeda(custoTotalAtual) },
                     ]}
                     comparativo={resultado.comparativoEstrategias.map((c) => ({
                       nome: `${c.icone} ${c.nome}`,
@@ -613,7 +711,7 @@ export function FormRoteirizacao({
                       litros: `${c.litrosTotal} L`,
                       grade: c.gradeMedia,
                     }))}
-                    paradas={resultado.paradas.map((p, i) => ({
+                    paradas={paradasAtuais.paradas.map((p, i) => ({
                       numero: String(i + 1),
                       posto: p.label,
                       municipioUf: "—",
@@ -627,7 +725,7 @@ export function FormRoteirizacao({
                   <BotaoExportarGpx
                     origem={origem}
                     destino={destino}
-                    paradas={resultado.paradas}
+                    paradas={paradasAtuais.paradas}
                     coordenadas={resultado.coordenadas}
                     placa={placa || undefined}
                   />
@@ -638,7 +736,7 @@ export function FormRoteirizacao({
                         destino: destino.label,
                         placa: placa || undefined,
                         paradas: [
-                          ...resultado.paradas.map((p) => ({
+                          ...paradasAtuais.paradas.map((p) => ({
                             local: p.label,
                             categoria: "abastecimento",
                             descricao: [p.bandeira, `R$ ${p.preco.toFixed(3)}/L`].filter(Boolean).join(" · "),
@@ -670,10 +768,8 @@ export function FormRoteirizacao({
                         placa: placa || undefined,
                         kmEstimado: Math.round(resultado.distanciaKm),
                         consumoKmL: autonomia || undefined,
-                        precoCombustivel: (() => {
-                          const litrosTotal = resultado.paradas.reduce((s, p) => s + p.litrosSugeridos, 0);
-                          return litrosTotal > 0 ? Math.round((resultado.custoTotal / litrosTotal) * 1000) / 1000 : undefined;
-                        })(),
+                        precoCombustivel:
+                          litrosTotalAtual > 0 ? Math.round((custoTotalAtual / litrosTotalAtual) * 1000) / 1000 : undefined,
                         pedagios: resultado.pracasPedagio.map((praca) => ({
                           praca_nome: praca.nome,
                           valor: praca.valorCaminhaoEixo ?? praca.valorCarro ?? 0,
@@ -684,7 +780,7 @@ export function FormRoteirizacao({
                         // (se a empresa tiver o parâmetro habilitado, ver
                         // planos-viagem/actions.ts). Não editável no formulário —
                         // só passa direto, igual aos pedágios sugeridos da rota.
-                        paradas: resultado.paradas.map((p, i) => ({
+                        paradas: paradasAtuais.paradas.map((p, i) => ({
                           ordem: i,
                           posto_cnpj: p.cnpj,
                           posto_nome: p.label,
@@ -708,8 +804,8 @@ export function FormRoteirizacao({
                     combustivel={combustivel || undefined}
                     distanciaKm={resultado.distanciaKm}
                     duracaoMin={resultado.duracaoMin}
-                    custoTotal={resultado.custoTotal}
-                    paradas={resultado.paradas}
+                    custoTotal={custoTotalAtual}
+                    paradas={paradasAtuais.paradas}
                   />
                 </div>
               </div>
