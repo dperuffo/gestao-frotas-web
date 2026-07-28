@@ -9,7 +9,7 @@ import { calcularRoteirizacaoAcao, type ResultadoRoteirizacao } from "../actions
 import { PERFIS_PESO, PERFIL_PADRAO } from "@/lib/roteirizacaoScore";
 import { PRODUTOS_POSTO, PRODUTOS_POR_TIPO_VEICULO } from "@/lib/constants";
 import { corPorBandeira } from "@/lib/coresBandeira";
-import { formatCNPJ } from "@/lib/utils";
+import { formatCNPJ, normalizarTexto } from "@/lib/utils";
 import { calcularAbastecimentoParaSelecao } from "@/lib/roteirizacaoAlgoritmo";
 import { ComparativoEstrategias } from "./ComparativoEstrategias";
 import { GraficosRota } from "./GraficosRota";
@@ -97,6 +97,12 @@ export function FormRoteirizacao({
   // motorista vai realmente usar. Começa com os CNPJs que o algoritmo
   // sugeriu (ver calcular() abaixo) — o gestor ajusta a partir daí.
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  // Fase Roteirização-Busca-Genérica (28/07/2026) — pedido do Daniel: filtro
+  // livre (nome, CNPJ, cidade ou estado) sobre a tabela de postos do
+  // corredor, mesmo padrão de busca genérica já usado em /veiculos,
+  // /precos-postos etc. — só que aqui em memória (client-side), já que a
+  // lista inteira de candidatos já veio do servidor de uma vez.
+  const [buscaPosto, setBuscaPosto] = useState("");
 
   function alternarPosto(cnpj: string) {
     setSelecionados((atual) => {
@@ -139,6 +145,16 @@ export function FormRoteirizacao({
       return a.km - b.km;
     });
   }, [resultado, selecionados]);
+
+  const candidatosFiltrados = useMemo(() => {
+    const termo = normalizarTexto(buscaPosto);
+    if (!termo) return candidatosOrdenados;
+    return candidatosOrdenados.filter((c) =>
+      normalizarTexto([c.label, c.cnpj, formatCNPJ(c.cnpj), c.municipio, c.uf].filter(Boolean).join(" ")).includes(
+        termo
+      )
+    );
+  }, [candidatosOrdenados, buscaPosto]);
 
   function selecionarVeiculo(idPlaca: string) {
     setPlaca(idPlaca);
@@ -491,14 +507,25 @@ export function FormRoteirizacao({
 
           {abaAtiva === "abastecimento" && (
             <div className="card overflow-x-auto p-4">
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold text-slate-900">
                   Postos no corredor — sugestão inicial: {perfilAtual.nome}
                 </h2>
                 <p className="text-xs text-slate-500">Clique numa linha pra marcar/desmarcar como parada.</p>
               </div>
+              {resultado.candidatos.length > 0 && (
+                <input
+                  type="search"
+                  value={buscaPosto}
+                  onChange={(e) => setBuscaPosto(e.target.value)}
+                  placeholder="Buscar por nome, CNPJ, cidade ou estado..."
+                  className="input mb-3 max-w-sm"
+                />
+              )}
               {resultado.candidatos.length === 0 ? (
                 <p className="text-sm text-slate-400">Nenhum posto candidato encontrado no corredor da rota.</p>
+              ) : candidatosFiltrados.length === 0 ? (
+                <p className="text-sm text-slate-400">Nenhum posto encontrado para &quot;{buscaPosto}&quot;.</p>
               ) : (
                 <table className="w-full border-separate border-spacing-0 text-left text-sm">
                   <thead className="text-xs uppercase text-slate-500">
@@ -516,7 +543,7 @@ export function FormRoteirizacao({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {candidatosOrdenados.map((c) => {
+                    {candidatosFiltrados.map((c) => {
                       const selecionado = selecionados.has(c.cnpj);
                       const parada = paradasAtuais.paradas.find((p) => p.cnpj === c.cnpj);
                       return (

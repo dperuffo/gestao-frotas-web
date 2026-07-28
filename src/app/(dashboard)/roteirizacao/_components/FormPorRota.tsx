@@ -10,7 +10,7 @@ import MapaRotaLazy from "./MapaRotaLazy";
 import { calcularRotaEPostosAcao, type ResultadoRotaCalculada } from "../actions";
 import { PRODUTOS_POSTO, PRODUTOS_POR_TIPO_VEICULO } from "@/lib/constants";
 import { corPorBandeira } from "@/lib/coresBandeira";
-import { formatCNPJ } from "@/lib/utils";
+import { formatCNPJ, normalizarTexto } from "@/lib/utils";
 import { calcularAbastecimentoParaSelecao } from "@/lib/roteirizacaoAlgoritmo";
 import { custoPedagioTotal } from "@/lib/pedagio";
 import type { VeiculoOpcao } from "./FormRoteirizacao";
@@ -72,6 +72,10 @@ export function FormPorRota({
   // sugestão automática de nenhum algoritmo: o gestor monta a lista de
   // paradas clicando nos postos que quiser, no mapa ou na tabela.
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  // Fase Roteirização-Busca-Genérica (28/07/2026) — filtro livre (nome,
+  // CNPJ, cidade ou estado) sobre a tabela de postos do corredor, mesmo
+  // padrão usado no Roteirizador Inteligente.
+  const [buscaPosto, setBuscaPosto] = useState("");
 
   function alternarPosto(cnpj: string) {
     setSelecionados((atual) => {
@@ -111,6 +115,16 @@ export function FormPorRota({
       return a.km - b.km;
     });
   }, [resultado, selecionados]);
+
+  const candidatosFiltrados = useMemo(() => {
+    const termo = normalizarTexto(buscaPosto);
+    if (!termo) return candidatosOrdenados;
+    return candidatosOrdenados.filter((c) =>
+      normalizarTexto([c.label, c.cnpj, formatCNPJ(c.cnpj), c.municipio, c.uf].filter(Boolean).join(" ")).includes(
+        termo
+      )
+    );
+  }, [candidatosOrdenados, buscaPosto]);
   // ResultadoRotaCalculada não traz o custo de pedágio pronto (diferente do
   // Roteirizador Inteligente) — calcula aqui no client com a mesma função
   // pura usada no servidor (custoPedagioTotal, src/lib/pedagio.ts).
@@ -408,14 +422,25 @@ export function FormPorRota({
           </div>
 
           <div className="card mb-6 overflow-x-auto p-4">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-slate-900">
                 Postos no corredor <AjudaIcon chave="roteirizacao.score_posto" />
               </h2>
               <p className="text-xs text-slate-500">Clique numa linha pra marcar/desmarcar como parada.</p>
             </div>
+            {resultado.candidatos.length > 0 && (
+              <input
+                type="search"
+                value={buscaPosto}
+                onChange={(e) => setBuscaPosto(e.target.value)}
+                placeholder="Buscar por nome, CNPJ, cidade ou estado..."
+                className="input mb-3 max-w-sm"
+              />
+            )}
             {resultado.candidatos.length === 0 ? (
               <p className="text-sm text-slate-400">Nenhum posto candidato encontrado no corredor da rota.</p>
+            ) : candidatosFiltrados.length === 0 ? (
+              <p className="text-sm text-slate-400">Nenhum posto encontrado para &quot;{buscaPosto}&quot;.</p>
             ) : (
               <table className="w-full border-separate border-spacing-0 text-left text-sm">
                 <thead className="text-xs uppercase text-slate-500">
@@ -433,7 +458,7 @@ export function FormPorRota({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {candidatosOrdenados.map((c) => {
+                  {candidatosFiltrados.map((c) => {
                     const selecionado = selecionados.has(c.cnpj);
                     const parada = paradasAtuais.paradas.find((p) => p.cnpj === c.cnpj);
                     return (
