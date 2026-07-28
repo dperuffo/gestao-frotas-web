@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { salvarParametroPrePedidoAcao } from "../actions";
+import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 // Pré-Pedido é diferente dos outros 10 tipos: não é uma lista de regras
 // escopadas por placa/motorista, e sim um único interruptor por empresa —
@@ -24,6 +25,9 @@ export function SecaoPrePedido({ empresaId, habilitado }: { empresaId: string; h
 
   return (
     <div className="card p-4">
+      <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+        Pré-Pedido <AjudaIcon chave="parametros-uso.pre-pedido" />
+      </h2>
       <p className="text-sm text-slate-600">
         Quando habilitado, presume-se que uma rota inteligente foi traçada e um Plano de Viagem criado a partir dela.
         Esse Plano gera um <strong>Pré-Pedido</strong> — com número sequencial e os pontos de abastecimento
