@@ -4410,8 +4410,15 @@ export interface Database {
           cnpj_posto: string | null;
           nome_posto: string | null;
           uf_posto: string | null;
+          municipio_posto: string | null;
           hodometro: number | null;
           data: string | null;
+          meio_pagamento: string | null;
+          tipo_veiculo: string | null;
+          marca_veiculo: string | null;
+          modelo_veiculo: string | null;
+          classificacao_veiculo: string | null;
+          centro_custo: string | null;
           empresa_id: string | null;
         }[];
       };
@@ -4422,6 +4429,9 @@ export interface Database {
           oficina: string | null;
           custo_total: number | null;
           data: string | null;
+          origem: string | null;
+          tecnico: string | null;
+          centro_custo: string | null;
           empresa_id: string | null;
         }[];
       };
@@ -4433,8 +4443,83 @@ export interface Database {
           descricao: string | null;
           valor: number | null;
           data: string | null;
+          data_lancamento: string | null;
           recorrente: boolean | null;
           origem: string | null;
+          centro_custo: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_notas_fiscais_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          produto: string | null;
+          nome_posto: string | null;
+          cnpj_posto: string | null;
+          numero_nf: number | null;
+          quantidade: number | null;
+          valor_total: number | null;
+          valor_unitario: number | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_fretes_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          titulo: string | null;
+          status: string | null;
+          tipo_carga: string | null;
+          uf_origem: string | null;
+          uf_destino: string | null;
+          motorista: string | null;
+          valor_oferecido: number | null;
+          km_estimado: number | null;
+          peso_carga_kg: number | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_financeiro_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          movimento: string | null;
+          status: string | null;
+          contraparte: string | null;
+          origem: string | null;
+          valor_original: number | null;
+          valor_pago: number | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_acoes_sugeridas_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          tipo: string | null;
+          severidade: string | null;
+          status: string | null;
+          alvo_label: string | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_chamados_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          tipo: string | null;
+          prioridade: string | null;
+          status: string | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_avaliacoes_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          estrelas: number | null;
+          tem_comentario: boolean | null;
+          data: string | null;
           empresa_id: string | null;
         }[];
       };

@@ -15,8 +15,15 @@ export type AbastecimentoBruto = {
   cnpjPosto: string | null;
   nomePosto: string | null;
   ufPosto: string | null;
+  municipioPosto: string | null;
   hodometro: number | null;
   data: string | null;
+  meioPagamento: string | null;
+  tipoVeiculo: string | null;
+  marcaVeiculo: string | null;
+  modeloVeiculo: string | null;
+  classificacaoVeiculo: string | null;
+  centroCusto: string | null;
 };
 
 export type ManutencaoBruto = {
@@ -24,6 +31,9 @@ export type ManutencaoBruto = {
   oficina: string | null;
   custoTotal: number | null;
   data: string | null;
+  origem: string | null;
+  tecnico: string | null;
+  centroCusto: string | null;
 };
 
 export type CustoFixoBruto = {
@@ -32,18 +42,109 @@ export type CustoFixoBruto = {
   descricao: string | null;
   valor: number | null;
   data: string | null;
+  dataLancamento: string | null;
   recorrente: boolean | null;
   origem: string | null;
+  centroCusto: string | null;
 };
 
-type Fonte = "abastecimentos" | "manutencao" | "custos_fixos";
-type LinhaBase = AbastecimentoBruto | ManutencaoBruto | CustoFixoBruto;
+// Fase relatorios-mais-dimensoes (29/07/2026, pedido do Daniel: "relatórios
+// personalizados está com poucas dimensões e variáveis, traga mais
+// sugestões") — 5 fontes novas, cada uma espelhando o mesmo padrão das 3
+// originais (RPC "bruto" filtrada por empresa/período, mapeada em
+// relatorios/page.tsx). Ver comentário completo nas migrações
+// relatorio_*_bruto.
+export type NotaFiscalBruto = {
+  produto: string | null;
+  nomePosto: string | null;
+  cnpjPosto: string | null;
+  numeroNf: number | null;
+  quantidade: number | null;
+  valorTotal: number | null;
+  valorUnitario: number | null;
+  data: string | null;
+};
+
+export type FreteBruto = {
+  titulo: string | null;
+  status: string | null;
+  tipoCarga: string | null;
+  ufOrigem: string | null;
+  ufDestino: string | null;
+  motorista: string | null;
+  valorOferecido: number | null;
+  kmEstimado: number | null;
+  pesoCargaKg: number | null;
+  data: string | null;
+};
+
+export type FinanceiroBruto = {
+  movimento: string | null;
+  status: string | null;
+  contraparte: string | null;
+  origem: string | null;
+  valorOriginal: number | null;
+  valorPago: number | null;
+  data: string | null;
+};
+
+export type AcaoSugeridaBruto = {
+  tipo: string | null;
+  severidade: string | null;
+  status: string | null;
+  alvoLabel: string | null;
+  data: string | null;
+};
+
+export type ChamadoBruto = {
+  tipo: string | null;
+  prioridade: string | null;
+  status: string | null;
+  data: string | null;
+};
+
+export type AvaliacaoBruto = {
+  estrelas: number | null;
+  temComentario: boolean | null;
+  data: string | null;
+};
+
+type Fonte =
+  | "abastecimentos"
+  | "manutencao"
+  | "custos_fixos"
+  | "notas_fiscais"
+  | "fretes"
+  | "financeiro"
+  | "acoes_sugeridas"
+  | "chamados"
+  | "avaliacoes";
+type LinhaBase =
+  | AbastecimentoBruto
+  | ManutencaoBruto
+  | CustoFixoBruto
+  | NotaFiscalBruto
+  | FreteBruto
+  | FinanceiroBruto
+  | AcaoSugeridaBruto
+  | ChamadoBruto
+  | AvaliacaoBruto;
 type Formato = "int" | "dec" | "money" | "money3";
 type Metrica = { id: string; label: string; formato: Formato; calcular: (linhas: LinhaBase[]) => number };
 
 const CORES = ["#1565C0", "#E65100", "#2E7D32", "#6A1B9A", "#B71C1C", "#00838F", "#F9A825", "#4527A0"];
 
-const FONTE_LABEL: Record<Fonte, string> = { abastecimentos: "Abastecimentos", manutencao: "Manutenção", custos_fixos: "Custos Fixos" };
+const FONTE_LABEL: Record<Fonte, string> = {
+  abastecimentos: "Abastecimentos",
+  manutencao: "Manutenção",
+  custos_fixos: "Custos Fixos",
+  notas_fiscais: "Notas Fiscais",
+  fretes: "Fretes",
+  financeiro: "Financeiro (Contas a Receber/Pagar)",
+  acoes_sugeridas: "Ações Sugeridas",
+  chamados: "Chamados",
+  avaliacoes: "Avaliações",
+};
 
 function mesRef(data: string | null) {
   if (!data) return "—";
@@ -121,14 +222,24 @@ const DIMENSOES: Record<Fonte, { id: string; label: string; extrator: (r: LinhaB
     { id: "motorista", label: "Motorista", extrator: (r) => (r as AbastecimentoBruto).motorista || "—" },
     { id: "nome_posto", label: "Posto", extrator: (r) => (r as AbastecimentoBruto).nomePosto || "—" },
     { id: "uf_posto", label: "Estado (UF)", extrator: (r) => (r as AbastecimentoBruto).ufPosto || "—" },
+    { id: "municipio_posto", label: "Município do Posto", extrator: (r) => (r as AbastecimentoBruto).municipioPosto || "—" },
+    { id: "meio_pagamento", label: "Meio de Pagamento", extrator: (r) => (r as AbastecimentoBruto).meioPagamento || "—" },
+    { id: "tipo_veiculo", label: "Tipo de Veículo", extrator: (r) => (r as AbastecimentoBruto).tipoVeiculo || "—" },
+    { id: "marca_veiculo", label: "Marca do Veículo", extrator: (r) => (r as AbastecimentoBruto).marcaVeiculo || "—" },
+    { id: "classificacao_veiculo", label: "Classificação (Leve/Pesado)", extrator: (r) => (r as AbastecimentoBruto).classificacaoVeiculo || "—" },
+    { id: "centro_custo", label: "Centro de Custo", extrator: (r) => (r as AbastecimentoBruto).centroCusto || "—" },
   ],
   manutencao: [
     { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as ManutencaoBruto).data) },
     { id: "placa", label: "Veículo (Placa)", extrator: (r) => (r as ManutencaoBruto).placa || "—" },
     { id: "oficina", label: "Oficina", extrator: (r) => (r as ManutencaoBruto).oficina || "—" },
+    { id: "origem", label: "Origem", extrator: (r) => ((r as ManutencaoBruto).origem === "api" ? "Integração" : "Manual") },
+    { id: "tecnico", label: "Técnico", extrator: (r) => (r as ManutencaoBruto).tecnico || "—" },
+    { id: "centro_custo", label: "Centro de Custo", extrator: (r) => (r as ManutencaoBruto).centroCusto || "—" },
   ],
   custos_fixos: [
-    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as CustoFixoBruto).data) },
+    { id: "periodo_mes", label: "Período (competência)", extrator: (r) => mesRef((r as CustoFixoBruto).data) },
+    { id: "periodo_lancamento", label: "Período (lançamento)", extrator: (r) => mesRef((r as CustoFixoBruto).dataLancamento) },
     {
       id: "tipo",
       label: "Tipo de custo",
@@ -139,6 +250,46 @@ const DIMENSOES: Record<Fonte, { id: string; label: string; extrator: (r: LinhaB
     },
     { id: "placa", label: "Veículo (Placa)", extrator: (r) => (r as CustoFixoBruto).placa || "—" },
     { id: "origem", label: "Origem", extrator: (r) => ((r as CustoFixoBruto).origem === "api" ? "Integração" : "Manual") },
+    { id: "centro_custo", label: "Centro de Custo", extrator: (r) => (r as CustoFixoBruto).centroCusto || "—" },
+    { id: "recorrente", label: "Recorrente?", extrator: (r) => ((r as CustoFixoBruto).recorrente ? "Sim" : "Não") },
+  ],
+  notas_fiscais: [
+    { id: "periodo_mes", label: "Período (emissão)", extrator: (r) => mesRef((r as NotaFiscalBruto).data) },
+    { id: "produto", label: "Produto (ANP)", extrator: (r) => (r as NotaFiscalBruto).produto || "—" },
+    { id: "nome_posto", label: "Posto Emitente", extrator: (r) => (r as NotaFiscalBruto).nomePosto || "—" },
+  ],
+  fretes: [
+    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as FreteBruto).data) },
+    { id: "status", label: "Status", extrator: (r) => (r as FreteBruto).status || "—" },
+    { id: "tipo_carga", label: "Tipo de Carga", extrator: (r) => (r as FreteBruto).tipoCarga || "—" },
+    { id: "uf_origem", label: "UF de Origem", extrator: (r) => (r as FreteBruto).ufOrigem || "—" },
+    { id: "uf_destino", label: "UF de Destino", extrator: (r) => (r as FreteBruto).ufDestino || "—" },
+    { id: "motorista", label: "Motorista", extrator: (r) => (r as FreteBruto).motorista || "—" },
+  ],
+  financeiro: [
+    { id: "periodo_mes", label: "Período (vencimento)", extrator: (r) => mesRef((r as FinanceiroBruto).data) },
+    { id: "movimento", label: "Movimento (Receber/Pagar)", extrator: (r) => (r as FinanceiroBruto).movimento || "—" },
+    { id: "status", label: "Status", extrator: (r) => (r as FinanceiroBruto).status || "—" },
+    { id: "contraparte", label: "Cliente/Fornecedor", extrator: (r) => (r as FinanceiroBruto).contraparte || "—" },
+    { id: "origem", label: "Origem", extrator: (r) => (r as FinanceiroBruto).origem || "—" },
+  ],
+  acoes_sugeridas: [
+    { id: "periodo_mes", label: "Período (detecção)", extrator: (r) => mesRef((r as AcaoSugeridaBruto).data) },
+    { id: "tipo", label: "Tipo", extrator: (r) => (r as AcaoSugeridaBruto).tipo || "—" },
+    { id: "severidade", label: "Severidade", extrator: (r) => (r as AcaoSugeridaBruto).severidade || "—" },
+    { id: "status", label: "Status", extrator: (r) => (r as AcaoSugeridaBruto).status || "—" },
+    { id: "alvo", label: "Alvo", extrator: (r) => (r as AcaoSugeridaBruto).alvoLabel || "—" },
+  ],
+  chamados: [
+    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as ChamadoBruto).data) },
+    { id: "tipo", label: "Tipo", extrator: (r) => (r as ChamadoBruto).tipo || "—" },
+    { id: "prioridade", label: "Prioridade", extrator: (r) => (r as ChamadoBruto).prioridade || "—" },
+    { id: "status", label: "Status", extrator: (r) => (r as ChamadoBruto).status || "—" },
+  ],
+  avaliacoes: [
+    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as AvaliacaoBruto).data) },
+    { id: "estrelas", label: "Estrelas", extrator: (r) => String((r as AvaliacaoBruto).estrelas ?? "—") },
+    { id: "tem_comentario", label: "Com comentário?", extrator: (r) => ((r as AvaliacaoBruto).temComentario ? "Sim" : "Não") },
   ],
 };
 
@@ -184,6 +335,54 @@ const METRICAS: Record<Fonte, Metrica[]> = {
       label: "Valor Médio (R$)",
       formato: "money",
       calcular: (l) => (l.length ? l.reduce((s, r) => s + ((r as CustoFixoBruto).valor || 0), 0) / l.length : 0),
+    },
+  ],
+  notas_fiscais: [
+    { id: "nf_valor", label: "Valor Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as NotaFiscalBruto).valorTotal || 0), 0) },
+    { id: "nf_qtd", label: "Nº de Notas", formato: "int", calcular: (l) => l.length },
+    { id: "nf_quantidade", label: "Quantidade Total (L)", formato: "dec", calcular: (l) => l.reduce((s, r) => s + ((r as NotaFiscalBruto).quantidade || 0), 0) },
+    {
+      id: "nf_valor_unit_med",
+      label: "Valor Unitário Médio (R$/L)",
+      formato: "money3",
+      calcular: (l) => {
+        const validos = l.filter((r) => ((r as NotaFiscalBruto).valorUnitario || 0) > 0);
+        return validos.length ? validos.reduce((s, r) => s + ((r as NotaFiscalBruto).valorUnitario || 0), 0) / validos.length : 0;
+      },
+    },
+  ],
+  fretes: [
+    { id: "fr_qtd", label: "Nº de Fretes", formato: "int", calcular: (l) => l.length },
+    { id: "fr_valor", label: "Valor Ofertado Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as FreteBruto).valorOferecido || 0), 0) },
+    {
+      id: "fr_valor_med",
+      label: "Valor Ofertado Médio (R$)",
+      formato: "money",
+      calcular: (l) => (l.length ? l.reduce((s, r) => s + ((r as FreteBruto).valorOferecido || 0), 0) / l.length : 0),
+    },
+    { id: "fr_km", label: "Km Estimado Total", formato: "dec", calcular: (l) => l.reduce((s, r) => s + ((r as FreteBruto).kmEstimado || 0), 0) },
+    { id: "fr_peso", label: "Peso da Carga Total (kg)", formato: "dec", calcular: (l) => l.reduce((s, r) => s + ((r as FreteBruto).pesoCargaKg || 0), 0) },
+  ],
+  financeiro: [
+    { id: "fin_valor_orig", label: "Valor Original (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as FinanceiroBruto).valorOriginal || 0), 0) },
+    { id: "fin_valor_pago", label: "Valor Pago (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as FinanceiroBruto).valorPago || 0), 0) },
+    { id: "fin_qtd", label: "Nº de Lançamentos", formato: "int", calcular: (l) => l.length },
+    {
+      id: "fin_valor_med",
+      label: "Valor Médio (R$)",
+      formato: "money",
+      calcular: (l) => (l.length ? l.reduce((s, r) => s + ((r as FinanceiroBruto).valorOriginal || 0), 0) / l.length : 0),
+    },
+  ],
+  acoes_sugeridas: [{ id: "as_qtd", label: "Nº de Ações", formato: "int", calcular: (l) => l.length }],
+  chamados: [{ id: "ch_qtd", label: "Nº de Chamados", formato: "int", calcular: (l) => l.length }],
+  avaliacoes: [
+    { id: "av_qtd", label: "Nº de Avaliações", formato: "int", calcular: (l) => l.length },
+    {
+      id: "av_nota_media",
+      label: "Nota Média (estrelas)",
+      formato: "dec",
+      calcular: (l) => (l.length ? l.reduce((s, r) => s + ((r as AvaliacaoBruto).estrelas || 0), 0) / l.length : 0),
     },
   ],
 };
@@ -284,6 +483,12 @@ export function RelatoriosPersonalizados({
   abastecimentos,
   manutencoes,
   custosFixos,
+  notasFiscais,
+  fretes,
+  financeiro,
+  acoesSugeridas,
+  chamados,
+  avaliacoes,
   nomeEmpresa,
   nomeUsuario,
   cargoUsuario,
@@ -291,6 +496,12 @@ export function RelatoriosPersonalizados({
   abastecimentos: AbastecimentoBruto[];
   manutencoes: ManutencaoBruto[];
   custosFixos: CustoFixoBruto[];
+  notasFiscais: NotaFiscalBruto[];
+  fretes: FreteBruto[];
+  financeiro: FinanceiroBruto[];
+  acoesSugeridas: AcaoSugeridaBruto[];
+  chamados: ChamadoBruto[];
+  avaliacoes: AvaliacaoBruto[];
   nomeEmpresa: string;
   nomeUsuario: string;
   cargoUsuario: string | null;
@@ -315,8 +526,24 @@ export function RelatoriosPersonalizados({
   // "Período", inclui a granularidade escolhida (ex.: "Período (por semana)").
   const dimensaoLabelAtual = ehDimensaoPeriodo ? `Período (${GRANULARIDADE_LABEL[periodoGranularidade]})` : dimensaoAtual.label;
 
-  const dadosBase: LinhaBase[] =
-    fonte === "abastecimentos" ? abastecimentos : fonte === "manutencao" ? manutencoes : custosFixos;
+  // Fase relatorios-mais-dimensoes — trocado de ternário encadeado (só dava
+  // conta de 3 fontes) por um mapa, agora que são 9. `useMemo` porque esse
+  // objeto reconstrói um array novo por fonte a cada render.
+  const dadosPorFonte: Record<Fonte, LinhaBase[]> = useMemo(
+    () => ({
+      abastecimentos,
+      manutencao: manutencoes,
+      custos_fixos: custosFixos,
+      notas_fiscais: notasFiscais,
+      fretes,
+      financeiro,
+      acoes_sugeridas: acoesSugeridas,
+      chamados,
+      avaliacoes,
+    }),
+    [abastecimentos, manutencoes, custosFixos, notasFiscais, fretes, financeiro, acoesSugeridas, chamados, avaliacoes]
+  );
+  const dadosBase: LinhaBase[] = dadosPorFonte[fonte];
 
   // Filtro de intervalo de datas — reduz as linhas ANTES de agrupar. "12m"
   // (padrão) não filtra nada, mantendo o comportamento de sempre (usa tudo
@@ -503,6 +730,12 @@ export function RelatoriosPersonalizados({
             <option value="abastecimentos">⛽ Abastecimentos</option>
             <option value="manutencao">🔧 Manutenção</option>
             <option value="custos_fixos">💰 Custos Fixos</option>
+            <option value="notas_fiscais">🧾 Notas Fiscais</option>
+            <option value="fretes">🚚 Fretes</option>
+            <option value="financeiro">🏦 Financeiro (Receber/Pagar)</option>
+            <option value="acoes_sugeridas">💡 Ações Sugeridas</option>
+            <option value="chamados">🎫 Chamados</option>
+            <option value="avaliacoes">⭐ Avaliações</option>
           </select>
         </div>
         <div>
@@ -545,8 +778,8 @@ export function RelatoriosPersonalizados({
 
       {dadosBase.length === 0 ? (
         <p className="p-4 text-sm text-slate-400">
-          Nenhum dado de {fonte === "abastecimentos" ? "abastecimento" : fonte === "manutencao" ? "manutenção" : "custo fixo"}{" "}
-          encontrado no período (últimos 12 meses{fonte === "custos_fixos" ? ", e também os próximos 12" : ""}).
+          Nenhum dado de {FONTE_LABEL[fonte].toLowerCase()} encontrado no período (últimos 12 meses
+          {fonte === "custos_fixos" ? ", e também os próximos 12" : ""}).
         </p>
       ) : dadosFiltradosPorPeriodo.length === 0 ? (
         <p className="p-4 text-sm text-slate-400">Nenhum registro no período selecionado — ajuste o filtro acima.</p>

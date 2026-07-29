@@ -88,6 +88,12 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     { data: abastecimentosRaw },
     { data: manutencoesRaw },
     { data: custosFixosRaw },
+    { data: notasFiscaisRaw },
+    { data: fretesRaw },
+    { data: financeiroRaw },
+    { data: acoesSugeridasRaw },
+    { data: chamadosRaw },
+    { data: avaliacoesRaw },
   ] = await Promise.all([
     supabase.rpc("historico_precos_detalhado", rpcArgs),
     supabase.rpc("postos_gf_desvio_anp", rpcArgs),
@@ -95,6 +101,15 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     supabase.rpc("relatorio_abastecimentos_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
     supabase.rpc("relatorio_manutencoes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
     supabase.rpc("relatorio_custos_fixos_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFimCustosFixos }),
+    // Fase relatorios-mais-dimensoes (29/07/2026) — 6 novas fontes pro
+    // construtor de Relatórios Personalizados, mesma janela padrão de 365
+    // dias retroativos das demais (ver comentário acima sobre pDataInicio).
+    supabase.rpc("relatorio_notas_fiscais_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_fretes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_financeiro_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_acoes_sugeridas_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_chamados_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_avaliacoes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
   ]);
 
   const historico = (historicoRaw ?? []).map((r) => ({
@@ -141,8 +156,15 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     cnpjPosto: r.cnpj_posto,
     nomePosto: r.nome_posto,
     ufPosto: r.uf_posto,
+    municipioPosto: r.municipio_posto,
     hodometro: r.hodometro,
     data: r.data,
+    meioPagamento: r.meio_pagamento,
+    tipoVeiculo: r.tipo_veiculo,
+    marcaVeiculo: r.marca_veiculo,
+    modeloVeiculo: r.modelo_veiculo,
+    classificacaoVeiculo: r.classificacao_veiculo,
+    centroCusto: r.centro_custo,
   }));
 
   const manutencoes = (manutencoesRaw ?? []).map((r) => ({
@@ -150,6 +172,9 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     oficina: r.oficina,
     custoTotal: r.custo_total,
     data: r.data,
+    origem: r.origem,
+    tecnico: r.tecnico,
+    centroCusto: r.centro_custo,
   }));
 
   const custosFixos = (custosFixosRaw ?? []).map((r) => ({
@@ -158,8 +183,67 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     descricao: r.descricao,
     valor: r.valor,
     data: r.data,
+    dataLancamento: r.data_lancamento,
     recorrente: r.recorrente,
     origem: r.origem,
+    centroCusto: r.centro_custo,
+  }));
+
+  // Fase relatorios-mais-dimensoes — mapeamento das 6 fontes novas, mesmo
+  // padrão snake_case (banco) -> camelCase (front) das 3 acima.
+  const notasFiscais = (notasFiscaisRaw ?? []).map((r) => ({
+    produto: r.produto,
+    nomePosto: r.nome_posto,
+    cnpjPosto: r.cnpj_posto,
+    numeroNf: r.numero_nf,
+    quantidade: r.quantidade,
+    valorTotal: r.valor_total,
+    valorUnitario: r.valor_unitario,
+    data: r.data,
+  }));
+
+  const fretes = (fretesRaw ?? []).map((r) => ({
+    titulo: r.titulo,
+    status: r.status,
+    tipoCarga: r.tipo_carga,
+    ufOrigem: r.uf_origem,
+    ufDestino: r.uf_destino,
+    motorista: r.motorista,
+    valorOferecido: r.valor_oferecido,
+    kmEstimado: r.km_estimado,
+    pesoCargaKg: r.peso_carga_kg,
+    data: r.data,
+  }));
+
+  const financeiro = (financeiroRaw ?? []).map((r) => ({
+    movimento: r.movimento,
+    status: r.status,
+    contraparte: r.contraparte,
+    origem: r.origem,
+    valorOriginal: r.valor_original,
+    valorPago: r.valor_pago,
+    data: r.data,
+  }));
+
+  const acoesSugeridas = (acoesSugeridasRaw ?? []).map((r) => ({
+    tipo: r.tipo,
+    severidade: r.severidade,
+    status: r.status,
+    alvoLabel: r.alvo_label,
+    data: r.data,
+  }));
+
+  const chamados = (chamadosRaw ?? []).map((r) => ({
+    tipo: r.tipo,
+    prioridade: r.prioridade,
+    status: r.status,
+    data: r.data,
+  }));
+
+  const avaliacoes = (avaliacoesRaw ?? []).map((r) => ({
+    estrelas: r.estrelas,
+    temComentario: r.tem_comentario,
+    data: r.data,
   }));
 
   return (
@@ -225,6 +309,12 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
                 abastecimentos={abastecimentos}
                 manutencoes={manutencoes}
                 custosFixos={custosFixos}
+                notasFiscais={notasFiscais}
+                fretes={fretes}
+                financeiro={financeiro}
+                acoesSugeridas={acoesSugeridas}
+                chamados={chamados}
+                avaliacoes={avaliacoes}
                 nomeEmpresa={nomeEmpresaSelecionada}
                 nomeUsuario={nomeUsuarioAtual}
                 cargoUsuario={cargoUsuarioAtual}
