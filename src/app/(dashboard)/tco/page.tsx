@@ -232,11 +232,21 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
                       {v.custo_por_km !== null ? `${formatarMoeda(v.custo_por_km)}/km` : "—"}
                     </td>
                     <td className="px-4 py-3 text-xs">
-                      {v.tco_completo ? (
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">Completo</span>
-                      ) : (
-                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">Operacional</span>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1">
+                        {v.tco_completo ? (
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">Completo</span>
+                        ) : (
+                          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">Operacional</span>
+                        )}
+                        {v.fonte_depreciacao === "fipe_curva_real" && (
+                          <span
+                            className="rounded-full bg-sky-50 px-2 py-0.5 text-sky-700"
+                            title="Depreciação calculada a partir da curva real de valor FIPE do veículo"
+                          >
+                            Curva FIPE
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

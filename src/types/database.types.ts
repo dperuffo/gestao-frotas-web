@@ -62,6 +62,11 @@ export interface Database {
           // (verificarLimiteFrota) pra esta empresa. Uso interno/teste,
           // editável só por admin em /clientes/[id].
           bypass_limite_frota: boolean;
+          // Fase TCO 2 (29/07/2026) — taxa de custo de capital (% ao ano),
+          // usada no TCO como custo de oportunidade do capital imobilizado
+          // na frota. Editável só por admin em /clientes/[id]; null = não
+          // incluir esse componente no cálculo.
+          taxa_custo_capital: number | null;
           // Fase 27.50 — "Frota" (cliente de gestão de frotas) ou "Revenda"
           // (posto revendedor com conta própria, feature de Negociação).
           segmento: string;
@@ -2362,6 +2367,18 @@ export interface Database {
           valor_aquisicao: number | null;
           data_aquisicao: string | null;
           valor_residual_estimado: number | null;
+          // Já existiam no banco antes da Fase TCO 2, mas nunca tinham sido
+          // refletidas aqui (o types file ficou defasado nessas colunas).
+          valor_fipe: number | null;
+          codigo_fipe: string | null;
+          combustivel_fipe: string | null;
+          mes_referencia: string | null;
+          // Fase TCO 2 (29/07/2026) — identidade FIPE completa: tipo
+          // (cars/motorcycles/trucks) e código do ano-combustível (yearId),
+          // necessários pra refresh direto por codigo_fipe sem repetir a
+          // cascata marca>modelo>ano.
+          fipe_tipo_veiculo: "cars" | "motorcycles" | "trucks" | null;
+          fipe_ano_codigo: string | null;
           criado_em: string | null;
           atualizado_em: string | null;
         };
@@ -2376,6 +2393,42 @@ export interface Database {
             columns: ["centro_custo_id"];
             isOneToOne: false;
             referencedRelation: "centros_custo";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase TCO 2 (29/07/2026) — histórico mensal de valor FIPE por
+      // veículo, usado pra curva de depreciação real no TCO
+      // (tco_calcular_depreciacao_capital). Alimentado no vínculo inicial
+      // (backfill de até 3 meses via /history) e no cron mensal
+      // (/api/cron/atualizar-fipe).
+      cadastro_veiculos_fipe_historico: {
+        Row: {
+          id: string;
+          cadastro_veiculo_id: string;
+          cnpj_frota: string;
+          placa: string;
+          codigo_fipe: string;
+          mes_referencia: string;
+          referencia_codigo: number | null;
+          valor: number;
+          criado_em: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["cadastro_veiculos_fipe_historico"]["Row"]> & {
+          cadastro_veiculo_id: string;
+          cnpj_frota: string;
+          placa: string;
+          codigo_fipe: string;
+          mes_referencia: string;
+          valor: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["cadastro_veiculos_fipe_historico"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "cadastro_veiculos_fipe_historico_cadastro_veiculo_id_fkey";
+            columns: ["cadastro_veiculo_id"];
+            isOneToOne: false;
+            referencedRelation: "cadastro_veiculos";
             referencedColumns: ["id"];
           },
         ];
@@ -5074,6 +5127,11 @@ export interface Database {
           valor_aquisicao: number | null;
           data_aquisicao: string | null;
           valor_residual_estimado: number | null;
+          // Fase TCO 2 (29/07/2026) — identidade/valor FIPE atual do
+          // veículo + os 2 novos componentes de custo (depreciação passa a
+          // poder vir da curva real FIPE, não só do heurístico linear).
+          codigo_fipe: string | null;
+          valor_fipe: number | null;
           km_periodo: number | null;
           custo_combustivel: number;
           custo_manutencao: number;
@@ -5081,9 +5139,32 @@ export interface Database {
           custo_oficinas: number;
           custo_fixos: number;
           custo_depreciacao: number | null;
+          custo_capital: number | null;
+          fonte_depreciacao: "fipe_curva_real" | "linear_estimado" | null;
           tco_total: number;
           custo_por_km: number | null;
           tco_completo: boolean;
+        }[];
+      };
+      // Fase TCO 2 (29/07/2026) — depreciação real (curva FIPE) com
+      // fallback pro heurístico linear + custo de capital (custo de
+      // oportunidade do capital imobilizado). Chamada internamente por
+      // tco_veiculo/tco_frota_resumo — não é chamada direto do frontend,
+      // mas fica documentada aqui pra consistência com o resto do arquivo.
+      tco_calcular_depreciacao_capital: {
+        Args: {
+          p_veiculo_id: string;
+          p_valor_aquisicao: number | null;
+          p_valor_residual_estimado: number | null;
+          p_valor_fipe_atual: number | null;
+          p_data_inicio: string;
+          p_data_fim: string;
+          p_taxa_custo_capital: number | null;
+        };
+        Returns: {
+          custo_depreciacao: number | null;
+          fonte_depreciacao: "fipe_curva_real" | "linear_estimado" | null;
+          custo_capital: number | null;
         }[];
       };
       // Fase TCO (29/07/2026) — ranking de veículos por custo/km no período,
@@ -5115,6 +5196,8 @@ export interface Database {
           custo_oficinas: number;
           custo_fixos: number;
           custo_depreciacao: number | null;
+          custo_capital: number | null;
+          fonte_depreciacao: "fipe_curva_real" | "linear_estimado" | null;
           tco_total: number;
           custo_por_km: number | null;
           tco_completo: boolean;

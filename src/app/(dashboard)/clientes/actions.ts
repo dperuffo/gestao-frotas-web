@@ -78,6 +78,13 @@ export async function atualizarCliente(
   const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
   if (perfilAtual === "admin") {
     payload.bypass_limite_frota = formData.get("bypass_limite_frota") === "on";
+
+    // Fase TCO 2 (29/07/2026) — taxa de custo de capital (% ao ano), mesma
+    // checagem server-side de admin acima (não confia só na UI escondendo o
+    // campo em ClienteForm).
+    const taxaBruta = String(formData.get("taxa_custo_capital") ?? "").trim();
+    const taxa = taxaBruta ? Number(taxaBruta) : null;
+    payload.taxa_custo_capital = taxa != null && Number.isFinite(taxa) ? taxa : null;
   }
 
   const { error } = await supabase.from("empresas").update(payload).eq("id", id);

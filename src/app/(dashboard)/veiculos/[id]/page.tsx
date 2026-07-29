@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { normalizarCNPJ } from "@/lib/utils";
 import { VeiculoForm } from "../_components/VeiculoForm";
+import { VincularFipe } from "../_components/VincularFipe";
 
 export default async function EditarVeiculoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,6 +27,9 @@ export default async function EditarVeiculoPage({ params }: { params: Promise<{ 
         centrosCusto={centrosCusto ?? []}
         nomeEmpresaAtual={empresaAtual?.nome ?? undefined}
       />
+      <div className="mt-6">
+        <VincularFipe veiculo={veiculo} />
+      </div>
     </div>
   );
 }

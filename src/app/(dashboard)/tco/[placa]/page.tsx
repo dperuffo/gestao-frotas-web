@@ -127,10 +127,22 @@ export default async function TcoVeiculoPage({
           label="📉 Depreciação"
           valor={v.custo_depreciacao}
           indisponivel={v.custo_depreciacao === null}
+          selo={
+            v.fonte_depreciacao === "fipe_curva_real"
+              ? "Curva FIPE"
+              : v.fonte_depreciacao === "linear_estimado"
+                ? "Estimativa linear"
+                : undefined
+          }
+        />
+        <ComponenteCard
+          label="💰 Custo de capital"
+          valor={v.custo_capital}
+          indisponivel={v.custo_capital === null}
         />
       </div>
 
-      <div className="card p-6">
+      <div className="mb-6 card p-6">
         <h2 className="text-sm font-semibold text-slate-900">Dados de aquisição</h2>
         <div className="mt-3 grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
           <div>
@@ -159,6 +171,29 @@ export default async function TcoVeiculoPage({
         </Link>
       </div>
 
+      <div className="card p-6">
+        <h2 className="text-sm font-semibold text-slate-900">Vínculo FIPE</h2>
+        {v.codigo_fipe ? (
+          <div className="mt-3 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-400">Código FIPE</p>
+              <p className="mt-1 text-slate-900">{v.codigo_fipe}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-400">Valor FIPE atual</p>
+              <p className="mt-1 text-slate-900">{v.valor_fipe !== null ? formatarMoeda(v.valor_fipe) : "—"}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-slate-500">
+            Este veículo ainda não está vinculado a um código FIPE — a depreciação acima usa a estimativa linear.
+          </p>
+        )}
+        <Link href="/veiculos" className="mt-4 inline-block text-xs text-frota-600 hover:underline">
+          Gerenciar vínculo FIPE em Veículos →
+        </Link>
+      </div>
+
       <p className="mt-6 text-xs text-slate-400">
         Km no período:{" "}
         {v.km_periodo !== null
@@ -174,14 +209,19 @@ function ComponenteCard({
   label,
   valor,
   indisponivel,
+  selo,
 }: {
   label: string;
   valor: number | null;
   indisponivel?: boolean;
+  selo?: string;
 }) {
   return (
     <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
+        {selo && <span className="whitespace-nowrap rounded-full bg-sky-50 px-2 py-0.5 text-[10px] text-sky-700">{selo}</span>}
+      </div>
       <p className={`mt-1 text-xl font-semibold ${indisponivel ? "text-slate-300" : "text-slate-900"}`}>
         {indisponivel || valor === null ? "—" : formatarMoeda(valor)}
       </p>

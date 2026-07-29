@@ -158,6 +158,31 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
               </span>
             </label>
           )}
+
+          {/* Fase TCO 2 (29/07/2026) — taxa de custo de capital (% ao ano),
+              usada no cálculo de TCO como custo de oportunidade do capital
+              imobilizado nos veículos. Só admin edita — mesma checagem
+              server-side de bypass_limite_frota (atualizarCliente). */}
+          {souAdmin && (
+            <div className="mt-4">
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Taxa de custo de capital (% ao ano)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                name="taxa_custo_capital"
+                defaultValue={cliente.taxa_custo_capital ?? ""}
+                className="input max-w-xs"
+                placeholder="Ex: 12.5"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Usada no TCO (custo total de propriedade) como custo de oportunidade do capital imobilizado na
+                frota. Deixe em branco pra não incluir esse componente no cálculo.
+              </p>
+            </div>
+          )}
         </section>
       )}
 
