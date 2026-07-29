@@ -49,6 +49,11 @@ function montarPayloadBase(formData: FormData) {
     numero_eixos: numeroOuNull(formData.get("numero_eixos")),
     classificacao,
     tipo,
+    // Fase TCO (29/07/2026) — opcionais, usados só pra calcular depreciação
+    // no módulo de TCO (tco_veiculo/tco_frota_resumo).
+    valor_aquisicao: numeroOuNull(formData.get("valor_aquisicao")),
+    data_aquisicao: String(formData.get("data_aquisicao") ?? "").trim() || null,
+    valor_residual_estimado: numeroOuNull(formData.get("valor_residual_estimado")),
   };
 }
 

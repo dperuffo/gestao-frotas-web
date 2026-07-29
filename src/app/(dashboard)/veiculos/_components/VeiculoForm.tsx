@@ -162,6 +162,43 @@ export function VeiculoForm({
       </section>
 
       <section className="card p-6">
+        <h2 className="mb-4 text-sm font-semibold text-slate-900">TCO / Aquisição</h2>
+        <p className="mb-4 text-xs text-slate-500">
+          Opcional — usado só pra calcular o TCO (custo total de propriedade, incluindo depreciação) em{" "}
+          <span className="font-medium">TCO / Custo por Veículo</span>. Sem esses dados o TCO ainda é calculado, mas
+          sem depreciação.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Campo label="Valor de aquisição (R$)">
+            <input
+              type="number"
+              step="0.01"
+              name="valor_aquisicao"
+              defaultValue={veiculo?.valor_aquisicao ?? ""}
+              className="input"
+            />
+          </Campo>
+          <Campo label="Data de aquisição">
+            <input
+              type="date"
+              name="data_aquisicao"
+              defaultValue={veiculo?.data_aquisicao ?? ""}
+              className="input"
+            />
+          </Campo>
+          <Campo label="Valor residual estimado (R$)">
+            <input
+              type="number"
+              step="0.01"
+              name="valor_residual_estimado"
+              defaultValue={veiculo?.valor_residual_estimado ?? ""}
+              className="input"
+            />
+          </Campo>
+        </div>
+      </section>
+
+      <section className="card p-6">
         <h2 className="mb-4 text-sm font-semibold text-slate-900">Localização e centro de custo</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Município">

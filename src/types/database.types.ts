@@ -2355,6 +2355,13 @@ export interface Database {
           // fica true até o cliente editar e completar os dados.
           origem_cadastro: "manual" | "importado";
           pendente_revisao: boolean;
+          // Fase TCO (29/07/2026) — dados de aquisição usados no cálculo de
+          // custo total de propriedade (RPCs tco_veiculo/tco_frota_resumo).
+          // Opcionais: se valor_aquisicao vier nulo, o TCO é calculado sem
+          // depreciação (tco_completo = false).
+          valor_aquisicao: number | null;
+          data_aquisicao: string | null;
+          valor_residual_estimado: number | null;
           criado_em: string | null;
           atualizado_em: string | null;
         };
@@ -5049,6 +5056,69 @@ export interface Database {
           resultado_bruto: number;
           custos_fixos: number;
           ebitda: number;
+        }[];
+      };
+      // Fase TCO (29/07/2026) — custo total de propriedade de um único
+      // veículo no período. custo_depreciacao/tco_completo ficam null/false
+      // quando o veículo não tem valor_aquisicao preenchido (TCO
+      // "operacional", sem depreciação).
+      tco_veiculo: {
+        Args: { p_empresa_id: string; p_placa: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          placa: string;
+          marca: string | null;
+          modelo: string | null;
+          ano_fabricacao: number | null;
+          centro_custo_id: string | null;
+          centro_custo_nome: string | null;
+          valor_aquisicao: number | null;
+          data_aquisicao: string | null;
+          valor_residual_estimado: number | null;
+          km_periodo: number | null;
+          custo_combustivel: number;
+          custo_manutencao: number;
+          custo_multas: number;
+          custo_oficinas: number;
+          custo_fixos: number;
+          custo_depreciacao: number | null;
+          tco_total: number;
+          custo_por_km: number | null;
+          tco_completo: boolean;
+        }[];
+      };
+      // Fase TCO (29/07/2026) — ranking de veículos por custo/km no período,
+      // mesmo padrão de paginação/filtro de manutencao_preditiva_resumo
+      // (total_count embutido em cada linha).
+      tco_frota_resumo: {
+        Args: {
+          p_empresa_id: string;
+          p_data_inicio: string;
+          p_data_fim: string;
+          p_centro_custo_id?: string | null;
+          p_busca?: string | null;
+          p_ordenar?: string | null;
+          p_limit?: number | null;
+          p_offset?: number | null;
+        };
+        Returns: {
+          placa: string;
+          marca: string | null;
+          modelo: string | null;
+          ano_fabricacao: number | null;
+          centro_custo_id: string | null;
+          centro_custo_nome: string | null;
+          valor_aquisicao: number | null;
+          km_periodo: number | null;
+          custo_combustivel: number;
+          custo_manutencao: number;
+          custo_multas: number;
+          custo_oficinas: number;
+          custo_fixos: number;
+          custo_depreciacao: number | null;
+          tco_total: number;
+          custo_por_km: number | null;
+          tco_completo: boolean;
+          total_count: number;
         }[];
       };
       // Fase Convite-Self-Service (26/07/2026) — RPC dedicada pra /minha-
