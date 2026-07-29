@@ -45,6 +45,8 @@ import {
   ClipboardCheck,
   ListChecks,
   Bell,
+  Gavel,
+  Hammer,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -57,6 +59,7 @@ import { contarAcoesSugeridasPendentesAcao } from "./acoes-sugeridas/actions";
 import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
 import { contarFalhasVerificacaoAntifraudeAcao } from "./antifraude/actions";
 import { contarCadastrosPendentesAcao } from "./cadastros-pendentes/actions";
+import { contarMultasPendentesAcao } from "./multas/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
@@ -190,6 +193,14 @@ const menuOperacao = [
   // regionais já usados no índice público de preços.
   { href: "/combustivel-ideal", label: "Combustível Ideal", icon: Leaf }, // PWA: Icons.eco
   { href: "/manutencao-preditiva", label: "Manutenção Preditiva", icon: Wrench }, // PWA: Icons.build
+  // Fase Onda-2 (benchmark TicketLog, item #4) — pedido do Daniel: ciclo de
+  // multas (captura manual, indicação de condutor reaproveitando o vínculo
+  // Motorista<->Veículo, histórico e alerta de prazo pro desconto).
+  { href: "/multas", label: "Multas", icon: Gavel }, // PWA: Icons.gavel
+  // Fase Onda-2 (benchmark TicketLog, item #5) — pedido do Daniel: catálogo
+  // de oficinas credenciadas (admin credencia) + fluxo simples de
+  // solicitação de orçamento pro cliente.
+  { href: "/oficinas", label: "Rede de Oficinas", icon: Hammer }, // PWA: Icons.build_circle
   // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
   // soluções de automação/meios de pagamento integrados via API (Hub de
   // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
@@ -326,6 +337,9 @@ const menuAdministracao = [
   // a clientes, motoristas e postos, sem depender de e-mail/WhatsApp. CRUD
   // do que alimenta o sino no rodapé do menu (ver <AvisosSino /> abaixo).
   { href: "/administracao/central-avisos", label: "Central de Avisos", icon: Bell },
+  // Fase Onda-2 (benchmark TicketLog, item #5) — CRUD do catálogo nacional
+  // de oficinas credenciadas, exibido pro cliente em /oficinas.
+  { href: "/administracao/oficinas-credenciadas", label: "Oficinas Credenciadas", icon: Hammer },
 ];
 
 // Alvos do tour de boas-vindas (Fase 24) — só os 3 itens de menu citados no
@@ -406,6 +420,7 @@ export default async function DashboardLayout({
     falhasVerificacaoAntifraude,
     acoesSugeridasPendentes,
     cadastrosPendentes,
+    multasPendentes,
     logoutInatividadeMinutos,
     avisos,
   ] = await Promise.all([
@@ -458,6 +473,13 @@ export default async function DashboardLayout({
       // o resto do cadastro (mesma blindagem "falha vira 0" das demais).
       contarCadastrosPendentesAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar cadastros pendentes (ignorado):", e);
+        return 0;
+      }),
+      // Fase Onda-2 (benchmark TicketLog, item #4) — bolinha de multas
+      // pendentes de indicação com prazo vencendo em até 7 dias, mesma
+      // blindagem "falha vira 0" das demais contagens.
+      contarMultasPendentesAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar multas pendentes (ignorado):", e);
         return 0;
       }),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
@@ -762,6 +784,11 @@ export default async function DashboardLayout({
                   {item.href === "/acoes-sugeridas" && acoesSugeridasPendentes > 0 && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                       {acoesSugeridasPendentes}
+                    </span>
+                  )}
+                  {item.href === "/multas" && multasPendentes > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                      {multasPendentes}
                     </span>
                   )}
                 </Link>

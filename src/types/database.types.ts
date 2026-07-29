@@ -1712,7 +1712,12 @@ export interface Database {
         Row: {
           id: string;
           empresa_id: string;
-          origem: "fatura_meio_pagamento" | "avulso";
+          // Fase Onda-2 (benchmark TicketLog, itens #4 e #5) — pedido do
+          // Daniel: "Custos com multas e oficinas de manutenção devem entrar
+          // no contas a pagar do cliente para gestão financeira". 'multa'
+          // referencia multas.id; 'orcamento_oficina' referencia
+          // solicitacoes_orcamento_oficina.id (ver referencia_id).
+          origem: "fatura_meio_pagamento" | "avulso" | "multa" | "orcamento_oficina";
           referencia_id: string | null;
           credor_nome: string | null;
           credor_cnpj: string | null;
@@ -1729,7 +1734,7 @@ export interface Database {
         };
         Insert: Partial<Database["public"]["Tables"]["contas_pagar"]["Row"]> & {
           empresa_id: string;
-          origem: "fatura_meio_pagamento" | "avulso";
+          origem: "fatura_meio_pagamento" | "avulso" | "multa" | "orcamento_oficina";
           valor_original: number;
           vencimento: string;
         };
@@ -3735,6 +3740,115 @@ export interface Database {
             columns: ["ticket_id"];
             isOneToOne: false;
             referencedRelation: "tickets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase Onda-2 (benchmark TicketLog, item #4) — ciclo de multas:
+      // captura manual (v1, sem integração Detran/Renainf), indicação de
+      // condutor (reaproveita parametros_vinculo_motorista_veiculo pra
+      // sugerir), histórico por motorista/veículo, prazo de desconto. Ao
+      // criar, lança automaticamente em contas_pagar (origem = "multa").
+      multas: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string;
+          motorista_id: string | null;
+          numero_ait: string | null;
+          orgao_autuador: string | null;
+          local_infracao: string | null;
+          data_infracao: string;
+          data_limite_indicacao: string | null;
+          descricao: string | null;
+          gravidade: string | null;
+          pontos: number | null;
+          valor_original: number | null;
+          valor_desconto: number | null;
+          status: string;
+          anexo_path: string | null;
+          observacoes: string | null;
+          indicado_em: string | null;
+          indicado_por: string | null;
+          pago_em: string | null;
+          criado_em: string;
+          criado_por: string | null;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["multas"]["Row"]> & {
+          empresa_id: string;
+          placa: string;
+          data_infracao: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["multas"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "multas_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase Onda-2 (benchmark TicketLog, item #5) — catálogo nacional de
+      // oficinas credenciadas (mesmo padrão de postos_gf: leitura aberta a
+      // qualquer usuário autenticado, escrita só admin via
+      // /administracao/oficinas-credenciadas).
+      oficinas_credenciadas: {
+        Row: {
+          id: string;
+          nome: string;
+          cnpj: string | null;
+          especialidades: string[];
+          telefone: string | null;
+          email: string | null;
+          endereco: string | null;
+          municipio: string | null;
+          uf: string | null;
+          avaliacao_media: number | null;
+          ativo: boolean;
+          criado_em: string;
+          criado_por: string | null;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["oficinas_credenciadas"]["Row"]> & { nome: string };
+        Update: Partial<Database["public"]["Tables"]["oficinas_credenciadas"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase Onda-2 (benchmark TicketLog, item #5) — fluxo simples de
+      // cotação por tenant: cliente solicita, gestor registra o retorno
+      // (valor/prazo) recebido por telefone/e-mail (sem portal pra oficina
+      // responder na v1) e decide aceitar/recusar. Ao aceitar, lança em
+      // contas_pagar (origem = "orcamento_oficina").
+      solicitacoes_orcamento_oficina: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          oficina_id: string;
+          placa: string | null;
+          descricao_servico: string;
+          status: string;
+          valor_orcado: number | null;
+          prazo_execucao: string | null;
+          observacoes_oficina: string | null;
+          criado_em: string;
+          criado_por: string | null;
+          respondido_em: string | null;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["solicitacoes_orcamento_oficina"]["Row"]> & {
+          empresa_id: string;
+          oficina_id: string;
+          descricao_servico: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["solicitacoes_orcamento_oficina"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_orcamento_oficina_oficina_id_fkey";
+            columns: ["oficina_id"];
+            isOneToOne: false;
+            referencedRelation: "oficinas_credenciadas";
             referencedColumns: ["id"];
           },
         ];

@@ -1,0 +1,209 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { STATUS_MULTA_LABEL, STATUS_MULTA_COR, GRAVIDADE_MULTA_LABEL } from "@/lib/multas";
+
+type SearchParams = { empresa?: string; q?: string; status?: string };
+
+// Fase Onda-2 (benchmark TicketLog, item #4) — Gestão de Multas, primeira
+// versão. Ciclo: captura manual da multa (upload) -> indicação do condutor
+// (sugestão vinda do vínculo Motorista<->Veículo já existente em
+// Parâmetros de Uso) -> acompanhamento até pagar/recorrer, com alerta de
+// prazo pro desconto de pagamento antecipado (ver actions.ts).
+export default async function MultasPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const { empresa: empresaParam, q, status } = await searchParams;
+  const supabase = await createClient();
+  const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+
+  type MultaLinha = {
+    id: string;
+    placa: string;
+    numero_ait: string | null;
+    data_infracao: string;
+    data_limite_indicacao: string | null;
+    descricao: string | null;
+    gravidade: string | null;
+    valor_original: number | null;
+    valor_desconto: number | null;
+    status: string;
+    motorista_id: string | null;
+    motoristas: { nome_completo: string } | null;
+  };
+
+  let multasRaw: MultaLinha[] = [];
+  if (empresaSelecionada) {
+    let query = supabase
+      .from("multas")
+      .select(
+        "id, placa, numero_ait, data_infracao, data_limite_indicacao, descricao, gravidade, valor_original, valor_desconto, status, motorista_id, motoristas(nome_completo)"
+      )
+      .eq("empresa_id", empresaSelecionada)
+      .order("data_infracao", { ascending: false })
+      .limit(200);
+    if (status) query = query.eq("status", status);
+    const { data } = await query;
+    multasRaw = (data ?? []) as unknown as MultaLinha[];
+  }
+
+  // Fase busca-generica-listas — mesmo padrão ?q= já usado em /veiculos,
+  // /cotacoes etc.
+  const termoBusca = (q ?? "").trim().toLowerCase();
+  const multas = termoBusca
+    ? multasRaw.filter(
+        (m) =>
+          m.placa?.toLowerCase().includes(termoBusca) ||
+          m.numero_ait?.toLowerCase().includes(termoBusca) ||
+          m.descricao?.toLowerCase().includes(termoBusca) ||
+          m.motoristas?.nome_completo?.toLowerCase().includes(termoBusca)
+      )
+    : multasRaw;
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const pendentesIndicacao = multasRaw.filter((m) => m.status === "pendente_indicacao").length;
+  const vencendoEmBreve = multasRaw.filter(
+    (m) => m.status === "pendente_indicacao" && m.data_limite_indicacao && m.data_limite_indicacao >= hoje
+  ).length;
+  const valorEmAberto = multasRaw
+    .filter((m) => m.status !== "paga" && m.status !== "cancelada")
+    .reduce((s, m) => s + (m.valor_desconto ?? m.valor_original ?? 0), 0);
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">Gestão de Multas</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Captura, indicação de condutor e histórico de multas por veículo/motorista.
+          </p>
+        </div>
+        {empresaSelecionada && (
+          <Link href={`/multas/nova?empresa=${empresaSelecionada}`} className="btn-primary text-sm">
+            + Nova Multa
+          </Link>
+        )}
+      </div>
+
+      <form className="mb-4 flex flex-wrap items-end gap-2">
+        {empresas.length > 1 && (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">Selecione um cliente...</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Placa, AIT, descrição ou motorista..."
+            className="input text-sm"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500">Status</label>
+          <select name="status" defaultValue={status ?? ""} className="input text-sm">
+            <option value="">Todos</option>
+            {Object.entries(STATUS_MULTA_LABEL).map(([id, label]) => (
+              <option key={id} value={id}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button type="submit" className="btn-secondary text-sm">
+          Filtrar
+        </button>
+      </form>
+
+      {!empresaSelecionada ? (
+        <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Selecione um cliente para ver as multas da frota dele.
+        </p>
+      ) : (
+        <>
+          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div className="card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Pendentes de indicação</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">{pendentesIndicacao}</p>
+            </div>
+            <div className={`card p-4 ${vencendoEmBreve > 0 ? "border-red-200 bg-red-50/50" : ""}`}>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Prazo vencendo (7 dias)</p>
+              <p className={`mt-1 text-2xl font-semibold ${vencendoEmBreve > 0 ? "text-red-700" : "text-slate-900"}`}>
+                {vencendoEmBreve}
+              </p>
+            </div>
+            <div className="card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Valor em aberto</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">
+                {valorEmAberto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </p>
+            </div>
+          </div>
+
+          <div className="card overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Data</th>
+                  <th className="px-4 py-3">Placa</th>
+                  <th className="px-4 py-3">AIT</th>
+                  <th className="px-4 py-3">Descrição</th>
+                  <th className="px-4 py-3">Motorista</th>
+                  <th className="px-4 py-3">Valor</th>
+                  <th className="px-4 py-3">Prazo</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {multas.map((m) => (
+                  <tr key={m.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 text-slate-600">{new Date(`${m.data_infracao}T00:00:00`).toLocaleDateString("pt-BR")}</td>
+                    <td className="px-4 py-3">
+                      <Link href={`/multas/${m.id}`} className="font-medium text-frota-600 hover:underline">
+                        {m.placa}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{m.numero_ait ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {m.descricao ?? "—"}
+                      {m.gravidade && (
+                        <span className="ml-2 text-xs text-slate-400">({GRAVIDADE_MULTA_LABEL[m.gravidade] ?? m.gravidade})</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{m.motoristas?.nome_completo ?? "—"}</td>
+                    <td className="px-4 py-3 tabular-nums text-slate-600">
+                      {(m.valor_desconto ?? m.valor_original)?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {m.data_limite_indicacao ? new Date(`${m.data_limite_indicacao}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_MULTA_COR[m.status] ?? "bg-slate-100 text-slate-600"}`}>
+                        {STATUS_MULTA_LABEL[m.status] ?? m.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {multas.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                      Nenhuma multa encontrada para esse filtro.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
