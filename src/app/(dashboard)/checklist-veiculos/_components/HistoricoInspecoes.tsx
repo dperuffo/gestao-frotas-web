@@ -20,6 +20,8 @@ type Inspecao = {
   hodometro: number | null;
   responsavel: string | null;
   criado_por: string | null;
+  origem: "gestor" | "motorista" | null;
+  motorista_nome: string | null;
   itens: Item[];
 };
 
@@ -103,6 +105,13 @@ export function HistoricoInspecoes({ placa, inspecoes }: { placa: string; inspec
                     {insp.responsavel ? ` · ${insp.responsavel}` : ""}
                   </span>
                   <span className="flex items-center gap-2">
+                    {insp.origem === "motorista" ? (
+                      <span className="rounded-full bg-frota-50 px-2 py-0.5 text-xs text-frota-700">
+                        Motorista{insp.motorista_nome ? ` · ${insp.motorista_nome}` : ""}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">Gestor</span>
+                    )}
                     {naoConformes.length > 0 ? (
                       <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700">
                         {naoConformes.length} não conforme(s)

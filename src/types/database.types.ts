@@ -2964,6 +2964,11 @@ export interface Database {
           responsavel: string | null;
           criado_por: string | null;
           criado_em: string;
+          // Fase Inspeção-pelo-Motorista (30/07/2026) — origem 'motorista'
+          // vem do app Estrada que Cuida (RPC registrar_inspecao_motorista,
+          // SECURITY DEFINER); 'gestor' é o padrão (painel/PWA Cliente).
+          origem: "gestor" | "motorista";
+          motorista_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["inspecoes_veiculos"]["Row"]> & {
           empresa_id: string;
@@ -2972,7 +2977,15 @@ export interface Database {
           data_inspecao: string;
         };
         Update: Partial<Database["public"]["Tables"]["inspecoes_veiculos"]["Row"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "inspecoes_veiculos_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       // Fase Indicadores-da-Frota C (30/07/2026) — um item de checklist por
       // linha (Pneus, Freios, Luzes...); resolvido_em/resolvido_por só

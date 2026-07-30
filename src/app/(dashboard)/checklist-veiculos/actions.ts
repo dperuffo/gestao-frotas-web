@@ -50,6 +50,7 @@ export async function registrarInspecaoAcao(
       hodometro,
       responsavel,
       criado_por: user?.email ?? null,
+      origem: "gestor",
     })
     .select("id")
     .single();

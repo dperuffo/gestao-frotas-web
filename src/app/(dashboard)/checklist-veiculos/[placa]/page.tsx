@@ -65,18 +65,23 @@ export default async function DetalheChecklistVeiculoPage({
   const { data: inspecoesRaw } = await supabase
     .from("inspecoes_veiculos")
     .select(
-      "id, data_inspecao, hodometro, responsavel, criado_por, inspecoes_veiculos_itens(id, item, critico, conforme, observacao, resolvido_em, resolvido_por)"
+      "id, data_inspecao, hodometro, responsavel, criado_por, origem, motorista_id, motoristas(nome_completo), inspecoes_veiculos_itens(id, item, critico, conforme, observacao, resolvido_em, resolvido_por)"
     )
     .eq("placa", placa)
     .order("data_inspecao", { ascending: false })
     .limit(50);
 
+  // Fase Inspeção-pelo-Motorista (30/07/2026) — pedido do Daniel: "manutenção
+  // do histórico na visao do cliente" mostrando se a inspeção veio do
+  // gestor (painel/PWA Cliente) ou do motorista (app Estrada que Cuida).
   const inspecoes = (inspecoesRaw ?? []).map((i) => ({
     id: i.id,
     data_inspecao: i.data_inspecao,
     hodometro: i.hodometro,
     responsavel: i.responsavel,
     criado_por: i.criado_por,
+    origem: i.origem as "gestor" | "motorista" | null,
+    motorista_nome: (i.motoristas as { nome_completo: string } | null)?.nome_completo ?? null,
     itens: i.inspecoes_veiculos_itens ?? [],
   }));
 
