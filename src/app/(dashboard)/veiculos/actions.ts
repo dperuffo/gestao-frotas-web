@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CLASSIFICACAO, type Classificacao, TIPO_PORTE_VEICULO, type TipoPorteVeiculo } from "@/lib/constants";
 import { alocarVeiculoCentroCusto } from "@/lib/centroCusto";
+import { normalizarCNPJ } from "@/lib/utils";
 
 export type VeiculoFormState = { erro?: string } | undefined;
 
@@ -173,12 +174,24 @@ export async function atualizarVeiculo(
 
   // Realoca (ou desaloca, se centroCustoId for null) o veículo, preservando
   // o histórico em centros_custo_veiculos em vez de sobrescrever a alocação.
+  //
+  // Achado real (30/07/2026, investigando "new row violates row-level
+  // security policy for table centros_custo_veiculos" ao trocar centro de
+  // custo): a busca da empresa aqui comparava `cnpj` cru
+  // (`.eq("cnpj", existente.cnpj_frota)`), sem normalizar pontuação/caixa —
+  // mesmo tipo de inconsistência de formato entre `empresas.cnpj` e
+  // `cadastro_veiculos.cnpj_frota` que [id]/page.tsx já trata com
+  // normalizarCNPJ (e que a RLS de centros_custo_veiculos também normaliza
+  // via SQL). Quando os dois campos representam o mesmo CNPJ mas com
+  // formatação diferente, a comparação crua não achava a empresa,
+  // `empresaId` chegava `null` em alocarVeiculoCentroCusto, e o insert
+  // subsequente violava o WITH CHECK da política (que exige empresa_id
+  // presente na lista do usuário — null nunca casa). Corrigido buscando
+  // todas as empresas e comparando normalizado, igual ao resto do app.
   if (existente?.cnpj_frota) {
-    const { data: empresa } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("cnpj", existente.cnpj_frota)
-      .maybeSingle();
+    const { data: empresas } = await supabase.from("empresas").select("id, cnpj");
+    const cnpjFrotaNormalizado = normalizarCNPJ(existente.cnpj_frota);
+    const empresa = empresas?.find((e) => normalizarCNPJ(e.cnpj) === cnpjFrotaNormalizado) ?? null;
     const {
       data: { user },
     } = await supabase.auth.getUser();
