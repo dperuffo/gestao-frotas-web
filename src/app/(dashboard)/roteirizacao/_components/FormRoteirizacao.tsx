@@ -427,7 +427,7 @@ export function FormRoteirizacao({
               rotaSelecionadaId={resultado ? undefined : rotaEscolhidaId}
               onSelecionarRota={resultado ? undefined : setRotaEscolhidaId}
               onTogglePosto={resultado ? alternarPosto : undefined}
-              alturaClasse="h-[420px]"
+              alturaClasse="h-[650px]"
               marcadores={
                 resultado
                   ? [
