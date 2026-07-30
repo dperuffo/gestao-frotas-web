@@ -48,6 +48,7 @@ import {
   Gavel,
   Hammer,
   Coins,
+  Gauge,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -195,6 +196,7 @@ const menuOperacao = [
   { href: "/combustivel-ideal", label: "Combustível Ideal", icon: Leaf }, // PWA: Icons.eco
   { href: "/manutencao-preditiva", label: "Manutenção Preditiva", icon: Wrench }, // PWA: Icons.build
   { href: "/tco", label: "TCO / Custo por Veículo", icon: Coins }, // PWA: Icons.pending
+  { href: "/indicadores-frota", label: "Indicadores da Frota", icon: Gauge }, // PWA: Icons.speed
   // Fase Onda-2 (benchmark TicketLog, item #4) — pedido do Daniel: ciclo de
   // multas (captura manual, indicação de condutor reaproveitando o vínculo
   // Motorista<->Veículo, histórico e alerta de prazo pro desconto).

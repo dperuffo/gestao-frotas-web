@@ -11,6 +11,9 @@ type Registro = {
   itens_realizados: string[] | null;
   oficina: string | null;
   custo_total: number | null;
+  // Fase Indicadores-da-Frota (30/07/2026) — null em registros anteriores a
+  // essa fase (não classificados).
+  tipo: string | null;
   // Fase TCO 3 (29/07/2026) — opcional, usado no cálculo de custo de
   // downtime no TCO.
   dias_parado: number | null;
@@ -45,6 +48,7 @@ export function HistoricoManutencoes({ placa, registros }: { placa: string; regi
         <thead className="text-xs uppercase text-slate-500">
           <tr>
             <th className="py-2 pr-4">Data</th>
+            <th className="py-2 pr-4">Tipo</th>
             <th className="py-2 pr-4">Km</th>
             <th className="py-2 pr-4">Itens</th>
             <th className="py-2 pr-4">Oficina</th>
@@ -58,6 +62,15 @@ export function HistoricoManutencoes({ placa, registros }: { placa: string; regi
           {registros.map((r) => (
             <tr key={r.id}>
               <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-700">{formatDate(r.data_manutencao)}</td>
+              <td className="py-2.5 pr-4 align-top">
+                {r.tipo === "Preventiva" && (
+                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Preventiva</span>
+                )}
+                {r.tipo === "Corretiva" && (
+                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700">Corretiva</span>
+                )}
+                {!r.tipo && <span className="text-slate-300">—</span>}
+              </td>
               <td className="py-2.5 pr-4 align-top tabular-nums text-slate-600">
                 {r.hodometro ? `${r.hodometro.toLocaleString("pt-BR")} km` : "—"}
               </td>

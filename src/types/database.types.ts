@@ -2938,6 +2938,9 @@ export interface Database {
           empresa_id: string | null;
           origem: string;
           fotos: string[] | null;
+          // Fase Indicadores-da-Frota (30/07/2026) — "Preventiva" | "Corretiva",
+          // null em registros anteriores (não classificados).
+          tipo: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["manutencoes_realizadas"]["Row"]> & {
           cnpj_frota: string;
@@ -5218,6 +5221,32 @@ export interface Database {
           custo_por_km: number | null;
           tco_completo: boolean;
           total_count: number;
+        }[];
+      };
+      // Fase Indicadores-da-Frota (30/07/2026) — painel /indicadores-frota
+      // (disponibilidade, CPK operacional, consumo médio, utilização e
+      // proporção corretiva/preventiva), a partir dos "8 KPIs essenciais" de
+      // um benchmark de mercado. Retorna uma única linha (agregado da
+      // frota), não uma por veículo.
+      kpis_frota_resumo: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          total_veiculos: number;
+          dias_periodo: number;
+          dias_parado_total: number;
+          disponibilidade_pct: number | null;
+          km_total: number | null;
+          custo_operacional_total: number;
+          cpk_operacional: number | null;
+          litros_total: number | null;
+          media_km_l: number | null;
+          dias_disponivel_total: number;
+          dias_com_movimento_total: number;
+          utilizacao_pct: number | null;
+          manutencao_preventiva_custo: number;
+          manutencao_corretiva_custo: number;
+          manutencao_nao_classificada_custo: number;
+          pct_corretiva: number | null;
         }[];
       };
       // Fase Convite-Self-Service (26/07/2026) — RPC dedicada pra /minha-

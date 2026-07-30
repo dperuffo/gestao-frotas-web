@@ -42,10 +42,15 @@ export async function registrarManutencaoAcao(
   const diasParado = numeroOuNull(formData.get("dias_parado"));
   const obsGerais = String(formData.get("obs_gerais") ?? "").trim() || null;
   const itens = formData.getAll("itens_realizados").map((v) => String(v));
+  // Fase Indicadores-da-Frota (30/07/2026) — alimenta o KPI de proporção
+  // corretiva/preventiva (kpis_frota_resumo). Registro antigo fica com
+  // tipo=null (não classificado); daqui pra frente é sempre obrigatório.
+  const tipo = String(formData.get("tipo") ?? "").trim() || null;
 
   if (!placa) return { erro: "Placa é obrigatória." };
   if (!dataManutencao) return { erro: "Data da manutenção é obrigatória." };
   if (itens.length === 0) return { erro: "Selecione ao menos um item realizado." };
+  if (tipo !== "Preventiva" && tipo !== "Corretiva") return { erro: "Selecione o tipo: Preventiva ou Corretiva." };
 
   const {
     data: { user },
@@ -69,6 +74,7 @@ export async function registrarManutencaoAcao(
       oficina,
       custo_total: custoTotal,
       dias_parado: diasParado,
+      tipo,
       itens_realizados: itens,
       obs_gerais: obsGerais,
       criado_por: user?.email ?? null,

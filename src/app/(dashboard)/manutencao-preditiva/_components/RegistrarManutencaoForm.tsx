@@ -67,6 +67,23 @@ export function RegistrarManutencaoForm({
           <label className="mb-1 block text-sm font-medium text-slate-700">Custo total (R$)</label>
           <input type="number" name="custo_total" min={0} step="0.01" className="input" />
         </div>
+        {/* Fase Indicadores-da-Frota (30/07/2026) — classificação usada no KPI
+            de proporção corretiva/preventiva. Sem valor padrão de propósito:
+            forçar o gestor a escolher garante que a manutenção nova sempre
+            entre na conta certa (o "não classificado" só existe pra manutenção
+            antiga, registrada antes desta fase). */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Tipo <span className="text-red-500">*</span>
+          </label>
+          <select name="tipo" required defaultValue="" className="input">
+            <option value="" disabled>
+              Selecione...
+            </option>
+            <option value="Preventiva">Preventiva</option>
+            <option value="Corretiva">Corretiva</option>
+          </select>
+        </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Técnico</label>
           <input name="tecnico" className="input" />
