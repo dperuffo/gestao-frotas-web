@@ -183,6 +183,32 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
               </p>
             </div>
           )}
+
+          {/* Fase TCO 3 (29/07/2026) — custo diário de downtime, multiplicado
+              pelos dias_parado lançados manualmente nas manutenções (sem
+              telemetria/GPS não dá pra medir automaticamente). Mesmo padrão
+              admin-only de taxa_custo_capital/bypass_limite_frota. */}
+          {souAdmin && (
+            <div className="mt-4">
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Custo diário de downtime (R$/dia)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                name="custo_diario_downtime"
+                defaultValue={cliente.custo_diario_downtime ?? ""}
+                className="input max-w-xs"
+                placeholder="Ex: 250"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Usada no TCO como custo de veículo parado (dias parado × esse valor). Os dias parados vêm do
+                preenchimento manual em cada manutenção. Deixe em branco pra não incluir esse componente no
+                cálculo.
+              </p>
+            </div>
+          )}
         </section>
       )}
 

@@ -85,6 +85,12 @@ export async function atualizarCliente(
     const taxaBruta = String(formData.get("taxa_custo_capital") ?? "").trim();
     const taxa = taxaBruta ? Number(taxaBruta) : null;
     payload.taxa_custo_capital = taxa != null && Number.isFinite(taxa) ? taxa : null;
+
+    // Fase TCO 3 (29/07/2026) — custo diário de downtime, mesma checagem de
+    // admin acima.
+    const custoDowntimeBruto = String(formData.get("custo_diario_downtime") ?? "").trim();
+    const custoDowntime = custoDowntimeBruto ? Number(custoDowntimeBruto) : null;
+    payload.custo_diario_downtime = custoDowntime != null && Number.isFinite(custoDowntime) ? custoDowntime : null;
   }
 
   const { error } = await supabase.from("empresas").update(payload).eq("id", id);

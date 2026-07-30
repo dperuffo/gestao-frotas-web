@@ -140,6 +140,12 @@ export default async function TcoVeiculoPage({
           valor={v.custo_capital}
           indisponivel={v.custo_capital === null}
         />
+        <ComponenteCard
+          label="⏸️ Downtime"
+          valor={v.custo_downtime}
+          indisponivel={v.custo_downtime === null}
+          selo={v.dias_parado_periodo > 0 ? `${v.dias_parado_periodo} dia(s) parado` : undefined}
+        />
       </div>
 
       <div className="mb-6 card p-6">

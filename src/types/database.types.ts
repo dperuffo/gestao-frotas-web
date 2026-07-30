@@ -67,6 +67,11 @@ export interface Database {
           // na frota. Editável só por admin em /clientes/[id]; null = não
           // incluir esse componente no cálculo.
           taxa_custo_capital: number | null;
+          // Fase TCO 3 (29/07/2026) — custo estimado por dia de veículo
+          // parado (R$/dia), usado no TCO como custo_downtime = soma(dias
+          // parados no período) × esse valor. Editável só por admin em
+          // /clientes/[id]; null = não incluir esse componente no cálculo.
+          custo_diario_downtime: number | null;
           // Fase 27.50 — "Frota" (cliente de gestão de frotas) ou "Revenda"
           // (posto revendedor com conta própria, feature de Negociação).
           segmento: string;
@@ -2921,6 +2926,10 @@ export interface Database {
           tecnico: string | null;
           oficina: string | null;
           custo_total: number | null;
+          // Fase TCO 3 (29/07/2026) — opcional, preenchimento manual do
+          // gestor (sem telemetria/GPS não dá pra medir automaticamente).
+          // Usado no TCO (custo_downtime).
+          dias_parado: number | null;
           itens_realizados: string[] | null;
           obs_gerais: string | null;
           criado_por: string | null;
@@ -5141,6 +5150,11 @@ export interface Database {
           custo_depreciacao: number | null;
           custo_capital: number | null;
           fonte_depreciacao: "fipe_curva_real" | "linear_estimado" | null;
+          // Fase TCO 3 (29/07/2026) — downtime (dias parados no período,
+          // somados de manutencoes_realizadas.dias_parado, × o custo diário
+          // configurado na empresa).
+          dias_parado_periodo: number;
+          custo_downtime: number | null;
           tco_total: number;
           custo_por_km: number | null;
           tco_completo: boolean;
@@ -5198,6 +5212,8 @@ export interface Database {
           custo_depreciacao: number | null;
           custo_capital: number | null;
           fonte_depreciacao: "fipe_curva_real" | "linear_estimado" | null;
+          dias_parado_periodo: number;
+          custo_downtime: number | null;
           tco_total: number;
           custo_por_km: number | null;
           tco_completo: boolean;

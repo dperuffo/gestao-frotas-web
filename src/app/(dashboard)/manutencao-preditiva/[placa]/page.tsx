@@ -73,7 +73,7 @@ export default async function DetalheManutencaoPreditivaPage({
 
   const { data: historicoRaw } = await supabase
     .from("manutencoes_realizadas")
-    .select("id, data_manutencao, hodometro, itens_realizados, oficina, custo_total, criado_por, fotos")
+    .select("id, data_manutencao, hodometro, itens_realizados, oficina, custo_total, dias_parado, criado_por, fotos")
     .eq("placa", placa)
     .order("data_manutencao", { ascending: false })
     .limit(100);

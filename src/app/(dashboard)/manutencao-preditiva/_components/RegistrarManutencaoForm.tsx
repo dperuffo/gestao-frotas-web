@@ -71,9 +71,19 @@ export function RegistrarManutencaoForm({
           <label className="mb-1 block text-sm font-medium text-slate-700">Técnico</label>
           <input name="tecnico" className="input" />
         </div>
-        <div className="sm:col-span-2">
+        <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Oficina</label>
           <input name="oficina" className="input" />
+        </div>
+        {/* Fase TCO 3 (29/07/2026) — opcional, usado só pra estimar custo de
+            downtime no TCO (tco_veiculo/tco_frota_resumo). Sem telemetria/GPS
+            não dá pra medir automaticamente, então é preenchimento manual do
+            gestor mesmo. */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Dias parado <span className="font-normal text-slate-400">(opcional)</span>
+          </label>
+          <input type="number" name="dias_parado" min={0} step="1" className="input" />
         </div>
       </div>
 

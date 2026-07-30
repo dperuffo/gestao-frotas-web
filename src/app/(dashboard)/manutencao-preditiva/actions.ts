@@ -39,6 +39,7 @@ export async function registrarManutencaoAcao(
   const tecnico = String(formData.get("tecnico") ?? "").trim() || null;
   const oficina = String(formData.get("oficina") ?? "").trim() || null;
   const custoTotal = numeroOuNull(formData.get("custo_total"));
+  const diasParado = numeroOuNull(formData.get("dias_parado"));
   const obsGerais = String(formData.get("obs_gerais") ?? "").trim() || null;
   const itens = formData.getAll("itens_realizados").map((v) => String(v));
 
@@ -67,6 +68,7 @@ export async function registrarManutencaoAcao(
       tecnico,
       oficina,
       custo_total: custoTotal,
+      dias_parado: diasParado,
       itens_realizados: itens,
       obs_gerais: obsGerais,
       criado_por: user?.email ?? null,
