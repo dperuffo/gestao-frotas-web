@@ -5342,6 +5342,44 @@ export interface Database {
           indice_sinistralidade: number | null;
         }[];
       };
+      // Fase Indicadores-da-Frota D (30/07/2026) — mesmos 8 KPIs de
+      // kpis_frota_resumo, mas 1 linha por veículo ativo (não agregado),
+      // pra alimentar o filtro de veículo específico e a tabela de
+      // comparação em /indicadores-frota. indice_sinistralidade não é
+      // devolvido aqui (percentual não faz sentido pra n=1); só
+      // total_sinistros (contagem bruta).
+      kpis_frota_por_veiculo: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          placa: string;
+          marca: string | null;
+          modelo: string | null;
+          tipo_veiculo: string | null;
+          tipo: string | null;
+          classificacao: string | null;
+          centro_custo_nome: string | null;
+          dias_periodo: number;
+          dias_parado: number;
+          disponibilidade_pct: number | null;
+          km_periodo: number;
+          custo_operacional_total: number;
+          cpk_operacional: number | null;
+          litros: number;
+          media_km_l: number | null;
+          dias_disponivel: number;
+          dias_com_movimento: number;
+          utilizacao_pct: number | null;
+          manutencao_preventiva_custo: number;
+          manutencao_corretiva_custo: number;
+          manutencao_nao_classificada_custo: number;
+          pct_corretiva: number | null;
+          itens_inspecionados: number;
+          itens_conformes: number;
+          conformidade_pct: number | null;
+          tmrnc_horas: number | null;
+          total_sinistros: number;
+        }[];
+      };
       // Fase Indicadores-da-Frota C (30/07/2026) — resumo por veículo pra
       // /checklist-veiculos (lista): última inspeção e pendências abertas
       // (itens não conformes ainda sem resolvido_em).
