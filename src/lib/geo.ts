@@ -196,6 +196,14 @@ const OSRM_SERVIDORES = [
   "https://routing.openstreetmap.de/routed-car/route/v1/driving",
 ];
 
+// "rapido" (padrão/sempre usado por calcularRotaOsrm) fica com a rota
+// principal que o profile "driving" do OSRM devolve, otimizada por tempo.
+// "curto" pede alternativas ao OSRM (alternatives=true) e fica com a de
+// menor quilometragem total — usado internamente por
+// buscarAlternativasRotaOsrm (ver abaixo) pra montar o seletor de rotas
+// estilo Waze no Roteirizador Inteligente.
+export type ModoCalculoRota = "rapido" | "curto";
+
 // Calcula a rota rodoviária entre origem, destino e paradas intermediárias
 // (na ordem informada) usando o OSRM público — mesmos servidores usados no
 // Streamlit (calcular_rota()), tentados em sequência. Se ambos falharem,
@@ -204,18 +212,29 @@ const OSRM_SERVIDORES = [
 export async function calcularRotaOsrm(
   origem: Ponto,
   destino: Ponto,
-  paradas: Ponto[] = []
+  paradas: Ponto[] = [],
+  modo: ModoCalculoRota = "rapido"
 ): Promise<ResultadoRota> {
   const pontos = [origem, ...paradas, destino];
   const coordsStr = pontos.map((p) => `${p.lon},${p.lat}`).join(";");
+  const pedirAlternativas = modo === "curto";
 
   for (const servidor of OSRM_SERVIDORES) {
     try {
-      const url = `${servidor}/${coordsStr}?overview=full&geometries=geojson`;
+      const url = `${servidor}/${coordsStr}?overview=full&geometries=geojson${pedirAlternativas ? "&alternatives=true" : ""}`;
       const resp = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
       if (!resp.ok) continue;
       const json = await resp.json();
-      const rota = json?.routes?.[0];
+      const rotas: any[] | undefined = json?.routes;
+      if (!rotas || rotas.length === 0) continue;
+      // Em modo "curto" o OSRM pode devolver 1+ alternativas (nem sempre
+      // encontra mais de uma, sobretudo com paradas intermediárias) — fica
+      // sempre com a de menor `distance`, que na ausência de alternativas
+      // reais é simplesmente a única rota devolvida (mesmo resultado do
+      // modo "rapido").
+      const rota = pedirAlternativas
+        ? rotas.reduce((menor, atual) => (atual.distance < menor.distance ? atual : menor))
+        : rotas[0];
       if (!rota) continue;
       const coordenadas: Ponto[] = rota.geometry.coordinates.map(
         ([lon, lat]: [number, number]) => ({ lat, lon })
@@ -246,4 +265,61 @@ export async function calcularRotaOsrm(
   let distanciaKm = 0;
   for (let i = 0; i < pontos.length - 1; i++) distanciaKm += haversineKm(pontos[i], pontos[i + 1]);
   return { coordenadas, distanciaKm, duracaoMin: (distanciaKm / 80) * 60, linhaReta: true };
+}
+
+export type OpcaoRota = ResultadoRota & { id: number };
+
+// Fase Rotas-Alternativas (30/07/2026) — pedido do Daniel: "podemos evoluir
+// como o Waze, onde apresenta as rotas para o usuário e ele define qual
+// será a melhor para ele". Pede ao OSRM todas as alternativas conhecidas
+// pro trajeto (alternatives=true) e devolve todas, sem escolher nenhuma —
+// quem decide é a tela (FormRoteirizacao.tsx), mostrando km/tempo de cada
+// uma. Nem sempre o OSRM encontra mais de uma rota real (comum em trechos
+// sem opção viável de desvio, ou com paradas intermediárias) — nesse caso
+// devolve só 1 opção, e a tela pula o seletor.
+export async function buscarAlternativasRotaOsrm(
+  origem: Ponto,
+  destino: Ponto,
+  paradas: Ponto[] = []
+): Promise<OpcaoRota[]> {
+  const pontos = [origem, ...paradas, destino];
+  const coordsStr = pontos.map((p) => `${p.lon},${p.lat}`).join(";");
+
+  for (const servidor of OSRM_SERVIDORES) {
+    try {
+      const url = `${servidor}/${coordsStr}?overview=full&geometries=geojson&alternatives=true`;
+      const resp = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(12_000) });
+      if (!resp.ok) continue;
+      const json = await resp.json();
+      const rotas: any[] | undefined = json?.routes;
+      if (!rotas || rotas.length === 0) continue;
+
+      const opcoes: OpcaoRota[] = rotas.map((rota, i) => ({
+        id: i,
+        coordenadas: rota.geometry.coordinates.map(([lon, lat]: [number, number]) => ({ lat, lon })),
+        distanciaKm: Math.round((rota.distance / 1000) * 10) / 10,
+        duracaoMin: Math.round(rota.duration / 60),
+        linhaReta: false,
+      }));
+
+      // Descarta "alternativas" praticamente idênticas à principal (o OSRM
+      // às vezes devolve variações de <1km/1min que não ajudam o gestor a
+      // decidir nada, só poluem o seletor).
+      const distintas: OpcaoRota[] = [];
+      for (const op of opcoes) {
+        const duplicada = distintas.some(
+          (v) => Math.abs(v.distanciaKm - op.distanciaKm) < 1 && Math.abs(v.duracaoMin - op.duracaoMin) < 2
+        );
+        if (!duplicada) distintas.push(op);
+      }
+      return distintas;
+    } catch {
+      continue;
+    }
+  }
+
+  // Fallback: OSRM indisponível — mesma linha reta de calcularRotaOsrm,
+  // como opção única (sem seletor de alternativas nesse caso).
+  const linhaReta = await calcularRotaOsrm(origem, destino, paradas, "rapido");
+  return [{ ...linhaReta, id: 0 }];
 }

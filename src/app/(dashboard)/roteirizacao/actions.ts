@@ -6,11 +6,13 @@ import type { Json } from "@/types/database.types";
 import {
   geocodificar,
   calcularRotaOsrm,
+  buscarAlternativasRotaOsrm,
   distanciasAcumuladas,
   posicaoNaRotaKm,
   construirBoundingBoxesDaRota,
   type Ponto,
   type SugestaoGeocoding,
+  type OpcaoRota,
 } from "@/lib/geo";
 import { calcularScorePosto, PERFIS_PESO, type ScorePosto } from "@/lib/roteirizacaoScore";
 import { otimizarAbastecimento, type ParadaSugerida, type CandidatoAbastecimento } from "@/lib/roteirizacaoAlgoritmo";
@@ -787,6 +789,18 @@ async function montarCandidatosNoCorredor(
   return { candidatos: candidatos.sort((a, b) => a.km - b.km), usouFallbackAnp };
 }
 
+// Fase Rotas-Alternativas (30/07/2026) — busca TODAS as opções de rota
+// entre origem e destino (estilo Waze) pra tela mostrar antes do gestor
+// decidir. Chamada separada de calcularRoteirizacaoAcao porque não precisa
+// de veículo/perfil ainda — é só "quais caminhos existem daqui pra lá".
+export async function buscarAlternativasRotaAcao(params: {
+  origem: Ponto;
+  destino: Ponto;
+  paradas?: Ponto[];
+}): Promise<OpcaoRota[]> {
+  return buscarAlternativasRotaOsrm(params.origem, params.destino, params.paradas ?? []);
+}
+
 // ── Modo "Roteirização" (planejamento com veículo) ────────────────────
 export async function calcularRoteirizacaoAcao(params: {
   empresaId: string;
@@ -800,11 +814,22 @@ export async function calcularRoteirizacaoAcao(params: {
     combustivelInicialL?: number;
   };
   perfilChave: string;
+  // Fase Rotas-Alternativas (30/07/2026) — pedido do Daniel: "podemos evoluir
+  // como o Waze, onde apresenta as rotas para o usuário e ele define qual
+  // será a melhor". O gestor busca as opções de rota primeiro
+  // (buscarAlternativasRotaAcao) e escolhe uma — essa rota já calculada é
+  // repassada aqui pra não reconsultar o OSRM (garante que o resultado usa
+  // EXATAMENTE a rota que o gestor viu e escolheu na tela, não uma nova
+  // consulta que poderia devolver algo levemente diferente). Se omitido
+  // (fluxo antigo, direto "Calcular"), cai no comportamento de sempre —
+  // busca a rota principal (mais rápida) na hora.
+  rotaEscolhida?: { coordenadas: Ponto[]; distanciaKm: number; duracaoMin: number; linhaReta: boolean };
 }): Promise<ResultadoRoteirizacao> {
   const supabase = await createClient();
   const perfil = PERFIS_PESO.find((p) => p.chave === params.perfilChave) ?? PERFIS_PESO[1];
 
-  const rota = await calcularRotaOsrm(params.origem, params.destino, params.paradas ?? []);
+  const rota =
+    params.rotaEscolhida ?? (await calcularRotaOsrm(params.origem, params.destino, params.paradas ?? [], "rapido"));
   const acumuladas = distanciasAcumuladas(rota.coordenadas);
 
   const { candidatos, usouFallbackAnp } = await montarCandidatosNoCorredor(supabase, {

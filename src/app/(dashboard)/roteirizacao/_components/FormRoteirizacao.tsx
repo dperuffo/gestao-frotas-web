@@ -5,7 +5,8 @@ import Link from "next/link";
 import { BuscaLocalInput, type LocalSelecionado } from "./BuscaLocalInput";
 import { SalvarConsultaForm } from "./SalvarConsultaForm";
 import MapaRotaLazy from "./MapaRotaLazy";
-import { calcularRoteirizacaoAcao, type ResultadoRoteirizacao } from "../actions";
+import { calcularRoteirizacaoAcao, buscarAlternativasRotaAcao, type ResultadoRoteirizacao } from "../actions";
+import type { OpcaoRota } from "@/lib/geo";
 import { PERFIS_PESO, PERFIL_PADRAO } from "@/lib/roteirizacaoScore";
 import { PRODUTOS_POSTO, PRODUTOS_POR_TIPO_VEICULO } from "@/lib/constants";
 import { corPorBandeira } from "@/lib/coresBandeira";
@@ -104,6 +105,53 @@ export function FormRoteirizacao({
   // lista inteira de candidatos já veio do servidor de uma vez.
   const [buscaPosto, setBuscaPosto] = useState("");
 
+  // Fase Rotas-Alternativas (30/07/2026) — pedido do Daniel: "podemos
+  // evoluir como o Waze, onde apresenta as rotas para o usuário e ele
+  // define qual será a melhor para ele". `alternativas` guarda as opções
+  // devolvidas pelo OSRM (normalmente 1-3); `rotaEscolhidaId` é a que o
+  // gestor selecionou pra usar no cálculo de abastecimento. Qualquer
+  // mudança em origem/destino/paradas invalida a busca anterior (ver
+  // limparAlternativas abaixo) — senão o gestor poderia calcular com uma
+  // rota que não corresponde mais aos pontos preenchidos.
+  const [alternativas, setAlternativas] = useState<OpcaoRota[] | null>(null);
+  const [rotaEscolhidaId, setRotaEscolhidaId] = useState<number | null>(null);
+  const [buscandoRotas, setBuscandoRotas] = useState(false);
+
+  function limparAlternativas() {
+    setAlternativas(null);
+    setRotaEscolhidaId(null);
+  }
+
+  const rotulosAlternativas = useMemo(() => {
+    if (!alternativas || alternativas.length < 2) return {} as Record<number, string[]>;
+    const maisRapida = alternativas.reduce((m, o) => (o.duracaoMin < m.duracaoMin ? o : m));
+    const maisCurta = alternativas.reduce((m, o) => (o.distanciaKm < m.distanciaKm ? o : m));
+    const mapa: Record<number, string[]> = {};
+    for (const op of alternativas) mapa[op.id] = [];
+    mapa[maisRapida.id].push("🚀 Terminar mais rápido");
+    if (maisCurta.id !== maisRapida.id) mapa[maisCurta.id].push("📏 Reduzir distâncias");
+    return mapa;
+  }, [alternativas]);
+
+  async function buscarRotas() {
+    if (!origem || !destino) return setErro("Informe origem e destino antes de buscar rotas.");
+    setErro(null);
+    setBuscandoRotas(true);
+    try {
+      const opcoes = await buscarAlternativasRotaAcao({
+        origem,
+        destino,
+        paradas: paradas.filter((p) => p.lat !== 0 || p.lon !== 0).map((p) => ({ lat: p.lat, lon: p.lon })),
+      });
+      setAlternativas(opcoes);
+      setRotaEscolhidaId(opcoes[0]?.id ?? null);
+    } catch {
+      setErro("Não consegui buscar as rotas agora. Tente de novo em instantes.");
+    } finally {
+      setBuscandoRotas(false);
+    }
+  }
+
   function alternarPosto(cnpj: string) {
     setSelecionados((atual) => {
       const novo = new Set(atual);
@@ -196,6 +244,7 @@ export function FormRoteirizacao({
     if (!combustivel.trim()) return setErro("Informe o combustível do veículo.");
     if (capacidade <= 0 || autonomia <= 0) return setErro("Tanque e autonomia precisam ser maiores que zero.");
     setErro(null);
+    const rotaEscolhida = alternativas?.find((o) => o.id === rotaEscolhidaId);
     startTransition(async () => {
       const r = await calcularRoteirizacaoAcao({
         empresaId,
@@ -209,6 +258,14 @@ export function FormRoteirizacao({
           combustivelInicialL: combustivelInicial || capacidade,
         },
         perfilChave,
+        rotaEscolhida: rotaEscolhida
+          ? {
+              coordenadas: rotaEscolhida.coordenadas,
+              distanciaKm: rotaEscolhida.distanciaKm,
+              duracaoMin: rotaEscolhida.duracaoMin,
+              linhaReta: rotaEscolhida.linhaReta,
+            }
+          : undefined,
       });
       setResultado(r);
       // A sugestão do algoritmo vira o ponto de partida da seleção — o
@@ -231,11 +288,25 @@ export function FormRoteirizacao({
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Origem</label>
-            <BuscaLocalInput placeholder="Cidade de origem" valorInicial={origem} onSelecionar={setOrigem} />
+            <BuscaLocalInput
+              placeholder="Cidade de origem"
+              valorInicial={origem}
+              onSelecionar={(local) => {
+                setOrigem(local);
+                limparAlternativas();
+              }}
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Destino</label>
-            <BuscaLocalInput placeholder="Cidade de destino" valorInicial={destino} onSelecionar={setDestino} />
+            <BuscaLocalInput
+              placeholder="Cidade de destino"
+              valorInicial={destino}
+              onSelecionar={(local) => {
+                setDestino(local);
+                limparAlternativas();
+              }}
+            />
           </div>
         </div>
 
@@ -247,15 +318,19 @@ export function FormRoteirizacao({
                 <BuscaLocalInput
                   placeholder="Cidade da parada"
                   valorInicial={paradas[i]}
-                  onSelecionar={(local) =>
-                    setParadas((atual) => atual.map((p, idx) => (idx === i ? (local ?? p) : p)))
-                  }
+                  onSelecionar={(local) => {
+                    setParadas((atual) => atual.map((p, idx) => (idx === i ? (local ?? p) : p)));
+                    limparAlternativas();
+                  }}
                 />
               </div>
               <button
                 type="button"
                 className="text-sm text-slate-400 hover:text-red-600"
-                onClick={() => setParadas((atual) => atual.filter((_, idx) => idx !== i))}
+                onClick={() => {
+                  setParadas((atual) => atual.filter((_, idx) => idx !== i));
+                  limparAlternativas();
+                }}
               >
                 remover
               </button>
@@ -269,6 +344,60 @@ export function FormRoteirizacao({
         >
           + Adicionar parada
         </button>
+
+        {/* Fase Rotas-Alternativas (30/07/2026) — pedido do Daniel: "podemos
+            evoluir como o Waze, onde apresenta as rotas para o usuário e ele
+            define qual será a melhor para ele". Busca opcional — quem não
+            usar, o cálculo final cai no comportamento de sempre (rota mais
+            rápida escolhida automaticamente). */}
+        <div className="border-t border-slate-100 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-slate-900">Opções de rota</p>
+            <button
+              type="button"
+              className="btn-secondary disabled:opacity-50"
+              disabled={!origem || !destino || buscandoRotas}
+              onClick={buscarRotas}
+            >
+              {buscandoRotas ? "Buscando rotas..." : "🔍 Ver opções de rota"}
+            </button>
+          </div>
+          {alternativas && alternativas.length > 1 ? (
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {alternativas.map((op, i) => {
+                const rotulos = rotulosAlternativas[op.id] ?? [];
+                const selecionada = rotaEscolhidaId === op.id;
+                return (
+                  <button
+                    key={op.id}
+                    type="button"
+                    onClick={() => setRotaEscolhidaId(op.id)}
+                    className={`rounded-lg border p-3 text-left text-sm ${
+                      selecionada ? "border-frota-600 bg-frota-50" : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <p className="font-medium text-slate-900">
+                      {rotulos.length > 0 ? rotulos.join(" · ") : `Alternativa ${i + 1}`}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {op.distanciaKm.toLocaleString("pt-BR")} km · {Math.floor(op.duracaoMin / 60)}h{" "}
+                      {String(Math.round(op.duracaoMin % 60)).padStart(2, "0")}min
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          ) : alternativas && alternativas.length === 1 ? (
+            <p className="mt-2 text-xs text-slate-500">
+              Só existe um caminho viável entre esses pontos — nenhuma rota alternativa encontrada.
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-slate-400">
+              Opcional: veja as rotas possíveis antes de calcular e escolha entre reduzir distância ou terminar mais
+              rápido.
+            </p>
+          )}
+        </div>
 
         <div className="border-t border-slate-100 pt-4">
           <p className="mb-2 text-sm font-semibold text-slate-900">Veículo</p>
