@@ -27,17 +27,24 @@ type KpisFrota = {
   manutencao_corretiva_custo: number;
   manutencao_nao_classificada_custo: number;
   pct_corretiva: number | null;
+  // Fase C (30/07/2026) — checklist de inspeção veicular (/checklist-veiculos)
+  // e registro de sinistros (/sinistros), os 2 fluxos de captura que faltavam.
+  itens_inspecionados: number;
+  itens_conformes: number;
+  conformidade_pct: number | null;
+  tmrnc_horas: number | null;
+  total_sinistros: number;
+  indice_sinistralidade: number | null;
 };
 
 // Fase Indicadores-da-Frota (30/07/2026) — pedido do Daniel a partir de um
-// artigo sobre os "8 KPIs essenciais" de gestão de frotas. Este painel reúne
-// os 4 que dá pra calcular com dado que já coletamos (disponibilidade, CPK
-// operacional, consumo médio, utilização) + a proporção corretiva/preventiva
-// (nova, ver coluna `tipo` em manutencoes_realizadas). Os outros 3 do artigo
-// — conformidade por checklist, tempo de resolução de não conformidade e
-// sinistralidade — exigem um fluxo de captura que a plataforma ainda não
-// tem (checklist de inspeção e registro de sinistros/acidentes); não dá pra
-// "calcular" eles do nada, então ficaram de fora desta fase.
+// artigo sobre os "8 KPIs essenciais" de gestão de frotas. Fase A/B: os 5 que
+// dava pra calcular com dado já coletado (disponibilidade, CPK operacional,
+// consumo médio, utilização, proporção corretiva/preventiva — esta última
+// via nova coluna `tipo` em manutencoes_realizadas). Fase C: os 3 que
+// faltavam — conformidade por checklist e TMRNC (checklist de inspeção
+// veicular, novo) e índice de sinistralidade (registro de sinistros, novo)
+// — completando os 8 do benchmark.
 export default async function IndicadoresFrotaPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { empresa: empresaParam, inicio, fim } = await searchParams;
   const supabase = await createClient();
@@ -138,6 +145,23 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               destaque={kpis.pct_corretiva !== null && kpis.pct_corretiva > 20 ? "aviso" : undefined}
             />
             <Indicador label="Veículos ativos no período" valor={String(kpis.total_veiculos)} />
+            <Indicador
+              label="Taxa de conformidade (checklist)"
+              valor={kpis.conformidade_pct !== null ? `${kpis.conformidade_pct}%` : "Sem inspeções no período"}
+              ajudaChave="indicadores_frota.conformidade"
+              destaque={kpis.conformidade_pct !== null && kpis.conformidade_pct < 90 ? "aviso" : undefined}
+            />
+            <Indicador
+              label="Tempo médio de resolução (TMRNC)"
+              valor={kpis.tmrnc_horas !== null ? `${kpis.tmrnc_horas}h` : "Sem pendências resolvidas"}
+              ajudaChave="indicadores_frota.tmrnc"
+            />
+            <Indicador
+              label="Índice de sinistralidade"
+              valor={kpis.indice_sinistralidade !== null ? `${kpis.indice_sinistralidade}%` : "—"}
+              ajudaChave="indicadores_frota.sinistralidade"
+              destaque={kpis.indice_sinistralidade !== null && kpis.indice_sinistralidade > 10 ? "aviso" : undefined}
+            />
           </div>
 
           {kpis.manutencao_nao_classificada_custo > 0 && (
@@ -152,14 +176,16 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
             </div>
           )}
 
-          <div className="card p-4">
-            <p className="mb-3 text-sm font-medium text-slate-700">Outros 3 KPIs do benchmark de mercado</p>
-            <p className="text-sm text-slate-500">
-              Taxa de conformidade (checklist de inspeção), tempo médio de resolução de não conformidades e índice de
-              sinistralidade não aparecem aqui porque a plataforma ainda não tem um fluxo de captura desses dados
-              (inspeção veicular e registro de sinistros/acidentes). Fale com a gente se quiser priorizar isso.
-            </p>
-          </div>
+          {kpis.itens_inspecionados === 0 && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              Nenhuma inspeção registrada neste período — a taxa de conformidade e o TMRNC aparecem assim que a
+              primeira inspeção for feita em{" "}
+              <Link href="/checklist-veiculos" className="underline">
+                Checklist de Inspeção
+              </Link>
+              .
+            </div>
+          )}
         </>
       )}
     </div>

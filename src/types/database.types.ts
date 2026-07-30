@@ -2950,6 +2950,93 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["manutencoes_realizadas"]["Row"]>;
         Relationships: [];
       };
+      // Fase Indicadores-da-Frota C (30/07/2026) — checklist de inspeção
+      // veicular (cabeçalho), alimenta os KPIs conformidade_pct/tmrnc_horas
+      // via kpis_frota_resumo. Itens ficam em inspecoes_veiculos_itens.
+      inspecoes_veiculos: {
+        Row: {
+          id: number;
+          empresa_id: string;
+          cnpj_frota: string;
+          placa: string;
+          data_inspecao: string;
+          hodometro: number | null;
+          responsavel: string | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["inspecoes_veiculos"]["Row"]> & {
+          empresa_id: string;
+          cnpj_frota: string;
+          placa: string;
+          data_inspecao: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["inspecoes_veiculos"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase Indicadores-da-Frota C (30/07/2026) — um item de checklist por
+      // linha (Pneus, Freios, Luzes...); resolvido_em/resolvido_por só
+      // preenchidos quando conforme=false e a pendência é sanada depois
+      // (alimenta o TMRNC).
+      inspecoes_veiculos_itens: {
+        Row: {
+          id: number;
+          inspecao_id: number;
+          empresa_id: string;
+          item: string;
+          critico: boolean;
+          conforme: boolean;
+          observacao: string | null;
+          resolvido_em: string | null;
+          resolvido_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["inspecoes_veiculos_itens"]["Row"]> & {
+          inspecao_id: number;
+          empresa_id: string;
+          item: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["inspecoes_veiculos_itens"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "inspecoes_veiculos_itens_inspecao_id_fkey";
+            columns: ["inspecao_id"];
+            isOneToOne: false;
+            referencedRelation: "inspecoes_veiculos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase Indicadores-da-Frota C (30/07/2026) — registro de sinistros/
+      // acidentes por veículo, alimenta indice_sinistralidade via
+      // kpis_frota_resumo.
+      sinistros_veiculos: {
+        Row: {
+          id: number;
+          empresa_id: string;
+          cnpj_frota: string;
+          placa: string;
+          motorista_nome: string | null;
+          data_sinistro: string;
+          tipo: string;
+          gravidade: string | null;
+          houve_vitima: boolean;
+          custo_estimado: number | null;
+          local_ocorrencia: string | null;
+          descricao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["sinistros_veiculos"]["Row"]> & {
+          empresa_id: string;
+          cnpj_frota: string;
+          placa: string;
+          data_sinistro: string;
+          tipo: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["sinistros_veiculos"]["Row"]>;
+        Relationships: [];
+      };
       // Fase Pedágios — base pública nacional de praças de pedágio (federais
       // + estaduais), sem empresa_id, mesmo padrão de anp_postos acima.
       // Fonte: OpenStreetMap (barrier=toll_booth) + ANTT (metadados oficiais
@@ -5247,6 +5334,26 @@ export interface Database {
           manutencao_corretiva_custo: number;
           manutencao_nao_classificada_custo: number;
           pct_corretiva: number | null;
+          itens_inspecionados: number;
+          itens_conformes: number;
+          conformidade_pct: number | null;
+          tmrnc_horas: number | null;
+          total_sinistros: number;
+          indice_sinistralidade: number | null;
+        }[];
+      };
+      // Fase Indicadores-da-Frota C (30/07/2026) — resumo por veículo pra
+      // /checklist-veiculos (lista): última inspeção e pendências abertas
+      // (itens não conformes ainda sem resolvido_em).
+      checklist_veiculos_resumo: {
+        Args: { p_empresa_id: string; p_busca: string | null };
+        Returns: {
+          placa: string;
+          marca: string | null;
+          modelo: string | null;
+          centro_custo_nome: string | null;
+          ultima_inspecao: string | null;
+          pendencias_abertas: number;
         }[];
       };
       // Fase Convite-Self-Service (26/07/2026) — RPC dedicada pra /minha-

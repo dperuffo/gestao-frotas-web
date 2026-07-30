@@ -49,6 +49,8 @@ import {
   Hammer,
   Coins,
   Gauge,
+  ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -197,6 +199,13 @@ const menuOperacao = [
   { href: "/manutencao-preditiva", label: "Manutenção Preditiva", icon: Wrench }, // PWA: Icons.build
   { href: "/tco", label: "TCO / Custo por Veículo", icon: Coins }, // PWA: Icons.pending
   { href: "/indicadores-frota", label: "Indicadores da Frota", icon: Gauge }, // PWA: Icons.speed
+  // Fase Indicadores-da-Frota (30/07/2026) — checklist de inspeção periódica
+  // (pneus, freios, luzes etc.), alimenta os KPIs de conformidade e TMRNC em
+  // /indicadores-frota.
+  { href: "/checklist-veiculos", label: "Checklist de Inspeção", icon: ShieldCheck }, // PWA: Icons.fact_check
+  // Fase Indicadores-da-Frota (30/07/2026) — registro de sinistros/acidentes,
+  // alimenta o KPI de índice de sinistralidade em /indicadores-frota.
+  { href: "/sinistros", label: "Sinistros", icon: AlertTriangle }, // PWA: Icons.warning_amber
   // Fase Onda-2 (benchmark TicketLog, item #4) — pedido do Daniel: ciclo de
   // multas (captura manual, indicação de condutor reaproveitando o vínculo
   // Motorista<->Veículo, histórico e alerta de prazo pro desconto).
