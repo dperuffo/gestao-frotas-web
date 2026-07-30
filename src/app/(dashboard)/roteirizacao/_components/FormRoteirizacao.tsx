@@ -201,9 +201,9 @@ export function FormRoteirizacao({
     const termo = normalizarTexto(buscaPosto);
     if (!termo) return candidatosOrdenados;
     return candidatosOrdenados.filter((c) =>
-      normalizarTexto([c.label, c.cnpj, formatCNPJ(c.cnpj), c.municipio, c.uf].filter(Boolean).join(" ")).includes(
-        termo
-      )
+      normalizarTexto(
+        [c.label, c.cnpj, formatCNPJ(c.cnpj), c.municipio, c.uf, c.bandeira].filter(Boolean).join(" ")
+      ).includes(termo)
     );
   }, [candidatosOrdenados, buscaPosto]);
 
@@ -675,7 +675,7 @@ export function FormRoteirizacao({
                   type="search"
                   value={buscaPosto}
                   onChange={(e) => setBuscaPosto(e.target.value)}
-                  placeholder="Buscar por nome, CNPJ, cidade ou estado..."
+                  placeholder="Buscar por nome, CNPJ, bandeira, cidade ou estado..."
                   className="input mb-3 max-w-sm"
                 />
               )}
@@ -723,6 +723,9 @@ export function FormRoteirizacao({
                               </span>
                             )}
                             <p className="mt-0.5 text-xs font-normal text-slate-400">{formatCNPJ(c.cnpj)}</p>
+                            {c.bandeira && (
+                              <p className="mt-0.5 text-xs font-normal text-slate-400">{c.bandeira}</p>
+                            )}
                             {parada && (
                               <p className="mt-0.5 text-xs font-normal text-slate-400">
                                 {MOTIVO_LABEL[parada.motivo] ?? parada.motivo}
