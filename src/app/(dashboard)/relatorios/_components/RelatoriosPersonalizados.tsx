@@ -226,7 +226,11 @@ const DIMENSOES: Record<Fonte, { id: string; label: string; extrator: (r: LinhaB
     { id: "meio_pagamento", label: "Meio de Pagamento", extrator: (r) => (r as AbastecimentoBruto).meioPagamento || "—" },
     { id: "tipo_veiculo", label: "Tipo de Veículo", extrator: (r) => (r as AbastecimentoBruto).tipoVeiculo || "—" },
     { id: "marca_veiculo", label: "Marca do Veículo", extrator: (r) => (r as AbastecimentoBruto).marcaVeiculo || "—" },
-    { id: "classificacao_veiculo", label: "Classificação (Leve/Pesado)", extrator: (r) => (r as AbastecimentoBruto).classificacaoVeiculo || "—" },
+    // Achado real (30/07/2026): rótulo dizia "(Leve/Pesado)", mas o dado por
+    // trás (relatorio_abastecimentos_bruto → v.classificacao) é Próprio/
+    // Agregado — Leve/Pesado é outro campo (cadastro_veiculos.tipo), que essa
+    // fonte de relatório nem expõe. Corrigido o rótulo pra bater com o dado.
+    { id: "classificacao_veiculo", label: "Classificação (Próprio/Agregado)", extrator: (r) => (r as AbastecimentoBruto).classificacaoVeiculo || "—" },
     { id: "centro_custo", label: "Centro de Custo", extrator: (r) => (r as AbastecimentoBruto).centroCusto || "—" },
   ],
   manutencao: [

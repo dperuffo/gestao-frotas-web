@@ -288,6 +288,12 @@ export type StatusMotorista = (typeof STATUS_MOTORISTA)[number];
 export const CLASSIFICACAO = ["Próprio", "Agregado"] as const;
 export type Classificacao = (typeof CLASSIFICACAO)[number];
 
+// Achado real (30/07/2026, pedido do Daniel): quase toda a frota cadastrada
+// (2389 de 2404 veículos) estava com tipo_veiculo = "Outro" — rótulo genérico
+// que não dizia nada. Renomeado para "Carro de Passeio" porque é isso que a
+// maioria desses veículos realmente é (frota leve, não caminhões/carretas).
+// Migração de dados (renomear_outro_para_carro_passeio) atualizou os
+// registros existentes pra manter consistência com este rótulo.
 export const TIPOS_VEICULO = [
   "Cavalo Mecânico",
   "Carreta",
@@ -295,7 +301,7 @@ export const TIPOS_VEICULO = [
   "Toco",
   "VUC",
   "Utilitário",
-  "Outro",
+  "Carro de Passeio",
 ] as const;
 
 // Fase 27.124 — porte do veículo (cadastro_veiculos.tipo), diferente de
