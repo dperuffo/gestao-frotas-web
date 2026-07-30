@@ -100,11 +100,24 @@ function AjustarLimites({ pontos }: { pontos: [number, number][] }) {
 export default function MapaRota({
   marcadores,
   rota,
+  rotasAlternativas,
+  rotaSelecionadaId,
+  onSelecionarRota,
   alturaClasse = "h-[600px]",
   onTogglePosto,
 }: {
   marcadores: MarcadorMapa[];
   rota?: { lat: number; lon: number }[];
+  // Fase Rotas-Alternativas (30/07/2026) — pedido do Daniel: mostrar as N
+  // rotas devolvidas pelo OSRM ao mesmo tempo no mapa (estilo Waze), pra
+  // decidir visualmente em vez de só olhar km/tempo nos cards. Quando
+  // presente, tem prioridade sobre `rota` (que continua existindo pro caso
+  // simples de 1 rota só, ex: resultado final já calculado).
+  rotasAlternativas?: { id: number; coordenadas: { lat: number; lon: number }[] }[];
+  rotaSelecionadaId?: number | null;
+  // Clicar numa linha alternativa no mapa também seleciona ela (sem esse
+  // prop, as linhas só são visuais).
+  onSelecionarRota?: (id: number) => void;
   alturaClasse?: string;
   // Fase Seleção-Manual-de-Postos — chamado com o CNPJ do posto quando o
   // gestor clica em "Selecionar como parada" / "Remover parada" no popup.
@@ -129,7 +142,15 @@ export default function MapaRota({
   const todosPontos: [number, number][] = [
     ...marcadores.map((m): [number, number] => [m.lat, m.lon]),
     ...(rota ?? []).map((p): [number, number] => [p.lat, p.lon]),
+    ...(rotasAlternativas ?? []).flatMap((r) => r.coordenadas.map((p): [number, number] => [p.lat, p.lon])),
   ];
+
+  // Não-selecionadas primeiro (cinza, tracejada) e a selecionada por
+  // último (azul, sólida, por cima) — assim ela nunca fica escondida atrás
+  // de outra rota que passe pelo mesmo trecho.
+  const rotasParaDesenhar = rotasAlternativas
+    ? [...rotasAlternativas].sort((a, b) => (a.id === rotaSelecionadaId ? 1 : b.id === rotaSelecionadaId ? -1 : 0))
+    : [];
 
   // Legenda: uma entrada por combinação (cor, rótulo) entre os marcadores
   // de posto exibidos — assim ela reflete exatamente o que está no mapa,
@@ -159,9 +180,27 @@ export default function MapaRota({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {rota && rota.length > 1 && (
-          <Polyline positions={rota.map((p) => [p.lat, p.lon])} pathOptions={{ color: "#2563eb", weight: 4 }} />
-        )}
+        {rotasParaDesenhar.length > 0
+          ? rotasParaDesenhar.map((r) => {
+              const selecionada = r.id === rotaSelecionadaId;
+              return (
+                <Polyline
+                  key={r.id}
+                  positions={r.coordenadas.map((p): [number, number] => [p.lat, p.lon])}
+                  pathOptions={{
+                    color: selecionada ? "#2563eb" : "#94a3b8",
+                    weight: selecionada ? 5 : 3,
+                    opacity: selecionada ? 1 : 0.75,
+                    dashArray: selecionada ? undefined : "8 6",
+                  }}
+                  eventHandlers={onSelecionarRota ? { click: () => onSelecionarRota(r.id) } : undefined}
+                />
+              );
+            })
+          : rota &&
+            rota.length > 1 && (
+              <Polyline positions={rota.map((p): [number, number] => [p.lat, p.lon])} pathOptions={{ color: "#2563eb", weight: 4 }} />
+            )}
         {marcadores.map((m, i) =>
           m.pedagio ? (
             <Marker key={i} position={[m.lat, m.lon]} icon={iconePedagio}>
@@ -240,6 +279,22 @@ export default function MapaRota({
               <span className="truncate text-slate-700">{l.label}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {rotasParaDesenhar.length > 1 && (
+        <div className="absolute right-2 top-2 z-[1000] rounded-lg bg-white/95 p-2 text-xs shadow-md">
+          <div className="flex items-center gap-1.5 py-0.5">
+            <span className="inline-block h-0.5 w-5 shrink-0 bg-frota-600" />
+            <span className="text-slate-700">Rota selecionada</span>
+          </div>
+          <div className="flex items-center gap-1.5 py-0.5">
+            <span
+              className="inline-block h-0.5 w-5 shrink-0 bg-slate-400"
+              style={{ backgroundImage: "repeating-linear-gradient(90deg, #94a3b8 0 4px, transparent 4px 7px)" }}
+            />
+            <span className="text-slate-700">Alternativa — toque na linha</span>
+          </div>
         </div>
       )}
     </div>

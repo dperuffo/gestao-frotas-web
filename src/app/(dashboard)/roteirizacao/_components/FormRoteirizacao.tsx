@@ -363,30 +363,50 @@ export function FormRoteirizacao({
             </button>
           </div>
           {alternativas && alternativas.length > 1 ? (
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {alternativas.map((op, i) => {
-                const rotulos = rotulosAlternativas[op.id] ?? [];
-                const selecionada = rotaEscolhidaId === op.id;
-                return (
-                  <button
-                    key={op.id}
-                    type="button"
-                    onClick={() => setRotaEscolhidaId(op.id)}
-                    className={`rounded-lg border p-3 text-left text-sm ${
-                      selecionada ? "border-frota-600 bg-frota-50" : "border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
-                    <p className="font-medium text-slate-900">
-                      {rotulos.length > 0 ? rotulos.join(" · ") : `Alternativa ${i + 1}`}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {op.distanciaKm.toLocaleString("pt-BR")} km · {Math.floor(op.duracaoMin / 60)}h{" "}
-                      {String(Math.round(op.duracaoMin % 60)).padStart(2, "0")}min
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
+            <>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                {alternativas.map((op, i) => {
+                  const rotulos = rotulosAlternativas[op.id] ?? [];
+                  const selecionada = rotaEscolhidaId === op.id;
+                  return (
+                    <button
+                      key={op.id}
+                      type="button"
+                      onClick={() => setRotaEscolhidaId(op.id)}
+                      className={`rounded-lg border p-3 text-left text-sm ${
+                        selecionada ? "border-frota-600 bg-frota-50" : "border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      <p className="font-medium text-slate-900">
+                        {rotulos.length > 0 ? rotulos.join(" · ") : `Alternativa ${i + 1}`}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {op.distanciaKm.toLocaleString("pt-BR")} km · {Math.floor(op.duracaoMin / 60)}h{" "}
+                        {String(Math.round(op.duracaoMin % 60)).padStart(2, "0")}min
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Fase Rotas-Alternativas — pedido do Daniel: "é possível
+                  representar no mapa estas duas rotas, ao mesmo tempo, para
+                  que o usuário consiga ver a diferença e decidir?". Mostra
+                  todas as alternativas sobrepostas (selecionada em azul
+                  sólido, as demais tracejadas em cinza) — clicar numa linha
+                  no mapa também seleciona ela, além dos cards acima. */}
+              <div className="mt-3">
+                <MapaRotaLazy
+                  marcadores={[
+                    ...(origem ? [{ lat: origem.lat, lon: origem.lon, label: "Origem" }] : []),
+                    ...(destino ? [{ lat: destino.lat, lon: destino.lon, label: "Destino" }] : []),
+                  ]}
+                  rotasAlternativas={alternativas.map((op) => ({ id: op.id, coordenadas: op.coordenadas }))}
+                  rotaSelecionadaId={rotaEscolhidaId}
+                  onSelecionarRota={setRotaEscolhidaId}
+                  alturaClasse="h-72"
+                />
+              </div>
+            </>
           ) : alternativas && alternativas.length === 1 ? (
             <p className="mt-2 text-xs text-slate-500">
               Só existe um caminho viável entre esses pontos — nenhuma rota alternativa encontrada.

@@ -18,6 +18,9 @@ const MapaRota = dynamic(() => import("./MapaRota"), {
 export default function MapaRotaLazy(props: {
   marcadores: MarcadorMapa[];
   rota?: { lat: number; lon: number }[];
+  rotasAlternativas?: { id: number; coordenadas: { lat: number; lon: number }[] }[];
+  rotaSelecionadaId?: number | null;
+  onSelecionarRota?: (id: number) => void;
   alturaClasse?: string;
   onTogglePosto?: (cnpj: string) => void;
 }) {
