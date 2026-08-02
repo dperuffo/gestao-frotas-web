@@ -310,6 +310,7 @@ export default async function FreteDetalhePage({
   const avaliacaoCliente = (avaliacoes ?? []).find((a) => a.avaliador === "cliente");
 
   const LABEL_EVENTO: Record<string, string> = {
+    chegou_origem: "Chegou na origem",
     saiu_origem: "Saiu da origem",
     chegou_posto: "Chegou no posto",
     abasteceu: "Abasteceu",
@@ -317,6 +318,7 @@ export default async function FreteDetalhePage({
     chegou_destino: "Chegou no destino",
     ocorrencia: "Ocorrência",
     concluido: "Concluiu o frete",
+    panico: "🚨 Alerta de emergência",
   };
 
   // Fase P0.4 — classificação estruturada da ocorrência (antes só existia

@@ -24,6 +24,7 @@ type FreteAndamento = {
   ultimo_evento_tipo: string | null;
   ultimo_evento_em: string | null;
   ultimo_evento_observacao: string | null;
+  teve_panico: boolean;
 };
 
 const LABEL_STATUS: Record<string, string> = {
@@ -40,6 +41,7 @@ const LABEL_EVENTO: Record<string, string> = {
   chegou_destino: "Chegou no destino",
   ocorrencia: "Ocorrência",
   concluido: "Concluiu o frete",
+  panico: "🚨 Alerta de emergência",
 };
 
 // Formatação simples de "há Xh" / "há X dias" — sem lib externa, esse
@@ -88,6 +90,7 @@ export default async function TorreDeControlePage({
   });
   const totalAtrasados = comRisco.filter((f) => f.atrasado).length;
   const totalVencendoEmBreve = comRisco.filter((f) => f.vencendoEmBreve).length;
+  const totalPanico = comRisco.filter((f) => f.teve_panico).length;
 
   return (
     <div>
@@ -129,7 +132,7 @@ export default async function TorreDeControlePage({
 
       {empresaSelecionada && (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Fretes em andamento</p>
               <p className="mt-1 text-2xl font-semibold text-slate-900">{fretes.length}</p>
@@ -144,6 +147,12 @@ export default async function TorreDeControlePage({
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Prazo estourado</p>
               <p className={`mt-1 text-2xl font-semibold ${totalAtrasados > 0 ? "text-red-700" : "text-slate-900"}`}>
                 {totalAtrasados}
+              </p>
+            </div>
+            <div className={`card p-4 ${totalPanico > 0 ? "border-red-300 bg-red-100/70" : ""}`}>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">🚨 Alerta de emergência</p>
+              <p className={`mt-1 text-2xl font-semibold ${totalPanico > 0 ? "text-red-800" : "text-slate-900"}`}>
+                {totalPanico}
               </p>
             </div>
           </div>
@@ -163,7 +172,13 @@ export default async function TorreDeControlePage({
                   key={f.id}
                   href={`/fretes/${f.id}`}
                   className={`card block p-4 transition hover:border-slate-300 ${
-                    f.atrasado ? "border-red-200 bg-red-50/40" : f.vencendoEmBreve ? "border-amber-200 bg-amber-50/40" : ""
+                    f.teve_panico
+                      ? "border-red-400 bg-red-100/60 ring-1 ring-red-300"
+                      : f.atrasado
+                        ? "border-red-200 bg-red-50/40"
+                        : f.vencendoEmBreve
+                          ? "border-amber-200 bg-amber-50/40"
+                          : ""
                   }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
@@ -173,7 +188,14 @@ export default async function TorreDeControlePage({
                         {f.origem_label} → {f.destino_label}
                       </p>
                     </div>
-                    <span className="badge-ativo">{LABEL_STATUS[f.status] ?? f.status}</span>
+                    <div className="flex items-center gap-2">
+                      {f.teve_panico && (
+                        <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
+                          🚨 Emergência
+                        </span>
+                      )}
+                      <span className="badge-ativo">{LABEL_STATUS[f.status] ?? f.status}</span>
+                    </div>
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">

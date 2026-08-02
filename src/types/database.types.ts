@@ -5461,6 +5461,7 @@ export interface Database {
           ultimo_evento_tipo: string | null;
           ultimo_evento_em: string | null;
           ultimo_evento_observacao: string | null;
+          teve_panico: boolean;
         }[];
       };
       // Fase Indicadores-da-Frota C (30/07/2026) — resumo por veículo pra
