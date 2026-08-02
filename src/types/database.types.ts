@@ -1211,13 +1211,15 @@ export interface Database {
           id: string;
           frete_id: string;
           tipo_evento:
+            | "chegou_origem"
             | "saiu_origem"
             | "chegou_posto"
             | "abasteceu"
             | "parada"
             | "chegou_destino"
             | "ocorrencia"
-            | "concluido";
+            | "concluido"
+            | "panico";
           posto_recomendado_id: string | null;
           observacao: string | null;
           lat: number | null;
@@ -1234,15 +1236,38 @@ export interface Database {
         Insert: Partial<Database["public"]["Tables"]["fretes_eventos"]["Row"]> & {
           frete_id: string;
           tipo_evento:
+            | "chegou_origem"
             | "saiu_origem"
             | "chegou_posto"
             | "abasteceu"
             | "parada"
             | "chegou_destino"
             | "ocorrencia"
-            | "concluido";
+            | "concluido"
+            | "panico";
         };
         Update: Partial<Database["public"]["Tables"]["fretes_eventos"]["Row"]>;
+        Relationships: [];
+      };
+      // Fase Grupo-1-item-3 (02/08/2026, benchmark FNI vs KMM) — chat simples
+      // motorista<->operação por frete. Realtime habilitado (postgres_changes)
+      // pra atualização ao vivo dos dois lados.
+      fretes_mensagens: {
+        Row: {
+          id: string;
+          frete_id: string;
+          remetente_tipo: "motorista" | "empresa";
+          remetente_motorista_id: string | null;
+          remetente_email: string | null;
+          mensagem: string;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["fretes_mensagens"]["Row"]> & {
+          frete_id: string;
+          remetente_tipo: "motorista" | "empresa";
+          mensagem: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fretes_mensagens"]["Row"]>;
         Relationships: [];
       };
       // Fase Fretes B — avaliação bidirecional (1 a 5 estrelas) ao concluir.

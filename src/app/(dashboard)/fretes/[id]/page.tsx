@@ -11,6 +11,7 @@ import { RomaneioCard, type NfeCargaRow } from "../_components/RomaneioCard";
 import { EntregaCard, type EntregaConfirmada } from "../_components/EntregaCard";
 import { PagamentosFrete, type PagamentoFrete } from "../_components/PagamentosFrete";
 import { RecolocarParaBaseCard } from "../_components/RecolocarParaBaseCard";
+import { ChatFrete } from "../_components/ChatFrete";
 
 type FreteDetalhe = {
   id: string;
@@ -79,6 +80,10 @@ export default async function FreteDetalhePage({
   const { id } = await params;
   const { empresa: empresaParam } = await searchParams;
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: frete } = await supabase
     .from("fretes")
@@ -554,6 +559,14 @@ export default async function FreteDetalhePage({
             ))}
           </div>
         </div>
+      )}
+
+      {emAndamentoOuConcluido && freteTipado.motorista_id && (
+        <ChatFrete
+          freteId={id}
+          remetenteEmail={user?.email ?? null}
+          nomeMotorista={motoristaData?.nome_completo ?? null}
+        />
       )}
 
       {entrega && (
