@@ -5438,6 +5438,31 @@ export interface Database {
           roi_frota_pct: number;
         }[];
       };
+      // Fase Torre-de-Controle-Leve (02/08/2026, benchmark FNI vs KMM,
+      // Grupo 1 item 1) — painel único de fretes em andamento: frete +
+      // prazo combinado (entrega_data + entrega_hora) + último checkpoint
+      // de fretes_eventos, via LATERAL (evita N+1). Mesma checagem de
+      // autorização de meus_fretes_empresa.
+      fretes_em_andamento_empresa: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          id: string;
+          titulo: string;
+          status: string;
+          origem_label: string;
+          destino_label: string;
+          motorista_id: string | null;
+          nome_motorista: string | null;
+          telefone_motorista: string | null;
+          criado_em: string;
+          entrega_data: string | null;
+          entrega_hora: string | null;
+          prazo_limite: string | null;
+          ultimo_evento_tipo: string | null;
+          ultimo_evento_em: string | null;
+          ultimo_evento_observacao: string | null;
+        }[];
+      };
       // Fase Indicadores-da-Frota C (30/07/2026) — resumo por veículo pra
       // /checklist-veiculos (lista): última inspeção e pendências abertas
       // (itens não conformes ainda sem resolvido_em).

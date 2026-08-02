@@ -51,6 +51,7 @@ import {
   Gauge,
   ShieldCheck,
   AlertTriangle,
+  Radar,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -180,6 +181,10 @@ const menuOperacao = [
   // motorista próprio/parceiro. Motoristas Parceiros é o cadastro de
   // terceiros/agregados usado pelo modo direto.
   { href: "/fretes", label: "Fretes", icon: Truck }, // PWA: Icons.local_shipping
+  // Fase Torre-de-Controle-Leve (02/08/2026, benchmark FNI vs KMM, Grupo 1
+  // item 1) — painel único dos fretes em andamento, com último checkpoint e
+  // alerta de prazo. Não depende de GPS, só agrega fretes_eventos.
+  { href: "/torre-de-controle", label: "Torre de Controle", icon: Radar },
   // Fase P0.5 (plano FNI_Plano_Implementacao_P0.md) — cotações simulam o
   // frete a partir das Tabelas de Frete (frete-peso/ad valorem/GRIS/ICMS)
   // e do piso mínimo ANTT, e convertem em frete com um clique.
