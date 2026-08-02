@@ -6,7 +6,17 @@
 // popular painel financeiro em despesas". `marcar_pagamento_frete` agora
 // insere em custos_fixos com tipo/origem 'frete' quando uma parcela
 // (adiantamento ou saldo final) é confirmada como paga.
-export const TIPOS_CUSTO_FIXO = ["seguro", "ipva", "licenciamento", "rastreamento", "multa", "pedagio", "frete", "outro"] as const;
+// Achado real (02/08/2026, pedido do Daniel: "gastos com refeições,
+// estadias, banhos, lavanderia... não estão sendo computados nas
+// despesas") — planos_viagem já captura esses valores (valor_refeicao_dia/
+// valor_pernoite_dia/valor_banho_dia/valor_lavagem_dia -> custo_diarias),
+// só não virava lançamento financeiro. Migração
+// lancar_diarias_viagem_no_financeiro criou o trigger
+// trg_lancar_diarias_viagem_financeiro em planos_viagem: ao concluir um
+// plano com custo_diarias > 0, lança automaticamente em custos_fixos com
+// tipo 'diarias_viagem'/origem 'plano_viagem' (mesmo padrão já usado pra
+// parcelas de frete pagas, tipo/origem 'frete').
+export const TIPOS_CUSTO_FIXO = ["seguro", "ipva", "licenciamento", "rastreamento", "multa", "pedagio", "frete", "diarias_viagem", "outro"] as const;
 export type TipoCustoFixo = (typeof TIPOS_CUSTO_FIXO)[number];
 
 export const TIPO_CUSTO_FIXO_LABEL: Record<TipoCustoFixo, string> = {
@@ -17,6 +27,7 @@ export const TIPO_CUSTO_FIXO_LABEL: Record<TipoCustoFixo, string> = {
   multa: "Multa",
   pedagio: "Pedágio",
   frete: "Frete",
+  diarias_viagem: "Diárias de viagem",
   outro: "Outro",
 };
 

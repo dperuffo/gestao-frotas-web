@@ -22,8 +22,13 @@ export type LinhaCustoFixo = {
 // pagos em Fretes) — mesmo badge visual de "Integração" pros demais
 // automáticos (origem 'api'), mas com rótulo e cor próprios pra deixar
 // claro de onde veio.
+//
+// Achado real (02/08/2026) — mesmo padrão pra origem 'plano_viagem': lançado
+// automaticamente pelo trigger trg_lancar_diarias_viagem_financeiro quando um
+// Plano de Viagem é concluído com diárias de refeição/pernoite/banho/lavagem.
 function badgeOrigem(origem: string) {
   if (origem === "frete") return { classe: "badge-ativo", label: "Frete" };
+  if (origem === "plano_viagem") return { classe: "badge-ativo", label: "Plano de Viagem" };
   if (origem === "api") return { classe: "badge-ativo", label: "Integração" };
   return { classe: "badge-atencao", label: "Manual" };
 }
