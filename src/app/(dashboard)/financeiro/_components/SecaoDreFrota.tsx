@@ -20,6 +20,11 @@ export type DreFrotaDados = {
 
 export function SecaoDreFrota({ dados }: { dados: DreFrotaDados }) {
   const margemEbitda = dados.receita_bruta_fretes > 0 ? (dados.ebitda / dados.receita_bruta_fretes) * 100 : null;
+  // Fase KPIs-Operacionais (02/08/2026, pedido do Daniel) — "Custo de
+  // Combustível (% sobre receita)" é um KPI de mercado padrão de
+  // transportadoras; os dois valores já vinham juntos nesta mesma RPC
+  // (dre_frota), só faltava essa conta em cima do que já é buscado.
+  const combustivelPctReceita = dados.receita_bruta_fretes > 0 ? (dados.custo_combustivel / dados.receita_bruta_fretes) * 100 : null;
 
   return (
     <div className="card mb-6 p-6">
@@ -38,9 +43,18 @@ export function SecaoDreFrota({ dados }: { dados: DreFrotaDados }) {
           <LinhaDre label="= EBITDA" valor={dados.ebitda} negrito destaque />
         </tbody>
       </table>
-      {margemEbitda !== null && (
-        <p className="mt-3 text-xs text-slate-500">
-          Margem EBITDA: <span className="font-medium text-slate-700">{margemEbitda.toFixed(1)}%</span>
+      {(margemEbitda !== null || combustivelPctReceita !== null) && (
+        <p className="mt-3 flex flex-wrap gap-x-4 text-xs text-slate-500">
+          {margemEbitda !== null && (
+            <span>
+              Margem EBITDA: <span className="font-medium text-slate-700">{margemEbitda.toFixed(1)}%</span>
+            </span>
+          )}
+          {combustivelPctReceita !== null && (
+            <span>
+              Combustível sobre receita: <span className="font-medium text-slate-700">{combustivelPctReceita.toFixed(1)}%</span>
+            </span>
+          )}
         </p>
       )}
     </div>

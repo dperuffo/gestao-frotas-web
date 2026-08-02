@@ -36,6 +36,28 @@ type KpisFrotaResumo = {
   indice_sinistralidade: number | null;
 };
 
+// Fase KPIs-Operacionais (02/08/2026, pedido do Daniel: trazer indicadores
+// logísticos de mercado — OTIF, OCT, avarias, reclamações, km vazio, ROI —
+// pra plataforma). RPC kpis_operacionais_frota — independente do
+// filtro de veículo/tipo/modelo acima (fretes não têm placa associada de
+// forma confiável no schema), sempre calculada pra empresa inteira.
+type KpisOperacionais = {
+  fretes_concluidos_total: number;
+  fretes_com_prazo_total: number;
+  otif_pct: number | null;
+  oct_horas_medio: number | null;
+  indice_avarias_pct: number | null;
+  indice_reclamacoes_pct: number | null;
+  qtd_reentregas_devolucoes: number;
+  km_total_frota: number;
+  km_estimado_fretes: number | null;
+  km_vazio_estimado_pct: number | null;
+  valor_investido_frota: number;
+  receita_bruta_fretes: number;
+  custo_operacional_total: number;
+  roi_frota_pct: number | null;
+};
+
 function resumoParaExibicao(k: KpisFrotaResumo): KpisExibicao {
   return {
     totalVeiculos: k.total_veiculos,
@@ -81,16 +103,22 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
   const dataFim = fim || paraISO(agora);
   const diasPeriodo = Math.max(1, Math.round((new Date(dataFim).getTime() - new Date(dataInicio).getTime()) / 86400000) + 1);
 
-  const [{ data: resumoRaw, error: erroResumo }, { data: porVeiculoRaw, error: erroPorVeiculo }] = empresaSelecionada
+  const [
+    { data: resumoRaw, error: erroResumo },
+    { data: porVeiculoRaw, error: erroPorVeiculo },
+    { data: operacionaisRaw, error: erroOperacionais },
+  ] = empresaSelecionada
     ? await Promise.all([
         supabase.rpc("kpis_frota_resumo", { p_empresa_id: empresaSelecionada, p_data_inicio: dataInicio, p_data_fim: dataFim }),
         supabase.rpc("kpis_frota_por_veiculo", { p_empresa_id: empresaSelecionada, p_data_inicio: dataInicio, p_data_fim: dataFim }),
+        supabase.rpc("kpis_operacionais_frota", { p_empresa_id: empresaSelecionada, p_data_inicio: dataInicio, p_data_fim: dataFim }),
       ])
-    : [{ data: null, error: null }, { data: null, error: null }];
+    : [{ data: null, error: null }, { data: null, error: null }, { data: null, error: null }];
 
   const resumo = (Array.isArray(resumoRaw) ? resumoRaw[0] : resumoRaw) as KpisFrotaResumo | null | undefined;
   const veiculos = (porVeiculoRaw ?? []) as VeiculoKpi[];
-  const error = erroResumo ?? erroPorVeiculo;
+  const operacionais = (Array.isArray(operacionaisRaw) ? operacionaisRaw[0] : operacionaisRaw) as KpisOperacionais | null | undefined;
+  const error = erroResumo ?? erroPorVeiculo ?? erroOperacionais;
 
   const tiposDisponiveis = Array.from(new Set(veiculos.map((v) => v.tipo_veiculo).filter((v): v is string => Boolean(v)))).sort();
   const modelosDisponiveis = Array.from(new Set(veiculos.map((v) => v.modelo).filter((v): v is string => Boolean(v)))).sort();
@@ -278,6 +306,77 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               </Link>
               .
             </div>
+          )}
+
+          {operacionais && (
+            <>
+              <div className="mb-3 mt-2">
+                <h2 className="text-sm font-semibold text-slate-900">Indicadores operacionais (Fretes/TMS)</h2>
+                <p className="text-xs text-slate-500">
+                  Calculados pra empresa inteira (não filtram por veículo/tipo/modelo, já que o frete não é
+                  vinculado a uma placa específica no sistema).
+                </p>
+              </div>
+
+              {operacionais.fretes_concluidos_total === 0 ? (
+                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  Nenhum frete concluído neste período — os indicadores de OTIF, OCT, avarias e reclamações aparecem
+                  assim que o primeiro frete for concluído em{" "}
+                  <Link href="/fretes" className="underline">
+                    Fretes
+                  </Link>
+                  .
+                </div>
+              ) : (
+                <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <Indicador
+                    label="OTIF (no prazo e sem ocorrência)"
+                    valor={
+                      operacionais.otif_pct !== null
+                        ? `${operacionais.otif_pct}%`
+                        : "Sem fretes com prazo definido"
+                    }
+                    destaque={operacionais.otif_pct !== null && operacionais.otif_pct < 90 ? "aviso" : undefined}
+                  />
+                  <Indicador
+                    label="OCT (tempo de ciclo do pedido)"
+                    valor={operacionais.oct_horas_medio !== null ? `${operacionais.oct_horas_medio}h em média` : "—"}
+                  />
+                  <Indicador
+                    label="Índice de avarias"
+                    valor={operacionais.indice_avarias_pct !== null ? `${operacionais.indice_avarias_pct}%` : "—"}
+                    destaque={operacionais.indice_avarias_pct !== null && operacionais.indice_avarias_pct > 0 ? "aviso" : undefined}
+                  />
+                  <Indicador
+                    label="Índice de reclamações"
+                    valor={operacionais.indice_reclamacoes_pct !== null ? `${operacionais.indice_reclamacoes_pct}%` : "—"}
+                    destaque={operacionais.indice_reclamacoes_pct !== null && operacionais.indice_reclamacoes_pct > 5 ? "aviso" : undefined}
+                  />
+                  <Indicador
+                    label="Reentregas e devoluções"
+                    valor={`${operacionais.qtd_reentregas_devolucoes} no período`}
+                    destaque={operacionais.qtd_reentregas_devolucoes > 0 ? "aviso" : undefined}
+                  />
+                  <Indicador
+                    label="Km rodado vazio (estimado)"
+                    valor={operacionais.km_vazio_estimado_pct !== null ? `${operacionais.km_vazio_estimado_pct}%` : "—"}
+                  />
+                  <Indicador
+                    label="ROI da frota"
+                    valor={operacionais.roi_frota_pct !== null ? `${operacionais.roi_frota_pct}%` : "Sem valor de aquisição cadastrado"}
+                    destaque={operacionais.roi_frota_pct !== null && operacionais.roi_frota_pct < 0 ? "aviso" : undefined}
+                  />
+                </div>
+              )}
+
+              {operacionais.km_vazio_estimado_pct !== null && (
+                <p className="mb-6 text-xs text-slate-400">
+                  Km rodado vazio é uma ESTIMATIVA (km total da frota via hodômetro menos o km estimado dos fretes
+                  concluídos) — não é medição real de trecho com/sem carga, já que o sistema não tem rastreamento
+                  contínuo (telemetria) hoje.
+                </p>
+              )}
+            </>
           )}
 
           <div className="mb-3 mt-2">

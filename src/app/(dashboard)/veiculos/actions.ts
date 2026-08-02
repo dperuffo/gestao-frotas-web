@@ -55,6 +55,9 @@ function montarPayloadBase(formData: FormData) {
     valor_aquisicao: numeroOuNull(formData.get("valor_aquisicao")),
     data_aquisicao: String(formData.get("data_aquisicao") ?? "").trim() || null,
     valor_residual_estimado: numeroOuNull(formData.get("valor_residual_estimado")),
+    // Fase KPIs-Operacionais (02/08/2026) — opcional, usado só pro KPI de
+    // Ocupação de Carga em Indicadores da Frota.
+    capacidade_kg: numeroOuNull(formData.get("capacidade_kg")),
   };
 }
 

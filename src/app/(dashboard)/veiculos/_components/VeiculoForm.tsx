@@ -158,6 +158,18 @@ export function VeiculoForm({
           <Campo label="Número de eixos">
             <input type="number" name="numero_eixos" defaultValue={veiculo?.numero_eixos ?? ""} className="input" />
           </Campo>
+          {/* Fase KPIs-Operacionais (02/08/2026) — capacidade de carga útil,
+              usada só pro KPI de Ocupação de Carga (peso do frete /
+              capacidade do veículo) em Indicadores da Frota. Opcional. */}
+          <Campo label="Capacidade de carga (kg)">
+            <input
+              type="number"
+              step="0.01"
+              name="capacidade_kg"
+              defaultValue={veiculo?.capacidade_kg ?? ""}
+              className="input"
+            />
+          </Campo>
         </div>
       </section>
 

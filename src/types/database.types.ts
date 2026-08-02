@@ -2384,6 +2384,10 @@ export interface Database {
           // cascata marca>modelo>ano.
           fipe_tipo_veiculo: "cars" | "motorcycles" | "trucks" | null;
           fipe_ano_codigo: string | null;
+          // Fase KPIs-Operacionais (02/08/2026) — capacidade de carga útil
+          // (kg), usada só pro KPI de Ocupação de Carga em Indicadores da
+          // Frota. Opcional.
+          capacidade_kg: number | null;
           criado_em: string | null;
           atualizado_em: string | null;
         };
@@ -2712,6 +2716,13 @@ export interface Database {
           competencia: string;
           recorrente: boolean;
           origem: string;
+          // Fase Diárias-no-Financeiro (02/08/2026) — FK opcional pro plano
+          // de viagem que originou o lançamento, quando origem =
+          // 'plano_viagem' (diárias de refeição/pernoite/banho/lavagem).
+          // Índice único parcial (uq_custos_fixos_plano_viagem_id) garante 1
+          // lançamento por plano; trigger em planos_viagem faz upsert/delete
+          // conforme o status vira/deixa de ser 'concluido'.
+          plano_viagem_id: string | null;
           criado_em: string | null;
           criado_por: string | null;
         };
@@ -2735,6 +2746,13 @@ export interface Database {
             columns: ["centro_custo_id"];
             isOneToOne: false;
             referencedRelation: "centros_custo";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "custos_fixos_plano_viagem_id_fkey";
+            columns: ["plano_viagem_id"];
+            isOneToOne: false;
+            referencedRelation: "planos_viagem";
             referencedColumns: ["id"];
           },
         ];
@@ -5391,6 +5409,33 @@ export interface Database {
           conformidade_pct: number | null;
           tmrnc_horas: number | null;
           total_sinistros: number;
+        }[];
+      };
+      // Fase KPIs-Operacionais (02/08/2026, pedido do Daniel: "verificar
+      // quais destes indicadores ainda podemos trazer para a plataforma") —
+      // KPIs logísticos padrão de mercado (OTIF, OCT, avarias, reclamações,
+      // km vazio estimado, ROI da frota etc.) calculados sobre fretes,
+      // faturas_fretes e custos operacionais. Fica de fora desta fase, por
+      // exigir telemetria/GPS que o sistema não tem: Tempo em Excesso de
+      // Velocidade e Conformidade de Rotas. Retorna 1 linha (agregado da
+      // empresa no período).
+      kpis_operacionais_frota: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          fretes_concluidos_total: number;
+          fretes_com_prazo_total: number;
+          otif_pct: number;
+          oct_horas_medio: number;
+          indice_avarias_pct: number;
+          indice_reclamacoes_pct: number;
+          qtd_reentregas_devolucoes: number;
+          km_estimado_fretes: number;
+          km_total_frota: number;
+          km_vazio_estimado_pct: number;
+          receita_bruta_fretes: number;
+          custo_operacional_total: number;
+          valor_investido_frota: number;
+          roi_frota_pct: number;
         }[];
       };
       // Fase Indicadores-da-Frota C (30/07/2026) — resumo por veículo pra
