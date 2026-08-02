@@ -1008,6 +1008,25 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["fidelidade_catalogo_itens"]["Row"]>;
         Relationships: [];
       };
+      // Fase Grupo-1-item-4 (02/08/2026, benchmark FNI vs KMM) — controle de
+      // jornada do motorista, versão simplificada (só eventos pontuais,
+      // sem telemetria). Só usado pelo PWA Motorista (estrada-que-cuida)
+      // por enquanto; a policy de leitura pra empresa já existe no banco
+      // pra viabilizar um painel de compliance no futuro (Grupo 2).
+      motoristas_jornada_eventos: {
+        Row: {
+          id: string;
+          motorista_id: string;
+          tipo_evento: "inicio_jornada" | "inicio_descanso";
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["motoristas_jornada_eventos"]["Row"]> & {
+          motorista_id: string;
+          tipo_evento: "inicio_jornada" | "inicio_descanso";
+        };
+        Update: Partial<Database["public"]["Tables"]["motoristas_jornada_eventos"]["Row"]>;
+        Relationships: [];
+      };
       fidelidade_resgates: {
         Row: {
           id: string;
@@ -1132,6 +1151,12 @@ export interface Database {
           percentual_adiantamento: number;
           saldo_combustivel_tipo: "Valor" | "Volume" | null;
           saldo_combustivel_alocado: number | null;
+          // Fase Grupo-1-item-5 (02/08/2026, benchmark FNI vs KMM) — marca
+          // quando cada tipo de alerta de SLA já foi enviado (Edge Function
+          // alertas-sla-fretes, via pg_cron), pra não repetir o aviso a
+          // cada execução do cron.
+          alerta_sla_proximo_enviado_em: string | null;
+          alerta_sla_estourado_enviado_em: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["fretes"]["Row"]> & {
           empresa_id: string;
@@ -1232,6 +1257,12 @@ export interface Database {
           foto_path: string | null;
           // Fase P0.4 — obrigatório quando tipo_evento='ocorrencia'.
           codigo_ocorrencia: "atraso" | "avaria" | "recusa" | "reentrega" | "devolucao" | null;
+          // Fase Resolver-Panico (02/08/2026) — usado só em tipo_evento='panico':
+          // gestor marca o alerta como verificado/sanado (ver RPC
+          // resolver_alerta_panico_frete). Nulo enquanto não resolvido.
+          resolvido_por: string | null;
+          resolvido_em: string | null;
+          resolvido_observacao: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["fretes_eventos"]["Row"]> & {
           frete_id: string;
@@ -5138,6 +5169,13 @@ export interface Database {
           p_foto_path?: string | null;
           p_codigo_ocorrencia?: string | null;
         };
+        Returns: undefined;
+      };
+      // Fase Resolver-Panico (02/08/2026) — gestor marca um alerta de
+      // pânico como verificado/sanado (ver coluna resolvido_em em
+      // fretes_eventos).
+      resolver_alerta_panico_frete: {
+        Args: { p_evento_id: string; p_observacao?: string | null };
         Returns: undefined;
       };
       avaliar_frete: {

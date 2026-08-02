@@ -366,3 +366,18 @@ export async function avaliarMotoristaAcao(
   if (error) return { erro: error.message };
   revalidatePath(`/fretes/${freteId}`);
 }
+
+// Fase Resolver-Panico (02/08/2026, pedido do Daniel) — gestor marca um
+// alerta de pânico como verificado/sanado. Não apaga o evento, só marca
+// quem resolveu e quando (a RPC valida que o evento é mesmo 'panico' e que
+// quem chama é dono da empresa desse frete).
+export async function resolverAlertaPanicoAcao(freteId: string, eventoId: string, observacao: string | null) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("resolver_alerta_panico_frete", {
+    p_evento_id: eventoId,
+    p_observacao: observacao,
+  });
+  if (error) return { erro: error.message };
+  revalidatePath(`/fretes/${freteId}`);
+  revalidatePath("/torre-de-controle");
+}

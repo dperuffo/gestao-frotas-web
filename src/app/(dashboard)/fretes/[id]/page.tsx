@@ -12,6 +12,7 @@ import { EntregaCard, type EntregaConfirmada } from "../_components/EntregaCard"
 import { PagamentosFrete, type PagamentoFrete } from "../_components/PagamentosFrete";
 import { RecolocarParaBaseCard } from "../_components/RecolocarParaBaseCard";
 import { ChatFrete } from "../_components/ChatFrete";
+import { ResolverPanicoButton } from "../_components/ResolverPanicoButton";
 
 type FreteDetalhe = {
   id: string;
@@ -112,7 +113,9 @@ export default async function FreteDetalhePage({
       .order("ordem"),
     supabase
       .from("fretes_eventos")
-      .select("id, tipo_evento, observacao, criado_em, foto_path, codigo_ocorrencia")
+      .select(
+        "id, tipo_evento, observacao, criado_em, foto_path, codigo_ocorrencia, resolvido_por, resolvido_em, resolvido_observacao"
+      )
       .eq("frete_id", id)
       .order("criado_em"),
     supabase
@@ -533,30 +536,48 @@ export default async function FreteDetalhePage({
         <div className="card mb-6 p-6">
           <h2 className="mb-3 text-sm font-semibold text-slate-900">📍 Linha do tempo</h2>
           <div className="space-y-2 text-sm">
-            {eventosComFoto.map((e) => (
-              <div key={e.id} className="flex items-center justify-between border-b border-dashed border-slate-200 pb-2">
-                <span className="flex items-center gap-2 text-slate-700">
-                  {LABEL_EVENTO[e.tipo_evento] ?? e.tipo_evento}
-                  {e.codigo_ocorrencia && (
-                    <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">
-                      {LABEL_CODIGO_OCORRENCIA[e.codigo_ocorrencia] ?? e.codigo_ocorrencia}
-                    </span>
-                  )}
-                  {e.observacao && <span className="text-xs text-slate-500">— {e.observacao}</span>}
-                  {e.fotoUrl && (
-                    <a href={e.fotoUrl} target="_blank" rel="noopener noreferrer" title="Ver foto do motorista">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={e.fotoUrl}
-                        alt={`Foto anexada em ${LABEL_EVENTO[e.tipo_evento] ?? e.tipo_evento}`}
-                        className="h-8 w-8 rounded border border-slate-200 object-cover hover:opacity-80"
-                      />
-                    </a>
-                  )}
-                </span>
-                <span className="text-xs text-slate-400">{new Date(e.criado_em).toLocaleString("pt-BR")}</span>
-              </div>
-            ))}
+            {eventosComFoto.map((e) => {
+              const isPanico = e.tipo_evento === "panico";
+              const panicoResolvido = isPanico && !!e.resolvido_em;
+              return (
+                <div
+                  key={e.id}
+                  className={`flex flex-wrap items-center justify-between gap-2 border-b border-dashed pb-2 ${
+                    isPanico && !panicoResolvido ? "border-red-200 bg-red-50/50 px-2" : "border-slate-200"
+                  }`}
+                >
+                  <span className="flex items-center gap-2 text-slate-700">
+                    {LABEL_EVENTO[e.tipo_evento] ?? e.tipo_evento}
+                    {e.codigo_ocorrencia && (
+                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">
+                        {LABEL_CODIGO_OCORRENCIA[e.codigo_ocorrencia] ?? e.codigo_ocorrencia}
+                      </span>
+                    )}
+                    {e.observacao && <span className="text-xs text-slate-500">— {e.observacao}</span>}
+                    {e.fotoUrl && (
+                      <a href={e.fotoUrl} target="_blank" rel="noopener noreferrer" title="Ver foto do motorista">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={e.fotoUrl}
+                          alt={`Foto anexada em ${LABEL_EVENTO[e.tipo_evento] ?? e.tipo_evento}`}
+                          className="h-8 w-8 rounded border border-slate-200 object-cover hover:opacity-80"
+                        />
+                      </a>
+                    )}
+                    {isPanico &&
+                      (panicoResolvido ? (
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                          Resolvido por {e.resolvido_por} em {new Date(e.resolvido_em!).toLocaleString("pt-BR")}
+                          {e.resolvido_observacao ? ` — ${e.resolvido_observacao}` : ""}
+                        </span>
+                      ) : (
+                        <ResolverPanicoButton freteId={id} eventoId={e.id} />
+                      ))}
+                  </span>
+                  <span className="text-xs text-slate-400">{new Date(e.criado_em).toLocaleString("pt-BR")}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
