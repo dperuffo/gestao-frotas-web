@@ -49,6 +49,13 @@
 //   Texto/preços em sincronia manual com PLANOS_POSTO/PLANO_POSTO_LABEL/
 //   FEATURES_PLANO_POSTO/FAIXA_POSTOS_PLANO em src/lib/constants.ts e a
 //   Cláusula 3ª por plano de posto em src/lib/termoAdesao.ts.
+// - Atualização (02/08/2026): cards de #func (TCO, Checklist de Inspeção,
+//   Indicadores da Frota, Sinistros e Multas, Rede de Oficinas, Central de
+//   Avisos), #fretes (Piso Mínimo ANTT, Cotações/Tabelas/Faturamento) e
+//   #postos (Pré-Pedidos) refletindo entregas recentes — mesmas features
+//   documentadas em FEATURES_PLANO/FEATURES_PLANO_POSTO (src/lib/
+//   constants.ts) e nas novas linhas de permissoes_perfil (migração
+//   inserir_permissoes_novas_funcionalidades).
 export const LANDING_BODY_HTML = `
 <style>
 :root{--navy:#04112e;--blue:#0d2d6b;--electric:#1a56f0;--cyan:#00b4d8;--cyan2:#00c2ff;--gold:#f5a623;--white:#ffffff;--gray:#8a9bb5;}
@@ -679,6 +686,12 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
     <div class="card"><div class="icon">🎮</div><div class="ct" data-i18n="card6_t">Missões e Fidelidade</div><div class="cd" data-i18n="card6_d">Crie metas com prêmios pros motoristas parceiros, dentro da sua rede ou em conjunto com outras empresas do mesmo grupo econômico.</div></div>
     <div class="card"><div class="icon">🏪</div><div class="ct" data-i18n="card7_t">Parcerias Locais</div><div class="cd" data-i18n="card7_d">Conecte sua rede a comércios locais — borracharia, oficina, restaurante — com benefícios exclusivos pros motoristas.</div></div>
     <div class="card"><div class="icon">🛡️</div><div class="ct" data-i18n="card8_t">Antifraude</div><div class="cd" data-i18n="card8_d">Regras automáticas sinalizam abastecimentos e rotas fora do padrão antes que virem prejuízo.</div></div>
+    <div class="card"><div class="icon">🧮</div><div class="ct">TCO da Frota</div><div class="cd">Custo total de propriedade por veículo — combustível, manutenção e depreciação num só número, pra comparar e decidir.</div></div>
+    <div class="card"><div class="icon">✅</div><div class="ct">Checklist de Inspeção</div><div class="cd">Motorista faz a vistoria do veículo pelo app antes de rodar; gestor acompanha itens não conformes em tempo real.</div></div>
+    <div class="card"><div class="icon">📉</div><div class="ct">Indicadores da Frota</div><div class="cd">Painel de KPIs operacionais — custo por km, disponibilidade, manutenção — pra decisão rápida sem planilha.</div></div>
+    <div class="card"><div class="icon">🚨</div><div class="ct">Sinistros e Multas</div><div class="cd">Registre e acompanhe ocorrências e infrações vinculadas a cada veículo e motorista, do primeiro registro à resolução.</div></div>
+    <div class="card"><div class="icon">🔧</div><div class="ct">Rede de Oficinas</div><div class="cd">Oficinas credenciadas pra manutenção da frota, com histórico de serviços por veículo.</div></div>
+    <div class="card"><div class="icon">📢</div><div class="ct">Central de Avisos</div><div class="cd">Comunicados internos direto pros motoristas e equipe, sem depender de grupo de WhatsApp.</div></div>
   </div>
 </section>
 
@@ -693,6 +706,8 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
     <div class="card"><div class="icon">🚛</div><div class="ct" data-i18n="frcard3_t">Filtro por veículo e carroceria</div><div class="cd" data-i18n="frcard3_d">Motorista vê só os fretes compatíveis com o veículo que tem; cliente restringe o frete pro tipo de carroceria certo.</div></div>
     <div class="card"><div class="icon">📍</div><div class="ct" data-i18n="frcard4_t">Distância até a coleta</div><div class="cd" data-i18n="frcard4_d">Antes de aceitar, o motorista vê quantos km faltam até o ponto de coleta — geolocalização em tempo real, sem letra miúda.</div></div>
     <div class="card"><div class="icon">🏷️</div><div class="ct" data-i18n="frcard5_t">Destaques automáticos</div><div class="cd" data-i18n="frcard5_d">Motoristas com elogios recorrentes — pontual, cuidado com a carga, comunicativo — ganham selos automáticos no perfil.</div></div>
+    <div class="card"><div class="icon">📐</div><div class="ct">Piso Mínimo ANTT</div><div class="cd">Validação automática do piso de frete mínimo antes de fechar negócio, alinhado à tabela oficial da ANTT.</div></div>
+    <div class="card"><div class="icon">🧾</div><div class="ct">Cotações, Tabelas e Faturamento</div><div class="cd">Monte tabelas de frete próprias, receba cotações de transportadoras parceiras e feche o faturamento — tudo integrado, com emissão de CT-e/MDF-e.</div></div>
   </div>
   <div style="text-align:center;margin-top:40px">
     <a href="/cadastro" class="btn-s" data-i18n="fretes_cta">🚚 Publicar meu primeiro frete →</a>
@@ -721,6 +736,7 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
     <div class="card"><div class="icon">🧾</div><div class="ct" data-i18n="pocard1_t">Conciliação automática</div><div class="cd" data-i18n="pocard1_d">Abastecimentos e NF-e conciliados automaticamente com o ciclo de faturamento acordado com cada cliente.</div></div>
     <div class="card"><div class="icon">🌐</div><div class="ct" data-i18n="pocard2_t">Rede de Postos</div><div class="cd" data-i18n="pocard2_d">Agrupe todos os postos da sua bandeira ou grupo econômico numa assinatura única, paga pela matriz em nome de todos.</div></div>
     <div class="card"><div class="icon">💳</div><div class="ct" data-i18n="pocard3_t">Planos próprios para postos</div><div class="cd" data-i18n="pocard3_d">Trial de 14 dias grátis e depois planos e preços pensados pra revenda de combustíveis — não é o mesmo plano de frota com outro nome.</div></div>
+    <div class="card"><div class="icon">📦</div><div class="ct">Pré-Pedidos</div><div class="cd">Receba pedidos antecipados de abastecimento das frotas parceiras e organize a fila e o volume do dia com antecedência.</div></div>
   </div>
   <div style="text-align:center;margin-top:40px">
     <a href="#precos-postos" class="btn-p" data-i18n="postos_cta_precos">Ver planos para postos →</a>
@@ -787,8 +803,8 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   </div>
   <div class="pgrid">
     <div class="pc"><div class="pn" data-i18n="plan0_n">Gratuito</div><div class="pp"><sup>R$</sup>0<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan0_d">Para começar</div><ul class="pf"><li data-i18n="plan0_f1">1 usuário</li><li data-i18n="plan0_f2">10 veículos</li><li data-i18n="plan0_f3">2 postos</li><li class="off" data-i18n="plan_anp_hist">Histórico ANP</li><li class="off">Excel</li><li class="off">API</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan0_btn">Começar grátis</a></div>
-    <div class="pc"><div class="pn" data-i18n="plan1_n">Essencial</div><div class="pp"><sup>R$</sup>249<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan1_d">Pequenas frotas</div><ul class="pf"><li data-i18n="plan1_f1">5 usuários</li><li data-i18n="plan1_f2">20 veículos inclusos (+R$4,50/excedente)</li><li data-i18n="plan1_f3">Roteirização, Rotograma e Planos de Viagem</li><li data-i18n="plan1_f4">Inteligência de Rede</li><li data-i18n="plan1_f5">Exportação Excel</li><li class="off">Gestão de Fretes (TMS)</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan1_btn">Assinar Essencial</a></div>
-    <div class="pc feat"><div class="pbadge" data-i18n="plan_popular">Mais popular</div><div class="pn" data-i18n="plan2_n">Profissional</div><div class="pp"><sup>R$</sup>549<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan2_d">TMS para transportadoras</div><ul class="pf"><li data-i18n="plan2_f1">20 usuários</li><li data-i18n="plan2_f2">60 veículos inclusos (+R$3,50/excedente)</li><li data-i18n="plan2_f3">Gestão de Fretes (TMS) — até 30/mês</li><li data-i18n="plan2_f4">Emissão de CT-e/MDF-e</li><li data-i18n="plan2_f5">Cotações e Tabelas de Frete</li><li data-i18n="plan2_f6">API + Webhooks</li></ul><a href="/cadastro" class="pbtn p" data-i18n="plan2_btn">Trial grátis 14 dias</a></div>
+    <div class="pc"><div class="pn" data-i18n="plan1_n">Essencial</div><div class="pp"><sup>R$</sup>249<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan1_d">Pequenas frotas</div><ul class="pf"><li data-i18n="plan1_f1">5 usuários</li><li data-i18n="plan1_f2">20 veículos inclusos (+R$4,50/excedente)</li><li data-i18n="plan1_f3">Roteirização, Rotograma e Planos de Viagem</li><li data-i18n="plan1_f4">Inteligência de Rede</li><li>TCO, Checklist de Inspeção e Indicadores da Frota</li><li>Sinistros, Multas e Rede de Oficinas</li><li data-i18n="plan1_f5">Exportação Excel</li><li class="off">Gestão de Fretes (TMS)</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan1_btn">Assinar Essencial</a></div>
+    <div class="pc feat"><div class="pbadge" data-i18n="plan_popular">Mais popular</div><div class="pn" data-i18n="plan2_n">Profissional</div><div class="pp"><sup>R$</sup>549<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan2_d">TMS para transportadoras</div><ul class="pf"><li data-i18n="plan2_f1">20 usuários</li><li data-i18n="plan2_f2">60 veículos inclusos (+R$3,50/excedente)</li><li data-i18n="plan2_f3">Gestão de Fretes (TMS) — até 30/mês</li><li data-i18n="plan2_f4">Emissão de CT-e/MDF-e e faturamento de fretes</li><li data-i18n="plan2_f5">Cotações e Tabelas de Frete (piso ANTT)</li><li data-i18n="plan2_f6">API + Webhooks</li></ul><a href="/cadastro" class="pbtn p" data-i18n="plan2_btn">Trial grátis 14 dias</a></div>
     <div class="pc"><div class="pn" data-i18n="plan3_n">Enterprise</div><div class="pp"><sup>R$</sup>1.099<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan3_d">Grandes operações e TMS ilimitado</div><ul class="pf"><li data-i18n="plan3_f1">150 veículos inclusos (+R$2,50/excedente)</li><li data-i18n="plan3_f2">Gestão de Fretes (TMS) ilimitada</li><li>SSO SAML</li><li>SLA 99,95%</li><li data-i18n="plan3_f6">Suporte 24/7</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan3_btn">Assinar Enterprise</a></div>
   </div>
 </section>
@@ -809,7 +825,7 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
     <p class="sec-sub" style="margin:0 auto">Sem cartão de crédito. Cancele quando quiser. Rede de Postos com assinatura única, paga pela matriz.</p>
   </div>
   <div class="pgrid">
-    <div class="pc"><div class="pn">Essencial</div><div class="pp"><sup>R$</sup>99<span>/mês</span></div><div class="pd">Posto avulso</div><ul class="pf"><li>1 posto (sem Rede de Postos)</li><li>Gestão de faturas e conciliação de abastecimentos</li><li>Financeiro: contas a receber e inadimplência</li><li>Cadastro de bicos, produtos e preços</li><li class="off">Rede de Postos</li><li class="off">Inteligência de Rede e Antifraude</li></ul><a href="/cadastro" class="pbtn o">Assinar Essencial</a></div>
+    <div class="pc"><div class="pn">Essencial</div><div class="pp"><sup>R$</sup>99<span>/mês</span></div><div class="pd">Posto avulso</div><ul class="pf"><li>1 posto (sem Rede de Postos)</li><li>Gestão de faturas e conciliação de abastecimentos</li><li>Financeiro: contas a receber e inadimplência</li><li>Cadastro de bicos, produtos e preços</li><li>Pré-Pedidos de combustível</li><li class="off">Rede de Postos</li><li class="off">Inteligência de Rede e Antifraude</li></ul><a href="/cadastro" class="pbtn o">Assinar Essencial</a></div>
     <div class="pc feat"><div class="pbadge">Mais popular</div><div class="pn">Profissional</div><div class="pp"><sup>R$</sup>159<span>/mês</span></div><div class="pd">Redes pequenas e médias</div><ul class="pf"><li>Tudo do Essencial</li><li>Rede de Postos — até 5 postos inclusos</li><li>Assinatura única, paga pela matriz (+R$35/posto excedente)</li><li>Inteligência de Rede e Antifraude</li><li>Suporte em até 24h</li></ul><a href="/cadastro" class="pbtn p">Trial grátis 14 dias</a></div>
     <div class="pc"><div class="pn">Enterprise</div><div class="pp"><sup>R$</sup>599<span>/mês</span></div><div class="pd">Grandes redes de postos</div><ul class="pf"><li>Tudo do Profissional</li><li>Rede de Postos — até 20 postos inclusos</li><li>Assinatura única, paga pela matriz (+R$20/posto excedente)</li><li>API, integrações e webhooks</li><li>SLA 99,95%</li></ul><a href="/cadastro" class="pbtn o">Assinar Enterprise</a></div>
   </div>

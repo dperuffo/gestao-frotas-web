@@ -37,11 +37,18 @@ export const PLANO_LABEL: Record<Plano, string> = {
 // Fretes (TMS) é liberada a partir do Profissional (até 30 fretes/mês) e
 // ilimitada no Enterprise; emissão de CT-e/MDF-e e faturamento de fretes
 // dependem de ter acesso a Fretes, então seguem a mesma régua.
+// Atualização (02/08/2026): incluídas as entregas de gestão operacional de
+// frota que ficam liberadas em todos os planos pagos hoje (sem gate de
+// código, igual às demais linhas do Essencial acima) — TCO, Checklist de
+// Inspeção veicular, Indicadores da Frota, Sinistros/Multas e Rede de
+// Oficinas parceiras. Ver mesma atualização em landingBody.ts.
 export const FEATURES_PLANO: Record<"basico" | "profissional" | "enterprise", string[]> = {
   basico: [
     "Roteirização, Rotograma e Planos de Viagem",
     "Consulta de preços ANP e Inteligência de Rede",
     "Cadastros de frota, motoristas e centros de custo",
+    "TCO, Checklist de Inspeção e Indicadores da Frota",
+    "Controle de Sinistros, Multas e Rede de Oficinas",
     "Suporte em até 48h",
   ],
   profissional: [
@@ -148,11 +155,14 @@ export const LIMITES_PLANO_POSTO: Record<PlanoPosto, { max_usuarios: number; max
 // Enterprise — não ofertar esse benefício por enquanto (nem pra Frota, nem
 // pra Posto). Ver mesma remoção em landingBody.ts e termoAdesao.ts
 // (Cláusula 3ª de ambos os Enterprise, com hash recalculado).
+// Atualização (02/08/2026): incluído Pré-Pedidos (sem gate de código hoje,
+// disponível já no Essencial). Ver mesma atualização em landingBody.ts.
 export const FEATURES_PLANO_POSTO: Record<PlanoPosto, string[]> = {
   posto_essencial: [
     "Gestão de faturas e conciliação de abastecimentos",
     "Financeiro: contas a receber e inadimplência",
     "Cadastro de bicos, produtos e preços",
+    "Pré-Pedidos de combustível",
     "1 posto (sem Rede de Postos)",
     "Suporte em até 48h",
   ],
