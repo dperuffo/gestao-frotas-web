@@ -55,6 +55,7 @@ import {
   CalendarClock,
   Boxes,
   ArrowLeftRight,
+  Briefcase,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -201,6 +202,7 @@ const menuOperacao = [
   // e do piso mínimo ANTT, e convertem em frete com um clique.
   { href: "/cotacoes", label: "Cotações", icon: Calculator },
   { href: "/tabelas-frete", label: "Tabelas de Frete", icon: ClipboardList },
+  { href: "/crm-comercial", label: "CRM Comercial", icon: Briefcase }, // PWA: Icons.work_outline
   // Fase P0.6 — faturamento de fretes (agrupa CT-es autorizados por
   // tomador/período) + contas a receber genérico (ver seção nova em
   // /financeiro).

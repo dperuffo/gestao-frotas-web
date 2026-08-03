@@ -1861,6 +1861,30 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["extrato_bancario_lancamentos"]["Row"]>;
         Relationships: [];
       };
+      // Fase Grupo 2 (Rodopar/Datapar, item 5) — CRM Comercial: histórico de
+      // relacionamento (ligações, e-mails, reuniões, visitas) por cliente
+      // (cadastros_parceiros papel='tomador'). O funil de propostas em si
+      // reaproveita cotacoes, sem tabela nova.
+      clientes_interacoes: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          cliente_id: string;
+          tipo: "ligacao" | "email" | "whatsapp" | "reuniao" | "visita" | "outro";
+          descricao: string;
+          proxima_acao_data: string | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["clientes_interacoes"]["Row"]> & {
+          empresa_id: string;
+          cliente_id: string;
+          tipo: "ligacao" | "email" | "whatsapp" | "reuniao" | "visita" | "outro";
+          descricao: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["clientes_interacoes"]["Row"]>;
+        Relationships: [];
+      };
       // Cabeçalho da fatura enviada pelo meio de pagamento (Hub de
       // Integrações — POST /api/integracoes/faturas-meio-pagamento), com os
       // abastecimentos atrelados (ver abastecimentos_externos.fatura_recebida_id).
