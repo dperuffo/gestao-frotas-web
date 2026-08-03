@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { MapaVeiculos, type PosicaoVeiculo } from "./_components/MapaVeiculos";
 
 // Fase Torre-de-Controle-Leve (02/08/2026, pedido do Daniel após o benchmark
 // FNI vs KMM — "Grupo 1" das sugestões: dá pra ter boa parte do valor de uma
@@ -8,6 +9,12 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 // que o motorista já registra no app (fretes_eventos) num painel único, com
 // alerta de prazo. É "leve" porque não sabe ONDE o motorista está agora, só
 // o ÚLTIMO checkpoint que ele confirmou — diferente de rastreamento real.
+//
+// Fase Grupo 2 (Rodopar/Datapar, item 4, 03/08/2026) — quando o cliente
+// conecta QUALQUER sistema de rastreamento ao endpoint genérico de ingestão
+// (/api/integracoes/gps, ver /integracoes), a mesma tela ganha um mapa ao
+// vivo com a última posição de cada placa — sem precisar de nenhuma
+// integração específica de provedor.
 type FreteAndamento = {
   id: string;
   titulo: string;
@@ -76,9 +83,35 @@ export default async function TorreDeControlePage({
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
   let fretes: FreteAndamento[] = [];
+  let posicoes: PosicaoVeiculo[] = [];
   if (empresaSelecionada) {
-    const { data } = await supabase.rpc("fretes_em_andamento_empresa", { p_empresa_id: empresaSelecionada });
+    const [{ data }, { data: posicoesRaw }] = await Promise.all([
+      supabase.rpc("fretes_em_andamento_empresa", { p_empresa_id: empresaSelecionada }),
+      supabase
+        .from("veiculos_posicoes")
+        .select("placa, lat, lon, velocidade_kmh, timestamp_gps, provedor")
+        .eq("empresa_id", empresaSelecionada)
+        .order("timestamp_gps", { ascending: false })
+        .limit(500),
+    ]);
     fretes = (data ?? []) as unknown as FreteAndamento[];
+
+    // Última posição por placa — dedupe em JS (sem DISTINCT ON via
+    // PostgREST), mesmo padrão já usado em outras telas deste app pra
+    // reduzir uma lista bruta ao "1 por chave" mais recente.
+    const ultimaPorPlaca = new Map<string, PosicaoVeiculo>();
+    for (const p of posicoesRaw ?? []) {
+      if (ultimaPorPlaca.has(p.placa)) continue;
+      ultimaPorPlaca.set(p.placa, {
+        placa: p.placa,
+        lat: Number(p.lat),
+        lon: Number(p.lon),
+        velocidadeKmh: p.velocidade_kmh != null ? Number(p.velocidade_kmh) : null,
+        timestampGps: p.timestamp_gps,
+        provedor: p.provedor,
+      });
+    }
+    posicoes = Array.from(ultimaPorPlaca.values());
   }
 
   const agora = Date.now();
@@ -98,9 +131,13 @@ export default async function TorreDeControlePage({
         <h1 className="text-xl font-semibold text-slate-900">Torre de Controle</h1>
         <p className="mt-1 text-sm text-slate-500">
           Visão única dos fretes em andamento agora, com o último checkpoint registrado pelo motorista e alerta de
-          prazo. Não é rastreamento por GPS — é baseado nos eventos que o motorista confirma no app (saiu da origem,
-          chegou no posto, chegou no destino etc.), então a posição pode estar desatualizada entre um checkpoint e
-          outro.
+          prazo. Por padrão não é rastreamento por GPS — é baseado nos eventos que o motorista confirma no app (saiu
+          da origem, chegou no posto, chegou no destino etc.), então a posição pode estar desatualizada entre um
+          checkpoint e outro. Se você conectar um sistema de rastreamento em{" "}
+          <Link href="/integracoes" className="text-frota-600 hover:underline">
+            Integrações
+          </Link>{" "}
+          (escopo <code>gps:write</code>, qualquer provedor), um mapa ao vivo aparece aqui também.
           {nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
         </p>
       </div>
@@ -132,6 +169,13 @@ export default async function TorreDeControlePage({
 
       {empresaSelecionada && (
         <>
+          {posicoes.length > 0 && (
+            <div className="card mb-6 p-4">
+              <h2 className="mb-3 text-sm font-semibold text-slate-900">Mapa ao vivo ({posicoes.length} veículo{posicoes.length === 1 ? "" : "s"})</h2>
+              <MapaVeiculos posicoes={posicoes} />
+            </div>
+          )}
+
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Fretes em andamento</p>

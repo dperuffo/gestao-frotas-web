@@ -403,6 +403,39 @@ function SecaoHub({
     "oficina": "Oficina Central"
   }'`}
             </pre>
+
+            {/* Fase Grupo 2 (Rodopar/Datapar, item 4, 03/08/2026) — mecanismo
+                GENÉRICO de rastreamento: em vez de integrar com um provedor
+                específico, qualquer sistema (Sascar, Positron, Onixsat,
+                Autotrac ou outro que o cliente já tenha) configura o próprio
+                envio pra cá, com a chave dele — vira mapa ao vivo na Torre
+                de Controle. Aceita 1 posição OU um array (lote). */}
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Enviar posição de GPS — qualquer provedor de rastreamento (escopo gps:write)
+            </p>
+            <pre className="mb-1 overflow-x-auto rounded-lg bg-frota-950 px-4 py-3 text-xs text-slate-100">
+{`curl -X POST https://SEU-DOMINIO-FNI.com.br/api/integracoes/gps \\
+  -H "Authorization: Bearer fni_..." \\
+  -H "Content-Type: application/json" \\
+  -d '[
+    {
+      "placa": "ABC1D23",
+      "lat": -23.55052,
+      "lon": -46.633308,
+      "velocidade_kmh": 62.5,
+      "timestamp_gps": "2026-08-03T14:30:00Z",
+      "provedor": "sascar"
+    }
+  ]'`}
+            </pre>
+            <p className="mb-4 text-xs text-slate-400">
+              Não é uma integração com um provedor específico — é um endpoint aberto pra{" "}
+              <strong>qualquer</strong> sistema de rastreamento que você já tenha (Sascar, Positron, Onixsat,
+              Autotrac ou outro). Aceita um objeto único ou um array (lote). <code>lat</code>/<code>lon</code>{" "}
+              e <code>placa</code> são obrigatórios; <code>timestamp_gps</code> (se ausente, usa o horário de
+              recebimento), <code>velocidade_kmh</code> e <code>provedor</code> são opcionais. As posições
+              alimentam o mapa ao vivo em <strong>Torre de Controle</strong> (última posição por placa).
+            </p>
           </>
         )}
 

@@ -1885,6 +1885,34 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["clientes_interacoes"]["Row"]>;
         Relationships: [];
       };
+      // Fase Grupo 2 (Rodopar/Datapar, item 4, 03/08/2026) — Rastreamento
+      // GPS contínuo como mecanismo GENÉRICO de ingestão: qualquer sistema
+      // de rastreamento (Sascar, Positron, Onixsat, Autotrac ou outro)
+      // empurra posições via /api/integracoes/gps (escopo gps:write),
+      // alimentando o mapa ao vivo da Torre de Controle. Histórico completo
+      // (não só a última posição), pra permitir reconstruir trajeto no
+      // futuro.
+      veiculos_posicoes: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string;
+          lat: number;
+          lon: number;
+          velocidade_kmh: number | null;
+          timestamp_gps: string;
+          provedor: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["veiculos_posicoes"]["Row"]> & {
+          empresa_id: string;
+          placa: string;
+          lat: number;
+          lon: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["veiculos_posicoes"]["Row"]>;
+        Relationships: [];
+      };
       // Cabeçalho da fatura enviada pelo meio de pagamento (Hub de
       // Integrações — POST /api/integracoes/faturas-meio-pagamento), com os
       // abastecimentos atrelados (ver abastecimentos_externos.fatura_recebida_id).

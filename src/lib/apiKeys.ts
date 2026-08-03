@@ -111,6 +111,16 @@ export const ESCOPO_PARAMETROS_NF_READ = "parametros_nf:read";
 // entrega pro seu provedor configurar — nunca o provedor de posse própria.
 export const ESCOPO_FATURAS_MEIO_PAGAMENTO_WRITE = "faturas_meio_pagamento:write";
 
+// Fase Grupo 2 (Rodopar/Datapar, item 4, 03/08/2026) — Rastreamento GPS
+// contínuo como mecanismo GENÉRICO: em vez de integrar com um provedor
+// específico (Sascar, Positron, Onixsat, Autotrac...), qualquer sistema de
+// rastreamento que o cliente já tenha pode empurrar posições pra dentro da
+// FNI com uma chave só sua, alimentando o mapa ao vivo da Torre de
+// Controle. Mesma posse de chave dos outros escopos "write": quem gera é o
+// CLIENTE (frotista), na tela /integracoes, e entrega pro seu provedor de
+// rastreamento configurar.
+export const ESCOPO_GPS_WRITE = "gps:write";
+
 // Catálogo central dos escopos disponíveis — usado tanto pela UI de geração
 // de chave (/integracoes, pra montar os checkboxes) quanto pela documentação
 // da API. Adicionar um escopo novo aqui é o único lugar a mudar pra ele
@@ -272,5 +282,12 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
     label: "Faturas de meio de pagamento (escrita)",
     descricao:
       "Enviar a fatura já fechada pelo meio de pagamento (Ticket Log, Edenred, Veloe...), com os abastecimentos atrelados — vira contas a pagar no ERP financeiro do cliente.",
+  },
+  {
+    escopo: ESCOPO_GPS_WRITE,
+    categoria: "Rastreamento",
+    label: "Posições de GPS (escrita)",
+    descricao:
+      "Enviar posições (placa, latitude/longitude, velocidade) de qualquer sistema de rastreamento — alimenta o mapa ao vivo da Torre de Controle.",
   },
 ];
