@@ -3024,6 +3024,75 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["manutencoes_realizadas"]["Row"]>;
         Relationships: [];
       };
+      // Fase Grupo 1 Rodopar item 2 (03/08/2026, benchmark FNI vs Rodopar/
+      // Datapar) — catálogo de peças da Manutenção. quantidade_atual e
+      // custo_unitario_medio NUNCA são escritos direto pela aplicação: são
+      // mantidos pelo trigger pecas_estoque_aplicar_movimento, disparado a
+      // cada insert em pecas_estoque_movimentos (ledger imutável abaixo).
+      pecas_estoque: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          nome: string;
+          codigo: string | null;
+          unidade_medida: string;
+          quantidade_atual: number;
+          quantidade_minima: number;
+          custo_unitario_medio: number | null;
+          ativa: boolean;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pecas_estoque"]["Row"]> & {
+          empresa_id: string;
+          nome: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["pecas_estoque"]["Row"]>;
+        Relationships: [];
+      };
+      // Ledger imutável (só SELECT+INSERT na RLS — sem UPDATE/DELETE) das
+      // entradas/saídas de peças. tipo_movimento 'saida' é bloqueado pela
+      // CHECK quantidade_atual >= 0 em pecas_estoque quando excede o saldo —
+      // impede requisição fantasma/fraude no estoque (gap Rodopar/Datapar).
+      pecas_estoque_movimentos: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          peca_id: string;
+          tipo_movimento: "entrada" | "saida";
+          quantidade: number;
+          custo_unitario: number | null;
+          manutencao_id: number | null;
+          placa: string | null;
+          motivo: string | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pecas_estoque_movimentos"]["Row"]> & {
+          empresa_id: string;
+          peca_id: string;
+          tipo_movimento: "entrada" | "saida";
+          quantidade: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["pecas_estoque_movimentos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "pecas_estoque_movimentos_peca_id_fkey";
+            columns: ["peca_id"];
+            isOneToOne: false;
+            referencedRelation: "pecas_estoque";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pecas_estoque_movimentos_manutencao_id_fkey";
+            columns: ["manutencao_id"];
+            isOneToOne: false;
+            referencedRelation: "manutencoes_realizadas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Fase Indicadores-da-Frota C (30/07/2026) — checklist de inspeção
       // veicular (cabeçalho), alimenta os KPIs conformidade_pct/tmrnc_horas
       // via kpis_frota_resumo. Itens ficam em inspecoes_veiculos_itens.

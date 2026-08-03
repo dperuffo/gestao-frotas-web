@@ -53,6 +53,7 @@ import {
   AlertTriangle,
   Radar,
   CalendarClock,
+  Boxes,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -207,6 +208,11 @@ const menuOperacao = [
   // regionais já usados no índice público de preços.
   { href: "/combustivel-ideal", label: "Combustível Ideal", icon: Leaf }, // PWA: Icons.eco
   { href: "/manutencao-preditiva", label: "Manutenção Preditiva", icon: Wrench }, // PWA: Icons.build
+  // Fase Grupo 1 Rodopar item 2 (03/08/2026, benchmark FNI vs Rodopar/Datapar)
+  // — catálogo de peças com saldo/custo médio calculado a partir de um
+  // ledger imutável de movimentos, integrado à Manutenção (vincula saída à
+  // OS). Fecha o gap "Materiais sem controle real de peças".
+  { href: "/estoque-pecas", label: "Estoque de Peças", icon: Boxes }, // PWA: Icons.inventory_2
   { href: "/tco", label: "TCO / Custo por Veículo", icon: Coins }, // PWA: Icons.pending
   { href: "/indicadores-frota", label: "Indicadores da Frota", icon: Gauge }, // PWA: Icons.speed
   // Fase Indicadores-da-Frota (30/07/2026) — checklist de inspeção periódica
