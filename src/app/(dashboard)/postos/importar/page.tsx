@@ -25,6 +25,14 @@ export default async function ImportarPostosPage() {
           (upsert) e não altera se o gestor bloqueou o posto para abastecimento — esse bloqueio é
           feito manualmente na tela de cada posto e é preservado entre importações.
         </p>
+        <p className="mt-2">
+          Se a origem não for a integração Pró-Frotas, também aceitamos o{" "}
+          <Link href="/postos/importar/modelo-padrao" className="text-frota-600 hover:underline">
+            modelo padrão de planilha
+          </Link>{" "}
+          (cabeçalho por nome de coluna, só o CNPJ é obrigatório) — baixe, preencha com o layout
+          do seu sistema e envie normalmente abaixo.
+        </p>
       </div>
 
       <ImportForm empresas={empresas ?? []} />

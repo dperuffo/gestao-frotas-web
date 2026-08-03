@@ -7477,3 +7477,44 @@ no campo de corpo do template. Subject sugerido: "Você foi convidado — FNI Ge
 
 Validado com `npx tsc --noEmit`, ambos limpos (nenhum código do Next foi alterado — só o HTML
 novo e este documento).
+
+## Fase template-padrao-planilhas — modelo padrão genérico para importação de postos/preços
+
+Pedido do Daniel (anotado como "para depois" durante a Fase Grupo 2/item 6, retomado em
+seguida): as planilhas de `postos_gf` e `preco_posto` só aceitavam o layout exato exportado
+pela integração Pró-Frotas (43 e 16 colunas fixas por posição, ver Fase 5) — qualquer outro
+sistema externo que quisesse carregar dados por planilha não tinha como. A pedido, os dois
+importadores passaram a aceitar TAMBÉM um "modelo padrão" genérico, sem deixar de aceitar o
+arquivo Pró-Frotas de sempre (zero mudança de comportamento pra quem já usa esse fluxo).
+
+- **Detecção do layout**: os dois `route.ts` ativos (`api/postos/importar` e
+  `api/postos/importar-precos`) continuam procurando primeiro a aba estrutural do Pró-Frotas
+  ("Ponto de Venda" / "Preços"); se ela não existir no arquivo enviado, em vez de rejeitar, o
+  importador cai para o modo genérico: lê a primeira aba e mapeia as colunas por NOME de
+  cabeçalho (normalizado — sem acento, minúsculo, `?`/`º` removidos), usando `indiceColunas`/
+  `normalizarCabecalho` de `src/lib/xlsx.ts` — o mesmo mecanismo que a importação de
+  `postos_anp.xlsx` já usava (`api/postos/importar-anp/route.ts`), só que reaproveitado aqui
+  pela primeira vez nesses dois importadores.
+- **Colunas do modelo genérico de postos_gf**: só "CNPJ" é obrigatória; as outras 25
+  (Razão Social, Município, UF, Bairro, CEP, Logradouro, Número, Complemento, Latitude,
+  Longitude, Bandeira, Rede, Telefone, E-mail, Horário de Funcionamento, Funciona 24h?, Pista
+  para Caminhão?, Possui Conveniência?/Restaurante?/Banheiro?/Estacionamento?/Troca de
+  Óleo?/Arla 32?/Internet?, Ativo?) ficam null/false se ausentes — bem mais enxuto que as 43
+  colunas específicas do Pró-Frotas (sem os campos internos tipo "Código JDE"/"Status
+  Ipiranga", que não fazem sentido fora dessa integração). "Ativo?" default é `true` (só vira
+  `false` com um "Não" explícito) pra não desativar postos em massa por uma coluna opcional
+  não preenchida.
+- **Colunas do modelo genérico de preços**: CNPJ, Combustível, Preço e (Data de Vigência OU
+  Data de Atualização) são obrigatórias; Razão Social/Município/UF/Bandeira são opcionais —
+  mesma lógica de fallback de data que o layout Pró-Frotas já tinha.
+- **Novas rotas de download**: `/postos/importar/modelo-padrao` e
+  `/postos/importar-precos/modelo-padrao` (linkadas nas respectivas telas de importação, ao
+  contrário das rotas `/modelo` antigas — que reproduzem o layout Pró-Frotas e continuam
+  existindo, mas seguem órfãs/sem link, como já estavam desde a Fase 5). Nome da aba gerada
+  ("Postos" / "Preços - Padrão") é de propósito diferente do nome usado pelo Pró-Frotas, pra
+  não ser confundido com o layout posicional na hora da detecção.
+- Testado o round-trip real (gerar o `.xlsx` com `XLSX.write` e reler com `XLSX.read`) pra
+  confirmar que cada cabeçalho do modelo normaliza exatamente para a chave que o parser
+  espera — sem depender só da leitura visual do código.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos nos 6 arquivos tocados/criados.

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { lerAba, texto, textoOuNull, numero, data as celulaData, dedupePorChave } from "@/lib/xlsx";
+import { lerAba, indiceColunas, texto, textoOuNull, numero, data as celulaData, dedupePorChave } from "@/lib/xlsx";
 import { normalizarCNPJ, resolverUf } from "@/lib/utils";
 import type { Database } from "@/types/database.types";
 
@@ -37,6 +37,48 @@ const COL = {
   bandeira: 15,
 } as const;
 
+// Fase template-padrao-planilhas — pedido do Daniel: além do arquivo
+// "preco_posto.xlsx" da integração Pró-Frotas (layout posicional fixo
+// acima), também aceitamos um "modelo padrão" genérico — cabeçalho por NOME
+// de coluna (qualquer ordem), pra qualquer sistema externo que não seja o
+// Pró-Frotas. Baixável em /postos/importar-precos/modelo-padrao. Colunas
+// reconhecidas (cabeçalho normalizado entre parênteses; cnpj, combustivel,
+// preco e ao menos uma das duas datas são obrigatórias): CNPJ (cnpj) ·
+// Combustível (combustivel) · Preço (preco) · Data de Vigência (data de
+// vigencia) · Data de Atualização (data de atualizacao) · Razão Social
+// (razao social) · Município (municipio) · UF (uf) · Bandeira (bandeira).
+function montarRegistroGenericoPreco(
+  linha: unknown[],
+  idx: Map<string, number>,
+  empresaPorCnpj: Map<string, string | null>,
+): LinhaPreco | null {
+  const pegar = (nomeColuna: string) => {
+    const i = idx.get(nomeColuna);
+    return i === undefined ? undefined : linha[i];
+  };
+  const cnpj = normalizarCNPJ(texto(pegar("cnpj")));
+  const combustivel = textoOuNull(pegar("combustivel"));
+  const preco = numero(pegar("preco"));
+  if (!cnpj || !combustivel || preco === null) return null;
+
+  const dataRef = celulaData(pegar("data de vigencia")) ?? celulaData(pegar("data de atualizacao"));
+  if (!dataRef) return null;
+
+  return {
+    cnpj,
+    combustivel,
+    preco,
+    data_ref: dataRef,
+    data_atualizacao: celulaData(pegar("data de atualizacao")),
+    fonte: "modelo_padrao.xlsx",
+    razao_social: textoOuNull(pegar("razao social")),
+    municipio: textoOuNull(pegar("municipio")),
+    uf: resolverUf(textoOuNull(pegar("uf"))),
+    empresa_id: empresaPorCnpj.get(cnpj) ?? null,
+    bandeira: textoOuNull(pegar("bandeira")),
+  };
+}
+
 // Fase corrige-bloqueio-cloudflare-waf — mesma razão do route.ts de
 // /api/postos/importar: trocado de Server Action pra Route Handler pra
 // escapar da regra do WAF que confunde o protocolo de Server Actions com o
@@ -51,17 +93,20 @@ export async function POST(request: Request) {
   }
 
   const buffer = await arquivo.arrayBuffer();
-  const linhasDaAba = lerAba(buffer, "Preços");
-  const linhas = linhasDaAba.length > 0 ? linhasDaAba : lerAba(buffer);
+  const linhasDaAbaProFrotas = lerAba(buffer, "Preços");
+  const usaLayoutProFrotas = linhasDaAbaProFrotas.length > 0;
+  const linhas = usaLayoutProFrotas ? linhasDaAbaProFrotas : lerAba(buffer);
   if (linhas.length < 2) {
     return NextResponse.json<ResultadoImportacaoPrecos>({ erro: "A planilha está vazia ou não tem nenhuma linha de dados." });
   }
 
-  const primeiraCelula = texto(linhas[0][COL.dataVigencia]).toLowerCase();
-  if (!primeiraCelula.includes("vig")) {
-    return NextResponse.json<ResultadoImportacaoPrecos>({
-      erro: 'A primeira coluna da planilha precisa ser "Data de Vigência" — confira se o arquivo enviado é o modelo correto (aba "Preços").',
-    });
+  if (usaLayoutProFrotas) {
+    const primeiraCelula = texto(linhas[0][COL.dataVigencia]).toLowerCase();
+    if (!primeiraCelula.includes("vig")) {
+      return NextResponse.json<ResultadoImportacaoPrecos>({
+        erro: 'A primeira coluna da planilha precisa ser "Data de Vigência" — confira se o arquivo enviado é o modelo correto (aba "Preços").',
+      });
+    }
   }
 
   // Esta importação é cross-tenant por natureza: uma única planilha da
@@ -81,43 +126,68 @@ export async function POST(request: Request) {
   const registros: LinhaPreco[] = [];
   let erros = 0;
 
-  for (let i = 1; i < linhas.length; i++) {
-    const linha = linhas[i];
-    const cnpj = normalizarCNPJ(texto(linha[COL.cnpj]));
-    const combustivel = textoOuNull(linha[COL.produto]);
-    const preco = numero(linha[COL.precoPosto]);
+  if (usaLayoutProFrotas) {
+    for (let i = 1; i < linhas.length; i++) {
+      const linha = linhas[i];
+      const cnpj = normalizarCNPJ(texto(linha[COL.cnpj]));
+      const combustivel = textoOuNull(linha[COL.produto]);
+      const preco = numero(linha[COL.precoPosto]);
 
-    if (!cnpj || !combustivel || preco === null) {
-      erros++;
-      continue;
+      if (!cnpj || !combustivel || preco === null) {
+        erros++;
+        continue;
+      }
+
+      const dataRef = celulaData(linha[COL.dataVigencia]) ?? celulaData(linha[COL.dataAtualizacao]);
+      if (!dataRef) {
+        erros++;
+        continue;
+      }
+
+      registros.push({
+        cnpj,
+        combustivel,
+        preco,
+        data_ref: dataRef,
+        data_atualizacao: celulaData(linha[COL.dataAtualizacao]),
+        fonte: "preco_posto.xlsx",
+        razao_social: textoOuNull(linha[COL.pontoDeVenda]),
+        municipio: textoOuNull(linha[COL.cidade]),
+        uf: resolverUf(textoOuNull(linha[COL.uf])),
+        empresa_id: empresaPorCnpj.get(cnpj) ?? null,
+        codigo_profrotas: textoOuNull(linha[COL.codigoProfrotas]),
+        codigo_abadi: textoOuNull(linha[COL.codigoAbadi]),
+        preco_anterior: numero(linha[COL.precoAnterior]),
+        preco_referencia: numero(linha[COL.precoReferencia]),
+        status: textoOuNull(linha[COL.status]),
+        status_ponto_venda: textoOuNull(linha[COL.statusPontoVenda]),
+        origem_alteracao: textoOuNull(linha[COL.origemAlteracao]),
+        bandeira: textoOuNull(linha[COL.bandeira]),
+      });
+    }
+  } else {
+    // Não é o layout Pró-Frotas (não tem aba "Preços") — tratamos como o
+    // modelo padrão genérico, mapeando por NOME de cabeçalho (ver
+    // montarRegistroGenericoPreco acima).
+    const idx = indiceColunas(linhas[0]);
+    const temColunasMinimas = idx.has("cnpj") && idx.has("combustivel") && idx.has("preco") &&
+      (idx.has("data de vigencia") || idx.has("data de atualizacao"));
+    if (!temColunasMinimas) {
+      return NextResponse.json<ResultadoImportacaoPrecos>({
+        erro:
+          'Planilha não reconhecida: envie o arquivo "preco_posto.xlsx" da integração Pró-Frotas (aba "Preços") ou o ' +
+          'modelo padrão (colunas "CNPJ", "Combustível", "Preço" e "Data de Vigência") — baixe o modelo padrão na tela de importação.',
+      });
     }
 
-    const dataRef = celulaData(linha[COL.dataVigencia]) ?? celulaData(linha[COL.dataAtualizacao]);
-    if (!dataRef) {
-      erros++;
-      continue;
+    for (let i = 1; i < linhas.length; i++) {
+      const registro = montarRegistroGenericoPreco(linhas[i], idx, empresaPorCnpj);
+      if (!registro) {
+        erros++;
+        continue;
+      }
+      registros.push(registro);
     }
-
-    registros.push({
-      cnpj,
-      combustivel,
-      preco,
-      data_ref: dataRef,
-      data_atualizacao: celulaData(linha[COL.dataAtualizacao]),
-      fonte: "preco_posto.xlsx",
-      razao_social: textoOuNull(linha[COL.pontoDeVenda]),
-      municipio: textoOuNull(linha[COL.cidade]),
-      uf: resolverUf(textoOuNull(linha[COL.uf])),
-      empresa_id: empresaPorCnpj.get(cnpj) ?? null,
-      codigo_profrotas: textoOuNull(linha[COL.codigoProfrotas]),
-      codigo_abadi: textoOuNull(linha[COL.codigoAbadi]),
-      preco_anterior: numero(linha[COL.precoAnterior]),
-      preco_referencia: numero(linha[COL.precoReferencia]),
-      status: textoOuNull(linha[COL.status]),
-      status_ponto_venda: textoOuNull(linha[COL.statusPontoVenda]),
-      origem_alteracao: textoOuNull(linha[COL.origemAlteracao]),
-      bandeira: textoOuNull(linha[COL.bandeira]),
-    });
   }
 
   // Mesmo posto+combustível pode aparecer mais de uma vez na planilha com a

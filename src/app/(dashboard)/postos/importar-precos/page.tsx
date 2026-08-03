@@ -20,6 +20,14 @@ export default function ImportarPrecosPage() {
           data de referência usa a &quot;Data de Vigência&quot; e, se estiver vazia (&quot;-&quot;),
           cai para a &quot;Data de Atualização&quot;.
         </p>
+        <p className="mt-2">
+          Se a origem não for a integração Pró-Frotas, também aceitamos o{" "}
+          <Link href="/postos/importar-precos/modelo-padrao" className="text-frota-600 hover:underline">
+            modelo padrão de planilha
+          </Link>{" "}
+          (cabeçalho por nome de coluna — CNPJ, Combustível, Preço e Data de Vigência são
+          obrigatórios) — baixe, preencha com o layout do seu sistema e envie normalmente abaixo.
+        </p>
       </div>
 
       <ImportForm />

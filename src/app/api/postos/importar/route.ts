@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { lerAba, texto, textoOuNull, numero, data as celulaData, simNao, dedupePorChave } from "@/lib/xlsx";
+import { lerAba, indiceColunas, texto, textoOuNull, numero, data as celulaData, simNao, dedupePorChave } from "@/lib/xlsx";
 import { normalizarCNPJ, resolverUf } from "@/lib/utils";
 import type { Database } from "@/types/database.types";
 
@@ -92,6 +92,68 @@ function montarExtras(linha: unknown[]) {
   };
 }
 
+// Fase template-padrao-planilhas — pedido do Daniel: além do arquivo
+// "postos_gf.xlsx" exportado da integração Pró-Frotas (layout posicional
+// fixo acima), também aceitamos um "modelo padrão" genérico — planilha com
+// cabeçalho por NOME de coluna (qualquer ordem), pensada para qualquer
+// sistema externo que não seja o Pró-Frotas preencher/mapear os próprios
+// dados. Baixável em /postos/importar/modelo-padrao. Colunas reconhecidas
+// (cabeçalho normalizado — sem acento, minúsculo — entre parênteses; só
+// "cnpj" é obrigatória, o resto fica null/false se a coluna não existir):
+// CNPJ (cnpj, obrigatória) · Razão Social (razao social) · Município
+// (municipio) · UF (uf) · Bairro (bairro) · CEP (cep) · Logradouro
+// (logradouro) · Número (numero) · Complemento (complemento) · Latitude
+// (latitude) · Longitude (longitude) · Bandeira (bandeira) · Rede (rede) ·
+// Telefone (telefone) · E-mail (e-mail) · Horário de Funcionamento (horario
+// de funcionamento) · Funciona 24h? (funciona 24h) · Pista para Caminhão?
+// (pista para caminhao) · Possui Conveniência? (possui conveniencia) ·
+// Possui Restaurante? (possui restaurante) · Possui Banheiro? (possui
+// banheiro) · Possui Estacionamento? (possui estacionamento) · Possui Troca
+// de Óleo? (possui troca de oleo) · Possui Arla 32? (possui arla 32) ·
+// Possui Internet? (possui internet) · Ativo? (ativo).
+function montarRegistroGenerico(linha: unknown[], idx: Map<string, number>, empresaId: string): LinhaPostoGf | null {
+  const pegar = (nomeColuna: string) => {
+    const i = idx.get(nomeColuna);
+    return i === undefined ? undefined : linha[i];
+  };
+  const cnpj = normalizarCNPJ(texto(pegar("cnpj")));
+  if (!cnpj) return null;
+  return {
+    cnpj,
+    empresa_id: empresaId,
+    razao_social: textoOuNull(pegar("razao social")),
+    municipio: textoOuNull(pegar("municipio")),
+    uf: resolverUf(textoOuNull(pegar("uf"))),
+    bairro: textoOuNull(pegar("bairro")),
+    cep: textoOuNull(pegar("cep")),
+    logradouro: textoOuNull(pegar("logradouro")),
+    numero: textoOuNull(pegar("numero")),
+    complemento: textoOuNull(pegar("complemento")),
+    lat: numero(pegar("latitude")),
+    lon: numero(pegar("longitude")),
+    bandeira: textoOuNull(pegar("bandeira")),
+    rede: textoOuNull(pegar("rede")),
+    telefone_contato: textoOuNull(pegar("telefone")),
+    email_contato: textoOuNull(pegar("e-mail")),
+    horario: textoOuNull(pegar("horario de funcionamento")),
+    funciona_24h: simNao(pegar("funciona 24h")),
+    pista_caminhao: simNao(pegar("pista para caminhao")),
+    conveniencia: simNao(pegar("possui conveniencia")),
+    possui_restaurante: simNao(pegar("possui restaurante")),
+    possui_banheiro: simNao(pegar("possui banheiro")),
+    possui_estacionamento: simNao(pegar("possui estacionamento")),
+    possui_troca_oleo: simNao(pegar("possui troca de oleo")),
+    arla: simNao(pegar("possui arla 32")),
+    possui_internet: simNao(pegar("possui internet")),
+    // "Ativo?" fica ligado por padrão (coluna ausente OU célula vazia) — só
+    // vira false com um "Não"/"0" explícito, pra não desativar em massa um
+    // posto só porque o sistema externo não preencheu essa coluna opcional.
+    ativo: textoOuNull(pegar("ativo")) === null ? true : simNao(pegar("ativo")),
+    origem: "planilha_cliente",
+    atualizado_em: new Date().toISOString(),
+  };
+}
+
 // Fase corrige-bloqueio-cloudflare-waf — pedido do Daniel: o upload dessa
 // planilha estava tomando 403 da Cloudflare (regra gerenciada "React -
 // Leaking Server Functions", virtual patch do CVE-2025-55183) porque Server
@@ -125,68 +187,92 @@ export async function POST(request: Request) {
   }
 
   const buffer = await arquivo.arrayBuffer();
-  const linhasDaAba = lerAba(buffer, "Ponto de Venda");
-  const linhas = linhasDaAba.length > 0 ? linhasDaAba : lerAba(buffer);
+  const linhasDaAbaProFrotas = lerAba(buffer, "Ponto de Venda");
+  const usaLayoutProFrotas = linhasDaAbaProFrotas.length > 0;
+  const linhas = usaLayoutProFrotas ? linhasDaAbaProFrotas : lerAba(buffer);
   if (linhas.length < 2) {
     return NextResponse.json<ResultadoImportacaoPostosGf>({ erro: "A planilha está vazia ou não tem nenhuma linha de dados." });
-  }
-
-  const primeiraCelula = texto(linhas[0][COL.cnpj]).toLowerCase();
-  if (primeiraCelula !== "cnpj") {
-    return NextResponse.json<ResultadoImportacaoPostosGf>({
-      erro: 'A primeira coluna da planilha precisa ser "CNPJ" — confira se o arquivo enviado é o modelo correto (aba "Ponto de Venda").',
-    });
   }
 
   const registros: LinhaPostoGf[] = [];
   let erros = 0;
 
-  for (let i = 1; i < linhas.length; i++) {
-    const linha = linhas[i];
-    const cnpj = normalizarCNPJ(texto(linha[COL.cnpj]));
-    if (!cnpj) {
-      erros++;
-      continue;
+  if (usaLayoutProFrotas) {
+    const primeiraCelula = texto(linhas[0][COL.cnpj]).toLowerCase();
+    if (primeiraCelula !== "cnpj") {
+      return NextResponse.json<ResultadoImportacaoPostosGf>({
+        erro: 'A primeira coluna da planilha precisa ser "CNPJ" — confira se o arquivo enviado é o modelo correto (aba "Ponto de Venda").',
+      });
     }
-    registros.push({
-      cnpj,
-      empresa_id: empresaId,
-      razao_social: textoOuNull(linha[COL.nome]),
-      tipo_localizacao: textoOuNull(linha[COL.tipoLocalizacao]),
-      perfil_venda: textoOuNull(linha[COL.perfilVenda]),
-      status_pdv: textoOuNull(linha[COL.status]),
-      situacao_pdv: textoOuNull(linha[COL.situacao]),
-      rede: textoOuNull(linha[COL.rede]),
-      micromercado: textoOuNull(linha[COL.micromercado]),
-      bandeira: textoOuNull(linha[COL.bandeira]),
-      tipo_bandeira: textoOuNull(linha[COL.tipoBandeira]),
-      grupo_economico: textoOuNull(linha[COL.grupoEconomico]),
-      taxa_administracao: numero(linha[COL.taxaAdministracao]),
-      cep: textoOuNull(linha[COL.cep]),
-      logradouro: textoOuNull(linha[COL.logradouro]),
-      numero: textoOuNull(linha[COL.numero]),
-      complemento: textoOuNull(linha[COL.complemento]),
-      lat: numero(linha[COL.latitude]),
-      lon: numero(linha[COL.longitude]),
-      bairro: textoOuNull(linha[COL.bairro]),
-      municipio: textoOuNull(linha[COL.cidade]),
-      uf: resolverUf(textoOuNull(linha[COL.uf])),
-      conveniencia: simNao(linha[COL.conveniencia]),
-      conveniencia_am_pm: simNao(linha[COL.convenienciaAmPm]),
-      possui_restaurante: simNao(linha[COL.restaurante]),
-      possui_banheiro: simNao(linha[COL.banheiro]),
-      cobranca_banheiro: simNao(linha[COL.cobrancaBanheiro]),
-      possui_estacionamento: simNao(linha[COL.estacionamento]),
-      possui_troca_oleo: simNao(linha[COL.trocaOleo]),
-      possui_oleo_granel: simNao(linha[COL.oleoGranel]),
-      arla: simNao(linha[COL.arla]),
-      tipo_arla: textoOuNull(linha[COL.tipoArla]),
-      possui_internet: simNao(linha[COL.internet]),
-      outros_servicos: textoOuNull(linha[COL.outrosServicos]),
-      data_habilitacao: celulaData(linha[COL.dataHabilitacao]),
-      extras: montarExtras(linha),
-      atualizado_em: new Date().toISOString(),
-    });
+
+    for (let i = 1; i < linhas.length; i++) {
+      const linha = linhas[i];
+      const cnpj = normalizarCNPJ(texto(linha[COL.cnpj]));
+      if (!cnpj) {
+        erros++;
+        continue;
+      }
+      registros.push({
+        cnpj,
+        empresa_id: empresaId,
+        razao_social: textoOuNull(linha[COL.nome]),
+        tipo_localizacao: textoOuNull(linha[COL.tipoLocalizacao]),
+        perfil_venda: textoOuNull(linha[COL.perfilVenda]),
+        status_pdv: textoOuNull(linha[COL.status]),
+        situacao_pdv: textoOuNull(linha[COL.situacao]),
+        rede: textoOuNull(linha[COL.rede]),
+        micromercado: textoOuNull(linha[COL.micromercado]),
+        bandeira: textoOuNull(linha[COL.bandeira]),
+        tipo_bandeira: textoOuNull(linha[COL.tipoBandeira]),
+        grupo_economico: textoOuNull(linha[COL.grupoEconomico]),
+        taxa_administracao: numero(linha[COL.taxaAdministracao]),
+        cep: textoOuNull(linha[COL.cep]),
+        logradouro: textoOuNull(linha[COL.logradouro]),
+        numero: textoOuNull(linha[COL.numero]),
+        complemento: textoOuNull(linha[COL.complemento]),
+        lat: numero(linha[COL.latitude]),
+        lon: numero(linha[COL.longitude]),
+        bairro: textoOuNull(linha[COL.bairro]),
+        municipio: textoOuNull(linha[COL.cidade]),
+        uf: resolverUf(textoOuNull(linha[COL.uf])),
+        conveniencia: simNao(linha[COL.conveniencia]),
+        conveniencia_am_pm: simNao(linha[COL.convenienciaAmPm]),
+        possui_restaurante: simNao(linha[COL.restaurante]),
+        possui_banheiro: simNao(linha[COL.banheiro]),
+        cobranca_banheiro: simNao(linha[COL.cobrancaBanheiro]),
+        possui_estacionamento: simNao(linha[COL.estacionamento]),
+        possui_troca_oleo: simNao(linha[COL.trocaOleo]),
+        possui_oleo_granel: simNao(linha[COL.oleoGranel]),
+        arla: simNao(linha[COL.arla]),
+        tipo_arla: textoOuNull(linha[COL.tipoArla]),
+        possui_internet: simNao(linha[COL.internet]),
+        outros_servicos: textoOuNull(linha[COL.outrosServicos]),
+        data_habilitacao: celulaData(linha[COL.dataHabilitacao]),
+        extras: montarExtras(linha),
+        atualizado_em: new Date().toISOString(),
+      });
+    }
+  } else {
+    // Não é o layout Pró-Frotas (não tem aba "Ponto de Venda") — tratamos
+    // como o modelo padrão genérico, mapeando por NOME de cabeçalho (ver
+    // montarRegistroGenerico acima) em vez de posição fixa.
+    const idx = indiceColunas(linhas[0]);
+    if (!idx.has("cnpj")) {
+      return NextResponse.json<ResultadoImportacaoPostosGf>({
+        erro:
+          'Planilha não reconhecida: envie o arquivo "postos_gf.xlsx" da integração Pró-Frotas (aba "Ponto de Venda") ' +
+          'ou o modelo padrão (com uma coluna "CNPJ" no cabeçalho) — baixe o modelo padrão na tela de importação.',
+      });
+    }
+
+    for (let i = 1; i < linhas.length; i++) {
+      const registro = montarRegistroGenerico(linhas[i], idx, empresaId);
+      if (!registro) {
+        erros++;
+        continue;
+      }
+      registros.push(registro);
+    }
   }
 
   // Se o mesmo CNPJ aparecer mais de uma vez na planilha, o Postgres recusa
