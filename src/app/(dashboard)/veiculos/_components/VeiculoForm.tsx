@@ -174,13 +174,14 @@ export function VeiculoForm({
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">TCO / Aquisição</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900">TCO / Aquisição / Patrimônio</h2>
         <p className="mb-4 text-xs text-slate-500">
-          Opcional — usado só pra calcular o TCO (custo total de propriedade, incluindo depreciação) em{" "}
-          <span className="font-medium">TCO / Custo por Veículo</span>. Sem esses dados o TCO ainda é calculado, mas
-          sem depreciação.
+          Opcional — usado pra calcular o TCO (custo total de propriedade) em{" "}
+          <span className="font-medium">TCO / Custo por Veículo</span> e a depreciação contábil em{" "}
+          <span className="font-medium">Patrimônio</span>. Sem esses dados, o TCO ainda é calculado (sem
+          depreciação) e o veículo não entra no Patrimônio.
         </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <Campo label="Valor de aquisição (R$)">
             <input
               type="number"
@@ -204,6 +205,20 @@ export function VeiculoForm({
               step="0.01"
               name="valor_residual_estimado"
               defaultValue={veiculo?.valor_residual_estimado ?? ""}
+              className="input"
+            />
+          </Campo>
+          {/* Fase Grupo 2 (Rodopar, item 6, 03/08/2026) — vida útil contábil,
+              usada só pelo módulo de Patrimônio (depreciação linha reta).
+              Padrão 5 anos se deixado em branco. */}
+          <Campo label="Vida útil contábil (anos)">
+            <input
+              type="number"
+              step="1"
+              min="1"
+              name="vida_util_anos"
+              placeholder="5"
+              defaultValue={veiculo?.vida_util_anos ?? ""}
               className="input"
             />
           </Campo>

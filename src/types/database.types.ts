@@ -2533,6 +2533,10 @@ export interface Database {
           // (kg), usada só pro KPI de Ocupação de Carga em Indicadores da
           // Frota. Opcional.
           capacidade_kg: number | null;
+          // Fase Grupo 2 (Rodopar, item 6, 03/08/2026) — vida útil contábil
+          // em anos, usada só pelo módulo de Patrimônio (depreciação linha
+          // reta). Se nulo, a RPC assume 5 anos.
+          vida_util_anos: number | null;
           criado_em: string | null;
           atualizado_em: string | null;
         };
@@ -2581,6 +2585,39 @@ export interface Database {
           {
             foreignKeyName: "cadastro_veiculos_fipe_historico_cadastro_veiculo_id_fkey";
             columns: ["cadastro_veiculo_id"];
+            isOneToOne: false;
+            referencedRelation: "cadastro_veiculos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase Grupo 2 (Rodopar, item 6, 03/08/2026) — correções formais do
+      // ativo (reavaliação, melhoria/capitalização, baixa), lidas pelas RPCs
+      // patrimonio_veiculo/patrimonio_frota_resumo pra ajustar a
+      // depreciação linha reta e o valor contábil líquido.
+      patrimonio_ajustes: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          veiculo_id: string;
+          tipo: "reavaliacao" | "melhoria" | "baixa";
+          valor: number;
+          data_ajuste: string;
+          motivo: string | null;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["patrimonio_ajustes"]["Row"]> & {
+          empresa_id: string;
+          veiculo_id: string;
+          tipo: "reavaliacao" | "melhoria" | "baixa";
+          valor: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["patrimonio_ajustes"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "patrimonio_ajustes_veiculo_id_fkey";
+            columns: ["veiculo_id"];
             isOneToOne: false;
             referencedRelation: "cadastro_veiculos";
             referencedColumns: ["id"];
@@ -5559,6 +5596,74 @@ export interface Database {
           tco_total: number;
           custo_por_km: number | null;
           tco_completo: boolean;
+          total_count: number;
+        }[];
+      };
+      // Fase Grupo 2 (Rodopar, item 6, 03/08/2026) — depreciação contábil
+      // linha reta (não a econômica/FIPE do TCO) de um único veículo, já
+      // considerando correções do ativo (patrimonio_ajustes).
+      patrimonio_veiculo: {
+        Args: { p_empresa_id: string; p_placa: string; p_data_referencia?: string | null };
+        Returns: {
+          placa: string;
+          marca: string | null;
+          modelo: string | null;
+          ano_fabricacao: number | null;
+          centro_custo_id: string | null;
+          centro_custo_nome: string | null;
+          valor_aquisicao: number | null;
+          data_aquisicao: string | null;
+          valor_residual_estimado: number | null;
+          vida_util_anos: number;
+          valor_melhorias: number;
+          valor_reavaliacoes: number;
+          meses_decorridos: number | null;
+          meses_vida_util: number;
+          base_depreciavel: number;
+          depreciacao_acumulada: number | null;
+          valor_contabil_liquido: number | null;
+          percentual_depreciado: number | null;
+          baixado: boolean;
+          data_baixa: string | null;
+          valor_baixa: number | null;
+          patrimonio_completo: boolean;
+        }[];
+      };
+      // Fase Grupo 2 (Rodopar, item 6, 03/08/2026) — mesma depreciação
+      // contábil linha reta, pra frota inteira (lista + resumo em
+      // /patrimonio), mesmo padrão de paginação/busca do tco_frota_resumo.
+      patrimonio_frota_resumo: {
+        Args: {
+          p_empresa_id: string;
+          p_data_referencia?: string | null;
+          p_busca?: string | null;
+          p_ordenar?: string | null;
+          p_limit?: number | null;
+          p_offset?: number | null;
+        };
+        Returns: {
+          placa: string;
+          marca: string | null;
+          modelo: string | null;
+          ano_fabricacao: number | null;
+          centro_custo_id: string | null;
+          centro_custo_nome: string | null;
+          valor_aquisicao: number | null;
+          data_aquisicao: string | null;
+          valor_residual_estimado: number | null;
+          vida_util_anos: number;
+          valor_melhorias: number;
+          valor_reavaliacoes: number;
+          meses_decorridos: number | null;
+          meses_vida_util: number;
+          base_depreciavel: number;
+          depreciacao_acumulada: number | null;
+          valor_contabil_liquido: number | null;
+          percentual_depreciado: number | null;
+          baixado: boolean;
+          data_baixa: string | null;
+          valor_baixa: number | null;
+          patrimonio_completo: boolean;
           total_count: number;
         }[];
       };

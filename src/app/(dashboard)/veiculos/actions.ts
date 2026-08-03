@@ -55,6 +55,10 @@ function montarPayloadBase(formData: FormData) {
     valor_aquisicao: numeroOuNull(formData.get("valor_aquisicao")),
     data_aquisicao: String(formData.get("data_aquisicao") ?? "").trim() || null,
     valor_residual_estimado: numeroOuNull(formData.get("valor_residual_estimado")),
+    // Fase Grupo 2 (Rodopar, item 6, 03/08/2026) — vida útil contábil em
+    // anos, usada só pelo módulo de Patrimônio (patrimonio_veiculo/
+    // patrimonio_frota_resumo). Se em branco, a RPC assume 5 anos.
+    vida_util_anos: numeroOuNull(formData.get("vida_util_anos")),
     // Fase KPIs-Operacionais (02/08/2026) — opcional, usado só pro KPI de
     // Ocupação de Carga em Indicadores da Frota.
     capacidade_kg: numeroOuNull(formData.get("capacidade_kg")),

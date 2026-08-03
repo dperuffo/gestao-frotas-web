@@ -221,6 +221,9 @@ const menuOperacao = [
   // OS). Fecha o gap "Materiais sem controle real de peças".
   { href: "/estoque-pecas", label: "Estoque de Peças", icon: Boxes }, // PWA: Icons.inventory_2
   { href: "/tco", label: "TCO / Custo por Veículo", icon: Coins }, // PWA: Icons.pending
+  // Fase Grupo 2 (Rodopar, item 6, 03/08/2026) — depreciação contábil linha
+  // reta + correções do ativo (reavaliação/melhoria/baixa).
+  { href: "/patrimonio", label: "Patrimônio", icon: Landmark }, // PWA: Icons.account_balance
   { href: "/indicadores-frota", label: "Indicadores da Frota", icon: Gauge }, // PWA: Icons.speed
   // Fase Indicadores-da-Frota (30/07/2026) — checklist de inspeção periódica
   // (pneus, freios, luzes etc.), alimenta os KPIs de conformidade e TMRNC em
