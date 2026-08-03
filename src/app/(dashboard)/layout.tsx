@@ -54,6 +54,7 @@ import {
   Radar,
   CalendarClock,
   Boxes,
+  ArrowLeftRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -104,6 +105,10 @@ const menuVisaoGeral = [
   { href: "/assinatura", label: "Minha Assinatura", icon: CreditCard }, // PWA: Icons.credit_card
   { href: "/avaliar", label: "Avaliar Plataforma", icon: Star }, // PWA: Icons.star
   { href: "/financeiro", label: "Painel Financeiro", icon: DollarSign }, // PWA: Icons.attach_money
+  // Fase Grupo 1 Rodopar item 3 (03/08/2026, benchmark FNI vs Rodopar/
+  // Datapar) — importa extrato (OFX/CSV) e sugere vínculo com contas_pagar/
+  // contas_receber já lançadas, confirmando a baixa com um clique.
+  { href: "/conciliacao-bancaria", label: "Conciliação Bancária", icon: ArrowLeftRight }, // PWA: Icons.compare_arrows
   // Fase P0.1 (roadmap TMS/ERP) — configuração do emitente de CT-e/MDF-e
   // (dados fiscais, certificado A1 via provedor, teste de conexão).
   { href: "/fiscal", label: "Fiscal (CT-e/MDF-e)", icon: Receipt },

@@ -1824,6 +1824,43 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["contas_pagar_baixas"]["Row"]>;
         Relationships: [];
       };
+      // Fase Grupo 1 Rodopar item 3 (03/08/2026, benchmark FNI vs Rodopar/
+      // Datapar) — fila de lançamentos importados de extrato bancário (OFX/
+      // CSV). conciliado_com_tipo/conciliado_com_id apontam pra
+      // contas_pagar/contas_receber quando o usuário confirma o vínculo (a
+      // baixa em si é feita pelas RPCs baixar_conta_pagar/baixar_conta_receber
+      // já existentes, não duplicada aqui).
+      extrato_bancario_lancamentos: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          data: string;
+          descricao: string;
+          valor: number;
+          tipo: "credito" | "debito";
+          conta_bancaria: string | null;
+          identificador_externo: string | null;
+          hash_dedupe: string;
+          status: "pendente" | "conciliado" | "ignorado";
+          conciliado_com_tipo: "contas_pagar" | "contas_receber" | null;
+          conciliado_com_id: string | null;
+          conciliado_em: string | null;
+          conciliado_por: string | null;
+          arquivo_origem: string | null;
+          importado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["extrato_bancario_lancamentos"]["Row"]> & {
+          empresa_id: string;
+          data: string;
+          descricao: string;
+          valor: number;
+          tipo: "credito" | "debito";
+          hash_dedupe: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["extrato_bancario_lancamentos"]["Row"]>;
+        Relationships: [];
+      };
       // Cabeçalho da fatura enviada pelo meio de pagamento (Hub de
       // Integrações — POST /api/integracoes/faturas-meio-pagamento), com os
       // abastecimentos atrelados (ver abastecimentos_externos.fatura_recebida_id).
