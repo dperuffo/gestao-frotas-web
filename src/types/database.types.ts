@@ -5527,6 +5527,28 @@ export interface Database {
           teve_panico: boolean;
         }[];
       };
+      // Fase Programacao-Frota (03/08/2026, benchmark FNI vs Rodopar/Datapar,
+      // Grupo 1 item 1) — quadro de alocação de veículos: cruza
+      // parametros_vinculo_motorista_veiculo com fretes aceito/em_andamento
+      // pra mostrar quem está livre e quem está em viagem (e até quando).
+      programacao_frota_empresa: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          veiculo_id: string;
+          placa: string;
+          marca: string | null;
+          modelo: string | null;
+          tipo_veiculo: string | null;
+          ativo: boolean;
+          motorista_id: string | null;
+          nome_motorista: string | null;
+          frete_id: string | null;
+          frete_titulo: string | null;
+          frete_status: string | null;
+          frete_destino_label: string | null;
+          disponivel_a_partir: string | null;
+        }[];
+      };
       // Fase Indicadores-da-Frota C (30/07/2026) — resumo por veículo pra
       // /checklist-veiculos (lista): última inspeção e pendências abertas
       // (itens não conformes ainda sem resolvido_em).

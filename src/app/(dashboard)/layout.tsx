@@ -52,6 +52,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   Radar,
+  CalendarClock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoSair } from "./_components/BotaoSair";
@@ -185,6 +186,10 @@ const menuOperacao = [
   // item 1) — painel único dos fretes em andamento, com último checkpoint e
   // alerta de prazo. Não depende de GPS, só agrega fretes_eventos.
   { href: "/torre-de-controle", label: "Torre de Controle", icon: Radar },
+  // Fase Programacao-Frota (03/08/2026, benchmark FNI vs Rodopar/Datapar,
+  // Grupo 1 item 1) — visão por veículo (em vez de por frete): quem está
+  // em viagem e até quando, quem está livre, quem não tem motorista.
+  { href: "/programacao", label: "Programação", icon: CalendarClock },
   // Fase P0.5 (plano FNI_Plano_Implementacao_P0.md) — cotações simulam o
   // frete a partir das Tabelas de Frete (frete-peso/ad valorem/GRIS/ICMS)
   // e do piso mínimo ANTT, e convertem em frete com um clique.
