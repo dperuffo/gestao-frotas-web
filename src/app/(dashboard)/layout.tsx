@@ -57,7 +57,15 @@ import {
   ArrowLeftRight,
   Briefcase,
 } from "lucide-react";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import {
+  HREF_FUNCIONALIDADE,
+  carregarMapaPermissoes,
+  ehBypassPermissao,
+  resolverFuncionalidadeDaRota,
+  temAcesso,
+} from "@/lib/permissoes";
 import { BotaoSair } from "./_components/BotaoSair";
 import { contarChamadosNaoVistosAcao } from "./chamados/actions";
 import { contarAvaliacoesPendentesAcao } from "./avaliacoes/actions";
@@ -557,15 +565,42 @@ export default async function DashboardLayout({
     ? PERFIL_LABEL[perfilUsuario.perfil as Perfil] ?? perfilUsuario.perfil
     : null;
 
+  // Fase enforcement-permissoes (04/08/2026, pedido do Daniel: "as
+  // permissoes deveriam travar se estiverem desligadas, tanto na web quanto
+  // no PWA") — até aqui, a matriz de /permissoes só editava a tabela, nada
+  // no app lia essas linhas de verdade (achado registrado na fase anterior).
+  // Daqui pra baixo: filtra os itens de menu pelo que o perfil atual NÃO tem
+  // acesso, e bloqueia (redirect) quem tenta acessar a URL direta de uma
+  // tela sem permissão — ver src/lib/permissoes.ts pro mapa de rotas e as
+  // limitações conhecidas (só o padrão global é aplicado no bloqueio, não a
+  // customização por empresa).
+  const bypassPermissao = ehBypassPermissao(perfilUsuario?.perfil, user.email);
+  const mapaPermissoes =
+    !bypassPermissao && perfilUsuario?.perfil
+      ? await carregarMapaPermissoes(supabase, perfilUsuario.perfil)
+      : new Map<string, boolean>();
+  const podeAcessar = (funcionalidade: string | null) => bypassPermissao || temAcesso(mapaPermissoes, funcionalidade);
+  // Mesma checagem acima, mas a partir do href de um item de menu — usada
+  // pra filtrar cada uma das listas de menu abaixo (item some quando o
+  // perfil atual não tem permissão pra funcionalidade correspondente).
+  const podeAcessarItem = (item: { href: string }) => podeAcessar(HREF_FUNCIONALIDADE[item.href] ?? null);
+
+  const headersRequisicao = await headers();
+  const pathnameAtual = headersRequisicao.get("x-pathname") ?? "";
+  const acessoNegado = (headersRequisicao.get("x-search") ?? "").includes("acesso=negado");
+  if (!podeAcessar(resolverFuncionalidadeDaRota(pathnameAtual))) {
+    redirect("/dashboard?acesso=negado");
+  }
+
   // Admin (time interno FNI) não assina um plano nem avalia a plataforma
   // como cliente — ele só gerencia as assinaturas e acompanha as avaliações
   // de todos os clientes via "Assinaturas (todos os clientes)" e
   // "Avaliações dos Clientes", em Administração. Por isso "Minha Assinatura"
   // e "Avaliar Plataforma" somem do menu pra esse perfil.
   const ehAdmin = perfilUsuario?.perfil === "admin";
-  const itensVisaoGeral = ehAdmin
-    ? menuVisaoGeral.filter((item) => item.href !== "/assinatura" && item.href !== "/avaliar")
-    : menuVisaoGeral;
+  const itensVisaoGeral = (
+    ehAdmin ? menuVisaoGeral.filter((item) => item.href !== "/assinatura" && item.href !== "/avaliar") : menuVisaoGeral
+  ).filter(podeAcessarItem);
 
   // Fase 27.50 — perfil "posto" é uma trilha própria (Revenda), separada da
   // hierarquia de Frota (mesmo espírito da Fase 27.39 em /permissoes): vê um
@@ -585,12 +620,16 @@ export default async function DashboardLayout({
   // analista já têm "Usuários" (visão global) e colaborador não convida
   // ninguém.
   const podeConvidarEquipe = perfilUsuario?.perfil === "gestor_frota" || perfilUsuario?.perfil === "posto";
-  const itensCadastrosFiltrados = (podeGerenciarUsuarios ? menuCadastros : menuCadastros.filter((i) => i.href !== "/usuarios")).filter(
-    (i) => i.href !== "/minha-equipe" || podeConvidarEquipe
-  );
-  const itensPostoGestaoFiltrados = (podeGerenciarUsuarios ? menuPostoGestao : menuPostoGestao.filter((i) => i.href !== "/usuarios")).filter(
-    (i) => i.href !== "/minha-equipe" || podeConvidarEquipe
-  );
+  const itensCadastrosFiltrados = (podeGerenciarUsuarios ? menuCadastros : menuCadastros.filter((i) => i.href !== "/usuarios"))
+    .filter((i) => i.href !== "/minha-equipe" || podeConvidarEquipe)
+    .filter(podeAcessarItem);
+  const itensPostoGestaoFiltrados = (podeGerenciarUsuarios ? menuPostoGestao : menuPostoGestao.filter((i) => i.href !== "/usuarios"))
+    .filter((i) => i.href !== "/minha-equipe" || podeConvidarEquipe)
+    .filter(podeAcessarItem);
+  // Fase enforcement-permissoes — mesmo filtro pras duas listas que ainda
+  // não tinham nenhuma versão "Filtrada" (Operação de Frota e de Posto).
+  const itensOperacaoFiltrados = menuOperacao.filter(podeAcessarItem);
+  const itensPostoOperacaoFiltrados = menuPostoOperacao.filter(podeAcessarItem);
 
   // Fase 27.114 — o passo "menu-administracao" só existe no DOM quando
   // ehAdmin (ver bloco {ehAdmin && (...)} abaixo, Fase 27.110); filtra ele
@@ -689,7 +728,7 @@ export default async function DashboardLayout({
               Operação
             </p>
             <ul className="space-y-1">
-              {menuPostoOperacao.map((item) => (
+              {itensPostoOperacaoFiltrados.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
@@ -795,7 +834,7 @@ export default async function DashboardLayout({
             Operação
           </p>
           <ul className="space-y-1">
-            {menuOperacao.map((item) => (
+            {itensOperacaoFiltrados.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
@@ -922,6 +961,14 @@ export default async function DashboardLayout({
             de cliente e posto — não pro admin (time interno FNI), que não é
             o público desse benefício. */}
         {!ehAdmin && <LembretePwaBanner />}
+        {/* Fase enforcement-permissoes — aviso depois do redirect de
+            bloqueio de rota (ver resolverFuncionalidadeDaRota acima). */}
+        {acessoNegado && (
+          <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Seu perfil não tem permissão para acessar aquela tela. Fale com quem gerencia a
+            equipe se você acha que deveria ter acesso.
+          </div>
+        )}
         {children}
       </main>
     </div>

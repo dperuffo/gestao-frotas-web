@@ -7552,3 +7552,62 @@ Oficinas, Central de Avisos, Pré-Pedidos).
   de Controle (é a mesma tela — o rastreamento ao vivo é o mapa dela), sem card próprio.
 
 Validado: `npx tsc --noEmit` e `npx eslint` limpos (`constants.ts` e `landingBody.ts`).
+
+## Fase enforcement-permissoes — permissões passam a travar de verdade (web + PWA)
+
+Pedido do Daniel: "mas as permissoes deveriam travar se estiverem desligadas, tanto na web
+quanto no PWA" — resposta direta ao achado registrado na fase anterior (matriz só
+decorativa). Confirmado com o Daniel: aplicar nas 64 funcionalidades existentes de uma vez
+(não só as 6 novas) e nos dois lados (web e Flutter) juntos.
+
+- **Achado de integridade antes de ligar o bloqueio**: cruzando cada linha `permitido=false`
+  (gestor_frota/analista/posto) contra o menu/comportamento real do app, 6 linhas
+  contradiziam abertamente o que já funcionava pra clientes reais — teriam trancado posto
+  fora do próprio dashboard (loop de redirecionamento), de Rede de Postos, Integrações e
+  Minha Equipe, e gestor_frota/analista fora da própria tela `/permissoes`. Corrigidas
+  primeiro (migration `corrigir_inconsistencias_permissoes_antes_do_enforcement`,
+  `permitido = true` nessas 6 linhas) — sem isso, ligar o bloqueio teria sido um incidente,
+  não uma feature.
+- **Web — `src/lib/permissoes.ts`** (módulo novo, único lugar que decide isso pro lado web):
+  `HREF_FUNCIONALIDADE` (mapa href → `aba_*`), `resolverFuncionalidadeDaRota` (prefixo com
+  borda de `/`, evita `/postos` capturar `/postos-duplicados` por engano),
+  `ehBypassPermissao` (admin e o e-mail do Daniel nunca travam),
+  `carregarMapaPermissoes` (fail-open: erro de rede/banco = tudo liberado, não derruba o
+  dashboard) e `temAcesso` (linha ausente = liberado).
+- **Web — `src/lib/supabase/middleware.ts`**: passa a propagar `x-pathname`/`x-search` via
+  headers da REQUEST (não da response — achado próprio durante a implementação: `headers()`
+  num Server Component lê o que o middleware repassa adiante em
+  `NextResponse.next({ request })`, não o que volta pro navegador; setar só em
+  `response.headers` não tem efeito nenhum ali).
+- **Web — `(dashboard)/layout.tsx`**: filtra cada seção de menu (`itensVisaoGeral`,
+  `itensCadastrosFiltrados`, `itensOperacaoFiltrados`, `itensPostoGestaoFiltrados`,
+  `itensPostoOperacaoFiltrados`) por `podeAcessarItem`, e redireciona pra
+  `/dashboard?acesso=negado` (com aviso visível) quem tenta acessar direto uma URL sem
+  permissão. `/dashboard`, `/chamados`, `/assinatura`, `/mfa-setup` e `/login` nunca são
+  bloqueadas (evita loop — `/dashboard` é o próprio destino do redirect).
+- **Flutter (`estudo-de-rede`) — `core/services/permissoes_acesso.dart`** (módulo novo, porta
+  1:1 do módulo web, mesmos slugs `aba_*`): `rotaFuncionalidade` cobre os dois shells
+  (cliente `/x` e posto `/posto/x` na mesma tabela), `permissoesMapaProvider`
+  (`FutureProvider.family` por perfil, cacheado — reaproveitado tanto pelo redirect do
+  router quanto pelo filtro de menu, sem repetir consulta a cada navegação).
+- **Flutter — `core/router/app_router.dart`**: nova "Camada 5" no `redirect` do GoRouter,
+  depois da camada de perfil (posto x demais) — mesma ordem de raciocínio da web. Redireciona
+  pra `/` (cliente) ou `/posto` (posto), ambas em `rotasNuncaBloqueadas`, então sem risco de
+  loop.
+- **Flutter — `home_screen.dart` / `posto_home_screen.dart`**: cada item de menu ganhou um
+  `if (pode('/rota'))` (mesmo padrão collection-if já usado pros itens exclusivos de admin) —
+  esconde do Drawer o que o router já bloquearia ao clicar, evitando a pessoa navegar pra uma
+  tela e cair de volta sem entender por quê.
+- **Limitações conhecidas, deixadas de propósito** (documentadas nos dois módulos): o
+  bloqueio de rota só olha o padrão GLOBAL de permissões — a customização por empresa que
+  gestor_frota/analista/posto fazem em `/permissoes` continua gravando normal, mas não afeta
+  o bloqueio automático (exigiria saber "qual empresa está ativa" em todo redirect/layout,
+  fora de escopo aqui); e o perfil "colaborador" não tem nenhuma linha em
+  `permissoes_perfil` (só admin/gestor_frota/analista/posto têm as 64 cada), então fica
+  sempre liberado por padrão — resolver isso exigiria popular a matriz pra esse perfil
+  primeiro, decisão de produto fora do escopo desta fase.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos (web); revisão manual linha a linha do
+Dart (paridade de parênteses/chaves/colchetes conferida via script, `flutter analyze` não
+disponível neste ambiente) — mesmo método de validação já usado nas fases anteriores do PWA
+quando o SDK Flutter não está no sandbox.

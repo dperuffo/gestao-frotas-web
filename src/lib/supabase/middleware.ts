@@ -6,7 +6,20 @@ import { NextResponse, type NextRequest } from "next/server";
 // (subir de aal1 para aal2) é verificada no layout do dashboard, não aqui,
 // para evitar chamadas extras à API em toda requisição (inclusive assets).
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // Fase enforcement-permissoes (04/08/2026) — propaga a rota atual (e a
+  // query string) pro layout do dashboard via header de REQUEST (não de
+  // response: `headers()` num Server Component lê os headers da requisição
+  // que o middleware repassa adiante via `NextResponse.next({ request })`,
+  // não os headers que voltam pro navegador — setar só em `response.headers`
+  // não teria efeito nenhum aqui, achado ao revisar esta implementação antes
+  // de validar). x-search só é usado hoje pro layout detectar
+  // "?acesso=negado" e mostrar um aviso depois do redirect de bloqueio, sem
+  // precisar tocar em cada page.tsx que já tem searchParams próprios.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  requestHeaders.set("x-search", request.nextUrl.search);
+
+  let response = NextResponse.next({ request: { headers: requestHeaders } });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +31,7 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          response = NextResponse.next({ request: { headers: requestHeaders } });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
