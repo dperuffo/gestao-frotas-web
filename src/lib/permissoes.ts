@@ -67,6 +67,12 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/postos": "aba_postos",
   "/abastecimentos": "aba_abastecimentos",
   "/notas-fiscais": "aba_notas_fiscais",
+  // Fase Central-Avisos-Por-Empresa (04/08/2026) — reaproveita a MESMA
+  // funcionalidade já existente em permissoes_perfil (usada pra travar
+  // /administracao/central-avisos pro admin); aqui é a versão pro
+  // não-admin criar avisos só pra própria empresa (ver
+  // central-avisos/gerenciar/page.tsx e criar_aviso_empresa() no banco).
+  "/central-avisos/gerenciar": "aba_central_avisos",
   // Renomeada (Fase Ações-Sugeridas-Completa) — mesma linha antiga de
   // "Anomalias", que saiu do menu mas continua sendo o mesmo conceito.
   "/acoes-sugeridas": "aba_anomalias",

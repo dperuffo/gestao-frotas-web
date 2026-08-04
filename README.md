@@ -8189,3 +8189,51 @@ Validado: `npx tsc --noEmit` e `npx eslint` limpos na web; RPCs testadas end-to-
 (incluindo `search_path` e RLS ativo, verificados diretamente); Flutter validado por revisão
 manual completa + balanceamento de parênteses/chaves/colchetes por script (sandbox sem Flutter
 instalado, mesma limitação já registrada em fases anteriores do PWA).
+
+## Fase Central-Avisos-Por-Empresa (04/08/2026)
+
+Achado real (bug reportado pelo Daniel): ele liberou, como admin, a permissão `aba_central_avisos`
+pro perfil `gestor_frota` esperando que isso deixasse esse perfil criar avisos — mas não apareceu
+nada no menu do cliente. Causa raiz: a seção Administração inteira (menu + páginas + server
+actions de `/administracao/central-avisos`) tem `perfil === "admin"` hardcoded, ignorando
+`permissoes_perfil` por completo. Além disso, Central de Avisos é uma ferramenta de **broadcast da
+plataforma inteira** (deixar `segmentos_alvo`/`planos_alvo`/`empresas_alvo` vazios manda pra TODOS
+os clientes) — então simplesmente obedecer o toggle deixaria um gestor de frota broadcastar pra
+plataforma toda. Perguntado como resolver, o Daniel escolheu: **liberar, mas travado a aparecer só
+pra própria empresa de quem cria**.
+
+Reaproveita a MESMA permissão `aba_central_avisos` já existente em `permissoes_perfil` (não é
+funcionalidade nova) — só que, pro perfil não-admin, a nova tela `/central-avisos/gerenciar` cria
+avisos que o banco trava, estruturalmente, a nunca sair do escopo da empresa de quem publicou.
+
+**Banco** (migrações `central_avisos_por_empresa` + `central_avisos_por_empresa_fix_ambiguidade`):
+- `comunicados.criado_por_empresa_id` (nova coluna, `references empresas(id)`).
+- `permissao_global_permitida(funcionalidade, perfil)` — lê a linha GLOBAL de `permissoes_perfil`
+  (mesma semântica "sem linha = liberado" de `temAcesso()` no frontend).
+- `empresa_propria_do_usuario(p_empresa_id default null)` — resolve a empresa própria do usuário
+  via `usuarios_empresas` (`ativo = true`, vínculo direto — **não** expande grupo econômico, ao
+  contrário de `resolverEmpresaAtual`, exatamente pra não vazar o aviso pras empresas irmãs da
+  mesma rede). Levanta erro se ambíguo/inexistente, ou se `p_empresa_id` não pertence ao usuário.
+- `criar_aviso_empresa(...)` — `security definer`; rejeita perfil `admin` (usa o painel oficial) e
+  checa `permissao_global_permitida('aba_central_avisos', perfil)`; insere com
+  `empresas_alvo = array[empresa]`, `segmentos_alvo = '{}'`, `planos_alvo = '{}'` (nunca broadcast).
+- `listar_avisos_da_minha_empresa()` / `alternar_ativo_aviso_empresa(id, ativo)` /
+  `excluir_aviso_empresa(id)` — todas `security definer`, todas checam ownership via
+  `criado_por_empresa_id` antes de tocar a linha (RLS de `comunicados` só libera escrita pra
+  `perfil_usuario_atual() = 'admin'`, então um não-admin só grava através dessas RPCs).
+
+Testado end-to-end com JWTs simulados (dois usuários de empresas diferentes): criar, listar,
+tentativa de exclusão cross-tenant corretamente bloqueada (`P0001: Aviso não encontrado ou sem
+permissão.`), depois exclusão do próprio aviso com sucesso. Nenhum dado de teste ficou no banco.
+
+**Web**: `src/app/(dashboard)/central-avisos/actions.ts` (server actions finas, toda regra mora nas
+RPCs), `_components/AvisoEmpresaForm.tsx` (form simplificado — sem imagem/janela/segmentação, que
+só fazem sentido pro time FNI) e `_components/ListaAvisosEmpresa.tsx` (gerenciar/desativar/excluir,
+mesmo padrão de `useTransition` + `revalidatePath` de `ToggleAtivoAviso.tsx` do painel admin), tudo
+amarrado em `gerenciar/page.tsx` — bloqueia admin (redireciona pro painel oficial) e quem não tem a
+permissão. Item "Meus Avisos" (ícone `Megaphone`) entra em Conta e Ajuda pros dois menus (Frota e
+Posto), escondido do admin pelo mesmo filtro que já esconde "Minha Assinatura"/"Avaliar Plataforma"
+pra esse perfil. `HREF_FUNCIONALIDADE["/central-avisos/gerenciar"] = "aba_central_avisos"` em
+`src/lib/permissoes.ts`.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos.

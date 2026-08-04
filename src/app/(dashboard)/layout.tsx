@@ -57,6 +57,7 @@ import {
   ArrowLeftRight,
   Briefcase,
   Bot,
+  Megaphone,
 } from "lucide-react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -304,6 +305,10 @@ const menuContaAjuda: ItemMenuLateral[] = [
   // treinamento humano num produto self-service.
   { href: "/treinamento", label: "Central de Treinamento", icon: GraduationCap },
   { href: "/chamados", label: "Chamados", icon: Ticket },
+  // Fase Central-Avisos-Por-Empresa (04/08/2026) — some pro admin (filtro
+  // em itensContaAjuda abaixo, mesma exceção de /assinatura e /avaliar): ele
+  // já publica avisos oficiais em Administração → Central de Avisos.
+  { href: "/central-avisos/gerenciar", label: "Meus Avisos", icon: Megaphone },
 ];
 
 // Fase reorganizacao-menu — documentos, privacidade e as poucas telas de
@@ -397,6 +402,8 @@ const menuPostoContaAjuda: ItemMenuLateral[] = [
   { href: "/avaliar", label: "Avaliar Plataforma", icon: Star },
   { href: "/treinamento", label: "Central de Treinamento", icon: GraduationCap },
   { href: "/chamados", label: "Chamados", icon: Ticket },
+  // Fase Central-Avisos-Por-Empresa (04/08/2026) — mesmo item do lado Frota.
+  { href: "/central-avisos/gerenciar", label: "Meus Avisos", icon: Megaphone },
 ];
 
 // Fase reorganizacao-menu — documentos, privacidade e a chave de API.
@@ -790,7 +797,10 @@ export default async function DashboardLayout({
   // sempre, só que agora aplicada a "Conta e Ajuda" em vez da antiga
   // "Gestão").
   const itensContaAjuda = menuContaAjuda
-    .filter((item) => !ehAdmin || (item.href !== "/assinatura" && item.href !== "/avaliar"))
+    .filter(
+      (item) =>
+        !ehAdmin || (item.href !== "/assinatura" && item.href !== "/avaliar" && item.href !== "/central-avisos/gerenciar")
+    )
     .filter(podeAcessarItem);
   // "Permissões" tinha uma seção "Configurações" só pra ela, visível só pra
   // quem não era admin nem posto (Fase 27.117); agora mora em "Sistema" — o
@@ -805,7 +815,9 @@ export default async function DashboardLayout({
   const itensPostoVisaoGeral = menuPostoVisaoGeral.filter(podeAcessarItem);
   const itensPostoOperacaoFiltrados = menuPostoOperacao.filter(podeAcessarItem);
   const itensPostoFinanceiro = menuPostoFinanceiro.filter(podeAcessarItem);
-  const itensPostoContaAjuda = menuPostoContaAjuda.filter(podeAcessarItem);
+  const itensPostoContaAjuda = menuPostoContaAjuda
+    .filter((item) => !ehAdmin || item.href !== "/central-avisos/gerenciar")
+    .filter(podeAcessarItem);
   const itensPostoSistema = menuPostoSistema.filter(podeAcessarItem);
 
   // Fase 27.114 — o passo "menu-administracao" só existe no DOM quando

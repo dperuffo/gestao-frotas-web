@@ -5099,6 +5099,43 @@ export interface Database {
         Args: { p_limite?: number };
         Returns: { href: string; fixado: boolean }[];
       };
+      // Fase Central-Avisos-Por-Empresa (04/08/2026) — RPCs que deixam um
+      // perfil não-admin com a permissão "aba_central_avisos" criar/gerenciar
+      // avisos travados à própria empresa (empresas_alvo = [empresa]), sem
+      // acesso ao broadcast de plataforma inteira que o painel admin tem.
+      criar_aviso_empresa: {
+        Args: {
+          p_titulo: string;
+          p_resumo: string;
+          p_corpo: string;
+          p_tipo?: string;
+          p_urgencia?: string;
+          p_empresa_id?: string | null;
+        };
+        Returns: string;
+      };
+      listar_avisos_da_minha_empresa: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          tipo: string;
+          urgencia: string;
+          titulo: string;
+          resumo: string;
+          corpo: string;
+          ativo: boolean;
+          data_publicacao: string;
+          criado_em: string;
+        }[];
+      };
+      alternar_ativo_aviso_empresa: {
+        Args: { p_id: string; p_ativo: boolean };
+        Returns: void;
+      };
+      excluir_aviso_empresa: {
+        Args: { p_id: string };
+        Returns: void;
+      };
       motorista_duplicado: {
         Args: { p_empresa_id: string; p_cpf: string; p_excluir_id?: string | null };
         Returns: boolean;
