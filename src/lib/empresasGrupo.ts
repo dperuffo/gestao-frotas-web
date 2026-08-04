@@ -36,3 +36,25 @@ export async function empresaOuIrmaDoGrupo(
   const irmas = await empresasIrmasAcao(supabase, empresaId);
   return irmas.some((e) => e.id === empresaAlvoId);
 }
+
+// Fase Reuso-Operacional-Grupo (Fase 2) — resolve a empresa DONA de um
+// veículo a partir da placa (via cadastro_veiculos.cnpj_frota ->
+// empresa_id_do_cnpj), independente de qual empresa está "operando" no
+// momento. Usada por Multas/Checklist/Manutenção pra decidir onde o custo
+// deve ser lançado (decisão do Daniel: "fica com a empresa dona do
+// cadastro"). Retorna null se a placa não estiver cadastrada em nenhuma
+// empresa (ex.: digitada à mão, fora da frota) — nesse caso quem chama deve
+// manter o comportamento antigo (usar a empresa operando).
+export async function empresaDonaDoVeiculoAcao(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  placa: string
+): Promise<string | null> {
+  const { data: veiculo } = await supabase
+    .from("cadastro_veiculos")
+    .select("cnpj_frota")
+    .eq("placa", placa)
+    .maybeSingle();
+  if (!veiculo?.cnpj_frota) return null;
+  const { data: empresaId } = await supabase.rpc("empresa_id_do_cnpj", { p_cnpj: veiculo.cnpj_frota });
+  return empresaId ?? null;
+}

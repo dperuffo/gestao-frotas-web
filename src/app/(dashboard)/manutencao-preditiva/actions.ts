@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { empresaDonaDoVeiculoAcao, empresaOuIrmaDoGrupo } from "@/lib/empresasGrupo";
 
 export type ManutencaoFormState = { erro?: string; ok?: boolean; avisoFotos?: string } | undefined;
 
@@ -62,10 +63,24 @@ export async function registrarManutencaoAcao(
     .eq("placa", placa)
     .maybeSingle();
 
+  // Fase Reuso-Operacional-Grupo (Fase 2) — o custo da manutenção fica com a
+  // empresa DONA do cadastro do veículo, mesma decisão já usada em
+  // TCO/KPIs/Multas/Checklist. Se a placa pertencer a uma empresa fora do
+  // grupo econômico da empresa selecionada, rejeita.
+  const empresaDonaId = await empresaDonaDoVeiculoAcao(supabase, placa);
+  let empresaFinalId = empresaId;
+  if (empresaDonaId) {
+    const pertenceAoGrupo = await empresaOuIrmaDoGrupo(supabase, empresaId, empresaDonaId);
+    if (!pertenceAoGrupo) {
+      return { erro: "Essa placa não pertence à sua empresa nem a uma empresa do mesmo grupo econômico." };
+    }
+    empresaFinalId = empresaDonaId;
+  }
+
   const { data: inserida, error } = await supabase
     .from("manutencoes_realizadas")
     .insert({
-      empresa_id: empresaId,
+      empresa_id: empresaFinalId,
       cnpj_frota: veiculo?.cnpj_frota ?? "",
       placa,
       data_manutencao: dataManutencao,

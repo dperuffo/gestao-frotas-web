@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { formatDate } from "@/lib/utils";
 
 type SearchParams = { empresa?: string; busca?: string };
@@ -14,11 +15,35 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
   const supabase = await createClient();
   const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
-  const { data: veiculos, error } = empresaSelecionada
-    ? await supabase.rpc("checklist_veiculos_resumo", { p_empresa_id: empresaSelecionada, p_busca: busca || null })
-    : { data: null, error: null };
+  // Fase Reuso-Operacional-Grupo (Fase 2) — checklist_veiculos_resumo não
+  // tem paginação nem lógica pesada (diferente da Manutenção Preditiva), então
+  // dá pra reaproveitar o mesmo truque de Fase 1: chama a RPC uma vez por
+  // empresa do grupo e junta no JS, rotulando os veículos "emprestados".
+  type VeiculoChecklist = {
+    placa: string;
+    marca: string | null;
+    modelo: string | null;
+    centro_custo_nome: string | null;
+    ultima_inspecao: string | null;
+    pendencias_abertas: number;
+  };
 
-  const lista = veiculos ?? [];
+  let veiculosProprios: VeiculoChecklist[] | null = null;
+  let error: { message: string } | null = null;
+  let listaGrupo: (VeiculoChecklist & { empresaNome: string })[] = [];
+
+  if (empresaSelecionada) {
+    const irmas = await empresasIrmasAcao(supabase, empresaSelecionada);
+    const [resultadoProprio, resultadosGrupo] = await Promise.all([
+      supabase.rpc("checklist_veiculos_resumo", { p_empresa_id: empresaSelecionada, p_busca: busca || null }),
+      Promise.all(irmas.map((e) => supabase.rpc("checklist_veiculos_resumo", { p_empresa_id: e.id, p_busca: busca || null }))),
+    ]);
+    veiculosProprios = resultadoProprio.data;
+    error = resultadoProprio.error;
+    listaGrupo = resultadosGrupo.flatMap((r, i) => (r.data ?? []).map((v) => ({ ...v, empresaNome: irmas[i].nome })));
+  }
+
+  const lista = [...(veiculosProprios ?? []).map((v) => ({ ...v, empresaNome: undefined as string | undefined })), ...listaGrupo];
   const comPendencia = lista.filter((v) => v.pendencias_abertas > 0).length;
   const nuncaInspecionados = lista.filter((v) => !v.ultima_inspecao).length;
 
@@ -97,6 +122,7 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
                       <Link href={`/checklist-veiculos/${v.placa}`} className="font-medium text-frota-600 hover:underline">
                         {v.placa}
                       </Link>
+                      {v.empresaNome && <span className="ml-2 text-xs text-slate-400">({v.empresaNome})</span>}
                     </td>
                     <td className="px-4 py-3 text-slate-600">{[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}</td>
                     <td className="px-4 py-3 text-slate-600">{v.centro_custo_nome ?? "—"}</td>

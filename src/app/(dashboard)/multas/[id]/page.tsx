@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_MULTA_LABEL, STATUS_MULTA_COR, GRAVIDADE_MULTA_LABEL } from "@/lib/multas";
+import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { IndicarCondutorForm, StatusMultaBotoes, ExcluirMultaButton } from "../_components/MultaAcoes";
 
 export default async function MultaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,11 +32,24 @@ export default async function MultaDetalhePage({ params }: { params: Promise<{ i
     .or(`data_fim.is.null,data_fim.gte.${multa.data_infracao}`)
     .maybeSingle();
 
-  const { data: motoristas } = await supabase
-    .from("motoristas")
-    .select("id, nome_completo")
-    .eq("empresa_id", multa.empresa_id)
-    .order("nome_completo");
+  // Fase Reuso-Operacional-Grupo (Fase 2) — motorista de empresa irmã do
+  // grupo também entra como opção de condutor, rotulado com a empresa dona
+  // do cadastro (o veículo já pode ter sido "emprestado" nesse cenário).
+  const irmas = await empresasIrmasAcao(supabase, multa.empresa_id);
+  const nomePorEmpresaId = new Map(irmas.map((e) => [e.id, e.nome]));
+  const idsIrmas = irmas.map((e) => e.id);
+
+  const [{ data: motoristasData }, { data: motoristasGrupoData }] = await Promise.all([
+    supabase.from("motoristas").select("id, nome_completo").eq("empresa_id", multa.empresa_id).order("nome_completo"),
+    idsIrmas.length > 0
+      ? supabase.from("motoristas").select("id, nome_completo, empresa_id").in("empresa_id", idsIrmas).order("nome_completo")
+      : Promise.resolve({ data: [] as { id: string; nome_completo: string; empresa_id: string }[] }),
+  ]);
+
+  const motoristas = [
+    ...(motoristasData ?? []),
+    ...(motoristasGrupoData ?? []).map((m) => ({ id: m.id, nome_completo: m.nome_completo, empresaNome: nomePorEmpresaId.get(m.empresa_id) })),
+  ];
 
   const { data: historicoVeiculo } = await supabase
     .from("multas")

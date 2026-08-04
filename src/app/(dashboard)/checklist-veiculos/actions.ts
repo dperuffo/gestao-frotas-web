@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ITENS_INSPECAO, ITENS_CRITICOS } from "@/lib/checklist";
+import { empresaDonaDoVeiculoAcao, empresaOuIrmaDoGrupo } from "@/lib/empresasGrupo";
 
 export type InspecaoFormState = { erro?: string; ok?: boolean } | undefined;
 
@@ -40,10 +41,24 @@ export async function registrarInspecaoAcao(
     .eq("placa", placa)
     .maybeSingle();
 
+  // Fase Reuso-Operacional-Grupo (Fase 2) — o custo/registro da inspeção
+  // fica com a empresa DONA do cadastro do veículo, mesma decisão já usada
+  // em TCO/KPIs e agora em Multas. Se a placa pertencer a uma empresa fora
+  // do grupo econômico da empresa selecionada, rejeita.
+  const empresaDonaId = await empresaDonaDoVeiculoAcao(supabase, placa);
+  let empresaFinalId = empresaId;
+  if (empresaDonaId) {
+    const pertenceAoGrupo = await empresaOuIrmaDoGrupo(supabase, empresaId, empresaDonaId);
+    if (!pertenceAoGrupo) {
+      return { erro: "Essa placa não pertence à sua empresa nem a uma empresa do mesmo grupo econômico." };
+    }
+    empresaFinalId = empresaDonaId;
+  }
+
   const { data: inspecao, error } = await supabase
     .from("inspecoes_veiculos")
     .insert({
-      empresa_id: empresaId,
+      empresa_id: empresaFinalId,
       cnpj_frota: veiculo?.cnpj_frota ?? "",
       placa,
       data_inspecao: dataInspecao,
@@ -62,7 +77,7 @@ export async function registrarInspecaoAcao(
     const observacao = String(formData.get(`obs_${item}`) ?? "").trim() || null;
     return {
       inspecao_id: inspecao.id,
-      empresa_id: empresaId,
+      empresa_id: empresaFinalId,
       item,
       critico: ITENS_CRITICOS.includes(item),
       conforme,

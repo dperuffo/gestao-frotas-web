@@ -110,6 +110,11 @@ export default async function DetalheManutencaoPreditivaPage({
             {primeiro.tipo_veiculo ? ` · ${primeiro.tipo_veiculo}` : ""}
             {primeiro.idade_anos > 0 ? ` · ${primeiro.idade_anos} anos` : ""}
           </p>
+          {primeiro.empresa_dona_nome && (
+            <p className="mt-1 text-xs text-amber-600">
+              Veículo de {primeiro.empresa_dona_nome} (empresa do mesmo grupo econômico) — custo desta manutenção fica com ela.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <StatusBadge status={status} />

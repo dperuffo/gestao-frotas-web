@@ -7931,3 +7931,71 @@ do mesmo grupo) é uma decisão de negócio do Daniel/contador, não travada pel
 
 Validado: `npx tsc --noEmit` e `npx eslint` limpos nos 11 arquivos tocados (novo helper +
 Fretes + MDF-e + Planos de Viagem, web e componentes).
+
+## Fase Reuso-Operacional-Grupo — Fase 2 (Manutenção Preditiva, Checklist, Multas)
+
+Continuação da fase anterior: pedido do Daniel foi "pode iniciar a fase 2", cobrindo as três
+áreas que tinham ficado de fora (Manutenção/Checklist/Multas são histórico do veículo por placa,
+cada uma com uma forma diferente de listar/filtrar — por isso precisaram de tratamento
+individual, não deu pra copiar o mesmo código de Fretes/Planos de Viagem).
+
+**Decisão de atribuição de custo reforçada nesta fase**: como `manutencoes_realizadas`,
+`inspecoes_veiculos` e `multas` TÊM `empresa_id` próprio (diferente de Fretes/Planos de Viagem,
+que são contrato de serviço), e esse `empresa_id` era sempre gravado com a empresa "operando" no
+momento — precisava resolver explicitamente pra empresa DONA do veículo (via `cnpj_frota` →
+`empresa_id_do_cnpj`) toda vez que a placa usada for de uma empresa irmã. Antes da Fase 2 isso
+nunca dava errado por acaso (as telas só mostravam veículo da própria empresa); abrir a
+visibilidade pro grupo sem esse ajuste faria o custo cair na empresa errada.
+
+**`src/lib/empresasGrupo.ts`** ganhou `empresaDonaDoVeiculoAcao(supabase, placa)`: resolve a
+empresa dona de um veículo a partir da placa (`cadastro_veiculos.cnpj_frota` →
+`empresa_id_do_cnpj`). Usada nas 3 áreas pra decidir onde gravar `empresa_id`, com fallback pro
+comportamento antigo (usa a empresa operando) quando a placa não está cadastrada em nenhuma
+empresa — não bloqueia digitação livre de placa.
+
+**Multas** (`multas/actions.ts`, `nova/page.tsx`, `_components/NovaMultaForm.tsx`,
+`[id]/page.tsx`, `_components/MultaAcoes.tsx`): o mais simples dos três — sem RPC, sem paginação.
+`criarMultaAcao` resolve `empresa_id` (da multa e da `contas_pagar` vinculada) pro dono real do
+veículo, rejeitando se a placa for de fora do grupo. Picker de placa (`<datalist>`) e de
+motorista (indicação de condutor) passaram a incluir o grupo inteiro, rotulado (`ABC1D23 —
+Frotas & Frotas Ltda`). `indicarCondutorAcao` tinha ZERO validação de dono antes — fechado o
+mesmo tipo de gap já corrigido em Fretes/Planos de Viagem/MDF-e na fase 1.
+
+**Checklist de Inspeção** (`checklist-veiculos/page.tsx`, `actions.ts`): a RPC
+`checklist_veiculos_resumo` não tem paginação nem lógica pesada, então a lista usa o mesmo truque
+da Fase 1 — chama a RPC uma vez por empresa do grupo (fan-out) e junta no JS, sem precisar mexer
+em SQL. `registrarInspecaoAcao` resolve `empresa_id` pro dono real do veículo.
+
+**Manutenção Preditiva** (mais complexa — precisou migração SQL): as RPCs
+`manutencao_preditiva_resumo`/`_kpis` são construídas em cima de `manutencao_preditiva_base`, uma
+função com paginação, ordenação e um score de desgaste ponderado (8 componentes: óleo, pneus,
+filtros etc.) calculado a partir de consumo e histórico de manutenção — fan-out+merge no JS
+quebraria a paginação/ordenação corretas. Solução: em vez de mudar a assinatura de
+`manutencao_preditiva_base(p_empresa_id, p_placa)`, ela passou a expandir o `p_empresa_id`
+internamente pra "empresa + irmãs do grupo ativo" (nova função `empresas_grupo_ids(p_empresa_id)`,
+que reaproveita `listar_empresas_alvo_replicacao`) — os 3 filtros que antes eram
+`= p_empresa_id` (veículos por CNPJ, abastecimentos, manutenções) passaram a ser `= any(grupo)`.
+Isso significa que `manutencao_preditiva_resumo`, `manutencao_preditiva_kpis` e a tela de detalhe
+por placa (`manutencao_preditiva_base` chamada direto com `p_placa`) ganharam suporte a grupo
+DE GRAÇA, sem mudar assinatura nem reimplementar paginação/ordenação em JS. Novo campo de saída
+`empresa_dona_nome` (null quando o veículo é da própria empresa selecionada) alimenta o rótulo na
+lista e um aviso na tela de detalhe. Bônus encontrado ao testar: antes desta fase, abrir o
+detalhe de um veículo emprestado (`/manutencao-preditiva/[placa]`) dava 404 silencioso, porque
+`manutencao_preditiva_base` só enxergava veículo da própria empresa — corrigido como efeito
+colateral da mudança. `registrarManutencaoAcao` resolve `empresa_id` pro dono real do veículo,
+mesmo padrão das outras duas áreas.
+
+Testado direto no banco (simulando JWT de usuário real, não só leitura de schema): confirmado que
+`empresas_grupo_ids` retorna a empresa + irmã certa, que `manutencao_preditiva_resumo` rotula
+corretamente um veículo emprestado (`empresa_dona_nome`) sem duplicar linha, que o detalhe por
+placa de um veículo do grupo passou a retornar dados (antes retornava vazio), e que
+`manutencao_preditiva_kpis` segue agregando certo sobre o grupo. `get_advisors` (security)
+conferido — nenhum alerta novo introduzido pelas funções criadas/alteradas.
+
+**Fora do escopo desta fase, de propósito**: Abastecimento, Parâmetros de Uso, Fidelidade,
+Telemetria/GPS e Centro de Custo (Fase 3) — ainda não investigados a fundo; a expectativa é que
+precisem de pouca ou nenhuma mudança, por chavearem direto por placa/motorista_id.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos nos arquivos tocados (helper + Multas +
+Checklist + Manutenção Preditiva, web e SQL); migração testada com dados reais antes de dar como
+pronto.

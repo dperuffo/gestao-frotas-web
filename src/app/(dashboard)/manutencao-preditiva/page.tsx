@@ -207,6 +207,7 @@ export default async function ManutencaoPreditivaPage({
                       >
                         {v.placa}
                       </Link>
+                      {v.empresa_dona_nome && <span className="ml-2 text-xs text-slate-400">({v.empresa_dona_nome})</span>}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}

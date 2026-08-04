@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { indicarCondutorAcao, atualizarStatusMultaAcao, excluirMultaAcao } from "../actions";
 
-type Motorista = { id: string; nome_completo: string };
+type Motorista = { id: string; nome_completo: string; empresaNome?: string };
 
 export function IndicarCondutorForm({
   multaId,
@@ -47,7 +47,7 @@ export function IndicarCondutorForm({
         <option value="">Selecione o condutor...</option>
         {motoristas.map((m) => (
           <option key={m.id} value={m.id}>
-            {m.nome_completo}
+            {m.empresaNome ? `${m.nome_completo} — ${m.empresaNome}` : m.nome_completo}
           </option>
         ))}
       </select>

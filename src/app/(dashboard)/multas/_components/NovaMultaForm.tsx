@@ -4,7 +4,9 @@ import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { criarMultaAcao } from "../actions";
 
-export function NovaMultaForm({ empresaId, placas }: { empresaId: string; placas: string[] }) {
+type PlacaOpcao = { placa: string; empresaNome?: string };
+
+export function NovaMultaForm({ empresaId, placas }: { empresaId: string; placas: PlacaOpcao[] }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -32,7 +34,9 @@ export function NovaMultaForm({ empresaId, placas }: { empresaId: string; placas
           <input list="placas-multa" name="placa" required className="input" placeholder="ABC1D23" />
           <datalist id="placas-multa">
             {placas.map((p) => (
-              <option key={p} value={p} />
+              <option key={p.placa} value={p.placa}>
+                {p.empresaNome ? `${p.placa} — ${p.empresaNome}` : p.placa}
+              </option>
             ))}
           </datalist>
         </div>

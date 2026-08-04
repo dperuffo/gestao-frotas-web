@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { empresaDonaDoVeiculoAcao, empresaOuIrmaDoGrupo } from "@/lib/empresasGrupo";
 import type { Database } from "@/types/database.types";
 
 export type MultaFormState = { erro?: string; ok?: boolean; avisoAnexo?: string } | undefined;
@@ -50,10 +51,24 @@ export async function criarMultaAcao(empresaId: string, _prev: MultaFormState, f
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Fase Reuso-Operacional-Grupo (Fase 2) — o custo da multa fica com a
+  // empresa DONA do cadastro do veículo (mesma decisão já usada em
+  // TCO/KPIs), não com a empresa selecionada na tela. Se a placa pertencer
+  // a uma empresa fora do grupo econômico da empresa selecionada, rejeita.
+  const empresaDonaId = await empresaDonaDoVeiculoAcao(supabase, placa);
+  let empresaFinalId = empresaId;
+  if (empresaDonaId) {
+    const pertenceAoGrupo = await empresaOuIrmaDoGrupo(supabase, empresaId, empresaDonaId);
+    if (!pertenceAoGrupo) {
+      return { erro: "Essa placa não pertence à sua empresa nem a uma empresa do mesmo grupo econômico." };
+    }
+    empresaFinalId = empresaDonaId;
+  }
+
   const { data: inserida, error } = await supabase
     .from("multas")
     .insert({
-      empresa_id: empresaId,
+      empresa_id: empresaFinalId,
       placa,
       data_infracao: dataInfracao,
       data_limite_indicacao: dataLimiteIndicacao,
@@ -85,7 +100,7 @@ export async function criarMultaAcao(empresaId: string, _prev: MultaFormState, f
     await supabase
       .from("contas_pagar")
       .insert({
-        empresa_id: empresaId,
+        empresa_id: empresaFinalId,
         origem: "multa",
         referencia_id: inserida.id,
         credor_nome: orgaoAutuador ?? "Multa de trânsito",
@@ -126,6 +141,21 @@ export async function indicarCondutorAcao(multaId: string, motoristaId: string) 
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Fase Reuso-Operacional-Grupo (Fase 2) — fecha o mesmo tipo de brecha já
+  // corrigida em Fretes/Planos de Viagem/MDF-e: antes, qualquer motorista_id
+  // era aceito sem checar se ele pertence à empresa da multa (ou a uma
+  // irmã do grupo).
+  const [{ data: multa }, { data: motorista }] = await Promise.all([
+    supabase.from("multas").select("empresa_id").eq("id", multaId).maybeSingle(),
+    supabase.from("motoristas").select("empresa_id").eq("id", motoristaId).maybeSingle(),
+  ]);
+  if (!multa) throw new Error("Multa não encontrada.");
+  if (!motorista) throw new Error("Motorista não encontrado.");
+  const pertenceAoGrupo = await empresaOuIrmaDoGrupo(supabase, multa.empresa_id, motorista.empresa_id);
+  if (!pertenceAoGrupo) {
+    throw new Error("Esse motorista não pertence à empresa da multa nem a uma empresa do mesmo grupo econômico.");
+  }
 
   const { error } = await supabase
     .from("multas")

@@ -6113,6 +6113,7 @@ export interface Database {
           urgencia: "ok" | "alerta" | "critico";
           pct: number;
           fonte: "real" | "estimado";
+          empresa_dona_nome: string | null;
         }[];
       };
       manutencao_preditiva_resumo: {
@@ -6141,6 +6142,7 @@ export interface Database {
           n_criticos: number;
           n_alertas: number;
           total_count: number;
+          empresa_dona_nome: string | null;
         }[];
       };
       manutencao_preditiva_kpis: {
