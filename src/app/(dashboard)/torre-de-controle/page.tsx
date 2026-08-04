@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { MapaVeiculos, type PosicaoVeiculo } from "./_components/MapaVeiculos";
 
 // Fase Torre-de-Controle-Leve (02/08/2026, pedido do Daniel após o benchmark
@@ -85,12 +86,21 @@ export default async function TorreDeControlePage({
   let fretes: FreteAndamento[] = [];
   let posicoes: PosicaoVeiculo[] = [];
   if (empresaSelecionada) {
+    // Fase Reuso-Operacional-Grupo (Fase 3) — o rastreador GPS costuma estar
+    // instalado pela empresa DONA do veículo, então a posição de um veículo
+    // emprestado de uma irmã do grupo ficava invisível pra empresa que está
+    // operando ele agora. Mostra o mapa ao vivo com o grupo inteiro (só
+    // leitura — não muda quem "opera" o frete, isso continua vindo de
+    // fretes_em_andamento_empresa, que já é escopado certo).
+    const irmas = await empresasIrmasAcao(supabase, empresaSelecionada);
+    const idsEmpresasGrupo = [empresaSelecionada, ...irmas.map((e) => e.id)];
+
     const [{ data }, { data: posicoesRaw }] = await Promise.all([
       supabase.rpc("fretes_em_andamento_empresa", { p_empresa_id: empresaSelecionada }),
       supabase
         .from("veiculos_posicoes")
         .select("placa, lat, lon, velocidade_kmh, timestamp_gps, provedor")
-        .eq("empresa_id", empresaSelecionada)
+        .in("empresa_id", idsEmpresasGrupo)
         .order("timestamp_gps", { ascending: false })
         .limit(500),
     ]);

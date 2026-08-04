@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { lerPlanilhaComoTexto } from "@/lib/xlsx";
 import { normalizarCNPJ } from "@/lib/utils";
 import { garantirVeiculoCadastrado, garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
+import { empresaDonaDoVeiculoAcao } from "@/lib/empresasGrupo";
 
 export type LinhaResultado = {
   linha: number;
@@ -107,11 +108,18 @@ export async function importarAbastecimentos(
       if (seqError || seq == null) throw new Error("Não foi possível gerar o identificador do lançamento.");
       const identificador = seq as number;
 
+      // Fase Reuso-Operacional-Grupo (Fase 3) — se a placa da linha já tem
+      // cadastro e pertence a uma empresa IRMÃ do cnpj_cliente da planilha,
+      // o custo fica com a empresa DONA do veículo (mesmo critério do
+      // lançamento manual, Hub de Integrações e trigger da PróFrotas).
+      const empresaDonaVeiculo = placa ? await empresaDonaDoVeiculoAcao(supabase, placa) : null;
+      const empresaIdAbastecimento = empresaDonaVeiculo ?? empresa.id;
+
       const { error } = await supabase.from("profrotas_abastecimentos").insert({
         cnpj_frota: empresa.cnpj,
         frota_cnpj: empresa.cnpj,
         frota_razao_social: empresa.nome,
-        empresa_id: empresa.id,
+        empresa_id: empresaIdAbastecimento,
         identificador,
         sync_key: `manual-${identificador}`,
         abastecimento_estornado: 0,

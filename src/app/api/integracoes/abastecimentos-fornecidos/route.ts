@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { autenticarRequisicaoApi, marcarUsoChaveApi } from "@/lib/apiAuth";
 import { ESCOPO_ABASTECIMENTOS_FORNECIDOS_WRITE } from "@/lib/apiKeys";
 import { garantirVeiculoCadastrado, garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
+import { empresaDonaDoVeiculoAcao } from "@/lib/empresasGrupo";
 
 // Fase 27.144 — pedido do Daniel: "na aba de integrações na visão de
 // postos, criar o mecanismo de integração com softwares de automação de
@@ -125,10 +126,20 @@ export async function POST(request: Request) {
   // Posto vem sempre da chave, nunca do corpo (ver comentário do arquivo).
   const { data: posto } = await supabase.from("empresas").select("cnpj, nome").eq("id", chave.empresaId).maybeSingle();
 
+  // Fase Reuso-Operacional-Grupo (Fase 3) — se a placa já tem cadastro e
+  // pertence a uma empresa IRMÃ do cliente informado em "cliente_cnpj" (ex.:
+  // o posto reporta um abastecimento pro CNPJ da empresa B, mas a placa é
+  // de um veículo da empresa A, irmã de B no mesmo grupo econômico), o
+  // custo fica com a empresa DONA do veículo — mesmo critério já aplicado
+  // no endpoint irmão (/api/integracoes/abastecimentos), no lançamento
+  // manual, na importação XLSX e no trigger da PróFrotas.
+  const empresaDonaVeiculo = await empresaDonaDoVeiculoAcao(supabase, placa);
+  const empresaIdAbastecimento = empresaDonaVeiculo ?? empresaClienteId;
+
   const { data: registro, error: erroInsert } = await supabase
     .from("abastecimentos_externos")
     .insert({
-      empresa_id: empresaClienteId,
+      empresa_id: empresaIdAbastecimento,
       provedor: sistema,
       placa,
       motorista_nome: corpo.motorista_nome?.trim() || null,

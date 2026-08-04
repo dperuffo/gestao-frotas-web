@@ -12,8 +12,8 @@ type VinculoExistente = {
   observacao: string | null;
   status: string;
 };
-type VeiculoOpcao = { placa: string; marca: string | null; modelo: string | null };
-type MotoristaOpcao = { id: string; nome_completo: string; cpf: string | null };
+type VeiculoOpcao = { placa: string; marca: string | null; modelo: string | null; empresaNome?: string };
+type MotoristaOpcao = { id: string; nome_completo: string; cpf: string | null; empresaNome?: string };
 
 export function VinculoForm({
   vinculo,
@@ -61,6 +61,7 @@ export function VinculoForm({
               {veiculos.map((v) => (
                 <option key={v.placa} value={v.placa}>
                   {v.placa} {v.marca ? `— ${v.marca} ${v.modelo ?? ""}` : ""}
+                  {v.empresaNome ? ` (${v.empresaNome})` : ""}
                 </option>
               ))}
             </select>
@@ -73,6 +74,7 @@ export function VinculoForm({
               {motoristas.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.nome_completo} — {m.cpf}
+                  {m.empresaNome ? ` (${m.empresaNome})` : ""}
                 </option>
               ))}
             </select>

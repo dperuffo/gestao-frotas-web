@@ -7999,3 +7999,97 @@ precisem de pouca ou nenhuma mudança, por chavearem direto por placa/motorista_
 Validado: `npx tsc --noEmit` e `npx eslint` limpos nos arquivos tocados (helper + Multas +
 Checklist + Manutenção Preditiva, web e SQL); migração testada com dados reais antes de dar como
 pronto.
+
+## Fase Reuso-Operacional-Grupo — Fase 3 (Abastecimento, Parâmetros de Uso, bugfix veiculo_duplicado)
+
+Pedido do Daniel: "Fase 3 agora", cobrindo as 5 áreas deixadas de fora da Fase 2 (Abastecimento,
+Parâmetros de Uso, Fidelidade, Telemetria/GPS, Centro de Custo).
+
+**Investigação primeiro, código depois**: Fidelidade (`fidelidade_pontos_ledger`,
+`fidelidade_missoes_concluidas`, `fidelidade_adesoes`) chaveia só por `motorista_id`, sem
+`empresa_id`/placa — já é agnóstica de empresa por natureza, não precisou de nenhuma mudança.
+Centro de Custo (`centros_custo_veiculos`) é uma estrutura interna de UMA empresa (plano de contas
+de custo dela) — um veículo emprestado de uma irmã continua alocado ao centro de custo da PRÓPRIA
+empresa dona, não faz sentido "importar" a estrutura de custo da irmã — também não precisou de
+mudança.
+
+Duas decisões pedidas explicitamente ao Daniel antes de codar (achados arriscados o suficiente pra
+não assumir sozinho):
+
+1. **Atribuição de custo de combustível**: quando uma empresa irmã abastece um veículo que não é
+   dela, o custo fica com a empresa DONA do veículo (A) — mesmo critério já usado em
+   Manutenção/Checklist/Multas na Fase 2. Confirmado pelo Daniel.
+2. **Bug de veículo duplicado**: achado durante a investigação — `veiculo_duplicado` (RPC usada
+   por `garantirVeiculoCadastrado`, o auto-cadastro que roda em toda importação de abastecimento)
+   só comparava `cnpj_frota + placa`, então quando uma empresa irmã sincronizava/importava com o
+   PRÓPRIO CNPJ, o sistema não reconhecia que a placa já existia no grupo e recriava o veículo
+   duplicado em `cadastro_veiculos`. Daniel confirmou corrigir junto nesta mesma fase.
+
+**Bugfix `veiculo_duplicado`** (migração `veiculo_duplicado_grupo_economico`): nova função
+`grupo_ids_da_empresa(p_empresa_id)` — deliberadamente SEM `security definer` e SEM o auth check
+de `listar_empresas_alvo_replicacao`/`empresas_grupo_ids` (usadas na Fase 2), porque
+`veiculo_duplicado` também é chamada em contexto de CRON (`sync-profrotas`, via
+`createAdminClient()`, sem JWT de usuário) — reusar uma função com auth check quebraria o sync
+silenciosamente pra toda empresa em grupo. `grupo_ids_da_empresa` lê as tabelas de grupo
+diretamente; a RLS de `grupos_economicos_empresas` já deixa um usuário ver linhas de empresas
+irmãs (porque `empresas_do_usuario` já expande pro grupo inteiro), e o service role sempre
+ignora RLS — então a mesma função funciona certo nos dois contextos. `veiculo_duplicado` passou a
+considerar duplicado quando a placa já existe em QUALQUER empresa do mesmo grupo econômico da
+empresa de referência (antes só considerava o cnpj exato). Testado com JWT simulado de usuário E
+como service role — os dois caminhos confirmados. Mensagens de erro em `veiculos/actions.ts`
+atualizadas pra explicar o novo motivo de bloqueio.
+
+**Parâmetros de Uso** (`parametros-uso/page.tsx`, `novo/page.tsx`, `[id]/editar/page.tsx`,
+`_components/VinculoForm.tsx`, `actions.ts`): os `<select>` de veículo e motorista do vínculo
+motorista↔veículo passaram a listar também o grupo inteiro, rotulado. Diferente das outras áreas,
+o vínculo continua gravado com `empresa_id` = empresa OPERANDO (não o dono do veículo) — porque a
+regra é consultada via API com a chave da empresa operando
+(`api/integracoes/parametros/vinculo/route.ts`); resolver pro dono tornaria a regra invisível pra
+quem realmente vai autorizar o abastecimento. `criarVinculo`/`atualizarVinculo` tinham ZERO
+validação de dono antes — fechado o mesmo tipo de gap das fases anteriores
+(`validarPlacaMotoristaDoGrupo`, nova função).
+
+**Torre de Controle** (`torre-de-controle/page.tsx`): o mapa ao vivo (GPS) passou a incluir
+veículos de empresas irmãs na consulta de `veiculos_posicoes` — GPS costuma ser instalado pela
+empresa DONA do veículo, então uma empresa que só opera um veículo emprestado também precisa ver a
+posição dele.
+
+**Abastecimento** (a área mais espalhada — 5 pontos de entrada, não 4 como estimado inicialmente):
+todos gravavam `empresa_id` = empresa "operando"/reportando, nunca resolviam pro dono real do
+veículo. Corrigido em todos:
+
+- **Sync PróFrotas** (trigger `preencher_empresa_id_profrotas` em `profrotas_abastecimentos`):
+  esse trigger é COMPARTILHADO com `profrotas_api_keys` (mesma função, semânticas diferentes) —
+  não dava pra editar em lugar. Criada uma função nova,
+  `trg_preencher_empresa_id_profrotas_abastecimentos`, vinculada só à tabela de abastecimentos:
+  resolve `empresa_id` via `veiculo_placa` → `cadastro_veiculos.cnpj_frota` →
+  `empresa_id_do_cnpj` (nova função auxiliar `empresa_dona_do_veiculo`), caindo no comportamento
+  antigo (cnpj_frota reportado) só quando a placa ainda não tem cadastro nenhum (veículo
+  genuinamente novo). `profrotas_api_keys` ficou intocada, ainda usando a função original. Testado
+  com insert real: placa de empresa irmã reportando abastecimento de veículo de outra empresa do
+  grupo → `empresa_id` corretamente resolvido pra dona; placa nova sem cadastro → fallback correto
+  pro cnpj reportado.
+- **Hub de Integrações** (`api/integracoes/abastecimentos/route.ts`, tabela
+  `abastecimentos_externos`): mesma resolução via `empresaDonaDoVeiculoAcao`, fallback pra
+  `chave.empresaId`.
+- **Lançamento manual** (`abastecimentos/actions.ts`, `criarAbastecimento`): mesma resolução,
+  fallback pra empresa escolhida no campo "Cliente" do formulário; `cnpj_frota`/`frota_razao_social`
+  continuam refletindo a empresa escolhida (é quem está reportando), só `empresa_id` muda.
+- **Importação XLSX** (`abastecimentos/importar/actions.ts`): mesma resolução por linha, fallback
+  pro `cnpj_cliente` da planilha.
+- **Abastecimentos Fornecidos** (`api/integracoes/abastecimentos-fornecidos/route.ts` — endpoint
+  irmão do Hub de Integrações, só que do lado POSTO: o posto reporta um abastecimento pro CNPJ do
+  cliente informado no corpo da requisição): achado durante a implementação, não estava na lista
+  original de 4 pontos — mesmo bug, mesma correção.
+
+Visto que `abastecimentos_unificado` (a view usada pelos indicadores/TCO) só repassa
+`a.empresa_id`/`e.empresa_id` das tabelas de origem sem nenhuma lógica própria (confirmado via
+`pg_get_viewdef`), corrigir a gravação na origem foi suficiente — nenhuma RPC de leitura
+(TCO, Indicadores da Frota, DRE) precisou mudar.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos tocados (helper, Torre de
+Controle, Parâmetros de Uso, veículos, os 4 arquivos de Abastecimento + o endpoint de
+Abastecimentos Fornecidos). `pg_proc`/`proconfig` conferido nas 4 funções SQL novas/alteradas
+(`grupo_ids_da_empresa`, `veiculo_duplicado`, `empresa_dona_do_veiculo`,
+`trg_preencher_empresa_id_profrotas_abastecimentos`) — todas com `search_path=public` fixo, sem
+introduzir o alerta `function_search_path_mutable`.

@@ -89,12 +89,19 @@ export async function criarVeiculo(_prev: VeiculoFormState, formData: FormData):
   // do mesmo CNPJ). Checa aqui ANTES de tentar o insert pra dar uma mensagem
   // clara; o índice único normalizado no banco é a trava definitiva caso
   // essa checagem seja contornada (ex.: duas requisições simultâneas).
+  //
+  // Fase Reuso-Operacional-Grupo (Fase 3) — veiculo_duplicado agora também
+  // considera duplicado quando a placa já pertence a uma empresa irmã do
+  // mesmo grupo econômico (evita recadastrar o mesmo veículo físico); a
+  // mensagem cobre os dois casos.
   const { data: duplicado } = await supabase.rpc("veiculo_duplicado", {
     p_cnpj_frota: empresa.cnpj,
     p_placa: payload.placa,
   });
   if (duplicado) {
-    return { erro: `Já existe um veículo cadastrado com a placa ${payload.placa} para este cliente.` };
+    return {
+      erro: `Já existe um veículo cadastrado com a placa ${payload.placa} nesta empresa ou em uma empresa do mesmo grupo econômico — não precisa recadastrar, ele já pode ser usado aqui.`,
+    };
   }
 
   const { data, error } = await supabase
@@ -160,7 +167,9 @@ export async function atualizarVeiculo(
       p_excluir_id: id,
     });
     if (duplicado) {
-      return { erro: `Já existe outro veículo cadastrado com a placa ${payload.placa} para este cliente.` };
+      return {
+        erro: `Já existe outro veículo cadastrado com a placa ${payload.placa} nesta empresa ou em uma empresa do mesmo grupo econômico.`,
+      };
     }
   }
 

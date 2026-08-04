@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { empresaDonaDoVeiculoAcao, empresaOuIrmaDoGrupo } from "@/lib/empresasGrupo";
 
 // Fase 27.120 — pedido do Daniel: tela de "Parâmetros de Uso" pra que o
 // cliente configure regras que balizam abastecimentos feitos por outras
@@ -16,6 +17,32 @@ import { createClient } from "@/lib/supabase/server";
 // schema/ação/tela/API.
 
 export type VinculoFormState = { erro?: string } | undefined;
+
+// Fase Reuso-Operacional-Grupo (Fase 3) — fecha o mesmo tipo de brecha já
+// corrigida em Fretes/Planos de Viagem/MDF-e/Multas/Checklist/Manutenção:
+// antes, criarVinculo/atualizarVinculo aceitavam qualquer placa/motorista_id
+// sem checar se pertencem à empresa do vínculo (nem sequer à mesma
+// empresa, ignorando grupo). Passa a exigir "é da empresa OU de uma irmã
+// do grupo econômico ativo".
+async function validarPlacaMotoristaDoGrupo(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  empresaId: string,
+  placa: string,
+  motoristaId: string
+): Promise<string | null> {
+  const empresaDonaVeiculo = await empresaDonaDoVeiculoAcao(supabase, placa);
+  if (empresaDonaVeiculo) {
+    const veiculoOk = await empresaOuIrmaDoGrupo(supabase, empresaId, empresaDonaVeiculo);
+    if (!veiculoOk) return "Essa placa não pertence à sua empresa nem a uma empresa do mesmo grupo econômico.";
+  }
+
+  const { data: motorista } = await supabase.from("motoristas").select("empresa_id").eq("id", motoristaId).maybeSingle();
+  if (!motorista) return "Motorista não encontrado.";
+  const motoristaOk = await empresaOuIrmaDoGrupo(supabase, empresaId, motorista.empresa_id);
+  if (!motoristaOk) return "Esse motorista não pertence à sua empresa nem a uma empresa do mesmo grupo econômico.";
+
+  return null;
+}
 
 function montarPayload(formData: FormData) {
   return {
@@ -37,6 +64,9 @@ export async function criarVinculo(_prev: VinculoFormState, formData: FormData):
   if (!payload.placa || !payload.motorista_id || !empresaId) {
     return { erro: "Veículo (placa), motorista e cliente são obrigatórios." };
   }
+
+  const erroValidacao = await validarPlacaMotoristaDoGrupo(supabase, empresaId, payload.placa, payload.motorista_id);
+  if (erroValidacao) return { erro: erroValidacao };
 
   const {
     data: { user },
@@ -70,6 +100,16 @@ export async function atualizarVinculo(
   if (!payload.placa || !payload.motorista_id) {
     return { erro: "Veículo (placa) e motorista são obrigatórios." };
   }
+
+  const { data: vinculoAtual } = await supabase
+    .from("parametros_vinculo_motorista_veiculo")
+    .select("empresa_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!vinculoAtual) return { erro: "Vínculo não encontrado." };
+
+  const erroValidacao = await validarPlacaMotoristaDoGrupo(supabase, vinculoAtual.empresa_id, payload.placa, payload.motorista_id);
+  if (erroValidacao) return { erro: erroValidacao };
 
   const { error } = await supabase
     .from("parametros_vinculo_motorista_veiculo")

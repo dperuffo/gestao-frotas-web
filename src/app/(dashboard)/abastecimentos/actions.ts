@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { empresaDonaDoVeiculoAcao } from "@/lib/empresasGrupo";
 import {
   criarSolicitacaoAjuste,
   adicionarContrapropostaAjuste,
@@ -74,6 +75,18 @@ export async function criarAbastecimento(
   }
   const identificador = seq as number;
 
+  // Fase Reuso-Operacional-Grupo (Fase 3) — se a placa lançada já tem
+  // cadastro e pertence a uma empresa IRMÃ da "Cliente" escolhida no
+  // formulário (ex.: lançamento feito na empresa B pra um veículo que é da
+  // empresa A do mesmo grupo), o custo fica com a empresa DONA do veículo
+  // — mesmo critério do trigger de profrotas_abastecimentos/Hub de
+  // Integrações. cnpj_frota/frota_cnpj/frota_razao_social continuam
+  // refletindo a empresa escolhida no formulário (quem está reportando).
+  const empresaDonaVeiculo = payload.veiculo_placa
+    ? await empresaDonaDoVeiculoAcao(supabase, payload.veiculo_placa)
+    : null;
+  const empresaIdAbastecimento = empresaDonaVeiculo ?? empresaId;
+
   const { data, error } = await supabase
     .from("profrotas_abastecimentos")
     .insert({
@@ -81,7 +94,7 @@ export async function criarAbastecimento(
       cnpj_frota: empresa.cnpj,
       frota_cnpj: empresa.cnpj,
       frota_razao_social: empresa.nome,
-      empresa_id: empresaId,
+      empresa_id: empresaIdAbastecimento,
       identificador,
       sync_key: `manual-${identificador}`,
       abastecimento_estornado: 0,

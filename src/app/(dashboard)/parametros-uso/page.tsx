@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
+import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
 import { ToggleStatusVinculo } from "./_components/ToggleStatusVinculo";
@@ -310,17 +311,42 @@ async function ConteudoAba({
   // Fase 27.121 — os outros 9 tipos: opções compartilhadas (veículos,
   // motoristas, postos negociados) carregadas uma vez, e cada aba busca só
   // a própria tabela.
-  const [{ data: veiculosData }, { data: motoristasData }, { data: postosData }] = await Promise.all([
-    buscarTodosVeiculosDaEmpresa(supabase, empresaId),
-    supabase.from("motoristas").select("id, nome_completo, cpf").eq("empresa_id", empresaId).order("nome_completo"),
-    supabase
-      .from("negociacoes_postos")
-      .select("posto_cnpj, posto_nome")
-      .eq("empresa_cliente_id", empresaId)
-      .eq("status", "aceita"),
-  ]);
-  const veiculos = (veiculosData ?? []).map((v) => ({ placa: v.placa, marca: v.marca, modelo: v.modelo }));
-  const motoristas = motoristasData ?? [];
+  //
+  // Fase Reuso-Operacional-Grupo (Fase 3) — veículo/motorista de empresa
+  // irmã do grupo também entra como opção nos pickers (rotulado). A regra
+  // em si continua gravada com empresa_id = empresa operando (é ela quem
+  // consulta a regra via API na hora do abastecimento — ver
+  // api/integracoes/parametros/vinculo/route.ts), não o dono do veículo.
+  const irmas = await empresasIrmasAcao(supabase, empresaId);
+  const nomePorEmpresaId = new Map(irmas.map((e) => [e.id, e.nome]));
+  const idsIrmas = irmas.map((e) => e.id);
+
+  const [{ data: veiculosData }, { data: motoristasData }, { data: postosData }, resultadosVeiculosGrupo, { data: motoristasGrupoData }] =
+    await Promise.all([
+      buscarTodosVeiculosDaEmpresa(supabase, empresaId),
+      supabase.from("motoristas").select("id, nome_completo, cpf").eq("empresa_id", empresaId).order("nome_completo"),
+      supabase
+        .from("negociacoes_postos")
+        .select("posto_cnpj, posto_nome")
+        .eq("empresa_cliente_id", empresaId)
+        .eq("status", "aceita"),
+      Promise.all(irmas.map((e) => buscarTodosVeiculosDaEmpresa(supabase, e.id))),
+      idsIrmas.length > 0
+        ? supabase.from("motoristas").select("id, nome_completo, cpf, empresa_id").in("empresa_id", idsIrmas).order("nome_completo")
+        : Promise.resolve({ data: [] as { id: string; nome_completo: string; cpf: string | null; empresa_id: string }[] }),
+    ]);
+
+  const veiculosGrupo = resultadosVeiculosGrupo.flatMap((r, i) =>
+    (r.data ?? []).map((v) => ({ placa: v.placa, marca: v.marca, modelo: v.modelo, empresaNome: irmas[i].nome }))
+  );
+  const veiculos = [
+    ...(veiculosData ?? []).map((v) => ({ placa: v.placa, marca: v.marca, modelo: v.modelo, empresaNome: undefined as string | undefined })),
+    ...veiculosGrupo,
+  ];
+  const motoristas = [
+    ...(motoristasData ?? []),
+    ...(motoristasGrupoData ?? []).map((m) => ({ id: m.id, nome_completo: m.nome_completo, cpf: m.cpf, empresaNome: nomePorEmpresaId.get(m.empresa_id) })),
+  ];
   const postosMap = new Map<string, string>();
   (postosData ?? []).forEach((p) => {
     if (p.posto_cnpj) postosMap.set(p.posto_cnpj, p.posto_nome ?? p.posto_cnpj);

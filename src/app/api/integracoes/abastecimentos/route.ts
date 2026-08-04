@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { autenticarRequisicaoApi, marcarUsoChaveApi } from "@/lib/apiAuth";
 import { ESCOPO_ABASTECIMENTOS_WRITE } from "@/lib/apiKeys";
 import { garantirVeiculoCadastrado, garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
+import { empresaDonaDoVeiculoAcao } from "@/lib/empresasGrupo";
 
 // API pública pra provedores de cartão de combustível (Ticket Log, Alelo
 // Fleet, Repom etc.) lançarem transações de abastecimento direto na FNI —
@@ -91,10 +92,21 @@ export async function POST(request: Request) {
     }
   }
 
+  // Fase Reuso-Operacional-Grupo (Fase 3) — se a placa já tem cadastro em
+  // cadastro_veiculos e pertence a OUTRA empresa do mesmo grupo econômico
+  // da chave usada (ex.: chave da empresa B, mas veículo é da empresa A,
+  // irmã de B), o custo do abastecimento fica com a empresa DONA do
+  // veículo, não com quem está operando a integração — decisão do Daniel,
+  // mesmo critério já aplicado em profrotas_abastecimentos (trigger),
+  // Manutenção, Checklist e Multas. Se a placa ainda não tem cadastro
+  // algum, mantém o comportamento antigo (empresa da chave).
+  const empresaDonaVeiculo = await empresaDonaDoVeiculoAcao(supabase, placa);
+  const empresaIdAbastecimento = empresaDonaVeiculo ?? chave.empresaId;
+
   const { data: registro, error: erroInsert } = await supabase
     .from("abastecimentos_externos")
     .insert({
-      empresa_id: chave.empresaId,
+      empresa_id: empresaIdAbastecimento,
       provedor,
       placa,
       motorista_nome: corpo.motorista_nome?.trim() || null,
