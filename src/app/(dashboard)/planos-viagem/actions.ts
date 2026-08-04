@@ -7,11 +7,41 @@ import { STATUS_PLANO_VIAGEM, type StatusPlanoViagem } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
 import { calcularRotaOsrm, distanciasAcumuladas, type Ponto } from "@/lib/geo";
 import { buscarPracasPedagioNaRota } from "@/lib/pedagio";
+import { empresaOuIrmaDoGrupo } from "@/lib/empresasGrupo";
 
 type PlanoViagemUpdate = Database["public"]["Tables"]["planos_viagem"]["Update"];
 
 function statusValido(valor: string): StatusPlanoViagem {
   return (STATUS_PLANO_VIAGEM as readonly string[]).includes(valor) ? (valor as StatusPlanoViagem) : "rascunho";
+}
+
+// Fase Reuso-Operacional-Grupo — até aqui `placa`/`motorista_id` eram
+// gravados sem nenhuma checagem de dono (gap pré-existente: qualquer FK
+// solta passava). Agora exigimos que, quando informados, pertençam à
+// empresa que está criando/editando o plano OU a uma empresa irmã do
+// mesmo Grupo Econômico ativo (mesmo padrão já usado em Fretes/MDF-e).
+async function validarVeiculoMotoristaDoGrupo(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  empresaId: string,
+  placa: string | null,
+  motoristaId: string | null
+): Promise<string | null> {
+  if (placa) {
+    const { data: veiculo } = await supabase.from("cadastro_veiculos").select("cnpj_frota").eq("placa", placa).maybeSingle();
+    const empresaVeiculoId = veiculo?.cnpj_frota
+      ? (await supabase.rpc("empresa_id_do_cnpj", { p_cnpj: veiculo.cnpj_frota })).data
+      : null;
+    if (!(await empresaOuIrmaDoGrupo(supabase, empresaId, empresaVeiculoId))) {
+      return "Esse veículo não é da sua empresa nem do seu grupo econômico.";
+    }
+  }
+  if (motoristaId) {
+    const { data: motorista } = await supabase.from("motoristas").select("empresa_id").eq("id", motoristaId).maybeSingle();
+    if (!(await empresaOuIrmaDoGrupo(supabase, empresaId, motorista?.empresa_id))) {
+      return "Esse motorista não é da sua empresa nem do seu grupo econômico.";
+    }
+  }
+  return null;
 }
 
 export type PlanoViagemFormState = { erro?: string } | undefined;
@@ -214,6 +244,9 @@ export async function criarPlanoViagem(
     return { erro: "Selecione um cliente antes de salvar." };
   }
 
+  const erroDono = await validarVeiculoMotoristaDoGrupo(supabase, empresaId, payload.placa, payload.motorista_id);
+  if (erroDono) return { erro: erroDono };
+
   const { data, error } = await supabase
     .from("planos_viagem")
     .insert({ ...payload, empresa_id: empresaId, criado_por: user?.email ?? null })
@@ -269,6 +302,12 @@ export async function atualizarPlanoViagem(
   if (!payload.nome) {
     return { erro: "O nome do plano é obrigatório." };
   }
+
+  const { data: planoAtual } = await supabase.from("planos_viagem").select("empresa_id").eq("id", id).maybeSingle();
+  if (!planoAtual) return { erro: "Plano de viagem não encontrado." };
+
+  const erroDono = await validarVeiculoMotoristaDoGrupo(supabase, planoAtual.empresa_id, payload.placa ?? null, payload.motorista_id ?? null);
+  if (erroDono) return { erro: erroDono };
 
   const { error } = await supabase
     .from("planos_viagem")

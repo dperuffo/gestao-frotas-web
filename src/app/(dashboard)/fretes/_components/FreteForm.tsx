@@ -6,7 +6,7 @@ import { CampoLocalFrete } from "./CampoLocalFrete";
 import { CampoEnderecoCompleto } from "./CampoEnderecoCompleto";
 import { GRUPOS_VEICULO, CARROCERIAS_FRETE } from "@/lib/fretesVeiculos";
 
-type MotoristaOpcao = { id: string; nome: string; origem: "proprio" | "parceiro" };
+type MotoristaOpcao = { id: string; nome: string; origem: "proprio" | "grupo" | "parceiro"; empresaNome?: string };
 
 export function FreteForm({ empresaId, motoristas }: { empresaId: string; motoristas: MotoristaOpcao[] }) {
   const [erro, setErro] = useState<string | undefined>();
@@ -269,6 +269,17 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
                     .map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.nome}
+                      </option>
+                    ))}
+                </optgroup>
+              )}
+              {motoristas.filter((m) => m.origem === "grupo").length > 0 && (
+                <optgroup label="Motoristas do grupo econômico">
+                  {motoristas
+                    .filter((m) => m.origem === "grupo")
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nome} — {m.empresaNome}
                       </option>
                     ))}
                 </optgroup>

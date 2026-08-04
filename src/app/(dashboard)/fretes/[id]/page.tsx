@@ -14,6 +14,7 @@ import { RecolocarParaBaseCard } from "../_components/RecolocarParaBaseCard";
 import { ChatFrete } from "../_components/ChatFrete";
 import { ResolverPanicoButton } from "../_components/ResolverPanicoButton";
 import { AgendamentoPatioCard } from "../../agendamentos-patio/_components/AgendamentoPatioCard";
+import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 
 type FreteDetalhe = {
   id: string;
@@ -203,7 +204,20 @@ export default async function FreteDetalhePage({
       .maybeSingle(),
   ]);
 
-  const veiculos: VeiculoOpcao[] = (veiculosData ?? []).map((v: { id: string; placa: string }) => ({ id: v.id, placa: v.placa }));
+  // Fase Reuso-Operacional-Grupo — o "Iniciar viagem" (MDF-e) também
+  // aceita veículo de uma empresa irmã do grupo, não só da própria
+  // empresa que está emitindo o frete.
+  const irmasVeiculo = await empresasIrmasAcao(supabase, empresaId);
+  const resultadosVeiculosGrupo = await Promise.all(
+    irmasVeiculo.map((e) => supabase.rpc("veiculos_da_empresa", { p_empresa_id: e.id }).select("id, placa"))
+  );
+  const veiculosGrupo: VeiculoOpcao[] = resultadosVeiculosGrupo.flatMap((r, i) =>
+    ((r.data ?? []) as { id: string; placa: string }[]).map((v) => ({ id: v.id, placa: v.placa, empresaNome: irmasVeiculo[i].nome }))
+  );
+  const veiculos: VeiculoOpcao[] = [
+    ...(veiculosData ?? []).map((v: { id: string; placa: string }) => ({ id: v.id, placa: v.placa })),
+    ...veiculosGrupo,
+  ];
 
   const nfesCarga: NfeCargaRow[] = (nfesCargaData ?? []).map((n) => ({
     id: n.id,

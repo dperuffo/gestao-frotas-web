@@ -17,8 +17,8 @@ import type { Database } from "@/types/database.types";
 type PlanoViagem = Database["public"]["Tables"]["planos_viagem"]["Row"];
 type Pedagio = { praca_nome: string; valor: number };
 
-export type VeiculoOpcao = { placa: string; marca: string | null; modelo: string | null; autonomia: number | null };
-export type MotoristaOpcao = { id: string; nome_completo: string };
+export type VeiculoOpcao = { placa: string; marca: string | null; modelo: string | null; autonomia: number | null; empresaNome?: string };
+export type MotoristaOpcao = { id: string; nome_completo: string; empresaNome?: string };
 export type RotogramaOpcao = { id: string; numero: number; origem: string | null; destino: string | null };
 export type RotaSalvaOpcao = { id: string; nome: string };
 export type CentroCustoOpcao = { id: string; nome: string };
@@ -311,6 +311,7 @@ export function PlanoViagemForm({
               {veiculos.map((v) => (
                 <option key={v.placa} value={v.placa}>
                   {v.placa} {v.marca ? `— ${v.marca} ${v.modelo ?? ""}`.trim() : ""}
+                  {v.empresaNome ? ` (${v.empresaNome})` : ""}
                 </option>
               ))}
             </select>
@@ -321,6 +322,7 @@ export function PlanoViagemForm({
               {motoristas.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.nome_completo}
+                  {m.empresaNome ? ` (${m.empresaNome})` : ""}
                 </option>
               ))}
             </select>

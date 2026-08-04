@@ -7,7 +7,7 @@ import { cancelarMdfeAcao, encerrarMdfeAcao, iniciarViagemAcao } from "../mdfeAc
 // veículo, agrupando N CT-e". Aqui, 1 frete = 1 viagem. Provedor real ainda
 // não existe (mesma decisão da P0.1/P0.2) — roda no Simulador.
 
-export type VeiculoOpcao = { id: string; placa: string };
+export type VeiculoOpcao = { id: string; placa: string; empresaNome?: string };
 
 export type MdfeAtivo = {
   id: string;
@@ -140,6 +140,7 @@ function FormIniciarViagem({
             {veiculos.map((v) => (
               <option key={v.id} value={v.id} data-placa={v.placa}>
                 {v.placa}
+                {v.empresaNome ? ` — ${v.empresaNome}` : ""}
               </option>
             ))}
           </select>

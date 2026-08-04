@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { obterProvedorFiscal } from "@/lib/fiscal";
 import type { DadosEmissaoMdfe, ProvedorNome } from "@/lib/fiscal";
+import { empresaOuIrmaDoGrupo } from "@/lib/empresasGrupo";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -83,6 +84,20 @@ export async function iniciarViagemAcao(
   const placaVeiculo = String(formData.get("placa_veiculo") ?? "").trim().toUpperCase();
   if (!placaVeiculo) return { erro: "Informe a placa do veículo." };
   const veiculoId = String(formData.get("veiculo_id") ?? "").trim() || null;
+
+  // Fase Reuso-Operacional-Grupo — o veículo selecionado (quando vem da
+  // lista, não digitado à mão) precisa ser da própria empresa ou de uma
+  // irmã do mesmo Grupo Econômico ativo (não valida a placa digitada
+  // livre, que já era aceita sem checagem antes desta fase).
+  if (veiculoId) {
+    const { data: veiculo } = await supabase.from("cadastro_veiculos").select("cnpj_frota").eq("id", veiculoId).maybeSingle();
+    const empresaVeiculoId = veiculo?.cnpj_frota
+      ? (await supabase.rpc("empresa_id_do_cnpj", { p_cnpj: veiculo.cnpj_frota })).data
+      : null;
+    if (!(await empresaOuIrmaDoGrupo(supabase, empresaId, empresaVeiculoId))) {
+      return { erro: "Esse veículo não é da sua empresa nem do seu grupo econômico." };
+    }
+  }
 
   const condutorNome = String(formData.get("condutor_nome") ?? "").trim();
   const condutorCpf = String(formData.get("condutor_cpf") ?? "").replace(/\D/g, "");

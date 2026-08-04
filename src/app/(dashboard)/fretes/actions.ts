@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { verificarAcessoFretes, mensagemAcessoFretesBloqueado } from "@/lib/limitePlano";
+import { empresaOuIrmaDoGrupo } from "@/lib/empresasGrupo";
 
 // Fretes (Fase Fretes) — mecanismo de contratação de frete entre cliente e
 // motorista, dois modos:
@@ -146,17 +147,20 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
     return { erro: "Peso da carga precisa ser maior que zero." };
   }
 
-  // Modo direto exige que o motorista escolhido seja próprio (empresa_id
-  // igual) ou parceiro ativo — a RLS não valida isso sozinha (motorista_id
-  // é só uma FK solta), então checamos aqui antes de gravar.
+  // Modo direto exige que o motorista escolhido seja próprio, de uma
+  // empresa irmã do mesmo Grupo Econômico ativo (Fase
+  // Reuso-Operacional-Grupo — motorista cadastrado numa empresa do grupo
+  // pode rodar frete de outra, sem duplicar cadastro), ou parceiro ativo —
+  // a RLS não valida isso sozinha (motorista_id é só uma FK solta), então
+  // checamos aqui antes de gravar.
   if (motoristaId) {
-    const { data: proprio } = await supabase
+    const { data: motorista } = await supabase
       .from("motoristas")
-      .select("id")
+      .select("id, empresa_id")
       .eq("id", motoristaId)
-      .eq("empresa_id", empresaId)
       .maybeSingle();
-    if (!proprio) {
+    const proprioOuDoGrupo = motorista ? await empresaOuIrmaDoGrupo(supabase, empresaId, motorista.empresa_id) : false;
+    if (!proprioOuDoGrupo) {
       const { data: parceiro } = await supabase
         .from("empresas_motoristas_parceiros")
         .select("id")
@@ -165,7 +169,7 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
         .eq("status", "ativo")
         .maybeSingle();
       if (!parceiro) {
-        return { erro: "Esse motorista não é da sua empresa nem um parceiro ativo." };
+        return { erro: "Esse motorista não é da sua empresa, do seu grupo econômico, nem um parceiro ativo." };
       }
     }
   }

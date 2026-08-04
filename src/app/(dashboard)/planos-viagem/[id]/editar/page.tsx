@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { PlanoViagemForm } from "../../_components/PlanoViagemForm";
 
 export default async function EditarPlanoViagemPage({
@@ -13,6 +14,13 @@ export default async function EditarPlanoViagemPage({
   const { data: plano } = await supabase.from("planos_viagem").select("*").eq("id", id).single();
   if (!plano) notFound();
 
+  // Fase Reuso-Operacional-Grupo — veículo/motorista de empresa irmã do
+  // grupo também entram como opção pra editar (mesma expansão da tela
+  // "novo").
+  const irmas = await empresasIrmasAcao(supabase, plano.empresa_id);
+  const nomePorEmpresaId = new Map(irmas.map((e) => [e.id, e.nome]));
+  const idsIrmas = irmas.map((e) => e.id);
+
   const [
     { data: pedagiosData },
     { data: veiculosData },
@@ -21,6 +29,8 @@ export default async function EditarPlanoViagemPage({
     { data: rotasSalvasData },
     { data: centrosCustoData },
     { data: prePedidoData },
+    resultadosVeiculosGrupo,
+    { data: motoristasGrupoData },
   ] = await Promise.all([
     supabase.from("planos_viagem_pedagios").select("praca_nome, valor").eq("plano_viagem_id", id).order("ordem"),
     supabase.rpc("veiculos_da_empresa", { p_empresa_id: plano.empresa_id }),
@@ -33,11 +43,29 @@ export default async function EditarPlanoViagemPage({
       .select("id, numero, status, pre_pedidos_paradas(id, ordem, posto_cnpj, posto_nome, km_previsto, litros_previstos, atendido, atendido_em)")
       .eq("plano_viagem_id", id)
       .maybeSingle(),
+    Promise.all(irmas.map((e) => supabase.rpc("veiculos_da_empresa", { p_empresa_id: e.id }))),
+    idsIrmas.length > 0
+      ? supabase.from("motoristas").select("id, nome_completo, empresa_id").in("empresa_id", idsIrmas).order("nome_completo")
+      : Promise.resolve({ data: [] as { id: string; nome_completo: string; empresa_id: string }[] }),
   ]);
 
-  const veiculos = (veiculosData ?? [])
-    .filter((v) => v.ativo !== false)
-    .map((v) => ({ placa: v.placa, marca: v.marca, modelo: v.modelo, autonomia: v.autonomia }));
+  const veiculosGrupo = resultadosVeiculosGrupo.flatMap((r, i) =>
+    (r.data ?? [])
+      .filter((v) => v.ativo !== false)
+      .map((v) => ({ placa: v.placa, marca: v.marca, modelo: v.modelo, autonomia: v.autonomia, empresaNome: irmas[i].nome }))
+  );
+
+  const veiculos = [
+    ...(veiculosData ?? [])
+      .filter((v) => v.ativo !== false)
+      .map((v) => ({ placa: v.placa, marca: v.marca, modelo: v.modelo, autonomia: v.autonomia })),
+    ...veiculosGrupo,
+  ];
+
+  const motoristas = [
+    ...(motoristasData ?? []),
+    ...(motoristasGrupoData ?? []).map((m) => ({ id: m.id, nome_completo: m.nome_completo, empresaNome: nomePorEmpresaId.get(m.empresa_id) })),
+  ];
 
   const prePedido = prePedidoData
     ? {
@@ -96,7 +124,7 @@ export default async function EditarPlanoViagemPage({
         plano={plano}
         pedagiosIniciais={pedagiosData ?? []}
         veiculos={veiculos}
-        motoristas={motoristasData ?? []}
+        motoristas={motoristas}
         rotogramas={rotogramasData ?? []}
         rotasSalvas={rotasSalvasData ?? []}
         centrosCusto={centrosCustoData ?? []}

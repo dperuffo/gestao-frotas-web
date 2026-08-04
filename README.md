@@ -7874,3 +7874,60 @@ Corrigido nas 4.
 Validado: `npx tsc --noEmit` e `npx eslint` limpos; RLS confirmada ativa (com policies) nas 3
 tabelas novas via SQL; testes reais de ponta a ponta contra as empresas de teste do Grupo
 Frotas e da Rede de Postos DP (não só leitura de schema).
+
+## Fase Reuso-Operacional-Grupo — motorista/veículo usado por qualquer empresa do grupo
+
+Pedido do Daniel: hoje motorista e veículo pertencem a uma única empresa (`motoristas.empresa_id`
+é FK obrigatória; `cadastro_veiculos` nem tem `empresa_id` — o vínculo é via `cnpj_frota`,
+comparado com o CNPJ da empresa). Ele confirmou que, na prática, clientes com Grupo Econômico já
+usam o mesmo motorista/veículo em operações de mais de uma empresa do grupo — faltava o sistema
+representar isso.
+
+**Achado antes de mexer em qualquer linha**: o BANCO já permitia isso — as FKs de `fretes`,
+`planos_viagem`, `mdfe` pra `motoristas`/`cadastro_veiculos` são referências soltas, sem checar
+se é a mesma empresa, e a RLS dessas tabelas só olha o `empresa_id` do PRÓPRIO registro (frete,
+plano, MDF-e), não o do motorista/veículo referenciado. Quem bloqueava era código de aplicação:
+uma checagem manual em `fretes/actions.ts` ("motorista precisa ter `empresa_id` igual") e os
+`<select>` das telas, que só buscavam motorista/veículo da empresa selecionada no momento.
+`planos_viagem` e o "Iniciar viagem" (MDF-e) nem tinham essa checagem — aceitavam qualquer
+`motorista_id`/`veiculo_id` sem validar dono nenhum (gap de segurança pré-existente, fechado
+nesta fase de passagem).
+
+**Decisão de escopo (conversada com o Daniel antes de codar)**: fase 1 cobre só Fretes, Planos
+de Viagem e MDF-e — o núcleo da operação do dia a dia. Manutenção/Checklist/Multas ficam pra uma
+próxima rodada (ainda não confirmado se cada uma precisa ou já funciona por natureza, já que
+`inspecoes_veiculos`/`manutencoes_realizadas`/`multas` são histórico do veículo por placa).
+Quem fica com o custo/km nos relatórios (TCO, DRE, Indicadores da Frota) quando um veículo
+"emprestado" de uma empresa irmã roda uma operação de outra: fica com a EMPRESA DONA DO
+CADASTRO (decisão do Daniel, mais simples) — como TCO/DRE/KPIs já calculam em cima do próprio
+cadastro do veículo/motorista (`cnpj_frota`/`empresa_id`), nenhum relatório precisou mudar.
+
+**`src/lib/empresasGrupo.ts`** (novo): `empresasIrmasAcao(supabase, empresaId)` reaproveita a
+RPC `listar_empresas_alvo_replicacao` (já existente da Fase Replicação-Grupo) pra resolver as
+empresas irmãs de um Grupo Econômico ativo. `empresaOuIrmaDoGrupo(supabase, empresaId,
+empresaAlvoId)` é o helper de validação usado nas actions: "é a própria empresa OU uma irmã".
+
+**Fretes** (`fretes/novo/page.tsx` + `actions.ts` + `FreteForm.tsx`): o `<select>` de motorista
+ganhou um terceiro grupo, "Motoristas do grupo econômico" (além de "próprios" e "parceiros"),
+com o nome da empresa dona ao lado (`João Silva — Frotas & Frotas Ltda`). Em `criarFrete`, a
+checagem que exigia `motorista.empresa_id === empresaId` passou a aceitar também motorista de
+empresa irmã.
+
+**MDF-e** (`fretes/[id]/page.tsx` + `mdfeActions.ts` + `MdfeCard.tsx`): o `<select>` de veículo
+no "Iniciar viagem" passou a listar também os veículos das empresas irmãs (rotulados com o nome
+da empresa). `iniciarViagemAcao` ganhou a validação que não existia antes: se `veiculo_id` vier
+preenchido (via seleção, não digitado à mão), precisa ser da própria empresa ou de uma irmã.
+
+**Planos de Viagem** (`planos-viagem/novo/page.tsx` + `[id]/editar/page.tsx` + `actions.ts` +
+`PlanoViagemForm.tsx`): mesmo tratamento — `<select>` de veículo e de motorista passam a incluir
+o grupo inteiro (rotulado), e `criarPlanoViagem`/`atualizarPlanoViagem` ganharam a validação
+`validarVeiculoMotoristaDoGrupo` (não existia nenhuma checagem de dono antes desta fase — fechado
+o mesmo gap de segurança encontrado no MDF-e).
+
+**Fora do escopo desta fase, de propósito**: documentos fiscais (CT-e/MDF-e) com veículo/motorista
+de empresa irmã — tecnicamente já funciona (a validação só confere "está no grupo", não duplica
+regra fiscal), mas a validade disso perante a legislação (RNTRC, cessão/comodato entre empresas
+do mesmo grupo) é uma decisão de negócio do Daniel/contador, não travada pelo sistema.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos nos 11 arquivos tocados (novo helper +
+Fretes + MDF-e + Planos de Viagem, web e componentes).

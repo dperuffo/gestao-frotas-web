@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { PlanoViagemForm, type PrefillPlanoViagem } from "../_components/PlanoViagemForm";
 
 // Fase 27.48 — a escolha de cliente acontece igual ao resto do app (via
@@ -46,6 +47,13 @@ export default async function NovoPlanoViagemPage({
     );
   }
 
+  // Fase Reuso-Operacional-Grupo — veículo e motorista de uma empresa irmã
+  // do mesmo Grupo Econômico ativo também entram como opção, marcados com
+  // o nome da empresa dona do cadastro.
+  const irmas = await empresasIrmasAcao(supabase, empresaSelecionada);
+  const nomePorEmpresaId = new Map(irmas.map((e) => [e.id, e.nome]));
+  const idsIrmas = irmas.map((e) => e.id);
+
   const [
     { data: veiculosData },
     { data: motoristasData },
@@ -53,6 +61,8 @@ export default async function NovoPlanoViagemPage({
     { data: rotasSalvasData },
     { data: centrosCustoData },
     { data: parametroPrePedidoData },
+    resultadosVeiculosGrupo,
+    { data: motoristasGrupoData },
   ] = await Promise.all([
     supabase.rpc("veiculos_da_empresa", { p_empresa_id: empresaSelecionada }),
     supabase.from("motoristas").select("id, nome_completo").eq("empresa_id", empresaSelecionada).order("nome_completo"),
@@ -60,13 +70,31 @@ export default async function NovoPlanoViagemPage({
     supabase.from("rotas_salvas").select("id, nome").eq("empresa_id", empresaSelecionada).order("criado_em", { ascending: false }),
     supabase.from("centros_custo").select("id, nome").eq("empresa_id", empresaSelecionada).order("nome"),
     supabase.from("parametros_pre_pedido").select("habilitado").eq("empresa_id", empresaSelecionada).maybeSingle(),
+    Promise.all(irmas.map((e) => supabase.rpc("veiculos_da_empresa", { p_empresa_id: e.id }))),
+    idsIrmas.length > 0
+      ? supabase.from("motoristas").select("id, nome_completo, empresa_id").in("empresa_id", idsIrmas).order("nome_completo")
+      : Promise.resolve({ data: [] as { id: string; nome_completo: string; empresa_id: string }[] }),
   ]);
 
   const prePedidoHabilitado = parametroPrePedidoData?.habilitado === true;
 
-  const veiculos = (veiculosData ?? [])
-    .filter((v) => v.ativo !== false)
-    .map((v) => ({ placa: v.placa, marca: v.marca, modelo: v.modelo, autonomia: v.autonomia }));
+  const veiculosGrupo = resultadosVeiculosGrupo.flatMap((r, i) =>
+    (r.data ?? [])
+      .filter((v) => v.ativo !== false)
+      .map((v) => ({ placa: v.placa, marca: v.marca, modelo: v.modelo, autonomia: v.autonomia, empresaNome: irmas[i].nome }))
+  );
+
+  const veiculos = [
+    ...(veiculosData ?? [])
+      .filter((v) => v.ativo !== false)
+      .map((v) => ({ placa: v.placa, marca: v.marca, modelo: v.modelo, autonomia: v.autonomia })),
+    ...veiculosGrupo,
+  ];
+
+  const motoristas = [
+    ...(motoristasData ?? []),
+    ...(motoristasGrupoData ?? []).map((m) => ({ id: m.id, nome_completo: m.nome_completo, empresaNome: nomePorEmpresaId.get(m.empresa_id) })),
+  ];
 
   return (
     <div>
@@ -74,7 +102,7 @@ export default async function NovoPlanoViagemPage({
       <PlanoViagemForm
         empresaId={empresaSelecionada}
         veiculos={veiculos}
-        motoristas={motoristasData ?? []}
+        motoristas={motoristas}
         rotogramas={rotogramasData ?? []}
         rotasSalvas={rotasSalvasData ?? []}
         centrosCusto={centrosCustoData ?? []}
