@@ -1082,6 +1082,46 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["empresas_motoristas_parceiros"]["Row"]>;
         Relationships: [];
       };
+      // Fase agendamento-patio (04/08/2026, item 8 do benchmark FNI vs KMM,
+      // Grupo 2) — YMS leve: janela de carga (coleta) ou descarga (entrega)
+      // agendada pra um frete, no máximo 1 de cada tipo por frete. Status
+      // "em_andamento"/"concluido" são preenchidos pela RPC
+      // registrar_evento_frete a partir dos checkpoints do motorista.
+      agendamentos_patio: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          frete_id: string;
+          tipo: "coleta" | "entrega";
+          local_label: string;
+          doca: string | null;
+          janela_inicio: string;
+          janela_fim: string;
+          status: "agendado" | "confirmado" | "em_andamento" | "concluido" | "cancelado";
+          observacoes: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["agendamentos_patio"]["Row"]> & {
+          empresa_id: string;
+          frete_id: string;
+          tipo: "coleta" | "entrega";
+          local_label: string;
+          janela_inicio: string;
+          janela_fim: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["agendamentos_patio"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "agendamentos_patio_frete_id_fkey";
+            columns: ["frete_id"];
+            isOneToOne: false;
+            referencedRelation: "fretes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Fase Fretes — oferta de frete publicada por um cliente: modo direto
       // (motorista_id já preenchido, status aguardando_confirmacao) ou modo
       // mercado aberto (status disponivel, visível pra rede toda).

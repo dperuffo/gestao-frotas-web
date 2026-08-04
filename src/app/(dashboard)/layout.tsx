@@ -187,6 +187,11 @@ const menuFretes: ItemMenuLateral[] = [
   // Grupo 1 item 1) — visão por veículo (em vez de por frete): quem está
   // em viagem e até quando, quem está livre, quem não tem motorista.
   { href: "/programacao", label: "Programação", icon: CalendarClock },
+  // Fase agendamento-patio (04/08/2026, item 8 do benchmark FNI vs KMM,
+  // Grupo 2) — YMS leve: agenda das janelas de carga/descarga marcadas por
+  // frete, com aviso de conflito de doca e status que segue os checkpoints
+  // do motorista sozinho.
+  { href: "/agendamentos-patio", label: "Agendamento de Pátio", icon: CalendarClock },
   // Fase P0.5 (plano FNI_Plano_Implementacao_P0.md) — cotações simulam o
   // frete a partir das Tabelas de Frete (frete-peso/ad valorem/GRIS/ICMS)
   // e do piso mínimo ANTT, e convertem em frete com um clique.

@@ -78,6 +78,7 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/fretes": "aba_fretes",
   "/torre-de-controle": "aba_torre_controle",
   "/programacao": "aba_programacao_frota",
+  "/agendamentos-patio": "aba_agendamento_patio",
   "/cotacoes": "aba_cotacoes",
   "/tabelas-frete": "aba_tabelas_frete",
   "/crm-comercial": "aba_crm_comercial",

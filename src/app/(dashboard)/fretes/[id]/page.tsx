@@ -13,6 +13,7 @@ import { PagamentosFrete, type PagamentoFrete } from "../_components/PagamentosF
 import { RecolocarParaBaseCard } from "../_components/RecolocarParaBaseCard";
 import { ChatFrete } from "../_components/ChatFrete";
 import { ResolverPanicoButton } from "../_components/ResolverPanicoButton";
+import { AgendamentoPatioCard } from "../../agendamentos-patio/_components/AgendamentoPatioCard";
 
 type FreteDetalhe = {
   id: string;
@@ -105,7 +106,7 @@ export default async function FreteDetalhePage({
 
   const emAndamentoOuConcluido = ["aceito", "em_andamento", "concluido"].includes(freteTipado.status);
 
-  const [{ data: postos }, { data: eventos }, { data: itensParceria }, { data: avaliacoes }] = await Promise.all([
+  const [{ data: postos }, { data: eventos }, { data: itensParceria }, { data: avaliacoes }, { data: agendamentosPatio }] = await Promise.all([
     supabase
       .from("fretes_postos_recomendados")
       .select("id, nome_posto, observacao, item_catalogo_id, criado_em")
@@ -124,7 +125,17 @@ export default async function FreteDetalhePage({
       .eq("categoria", "conveniencia_posto")
       .eq("ativo", true),
     supabase.from("fretes_avaliacoes").select("avaliador, estrelas, comentario").eq("frete_id", id),
+    // Fase agendamento-patio — janelas de carga (coleta) e descarga
+    // (entrega) já agendadas pra este frete (no máximo 1 de cada, ver
+    // constraint agendamentos_patio_frete_tipo_unico).
+    supabase
+      .from("agendamentos_patio")
+      .select("id, tipo, doca, janela_inicio, janela_fim, status, observacoes")
+      .eq("frete_id", id),
   ]);
+
+  const agendamentoColeta = (agendamentosPatio ?? []).find((a) => a.tipo === "coleta") ?? null;
+  const agendamentoEntrega = (agendamentosPatio ?? []).find((a) => a.tipo === "entrega") ?? null;
 
   // Fase Fretes-Adiantamento-Combustível (19/07) — parcelas de pagamento
   // (adiantamento/saldo_final), geradas automaticamente pelo banco quando
@@ -456,6 +467,34 @@ export default async function FreteDetalhePage({
           />
         </div>
       )}
+
+      <div className="card mb-6 p-6">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900">🗓️ Agendamento de Pátio</h2>
+        <p className="mb-3 text-xs text-slate-500">
+          Janela de carga/descarga combinada com o local. Confirma sozinho pra &quot;em andamento&quot;/&quot;concluído&quot; quando o
+          motorista bate o checkpoint no app dele — não precisa marcar chegada/saída aqui.
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <AgendamentoPatioCard
+            freteId={id}
+            empresaId={empresaId}
+            tipo="coleta"
+            localLabelPadrao={
+              freteTipado.coleta_cidade ? `${freteTipado.coleta_cidade}/${freteTipado.coleta_uf ?? ""}` : freteTipado.origem_label
+            }
+            agendamento={agendamentoColeta}
+          />
+          <AgendamentoPatioCard
+            freteId={id}
+            empresaId={empresaId}
+            tipo="entrega"
+            localLabelPadrao={
+              freteTipado.entrega_cidade ? `${freteTipado.entrega_cidade}/${freteTipado.entrega_uf ?? ""}` : freteTipado.destino_label
+            }
+            agendamento={agendamentoEntrega}
+          />
+        </div>
+      </div>
 
       <PagamentosFrete freteId={id} freteConcluido={freteTipado.status === "concluido"} pagamentos={pagamentos} />
 

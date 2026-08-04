@@ -7699,3 +7699,41 @@ parênteses/chaves/colchetes nos 3 arquivos Dart tocados (mesma limitação de s
 Flutter/Dart instalado — `flutter analyze` ainda não rodado aqui); confirmado
 `.inFilter(...)` como método correto pro postgrest-dart desta versão (já usado em outros
 arquivos do repo, ex. `abastecimentos_cliente_service.dart`).
+
+## Fase agendamento-patio — YMS leve (agenda de carga/descarga)
+
+Item 8 do Grupo 2 do benchmark FNI vs KMM. Antes de desenhar, mapeamos o que já existia:
+`fretes` já tinha `coleta_data`/`coleta_hora` e `entrega_data`/`entrega_hora` (só um instante,
+sem janela), e `fretes_eventos` já registrava `chegou_origem`/`saiu_origem`/`chegou_destino`/
+`concluido` — ou seja, o "check-in/check-out" de pátio já existia via checkpoints do motorista.
+Faltava só a camada de AGENDAR: janela de tempo, aviso de conflito de doca e confirmação.
+
+**Migração `agendamento_patio_yms_leve`**: tabela nova `agendamentos_patio` (1 linha por
+janela — no máximo 1 de `tipo='coleta'` e 1 de `tipo='entrega'` por frete, via constraint
+única). RLS no mesmo padrão de sempre. A parte mais importante: a RPC `registrar_evento_frete`
+(a mesma que o motorista já chama pra bater checkpoint) ganhou 4 linhas novas de sincronização
+— quando o evento é `chegou_origem`/`saiu_origem`/`chegou_destino`/`concluido`, ela também
+atualiza o `agendamentos_patio` correspondente pra `em_andamento`/`concluido`. Resultado: zero
+tela ou botão novo no PWA motorista, o status "anda sozinho" a partir do fluxo que já existia.
+
+**Web — `agendamentos-patio/actions.ts`**: `criarAgendamentoAcao` valida a janela e, se a doca
+foi preenchida, checa conflito (overlap de horário na mesma doca da mesma empresa) antes de
+inserir — bloqueia com uma mensagem citando o frete conflitante. `reagendarAcao`,
+`confirmarAgendamentoAcao` e `cancelarAgendamentoAcao` completam o ciclo manual (o resto do
+ciclo é automático, como descrito acima).
+
+**Web — `_components/AgendamentoPatioCard.tsx`**: vive dentro de `/fretes/[id]`, uma instância
+pra coleta e outra pra entrega — sem agendamento ainda, mostra o formulário de criar; com
+agendamento, mostra badge de status + janela + doca + ações (confirmar/reagendar/cancelar,
+desabilitadas quando o status já passou a depender do motorista).
+
+**Web — `/agendamentos-patio` (nova tela, menu "Agendamento de Pátio" no grupo Fretes)**: agenda
+consolidada do dia, com contadores (total, confirmados, em andamento, atrasados) e uma linha
+por agendamento com link pro frete — pensada pra responder "o que está previsto pra hoje" sem
+precisar abrir frete por frete.
+
+Sem tela de criação separada — agendar sempre parte de dentro do frete (é lá que faz sentido,
+já que o agendamento pertence a UM frete); a tela nova é só consulta + ações rápidas.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos; conferido via SQL que a RLS ficou ativa com
+as 4 políticas (select/insert/update/delete) na tabela nova.
