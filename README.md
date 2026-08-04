@@ -7785,3 +7785,92 @@ runtime enquanto a função ficar "quente".
 "Sistema" e voltou pro grupo "Roteirização e Abastecimento" (web e PWA Cliente) — é regra de
 abastecimento (vínculo motorista-veículo, Hub de Integrações), não configuração geral do
 sistema.
+
+## Fase Replicação-Grupo — "Replicar para o grupo" (mecanismo genérico)
+
+Pedido do Daniel: hoje existem Grupo Econômico (clientes) e Rede de Postos (postos) — ambos já
+compartilham a MESMA tabela (`grupos_economicos` + `grupos_economicos_empresas`, diferenciados
+só pelo `segmento`, achado documentado desde a Fase 27.87). Faltava um jeito do usuário (cliente
+OU posto) replicar uma parametrização/cadastro que já preencheu numa empresa para as demais
+empresas do próprio grupo, sem repetir manualmente — pensado pra operação grande (muitas
+empresas por grupo), não só os 2 grupos de teste que existem hoje.
+
+**Decisão de arquitetura**: como Grupo Econômico e Rede de Postos já são o mesmo mecanismo no
+banco, bastou UM motor genérico pra servir os dois lados — nada de sistema paralelo por
+segmento.
+
+**Schema (migração `replicacao_grupo_mecanismo_*`)**:
+- `replicacao_tabelas_registro` — allow-list config-driven das tabelas elegíveis (não é uma
+  lista fixa no código; é dado). Cada linha define: `tabela` (+ opcional `tabela_filho` e
+  `coluna_fk_filho` pra cascatear registros pai-filho, ex.: tabela de frete → faixas de peso),
+  `coluna_empresa` (a maioria usa `empresa_id`, mas `precos_postos` usa `empresa_posto_id` —
+  suportado por config, não hardcoded), `colunas_chave_natural` (como detectar "já existe
+  equivalente" na empresa destino) e `filtro_sql` (extra WHERE pra excluir linhas que não fazem
+  sentido fora da empresa de origem — ver abaixo). **`filtro_sql` é confiável**: só é inserido
+  via migração/admin, nunca vem de input do usuário final — não há risco de injeção.
+- `replicacoes_lote` / `replicacoes_lote_itens` — cabeçalho + relatório por empresa destino
+  (sucesso/pulado/erro + motivo) de cada execução, pra auditoria e pra alimentar o relatório
+  mostrado na hora.
+
+**RPCs (SECURITY DEFINER)**: `listar_empresas_alvo_replicacao`, `criar_replicacao_lote`,
+`processar_replicacao_lote` e o atalho `replicar_para_grupo` (cria + processa numa chamada só).
+O motor roda inteiro dentro de UM `plpgsql` usando `jsonb_populate_record`/`to_jsonb` pra copiar
+qualquer linha genericamente (sem SQL dinâmico por coluna) — funciona pra qualquer tabela da
+allow-list sem precisar escrever código novo por tabela. Como o loop roda dentro do Postgres
+(sem round-trip de rede por empresa), mesmo um grupo com centenas de empresas processa numa
+única chamada de RPC, sem risco de timeout no servidor Next.js — decisão que trocou a ideia
+inicial de Edge Function/fila assíncrona por algo bem mais simples, já que o gargalo real
+(round-trips de rede) não existe aqui.
+
+**Permissão**: qualquer usuário com acesso à empresa de origem (via `empresas_do_usuario`, a
+mesma função usada em toda a leitura por grupo) pode replicar pra empresas irmãs — sem gate de
+admin. Mais permissivo que a gestão do Grupo Econômico em si (que é admin-only), mas
+deliberado: replicar só empurra dado pra empresas que o usuário já enxerga, não reestrutura o
+grupo — risco bem menor.
+
+**Conflito**: padrão `pular_se_existir` (nunca sobrescreve o que já existe na empresa destino —
+só cria o que falta) — decisão do Daniel, pensando no risco de propagar uma configuração errada
+sobre um grupo grande. `sobrescrever` existe na RPC pra uso futuro, mas não está exposto na UI.
+
+**Regra de segurança de dados**: campos amarrados a um veículo/motorista específico (placa,
+`motorista_id`) não fazem sentido em outra empresa (o veículo simplesmente não existe lá) —
+por isso o `filtro_sql` de cada tabela do tipo "Parâmetros de Uso" só libera as linhas
+"gerais" (sem placa/motorista específico); regras específicas de um veículo nunca são
+replicadas. Mesma lógica pra `tabelas_frete` (só as gerais, sem `cliente_tomador_id`).
+
+**Piloto (14 entradas no registro)**: Parâmetros de Uso (9 sub-tabelas: pré-pedido, dias/
+horários, intervalo, limite de serviços, postos permitidos, produto, hodômetro, volume diário,
+valor diário — excluídas de propósito `parametros_cota_veiculo`/vínculo/centros de custo por
+veículo, sempre específicas de um veículo), Parâmetros de NF (+ exceções por UF em cascata),
+Centros de Custo, Tabelas de Frete (+ faixas em cascata), Permissões por Perfil (customização
+por empresa) e Preços de Postos (lado posto).
+
+**Componente reutilizável**: `ReplicarParaGrupoButton.tsx` + `src/lib/replicacaoGrupo.ts`
+(server actions) — um botão só, dropado em qualquer tela com a `chaveTabela` certa: abre
+diálogo, lista as empresas-alvo, confirma, roda e mostra o relatório por empresa. Ligado em
+`/parametros-uso` (por aba), `/parametros-nf`, `/centros-custo`, `/tabelas-frete`,
+`/permissoes` (só quando o usuário customiza a própria empresa, não no padrão global do admin)
+e `/precos-postos` (lado posto).
+
+**Testado com dados reais** (empresas de teste do Grupo Frotas e da Rede de Postos DP): criação
+de lote, dedup (`pular_se_existir` reconhecendo registros já replicados numa segunda chamada),
+cascata pai-filho (tabela de frete → faixas) e a coluna de empresa customizada
+(`precos_postos.empresa_posto_id`) — um bug real foi encontrado e corrigido nesse teste (ver
+abaixo).
+
+**Achado real corrigido nesta fase**: o cascade pai-filho tinha um bug — a chave da coluna FK
+do filho estava sendo injetada como identificador SQL (`%I`) dentro de um `jsonb_build_object`,
+quando precisava ser string literal (`%L`). O efeito prático: os registros filhos eram
+duplicados e recolados no PRÓPRIO registro de origem (não no novo registro criado na empresa
+destino) — silencioso, sem erro. Descoberto testando de propósito o cascade de
+`tabelas_frete_faixas` com dados reais antes de dar como pronto; corrigido e revalidado.
+
+**Bugfix à parte, no mesmo dia (achado ao vivo pelo Daniel)**: 4 RPCs de KPIs/TCO
+(`tco_veiculo`, `tco_frota_resumo`, `kpis_frota_resumo`, `kpis_frota_por_veiculo`)
+referenciavam uma tabela inexistente, `solicitacoes_orcamento_oficina` — o nome real é
+`pedidos_orcamento_oficina` (renomeada em fase anterior, sem atualizar essas 4 funções).
+Corrigido nas 4.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos; RLS confirmada ativa (com policies) nas 3
+tabelas novas via SQL; testes reais de ponta a ponta contra as empresas de teste do Grupo
+Frotas e da Rede de Postos DP (não só leitura de schema).

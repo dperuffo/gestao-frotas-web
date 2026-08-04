@@ -1122,6 +1122,106 @@ export interface Database {
           },
         ];
       };
+      // Fase Replicação-Grupo — allow-list config-driven de tabelas
+      // elegíveis para o mecanismo "Replicar para o grupo".
+      replicacao_tabelas_registro: {
+        Row: {
+          id: string;
+          chave: string;
+          tabela: string;
+          tabela_filho: string | null;
+          coluna_fk_filho: string | null;
+          rotulo: string;
+          grupo_menu: string | null;
+          colunas_chave_natural: string[];
+          filtro_sql: string | null;
+          colunas_ignoradas: string[];
+          coluna_empresa: string;
+          ativo: boolean;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["replicacao_tabelas_registro"]["Row"]> & {
+          chave: string;
+          tabela: string;
+          rotulo: string;
+          colunas_chave_natural: string[];
+        };
+        Update: Partial<Database["public"]["Tables"]["replicacao_tabelas_registro"]["Row"]>;
+        Relationships: [];
+      };
+      replicacoes_lote: {
+        Row: {
+          id: string;
+          registro_tabela_id: string;
+          empresa_origem_id: string;
+          grupo_economico_id: string | null;
+          registro_origem_id: string | null;
+          modo_conflito: "pular_se_existir" | "sobrescrever";
+          status: "pendente" | "processando" | "concluido" | "concluido_com_erros" | "erro";
+          solicitado_por: string | null;
+          criado_em: string;
+          iniciado_em: string | null;
+          concluido_em: string | null;
+          total_empresas_alvo: number;
+          total_sucesso: number;
+          total_pulado: number;
+          total_erro: number;
+          erro_mensagem: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["replicacoes_lote"]["Row"]> & {
+          registro_tabela_id: string;
+          empresa_origem_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["replicacoes_lote"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "replicacoes_lote_registro_tabela_id_fkey";
+            columns: ["registro_tabela_id"];
+            isOneToOne: false;
+            referencedRelation: "replicacao_tabelas_registro";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "replicacoes_lote_empresa_origem_id_fkey";
+            columns: ["empresa_origem_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      replicacoes_lote_itens: {
+        Row: {
+          id: string;
+          lote_id: string;
+          empresa_destino_id: string;
+          status: "sucesso" | "pulado" | "erro";
+          motivo: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["replicacoes_lote_itens"]["Row"]> & {
+          lote_id: string;
+          empresa_destino_id: string;
+          status: "sucesso" | "pulado" | "erro";
+        };
+        Update: Partial<Database["public"]["Tables"]["replicacoes_lote_itens"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "replicacoes_lote_itens_lote_id_fkey";
+            columns: ["lote_id"];
+            isOneToOne: false;
+            referencedRelation: "replicacoes_lote";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "replicacoes_lote_itens_empresa_destino_id_fkey";
+            columns: ["empresa_destino_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Fase Fretes — oferta de frete publicada por um cliente: modo direto
       // (motorista_id já preenchido, status aguardando_confirmacao) ou modo
       // mercado aberto (status disponivel, visível pra rede toda).
@@ -4425,6 +4525,35 @@ export interface Database {
       empresas_do_usuario: {
         Args: { p_email: string };
         Returns: string[];
+      };
+      // Fase Replicação-Grupo — mecanismo genérico "Replicar para o grupo"
+      // (Grupo Econômico / Rede de Postos, mesmo mecanismo). Ver migração
+      // replicacao_grupo_mecanismo_*.
+      listar_empresas_alvo_replicacao: {
+        Args: { p_empresa_origem_id: string };
+        Returns: { empresa_id: string; nome: string }[];
+      };
+      criar_replicacao_lote: {
+        Args: {
+          p_chave_tabela: string;
+          p_empresa_origem_id: string;
+          p_registro_origem_id?: string | null;
+          p_modo_conflito?: string;
+        };
+        Returns: string;
+      };
+      processar_replicacao_lote: {
+        Args: { p_lote_id: string };
+        Returns: undefined;
+      };
+      replicar_para_grupo: {
+        Args: {
+          p_chave_tabela: string;
+          p_empresa_origem_id: string;
+          p_registro_origem_id?: string | null;
+          p_modo_conflito?: string;
+        };
+        Returns: string;
       };
       // Fase 27.137 — tela "Meu Posto": atualiza o cadastro da empresa,
       // compara CNPJ/coordenadas com anp_postos (e postos_gf de outros

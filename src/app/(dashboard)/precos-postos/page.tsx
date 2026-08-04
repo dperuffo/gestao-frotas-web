@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarDataHoraBr } from "@/lib/utils";
 import { FormularioPrecosPosto } from "./_components/FormularioPrecosPosto";
+import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 
@@ -109,7 +110,20 @@ async function PainelPosto({ empresaPostoId }: { empresaPostoId: string }) {
     atualizado_por_nome: p.atualizado_por ? (nomePorEmail[p.atualizado_por] ?? p.atualizado_por) : null,
   }));
 
-  return <FormularioPrecosPosto empresaPostoId={empresaPostoId} precosAtuais={precosAtuais} />;
+  return (
+    <div className="space-y-4">
+      {precosAtuais.length > 0 && (
+        <div className="flex justify-end">
+          <ReplicarParaGrupoButton
+            chaveTabela="precos_postos"
+            empresaId={empresaPostoId}
+            rotuloRegistro="a tabela de preços"
+          />
+        </div>
+      )}
+      <FormularioPrecosPosto empresaPostoId={empresaPostoId} precosAtuais={precosAtuais} />
+    </div>
+  );
 }
 
 async function PainelCliente({

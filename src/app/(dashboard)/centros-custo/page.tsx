@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
+import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
 
 type SearchParams = { empresa?: string };
 
@@ -93,7 +94,12 @@ export default async function CentrosCustoPage({
             <Indicador label="Veículos alocados" valor={totalVeiculosAlocados} ajudaChave="centros_custo.veiculos_alocados" />
           </div>
 
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex justify-end gap-3">
+            <ReplicarParaGrupoButton
+              chaveTabela="centros_custo"
+              empresaId={empresaSelecionada}
+              rotuloRegistro="os centros de custo"
+            />
             <BotaoExportarTabela
               nomeArquivo="centros-de-custo"
               titulo="Centros de Custo"

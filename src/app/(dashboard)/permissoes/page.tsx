@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { PERFIS, PERFIL_LABEL, EMPRESA_ID_GLOBAL, type Perfil } from "@/lib/constants";
+import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
 import { TogglePermissao } from "./_components/TogglePermissao";
 
 // Deixa "aba_dashboard" -> "Aba: Dashboard" e "func_exportar" -> "Função: Exportar",
@@ -155,6 +156,16 @@ export default async function PermissoesPage({
             Filtrar
           </button>
         </form>
+      )}
+
+      {!souAdmin && empresaEdicao && (
+        <div className="mb-4 flex justify-end">
+          <ReplicarParaGrupoButton
+            chaveTabela="permissoes_perfil"
+            empresaId={empresaEdicao}
+            rotuloRegistro="as permissões personalizadas desta empresa"
+          />
+        </div>
       )}
 
       <div className="card overflow-x-auto">

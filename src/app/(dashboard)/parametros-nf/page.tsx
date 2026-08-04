@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
 import { SecaoParametrosNF } from "./_components/SecaoParametrosNF";
 
 // Fase 27.140 — pedido do Daniel: tela de "Parâmetros de NF" pra que o
@@ -49,6 +50,16 @@ export default async function ParametrosNFPage({
             Filtrar
           </button>
         </form>
+      )}
+
+      {empresaSelecionada && (
+        <div className="mb-4 flex justify-end">
+          <ReplicarParaGrupoButton
+            chaveTabela="parametros_nota_fiscal"
+            empresaId={empresaSelecionada}
+            rotuloRegistro="os parâmetros de nota fiscal"
+          />
+        </div>
       )}
 
       {semClienteEscolhido || !empresaSelecionada ? (

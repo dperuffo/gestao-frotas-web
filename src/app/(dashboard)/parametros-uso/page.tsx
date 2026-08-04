@@ -4,6 +4,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
 import { ToggleStatusVinculo } from "./_components/ToggleStatusVinculo";
 import { SecaoIntervalo } from "./_components/SecaoIntervalo";
 import { SecaoValorDiario } from "./_components/SecaoValorDiario";
@@ -37,6 +38,24 @@ const ABAS: { tipo: string; label: string }[] = [
   { tipo: "cotas", label: "Cotas" },
   { tipo: "pre-pedido", label: "Pré-Pedido" },
 ];
+
+// Fase Replicação-Grupo — mapeia cada aba pra chave do registro em
+// replicacao_tabelas_registro. "vinculo" e "cotas" ficam de fora de
+// propósito: são regras amarradas a um veículo específico (placa), que só
+// existe na empresa de origem — replicar pra outra empresa criaria uma
+// referência quebrada.
+const CHAVE_REPLICACAO_POR_ABA: Record<string, string | undefined> = {
+  intervalo: "parametros_intervalo_abastecimento",
+  "valor-diario": "parametros_valor_diario_motorista",
+  "volume-diario": "parametros_volume_diario_veiculo",
+  produto: "parametros_produto_abastecido",
+  "hodometro-leve": "parametros_variacao_hodometro",
+  "hodometro-pesado": "parametros_variacao_hodometro",
+  "dias-horarios": "parametros_dias_horarios",
+  postos: "parametros_postos_permitidos",
+  servicos: "parametros_limite_servicos",
+  "pre-pedido": "parametros_pre_pedido",
+};
 
 type VinculoRow = {
   id: string;
@@ -140,6 +159,16 @@ export default async function ParametrosUsoPage({
           </Link>
         ))}
       </div>
+
+      {empresaSelecionada && CHAVE_REPLICACAO_POR_ABA[tipo] && (
+        <div className="mb-4 flex justify-end">
+          <ReplicarParaGrupoButton
+            chaveTabela={CHAVE_REPLICACAO_POR_ABA[tipo] as string}
+            empresaId={empresaSelecionada}
+            rotuloRegistro={`os parâmetros gerais de "${ABAS.find((a) => a.tipo === tipo)?.label}"`}
+          />
+        </div>
+      )}
 
       {semClienteEscolhido || !empresaSelecionada ? (
         <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver os parâmetros dele.</p>

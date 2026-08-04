@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
 import { AlternarAtivoTabela } from "./_components/AlternarAtivoTabela";
 import { BotaoExcluirTabela } from "./_components/BotaoExcluirTabela";
 
@@ -58,9 +59,16 @@ export default async function TabelasFretePage({ searchParams }: { searchParams:
           </p>
         </div>
         {empresaSelecionada && (
-          <Link href={`/tabelas-frete/novo?empresa=${empresaSelecionada}`} className="btn-primary">
-            + Nova tabela
-          </Link>
+          <div className="flex items-center gap-3">
+            <ReplicarParaGrupoButton
+              chaveTabela="tabelas_frete"
+              empresaId={empresaSelecionada}
+              rotuloRegistro="as tabelas de frete gerais (não específicas de um cliente-tomador)"
+            />
+            <Link href={`/tabelas-frete/novo?empresa=${empresaSelecionada}`} className="btn-primary">
+              + Nova tabela
+            </Link>
+          </div>
         )}
       </div>
 
