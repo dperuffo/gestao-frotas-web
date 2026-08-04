@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
-import { SolicitarOrcamentoButton, RespostaOrcamentoForm, DecisaoOrcamentoBotoes } from "./_components/OficinaAcoes";
-import { ESPECIALIDADES_OFICINA, STATUS_ORCAMENTO_LABEL, STATUS_ORCAMENTO_COR } from "@/lib/oficinas";
+import { PedidoOrcamentoCard } from "./_components/OficinaAcoes";
+import { CatalogoOficinasComSelecao } from "./_components/CatalogoOficinasComSelecao";
+import { ESPECIALIDADES_OFICINA } from "@/lib/oficinas";
 
 type SearchParams = { empresa?: string; uf?: string; especialidade?: string; q?: string };
 
@@ -51,29 +52,36 @@ export default async function OficinasPage({ searchParams }: { searchParams: Pro
     placas = (veiculosDaEmpresa ?? []).map((v) => v.placa).filter((p): p is string => Boolean(p)).sort();
   }
 
-  type Solicitacao = {
+  // Fase marketplace-pecas (04/08/2026) — 1 pedido pode ter N propostas
+  // (1 por oficina escolhida); a aba "Minhas Solicitações" agora agrupa por
+  // pedido pra comparação lado a lado, em vez de listar 1 linha por oficina.
+  type Pedido = {
     id: string;
     placa: string | null;
     descricao_servico: string;
     status: string;
-    valor_orcado: number | null;
-    prazo_execucao: string | null;
-    observacoes_oficina: string | null;
     criado_em: string;
-    oficinas_credenciadas: { nome: string } | null;
+    propostas_orcamento_oficina: {
+      id: string;
+      status: string;
+      valor_orcado: number | null;
+      prazo_execucao: string | null;
+      observacoes_oficina: string | null;
+      oficinas_credenciadas: { nome: string } | null;
+    }[];
   };
 
-  let solicitacoes: Solicitacao[] = [];
+  let pedidos: Pedido[] = [];
   if (empresaSelecionada) {
     const { data } = await supabase
-      .from("solicitacoes_orcamento_oficina")
+      .from("pedidos_orcamento_oficina")
       .select(
-        "id, placa, descricao_servico, status, valor_orcado, prazo_execucao, observacoes_oficina, criado_em, oficinas_credenciadas(nome)"
+        "id, placa, descricao_servico, status, criado_em, propostas_orcamento_oficina(id, status, valor_orcado, prazo_execucao, observacoes_oficina, oficinas_credenciadas(nome))"
       )
       .eq("empresa_id", empresaSelecionada)
       .order("criado_em", { ascending: false })
       .limit(100);
-    solicitacoes = (data ?? []) as unknown as Solicitacao[];
+    pedidos = (data ?? []) as unknown as Pedido[];
   }
 
   const ufsDisponiveis = Array.from(new Set((oficinasRaw ?? []).map((o) => o.uf).filter(Boolean))).sort() as string[];
@@ -144,39 +152,7 @@ export default async function OficinasPage({ searchParams }: { searchParams: Pro
                   </button>
                 </form>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {oficinas.map((o) => (
-                    <div key={o.id} className="card p-4">
-                      <p className="font-medium text-slate-900">{o.nome}</p>
-                      <p className="text-xs text-slate-500">
-                        {[o.municipio, o.uf].filter(Boolean).join(" / ") || "—"}
-                        {o.avaliacao_media != null && ` · ⭐ ${o.avaliacao_media.toFixed(1)}`}
-                      </p>
-                      {o.especialidades.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {o.especialidades.map((e) => (
-                            <span key={e} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                              {e}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <p className="mt-2 text-xs text-slate-500">
-                        {o.telefone ?? ""} {o.email ? `· ${o.email}` : ""}
-                      </p>
-                      <div className="mt-3">
-                        {empresaSelecionada ? (
-                          <SolicitarOrcamentoButton empresaId={empresaSelecionada} oficinaId={o.id} oficinaNome={o.nome} placas={placas} />
-                        ) : (
-                          <p className="text-xs text-slate-400">Selecione um cliente para solicitar orçamento.</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {oficinas.length === 0 && (
-                    <p className="col-span-full py-8 text-center text-sm text-slate-400">Nenhuma oficina encontrada para esse filtro.</p>
-                  )}
-                </div>
+                <CatalogoOficinasComSelecao oficinas={oficinas} empresaId={empresaSelecionada} placas={placas} />
               </div>
             ),
           },
@@ -187,36 +163,17 @@ export default async function OficinasPage({ searchParams }: { searchParams: Pro
               <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">Selecione um cliente para ver as solicitações.</p>
             ) : (
               <div className="space-y-3">
-                {solicitacoes.map((s) => (
-                  <div key={s.id} className="card p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {s.oficinas_credenciadas?.nome ?? "Oficina"} {s.placa ? `· ${s.placa}` : ""}
-                        </p>
-                        <p className="text-sm text-slate-600">{s.descricao_servico}</p>
-                        <p className="text-xs text-slate-400">{new Date(s.criado_em).toLocaleDateString("pt-BR")}</p>
-                      </div>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_ORCAMENTO_COR[s.status] ?? "bg-slate-100 text-slate-600"}`}>
-                        {STATUS_ORCAMENTO_LABEL[s.status] ?? s.status}
-                      </span>
-                    </div>
-
-                    {s.valor_orcado != null && (
-                      <p className="mt-2 text-sm text-slate-700">
-                        Orçado: <strong>{s.valor_orcado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
-                        {s.prazo_execucao ? ` · Prazo: ${s.prazo_execucao}` : ""}
-                      </p>
-                    )}
-                    {s.observacoes_oficina && <p className="mt-1 text-sm text-slate-500">{s.observacoes_oficina}</p>}
-
-                    <div className="mt-3 flex items-center gap-3">
-                      {s.status === "solicitado" && <RespostaOrcamentoForm id={s.id} />}
-                      {s.status === "respondido" && <DecisaoOrcamentoBotoes id={s.id} />}
-                    </div>
-                  </div>
+                {pedidos.map((p) => (
+                  <PedidoOrcamentoCard
+                    key={p.id}
+                    placa={p.placa}
+                    descricaoServico={p.descricao_servico}
+                    criadoEm={p.criado_em}
+                    statusPedido={p.status}
+                    propostas={p.propostas_orcamento_oficina}
+                  />
                 ))}
-                {solicitacoes.length === 0 && (
+                {pedidos.length === 0 && (
                   <p className="py-8 text-center text-sm text-slate-400">Nenhuma solicitação de orçamento ainda.</p>
                 )}
               </div>

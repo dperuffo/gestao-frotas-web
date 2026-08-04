@@ -1782,7 +1782,8 @@ export interface Database {
           // Daniel: "Custos com multas e oficinas de manutenção devem entrar
           // no contas a pagar do cliente para gestão financeira". 'multa'
           // referencia multas.id; 'orcamento_oficina' referencia
-          // solicitacoes_orcamento_oficina.id (ver referencia_id).
+          // propostas_orcamento_oficina.id (ver referencia_id — renomeada
+          // na fase marketplace-pecas, 04/08/2026).
           origem: "fatura_meio_pagamento" | "avulso" | "multa" | "orcamento_oficina";
           referencia_id: string | null;
           credor_nome: string | null;
@@ -4257,14 +4258,50 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["oficinas_credenciadas"]["Row"]>;
         Relationships: [];
       };
+      // Fase marketplace-pecas (04/08/2026, item 7 do benchmark FNI vs KMM,
+      // Grupo 2) — o "pedido" que o cliente faz, independente de quantas
+      // oficinas escolheu cotar (ver propostas_orcamento_oficina abaixo,
+      // 1 linha por oficina). Ao aceitar uma proposta, oficina_vencedora_id
+      // é preenchido e status vira "decidido".
+      pedidos_orcamento_oficina: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string | null;
+          descricao_servico: string;
+          status: string;
+          oficina_vencedora_id: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pedidos_orcamento_oficina"]["Row"]> & {
+          empresa_id: string;
+          descricao_servico: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["pedidos_orcamento_oficina"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_orcamento_oficina_oficina_vencedora_id_fkey";
+            columns: ["oficina_vencedora_id"];
+            isOneToOne: false;
+            referencedRelation: "oficinas_credenciadas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Fase Onda-2 (benchmark TicketLog, item #5) — fluxo simples de
       // cotação por tenant: cliente solicita, gestor registra o retorno
       // (valor/prazo) recebido por telefone/e-mail (sem portal pra oficina
       // responder na v1) e decide aceitar/recusar. Ao aceitar, lança em
-      // contas_pagar (origem = "orcamento_oficina").
-      solicitacoes_orcamento_oficina: {
+      // contas_pagar (origem = "orcamento_oficina"). Fase marketplace-pecas
+      // (04/08/2026) — renomeada de solicitacoes_orcamento_oficina pra
+      // propostas_orcamento_oficina (1 linha por oficina cotada) + ganhou
+      // pedido_id, ligando a um pedidos_orcamento_oficina (ver acima).
+      propostas_orcamento_oficina: {
         Row: {
           id: string;
+          pedido_id: string;
           empresa_id: string;
           oficina_id: string;
           placa: string | null;
@@ -4278,18 +4315,26 @@ export interface Database {
           respondido_em: string | null;
           atualizado_em: string;
         };
-        Insert: Partial<Database["public"]["Tables"]["solicitacoes_orcamento_oficina"]["Row"]> & {
+        Insert: Partial<Database["public"]["Tables"]["propostas_orcamento_oficina"]["Row"]> & {
+          pedido_id: string;
           empresa_id: string;
           oficina_id: string;
           descricao_servico: string;
         };
-        Update: Partial<Database["public"]["Tables"]["solicitacoes_orcamento_oficina"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["propostas_orcamento_oficina"]["Row"]>;
         Relationships: [
           {
-            foreignKeyName: "solicitacoes_orcamento_oficina_oficina_id_fkey";
+            foreignKeyName: "propostas_orcamento_oficina_oficina_id_fkey";
             columns: ["oficina_id"];
             isOneToOne: false;
             referencedRelation: "oficinas_credenciadas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "propostas_orcamento_oficina_pedido_id_fkey";
+            columns: ["pedido_id"];
+            isOneToOne: false;
+            referencedRelation: "pedidos_orcamento_oficina";
             referencedColumns: ["id"];
           },
         ];

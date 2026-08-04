@@ -7649,3 +7649,53 @@ Validado: `npx tsc --noEmit` e `npx eslint` limpos (web, `layout.tsx` +
 `GrupoMenuLateral.tsx`); revisão manual + balanceamento de parênteses/chaves/colchetes por
 script nos 2 arquivos Dart tocados (mesma limitação de sandbox sem Flutter/Dart instalado —
 `flutter analyze` ainda não rodado aqui).
+
+## Fase marketplace-pecas — Rede de Oficinas vira cotação multi-fornecedor (web + PWA Cliente)
+
+Item 7 do Grupo 2 do benchmark FNI vs KMM: "Evoluir Rede de Oficinas para marketplace de
+peças — abrir cotação pra múltiplos fornecedores comparando propostas, em vez de 1 oficina
+por solicitação". Confirmado com o Daniel junto com os outros 2 itens do Grupo 2
+(OCR de documentos, agendamento de carga/descarga — ver fases seguintes).
+
+**Migração `marketplace_pecas_multi_fornecedor`**: introduz `pedidos_orcamento_oficina` (1
+linha por pedido do cliente, independente de quantas oficinas escolheu) separado de
+`propostas_orcamento_oficina` (renomeada de `solicitacoes_orcamento_oficina`, 1 linha por
+oficina cotada, ganhou `pedido_id`). Backfill reaproveitou o mesmo `id` de cada solicitação
+existente pro novo pedido correspondente (relação 1:1 no momento da migração), evitando
+precisar correlacionar linha a linha. RLS do pedido espelha exatamente o padrão que já
+existia na tabela antiga (`empresas_do_usuario` + bypass admin/Daniel); a tabela de propostas
+manteve suas colunas e RLS como estavam — só ganhou a FK nova.
+
+**Web — `oficinas/actions.ts`**: `solicitarOrcamentoMultiAcao` substitui a antiga (1 oficina)
+— recebe uma lista de `oficinaId` e cria 1 pedido + N propostas. `decidirOrcamentoAcao`, ao
+aceitar uma proposta, agora também marca o pedido pai como "decidido" com a oficina vencedora
+e recusa automaticamente as demais propostas do mesmo pedido que ainda estivessem em aberto —
+só uma oficina executa o serviço.
+
+**Web — `_components/CatalogoOficinasComSelecao.tsx`** (novo, client component): o catálogo
+inteiro virou um único componente client (precisa de estado de seleção compartilhado entre
+todos os cards, o que um Server Component não permite) — cada card de oficina vira
+selecionável, e uma barra "sticky" no rodapé mostra quantas estão marcadas com botão "Pedir
+cotação", abrindo um modal com placa + descrição que envia pra todas de uma vez.
+
+**Web — `_components/OficinaAcoes.tsx`**: `PedidoOrcamentoCard` (novo) mostra um pedido com
+todas as suas propostas lado a lado pra comparação; `RespostaOrcamentoForm`/
+`DecisaoOrcamentoBotoes` continuam operando por proposta, sem mudança de comportamento.
+
+**Flutter (`estudo-de-rede`) — mesmo desenho**: `oficinas_service.dart` ganhou
+`solicitarMulti` (substitui `solicitar`) e `decidir` replicou a mesma lógica de
+decidir-o-pedido-e-recusar-as-demais; `oficinas_provider.dart` trocou `SolicitacaoOrcamento`/
+`minhasSolicitacoesOficinaProvider` por `PedidoOrcamento`+`PropostaOrcamento`/
+`meusPedidosOrcamentoProvider` (query aninhada, mesmo padrão Supabase da web);
+`oficinas_screen.dart` ganhou seleção multi-card (`Set<String> _selecionadas` + `Checkbox` em
+cada card + barra fixa no rodapé) e o card de "Minhas Solicitações" virou
+`_cardPedido`/`_cardProposta` (pedido com N propostas dentro).
+
+Sem item de menu novo — a evolução aconteceu dentro da tela `/oficinas` que já existia
+(grupo "Manutenção e Ativos" no menu reorganizado).
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos (web); revisão manual + balanceamento de
+parênteses/chaves/colchetes nos 3 arquivos Dart tocados (mesma limitação de sandbox sem
+Flutter/Dart instalado — `flutter analyze` ainda não rodado aqui); confirmado
+`.inFilter(...)` como método correto pro postgrest-dart desta versão (já usado em outros
+arquivos do repo, ex. `abastecimentos_cliente_service.dart`).
