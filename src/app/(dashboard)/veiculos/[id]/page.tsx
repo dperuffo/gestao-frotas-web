@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { normalizarCNPJ } from "@/lib/utils";
 import { VeiculoForm } from "../_components/VeiculoForm";
 import { VincularFipe } from "../_components/VincularFipe";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 export default async function EditarVeiculoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,6 +21,7 @@ export default async function EditarVeiculoPage({ params }: { params: Promise<{ 
 
   return (
     <div>
+      <BotaoVoltar href="/veiculos" />
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Veículo</h1>
       <VeiculoForm
         veiculo={veiculo}

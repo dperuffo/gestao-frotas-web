@@ -5,6 +5,7 @@ import type { AutorAjuste } from "@/lib/ajustesAbastecimentos";
 import { AbastecimentoForm } from "../_components/AbastecimentoForm";
 import { ExcluirAbastecimento } from "../_components/ExcluirAbastecimento";
 import { PainelAjusteAbastecimento } from "../_components/PainelAjusteAbastecimento";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 // Fase 27.65 — solicitação de ajuste em abastecimentos, com aprovação da
 // contraparte. Só entra nesse fluxo quando o registro tem uma contraparte de
@@ -53,6 +54,7 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
   if (!temContraparte) {
     return (
       <div>
+        <BotaoVoltar href="/abastecimentos" />
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-slate-900">Editar Abastecimento</h1>
@@ -97,6 +99,7 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
 
   return (
     <div>
+      <BotaoVoltar href="/abastecimentos" />
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Abastecimento</h1>
         {/* Fase 27.104 — pedido do Daniel: ID de 10 dígitos por

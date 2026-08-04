@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MotoristaForm } from "../_components/MotoristaForm";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 export default async function EditarMotoristaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,6 +19,7 @@ export default async function EditarMotoristaPage({ params }: { params: Promise<
 
   return (
     <div>
+      <BotaoVoltar href="/motoristas" />
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Motorista</h1>
       <MotoristaForm
         motorista={motorista}

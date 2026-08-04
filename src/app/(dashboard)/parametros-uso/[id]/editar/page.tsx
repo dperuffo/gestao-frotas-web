@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { VinculoForm } from "../../_components/VinculoForm";
+import { BotaoVoltar } from "../../../_components/BotaoVoltar";
 
 export default async function EditarVinculoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -40,6 +41,7 @@ export default async function EditarVinculoPage({ params }: { params: Promise<{ 
 
   return (
     <div>
+      <BotaoVoltar href="/parametros-uso" />
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Vínculo</h1>
       <VinculoForm
         vinculo={vinculo}

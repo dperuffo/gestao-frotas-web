@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { TabelaFreteForm } from "../_components/TabelaFreteForm";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 export default async function EditarTabelaFretePage({
   params,
@@ -30,6 +30,7 @@ export default async function EditarTabelaFretePage({
 
   return (
     <div>
+      <BotaoVoltar href={`/tabelas-frete?empresa=${empresaId}`} label="Voltar para a lista" />
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">📋 Editar tabela de frete</h1>
         <p className="mt-1 text-sm text-slate-500">{tabela.nome}</p>
@@ -45,11 +46,6 @@ export default async function EditarTabelaFretePage({
         }))}
         parceiros={(parceiros ?? []).map((p) => ({ id: p.id, razaoSocial: p.razao_social, cnpjCpf: p.cnpj_cpf }))}
       />
-      <div className="mt-4">
-        <Link href={`/tabelas-frete?empresa=${empresaId}`} className="text-sm text-frota-600 hover:underline">
-          ← Voltar para a lista
-        </Link>
-      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ConteudoForm } from "../_components/ConteudoForm";
+import { BotaoVoltar } from "../../../_components/BotaoVoltar";
 
 export default async function EditarConteudoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -24,6 +25,7 @@ export default async function EditarConteudoPage({ params }: { params: Promise<{
 
   return (
     <div>
+      <BotaoVoltar href="/administracao/central-conteudo" />
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Editar: {conteudo.titulo}</h1>
         <p className="mt-1 text-sm text-slate-500 font-mono">{conteudo.chave}</p>

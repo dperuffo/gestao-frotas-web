@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { gerarQrCodePixDataUrl } from "@/lib/pix";
 import { GerarCobrancaButton, MarcarFaturaFretePagaButton, CancelarFaturaFreteButton } from "../_components/AcoesFaturaFrete";
 import BotaoBaixarPdfFaturaFreteLazy from "../_components/BotaoBaixarPdfFaturaFreteLazy";
 import type { ItemFaturaFretePdf } from "../_components/FaturaFretePdf";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const LABEL_STATUS: Record<string, string> = { aberta: "Aberta", paga: "Paga", cancelada: "Cancelada" };
@@ -65,6 +65,7 @@ export default async function FaturaFreteDetalhePage({
 
   return (
     <div>
+      <BotaoVoltar href={`/faturas-fretes?empresa=${empresaId}`} label="Voltar para Faturas de Frete" />
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">
@@ -172,10 +173,6 @@ export default async function FaturaFreteDetalhePage({
           </tbody>
         </table>
       </div>
-
-      <Link href={`/faturas-fretes?empresa=${empresaId}`} className="text-sm text-frota-600 hover:underline">
-        ← Voltar para Faturas de Frete
-      </Link>
     </div>
   );
 }

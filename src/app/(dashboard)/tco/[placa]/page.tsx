@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 function paraISO(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -33,6 +34,7 @@ export default async function TcoVeiculoPage({
   if (!empresaSelecionada) {
     return (
       <div>
+        <BotaoVoltar href="/tco" />
         <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Selecione um cliente para ver o TCO deste veículo.
         </p>
@@ -70,11 +72,9 @@ export default async function TcoVeiculoPage({
 
   return (
     <div>
+      <BotaoVoltar href="/tco" label="Voltar para TCO" />
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <Link href="/tco" className="text-xs text-slate-500 hover:underline">
-            ← Voltar para TCO
-          </Link>
           <h1 className="mt-1 text-xl font-semibold text-slate-900">
             {v.placa} <span className="font-normal text-slate-500">— {[v.marca, v.modelo].filter(Boolean).join(" ") || "veículo sem marca/modelo"}</span>
           </h1>

@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { TIPO_MOVIMENTO_LABEL, TIPO_MOVIMENTO_COR, formatarMoeda } from "@/lib/estoquePecas";
 import { RegistrarMovimentoForm, DesativarPecaButton } from "../_components/EstoquePecasAcoes";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 export default async function PecaDetalhePage({
   params,
@@ -59,10 +59,8 @@ export default async function PecaDetalhePage({
 
   return (
     <div>
+      <BotaoVoltar href={`/estoque-pecas?empresa=${empresaId}`} />
       <div className="mb-6">
-        <Link href={`/estoque-pecas?empresa=${empresaId}`} className="text-sm text-frota-600 hover:underline">
-          ← Voltar
-        </Link>
         <div className="mt-2 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-slate-900">
             {peca.nome} {peca.codigo ? <span className="text-slate-400">· {peca.codigo}</span> : null}

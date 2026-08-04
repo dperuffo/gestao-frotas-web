@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
@@ -8,6 +7,7 @@ import {
   type NegociacaoDoCliente,
   type FaturaDoCliente,
 } from "@/app/(dashboard)/clientes/_components/CicloAbastecimentoPagamento";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 type SearchParams = { empresa?: string };
 
@@ -102,9 +102,7 @@ export default async function MeuPostoDetalhePage({
 
   return (
     <div>
-      <Link href="/financeiro" className="text-sm text-frota-600 hover:underline">
-        ← Voltar para o Painel Financeiro
-      </Link>
+      <BotaoVoltar href="/financeiro" label="Voltar para o Painel Financeiro" />
 
       <h1 className="mt-3 mb-6 text-xl font-semibold text-slate-900">{postoNome}</h1>
 

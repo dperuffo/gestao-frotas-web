@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -7,6 +6,7 @@ import { STATUS_CICLO_FATURA_LABEL, statusCicloFaturaExibicao } from "@/lib/fina
 import { gerarPayloadPix, gerarQrCodePixDataUrl } from "@/lib/pix";
 import BotaoBaixarPdfFaturaLazy from "./_components/BotaoBaixarPdfFaturaLazy";
 import type { ItemExtratoFaturaPdf, ParteBoletoPdf } from "./_components/FaturaPdf";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 function formatarEndereco(p: {
   logradouro: string | null;
@@ -153,9 +153,7 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
 
   return (
     <div>
-      <Link href="/financeiro-posto" className="text-sm text-frota-600 hover:underline">
-        ← Voltar
-      </Link>
+      <BotaoVoltar href="/financeiro-posto" />
 
       <div className="mt-3 mb-2 flex flex-wrap items-start justify-between gap-3">
         <div>

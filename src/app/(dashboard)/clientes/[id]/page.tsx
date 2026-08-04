@@ -7,6 +7,7 @@ import {
   type NegociacaoDoCliente,
   type FaturaDoCliente,
 } from "../_components/CicloAbastecimentoPagamento";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 export default async function EditarClientePage({
   params,
@@ -66,6 +67,7 @@ export default async function EditarClientePage({
 
   return (
     <div>
+      <BotaoVoltar href="/clientes" />
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Cliente — {cliente.nome}</h1>
       <ClienteForm cliente={cliente} souAdmin={souAdmin} />
       <CicloAbastecimentoPagamento

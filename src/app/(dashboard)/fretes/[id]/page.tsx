@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PainelPropostas, type Proposta } from "../_components/PainelPropostas";
 import { FormPostoRecomendado } from "../_components/FormPostoRecomendado";
@@ -15,6 +14,7 @@ import { ChatFrete } from "../_components/ChatFrete";
 import { ResolverPanicoButton } from "../_components/ResolverPanicoButton";
 import { AgendamentoPatioCard } from "../../agendamentos-patio/_components/AgendamentoPatioCard";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 type FreteDetalhe = {
   id: string;
@@ -386,9 +386,7 @@ export default async function FreteDetalhePage({
 
   return (
     <div>
-      <Link href={`/fretes?empresa=${empresaId}`} className="mb-4 inline-block text-sm text-frota-600 hover:underline">
-        ← Voltar pra Fretes
-      </Link>
+      <BotaoVoltar href={`/fretes?empresa=${empresaId}`} label="Voltar pra Fretes" />
 
       <div className="card mb-6 p-6">
         <div className="mb-3 flex flex-wrap items-start justify-between gap-2">

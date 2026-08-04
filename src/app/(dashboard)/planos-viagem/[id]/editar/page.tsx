@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { PlanoViagemForm } from "../../_components/PlanoViagemForm";
+import { BotaoVoltar } from "../../../_components/BotaoVoltar";
 
 export default async function EditarPlanoViagemPage({
   params,
@@ -76,6 +77,7 @@ export default async function EditarPlanoViagemPage({
 
   return (
     <div>
+      <BotaoVoltar href="/planos-viagem" />
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Plano de Viagem — {plano.nome}</h1>
 
       {prePedido && (

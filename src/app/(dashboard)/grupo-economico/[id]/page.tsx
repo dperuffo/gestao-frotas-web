@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { GrupoForm } from "../_components/GrupoForm";
 import { VincularEmpresaForm } from "../_components/VincularEmpresaForm";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 export default async function EditarGrupoPage({
   params,
@@ -39,6 +40,7 @@ export default async function EditarGrupoPage({
 
   return (
     <div className="space-y-6">
+      <BotaoVoltar href="/grupo-economico" />
       <h1 className="text-xl font-semibold text-slate-900">Editar Grupo Econômico — {grupo.nome}</h1>
       <GrupoForm grupo={grupo} />
       <VincularEmpresaForm grupoId={id} empresasDisponiveis={empresasDisponiveis} vinculos={vinculos} />

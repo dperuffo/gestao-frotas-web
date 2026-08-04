@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 // Fase 27.93 — pedido do Daniel (com print de "Ciclos por posto"): o ciclo
 // em andamento (ainda não fechado pelo robô, Fase 27.84) só mostrava
@@ -89,9 +90,7 @@ export default async function CicloAbertoPage({
 
   return (
     <div>
-      <Link href="/financeiro-posto" className="text-sm text-frota-600 hover:underline">
-        ← Voltar
-      </Link>
+      <BotaoVoltar href="/financeiro-posto" />
 
       <div className="mt-3 mb-2">
         <h1 className="text-xl font-semibold text-slate-900">

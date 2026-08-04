@@ -6,6 +6,7 @@ import { formatarMoeda } from "@/lib/financeiro";
 import { normalizarCNPJ } from "@/lib/utils";
 import { FormularioAjuste } from "./_components/FormularioAjuste";
 import { BotaoExcluirAjuste } from "./_components/BotaoExcluirAjuste";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 const TIPO_AJUSTE_LABEL: Record<string, string> = {
   reavaliacao: "Reavaliação",
@@ -32,6 +33,7 @@ export default async function PatrimonioVeiculoPage({
   if (!empresaSelecionada) {
     return (
       <div>
+        <BotaoVoltar href="/patrimonio" />
         <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Selecione um cliente para ver o patrimônio deste veículo.
         </p>
@@ -81,11 +83,9 @@ export default async function PatrimonioVeiculoPage({
 
   return (
     <div>
+      <BotaoVoltar href={`/patrimonio?empresa=${empresaSelecionada}`} label="Voltar para Patrimônio" />
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href={`/patrimonio?empresa=${empresaSelecionada}`} className="text-xs text-slate-500 hover:underline">
-            ← Voltar para Patrimônio
-          </Link>
           <h1 className="mt-1 text-xl font-semibold text-slate-900">
             {v.placa}{" "}
             <span className="font-normal text-slate-500">

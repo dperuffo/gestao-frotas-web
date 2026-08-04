@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
@@ -6,6 +5,7 @@ import { formatarDataBr, formatarDataHoraBr } from "@/lib/utils";
 import { formatarMoeda } from "@/lib/financeiro";
 import { FormularioContraproposta } from "../_components/FormularioContraproposta";
 import { BotaoCancelarNegociacao } from "../_components/BotaoCancelarNegociacao";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 export default async function DetalheNegociacaoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -67,11 +67,9 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
 
   return (
     <div>
+      <BotaoVoltar href="/negociacoes" />
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <Link href="/negociacoes" className="text-xs text-frota-600 hover:underline">
-            ← Voltar
-          </Link>
           <h1 className="mt-1 text-xl font-semibold text-slate-900">
             Negociação com {souPosto ? (negociacao.cliente_nome ?? "cliente") : (negociacao.posto_nome ?? negociacao.posto_cnpj)}
           </h1>

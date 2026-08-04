@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
 import BotaoBaixarPdfNotaLazy from "../_components/BotaoBaixarPdfNotaLazy";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 // Fase 27.94 — detalhe de uma NF-e já validada/vinculada, acessível às 3
 // visões (RLS de notas_fiscais_abastecimento já filtra por posto/cliente
@@ -55,9 +55,7 @@ export default async function NotaFiscalPage({ params }: { params: Promise<{ not
 
   return (
     <div>
-      <Link href="/notas-fiscais" className="text-sm text-frota-600 hover:underline">
-        ← Voltar
-      </Link>
+      <BotaoVoltar href="/notas-fiscais" />
 
       <div className="mt-3 mb-6">
         <h1 className="text-xl font-semibold text-slate-900">NF-e Nº {String(nota.numero_nf).padStart(6, "0")}</h1>

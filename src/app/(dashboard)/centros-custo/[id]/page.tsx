@@ -4,6 +4,7 @@ import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { CentroCustoForm } from "../_components/CentroCustoForm";
 import { AlocarVeiculoForm } from "../_components/AlocarVeiculoForm";
 import { AlocarMotoristaForm } from "../_components/AlocarMotoristaForm";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 export default async function EditarCentroCustoPage({
   params,
@@ -64,6 +65,7 @@ export default async function EditarCentroCustoPage({
 
   return (
     <div className="space-y-6">
+      <BotaoVoltar href="/centros-custo" />
       <h1 className="text-xl font-semibold text-slate-900">Editar Centro de Custo — {centro.nome}</h1>
       <CentroCustoForm centroCusto={centro} />
       <AlocarVeiculoForm

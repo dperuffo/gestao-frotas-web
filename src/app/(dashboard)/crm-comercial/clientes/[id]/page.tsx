@@ -13,6 +13,7 @@ import {
 import { ClienteForm } from "../_components/ClienteForm";
 import { InteracaoForm } from "../_components/InteracaoForm";
 import { BotaoExcluirInteracao } from "../_components/BotaoExcluirInteracao";
+import { BotaoVoltar } from "../../../_components/BotaoVoltar";
 
 export default async function ClienteCrmDetalhePage({
   params,
@@ -84,10 +85,8 @@ export default async function ClienteCrmDetalhePage({
 
   return (
     <div>
+      <BotaoVoltar href={`/crm-comercial?empresa=${empresaId}`} />
       <div className="mb-6">
-        <Link href={`/crm-comercial?empresa=${empresaId}`} className="text-sm text-frota-600 hover:underline">
-          ← Voltar
-        </Link>
         <div className="mt-2">
           <h1 className="text-xl font-semibold text-slate-900">{cliente.razao_social}</h1>
           <p className="text-sm text-slate-500">{formatarCnpjCpf(cliente.cnpj_cpf)}</p>

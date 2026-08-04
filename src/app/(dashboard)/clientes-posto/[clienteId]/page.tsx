@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
@@ -9,6 +8,7 @@ import {
   type NegociacaoDoCliente,
   type FaturaDoCliente,
 } from "@/app/(dashboard)/clientes/_components/CicloAbastecimentoPagamento";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 type SearchParams = { empresa?: string };
 
@@ -112,9 +112,7 @@ export default async function ClientePostoDetalhePage({
 
   return (
     <div>
-      <Link href="/clientes-posto" className="text-sm text-frota-600 hover:underline">
-        ← Voltar para Clientes
-      </Link>
+      <BotaoVoltar href="/clientes-posto" label="Voltar para Clientes" />
 
       <div className="mt-3 mb-6 card p-6">
         <h1 className="text-xl font-semibold text-slate-900">{cliente.nome}</h1>

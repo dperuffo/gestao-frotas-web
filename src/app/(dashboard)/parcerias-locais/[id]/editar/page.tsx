@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ItemParceriaForm } from "../../_components/ItemParceriaForm";
+import { BotaoVoltar } from "../../../_components/BotaoVoltar";
 
 export default async function EditarItemParceriaPage({
   params,
@@ -18,6 +19,7 @@ export default async function EditarItemParceriaPage({
   if (!empresaSelecionada) {
     return (
       <div className="card p-6">
+        <BotaoVoltar href="/parcerias-locais" />
         <h1 className="text-lg font-semibold text-slate-900">Selecione uma empresa</h1>
         <p className="mt-2 text-sm text-slate-500">
           Volte pra Parcerias Locais e escolha a empresa antes de editar um benefício.
@@ -37,6 +39,7 @@ export default async function EditarItemParceriaPage({
 
   return (
     <div>
+      <BotaoVoltar href={`/parcerias-locais?empresa=${empresaSelecionada}`} />
       <h1 className="mb-1 text-xl font-semibold text-slate-900">Editar Benefício</h1>
       <p className="mb-6 text-sm text-slate-500">{item.titulo}</p>
       <ItemParceriaForm empresaId={empresaSelecionada} item={item} />

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
@@ -7,6 +6,7 @@ import { ComponenteCard } from "../_components/ComponenteCard";
 import { RegistrarManutencaoForm } from "../_components/RegistrarManutencaoForm";
 import { HistoricoManutencoes } from "../_components/HistoricoManutencoes";
 import { ORDEM_COMPONENTES, gerarRecomendacoes, type StatusManutencao } from "@/lib/manutencaoPreditiva";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 type SearchParams = { empresa?: string };
 
@@ -26,9 +26,7 @@ export default async function DetalheManutencaoPreditivaPage({
   if (!empresaSelecionada) {
     return (
       <div>
-        <Link href="/manutencao-preditiva" className="mb-4 inline-block text-sm text-frota-600 hover:underline">
-          ← Voltar
-        </Link>
+        <BotaoVoltar href="/manutencao-preditiva" />
         <div className="card max-w-lg space-y-4 p-6">
           <p className="text-sm text-slate-600">Selecione o cliente para ver a análise deste veículo.</p>
           <form className="flex items-end gap-3">
@@ -98,9 +96,7 @@ export default async function DetalheManutencaoPreditivaPage({
 
   return (
     <div>
-      <Link href="/manutencao-preditiva" className="mb-4 inline-block text-sm text-frota-600 hover:underline">
-        ← Voltar
-      </Link>
+      <BotaoVoltar href="/manutencao-preditiva" />
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>

@@ -7,6 +7,7 @@ import { ExcluirPosto } from "../_components/ExcluirPosto";
 import { ToggleAtivoPosto } from "../_components/ToggleAtivoPosto";
 import { RegistrarPrecoForm } from "../_components/RegistrarPrecoForm";
 import { ExcluirPreco } from "../_components/ExcluirPreco";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 export default async function EditarPostoPage({ params }: { params: Promise<{ cnpj: string }> }) {
   const { cnpj } = await params;
@@ -58,6 +59,7 @@ export default async function EditarPostoPage({ params }: { params: Promise<{ cn
 
   return (
     <div>
+      <BotaoVoltar href="/postos" />
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Editar Posto Revendedor</h1>

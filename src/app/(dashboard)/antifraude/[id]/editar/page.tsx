@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { RegraAntifraudeForm } from "../../_components/RegraAntifraudeForm";
+import { BotaoVoltar } from "../../../_components/BotaoVoltar";
 
 export default async function EditarRegraAntifraudePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,6 +27,7 @@ export default async function EditarRegraAntifraudePage({ params }: { params: Pr
 
   return (
     <div>
+      <BotaoVoltar href="/antifraude" />
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Regra Antifraude</h1>
       <RegraAntifraudeForm
         regra={regra as any}

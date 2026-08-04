@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ItemCatalogoForm } from "../../_components/ItemCatalogoForm";
+import { BotaoVoltar } from "../../../_components/BotaoVoltar";
 
 export default async function EditarItemCatalogoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,6 +26,7 @@ export default async function EditarItemCatalogoPage({ params }: { params: Promi
 
   return (
     <div>
+      <BotaoVoltar href="/fidelidade" />
       <h1 className="mb-1 text-xl font-semibold text-slate-900">Editar Item do Catálogo</h1>
       <p className="mb-6 text-sm text-slate-500">{item.titulo}</p>
       <ItemCatalogoForm item={item} />

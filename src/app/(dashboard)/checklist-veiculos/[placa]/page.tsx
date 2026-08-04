@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { RegistrarInspecaoForm } from "../_components/RegistrarInspecaoForm";
 import { HistoricoInspecoes } from "../_components/HistoricoInspecoes";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 type SearchParams = { empresa?: string };
 
@@ -22,9 +22,7 @@ export default async function DetalheChecklistVeiculoPage({
   if (!empresaSelecionada) {
     return (
       <div>
-        <Link href="/checklist-veiculos" className="mb-4 inline-block text-sm text-frota-600 hover:underline">
-          ← Voltar
-        </Link>
+        <BotaoVoltar href="/checklist-veiculos" />
         <div className="card max-w-lg space-y-4 p-6">
           <p className="text-sm text-slate-600">Selecione o cliente para ver o checklist deste veículo.</p>
           <form className="flex items-end gap-3">
@@ -89,9 +87,7 @@ export default async function DetalheChecklistVeiculoPage({
 
   return (
     <div>
-      <Link href="/checklist-veiculos" className="mb-4 inline-block text-sm text-frota-600 hover:underline">
-        ← Voltar
-      </Link>
+      <BotaoVoltar href="/checklist-veiculos" />
 
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">{placa}</h1>

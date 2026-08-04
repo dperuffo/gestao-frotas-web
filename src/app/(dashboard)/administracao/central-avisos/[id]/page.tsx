@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AvisoForm } from "../_components/AvisoForm";
+import { BotaoVoltar } from "../../../_components/BotaoVoltar";
 
 export default async function EditarAvisoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -24,6 +25,7 @@ export default async function EditarAvisoPage({ params }: { params: Promise<{ id
 
   return (
     <div>
+      <BotaoVoltar href="/administracao/central-avisos" />
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Editar: {aviso.titulo}</h1>
       </div>

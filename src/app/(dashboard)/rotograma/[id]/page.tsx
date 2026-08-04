@@ -8,6 +8,7 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { BotaoExcluirRotograma } from "../_components/BotaoExcluirRotograma";
 import BotaoBaixarPdfRotogramaLazy from "../_components/BotaoBaixarPdfRotogramaLazy";
 import type { RotogramaParada, RotogramaRisco } from "../tipos";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 export default async function RotogramaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -52,11 +53,9 @@ export default async function RotogramaDetalhePage({ params }: { params: Promise
 
   return (
     <div>
+      <BotaoVoltar href="/rotograma" label="Voltar para Rotogramas" />
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/rotograma" className="mb-2 inline-block text-xs text-slate-500 hover:underline">
-            ← Voltar para Rotogramas
-          </Link>
           <h1 className="text-xl font-semibold text-slate-900">
             Rotograma #{rotograma.numero} — {rotograma.origem} → {rotograma.destino}
           </h1>

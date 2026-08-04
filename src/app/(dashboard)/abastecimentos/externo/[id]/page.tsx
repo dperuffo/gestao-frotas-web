@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatarDataHoraBr } from "@/lib/utils";
 import type { AutorAjuste } from "@/lib/ajustesAbastecimentos";
 import { PainelAjusteAbastecimento } from "../../_components/PainelAjusteAbastecimento";
+import { BotaoVoltar } from "../../../_components/BotaoVoltar";
 
 // Fase 27.142 — pedido do Daniel, sinalizado como "próximo passo" desde a
 // Fase 27.136 ("O posto cobra do cliente sobre abastecimentos de outras
@@ -50,6 +51,7 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
   if (!temContraparte) {
     return (
       <div>
+        <BotaoVoltar href="/abastecimentos" />
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-slate-900">Abastecimento</h1>
           {/* Fase 27.152/27.153 — mesmo ID de 10 dígitos de /abastecimentos/[id]
@@ -94,6 +96,7 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
 
   return (
     <div>
+      <BotaoVoltar href="/abastecimentos" />
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Abastecimento</h1>
         {/* Fase 27.152/27.153 — mesmo ID de 10 dígitos de /abastecimentos/[id]

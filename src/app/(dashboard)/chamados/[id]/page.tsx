@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
@@ -7,6 +6,7 @@ import { BUCKET_ANEXOS, CORES_PRIORIDADE, CORES_STATUS, prioridadeLabel, statusL
 import { ThreadChamado } from "../_components/ThreadChamado";
 import { ControlesAdminChamado } from "../_components/ControlesAdminChamado";
 import { BotaoResolverChamado } from "../_components/BotaoResolverChamado";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 // Fase 27.28 — achado real (em investigação): o crash mascarado e recorrente
 // ao enviar anexo numa resposta de chamado (visto de novo mesmo após alinhar
@@ -79,9 +79,7 @@ export default async function ChamadoDetalhePage({
 
     return (
       <div>
-        <Link href="/chamados" className="mb-2 inline-block text-xs text-slate-500 hover:underline">
-          ← Voltar para Chamados
-        </Link>
+        <BotaoVoltar href="/chamados" label="Voltar para Chamados" />
 
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -142,9 +140,7 @@ export default async function ChamadoDetalhePage({
     console.error("[chamados/[id]] falha ao carregar a tela:", e);
     return (
       <div>
-        <Link href="/chamados" className="mb-2 inline-block text-xs text-slate-500 hover:underline">
-          ← Voltar para Chamados
-        </Link>
+        <BotaoVoltar href="/chamados" label="Voltar para Chamados" />
         <h1 className="mb-6 mt-2 text-xl font-semibold text-slate-900">Chamado</h1>
         <div className="max-w-2xl rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
           <p className="font-semibold">Não foi possível carregar esta tela.</p>

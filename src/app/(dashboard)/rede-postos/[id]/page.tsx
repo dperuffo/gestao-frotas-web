@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { RedeForm } from "../_components/RedeForm";
 import { VincularPostoForm } from "../_components/VincularPostoForm";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 // Fase 27.87 — espelha /grupo-economico/[id]/page.tsx, filtrado a
 // segmento='Revenda' (postos revendedores).
@@ -67,6 +68,7 @@ export default async function EditarRedePage({
 
   return (
     <div className="space-y-6">
+      <BotaoVoltar href="/rede-postos" />
       <h1 className="text-xl font-semibold text-slate-900">Editar Rede de Postos — {rede.nome}</h1>
       <RedeForm rede={rede} />
       <VincularPostoForm redeId={id} postosDisponiveis={postosDisponiveis} vinculos={vinculos} />

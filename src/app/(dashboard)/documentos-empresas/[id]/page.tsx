@@ -10,6 +10,7 @@ import {
   type DocumentoEmpresa,
 } from "@/lib/empresasDocumentos";
 import { PainelRevisao } from "./_components/PainelRevisao";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 // Fase 27.149 — detalhe da documentação de uma empresa, pra revisão do
 // admin: todos os documentos (empresa + cada sócio) com link assinado pra
@@ -53,6 +54,7 @@ export default async function DocumentosEmpresaDetalhePage({ params }: { params:
 
   return (
     <div className="max-w-3xl">
+      <BotaoVoltar href="/documentos-empresas" />
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">{empresa.nome}</h1>
         <p className="mt-1 text-sm text-slate-500">

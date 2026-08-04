@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ConverterCotacaoButton } from "../_components/ConverterCotacaoButton";
 import { DescartarCotacaoButton } from "../_components/DescartarCotacaoButton";
+import { BotaoVoltar } from "../../_components/BotaoVoltar";
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -41,6 +42,7 @@ export default async function CotacaoDetalhePage({
 
   return (
     <div>
+      <BotaoVoltar href={`/cotacoes?empresa=${empresaId}`} label="Voltar para Cotações" />
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">
@@ -100,12 +102,6 @@ export default async function CotacaoDetalhePage({
           </Link>
         </div>
       )}
-
-      <div className="mt-6">
-        <Link href={`/cotacoes?empresa=${empresaId}`} className="text-sm text-frota-600 hover:underline">
-          ← Voltar para Cotações
-        </Link>
-      </div>
     </div>
   );
 }
