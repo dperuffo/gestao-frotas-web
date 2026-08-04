@@ -42,6 +42,12 @@ export const PLANO_LABEL: Record<Plano, string> = {
 // código, igual às demais linhas do Essencial acima) — TCO, Checklist de
 // Inspeção veicular, Indicadores da Frota, Sinistros/Multas e Rede de
 // Oficinas parceiras. Ver mesma atualização em landingBody.ts.
+// Atualização (04/08/2026, revisão de permissões pós-benchmark Rodopar/
+// Datapar): mesma lógica pras entregas dos Grupos 1 e 2 desse benchmark —
+// Torre de Controle (com GPS ao vivo), Programação de Frota, CRM Comercial,
+// Estoque de Peças, Patrimônio (depreciação contábil) e Conciliação
+// Bancária, todas sem gate de código, liberadas em qualquer plano pago hoje.
+// Mesma atualização em landingBody.ts (cards #func + <li> do plano Essencial).
 export const FEATURES_PLANO: Record<"basico" | "profissional" | "enterprise", string[]> = {
   basico: [
     "Roteirização, Rotograma e Planos de Viagem",
@@ -49,6 +55,8 @@ export const FEATURES_PLANO: Record<"basico" | "profissional" | "enterprise", st
     "Cadastros de frota, motoristas e centros de custo",
     "TCO, Checklist de Inspeção e Indicadores da Frota",
     "Controle de Sinistros, Multas e Rede de Oficinas",
+    "Torre de Controle com GPS ao vivo e Programação de Frota",
+    "CRM Comercial, Estoque de Peças, Patrimônio e Conciliação Bancária",
     "Suporte em até 48h",
   ],
   profissional: [

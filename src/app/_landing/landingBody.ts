@@ -56,6 +56,13 @@
 //   documentadas em FEATURES_PLANO/FEATURES_PLANO_POSTO (src/lib/
 //   constants.ts) e nas novas linhas de permissoes_perfil (migração
 //   inserir_permissoes_novas_funcionalidades).
+// - Atualização (04/08/2026, revisão de permissões pós-benchmark Rodopar/
+//   Datapar): 6 cards novos em #func (Torre de Controle com GPS ao vivo,
+//   Programação de Frota, CRM Comercial, Estoque de Peças, Patrimônio,
+//   Conciliação Bancária) + os mesmos itens como <li> no plano Essencial de
+//   .pricing#precos — mesmas features documentadas em FEATURES_PLANO
+//   (src/lib/constants.ts) e nas novas linhas de permissoes_perfil (migração
+//   inserir_permissoes_rodopar_grupo1_grupo2).
 export const LANDING_BODY_HTML = `
 <style>
 :root{--navy:#04112e;--blue:#0d2d6b;--electric:#1a56f0;--cyan:#00b4d8;--cyan2:#00c2ff;--gold:#f5a623;--white:#ffffff;--gray:#8a9bb5;}
@@ -692,6 +699,12 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
     <div class="card"><div class="icon">🚨</div><div class="ct">Sinistros e Multas</div><div class="cd">Registre e acompanhe ocorrências e infrações vinculadas a cada veículo e motorista, do primeiro registro à resolução.</div></div>
     <div class="card"><div class="icon">🔧</div><div class="ct">Rede de Oficinas</div><div class="cd">Oficinas credenciadas pra manutenção da frota, com histórico de serviços por veículo.</div></div>
     <div class="card"><div class="icon">📢</div><div class="ct">Central de Avisos</div><div class="cd">Comunicados internos direto pros motoristas e equipe, sem depender de grupo de WhatsApp.</div></div>
+    <div class="card"><div class="icon">🎯</div><div class="ct">Torre de Controle</div><div class="cd">Painel único dos fretes em andamento, com localização dos veículos em tempo real (GPS) e alerta automático de prazo estourado.</div></div>
+    <div class="card"><div class="icon">📅</div><div class="ct">Programação de Frota</div><div class="cd">Veja num só quadro quem está em viagem e até quando, quem está livre e quem ainda não tem motorista.</div></div>
+    <div class="card"><div class="icon">🤝</div><div class="ct">CRM Comercial</div><div class="cd">Funil de oportunidades, do primeiro contato ao contrato fechado, com histórico de interações por cliente.</div></div>
+    <div class="card"><div class="icon">📦</div><div class="ct">Estoque de Peças</div><div class="cd">Saldo e custo médio de peças calculados automaticamente, com saída vinculada direto à ordem de serviço.</div></div>
+    <div class="card"><div class="icon">🏛️</div><div class="ct">Patrimônio</div><div class="cd">Depreciação contábil linha reta por veículo, com registro formal de reavaliação, melhoria e baixa do ativo.</div></div>
+    <div class="card"><div class="icon">🔄</div><div class="ct">Conciliação Bancária</div><div class="cd">Importe o extrato (OFX/CSV) e concilie com um clique contra contas a pagar e a receber já lançadas.</div></div>
   </div>
 </section>
 
@@ -803,7 +816,7 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   </div>
   <div class="pgrid">
     <div class="pc"><div class="pn" data-i18n="plan0_n">Gratuito</div><div class="pp"><sup>R$</sup>0<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan0_d">Para começar</div><ul class="pf"><li data-i18n="plan0_f1">1 usuário</li><li data-i18n="plan0_f2">10 veículos</li><li data-i18n="plan0_f3">2 postos</li><li class="off" data-i18n="plan_anp_hist">Histórico ANP</li><li class="off">Excel</li><li class="off">API</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan0_btn">Começar grátis</a></div>
-    <div class="pc"><div class="pn" data-i18n="plan1_n">Essencial</div><div class="pp"><sup>R$</sup>249<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan1_d">Pequenas frotas</div><ul class="pf"><li data-i18n="plan1_f1">5 usuários</li><li data-i18n="plan1_f2">20 veículos inclusos (+R$4,50/excedente)</li><li data-i18n="plan1_f3">Roteirização, Rotograma e Planos de Viagem</li><li data-i18n="plan1_f4">Inteligência de Rede</li><li>TCO, Checklist de Inspeção e Indicadores da Frota</li><li>Sinistros, Multas e Rede de Oficinas</li><li data-i18n="plan1_f5">Exportação Excel</li><li class="off">Gestão de Fretes (TMS)</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan1_btn">Assinar Essencial</a></div>
+    <div class="pc"><div class="pn" data-i18n="plan1_n">Essencial</div><div class="pp"><sup>R$</sup>249<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan1_d">Pequenas frotas</div><ul class="pf"><li data-i18n="plan1_f1">5 usuários</li><li data-i18n="plan1_f2">20 veículos inclusos (+R$4,50/excedente)</li><li data-i18n="plan1_f3">Roteirização, Rotograma e Planos de Viagem</li><li data-i18n="plan1_f4">Inteligência de Rede</li><li>TCO, Checklist de Inspeção e Indicadores da Frota</li><li>Sinistros, Multas e Rede de Oficinas</li><li>Torre de Controle com GPS e Programação de Frota</li><li>CRM Comercial, Estoque de Peças, Patrimônio e Conciliação Bancária</li><li data-i18n="plan1_f5">Exportação Excel</li><li class="off">Gestão de Fretes (TMS)</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan1_btn">Assinar Essencial</a></div>
     <div class="pc feat"><div class="pbadge" data-i18n="plan_popular">Mais popular</div><div class="pn" data-i18n="plan2_n">Profissional</div><div class="pp"><sup>R$</sup>549<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan2_d">TMS para transportadoras</div><ul class="pf"><li data-i18n="plan2_f1">20 usuários</li><li data-i18n="plan2_f2">60 veículos inclusos (+R$3,50/excedente)</li><li data-i18n="plan2_f3">Gestão de Fretes (TMS) — até 30/mês</li><li data-i18n="plan2_f4">Emissão de CT-e/MDF-e e faturamento de fretes</li><li data-i18n="plan2_f5">Cotações e Tabelas de Frete (piso ANTT)</li><li data-i18n="plan2_f6">API + Webhooks</li></ul><a href="/cadastro" class="pbtn p" data-i18n="plan2_btn">Trial grátis 14 dias</a></div>
     <div class="pc"><div class="pn" data-i18n="plan3_n">Enterprise</div><div class="pp"><sup>R$</sup>1.099<span data-i18n="plan_mes">/mês</span></div><div class="pd" data-i18n="plan3_d">Grandes operações e TMS ilimitado</div><ul class="pf"><li data-i18n="plan3_f1">150 veículos inclusos (+R$2,50/excedente)</li><li data-i18n="plan3_f2">Gestão de Fretes (TMS) ilimitada</li><li>SSO SAML</li><li>SLA 99,95%</li><li data-i18n="plan3_f6">Suporte 24/7</li></ul><a href="/cadastro" class="pbtn o" data-i18n="plan3_btn">Assinar Enterprise</a></div>
   </div>

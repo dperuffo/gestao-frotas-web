@@ -7518,3 +7518,37 @@ arquivo Pró-Frotas de sempre (zero mudança de comportamento pra quem já usa e
   espera — sem depender só da leitura visual do código.
 
 Validado: `npx tsc --noEmit` e `npx eslint` limpos nos 6 arquivos tocados/criados.
+
+## Fase revisao-permissoes-landing-rodopar — sincronizar permissões e landing com o Grupo 1/2 (Rodopar)
+
+Pedido do Daniel: revisar Permissões por Perfil e a landing page depois das entregas do
+benchmark Rodopar/Datapar (Torre de Controle, Programação de Frota, Conciliação Bancária,
+Rastreamento GPS contínuo, CRM Comercial, Patrimônio formal) — mesmo movimento já feito em
+02/08/2026 pro lote anterior (TCO, Checklist, Indicadores da Frota, Sinistros/Multas, Rede de
+Oficinas, Central de Avisos, Pré-Pedidos).
+
+- **Achado**: a matriz de `/permissoes` só lista as `funcionalidade`s que já têm linha em
+  `permissoes_perfil` (não existe uma lista fixa no código — `permissoes/page.tsx` monta a
+  matriz 100% a partir do que existe no banco). Nenhuma das 6 telas novas tinha linha, então
+  não apareciam pra nenhum admin/gestor customizar. Achado à parte, registrado aqui pra
+  próxima vez que alguém mexer nisso: **hoje essa matriz não é lida em nenhum outro lugar do
+  app** (grep em todo o `src/` só encontra `permissoes_perfil` em `permissoes/page.tsx`,
+  `permissoes/actions.ts`, `constants.ts` e `database.types.ts`) — ela não esconde item de
+  menu nem bloqueia rota ainda. É configuração pronta pra um enforcement futuro, não uma
+  trava ativa hoje.
+- **Migration `inserir_permissoes_rodopar_grupo1_grupo2`**: 24 linhas novas (6
+  funcionalidades × 4 perfis) em `permissoes_perfil`, padrão global — `aba_torre_controle`,
+  `aba_programacao_frota`, `aba_conciliacao_bancaria`, `aba_crm_comercial`,
+  `aba_estoque_pecas`, `aba_patrimonio`. Mesmo padrão de acesso já usado pras demais abas de
+  Operação (`aba_tco`, `aba_sinistros`, `aba_multas`, `aba_oficinas`,
+  `aba_checklist_veiculos`): admin/gestor_frota/analista=true, posto=false — são telas só do
+  lado Frota, sem equivalente no menu do posto.
+- **`FEATURES_PLANO.basico`** (`src/lib/constants.ts`): 2 linhas novas — "Torre de Controle
+  com GPS ao vivo e Programação de Frota" e "CRM Comercial, Estoque de Peças, Patrimônio e
+  Conciliação Bancária" (mesmo texto usado no `<li>` do plano Essencial na landing).
+- **`landingBody.ts`**: 6 cards novos em `#func` (Torre de Controle, Programação de Frota,
+  CRM Comercial, Estoque de Peças, Patrimônio, Conciliação Bancária) + os mesmos 2 itens como
+  `<li>` no plano Essencial de `.pricing#precos`. GPS contínuo entrou dentro do card de Torre
+  de Controle (é a mesma tela — o rastreamento ao vivo é o mapa dela), sem card próprio.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos (`constants.ts` e `landingBody.ts`).
