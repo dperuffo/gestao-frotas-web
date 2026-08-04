@@ -808,6 +808,26 @@ export interface Database {
           },
         ];
       };
+      menu_favoritos: {
+        Row: {
+          id: string;
+          usuario_email: string;
+          href: string;
+          contagem: number;
+          ultimo_acesso: string | null;
+          score: number;
+          fixado_manual: boolean;
+          removido_manual: boolean;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["menu_favoritos"]["Row"]> & {
+          usuario_email: string;
+          href: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["menu_favoritos"]["Row"]>;
+        Relationships: [];
+      };
       grupos_economicos: {
         Row: {
           id: string;
@@ -5066,6 +5086,18 @@ export interface Database {
       veiculo_duplicado: {
         Args: { p_cnpj_frota: string; p_placa: string; p_excluir_id?: string | null };
         Returns: boolean;
+      };
+      registrar_acesso_menu: {
+        Args: { p_href: string };
+        Returns: void;
+      };
+      alternar_favorito_menu: {
+        Args: { p_href: string; p_fixar: boolean };
+        Returns: void;
+      };
+      favoritos_menu_do_usuario: {
+        Args: { p_limite?: number };
+        Returns: { href: string; fixado: boolean }[];
       };
       motorista_duplicado: {
         Args: { p_empresa_id: string; p_cpf: string; p_excluir_id?: string | null };

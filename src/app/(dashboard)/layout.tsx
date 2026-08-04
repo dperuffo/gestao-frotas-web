@@ -56,6 +56,7 @@ import {
   Boxes,
   ArrowLeftRight,
   Briefcase,
+  Bot,
 } from "lucide-react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -87,12 +88,15 @@ import { LembretePwaBanner } from "@/components/pwa/LembretePwaBanner";
 import { AvisosSino } from "./_components/AvisosSino";
 import { AvisoBannerFixo } from "./_components/AvisoBannerFixo";
 import { listarAvisosAcao } from "./administracao/central-avisos/actions";
+import { BarraAtalhosFavoritos, type ItemAtalho } from "./_components/BarraAtalhosFavoritos";
+import { RastreadorAcessoMenu } from "./_components/RastreadorAcessoMenu";
 
-// Fase 27.15 — o ícone da "Assistente FNI" é a logo (imagem), bem mais larga
-// que um emoji, então precisa de tratamento especial no render (ver
-// `item.logo` abaixo) — os demais itens seguem o MESMO padrão do
-// menuCadastros/menuOperacao/menuAdministracao: emoji embutido direto na
-// string do label.
+// Fase 27.15 (histórico) — a "Assistente FNI" chegou a usar a logo da marca
+// como ícone no menu, tratamento especial só dela (`item.logo`). Substituído
+// na Fase Ícones-Padrão-Menu (04/08/2026) por `icon: Bot`, igual a todos os
+// outros itens — pedido do Daniel pra ela (e a Central de Ajuda, no rodapé
+// do menu — ver CentralAjuda.tsx) seguirem o mesmo padrão de ícone
+// lucide-react do resto do menu.
 // Fase 27.112 — pedido do Daniel: "Alinhar ícones e textos iniciais com os
 // ícones e textos do menu Cadastros. Nomear a primeira sessão de ícones e
 // textos GERAL". Esta lista passou a usar o mesmo formato label com emoji
@@ -291,7 +295,7 @@ const menuEngajamento: ItemMenuLateral[] = [
 // hardcoded fora de qualquer array (ver GrupoMenuLateral.tsx pro porquê de
 // juntar tudo aqui: mesmo tema, "cuidar da própria conta e pedir ajuda").
 const menuContaAjuda: ItemMenuLateral[] = [
-  { href: "/assistente", label: "Assistente FNI", logo: true },
+  { href: "/assistente", label: "Assistente FNI", icon: Bot },
   { href: "/assinatura", label: "Minha Assinatura", icon: CreditCard }, // PWA: Icons.credit_card
   { href: "/avaliar", label: "Avaliar Plataforma", icon: Star }, // PWA: Icons.star
   // Fase Central-Treinamento (20/07/2026) — pedido do Daniel: treinamento
@@ -388,7 +392,7 @@ const menuPostoFinanceiro: ItemMenuLateral[] = [
 // Chamados entra aqui em vez de hardcoded fora de qualquer array (ver
 // GrupoMenuLateral.tsx).
 const menuPostoContaAjuda: ItemMenuLateral[] = [
-  { href: "/assistente", label: "Assistente FNI", logo: true },
+  { href: "/assistente", label: "Assistente FNI", icon: Bot },
   { href: "/assinatura", label: "Minha Assinatura", icon: CreditCard },
   { href: "/avaliar", label: "Avaliar Plataforma", icon: Star },
   { href: "/treinamento", label: "Central de Treinamento", icon: GraduationCap },
@@ -451,6 +455,38 @@ const menuAdministracao = [
   // de oficinas credenciadas, exibido pro cliente em /oficinas.
   { href: "/administracao/oficinas-credenciadas", label: "Oficinas Credenciadas", icon: Hammer },
 ];
+
+// Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel) — mapa
+// achatado de TODOS os itens de menu possíveis (frota + posto +
+// administração), usado só pra: (1) resolver label/ícone de um href
+// favoritado, sem duplicar essa informação em outro lugar; (2) saber quais
+// hrefs são "rastreáveis" (contam acesso pra frecência — ver
+// RastreadorAcessoMenu.tsx). Um mesmo href pode aparecer em mais de um
+// array (ex.: /assistente em menuContaAjuda E menuPostoContaAjuda, sempre
+// com o mesmo label/ícone; /permissoes em menuSistema E menuAdministracao,
+// com labels levemente diferentes) — o Map só guarda a última ocorrência,
+// sem consequência prática pra decidir a ordem dos favoritos.
+const TODOS_ITENS_MENU: ItemMenuLateral[] = [
+  ...menuVisaoGeral,
+  ...menuCadastros,
+  ...menuRoteirizacaoAbastecimento,
+  ...menuFretes,
+  ...menuManutencaoAtivos,
+  ...menuFinanceiro,
+  ...menuRelatorios,
+  ...menuEngajamento,
+  ...menuContaAjuda,
+  ...menuSistema,
+  ...menuPostoVisaoGeral,
+  ...menuPostoCadastros,
+  ...menuPostoOperacao,
+  ...menuPostoFinanceiro,
+  ...menuPostoContaAjuda,
+  ...menuPostoSistema,
+  ...menuAdministracao,
+];
+const MAPA_ITENS_MENU = new Map(TODOS_ITENS_MENU.map((item) => [item.href, item]));
+const HREFS_RASTREAVEIS = TODOS_ITENS_MENU.map((item) => item.href);
 
 // Alvos do tour de boas-vindas (Fase 24) — só os 3 itens de menu citados no
 // tour (ver src/lib/ajuda/tourPassos.ts) precisam de data-tour; os demais
@@ -532,6 +568,7 @@ export default async function DashboardLayout({
     multasPendentes,
     logoutInatividadeMinutos,
     avisos,
+    favoritosBrutos,
   ] = await Promise.all([
       contarChamadosNaoVistosAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar chamados não vistos (ignorado):", e);
@@ -597,6 +634,22 @@ export default async function DashboardLayout({
         console.error("[dashboard/layout] falha ao listar avisos (ignorado):", e);
         return [];
       }),
+      // Fase Acesso-Rápido-Favoritos (04/08/2026) — lista já ordenada
+      // (fixados manualmente primeiro, depois os de maior frecência) pra
+      // alimentar a barra de atalhos e as estrelas do menu lateral; mesma
+      // blindagem "falha vira []" das demais. `supabase.rpc(...)` devolve um
+      // PostgrestFilterBuilder (thenable, mas sem `.catch` de verdade) — por
+      // isso a IIFE async em vez de encadear `.then().catch()` direto nele.
+      (async (): Promise<{ href: string; fixado: boolean }[]> => {
+        try {
+          const { data, error } = await supabase.rpc("favoritos_menu_do_usuario", { p_limite: 8 });
+          if (error) throw error;
+          return data ?? [];
+        } catch (e) {
+          console.error("[dashboard/layout] falha ao buscar favoritos do menu (ignorado):", e);
+          return [];
+        }
+      })(),
     ]);
 
   // Nome e cargo/função do usuário logado, pra mostrar no lugar do texto
@@ -639,6 +692,22 @@ export default async function DashboardLayout({
   // pra filtrar cada uma das listas de menu abaixo (item some quando o
   // perfil atual não tem permissão pra funcionalidade correspondente).
   const podeAcessarItem = (item: { href: string }) => podeAcessar(HREF_FUNCIONALIDADE[item.href] ?? null);
+
+  // Fase Acesso-Rápido-Favoritos (04/08/2026) — resolve os hrefs favoritados
+  // (fixados manualmente ou sugeridos por frecência) pra label/ícone via
+  // MAPA_ITENS_MENU, descartando o que não existir mais em nenhum menu ou
+  // cuja permissão tenha sido revogada depois de favoritado (mesma checagem
+  // `podeAcessarItem` usada nas demais listas — nunca mostra um atalho pra
+  // uma tela que o usuário não pode mais acessar). `favoritosHrefsSet` é só
+  // pra saber, em O(1), se um href já está no acesso rápido (desenha a
+  // estrela cheia/vazia em cada item do menu lateral).
+  const itensFavoritos: ItemAtalho[] = favoritosBrutos
+    .map((f: { href: string; fixado: boolean }): ItemAtalho | null => {
+      const item = MAPA_ITENS_MENU.get(f.href);
+      return item && podeAcessarItem(item) ? { href: f.href, label: item.label, icon: item.icon } : null;
+    })
+    .filter((item): item is ItemAtalho => item !== null);
+  const favoritosHrefsSet = new Set(itensFavoritos.map((i) => i.href));
 
   const headersRequisicao = await headers();
   const pathnameAtual = headersRequisicao.get("x-pathname") ?? "";
@@ -739,6 +808,7 @@ export default async function DashboardLayout({
       tourJaVisto={perfilUsuario?.tour_onboarding_visto ?? false}
       passos={ehPosto ? PASSOS_TOUR_POSTO : passosTourFrota}
     >
+    <RastreadorAcessoMenu hrefsRastreaveis={HREFS_RASTREAVEIS} />
     <div className="flex min-h-screen">
       {/* Pedido do Daniel: "desacoplar o menu da tela de informações" — em
           telas com muito conteúdo, o <aside> (menu lateral) rolava junto com
@@ -776,12 +846,12 @@ export default async function DashboardLayout({
                 grupos temáticos, mesmo espírito da reorganização do lado
                 Frota logo abaixo (ver comentário grande em menuVisaoGeral,
                 no topo do arquivo). */}
-            <GrupoMenuLateral titulo="Visão Geral" itens={itensPostoVisaoGeral} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} primeiro />
-            <GrupoMenuLateral titulo="Cadastros" itens={itensPostoCadastrosFiltrados} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} />
-            <GrupoMenuLateral titulo="Operação" itens={itensPostoOperacaoFiltrados} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} />
-            <GrupoMenuLateral titulo="Financeiro" itens={itensPostoFinanceiro} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} />
-            <GrupoMenuLateral titulo="Conta e Ajuda" itens={itensPostoContaAjuda} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} />
-            <GrupoMenuLateral titulo="Sistema" itens={itensPostoSistema} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} />
+            <GrupoMenuLateral titulo="Visão Geral" itens={itensPostoVisaoGeral} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} favoritos={favoritosHrefsSet} primeiro />
+            <GrupoMenuLateral titulo="Cadastros" itens={itensPostoCadastrosFiltrados} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} favoritos={favoritosHrefsSet} />
+            <GrupoMenuLateral titulo="Operação" itens={itensPostoOperacaoFiltrados} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} favoritos={favoritosHrefsSet} />
+            <GrupoMenuLateral titulo="Financeiro" itens={itensPostoFinanceiro} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} favoritos={favoritosHrefsSet} />
+            <GrupoMenuLateral titulo="Conta e Ajuda" itens={itensPostoContaAjuda} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} favoritos={favoritosHrefsSet} />
+            <GrupoMenuLateral titulo="Sistema" itens={itensPostoSistema} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} favoritos={favoritosHrefsSet} />
             </>
           ) : (
           <>
@@ -791,9 +861,10 @@ export default async function DashboardLayout({
             badges={badgesMenu}
             tourPorHref={TOUR_POR_HREF}
             dataTourTitulo="menu-geral"
+            favoritos={favoritosHrefsSet}
             primeiro
           />
-          <GrupoMenuLateral titulo="Cadastros" itens={itensCadastrosFiltrados} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} dataTourTitulo="menu-cadastros" />
+          <GrupoMenuLateral titulo="Cadastros" itens={itensCadastrosFiltrados} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} dataTourTitulo="menu-cadastros" favoritos={favoritosHrefsSet} />
 
           {/* Fase reorganizacao-menu — os 3 grupos que substituíram a antiga
               "Operação" (33 itens numa lista só) ficam dentro de um mesmo
@@ -802,15 +873,15 @@ export default async function DashboardLayout({
               subgrupo) sem precisar reescrever o texto do passo em
               tourPassos.ts. */}
           <div data-tour="menu-operacao">
-            <GrupoMenuLateral titulo="Roteirização e Abastecimento" itens={itensRoteirizacaoAbastecimento} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
-            <GrupoMenuLateral titulo="Fretes" itens={itensFretes} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
-            <GrupoMenuLateral titulo="Manutenção e Ativos" itens={itensManutencaoAtivos} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
+            <GrupoMenuLateral titulo="Roteirização e Abastecimento" itens={itensRoteirizacaoAbastecimento} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} favoritos={favoritosHrefsSet} />
+            <GrupoMenuLateral titulo="Fretes" itens={itensFretes} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} favoritos={favoritosHrefsSet} />
+            <GrupoMenuLateral titulo="Manutenção e Ativos" itens={itensManutencaoAtivos} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} favoritos={favoritosHrefsSet} />
           </div>
-          <GrupoMenuLateral titulo="Financeiro" itens={itensFinanceiro} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
-          <GrupoMenuLateral titulo="Relatórios e Sustentabilidade" itens={itensRelatorios} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
-          <GrupoMenuLateral titulo="Engajamento" itens={itensEngajamento} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
-          <GrupoMenuLateral titulo="Conta e Ajuda" itens={itensContaAjuda} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
-          <GrupoMenuLateral titulo="Sistema" itens={itensSistema} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
+          <GrupoMenuLateral titulo="Financeiro" itens={itensFinanceiro} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} favoritos={favoritosHrefsSet} />
+          <GrupoMenuLateral titulo="Relatórios e Sustentabilidade" itens={itensRelatorios} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} favoritos={favoritosHrefsSet} />
+          <GrupoMenuLateral titulo="Engajamento" itens={itensEngajamento} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} favoritos={favoritosHrefsSet} />
+          <GrupoMenuLateral titulo="Conta e Ajuda" itens={itensContaAjuda} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} favoritos={favoritosHrefsSet} />
+          <GrupoMenuLateral titulo="Sistema" itens={itensSistema} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} favoritos={favoritosHrefsSet} />
 
           {/* Fase 27.110 — pedido do Daniel: "O menu Administração deve
               ficar visível somente para o admin da aplicação" — antes só
@@ -862,6 +933,10 @@ export default async function DashboardLayout({
         </div>
       </aside>
       <main className="flex-1 bg-slate-50 p-8">
+        {/* Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel) —
+            barra de atalhos pras telas mais usadas (frecência) ou fixadas
+            manualmente, primeira coisa visível no conteúdo. */}
+        <BarraAtalhosFavoritos itensIniciais={itensFavoritos} />
         {/* Fase Central-Avisos — banner fixo pros avisos fixado=true (ex.:
             manutenção em andamento), acima até do lembrete de PWA. */}
         <AvisoBannerFixo avisos={avisos.filter((a) => a.fixado)} />

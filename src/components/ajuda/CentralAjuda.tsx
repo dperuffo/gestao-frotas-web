@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { LifeBuoy } from "lucide-react";
 import { useTour } from "./TourProvider";
 
 // Botão fixo no rodapé da barra lateral (Fase 24) — "chamado a qualquer
 // momento" (pedido do Daniel): reabre o tour guiado de boas-vindas e dá um
 // lembrete rápido de onde achar ajuda contextual (ícones "?") e o
 // Assistente FNI pra perguntas livres sobre os dados.
+//
+// Fase Ícones-Padrão-Menu (04/08/2026, pedido do Daniel) — trocado o emoji
+// 🎓 embutido no label por um ícone lucide-react (`LifeBuoy`), igual ao
+// resto do menu (ver AvisosSino.tsx, componente vizinho no rodapé, pro
+// mesmo padrão: <Icon className="h-4 w-4 shrink-0 text-slate-300" /> antes
+// do texto). Não usamos GraduationCap aqui porque esse ícone já identifica
+// "Central de Treinamento" no menu principal — usar o mesmo pros dois
+// confundiria mais do que ajudaria.
 export function CentralAjuda() {
   const [aberto, setAberto] = useState(false);
   const { iniciar } = useTour();
@@ -20,7 +29,8 @@ export function CentralAjuda() {
         onClick={() => setAberto(true)}
         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
       >
-        🎓 Central de Ajuda
+        <LifeBuoy className="h-4 w-4 shrink-0 text-slate-300" />
+        Central de Ajuda
       </button>
 
       {aberto && (

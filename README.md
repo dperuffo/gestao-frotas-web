@@ -8093,3 +8093,99 @@ Abastecimentos Fornecidos). `pg_proc`/`proconfig` conferido nas 4 funções SQL 
 (`grupo_ids_da_empresa`, `veiculo_duplicado`, `empresa_dona_do_veiculo`,
 `trg_preencher_empresa_id_profrotas_abastecimentos`) — todas com `search_path=public` fixo, sem
 introduzir o alerta `function_search_path_mutable`.
+
+## Fase Ícones-Padrão-Menu — Central de Ajuda e Assistente FNI
+
+Pedido do Daniel: "Ícones de Central de Ajuda e Assistente FNI estão diferentes dos demais
+emojis. Adotar o mesmo padrão de emoji nestas duas abas da aplicação web e PWA." Achado ao
+investigar: os dois itens tinham ficado pra trás na migração da Fase 105 (que trocou os emojis
+embutidos no label por ícones lucide-react em todo o resto do menu).
+
+**Assistente FNI** (`layout.tsx`, `menuContaAjuda`/`menuPostoContaAjuda`): usava `logo: true`
+(campo especial que renderizava a logo da marca via `next/image`, tratamento único dela — ver
+`GrupoMenuLateral.tsx`), em vez de um `icon` lucide-react como todo o resto do menu. Trocado por
+`icon: Bot`. Removido o campo `logo` do tipo `ItemMenuLateral` e o branch de render da `<Image>`
+em `GrupoMenuLateral.tsx` (ficaria código morto, já que era o único uso). O PWA Flutter já usava
+`Icons.smart_toy` (equivalente Material do `Bot`) pro mesmo item — web e PWA ficaram alinhados
+sem precisar tocar no Flutter.
+
+**Central de Ajuda** (`components/ajuda/CentralAjuda.tsx`): o botão fixo no rodapé do menu
+lateral (ao lado de Avisos e Sair) ainda tinha o emoji 🎓 embutido direto no texto do botão,
+nunca migrado. Trocado por `<LifeBuoy className="h-4 w-4 shrink-0 text-slate-300" />`, mesmo
+padrão do `AvisosSino.tsx` vizinho. Não usamos `GraduationCap` (que já identifica "Central de
+Treinamento" no menu principal) pra não duplicar o mesmo ícone em dois itens diferentes.
+Investigado o PWA Flutter: a Central de Ajuda (tour guiado) nunca foi portada pra lá — não existe
+esse item no Drawer (`home_screen.dart`/`posto_home_screen.dart`), então não havia nada
+inconsistente pra corrigir do lado Flutter.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos nos 3 arquivos tocados (`layout.tsx`,
+`GrupoMenuLateral.tsx`, `CentralAjuda.tsx`).
+
+## Fase Acesso-Rápido-Favoritos — barra de atalhos + estrela de favoritar
+
+Pedido do Daniel: "Pensar em um mecanismo de acesso rápido em funcionalidades mais utilizadas
+pelos usuários, uma espécie de favoritos e, sendo favorito, a aba fica no topo da tela como um
+link rápido para ser clicado. Usar inteligência artificial para posicionar as abas mais
+utilizadas." Esclarecido com ele antes de implementar, via 4 perguntas diretas:
+
+1. **Mecanismo**: híbrido — o sistema sugere sozinho (por uso), e o usuário ajusta manualmente
+   fixando/removendo.
+2. **"Inteligência artificial"**: frequência + recência, calculada inteiramente no banco — não
+   é uma chamada de IA/LLM de verdade. Decisão explícita do Daniel ao ser perguntado.
+3. **Posição na tela**: barra horizontal de atalhos no topo do conteúdo (não no topo do menu
+   lateral, que era a opção recomendada — escolha dele).
+4. **Escopo desta rodada**: web e PWA (Cliente + Posto) juntos.
+
+**Algoritmo (frecência)**: cada acesso a uma rota do menu soma ao score existente com decaimento
+por meia-vida de 14 dias — `score_novo = score_antigo * 0.5^(dias_desde_ultimo_acesso / 14) + 1`
+— mesma ideia da lista de "mais visitados" de um navegador. Calculado 100% em SQL, sem custo de
+API externa, sem latência de rede pra uma chamada de IA, sempre disponível.
+
+**Modelo híbrido**: `fixado_manual` (usuário fixou explicitamente — sempre no topo,
+independente do score) e `removido_manual` (usuário removeu explicitamente — nunca mais
+resurge sozinho) são as duas colunas que dão ao usuário a palavra final sobre a sugestão
+automática.
+
+**Migração `menu_favoritos_acesso_rapido`**: tabela `menu_favoritos` (`usuario_email`, `href`,
+`score`, `ultimo_acesso`, `fixado_manual`, `removido_manual`), com RLS pelo mesmo padrão de
+`comunicados_leituras` (`usuario_email = COALESCE(auth.jwt() ->> 'email', auth.jwt() ->>
+'phone')` — `usuarios_app` não tem FK pra `auth.users`, então a tabela é por e-mail/telefone do
+JWT, não por `usuario_id`). Três funções, todas com `search_path=public` fixo (checado direto em
+`pg_proc.proconfig`, já que `get_advisors` no projeto ficou grande demais pro limite de tokens da
+ferramenta):
+
+- `registrar_acesso_menu(p_href)`: upsert que soma 1 ao score com o decaimento acima.
+- `alternar_favorito_menu(p_href, p_fixar)`: liga/desliga `fixado_manual` (fixar) ou
+  `removido_manual` (desfixar/remover).
+- `favoritos_menu_do_usuario(p_limite default 8)`: lista final já ordenada — fixados manualmente
+  primeiro, depois por score decrescente, truncada no limite — pronta pra desenhar a barra.
+
+Testado direto no banco (JWT simulado) antes e depois do port pro Flutter: múltiplos acessos
+acumulando score, pin manual sempre em primeiro lugar independente do score, remoção manual
+excluindo mesmo com o maior score, e truncamento no limite respeitando a ordenação.
+
+**Web**: `src/lib/menuFavoritos.ts` (novo, `"use server"`) — `registrarAcessoMenuAcao(href)`
+(best-effort, silencioso) e `alternarFavoritoMenuAcao(href, fixar)` (propaga erro, chama
+`revalidatePath("/", "layout")` em caso de sucesso pra ressincronizar barra + estrelas em toda a
+aplicação). `BotaoFavoritoMenu.tsx` (estrela ao lado de cada item do menu lateral, só visível no
+hover da linha via `group-hover`, estado otimista revertido em caso de falha).
+`BarraAtalhosFavoritos.tsx` (chips horizontais no topo do conteúdo, com botão "x" de remoção
+também otimista). `RastreadorAcessoMenu.tsx` (componente invisível montado uma vez no layout,
+registra 1 acesso via `usePathname()` toda vez que a rota muda pra uma rota rastreável, com
+`useRef` pra não regravar em re-renders sem navegação real). `layout.tsx`: `TODOS_ITENS_MENU`/
+`MAPA_ITENS_MENU`/`HREFS_RASTREAVEIS` (concatenação de todos os arrays de menu — frota, posto e
+admin — pra resolver hrefs favoritados em label/ícone sem duplicar essa informação); busca de
+favoritos via `supabase.rpc(...)` dentro de uma IIFE async com try/catch (o builder do Supabase é
+um `PromiseLike`, não um `Promise` completo — `.then().catch()` encadeado não compila);
+`BarraAtalhosFavoritos` inserida como primeiro filho do `<main>`; `favoritos={favoritosHrefsSet}`
+passado pra todas as 16 chamadas de `<GrupoMenuLateral>` (o bloco de Administração, renderizado à
+parte via `<ul>` inline, ficou fora desta primeira rodada).
+
+**PWA Flutter (Cliente + Posto)**: port 1:1 — ver README do Flutter (`estudo-de-rede/flutter/`),
+Fase Acesso-Rápido-Favoritos, pro detalhe da implementação (`menu_favoritos_provider.dart`,
+`barra_atalhos_favoritos.dart`, ajustes em `home_screen.dart`/`posto_home_screen.dart`).
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos na web; RPCs testadas end-to-end no banco
+(incluindo `search_path` e RLS ativo, verificados diretamente); Flutter validado por revisão
+manual completa + balanceamento de parênteses/chaves/colchetes por script (sandbox sem Flutter
+instalado, mesma limitação já registrada em fases anteriores do PWA).
