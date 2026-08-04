@@ -67,6 +67,7 @@ import {
   temAcesso,
 } from "@/lib/permissoes";
 import { BotaoSair } from "./_components/BotaoSair";
+import { GrupoMenuLateral, type ItemMenuLateral } from "./_components/GrupoMenuLateral";
 import { contarChamadosNaoVistosAcao } from "./chamados/actions";
 import { contarAvaliacoesPendentesAcao } from "./avaliacoes/actions";
 import { contarAcessosClientesNaoVistosAcao } from "./clientes/actions";
@@ -74,7 +75,6 @@ import { contarNegociacoesPendentesAcao } from "./negociacoes/actions";
 import { contarAjustesAbastecimentosPendentesAcao } from "./abastecimentos/actions";
 import { contarAcoesSugeridasPendentesAcao } from "./acoes-sugeridas/actions";
 import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
-import { contarFalhasVerificacaoAntifraudeAcao } from "./antifraude/actions";
 import { contarCadastrosPendentesAcao } from "./cadastros-pendentes/actions";
 import { contarMultasPendentesAcao } from "./multas/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
@@ -103,40 +103,36 @@ import { listarAvisosAcao } from "./administracao/central-avisos/actions";
 // emoji). Trocamos o emoji embutido no label por um componente `icon`
 // (lucide-react) equivalente ao Icons.xxx do Flutter — ver mapeamento por
 // item nos comentários abaixo quando o nome não é óbvio.
-const menuVisaoGeral = [
+// Fase reorganizacao-menu (04/08/2026, pedido do Daniel: "Fazer uma sugestao
+// de reorganizacao do menu" / "Organizacao de temas iguais", depois de "Acho
+// que esta bastante confuso para o usuario" sobre a antiga seção Operação —
+// 33 itens numa lista só, sem nenhuma subdivisão, bem mais desbalanceada que
+// Cadastros (9) e a antiga Gestão (11), porque cada fase nova só empilhava
+// mais um item ali). As antigas `menuVisaoGeral`/`menuOperacao` (44 itens
+// juntas) viraram 9 grupos temáticos menores — ver GrupoMenuLateral.tsx pro
+// componente que renderiza cada um. `menuCadastros` não mudou (já estava
+// bem organizada) e `menuAdministracao`, mais abaixo, também não — é
+// admin-only e sempre visível pra quem chega lá (admin sempre tem bypass de
+// permissão, ver ehBypassPermissao).
+//
+// "Visão Geral" agora é só o que se checa ao abrir o dia: status e o que
+// precisa de atenção agora. O resto do que morava na antiga Gestão foi
+// redistribuído por tema (ver os grupos abaixo).
+const menuVisaoGeral: ItemMenuLateral[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }, // PWA: Icons.dashboard
-  { href: "/assistente", label: "Assistente FNI", logo: true },
-  // Fase Central-Treinamento (20/07/2026) — pedido do Daniel: treinamento
-  // interativo com lições por módulo, screenshots reais e (via Assistente
-  // FNI) tira-dúvidas de uso — reduz dependência de time comercial/
-  // treinamento humano num produto self-service.
-  { href: "/treinamento", label: "Central de Treinamento", icon: GraduationCap },
-  { href: "/assinatura", label: "Minha Assinatura", icon: CreditCard }, // PWA: Icons.credit_card
-  { href: "/avaliar", label: "Avaliar Plataforma", icon: Star }, // PWA: Icons.star
-  { href: "/financeiro", label: "Painel Financeiro", icon: DollarSign }, // PWA: Icons.attach_money
-  // Fase Grupo 1 Rodopar item 3 (03/08/2026, benchmark FNI vs Rodopar/
-  // Datapar) — importa extrato (OFX/CSV) e sugere vínculo com contas_pagar/
-  // contas_receber já lançadas, confirmando a baixa com um clique.
-  { href: "/conciliacao-bancaria", label: "Conciliação Bancária", icon: ArrowLeftRight }, // PWA: Icons.compare_arrows
-  // Fase P0.1 (roadmap TMS/ERP) — configuração do emitente de CT-e/MDF-e
-  // (dados fiscais, certificado A1 via provedor, teste de conexão).
-  { href: "/fiscal", label: "Fiscal (CT-e/MDF-e)", icon: Receipt },
-  // Fase 27.149 — upload de documentação societária/cadastral (Contrato
-  // Social, docs dos sócios, comprovante de endereço), aprovada pelo admin
-  // em /documentos-empresas — pré-requisito pra criar/aderir a Redes de
-  // Postos/Grupos Econômicos e aceitar/criar negociações.
-  { href: "/documentos", label: "Documentos", icon: Folder }, // PWA: Icons.folder
-  // Fase 27.151 — pedido do Daniel: "faz todo o sentido deixar na visão do
-  // cliente [Inteligência de Rede]". A tela (que já era admin-only) passou
-  // a aceitar também o perfil cliente, mostrando só a rede da PRÓPRIA
-  // empresa (nunca a de outros clientes — ver comentário em
-  // inteligencia-rede/page.tsx). Continua também em Administração, com
-  // visão consolidada de toda a plataforma pro admin.
-  { href: "/inteligencia-rede", label: "Inteligência de Rede", icon: Network }, // PWA: Icons.hub
-  { href: "/lgpd", label: "Privacidade (LGPD)", icon: Lock }, // PWA: Icons.lock
+  // Fase Torre-de-Controle-Leve (02/08/2026, benchmark FNI vs KMM) — painel
+  // único dos fretes em andamento, com último checkpoint e alerta de prazo.
+  { href: "/torre-de-controle", label: "Torre de Controle", icon: Radar },
+  // Fase Indicadores-da-Frota (30/07/2026) — disponibilidade, CPK, consumo,
+  // utilização, sinistralidade e conformidade num só painel.
+  { href: "/indicadores-frota", label: "Indicadores da Frota", icon: Gauge }, // PWA: Icons.speed
+  // Fase Motor-de-Ação-Automática — central que fecha o ciclo sugestão ->
+  // aprovação -> execução real (bloquear motorista com CNH vencida, remover
+  // posto acima da média, cadastrar regra de hodômetro).
+  { href: "/acoes-sugeridas", label: "Ações Sugeridas", icon: Sparkles }, // PWA: Icons.auto_awesome
 ];
 
-const menuCadastros = [
+const menuCadastros: ItemMenuLateral[] = [
   { href: "/clientes", label: "Clientes", icon: Building2 }, // PWA: Icons.business
   { href: "/grupo-economico", label: "Grupo Econômico", icon: GitBranch }, // PWA: Icons.account_tree
   { href: "/usuarios", label: "Usuários", icon: Users }, // PWA: Icons.people
@@ -156,51 +152,37 @@ const menuCadastros = [
   { href: "/postos", label: "Postos Revendedores", icon: Fuel }, // PWA: Icons.local_gas_station
 ];
 
-const menuOperacao = [
+// Fase reorganizacao-menu — o dia a dia de rota e combustível: da
+// roteirização ao abastecimento em si, incluindo negociação de preço com
+// postos e as regras de nota fiscal desse fluxo.
+const menuRoteirizacaoAbastecimento: ItemMenuLateral[] = [
+  { href: "/roteirizacao", label: "Roteirização", icon: Route }, // PWA: Icons.route
+  { href: "/rotograma", label: "Rotograma", icon: Shield }, // PWA: Icons.shield_outlined
+  { href: "/planos-viagem", label: "Planos de Viagem", icon: Luggage }, // PWA: Icons.card_travel
   { href: "/abastecimentos", label: "Abastecimentos", icon: Fuel }, // PWA: Icons.local_gas_station
   // Fase 27.94/27.95 — status de NF-e por abastecimento (emitida/pendente)
   // + indicador de % de recolha, do lado do cliente.
   { href: "/notas-fiscais", label: "Notas Fiscais", icon: FileText }, // PWA: Icons.description
-  // Fase Motor-de-Ação-Automática — pedido do Daniel após o benchmark com a
-  // TicketLog: central que fecha o ciclo sugestão -> aprovação -> execução
-  // real (bloquear motorista com CNH vencida, remover posto acima da média,
-  // cadastrar regra de hodômetro), reaproveitando o que Anomalias/CNH/
-  // Inteligência de Rede já detectavam só como alerta. Fase
-  // Ações-Sugeridas-Completa: passou a cobrir os 4 tipos que o antigo painel
-  // de Anomalias detectava, então Anomalias saiu do menu (testado em
-  // produção pelo Daniel) — a rota /anomalias continua existindo só como
-  // redirect pra cá, pra não quebrar favoritos.
-  { href: "/acoes-sugeridas", label: "Ações Sugeridas", icon: Sparkles }, // PWA: Icons.auto_awesome
-  // Fase remove-antifraude-do-menu (27/07/2026, pedido do Daniel: "as duas
-  // regras definidas dentro da aba de Antifraude já estão contempladas nos
-  // parametros de uso do cliente... não vejo necessidade de termos a aba de
-  // antifraude na aplicacao") — tirado só do menu (opção escolhida pelo
-  // Daniel via AskUserQuestion, entre 3 alternativas). A rota /antifraude, as
-  // telas, as ações e o endpoint POST /api/integracoes/antifraude/verificar
-  // continuam funcionando normalmente (inclusive a checagem de bloqueios de
-  // Ações Sugeridas, que reaproveita essa mesma rota) — só não tem mais link
-  // visível na navegação. Nenhuma chave de API usa o escopo
-  // antifraude:verificar até hoje (confirmado no banco antes desta mudança).
-  // Fase 27.130 — indicadores do programa "Estrada que Cuida" (app próprio
-  // do motorista) por motorista; RPC indicadores_fidelidade_motoristas já
-  // checa autorização por empresa/admin internamente.
-  { href: "/fidelidade-motoristas", label: "Fidelidade dos Motoristas", icon: Gift },
-  // Fase Parcerias Locais (17/07) — o cliente cria seus próprios benefícios
-  // (treinamentos, marketplace, telemedicina etc.) no catálogo de
-  // fidelidade; mesma tela também vive em menuPostoOperacao (ver abaixo).
-  { href: "/parcerias-locais", label: "Parcerias Locais", icon: Gift }, // PWA: Icons.card_giftcard
-  { href: "/roteirizacao", label: "Roteirização", icon: Route }, // PWA: Icons.route
-  { href: "/rotograma", label: "Rotograma", icon: Shield }, // PWA: Icons.shield_outlined
-  { href: "/planos-viagem", label: "Planos de Viagem", icon: Luggage }, // PWA: Icons.card_travel
+  // Fase Onda-2 (benchmark TicketLog, item #6) — pedido do Daniel: comparador
+  // de combustível ideal por veículo/região, reaproveitando os preços
+  // regionais já usados no índice público de preços.
+  { href: "/combustivel-ideal", label: "Combustível Ideal", icon: Leaf }, // PWA: Icons.eco
+  { href: "/precos-postos", label: "Preços dos Postos Parceiros", icon: Tag }, // PWA: Icons.sell
+  { href: "/negociacoes", label: "Negociações com Postos", icon: Handshake }, // PWA: Icons.handshake
+  // Fase 27.140 — preferências de emissão de nota fiscal por CNPJ da frota,
+  // consultadas por ERPs/automação de posto via API (Hub de Integrações).
+  { href: "/parametros-nf", label: "Parâmetros de NF", icon: Receipt }, // PWA: Icons.receipt_long
+];
+
+// Fase reorganizacao-menu — o módulo TMS (frete como serviço pra terceiros),
+// separado do dia a dia da própria frota: negociação de frete, programação
+// por veículo e faturamento de quem contratou.
+const menuFretes: ItemMenuLateral[] = [
   // Fase Fretes — contratação de frete entre cliente e motorista, estilo
   // Uber (mercado aberto com negociação) ou atribuição direta a um
   // motorista próprio/parceiro. Motoristas Parceiros é o cadastro de
   // terceiros/agregados usado pelo modo direto.
   { href: "/fretes", label: "Fretes", icon: Truck }, // PWA: Icons.local_shipping
-  // Fase Torre-de-Controle-Leve (02/08/2026, benchmark FNI vs KMM, Grupo 1
-  // item 1) — painel único dos fretes em andamento, com último checkpoint e
-  // alerta de prazo. Não depende de GPS, só agrega fretes_eventos.
-  { href: "/torre-de-controle", label: "Torre de Controle", icon: Radar },
   // Fase Programacao-Frota (03/08/2026, benchmark FNI vs Rodopar/Datapar,
   // Grupo 1 item 1) — visão por veículo (em vez de por frete): quem está
   // em viagem e até quando, quem está livre, quem não tem motorista.
@@ -216,12 +198,12 @@ const menuOperacao = [
   // /financeiro).
   { href: "/faturas-fretes", label: "Faturas de Frete", icon: Receipt },
   { href: "/motoristas-parceiros", label: "Motoristas Parceiros", icon: Handshake }, // PWA: Icons.handshake_outlined
-  { href: "/negociacoes", label: "Negociações com Postos", icon: Handshake }, // PWA: Icons.handshake
-  { href: "/precos-postos", label: "Preços dos Postos Parceiros", icon: Tag }, // PWA: Icons.sell
-  // Fase Onda-2 (benchmark TicketLog, item #6) — pedido do Daniel: comparador
-  // de combustível ideal por veículo/região, reaproveitando os preços
-  // regionais já usados no índice público de preços.
-  { href: "/combustivel-ideal", label: "Combustível Ideal", icon: Leaf }, // PWA: Icons.eco
+];
+
+// Fase reorganizacao-menu — manter os veículos rodando e saber quanto cada
+// um custa: manutenção, peças, custo total de propriedade, patrimônio
+// contábil e os registros que alimentam os índices de segurança.
+const menuManutencaoAtivos: ItemMenuLateral[] = [
   { href: "/manutencao-preditiva", label: "Manutenção Preditiva", icon: Wrench }, // PWA: Icons.build
   // Fase Grupo 1 Rodopar item 2 (03/08/2026, benchmark FNI vs Rodopar/Datapar)
   // — catálogo de peças com saldo/custo médio calculado a partir de um
@@ -232,7 +214,6 @@ const menuOperacao = [
   // Fase Grupo 2 (Rodopar, item 6, 03/08/2026) — depreciação contábil linha
   // reta + correções do ativo (reavaliação/melhoria/baixa).
   { href: "/patrimonio", label: "Patrimônio", icon: Landmark }, // PWA: Icons.account_balance
-  { href: "/indicadores-frota", label: "Indicadores da Frota", icon: Gauge }, // PWA: Icons.speed
   // Fase Indicadores-da-Frota (30/07/2026) — checklist de inspeção periódica
   // (pneus, freios, luzes etc.), alimenta os KPIs de conformidade e TMRNC em
   // /indicadores-frota.
@@ -248,39 +229,97 @@ const menuOperacao = [
   // de oficinas credenciadas (admin credencia) + fluxo simples de
   // solicitação de orçamento pro cliente.
   { href: "/oficinas", label: "Rede de Oficinas", icon: Hammer }, // PWA: Icons.build_circle
-  // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
-  // soluções de automação/meios de pagamento integrados via API (Hub de
-  // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
-  { href: "/parametros-uso", label: "Parâmetros de Uso", icon: SlidersHorizontal }, // PWA: Icons.tune
-  // Fase 27.140 — preferências de emissão de nota fiscal por CNPJ da frota,
-  // consultadas por ERPs/automação de posto via API (Hub de Integrações).
-  { href: "/parametros-nf", label: "Parâmetros de NF", icon: Receipt }, // PWA: Icons.receipt_long
+];
+
+// Fase reorganizacao-menu — antes espalhado dentro de Gestão, agora junto
+// do que sempre foi, na prática, a mesma preocupação: dinheiro entrando e
+// saindo.
+const menuFinanceiro: ItemMenuLateral[] = [
+  { href: "/financeiro", label: "Painel Financeiro", icon: DollarSign }, // PWA: Icons.attach_money
+  // Fase Grupo 1 Rodopar item 3 (03/08/2026, benchmark FNI vs Rodopar/
+  // Datapar) — importa extrato (OFX/CSV) e sugere vínculo com contas_pagar/
+  // contas_receber já lançadas, confirmando a baixa com um clique.
+  { href: "/conciliacao-bancaria", label: "Conciliação Bancária", icon: ArrowLeftRight }, // PWA: Icons.compare_arrows
+  // Fase P0.1 (roadmap TMS/ERP) — configuração do emitente de CT-e/MDF-e
+  // (dados fiscais, certificado A1 via provedor, teste de conexão).
+  { href: "/fiscal", label: "Fiscal (CT-e/MDF-e)", icon: Receipt },
+];
+
+// Fase reorganizacao-menu — visão consolidada, fora do dia a dia
+// operacional.
+const menuRelatorios: ItemMenuLateral[] = [
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 }, // PWA: Icons.bar_chart
   // Fase Onda-3 (benchmark TicketLog, item #10) — pedido do Daniel: estimativa
   // de CO2 emitido pela frota a partir dos litros já registrados nos
   // abastecimentos (fatores de emissão em fatores_emissao_co2).
   { href: "/pegada-carbono", label: "Pegada de Carbono", icon: Globe }, // PWA: Icons.public
+  // Fase 27.151 — pedido do Daniel: "faz todo o sentido deixar na visão do
+  // cliente [Inteligência de Rede]". A tela (que já era admin-only) passou
+  // a aceitar também o perfil cliente, mostrando só a rede da PRÓPRIA
+  // empresa (nunca a de outros clientes — ver comentário em
+  // inteligencia-rede/page.tsx). Continua também em Administração, com
+  // visão consolidada de toda a plataforma pro admin.
+  { href: "/inteligencia-rede", label: "Inteligência de Rede", icon: Network }, // PWA: Icons.hub
+];
+
+// Fase reorganizacao-menu — programas voltados pro motorista, que hoje
+// ficavam soltos no meio da antiga Operação.
+const menuEngajamento: ItemMenuLateral[] = [
+  // Fase 27.130 — indicadores do programa "Estrada que Cuida" (app próprio
+  // do motorista) por motorista; RPC indicadores_fidelidade_motoristas já
+  // checa autorização por empresa/admin internamente.
+  { href: "/fidelidade-motoristas", label: "Fidelidade dos Motoristas", icon: Gift },
+  // Fase Parcerias Locais (17/07) — o cliente cria seus próprios benefícios
+  // (treinamentos, marketplace, telemedicina etc.) no catálogo de
+  // fidelidade; mesma tela também vive em menuPostoOperacao (ver abaixo).
+  { href: "/parcerias-locais", label: "Parcerias Locais", icon: Gift }, // PWA: Icons.card_giftcard
+];
+
+// Fase reorganizacao-menu — o que era o topo da antiga Gestão (Assistente,
+// Assinatura, Avaliação, Treinamento) mais Chamados, que antes vinha
+// hardcoded fora de qualquer array (ver GrupoMenuLateral.tsx pro porquê de
+// juntar tudo aqui: mesmo tema, "cuidar da própria conta e pedir ajuda").
+const menuContaAjuda: ItemMenuLateral[] = [
+  { href: "/assistente", label: "Assistente FNI", logo: true },
+  { href: "/assinatura", label: "Minha Assinatura", icon: CreditCard }, // PWA: Icons.credit_card
+  { href: "/avaliar", label: "Avaliar Plataforma", icon: Star }, // PWA: Icons.star
+  // Fase Central-Treinamento (20/07/2026) — pedido do Daniel: treinamento
+  // interativo com lições por módulo, screenshots reais e (via Assistente
+  // FNI) tira-dúvidas de uso — reduz dependência de time comercial/
+  // treinamento humano num produto self-service.
+  { href: "/treinamento", label: "Central de Treinamento", icon: GraduationCap },
+  { href: "/chamados", label: "Chamados", icon: Ticket },
+];
+
+// Fase reorganizacao-menu — documentos, privacidade e as poucas telas de
+// configuração/integração que o cliente (não-admin) pode tocar. Permissões
+// entrou aqui (antes tinha uma seção "Configurações" só pra ela) — some
+// pro admin via o filtro em itensSistema abaixo, porque ele já vê
+// "Permissões por Perfil" em Administração.
+const menuSistema: ItemMenuLateral[] = [
+  // Fase 27.149 — upload de documentação societária/cadastral (Contrato
+  // Social, docs dos sócios, comprovante de endereço), aprovada pelo admin
+  // em /documentos-empresas — pré-requisito pra criar/aderir a Redes de
+  // Postos/Grupos Econômicos e aceitar/criar negociações.
+  { href: "/documentos", label: "Documentos", icon: Folder }, // PWA: Icons.folder
+  { href: "/lgpd", label: "Privacidade (LGPD)", icon: Lock }, // PWA: Icons.lock
+  // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
+  // soluções de automação/meios de pagamento integrados via API (Hub de
+  // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
+  { href: "/parametros-uso", label: "Parâmetros de Uso", icon: SlidersHorizontal }, // PWA: Icons.tune
   { href: "/integracoes", label: "Integrações", icon: Plug },
+  { href: "/permissoes", label: "Permissões", icon: KeyRound },
 ];
 
 // Fase 27.50 — menu do posto revendedor (perfil "posto", tenant segmento
 // "Revenda"). Trilha própria, separada da hierarquia de Frota.
-// Fase 27.127/27.130 — pedido do Daniel: mecanismo de avaliação, chamados e
-// Assistente FNI também na visão do posto, junto com Privacidade (LGPD) e
-// Minha Assinatura (o posto agora assina um plano próprio — Fase 27.125),
-// "tudo dentro de uma aba Gestão" — e, na sequência, "No menu da visao Posto
-// ter uma sessão Gestão e uma sessão Operação". Mesmo espírito das seções
-// "Gestão"/"Operação" que já existem pro lado Frota (menuVisaoGeral/
-// menuOperacao, ver acima): Gestão = itens "de conta" (visão geral,
-// assinatura, time, dados da empresa, suporte); Operação = o dia a dia de
-// negociar/abastecer/precificar com os clientes. Nenhum item de Gestão exige
-// mudança de RLS/backend — resolverEmpresaAtual, avaliar/actions.ts e
-// chamados/actions.ts já são agnósticos de segmento (usam empresas_do_usuario
-// pelo e-mail, e todo posto tem sua própria linha em usuarios_empresas
-// apontando pra própria empresa, desde sempre — ver Fase 27.50/27.125).
-// Fase 27.56 — "Dashboard" entra em Gestão (mesmo lugar que ocupa no
-// menuVisaoGeral da Frota): todo mundo cai em /dashboard depois do login.
-const menuPostoGestao = [
+// Fase reorganizacao-menu (04/08/2026) — mesma reorganização por tema
+// aplicada do lado Frota (ver comentário grande acima de menuVisaoGeral):
+// as antigas "Gestão" (13 itens) e "Operação" (8) do posto viraram 6 grupos
+// menores. O posto nunca teve o problema de escala da Frota (33 itens numa
+// seção só), mas o pedido do Daniel foi explícito — "implemente nas visoes
+// web e PWA de clientes E postos" — pra manter os dois lados consistentes.
+const menuPostoVisaoGeral: ItemMenuLateral[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }, // PWA: Icons.dashboard
   // Fase 27.137 — pedido do Daniel: cadastro do estabelecimento (CNPJ,
   // razão social, endereço, contatos, lat/long) logo na adesão do posto,
@@ -289,47 +328,36 @@ const menuPostoGestao = [
   // quem acabou de aderir.
   { href: "/meu-posto", label: "Meu Posto", icon: MapPin }, // PWA: Icons.place
   // Fase 27.139 — pedido do Daniel: "Rede de Posto tem que estar na visão
-  // do posto para criação e gestão". Volta pro menu do posto (tinha ido
-  // só pra Administração na Fase 27.129, quando a escrita ainda era
-  // 100% admin-only) — RLS/código agora permitem que um posto crie e
-  // gerencie sua própria Rede (ver gruposEconomicos.ts). Continua também
+  // do posto para criação e gestão". RLS/código permitem que um posto crie
+  // e gerencie sua própria Rede (ver gruposEconomicos.ts). Continua também
   // em Administração, pra visão global do admin sobre todas as redes.
   { href: "/rede-postos", label: "Rede de Postos", icon: Network }, // PWA: Icons.hub
-  { href: "/assistente", label: "Assistente FNI", logo: true },
-  { href: "/treinamento", label: "Central de Treinamento", icon: GraduationCap },
-  { href: "/assinatura", label: "Minha Assinatura", icon: CreditCard },
-  { href: "/avaliar", label: "Avaliar Plataforma", icon: Star },
-  { href: "/financeiro-posto", label: "Financeiro", icon: DollarSign }, // PWA: Icons.attach_money
-  { href: "/lgpd", label: "Privacidade (LGPD)", icon: Lock },
-  // Fase 27.92 — self-service: cadastro da chave PIX usada como cedente no
-  // boleto/documento de cobrança enviado aos clientes.
-  { href: "/minha-empresa", label: "Meus Dados / PIX", icon: Landmark }, // PWA: Icons.account_balance
-  // Fase 27.149 — mesmo item de /documentos do lado Frota (menuVisaoGeral,
-  // ver acima), agora também disponível pro posto.
-  { href: "/documentos", label: "Documentos", icon: Folder },
+];
+
+// Fase reorganizacao-menu — quem acessa o posto e quem já negociou com ele.
+const menuPostoCadastros: ItemMenuLateral[] = [
   { href: "/usuarios", label: "Usuários", icon: Users },
-  // Fase Convite-Self-Service (26/07/2026) — mesma ideia do lado Frota
-  // acima: o próprio posto convida colegas só pra própria empresa, sem
-  // depender do time interno FNI.
+  // Fase Convite-Self-Service (26/07/2026) — o próprio posto convida
+  // colegas só pra própria empresa, sem depender do time interno FNI.
   { href: "/minha-equipe", label: "Minha Equipe", icon: Users },
+  // Fase 27.72 — cadastro dos clientes que já negociaram com o posto
+  // (qualquer status), com ciclo de abastecimento/pagamento por cliente.
+  { href: "/clientes-posto", label: "Clientes", icon: Building2 },
 ];
 
 // Fase 27.130 — o dia a dia operacional do posto: negociar com clientes
 // (aceitar/recusar/contrapropor o que o cliente enviou, ou enviar proposta
-// via API), registrar abastecimentos, acompanhar o cliente/preço/nota fiscal
-// de cada relação comercial, e gerar a própria chave de API.
-const menuPostoOperacao = [
+// via API), registrar abastecimentos, acompanhar preço/nota fiscal de cada
+// relação comercial.
+const menuPostoOperacao: ItemMenuLateral[] = [
   { href: "/negociacoes", label: "Negociações", icon: Handshake },
   { href: "/abastecimentos", label: "Abastecimentos", icon: Fuel },
   // Fase Parcerias Locais (17/07) — o posto cria seus próprios benefícios
   // (vale-refeição, banho, estacionamento, lavagem/troca de óleo, produtos
   // da conveniência etc.) no catálogo de fidelidade "Estrada que Cuida",
   // publicados pra rede toda de motoristas resgatar. Mesma tela do lado
-  // cliente (ver menuOperacao acima) — RLS escopa por criador_empresa_id.
+  // cliente (ver menuEngajamento acima) — RLS escopa por criador_empresa_id.
   { href: "/parcerias-locais", label: "Parcerias Locais", icon: Gift },
-  // Fase 27.72 — cadastro dos clientes que já negociaram com o posto
-  // (qualquer status), com ciclo de abastecimento/pagamento por cliente.
-  { href: "/clientes-posto", label: "Clientes", icon: Building2 },
   // Fase Pré-Pedido — pedido do Daniel: consulta do Pré-Pedido gerado no
   // Plano de Viagem do cliente (número + pontos de abastecimento
   // pré-agendados), pra o posto confirmar antes de liberar o abastecimento.
@@ -338,6 +366,34 @@ const menuPostoOperacao = [
   // Fase 27.94/27.95 — upload de NF-e (XML) por abastecimento + indicador
   // de % de recolha, do lado do posto.
   { href: "/notas-fiscais", label: "Notas Fiscais", icon: FileText },
+];
+
+// Fase reorganizacao-menu — dinheiro entrando (financeiro) e os dados
+// usados pra receber (PIX).
+const menuPostoFinanceiro: ItemMenuLateral[] = [
+  { href: "/financeiro-posto", label: "Financeiro", icon: DollarSign }, // PWA: Icons.attach_money
+  // Fase 27.92 — self-service: cadastro da chave PIX usada como cedente no
+  // boleto/documento de cobrança enviado aos clientes.
+  { href: "/minha-empresa", label: "Meus Dados / PIX", icon: Landmark }, // PWA: Icons.account_balance
+];
+
+// Fase reorganizacao-menu — mesmo grupo "Conta e Ajuda" do lado Frota;
+// Chamados entra aqui em vez de hardcoded fora de qualquer array (ver
+// GrupoMenuLateral.tsx).
+const menuPostoContaAjuda: ItemMenuLateral[] = [
+  { href: "/assistente", label: "Assistente FNI", logo: true },
+  { href: "/assinatura", label: "Minha Assinatura", icon: CreditCard },
+  { href: "/avaliar", label: "Avaliar Plataforma", icon: Star },
+  { href: "/treinamento", label: "Central de Treinamento", icon: GraduationCap },
+  { href: "/chamados", label: "Chamados", icon: Ticket },
+];
+
+// Fase reorganizacao-menu — documentos, privacidade e a chave de API.
+const menuPostoSistema: ItemMenuLateral[] = [
+  // Fase 27.149 — mesmo item de /documentos do lado Frota (menuSistema,
+  // ver acima), disponível também pro posto.
+  { href: "/documentos", label: "Documentos", icon: Folder },
+  { href: "/lgpd", label: "Privacidade (LGPD)", icon: Lock },
   { href: "/integracoes", label: "Integrações", icon: Plug },
 ];
 
@@ -464,7 +520,6 @@ export default async function DashboardLayout({
     negociacoesPendentes,
     ajustesAbastecimentosPendentes,
     documentosPendentes,
-    falhasVerificacaoAntifraude,
     acoesSugeridasPendentes,
     cadastrosPendentes,
     multasPendentes,
@@ -499,13 +554,6 @@ export default async function DashboardLayout({
       // mesma blindagem "falha vira 0" das demais contagens.
       contarDocumentosPendentesAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar documentos pendentes (ignorado):", e);
-        return 0;
-      }),
-      // Fase 27.15x — bolinha de falhas de verificação antifraude (fail-open
-      // — ver POST /api/integracoes/antifraude/verificar) ainda não lidas,
-      // mesma blindagem "falha vira 0" das demais contagens.
-      contarFalhasVerificacaoAntifraudeAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar falhas de verificação antifraude (ignorado):", e);
         return 0;
       }),
       // Fase Motor-de-Ação-Automática — bolinha de ações sugeridas pendentes
@@ -592,15 +640,27 @@ export default async function DashboardLayout({
     redirect("/dashboard?acesso=negado");
   }
 
-  // Admin (time interno FNI) não assina um plano nem avalia a plataforma
-  // como cliente — ele só gerencia as assinaturas e acompanha as avaliações
-  // de todos os clientes via "Assinaturas (todos os clientes)" e
-  // "Avaliações dos Clientes", em Administração. Por isso "Minha Assinatura"
-  // e "Avaliar Plataforma" somem do menu pra esse perfil.
   const ehAdmin = perfilUsuario?.perfil === "admin";
-  const itensVisaoGeral = (
-    ehAdmin ? menuVisaoGeral.filter((item) => item.href !== "/assinatura" && item.href !== "/avaliar") : menuVisaoGeral
-  ).filter(podeAcessarItem);
+
+  // Fase reorganizacao-menu (04/08/2026) — badges por href num único mapa,
+  // consumido por GrupoMenuLateral em qualquer grupo (cliente ou posto),
+  // em vez de repetir `item.href === "/x" && contagem > 0` dentro de cada
+  // seção. Motivo real: com os 10 grupos novos, essa repetição por seção
+  // teria multiplicado a mesma dívida técnica que já existia — achado ao
+  // revisar o arquivo antes desta fase, o badge de "/antifraude" no
+  // antigo menuOperacao já era código morto (a rota saiu do menu faz
+  // tempo e ninguém tinha limpado a condicional).
+  const badgesMenu: Record<string, number> = {
+    "/clientes": acessosClientesNaoVistos,
+    "/cadastros-pendentes": cadastrosPendentes,
+    "/negociacoes": negociacoesPendentes,
+    "/abastecimentos": ajustesAbastecimentosPendentes,
+    "/acoes-sugeridas": acoesSugeridasPendentes,
+    "/multas": multasPendentes,
+    "/chamados": chamadosNaoVistos,
+  };
+
+  const itensVisaoGeral = menuVisaoGeral.filter(podeAcessarItem);
 
   // Fase 27.50 — perfil "posto" é uma trilha própria (Revenda), separada da
   // hierarquia de Frota (mesmo espírito da Fase 27.39 em /permissoes): vê um
@@ -623,13 +683,41 @@ export default async function DashboardLayout({
   const itensCadastrosFiltrados = (podeGerenciarUsuarios ? menuCadastros : menuCadastros.filter((i) => i.href !== "/usuarios"))
     .filter((i) => i.href !== "/minha-equipe" || podeConvidarEquipe)
     .filter(podeAcessarItem);
-  const itensPostoGestaoFiltrados = (podeGerenciarUsuarios ? menuPostoGestao : menuPostoGestao.filter((i) => i.href !== "/usuarios"))
+  const itensPostoCadastrosFiltrados = (podeGerenciarUsuarios ? menuPostoCadastros : menuPostoCadastros.filter((i) => i.href !== "/usuarios"))
     .filter((i) => i.href !== "/minha-equipe" || podeConvidarEquipe)
     .filter(podeAcessarItem);
-  // Fase enforcement-permissoes — mesmo filtro pras duas listas que ainda
-  // não tinham nenhuma versão "Filtrada" (Operação de Frota e de Posto).
-  const itensOperacaoFiltrados = menuOperacao.filter(podeAcessarItem);
+
+  const itensRoteirizacaoAbastecimento = menuRoteirizacaoAbastecimento.filter(podeAcessarItem);
+  const itensFretes = menuFretes.filter(podeAcessarItem);
+  const itensManutencaoAtivos = menuManutencaoAtivos.filter(podeAcessarItem);
+  const itensFinanceiro = menuFinanceiro.filter(podeAcessarItem);
+  const itensRelatorios = menuRelatorios.filter(podeAcessarItem);
+  const itensEngajamento = menuEngajamento.filter(podeAcessarItem);
+  // Admin (time interno FNI) não assina um plano nem avalia a plataforma
+  // como cliente — ele só gerencia as assinaturas e acompanha as avaliações
+  // de todos os clientes via "Assinaturas (todos os clientes)" e
+  // "Avaliações dos Clientes", em Administração. Por isso "Minha Assinatura"
+  // e "Avaliar Plataforma" somem do menu pra esse perfil (mesma exceção de
+  // sempre, só que agora aplicada a "Conta e Ajuda" em vez da antiga
+  // "Gestão").
+  const itensContaAjuda = menuContaAjuda
+    .filter((item) => !ehAdmin || (item.href !== "/assinatura" && item.href !== "/avaliar"))
+    .filter(podeAcessarItem);
+  // "Permissões" tinha uma seção "Configurações" só pra ela, visível só pra
+  // quem não era admin nem posto (Fase 27.117); agora mora em "Sistema" — o
+  // filtro abaixo preserva a mesma regra pro admin (que já vê "Permissões
+  // por Perfil" em Administração, não precisa ver de novo aqui). Posto não
+  // entra nessa conta porque `menuPostoSistema` é uma lista própria, sem
+  // Permissões.
+  const itensSistema = menuSistema
+    .filter((item) => !ehAdmin || item.href !== "/permissoes")
+    .filter(podeAcessarItem);
+
+  const itensPostoVisaoGeral = menuPostoVisaoGeral.filter(podeAcessarItem);
   const itensPostoOperacaoFiltrados = menuPostoOperacao.filter(podeAcessarItem);
+  const itensPostoFinanceiro = menuPostoFinanceiro.filter(podeAcessarItem);
+  const itensPostoContaAjuda = menuPostoContaAjuda.filter(podeAcessarItem);
+  const itensPostoSistema = menuPostoSistema.filter(podeAcessarItem);
 
   // Fase 27.114 — o passo "menu-administracao" só existe no DOM quando
   // ehAdmin (ver bloco {ehAdmin && (...)} abaixo, Fase 27.110); filtra ele
@@ -674,235 +762,48 @@ export default async function DashboardLayout({
         <nav className="flex-1 px-3 py-4">
           {ehPosto ? (
             <>
-            {/* Fase 27.130 — pedido do Daniel: "No menu da visao Posto ter uma
-                sessão Gestão e uma sessão Operação" + "Conjunto Gestão acima
-                de conjunto Operação no menu" — mesma ordem/nomes das seções
-                que já existem pro lado Frota (Gestão vem antes de
-                Cadastros/Operação lá também). */}
-            <p className="mb-2 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Gestão
-            </p>
-            <ul className="space-y-1">
-              {itensPostoGestaoFiltrados.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    data-tour={TOUR_POR_HREF_POSTO[item.href]}
-                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-                  >
-                    <span className="flex items-center gap-2">
-                      {item.logo && (
-                        <Image
-                          src="/logo-fni.png"
-                          alt=""
-                          width={24}
-                          height={9}
-                          className="inline-block h-auto w-5 align-middle object-contain"
-                        />
-                      )}
-                      {item.icon && <item.icon className="h-4 w-4 shrink-0 text-slate-300" />}
-                      {item.label}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link
-                  href="/chamados"
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-                >
-                  <span className="flex items-center gap-2">
-                    <Ticket className="h-4 w-4 shrink-0 text-slate-300" />
-                    Chamados
-                  </span>
-                  {chamadosNaoVistos > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                      {chamadosNaoVistos}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            </ul>
-
-            <p className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Operação
-            </p>
-            <ul className="space-y-1">
-              {itensPostoOperacaoFiltrados.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    data-tour={TOUR_POR_HREF_POSTO[item.href]}
-                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-                  >
-                    <span className="flex items-center gap-2">
-                      <item.icon className="h-4 w-4 shrink-0 text-slate-300" />
-                      {item.label}
-                    </span>
-                    {item.href === "/negociacoes" && negociacoesPendentes > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                        {negociacoesPendentes}
-                      </span>
-                    )}
-                    {item.href === "/abastecimentos" && ajustesAbastecimentosPendentes > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                        {ajustesAbastecimentosPendentes}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {/* Fase reorganizacao-menu (04/08/2026, pedido do Daniel: "Fazer
+                uma sugestao de reorganizacao do menu" / "Organizacao de
+                temas iguais", aplicada nas visões cliente E posto) — as
+                antigas "Gestão"/"Operação" do posto (Fase 27.130) viraram 6
+                grupos temáticos, mesmo espírito da reorganização do lado
+                Frota logo abaixo (ver comentário grande em menuVisaoGeral,
+                no topo do arquivo). */}
+            <GrupoMenuLateral titulo="Visão Geral" itens={itensPostoVisaoGeral} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} primeiro />
+            <GrupoMenuLateral titulo="Cadastros" itens={itensPostoCadastrosFiltrados} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} />
+            <GrupoMenuLateral titulo="Operação" itens={itensPostoOperacaoFiltrados} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} />
+            <GrupoMenuLateral titulo="Financeiro" itens={itensPostoFinanceiro} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} />
+            <GrupoMenuLateral titulo="Conta e Ajuda" itens={itensPostoContaAjuda} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} />
+            <GrupoMenuLateral titulo="Sistema" itens={itensPostoSistema} badges={badgesMenu} tourPorHref={TOUR_POR_HREF_POSTO} />
             </>
           ) : (
           <>
-          <p data-tour="menu-geral" className="mb-2 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Gestão
-          </p>
-          <ul className="space-y-1">
-            {itensVisaoGeral.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  data-tour={TOUR_POR_HREF[item.href]}
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-                >
-                  <span className="flex items-center gap-2">
-                    {item.logo && (
-                      <Image
-                        src="/logo-fni.png"
-                        alt=""
-                        width={24}
-                        height={9}
-                        className="inline-block h-auto w-5 align-middle object-contain"
-                      />
-                    )}
-                    {item.icon && <item.icon className="h-4 w-4 shrink-0 text-slate-300" />}
-                    {item.label}
-                  </span>
-                </Link>
-              </li>
-            ))}
-            <li>
-              <Link
-                href="/chamados"
-                className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-              >
-                <span className="flex items-center gap-2">
-                  <Ticket className="h-4 w-4 shrink-0 text-slate-300" />
-                  Chamados
-                </span>
-                {chamadosNaoVistos > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                    {chamadosNaoVistos}
-                  </span>
-                )}
-              </Link>
-            </li>
-          </ul>
+          <GrupoMenuLateral
+            titulo="Visão Geral"
+            itens={itensVisaoGeral}
+            badges={badgesMenu}
+            tourPorHref={TOUR_POR_HREF}
+            dataTourTitulo="menu-geral"
+            primeiro
+          />
+          <GrupoMenuLateral titulo="Cadastros" itens={itensCadastrosFiltrados} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} dataTourTitulo="menu-cadastros" />
 
-          <p data-tour="menu-cadastros" className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Cadastros
-          </p>
-          <ul className="space-y-1">
-            {itensCadastrosFiltrados.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-                >
-                  <span className="flex items-center gap-2">
-                    <item.icon className="h-4 w-4 shrink-0 text-slate-300" />
-                    {item.label}
-                  </span>
-                  {item.href === "/clientes" && acessosClientesNaoVistos > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                      {acessosClientesNaoVistos}
-                    </span>
-                  )}
-                  {item.href === "/cadastros-pendentes" && cadastrosPendentes > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                      {cadastrosPendentes}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-
-          <p data-tour="menu-operacao" className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Operação
-          </p>
-          <ul className="space-y-1">
-            {itensOperacaoFiltrados.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-                >
-                  <span className="flex items-center gap-2">
-                    <item.icon className="h-4 w-4 shrink-0 text-slate-300" />
-                    {item.label}
-                  </span>
-                  {item.href === "/negociacoes" && negociacoesPendentes > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                      {negociacoesPendentes}
-                    </span>
-                  )}
-                  {item.href === "/abastecimentos" && ajustesAbastecimentosPendentes > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                      {ajustesAbastecimentosPendentes}
-                    </span>
-                  )}
-                  {item.href === "/antifraude" && falhasVerificacaoAntifraude > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                      {falhasVerificacaoAntifraude}
-                    </span>
-                  )}
-                  {item.href === "/acoes-sugeridas" && acoesSugeridasPendentes > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                      {acoesSugeridasPendentes}
-                    </span>
-                  )}
-                  {item.href === "/multas" && multasPendentes > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                      {multasPendentes}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-
-          {/* Fase 27.117 — pedido do Daniel: "Aba de Permissoes Precisa
-              aparecer para o cliente. Trazer somente permissoes no menu
-              Configuracoes para a visao do cliente". A Fase 27.110 escondeu
-              Permissões (dentro de Administração) de quem não é admin, mas
-              /permissoes já tem lógica própria pra gestor_frota/analista
-              customizarem as permissões da PRÓPRIA empresa (não é tela
-              exclusiva do time FNI como o resto de Administração) — ficou
-              escondida por engano. Seção própria, só pro cliente (não posto,
-              que já tem seu próprio /usuarios sem ganhar esta tela agora). */}
-          {!ehAdmin && !ehPosto && (
-            <>
-              <p className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Configurações
-              </p>
-              <ul className="space-y-1">
-                <li>
-                  <Link
-                    href="/permissoes"
-                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
-                  >
-                    <span className="flex items-center gap-2">
-                      <KeyRound className="h-4 w-4 shrink-0 text-slate-300" />
-                      Permissões
-                    </span>
-                  </Link>
-                </li>
-              </ul>
-            </>
-          )}
+          {/* Fase reorganizacao-menu — os 3 grupos que substituíram a antiga
+              "Operação" (33 itens numa lista só) ficam dentro de um mesmo
+              `data-tour="menu-operacao"`, pra o passo do tour continuar
+              destacando a área operacional inteira (e não só o primeiro
+              subgrupo) sem precisar reescrever o texto do passo em
+              tourPassos.ts. */}
+          <div data-tour="menu-operacao">
+            <GrupoMenuLateral titulo="Roteirização e Abastecimento" itens={itensRoteirizacaoAbastecimento} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
+            <GrupoMenuLateral titulo="Fretes" itens={itensFretes} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
+            <GrupoMenuLateral titulo="Manutenção e Ativos" itens={itensManutencaoAtivos} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
+          </div>
+          <GrupoMenuLateral titulo="Financeiro" itens={itensFinanceiro} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
+          <GrupoMenuLateral titulo="Relatórios e Sustentabilidade" itens={itensRelatorios} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
+          <GrupoMenuLateral titulo="Engajamento" itens={itensEngajamento} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
+          <GrupoMenuLateral titulo="Conta e Ajuda" itens={itensContaAjuda} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
+          <GrupoMenuLateral titulo="Sistema" itens={itensSistema} badges={badgesMenu} tourPorHref={TOUR_POR_HREF} />
 
           {/* Fase 27.110 — pedido do Daniel: "O menu Administração deve
               ficar visível somente para o admin da aplicação" — antes só

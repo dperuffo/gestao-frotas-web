@@ -7611,3 +7611,41 @@ Validado: `npx tsc --noEmit` e `npx eslint` limpos (web); revisão manual linha 
 Dart (paridade de parênteses/chaves/colchetes conferida via script, `flutter analyze` não
 disponível neste ambiente) — mesmo método de validação já usado nas fases anteriores do PWA
 quando o SDK Flutter não está no sandbox.
+
+## Fase reorganizacao-menu — menu lateral agrupado por tema (web + PWA cliente e posto)
+
+O Daniel colou o menu lateral renderizado da web e comentou "Acho que esta bastante confuso
+para o usuario" — a seção "Operação" tinha crescido, fase após fase (cada feature nova só
+era anexada na mesma lista), até virar 33 itens sem nenhuma subdivisão, bem mais
+desbalanceada que Cadastros (9) ou a antiga Gestão (11). Pedido seguinte: "Organizacao de
+temas iguais". Depois de uma proposta visual (mockup antes/depois), confirmado: "sim, quero
+que implemente nas visoes web e PWA de clientes e postos" — mesmo reagrupamento temático nos
+4 lugares, zero mudança de rota/permissão/funcionalidade, só reorganização visual.
+
+- **`(dashboard)/_components/GrupoMenuLateral.tsx`** (novo, Server Component): substitui os
+  ~4 blocos `<p>`+`<ul>` quase idênticos que existiam por seção por um componente único e
+  reutilizável — recebe `titulo`, `itens: ItemMenuLateral[]`, `badges?: Record<string,
+  number>` (lookup genérico, substituindo os `item.href === "/x" && contagem > 0`
+  espalhados por seção — achado ao migrar: o badge de `/antifraude` já era código morto,
+  rota fora do menu fazia tempo), `tourPorHref?`, `dataTourTitulo?` e `primeiro?: boolean`
+  (troca a margem-superior do CSS `:first-child` porque "Roteirização e Abastecimento"
+  precisa ficar dentro de um `<div data-tour="menu-operacao">` sem virar o "primeiro filho"
+  visual do menu inteiro).
+- **`(dashboard)/layout.tsx`**: `menuVisaoGeral`(4)/`menuOperacao`(33, antigo) viraram 10
+  grupos temáticos pro cliente — Visão Geral, Cadastros (inalterado), Roteirização e
+  Abastecimento, Fretes, Manutenção e Ativos, Financeiro, Relatórios e Sustentabilidade,
+  Engajamento, Conta e Ajuda, Sistema — e 6 pro posto — Visão Geral, Cadastros, Operação,
+  Financeiro, Conta e Ajuda, Sistema. A seção "Configurações" (só Permissões) foi
+  incorporada em "Sistema"; a seção Administração (admin-only) ficou intocada. Tour de
+  onboarding preservado: `data-tour="menu-geral"`/`"menu-cadastros"`/`"menu-operacao"`
+  continuam apontando pros mesmos alvos (o último agora envolve 3 dos novos grupos num
+  `<div>` — confirmado em `TourOverlay.tsx` que `getBoundingClientRect()` numa div
+  "container" funciona pra destacar o cluster inteiro).
+- **Flutter (`estudo-de-rede`) — `home_screen.dart`/`posto_home_screen.dart`**: mesmo
+  reagrupamento, mesmo padrão `_grp('...')` + `if (pode('/rota')) _item(...)` já existente,
+  só mudando em qual grupo cada item está. Detalhes no README do Flutter (fase homônima).
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos (web, `layout.tsx` +
+`GrupoMenuLateral.tsx`); revisão manual + balanceamento de parênteses/chaves/colchetes por
+script nos 2 arquivos Dart tocados (mesma limitação de sandbox sem Flutter/Dart instalado —
+`flutter analyze` ainda não rodado aqui).
