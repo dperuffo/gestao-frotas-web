@@ -1,12 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { alternarFavoritoMenuAcao } from "@/lib/menuFavoritos";
 
-export type ItemAtalho = { href: string; label: string; icon?: LucideIcon };
+// Fase Acesso-Rápido-Favoritos — bugfix pós-deploy (04/08/2026): `icon` era
+// tipado como `LucideIcon` (a referência da função/componente) e o layout.tsx
+// (Server Component) passava essa referência direto pra este componente
+// ("use client"). Função crua não pode atravessar a fronteira
+// servidor→cliente do React Server Components — daí o erro em produção
+// "Functions cannot be passed directly to Client Components...", que
+// derrubava TODA página do dashboard assim que qualquer usuário tinha 1
+// favorito registrado. Corrigido recebendo o ícone já RENDERIZADO
+// (`ReactNode`, um elemento React — isso sim pode atravessar a fronteira,
+// é o mesmo mecanismo que `children` usa) em vez da função crua.
+export type ItemAtalho = { href: string; label: string; icon?: ReactNode };
 
 // Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel) — barra
 // horizontal de atalhos no topo do conteúdo (escolha explícita dele: não no
@@ -44,7 +53,7 @@ export function BarraAtalhosFavoritos({ itensIniciais }: { itensIniciais: ItemAt
           className="group flex items-center gap-1.5 rounded-full border border-slate-200 bg-white py-1.5 pl-3 pr-2 text-sm text-slate-700 shadow-sm transition hover:border-frota-300"
         >
           <Link href={item.href} className="flex items-center gap-1.5">
-            {item.icon && <item.icon className="h-3.5 w-3.5 shrink-0 text-frota-600" />}
+            {item.icon}
             {item.label}
           </Link>
           <button

@@ -704,7 +704,20 @@ export default async function DashboardLayout({
   const itensFavoritos: ItemAtalho[] = favoritosBrutos
     .map((f: { href: string; fixado: boolean }): ItemAtalho | null => {
       const item = MAPA_ITENS_MENU.get(f.href);
-      return item && podeAcessarItem(item) ? { href: f.href, label: item.label, icon: item.icon } : null;
+      // Bugfix pós-deploy (04/08/2026) — o ícone precisa ir JÁ RENDERIZADO
+      // (elemento React), nunca a referência crua do componente: este
+      // layout.tsx é Server Component e BarraAtalhosFavoritos é "use
+      // client" — passar a função do ícone direto pela fronteira derrubava
+      // toda página do dashboard ("Functions cannot be passed directly to
+      // Client Components..."). Ver comentário completo em
+      // BarraAtalhosFavoritos.tsx.
+      return item && podeAcessarItem(item)
+        ? {
+            href: f.href,
+            label: item.label,
+            icon: item.icon ? <item.icon className="h-3.5 w-3.5 shrink-0 text-frota-600" /> : undefined,
+          }
+        : null;
     })
     .filter((item): item is ItemAtalho => item !== null);
   const favoritosHrefsSet = new Set(itensFavoritos.map((i) => i.href));
