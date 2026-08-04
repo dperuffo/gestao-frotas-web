@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition, type FormEvent } from "react";
-import { digitarNfeCargaAcao, enviarNfeCargaAcao } from "../romaneioActions";
+import { useRef, useState, useTransition, type ChangeEvent, type FormEvent } from "react";
+import { digitarNfeCargaAcao, enviarNfeCargaAcao, lerFotoNfeOcrAcao } from "../romaneioActions";
 
 // Fase P0.4 (plano FNI_Plano_Implementacao_P0.md) — romaneio: NF-e do
 // embarcador vinculadas ao frete. Peso/volume/valor somados formam o
@@ -109,6 +109,9 @@ function FormUploadNfe({ freteId, empresaId }: { freteId: string; empresaId: str
 function FormDigitarNfe({ freteId, empresaId }: { freteId: string; empresaId: string }) {
   const [mensagem, setMensagem] = useState<{ tipo: "erro" | "sucesso"; texto: string } | undefined>();
   const [isPending, startTransition] = useTransition();
+  const [lendoFoto, setLendoFoto] = useState(false);
+  const [chaveAcesso, setChaveAcesso] = useState("");
+  const [valorNf, setValorNf] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -121,16 +124,57 @@ function FormDigitarNfe({ freteId, empresaId }: { freteId: string; empresaId: st
       else if (resultado.sucesso) {
         setMensagem({ tipo: "sucesso", texto: "NF-e registrada." });
         formRef.current?.reset();
+        setChaveAcesso("");
+        setValorNf("");
       }
     });
   }
 
+  async function handleFotoOcr(e: ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!arquivo) return;
+    setMensagem(undefined);
+    setLendoFoto(true);
+    const formData = new FormData();
+    formData.set("foto", arquivo);
+    const resultado = await lerFotoNfeOcrAcao(formData);
+    setLendoFoto(false);
+    if (resultado.erro) {
+      setMensagem({ tipo: "erro", texto: resultado.erro });
+      return;
+    }
+    if (resultado.sugestao?.chaveAcesso) setChaveAcesso(resultado.sugestao.chaveAcesso);
+    if (resultado.sugestao?.valorNf) setValorNf(String(resultado.sugestao.valorNf));
+    setMensagem({ tipo: "sucesso", texto: "Lido da foto — confira os campos antes de registrar." });
+  }
+
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-2">
-      <input name="chave_acesso" placeholder="Chave de acesso (44 dígitos)" required maxLength={50} className="input text-xs" />
+      <label className="block cursor-pointer rounded-lg border border-dashed border-slate-300 px-2 py-1.5 text-center text-xs text-slate-500 hover:bg-slate-50">
+        {lendoFoto ? "Lendo a foto (OCR)..." : "📷 Ler chave de uma foto (OCR, opcional)"}
+        <input type="file" accept="image/*" capture="environment" onChange={handleFotoOcr} disabled={lendoFoto} className="hidden" />
+      </label>
+      <input
+        name="chave_acesso"
+        placeholder="Chave de acesso (44 dígitos)"
+        required
+        maxLength={50}
+        value={chaveAcesso}
+        onChange={(e) => setChaveAcesso(e.target.value)}
+        className="input text-xs"
+      />
       <div className="grid grid-cols-2 gap-2">
         <input name="peso_bruto_kg" type="number" step="0.01" placeholder="Peso bruto (kg)" className="input text-xs" />
-        <input name="valor_nf" type="number" step="0.01" placeholder="Valor da NF-e" className="input text-xs" />
+        <input
+          name="valor_nf"
+          type="number"
+          step="0.01"
+          placeholder="Valor da NF-e"
+          value={valorNf}
+          onChange={(e) => setValorNf(e.target.value)}
+          className="input text-xs"
+        />
       </div>
       <button type="submit" disabled={isPending} className="btn-secondary w-full text-xs">
         {isPending ? "Registrando..." : "Digitar chave da NF-e"}

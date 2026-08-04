@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { parsearXmlNfeCarga, type NfeCargaExtraida } from "@/lib/nfeCarga";
+import { extrairTextoDocumento } from "@/lib/ocr";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -116,4 +117,36 @@ export async function digitarNfeCargaAcao(freteId: string, empresaId: string, fo
 
   revalidatePath(`/fretes/${freteId}`);
   return { sucesso: { numeroNf: "—", chaveAcesso } };
+}
+
+// Fase ocr-documentos (04/08/2026, item 8 do benchmark FNI vs KMM, Grupo 2)
+// — "ler CT-e/canhoto automaticamente em vez de só foto". Só faz sentido
+// pra quem digita a chave (o upload de XML já é 100% estruturado e não
+// precisa de OCR nenhum). Não grava nada — só sugere pra pré-preencher o
+// formulário "Digitar chave da NF-e" acima; quem usa sempre revisa antes
+// de confirmar.
+export type ResultadoOcrNfe = { erro?: string; sugestao?: { chaveAcesso: string | null; valorNf: number | null } };
+
+export async function lerFotoNfeOcrAcao(formData: FormData): Promise<ResultadoOcrNfe> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { erro: "Sessão expirada, faça login novamente." };
+
+  const arquivo = formData.get("foto");
+  if (!(arquivo instanceof File) || arquivo.size === 0) return { erro: "Selecione uma foto da NF-e." };
+  if (arquivo.size > 8 * 1024 * 1024) return { erro: "Foto muito grande (máximo 8MB)." };
+
+  try {
+    const bytes = Buffer.from(await arquivo.arrayBuffer());
+    const resultado = await extrairTextoDocumento(bytes);
+    if (!resultado.chaveAcesso && !resultado.valorNf) {
+      return { erro: "Não consegui ler a chave de acesso nem o valor nessa foto — tente uma foto mais nítida ou digite manualmente." };
+    }
+    return { sugestao: { chaveAcesso: resultado.chaveAcesso, valorNf: resultado.valorNf } };
+  } catch (e) {
+    const mensagem = e instanceof Error ? e.message : "Erro inesperado ao ler a foto.";
+    return { erro: mensagem };
+  }
 }

@@ -7737,3 +7737,51 @@ já que o agendamento pertence a UM frete); a tela nova é só consulta + açõe
 
 Validado: `npx tsc --noEmit` e `npx eslint` limpos; conferido via SQL que a RLS ficou ativa com
 as 4 políticas (select/insert/update/delete) na tabela nova.
+
+## Fase ocr-documentos — ler CT-e/canhoto por foto (Tesseract OCR)
+
+Item 8 do Grupo 2 do benchmark FNI vs KMM — "ler CT-e/canhoto automaticamente em vez de só
+foto". Decisão do Daniel: Tesseract OCR via `tesseract.js`, gratuito, sem API paga (Google
+Vision/AWS Textract descartadas por causa do custo por uso). Mapeamos os dois fluxos que já
+existiam antes de mexer: romaneio (upload de XML da NF-e, 100% estruturado — sem uso pra OCR
+aqui) vs. "Digitar chave da NF-e" (o gestor digita os 44 dígitos manualmente quando só tem o
+papel — ESSE é o alvo real); e o canhoto (POD) do motorista, onde nome+documento do recebedor
+são sempre digitados na hora de confirmar a entrega.
+
+**`src/lib/ocr.ts`** (novo): `extrairTextoDocumento(imagem: Buffer)` roda
+`tesseract.js` (idioma `por`) e devolve o texto bruto + 4 campos extraídos por regex sobre
+esse texto — chave de acesso (44 dígitos, junta blocos separados por espaço até fechar o
+tamanho), valor (padrão `R$ ...`), número da NF-e e CPF do recebedor. Escolha deliberada:
+NÃO tentamos ler nome de pessoa (letra manuscrita é o pior caso pra qualquer OCR, inclusive
+os pagos) — só o que costuma vir IMPRESSO. Todo campo devolvido é uma SUGESTÃO pra
+pré-preencher formulário, nunca grava nada sozinho; quem usa sempre revisa antes de salvar.
+
+**Web — `romaneioActions.ts` + `RomaneioCard.tsx`**: `lerFotoNfeOcrAcao` (nova server action)
+roda o OCR sobre uma foto e devolve chave de acesso + valor; `FormDigitarNfe` ganhou um botão
+"📷 Ler chave de uma foto (OCR, opcional)" que chama essa action e pré-preenche os campos
+(chave de acesso, valor) — o gestor ainda confirma/edita antes de enviar. Upload de XML
+continua exatamente como estava (não precisa de OCR, é dado estruturado).
+
+**`/api/ocr/documento`** (nova rota, `runtime = "nodejs"` — tesseract.js não roda em Edge):
+mesmo padrão de `/api/assistente` (ver comentário lá) — autentica com o access_token da
+sessão Supabase do usuário via `Authorization: Bearer <token>` em vez de cookies, porque é a
+única forma do PWA Motorista (Flutter, sem esse runtime) rodar OCR. Recebe a foto como
+multipart (`arquivo`), devolve `{ texto, chaveAcesso, numeroNf, valorNf, documentoRecebedor }`.
+
+**estrada-que-cuida (Flutter, motorista)**: `ocr_service.dart` (novo, mesmo padrão de
+`assistente_service.dart` no PWA Cliente) chama essa rota. `frete_detalhe_screen.dart` —
+`_confirmarEntrega()` foi reordenado: agora tira a foto do canhoto PRIMEIRO, tenta ler o CPF
+do recebedor nela (best-effort, nunca bloqueia se falhar) e só DEPOIS abre o diálogo de
+nome/documento, com o campo de documento pré-preenchido (`helperText` avisando "lido da
+foto — confira") quando a leitura deu certo. Nome continua sempre digitado.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos (web); balanceamento de parênteses/chaves/
+colchetes por script nos 2 arquivos Dart tocados (mesma limitação de sandbox sem Flutter/Dart
+instalado). `tesseract.js` baixa o modelo de idioma `por` de um CDN no primeiro uso — pode
+deixar a primeira chamada mais lenta (cold start); chamadas seguintes reaproveitam o cache do
+runtime enquanto a função ficar "quente".
+
+**Ajuste de menu (mesma fase, pedido do Daniel)**: "Parâmetros de Uso" saiu do grupo
+"Sistema" e voltou pro grupo "Roteirização e Abastecimento" (web e PWA Cliente) — é regra de
+abastecimento (vínculo motorista-veículo, Hub de Integrações), não configuração geral do
+sistema.

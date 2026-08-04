@@ -160,6 +160,12 @@ const menuRoteirizacaoAbastecimento: ItemMenuLateral[] = [
   { href: "/rotograma", label: "Rotograma", icon: Shield }, // PWA: Icons.shield_outlined
   { href: "/planos-viagem", label: "Planos de Viagem", icon: Luggage }, // PWA: Icons.card_travel
   { href: "/abastecimentos", label: "Abastecimentos", icon: Fuel }, // PWA: Icons.local_gas_station
+  // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
+  // soluções de automação/meios de pagamento integrados via API (Hub de
+  // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
+  // Fase reorganizacao-menu-2 (04/08/2026, pedido do Daniel) — movida de
+  // "Sistema" pra cá: é regra de abastecimento, não configuração geral.
+  { href: "/parametros-uso", label: "Parâmetros de Uso", icon: SlidersHorizontal }, // PWA: Icons.tune
   // Fase 27.94/27.95 — status de NF-e por abastecimento (emitida/pendente)
   // + indicador de % de recolha, do lado do cliente.
   { href: "/notas-fiscais", label: "Notas Fiscais", icon: FileText }, // PWA: Icons.description
@@ -308,10 +314,6 @@ const menuSistema: ItemMenuLateral[] = [
   // Postos/Grupos Econômicos e aceitar/criar negociações.
   { href: "/documentos", label: "Documentos", icon: Folder }, // PWA: Icons.folder
   { href: "/lgpd", label: "Privacidade (LGPD)", icon: Lock }, // PWA: Icons.lock
-  // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
-  // soluções de automação/meios de pagamento integrados via API (Hub de
-  // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
-  { href: "/parametros-uso", label: "Parâmetros de Uso", icon: SlidersHorizontal }, // PWA: Icons.tune
   { href: "/integracoes", label: "Integrações", icon: Plug },
   { href: "/permissoes", label: "Permissões", icon: KeyRound },
 ];
