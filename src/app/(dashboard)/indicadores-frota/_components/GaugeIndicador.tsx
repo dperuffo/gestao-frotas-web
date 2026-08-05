@@ -2,6 +2,7 @@
 
 import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer } from "recharts";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { formatarMoeda } from "@/lib/financeiro";
 
 // Fase Velocímetro (05/08/2026, pedido do Daniel: "Utilizar grafico de
 // velocimetro nos indicadores de frota") — substitui os cards de número
@@ -28,6 +29,16 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 // reentregas) ganharam faixas de referência de mercado/bom-senso
 // operacional, ajustáveis depois se o Daniel achar que a faixa não bate com
 // a realidade da frota dele.
+//
+// Bugfix pós-deploy (05/08/2026) — a v1 recebia um `formatar: (v) => string`
+// via prop: essa função foi definida no Server Component (page.tsx) e
+// derrubou toda a tela ("Functions cannot be passed directly to Client
+// Components..." — mesma classe de bug da Fase Acesso-Rápido-Favoritos, ver
+// comentário em BarraAtalhosFavoritos.tsx). Trocado por `unidade`, um enum
+// (string, serializável) — a formatação agora acontece AQUI DENTRO do
+// próprio client component, nunca cruzando a fronteira.
+export type UnidadeGauge = "percentual" | "moeda_por_km" | "km_por_litro" | "horas" | "numero";
+
 export type GaugeIndicadorProps = {
   label: string;
   valor: number | null;
@@ -39,8 +50,8 @@ export type GaugeIndicadorProps = {
   zonaVermelha: number;
   /** Fronteira entre âmbar e verde, em unidade crua. */
   zonaVerde: number;
-  /** Formata o valor cru pro texto central (ex.: "99.8%", "R$ 1,63/km"). Default: `${valor}`. */
-  formatar?: (valor: number) => string;
+  /** Como formatar o valor cru (central e legendas min/max). Default: número puro. */
+  unidade?: UnidadeGauge;
   semValorTexto?: string;
   ajudaChave?: string;
 };
@@ -49,6 +60,23 @@ const COR_VERMELHA = "#dc2626"; // red-600
 const COR_AMBAR = "#d97706"; // amber-600
 const COR_VERDE = "#16a34a"; // green-600
 const COR_TRILHA = "#e2e8f0"; // slate-200
+
+function formatarValor(valor: number, unidade: UnidadeGauge | undefined): string {
+  switch (unidade) {
+    case "percentual":
+      return `${valor}%`;
+    case "moeda_por_km":
+      return `${formatarMoeda(valor)}/km`;
+    case "km_por_litro":
+      return `${valor} km/l`;
+    case "horas":
+      return `${valor}h`;
+    case "numero":
+      return `${Math.round(valor)}`;
+    default:
+      return `${valor}`;
+  }
+}
 
 function corDoValor(valor: number, zonaVermelha: number, zonaVerde: number, invertido: boolean): string {
   // Sem `invertido`: valor sobe = melhora (verde fica pro lado de cima).
@@ -71,7 +99,7 @@ export function GaugeIndicador({
   invertido = false,
   zonaVermelha,
   zonaVerde,
-  formatar,
+  unidade,
   semValorTexto = "—",
   ajudaChave,
 }: GaugeIndicadorProps) {
@@ -79,7 +107,7 @@ export function GaugeIndicador({
   const valorClampado = temValor ? Math.min(max, Math.max(min, valor)) : min;
   const percentual = ((valorClampado - min) / (max - min)) * 100;
   const cor = temValor ? corDoValor(valor, zonaVermelha, zonaVerde, invertido) : COR_TRILHA;
-  const textoValor = temValor ? (formatar ? formatar(valor) : `${valor}`) : semValorTexto;
+  const textoValor = temValor ? formatarValor(valor, unidade) : semValorTexto;
 
   return (
     <div className="card flex flex-col items-center p-4">
@@ -117,8 +145,8 @@ export function GaugeIndicador({
       </div>
 
       <div className="mt-1 flex w-full max-w-[220px] justify-between text-[10px] text-slate-400">
-        <span>{formatar ? formatar(min) : min}</span>
-        <span>{formatar ? formatar(max) : max}</span>
+        <span>{formatarValor(min, unidade)}</span>
+        <span>{formatarValor(max, unidade)}</span>
       </div>
     </div>
   );

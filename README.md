@@ -8307,3 +8307,15 @@ há `indiceSinistralidade` calculável).
 Validado: `npx tsc --noEmit` e `npx eslint` limpos. Sem preview visual nesta sessão (sandbox sem
 navegador) — vale conferir no navegador e pedir ajuste fino de tamanho/cores se algo não ficar como
 esperado.
+
+**Hotfix de produção (05/08/2026, mesmo dia) — mesma classe de bug da Fase Acesso-Rápido-Favoritos:**
+a v1 de `GaugeIndicador` recebia um prop `formatar: (v) => string` — essa função era criada no
+Server Component (`page.tsx`, ex.: `formatar={(v) => \`${v}%\`}`) e passada pra dentro de
+`GaugeIndicador`, que é `"use client"`. Função não é serializável pela fronteira Server→Client
+Component: a tela inteira quebrava em produção
+(`Error: Functions cannot be passed directly to Client Components...`, confirmado nos logs do
+Railway — serviço `gestao-frotas-web`, projeto `reasonable-creation`). `tsc`/`eslint` não pegam
+esse tipo de erro (é de serialização em runtime, não de tipo). Corrigido trocando `formatar` por
+`unidade` — um enum de string (`"percentual" | "moeda_por_km" | "km_por_litro" | "horas" |
+"numero"`, totalmente serializável) — e movendo a lógica de formatação (`formatarValor`) pra dentro
+do próprio `GaugeIndicador.tsx`, nunca mais cruzando a fronteira.

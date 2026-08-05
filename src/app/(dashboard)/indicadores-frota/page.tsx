@@ -258,7 +258,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                     max={100}
                     zonaVermelha={70}
                     zonaVerde={90}
-                    formatar={(v) => `${v}%`}
+                    unidade="percentual"
                     semValorTexto="Sem fretes com prazo definido"
                   />
                   <GaugeIndicador
@@ -269,7 +269,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                     invertido
                     zonaVermelha={48}
                     zonaVerde={24}
-                    formatar={(v) => `${v}h`}
+                    unidade="horas"
                   />
                   <GaugeIndicador
                     label="Índice de avarias"
@@ -279,7 +279,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                     invertido
                     zonaVermelha={10}
                     zonaVerde={0}
-                    formatar={(v) => `${v}%`}
+                    unidade="percentual"
                   />
                   <GaugeIndicador
                     label="Índice de reclamações"
@@ -289,7 +289,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                     invertido
                     zonaVermelha={15}
                     zonaVerde={5}
-                    formatar={(v) => `${v}%`}
+                    unidade="percentual"
                   />
                   <GaugeIndicador
                     label="Reentregas e devoluções"
@@ -299,7 +299,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                     invertido
                     zonaVermelha={3}
                     zonaVerde={0}
-                    formatar={(v) => `${Math.round(v)}`}
+                    unidade="numero"
                   />
                   <GaugeIndicador
                     label="Km rodado vazio (estimado)"
@@ -309,7 +309,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                     invertido
                     zonaVermelha={40}
                     zonaVerde={20}
-                    formatar={(v) => `${v}%`}
+                    unidade="percentual"
                   />
                   <GaugeIndicador
                     label="ROI da frota"
@@ -318,7 +318,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                     max={100}
                     zonaVermelha={0}
                     zonaVerde={15}
-                    formatar={(v) => `${v}%`}
+                    unidade="percentual"
                     semValorTexto="Sem valor de aquisição cadastrado"
                   />
                 </div>
@@ -347,7 +347,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               max={100}
               zonaVermelha={70}
               zonaVerde={90}
-              formatar={(v) => `${v}%`}
+              unidade="percentual"
               ajudaChave="indicadores_frota.disponibilidade"
             />
             <GaugeIndicador
@@ -358,7 +358,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               invertido
               zonaVermelha={3}
               zonaVerde={1.5}
-              formatar={(v) => `${formatarMoeda(v)}/km`}
+              unidade="moeda_por_km"
               ajudaChave="indicadores_frota.cpk"
             />
             <GaugeIndicador
@@ -368,7 +368,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               max={12}
               zonaVermelha={3}
               zonaVerde={6}
-              formatar={(v) => `${v} km/l`}
+              unidade="km_por_litro"
               ajudaChave="indicadores_frota.consumo"
             />
             <GaugeIndicador
@@ -378,7 +378,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               max={100}
               zonaVermelha={50}
               zonaVerde={70}
-              formatar={(v) => `${v}%`}
+              unidade="percentual"
               ajudaChave="indicadores_frota.utilizacao"
             />
             <GaugeIndicador
@@ -389,7 +389,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               invertido
               zonaVermelha={40}
               zonaVerde={20}
-              formatar={(v) => `${v}%`}
+              unidade="percentual"
               semValorTexto="Sem manutenção classificada"
               ajudaChave="indicadores_frota.corretiva"
             />
@@ -401,7 +401,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               max={100}
               zonaVermelha={70}
               zonaVerde={90}
-              formatar={(v) => `${v}%`}
+              unidade="percentual"
               semValorTexto="Sem inspeções no período"
               ajudaChave="indicadores_frota.conformidade"
             />
@@ -413,7 +413,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               invertido
               zonaVermelha={48}
               zonaVerde={24}
-              formatar={(v) => `${v}h`}
+              unidade="horas"
               semValorTexto="Sem pendências resolvidas"
               ajudaChave="indicadores_frota.tmrnc"
             />
@@ -426,7 +426,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                 invertido
                 zonaVermelha={25}
                 zonaVerde={10}
-                formatar={(v) => `${v}%`}
+                unidade="percentual"
                 ajudaChave="indicadores_frota.sinistralidade"
               />
             ) : (
