@@ -8246,3 +8246,17 @@ edição bem-sucedida pelo dono, tentativa de edição cross-tenant corretamente
 (`P0001: Aviso não encontrado ou sem permissão.`). `AvisoEmpresaForm` virou reaproveitável pros
 dois modos (sem `aviso` = criar, com `aviso` = editar, mesmo padrão de `AvisoForm.tsx` do painel
 admin), nova página `/central-avisos/gerenciar/[id]` e link "Editar" em `ListaAvisosEmpresa.tsx`.
+
+**Bugfix — Voltar caía na tela errada (04/08/2026, mesmo dia):** achado real do Daniel: entrou no
+detalhe de um abastecimento a partir da lista já filtrada por um cliente
+(`/abastecimentos?empresa=X`), clicou em "Voltar" e caiu em "selecione o cliente"
+(`/abastecimentos` sem `empresa`) em vez de voltar pra lista filtrada de onde veio. Causa: a
+primeira versão de `BotaoVoltar` usava um `href` fixo por tela (uma rota-lista "adivinhada"), que
+não tinha como saber qual filtro/página/aba estava ativa na tela anterior. Corrigido: `BotaoVoltar`
+virou Client Component e usa `router.back()` (histórico real do navegador) como caminho principal
+— preserva automaticamente query string e qualquer estado da tela anterior, sem a aplicação
+precisar reconstruir esse estado; o `href` de cada página continua existindo só como fallback pros
+casos sem histórico dentro do app (link direto, aba nova, refresh) — mesmo espírito do guard
+`context.canPop() ? context.pop() : context.go(fallback)` já usado no PWA Flutter. Correção
+concentrada num único arquivo (`_components/BotaoVoltar.tsx`) — nenhuma das ~40 páginas que já
+usam `<BotaoVoltar href="..." />` precisou mudar.
