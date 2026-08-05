@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 // Fase Central-Avisos-Por-Empresa (04/08/2026) — achado real: o Daniel
@@ -71,6 +72,40 @@ export async function criarAvisoEmpresaAcao(
   revalidatePath("/central-avisos/gerenciar");
   revalidatePath("/central-avisos");
   return { sucesso: true };
+}
+
+export async function editarAvisoEmpresaAcao(
+  id: string,
+  _prev: AvisoEmpresaFormState,
+  formData: FormData
+): Promise<AvisoEmpresaFormState> {
+  const titulo = String(formData.get("titulo") ?? "").trim();
+  const resumo = String(formData.get("resumo") ?? "").trim();
+  const corpo = String(formData.get("corpo") ?? "").trim();
+  const tipo = String(formData.get("tipo") ?? "aviso_geral");
+  const urgencia = String(formData.get("urgencia") ?? "informativo");
+
+  if (!titulo || !resumo || !corpo) {
+    return { erro: "Título, resumo e corpo são obrigatórios." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("editar_aviso_empresa", {
+    p_id: id,
+    p_titulo: titulo,
+    p_resumo: resumo,
+    p_corpo: corpo,
+    p_tipo: tipo,
+    p_urgencia: urgencia,
+  });
+
+  if (error) {
+    return { erro: error.message };
+  }
+
+  revalidatePath("/central-avisos/gerenciar");
+  revalidatePath("/central-avisos");
+  redirect("/central-avisos/gerenciar");
 }
 
 export async function alternarAtivoAvisoEmpresaAcao(id: string, ativo: boolean) {

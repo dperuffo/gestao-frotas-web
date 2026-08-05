@@ -5114,6 +5114,17 @@ export interface Database {
         };
         Returns: string;
       };
+      editar_aviso_empresa: {
+        Args: {
+          p_id: string;
+          p_titulo: string;
+          p_resumo: string;
+          p_corpo: string;
+          p_tipo?: string;
+          p_urgencia?: string;
+        };
+        Returns: undefined;
+      };
       listar_avisos_da_minha_empresa: {
         Args: Record<PropertyKey, never>;
         Returns: {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import { alternarAtivoAvisoEmpresaAcao, excluirAvisoEmpresaAcao, type AvisoDaMinhaEmpresa } from "../actions";
 import { formatarDataHoraBr } from "@/lib/utils";
 
@@ -40,6 +41,12 @@ export function ListaAvisosEmpresa({ avisos }: { avisos: AvisoDaMinhaEmpresa[] }
             <p className="mt-1 text-xs text-slate-400">Publicado em {formatarDataHoraBr(a.data_publicacao)}</p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
+            <Link
+              href={`/central-avisos/gerenciar/${a.id}`}
+              className="text-xs font-medium text-frota-600 hover:underline"
+            >
+              Editar
+            </Link>
             <button
               type="button"
               disabled={isPending}

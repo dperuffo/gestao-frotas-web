@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
-import { criarAvisoEmpresaAcao } from "../actions";
+import { criarAvisoEmpresaAcao, editarAvisoEmpresaAcao, type AvisoDaMinhaEmpresa } from "../actions";
 
 const TIPO_LABEL: Record<string, string> = {
   aviso_geral: "📣 Aviso geral",
@@ -22,7 +22,19 @@ const URGENCIA_LABEL: Record<string, string> = {
 // segmentação por segmento/plano/empresa (aqui SEMPRE a própria empresa de
 // quem cria — travado no banco, dentro de criar_aviso_empresa(), nem chega
 // a virar campo de formulário).
-export function AvisoEmpresaForm({ onCriado }: { onCriado?: () => void }) {
+//
+// Fase edição (04/08/2026) — pedido do Daniel: "Usuario poder editar um
+// aviso criado no painel". Reaproveita este mesmo form pros dois modos
+// (mesmo padrão de AvisoForm.tsx do admin): sem `aviso` = criar; com
+// `aviso` = editar (campos com defaultValue, chama editarAvisoEmpresaAcao,
+// que redireciona de volta pra lista no sucesso — sem reset/onCriado).
+export function AvisoEmpresaForm({
+  aviso,
+  onCriado,
+}: {
+  aviso?: AvisoDaMinhaEmpresa;
+  onCriado?: () => void;
+}) {
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
@@ -33,13 +45,18 @@ export function AvisoEmpresaForm({ onCriado }: { onCriado?: () => void }) {
     const form = e.currentTarget;
 
     startTransition(async () => {
-      const resultado = await criarAvisoEmpresaAcao(undefined, formData);
+      const resultado = aviso
+        ? await editarAvisoEmpresaAcao(aviso.id, undefined, formData)
+        : await criarAvisoEmpresaAcao(undefined, formData);
       if (resultado?.erro) {
         setErro(resultado.erro);
         return;
       }
-      form.reset();
-      onCriado?.();
+      if (!aviso) {
+        form.reset();
+        onCriado?.();
+      }
+      // Modo edição: editarAvisoEmpresaAcao já dá redirect() no sucesso.
     });
   }
 
@@ -49,7 +66,7 @@ export function AvisoEmpresaForm({ onCriado }: { onCriado?: () => void }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Campo label="Tipo">
-          <select name="tipo" defaultValue="aviso_geral" className="input">
+          <select name="tipo" defaultValue={aviso?.tipo ?? "aviso_geral"} className="input">
             {Object.entries(TIPO_LABEL).map(([valor, label]) => (
               <option key={valor} value={valor}>
                 {label}
@@ -58,7 +75,7 @@ export function AvisoEmpresaForm({ onCriado }: { onCriado?: () => void }) {
           </select>
         </Campo>
         <Campo label="Urgência" hint="Crítico não bloqueia a tela — só destaca visualmente.">
-          <select name="urgencia" defaultValue="informativo" className="input">
+          <select name="urgencia" defaultValue={aviso?.urgencia ?? "informativo"} className="input">
             {Object.entries(URGENCIA_LABEL).map(([valor, label]) => (
               <option key={valor} value={valor}>
                 {label}
@@ -69,18 +86,18 @@ export function AvisoEmpresaForm({ onCriado }: { onCriado?: () => void }) {
       </div>
 
       <Campo label="Título" required>
-        <input name="titulo" required className="input" />
+        <input name="titulo" required defaultValue={aviso?.titulo} className="input" />
       </Campo>
       <Campo label="Resumo" required hint="Linha curta — aparece no sino/drawer dos colegas da sua empresa.">
-        <input name="resumo" required className="input" />
+        <input name="resumo" required defaultValue={aviso?.resumo} className="input" />
       </Campo>
       <Campo label="Corpo" required hint={'Markdown simples: **negrito**, [texto](https://url), "- " pra lista.'}>
-        <textarea name="corpo" required rows={6} className="input font-mono text-xs" />
+        <textarea name="corpo" required rows={6} defaultValue={aviso?.corpo} className="input font-mono text-xs" />
       </Campo>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
         <button type="submit" disabled={isPending} className="btn-primary disabled:opacity-50">
-          {isPending ? "Publicando..." : "Publicar pra minha empresa"}
+          {isPending ? "Salvando..." : aviso ? "Salvar alterações" : "Publicar pra minha empresa"}
         </button>
       </div>
     </form>

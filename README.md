@@ -8237,3 +8237,12 @@ pra esse perfil. `HREF_FUNCIONALIDADE["/central-avisos/gerenciar"] = "aba_centra
 `src/lib/permissoes.ts`.
 
 Validado: `npx tsc --noEmit` e `npx eslint` limpos.
+
+**Edição (04/08/2026, mesmo dia):** pedido do Daniel: "Usuario poder editar um aviso criado no
+painel". Nova RPC `editar_aviso_empresa(p_id, p_titulo, p_resumo, p_corpo, p_tipo, p_urgencia)` —
+mesmas checagens de `criar_aviso_empresa` (rejeita admin, exige `aba_central_avisos`) mais o mesmo
+filtro de ownership por `criado_por_empresa_id` de `excluir_aviso_empresa`. Testada end-to-end:
+edição bem-sucedida pelo dono, tentativa de edição cross-tenant corretamente bloqueada
+(`P0001: Aviso não encontrado ou sem permissão.`). `AvisoEmpresaForm` virou reaproveitável pros
+dois modos (sem `aviso` = criar, com `aviso` = editar, mesmo padrão de `AvisoForm.tsx` do painel
+admin), nova página `/central-avisos/gerenciar/[id]` e link "Editar" em `ListaAvisosEmpresa.tsx`.
