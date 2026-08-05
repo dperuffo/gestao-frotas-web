@@ -8308,6 +8308,29 @@ Validado: `npx tsc --noEmit` e `npx eslint` limpos. Sem preview visual nesta ses
 navegador) — vale conferir no navegador e pedir ajuste fino de tamanho/cores se algo não ficar como
 esperado.
 
+## Bugfix — Agendamento de Pátio ficava "Atrasado" mesmo já concluído (05/08/2026)
+
+Achado real do Daniel: um agendamento de coleta que o motorista já tinha feito dentro do horário
+combinado aparecia com badge "Atrasado" em `/agendamentos-patio`. Causa: o badge é 100% calculado
+no frontend (`status in ('agendado','confirmado') AND janela_fim < agora` — não existe coluna de
+"atrasado" no banco), e o fluxo REAL usado pelos motoristas pra confirmar entrega —
+`confirmar_entrega_frete()` (POD: foto do canhoto + assinatura, é o único evento que o app registra
+na prática) — nunca atualizava `agendamentos_patio`. Só a RPC `registrar_evento_frete()` (botões
+avulsos de checkpoint tipo "Cheguei na origem"/"Saí da origem", que o motorista pode simplesmente
+não usar) fechava coleta/entrega do pátio. Resultado: fretes 100% concluídos (com canhoto e tudo)
+ficavam com os 2 agendamentos de pátio presos em "confirmado" pra sempre, virando "Atrasado" assim
+que a janela passava.
+
+Corrigido só no banco (sem mudança de código no repo — nenhum commit necessário, já está em
+produção): `confirmar_entrega_frete()` agora também fecha os 2 agendamentos de pátio do frete
+(coleta e entrega, se existirem e não estiverem cancelados) — confirmar entrega com POD é o sinal
+mais forte de que ambos já aconteceram de verdade. `registrar_evento_frete()` continua igual, pra
+quem usa os checkpoints granulares em tempo real. Migração `confirmar_entrega_frete_fecha_agendamentos_patio`
+também rodou uma correção retroativa pra qualquer agendamento de pátio já preso nesse estado
+(achado 1 frete afetado no banco — os 2 agendamentos dele, coleta e entrega, foram corrigidos pra
+"concluído"). UI não precisou de nenhuma mudança: `STATUS_AGENDAMENTO_LABEL`/`STATUS_AGENDAMENTO_COR`
+(`src/lib/agendamentosPatio.ts`) já sabiam renderizar o status "concluído" corretamente.
+
 **Hotfix de produção (05/08/2026, mesmo dia) — mesma classe de bug da Fase Acesso-Rápido-Favoritos:**
 a v1 de `GaugeIndicador` recebia um prop `formatar: (v) => string` — essa função era criada no
 Server Component (`page.tsx`, ex.: `formatar={(v) => \`${v}%\`}`) e passada pra dentro de
