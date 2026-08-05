@@ -8247,6 +8247,22 @@ edição bem-sucedida pelo dono, tentativa de edição cross-tenant corretamente
 dois modos (sem `aviso` = criar, com `aviso` = editar, mesmo padrão de `AvisoForm.tsx` do painel
 admin), nova página `/central-avisos/gerenciar/[id]` e link "Editar" em `ListaAvisosEmpresa.tsx`.
 
+**Correção de alcance — Grupo Econômico/Rede de Postos (04/08/2026, mesmo dia):** achado real do
+Daniel: criou um aviso "novidade" logado como gestor de frota da empresa "Transportes de Cargas
+Testes Ltda" esperando que chegasse também ao motorista de "Frotas & Frotas Ltda" — empresa irmã
+no mesmo Grupo Econômico ATIVO ("Grupo Frotas") — e não chegou. Causa: a v1 de
+`criar_aviso_empresa` escopava `empresas_alvo` só pra própria empresa (decisão minha original, pra
+evitar vazamento — não confirmada com o Daniel na hora). Confirmado por ele: "sendo gestor de
+frota, com visão de grupo econômico, o aviso deveria ser criado para o grupo econômico" / "Este
+deve ser o comportamento para grupoeconomico e redes de postos". Corrigido: `criar_aviso_empresa`
+agora resolve `empresas_alvo` como a própria empresa + TODAS as irmãs do Grupo Econômico (lado
+Frota) ou Rede de Postos (lado Revenda) ATIVO — mesma tabela `grupos_economicos_empresas` já usada
+em `listar_empresas_alvo_replicacao` ("Replicar para o grupo"). `criado_por_empresa_id` continua
+sendo só a empresa de origem (dono real do aviso pra edição/exclusão — não muda quem pode editar,
+só quem VÊ o aviso). Testado: novo aviso criado por um usuário de "Transportes de Cargas Testes
+Ltda" saiu com `empresas_alvo` = as duas empresas do grupo. O aviso real que o Daniel já tinha
+criado (`341a87cc`) foi corrigido manualmente no banco pro mesmo alcance, sem precisar recriar.
+
 **Bugfix — Voltar caía na tela errada (04/08/2026, mesmo dia):** achado real do Daniel: entrou no
 detalhe de um abastecimento a partir da lista já filtrada por um cliente
 (`/abastecimentos?empresa=X`), clicou em "Voltar" e caiu em "selecione o cliente"
@@ -8260,3 +8276,34 @@ casos sem histórico dentro do app (link direto, aba nova, refresh) — mesmo es
 `context.canPop() ? context.pop() : context.go(fallback)` já usado no PWA Flutter. Correção
 concentrada num único arquivo (`_components/BotaoVoltar.tsx`) — nenhuma das ~40 páginas que já
 usam `<BotaoVoltar href="..." />` precisou mudar.
+
+## Fase Velocímetro — Indicadores da Frota (05/08/2026)
+
+Pedido do Daniel: "Utilizar grafico de velocimetro nos indicadores de frota", depois confirmado
+que era pra TODOS os indicadores da tela `/indicadores-frota` (não só os que já são %) — inclusive
+CPK, Consumo, OCT, TMRNC e ROI, que não têm teto/piso natural.
+
+Novo componente `src/app/(dashboard)/indicadores-frota/_components/GaugeIndicador.tsx` (`"use
+client"`, primeiro gauge de verdade do app — `ScoreFrota.tsx` de Postos usa `PieChart`/donut, não é
+um velocímetro). Técnica: `RadialBarChart` do recharts (já era dependência do projeto) desenhado
+como CÍRCULO INTEIRO num box quadrado (`cx`/`cy` 50%, `innerRadius`/`outerRadius` ≤100% —
+matemática de raio previsível) e recortado pela metade com `overflow-hidden` num wrapper com metade
+da altura do box interno — só o semicírculo de cima fica visível. Evita o padrão mais comum de
+gauge do recharts (`cy="100%"` + raios >100%), que é mais sensível a diferenças de proporção entre
+versões.
+
+Cada indicador virou um gauge com `min`/`max`/2 zonas de cor (vermelho/âmbar/verde) calibradas a
+partir dos thresholds de "aviso" que já existiam nos cards de número antigos (ex.: disponibilidade
+< 90% já virava âmbar — virou a fronteira âmbar/verde do gauge). Indicadores sem threshold prévio
+(CPK, Consumo, OCT, TMRNC, Km vazio, Reentregas) ganharam faixas de referência operacional/de
+mercado — ajustáveis se não baterem com a realidade da frota do Daniel. Direção "quanto menor,
+melhor" (`invertido`) aplicada em CPK, Manutenção Corretiva, Sinistralidade, OCT, TMRNC, Km vazio,
+Avarias, Reclamações e Reentregas; "quanto maior, melhor" no resto.
+
+Ficaram como card de número simples (sem gauge, por não terem semântica de bom/ruim numa escala):
+"Veículos no filtro"/placa do veículo selecionado, e "Sinistros no período" (fallback só quando não
+há `indiceSinistralidade` calculável).
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos. Sem preview visual nesta sessão (sandbox sem
+navegador) — vale conferir no navegador e pedir ajuste fino de tamanho/cores se algo não ficar como
+esperado.

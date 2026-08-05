@@ -5,6 +5,7 @@ import { formatarMoeda } from "@/lib/financeiro";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { agregarVeiculos, veiculoParaExibicao, type VeiculoKpi, type KpisExibicao } from "@/lib/indicadoresFrota";
 import { TabelaComparacaoVeiculos } from "./_components/TabelaComparacaoVeiculos";
+import { GaugeIndicador } from "./_components/GaugeIndicador";
 
 type SearchParams = {
   empresa?: string;
@@ -250,42 +251,75 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                 </div>
               ) : (
                 <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <Indicador
+                  <GaugeIndicador
                     label="OTIF (no prazo e sem ocorrência)"
-                    valor={
-                      operacionais.otif_pct !== null
-                        ? `${operacionais.otif_pct}%`
-                        : "Sem fretes com prazo definido"
-                    }
-                    destaque={operacionais.otif_pct !== null && operacionais.otif_pct < 90 ? "aviso" : undefined}
+                    valor={operacionais.otif_pct}
+                    min={0}
+                    max={100}
+                    zonaVermelha={70}
+                    zonaVerde={90}
+                    formatar={(v) => `${v}%`}
+                    semValorTexto="Sem fretes com prazo definido"
                   />
-                  <Indicador
+                  <GaugeIndicador
                     label="OCT (tempo de ciclo do pedido)"
-                    valor={operacionais.oct_horas_medio !== null ? `${operacionais.oct_horas_medio}h em média` : "—"}
+                    valor={operacionais.oct_horas_medio}
+                    min={0}
+                    max={72}
+                    invertido
+                    zonaVermelha={48}
+                    zonaVerde={24}
+                    formatar={(v) => `${v}h`}
                   />
-                  <Indicador
+                  <GaugeIndicador
                     label="Índice de avarias"
-                    valor={operacionais.indice_avarias_pct !== null ? `${operacionais.indice_avarias_pct}%` : "—"}
-                    destaque={operacionais.indice_avarias_pct !== null && operacionais.indice_avarias_pct > 0 ? "aviso" : undefined}
+                    valor={operacionais.indice_avarias_pct}
+                    min={0}
+                    max={20}
+                    invertido
+                    zonaVermelha={10}
+                    zonaVerde={0}
+                    formatar={(v) => `${v}%`}
                   />
-                  <Indicador
+                  <GaugeIndicador
                     label="Índice de reclamações"
-                    valor={operacionais.indice_reclamacoes_pct !== null ? `${operacionais.indice_reclamacoes_pct}%` : "—"}
-                    destaque={operacionais.indice_reclamacoes_pct !== null && operacionais.indice_reclamacoes_pct > 5 ? "aviso" : undefined}
+                    valor={operacionais.indice_reclamacoes_pct}
+                    min={0}
+                    max={30}
+                    invertido
+                    zonaVermelha={15}
+                    zonaVerde={5}
+                    formatar={(v) => `${v}%`}
                   />
-                  <Indicador
+                  <GaugeIndicador
                     label="Reentregas e devoluções"
-                    valor={`${operacionais.qtd_reentregas_devolucoes} no período`}
-                    destaque={operacionais.qtd_reentregas_devolucoes > 0 ? "aviso" : undefined}
+                    valor={operacionais.qtd_reentregas_devolucoes}
+                    min={0}
+                    max={10}
+                    invertido
+                    zonaVermelha={3}
+                    zonaVerde={0}
+                    formatar={(v) => `${Math.round(v)}`}
                   />
-                  <Indicador
+                  <GaugeIndicador
                     label="Km rodado vazio (estimado)"
-                    valor={operacionais.km_vazio_estimado_pct !== null ? `${operacionais.km_vazio_estimado_pct}%` : "—"}
+                    valor={operacionais.km_vazio_estimado_pct}
+                    min={0}
+                    max={100}
+                    invertido
+                    zonaVermelha={40}
+                    zonaVerde={20}
+                    formatar={(v) => `${v}%`}
                   />
-                  <Indicador
+                  <GaugeIndicador
                     label="ROI da frota"
-                    valor={operacionais.roi_frota_pct !== null ? `${operacionais.roi_frota_pct}%` : "Sem valor de aquisição cadastrado"}
-                    destaque={operacionais.roi_frota_pct !== null && operacionais.roi_frota_pct < 0 ? "aviso" : undefined}
+                    valor={operacionais.roi_frota_pct}
+                    min={-100}
+                    max={100}
+                    zonaVermelha={0}
+                    zonaVerde={15}
+                    formatar={(v) => `${v}%`}
+                    semValorTexto="Sem valor de aquisição cadastrado"
                   />
                 </div>
               )}
@@ -306,52 +340,94 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">{contexto}</p>
 
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Indicador
+            <GaugeIndicador
               label="Índice de disponibilidade"
-              valor={kpis.disponibilidadePct !== null ? `${kpis.disponibilidadePct}%` : "—"}
+              valor={kpis.disponibilidadePct}
+              min={0}
+              max={100}
+              zonaVermelha={70}
+              zonaVerde={90}
+              formatar={(v) => `${v}%`}
               ajudaChave="indicadores_frota.disponibilidade"
-              destaque={kpis.disponibilidadePct !== null && kpis.disponibilidadePct < 90 ? "aviso" : undefined}
             />
-            <Indicador
+            <GaugeIndicador
               label="Custo por km (CPK operacional)"
-              valor={kpis.cpkOperacional !== null ? `${formatarMoeda(kpis.cpkOperacional)}/km` : "—"}
+              valor={kpis.cpkOperacional}
+              min={0}
+              max={5}
+              invertido
+              zonaVermelha={3}
+              zonaVerde={1.5}
+              formatar={(v) => `${formatarMoeda(v)}/km`}
               ajudaChave="indicadores_frota.cpk"
             />
-            <Indicador
+            <GaugeIndicador
               label="Consumo médio"
-              valor={kpis.mediaKmL !== null ? `${kpis.mediaKmL} km/l` : "—"}
+              valor={kpis.mediaKmL}
+              min={0}
+              max={12}
+              zonaVermelha={3}
+              zonaVerde={6}
+              formatar={(v) => `${v} km/l`}
               ajudaChave="indicadores_frota.consumo"
             />
-            <Indicador
+            <GaugeIndicador
               label="Taxa de utilização"
-              valor={kpis.utilizacaoPct !== null ? `${kpis.utilizacaoPct}%` : "—"}
+              valor={kpis.utilizacaoPct}
+              min={0}
+              max={100}
+              zonaVermelha={50}
+              zonaVerde={70}
+              formatar={(v) => `${v}%`}
               ajudaChave="indicadores_frota.utilizacao"
-              destaque={kpis.utilizacaoPct !== null && kpis.utilizacaoPct < 70 ? "aviso" : undefined}
             />
-            <Indicador
+            <GaugeIndicador
               label="Manutenção corretiva (% do custo)"
-              valor={kpis.pctCorretiva !== null ? `${kpis.pctCorretiva}%` : "Sem manutenção classificada"}
+              valor={kpis.pctCorretiva}
+              min={0}
+              max={100}
+              invertido
+              zonaVermelha={40}
+              zonaVerde={20}
+              formatar={(v) => `${v}%`}
+              semValorTexto="Sem manutenção classificada"
               ajudaChave="indicadores_frota.corretiva"
-              destaque={kpis.pctCorretiva !== null && kpis.pctCorretiva > 20 ? "aviso" : undefined}
             />
             <Indicador label={veiculoSelecionado ? "Veículo" : "Veículos no filtro"} valor={veiculoSelecionado ? veiculoSelecionado.placa : String(kpis.totalVeiculos)} />
-            <Indicador
+            <GaugeIndicador
               label="Taxa de conformidade (checklist)"
-              valor={kpis.conformidadePct !== null ? `${kpis.conformidadePct}%` : "Sem inspeções no período"}
+              valor={kpis.conformidadePct}
+              min={0}
+              max={100}
+              zonaVermelha={70}
+              zonaVerde={90}
+              formatar={(v) => `${v}%`}
+              semValorTexto="Sem inspeções no período"
               ajudaChave="indicadores_frota.conformidade"
-              destaque={kpis.conformidadePct !== null && kpis.conformidadePct < 90 ? "aviso" : undefined}
             />
-            <Indicador
+            <GaugeIndicador
               label="Tempo médio de resolução (TMRNC)"
-              valor={kpis.tmrncHoras !== null ? `${kpis.tmrncHoras}h` : "Sem pendências resolvidas"}
+              valor={kpis.tmrncHoras}
+              min={-24}
+              max={72}
+              invertido
+              zonaVermelha={48}
+              zonaVerde={24}
+              formatar={(v) => `${v}h`}
+              semValorTexto="Sem pendências resolvidas"
               ajudaChave="indicadores_frota.tmrnc"
             />
             {kpis.indiceSinistralidade !== null ? (
-              <Indicador
+              <GaugeIndicador
                 label="Índice de sinistralidade"
-                valor={`${kpis.indiceSinistralidade}%`}
+                valor={kpis.indiceSinistralidade}
+                min={0}
+                max={50}
+                invertido
+                zonaVermelha={25}
+                zonaVerde={10}
+                formatar={(v) => `${v}%`}
                 ajudaChave="indicadores_frota.sinistralidade"
-                destaque={kpis.indiceSinistralidade > 10 ? "aviso" : undefined}
               />
             ) : (
               <Indicador
