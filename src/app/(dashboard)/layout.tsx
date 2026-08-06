@@ -48,6 +48,7 @@ import {
   Gavel,
   Hammer,
   Coins,
+  Copy,
   Gauge,
   ShieldCheck,
   AlertTriangle,
@@ -79,6 +80,7 @@ import { contarAcoesSugeridasPendentesAcao } from "./acoes-sugeridas/actions";
 import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
 import { contarCadastrosPendentesAcao } from "./cadastros-pendentes/actions";
 import { contarMultasPendentesAcao } from "./multas/actions";
+import { contarDuplicidadesPlacaGrupoAcao } from "./duplicidade-placas-grupo/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
@@ -153,6 +155,12 @@ const menuCadastros: ItemMenuLateral[] = [
   // (origem_cadastro='importado'), ainda sem o resto do cadastro. Badge
   // conta os dois tipos juntos (contarCadastrosPendentesAcao).
   { href: "/cadastros-pendentes", label: "Cadastros Pendentes", icon: ClipboardCheck },
+  // Fase Duplicidade-Placas-Grupo (05/08/2026) — mesma placa cadastrada em
+  // mais de uma empresa do mesmo grupo econômico/rede de postos (achado real
+  // investigando o erro "Já existe outro veículo cadastrado com a placa
+  // SUT8I32..."). Badge conta placas duplicadas distintas, mesmo critério de
+  // "só soma com exatamente 1 empresa resolvida" de Cadastros Pendentes.
+  { href: "/duplicidade-placas-grupo", label: "Placas Duplicadas (Grupo)", icon: Copy },
   { href: "/centros-custo", label: "Centros de Custo", icon: Receipt }, // PWA: Icons.receipt_long
   { href: "/postos", label: "Postos Revendedores", icon: Fuel }, // PWA: Icons.local_gas_station
 ];
@@ -573,6 +581,7 @@ export default async function DashboardLayout({
     acoesSugeridasPendentes,
     cadastrosPendentes,
     multasPendentes,
+    duplicidadesPlacaGrupo,
     logoutInatividadeMinutos,
     avisos,
     favoritosBrutos,
@@ -626,6 +635,13 @@ export default async function DashboardLayout({
       // blindagem "falha vira 0" das demais contagens.
       contarMultasPendentesAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar multas pendentes (ignorado):", e);
+        return 0;
+      }),
+      // Fase Duplicidade-Placas-Grupo (05/08/2026) — bolinha de placas
+      // duplicadas entre empresas do mesmo grupo econômico/rede de postos,
+      // mesma blindagem "falha vira 0" das demais contagens.
+      contarDuplicidadesPlacaGrupoAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar duplicidades de placa (ignorado):", e);
         return 0;
       }),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
@@ -749,6 +765,7 @@ export default async function DashboardLayout({
   const badgesMenu: Record<string, number> = {
     "/clientes": acessosClientesNaoVistos,
     "/cadastros-pendentes": cadastrosPendentes,
+    "/duplicidade-placas-grupo": duplicidadesPlacaGrupo,
     "/negociacoes": negociacoesPendentes,
     "/abastecimentos": ajustesAbastecimentosPendentes,
     "/acoes-sugeridas": acoesSugeridasPendentes,

@@ -8342,3 +8342,58 @@ esse tipo de erro (é de serialização em runtime, não de tipo). Corrigido tro
 `unidade` — um enum de string (`"percentual" | "moeda_por_km" | "km_por_litro" | "horas" |
 "numero"`, totalmente serializável) — e movendo a lógica de formatação (`formatarValor`) pra dentro
 do próprio `GaugeIndicador.tsx`, nunca mais cruzando a fronteira.
+
+## Fase Duplicidade-Placas-Grupo (05/08/2026)
+
+Achado real do Daniel ao editar um veículo: "Já existe outro veículo cadastrado com a placa
+SUT8I32 nesta empresa ou em uma empresa do mesmo grupo econômico." Investigação confirmou que a
+RPC `veiculo_duplicado` (validação de create/edit, deployada em 04/08) está correta — exclui
+certinho o próprio registro sendo editado (`p_excluir_id`). O erro era um verdadeiro positivo:
+duas empresas do mesmo Grupo Econômico ("Grupo Frotas": Frotas & Frotas Ltda e Transportes de
+Cargas Testes Ltda) tinham cadastrado o mesmo veículo/placa de forma independente ANTES de
+entrarem pro mesmo grupo — cenário que nunca passa pela validação de create/edit, porque a colisão
+nasce sem ninguém criar/editar nada depois que o grupo já existia. Uma varredura no banco achou
+9 pares assim (`SWJ1D82, SVP2D01, STU9F62, FMX5J82, GBK9C01, SUT8I32, SVA2B63, STC5A21, TZB0D78,
+SSZ2C51`), todos entre as mesmas duas empresas.
+
+Pergunta do Daniel sobre o comportamento esperado: "quero saber como o sistema ira se comportar
+quando uma placa estiver em multiplas frotas do grupo economico... as caracteristicas da placa tem
+que ser as mesmas para o grupo economico" — e, ao invés de eu resolver os 9 pares um a um via SQL
+manual, pediu explicitamente: "resolver na aplicacao estes casos e casos novos se houverem".
+
+Nova tela `/duplicidade-placas-grupo` (menu Cadastros, sem gate de admin — é dado da própria frota
+do gestor_frota, mesmo espírito de `/cadastros-pendentes`), que:
+
+- Lista todo veículo com placa duplicada dentro do grupo econômico/rede de postos ATIVO da empresa
+  selecionada, agrupado por placa normalizada (`regexp_replace(upper(placa), '[^0-9A-Z]', '', 'g')`
+  — ignora maiúscula/minúscula e traço/espaço).
+- Mostra por veículo: empresa, marca/modelo, tipo/ano, quantidade de abastecimentos registrados e
+  data de cadastro — contexto suficiente pra decidir qual registro é o certo sem precisar abrir
+  cada cadastro em outra aba.
+- Duas ações por veículo: "Corrigir placa" (formulário inline, passa pela mesma RPC
+  `veiculo_duplicado` antes de salvar — não deixa trocar pra uma placa que já colide com outra) ou
+  "Inativar este cadastro" (soft-delete via `ativo=false`, mesmo padrão de `alternarAtivoVeiculo`
+  em `veiculos/actions.ts` — nunca apaga o histórico de abastecimentos/manutenções).
+- Cobre também casos NOVOS automaticamente: qualquer empresa que entrar num grupo econômico já com
+  uma placa colidindo com outra empresa do grupo aparece aqui sem precisar de nenhuma migração ou
+  intervenção manual — a RPC roda a comparação em tempo real, não depende de uma tabela de
+  "duplicatas conhecidas".
+
+Nova RPC `listar_duplicidades_placa_grupo(p_empresa_id)` (SECURITY DEFINER, `search_path=public`):
+resolve todas as empresas do grupo ativo da empresa informada via `grupo_ids_da_empresa` (mesma
+função já usada em Fretes cross-empresa e em "Replicar para o grupo"), junta os veículos ativos de
+todas elas, normaliza a placa e devolve só os grupos com mais de uma empresa distinta pra mesma
+placa normalizada. Acesso restrito a quem já tem a empresa entre `empresas_do_usuario(auth.email())`
+— mesmo padrão de checagem usado no resto do app.
+
+Novos arquivos: `src/app/(dashboard)/duplicidade-placas-grupo/page.tsx`,
+`_components/GrupoDuplicidade.tsx` (Client Component, um card por placa duplicada + 2 ações por
+veículo) e `actions.ts` (`listarDuplicidadesPlacaGrupoAcao`, `contarDuplicidadesPlacaGrupoAcao` —
+bolinha do menu, mesmo critério "só soma com exatamente 1 empresa resolvida" de Cadastros
+Pendentes —, `corrigirPlacaVeiculoAcao`, `inativarVeiculoDuplicadoAcao`). Item novo no menu
+Cadastros ("Placas Duplicadas (Grupo)", ícone `Copy`) e entrada em `HREF_FUNCIONALIDADE` reusando
+a funcionalidade `aba_veiculos` (mesma permissão que já controla a tela de Veículos).
+
+Os 9 pares legados ficam disponíveis pra resolução do próprio Daniel dentro da tela nova — inclui o
+caso original do SUT8I32 (registro correto já identificado por ele: `...d5e7`, Frotas & Frotas
+Ltda). Validado: `npx tsc --noEmit` e `npx eslint` limpos.

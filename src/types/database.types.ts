@@ -4553,6 +4553,23 @@ export interface Database {
         Args: { p_empresa_origem_id: string };
         Returns: { empresa_id: string; nome: string }[];
       };
+      listar_duplicidades_placa_grupo: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          placa_norm: string;
+          veiculo_id: string;
+          placa: string;
+          empresa_id: string;
+          empresa_nome: string;
+          marca: string | null;
+          modelo: string | null;
+          ano_fabricacao: number | null;
+          tipo_veiculo: string | null;
+          ativo: boolean;
+          criado_em: string;
+          qtd_abastecimentos: number;
+        }[];
+      };
       criar_replicacao_lote: {
         Args: {
           p_chave_tabela: string;

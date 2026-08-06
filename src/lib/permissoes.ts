@@ -63,6 +63,7 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/motoristas": "aba_motoristas",
   "/veiculos": "aba_veiculos",
   "/cadastros-pendentes": "aba_cadastros_pendentes",
+  "/duplicidade-placas-grupo": "aba_veiculos",
   "/centros-custo": "aba_centros_custo",
   "/postos": "aba_postos",
   "/abastecimentos": "aba_abastecimentos",
