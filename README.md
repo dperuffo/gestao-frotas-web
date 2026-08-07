@@ -8397,3 +8397,67 @@ a funcionalidade `aba_veiculos` (mesma permissão que já controla a tela de Ve�
 Os 9 pares legados ficam disponíveis pra resolução do próprio Daniel dentro da tela nova — inclui o
 caso original do SUT8I32 (registro correto já identificado por ele: `...d5e7`, Frotas & Frotas
 Ltda). Validado: `npx tsc --noEmit` e `npx eslint` limpos.
+
+**Bugfix — inativar a duplicata não desbloqueava a edição (05/08/2026, mesmo dia):** o Daniel já
+tinha resolvido os 9 pares pela tela nova (inativando o cadastro errado de cada par), mas ao editar
+o cadastro correto a mensagem "Já existe outro veículo cadastrado com a placa..." continuava
+aparecendo, impedindo salvar. Causa: `veiculo_duplicado()` nunca filtrava por `ativo` — um veículo
+inativado (soft-delete) continuava contando como colisão pra sempre. Corrigido adicionando `and
+cv.ativo = true` na subquery de existência (migração `veiculo_duplicado_ignora_inativos`). Testado:
+os 9 pares (incluindo SUT8I32) confirmados desbloqueados via `select veiculo_duplicado(...)` pro
+lado ativo de cada par, todos retornando `false` depois da correção.
+
+## Bugfix — "Hoje" do card "Seu consumo" no PWA motorista somava o veículo errado (05/08/2026)
+
+Achado real do Daniel, usando o motorista Daniel Peruffo como caso de teste: "os volumes
+transacionados nao batem" comparando o total exibido na web (31,2 L de um abastecimento específico)
+com o card "Seu consumo — Hoje" da Home do PWA motorista (25,48 L). Investigação (RPC
+`motorista_home_resumo`, consumida por `estrada-que-cuida/lib/features/dashboard/providers/
+home_resumo_provider.dart`): o bloco "hoje"/"valor" e a série de 7 dias somavam TODO abastecimento
+feito no VEÍCULO atualmente vinculado ao motorista (`parametros_vinculo_motorista_veiculo`), não o
+que ele próprio abasteceu. No caso de teste, o veículo vinculado ao Daniel Peruffo (placa STQ6D31)
+tinha sido abastecido no dia por outro motorista (25,48 L) — e os dois abastecimentos reais do
+Daniel Peruffo naquele dia (39,35 L + 31,2 L, em dois veículos diferentes) nunca apareciam no card
+dele, que é literalmente rotulado "Seu consumo".
+
+Corrigido (migração `motorista_home_resumo_hoje_por_motorista`): "hoje"/"valor" e a série de 7 dias
+passam a casar por IDENTIDADE do motorista — CPF normalizado quando a transação tem CPF preenchido,
+senão nome normalizado (maiúsculo/trim) —, escopado pela empresa do motorista (evita colisão de
+nome entre motoristas de empresas diferentes do mesmo grupo). `medias` (KM/L e R$/L dos últimos 30
+dias) continua calculada por VEÍCULO — consumo é propriedade do carro, não do motorista, e misturar
+por identidade quebraria a lógica de hodômetro sequencial. Testado com o motorista real (JWT
+simulado): "hoje" passou a mostrar 70,55 L / R$ 428,98 — a soma correta dos dois abastecimentos
+reais do Daniel Peruffo no dia, nos dois veículos que ele usou. Sem mudança de código necessária em
+nenhum dos dois repositórios (Flutter só desserializa o mesmo formato de JSON, RPC já é a única
+fonte).
+
+## Bugfix — "Alertas de Preço" (Inteligência de Rede) aparecia zerado (05/08/2026)
+
+Achado real do Daniel: a aba "Alertas de Preço" de `/inteligencia-rede` mostrava "0 postos em
+alerta" / "Nenhum posto em alerta no momento", mesmo o card executivo da mesma tela já indicando
+"Diesel Médio GF: -0,7% vs ANP" (ou seja, tem comparação ANP funcionando em outro lugar da mesma
+página). Investigação: chamando a RPC `postos_gf_alertas_preco(0.05, empresa)` direto no banco pra
+"Frotas & Frotas Ltda" retornou **4.130 alertas reais** (postos com preço mais de 5% acima do ANP)
+— então não era falta de dado nem RLS bloqueando (testado com JWT simulado do próprio
+`daniel.peruffo.app@gmail.com`, mesmo resultado). Causa mais provável: performance. A função levava
+**2,45s** por chamada (rodava 34 mil linhas de `historico_precos` inteiras num `DISTINCT ON`
+mesmo quando `p_empresa_id` já filtrava o resultado final) e é chamada 2x (threshold 0,05 e
+threshold -100) dentro do MESMO `Promise.all` de ~20 chamadas da página — risco real de estourar
+timeout em produção. Sem `error` sendo checado nesse ponto do código, uma falha virava
+silenciosamente `[]` → "0 alertas" na tela, sem nenhum rastro nos logs.
+
+Duas migrações de performance:
+- `postos_gf_alertas_preco_filtra_empresa_cedo`: empurra o filtro `p_empresa_id` pra DENTRO da CTE
+  `precos_recentes`, usando a coluna `historico_precos.empresa_id` já indexada
+  (`idx_precos_cnpj`/`idx_historico_precos_empresa_data`) — filtra ANTES do `DISTINCT ON`, não
+  depois. 2.450ms → ~1.560ms.
+- `postos_gf_alertas_preco_materializa_ctes`: adiciona `MATERIALIZED` explícito em todas as CTEs.
+  Desde o Postgres 12, CTEs simples podem ser "inlinadas" pelo planner, que reavalia expressões
+  caras (o `CASE` de `categoria_anp`, `normalizar_texto_anp()`, `uf_para_estado_anp()`) em vez de
+  computar uma vez só — `MATERIALIZED` força computar e reusar. ~1.560ms → ~620ms na melhor medição
+  (~4x mais rápido que o original). Resultado inalterado (mesmas 4.129 linhas de alerta).
+
+Também adicionado log de erro em `inteligencia-rede/page.tsx` pras duas chamadas de
+`postos_gf_alertas_preco` (antes só fazia `data ?? []`, sem checar `error`) — se voltar a acontecer,
+agora fica rastreável nos logs do servidor em vez de só aparecer como "0" silencioso na tela.
+Validado: `npx tsc --noEmit` e `npx eslint` limpos.

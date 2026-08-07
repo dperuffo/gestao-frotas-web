@@ -151,8 +151,8 @@ export default async function InteligenciaRedePage({
     { data: topMunicipiosRaw },
     { data: pontosMapaRaw },
     { data: evolucaoMensalRaw },
-    { data: alertasRaw },
-    { data: universoAvaliadoRaw },
+    { data: alertasRaw, error: alertasErro },
+    { data: universoAvaliadoRaw, error: universoAvaliadoErro },
     { data: municipiosPorUfRaw },
     { data: distribuidorasPorUfRaw },
     { data: precosPorUfRaw },
@@ -301,6 +301,17 @@ export default async function InteligenciaRedePage({
 
   // Alertas de preço: postos GF cujo preço está mais de 5% acima da
   // referência ANP (município → estado → Brasil, resolvido no banco).
+  // Fase 05/08/2026 (achado real do Daniel: a aba aparecia com "0 postos
+  // em alerta" mesmo havendo dado real no banco) — antes, um erro nessas
+  // duas RPCs (timeout, etc.) virava silenciosamente `[]` sem nenhum
+  // rastro; agora pelo menos loga no servidor pra dar pra diagnosticar
+  // sem precisar reproduzir manualmente no banco.
+  if (alertasErro) {
+    console.error("[inteligencia-rede] falha ao buscar alertas de preço (ignorado, mostra 0):", alertasErro);
+  }
+  if (universoAvaliadoErro) {
+    console.error("[inteligencia-rede] falha ao buscar universo avaliado de preço (ignorado, mostra 0):", universoAvaliadoErro);
+  }
   const alertas = alertasRaw ?? [];
   const totalAvaliados = (universoAvaliadoRaw ?? []).length;
   const totalAlertas = alertas.length;
