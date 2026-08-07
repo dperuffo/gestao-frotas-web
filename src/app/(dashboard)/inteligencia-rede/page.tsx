@@ -163,7 +163,7 @@ export default async function InteligenciaRedePage({
     { data: precosMapaOperacionalRaw },
     { data: desvioAnpRaw },
     { data: servicosPostoRaw },
-    { data: postosVisitadosRaw },
+    { data: postosVisitadosRaw, error: postosVisitadosErro },
     { data: precosPorMeioPagamentoRaw },
   ] = await Promise.all([
     supabase.rpc("postos_gf_por_uf"),
@@ -191,7 +191,7 @@ export default async function InteligenciaRedePage({
     supabase.rpc("postos_gf_precos_mapa"),
     supabase.rpc("postos_gf_desvio_anp", { p_empresa_id: empresaIdFiltro }),
     supabase.rpc("postos_gf_servicos", { p_empresa_id: empresaIdFiltro }),
-    supabase.rpc("abastecimentos_postos_visitados"),
+    supabase.rpc("abastecimentos_postos_visitados", { p_empresa_id: empresaIdFiltro }),
     supabase.rpc("preco_medio_por_meio_pagamento", { p_empresa_id: empresaIdFiltro }),
   ]);
 
@@ -468,6 +468,14 @@ export default async function InteligenciaRedePage({
     conveniencia: r.conveniencia,
     convenienciaAmPm: r.conveniencia_am_pm,
   }));
+  // Fase 05/08/2026 (achado real do Daniel: "Cobertura x Demanda" sempre
+  // mostrava "ainda não há abastecimentos reais suficientes", mesmo com
+  // dado real no banco -- abastecimentos_postos_visitados() não tinha
+  // p_empresa_id, dependia só de RLS pra escopar) -- loga se a RPC falhar,
+  // em vez de virar silenciosamente [].
+  if (postosVisitadosErro) {
+    console.error("[inteligencia-rede] falha ao buscar postos visitados (ignorado, mostra 0):", postosVisitadosErro);
+  }
   const postosVisitados = (postosVisitadosRaw ?? []).map((r) => ({
     cnpj: r.cnpj,
     razaoSocial: r.razao_social,

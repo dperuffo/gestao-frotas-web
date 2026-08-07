@@ -8461,3 +8461,25 @@ Também adicionado log de erro em `inteligencia-rede/page.tsx` pras duas chamada
 `postos_gf_alertas_preco` (antes só fazia `data ?? []`, sem checar `error`) — se voltar a acontecer,
 agora fica rastreável nos logs do servidor em vez de só aparecer como "0" silencioso na tela.
 Validado: `npx tsc --noEmit` e `npx eslint` limpos.
+
+## Bugfix — "Cobertura × Demanda" (Inteligência de Rede) sempre mostrava "sem dado suficiente" (05/08/2026)
+
+Achado real do Daniel, mesma tela do bug anterior: a aba "Cobertura × Demanda" sempre mostrava
+"Ainda não há abastecimentos reais suficientes... para medir demanda por UF", mesmo havendo dado
+real no banco (confirmado: **757 postos visitados / 2.463 abastecimentos com geolocalização**
+sitewide, **103 postos / 258 abastecimentos** já filtrando só pra "Frotas & Frotas Ltda"). Causa:
+diferente de toda outra RPC dessa página, `abastecimentos_postos_visitados()` nunca teve parâmetro
+`p_empresa_id` — dependia 100% da RLS de `abastecimentos_unificado` (via
+`profrotas_abastecimentos`/`abastecimentos_externos`) pra escopar por empresa, contrariando o
+princípio de "defesa em profundidade" já documentado no topo do próprio `page.tsx` ("nunca deixamos
+null pra cliente, pra nunca depender só do RLS"). Sem o parâmetro, a tela ficava refém de
+exatamente quais linhas a RLS libera pra aquela sessão específica, podendo divergir da empresa
+selecionada no dropdown.
+
+Corrigido (migração `abastecimentos_postos_visitados_filtra_empresa`): função ganhou
+`p_empresa_id` (default `null` = sem filtro, mesmo comportamento de sempre pra admin), filtrando
+`abastecimentos_unificado.empresa_id = p_empresa_id` quando informado — mesmo padrão de toda outra
+RPC da página. `inteligencia-rede/page.tsx` passou a chamar com `{ p_empresa_id: empresaIdFiltro }`
+e loga erro se a chamada falhar (antes só fazia `data ?? []`, sem checar `error` — mesmo ajuste do
+bugfix anterior de Alertas de Preço). `database.types.ts` atualizado com o novo parâmetro. Validado:
+`npx tsc --noEmit` e `npx eslint` limpos.

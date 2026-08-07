@@ -5423,7 +5423,7 @@ export interface Database {
         }[];
       };
       abastecimentos_postos_visitados: {
-        Args: Record<PropertyKey, never>;
+        Args: { p_empresa_id?: string | null };
         Returns: {
           cnpj: string;
           razao_social: string | null;
