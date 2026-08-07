@@ -12,16 +12,15 @@ import { formatarMoeda } from "@/lib/financeiro";
 // card de número simples): contadores/rótulos informativos sem essa
 // semântica, como "Veículos no filtro" ou a placa do veículo selecionado.
 //
-// Técnica: recharts não tem um componente de "gauge" pronto — o padrão
-// usado pela comunidade (e aqui) é um `RadialBarChart` com um único arco de
-// 180° (`startAngle={180}` a `endAngle={0}`), a prop `background` do
+// Técnica: recharts não tem um componente de "gauge" pronto — usamos um
+// `RadialBarChart` com um único arco completo, a prop `background` do
 // `RadialBar` desenha a trilha cinza cheia atrás, e o próprio `RadialBar`
 // desenha só a fatia colorida proporcional ao valor por cima — como
 // `ScoreFrota.tsx` (postos) já usa `PieChart`/`Pie` pra um "medidor" de
 // score, mas aquilo é um donut de distribuição, não um gauge de valor
 // único; aqui é o primeiro gauge de verdade do app.
 //
-// `min`/`max`/as 2 zonas de cor (`zonaAmarela`/`zonaVerde`, em unidade
+// `min`/`max`/as 2 zonas de cor (`zonaVermelha`/`zonaVerde`, em unidade
 // "crua", não normalizada) foram calibradas por indicador a partir dos
 // thresholds de "aviso" que já existiam nos cards de número (ex.:
 // disponibilidade < 90% já virava âmbar) — não são um número aleatório.
@@ -37,6 +36,19 @@ import { formatarMoeda } from "@/lib/financeiro";
 // comentário em BarraAtalhosFavoritos.tsx). Trocado por `unidade`, um enum
 // (string, serializável) — a formatação agora acontece AQUI DENTRO do
 // próprio client component, nunca cruzando a fronteira.
+//
+// Redesenho (05/08/2026, mesmo dia — pedido do Daniel: "Nao gostei muito
+// deste modelo de velocimetro... mais apresentavel, mais imponente"):
+// mostrei 3 alternativas via mockup (ponteiro clássico com zonas fixas,
+// arco grosso com marcações, anel completo com selo) e ele escolheu a
+// opção C — anel completo (360°, não mais meia-lua) com o número grande no
+// centro e um selo de status (Crítico/Atenção/Bom) embaixo. Trocou
+// `startAngle={180}/endAngle={0}` (semicírculo) por
+// `startAngle={90}/endAngle={-270}` (círculo cheio, começando no topo,
+// sentido horário) e removeu o wrapper `overflow-hidden` que recortava a
+// metade de baixo — não precisa mais recortar nada. Rótulos de min/max
+// saíram (não faziam parte do visual aprovado); o selo de status substitui
+// essa referência.
 export type UnidadeGauge = "percentual" | "moeda_por_km" | "km_por_litro" | "horas" | "numero";
 
 export type GaugeIndicadorProps = {
@@ -50,7 +62,7 @@ export type GaugeIndicadorProps = {
   zonaVermelha: number;
   /** Fronteira entre âmbar e verde, em unidade crua. */
   zonaVerde: number;
-  /** Como formatar o valor cru (central e legendas min/max). Default: número puro. */
+  /** Como formatar o valor cru (número central). Default: número puro. */
   unidade?: UnidadeGauge;
   semValorTexto?: string;
   ajudaChave?: string;
@@ -60,6 +72,8 @@ const COR_VERMELHA = "#dc2626"; // red-600
 const COR_AMBAR = "#d97706"; // amber-600
 const COR_VERDE = "#16a34a"; // green-600
 const COR_TRILHA = "#e2e8f0"; // slate-200
+const COR_NEUTRA_BG = "#f1f5f9"; // slate-100
+const COR_NEUTRA_TEXTO = "#64748b"; // slate-500
 
 function formatarValor(valor: number, unidade: UnidadeGauge | undefined): string {
   switch (unidade) {
@@ -91,6 +105,21 @@ function corDoValor(valor: number, zonaVermelha: number, zonaVerde: number, inve
   return COR_VERMELHA;
 }
 
+// Selo de status embaixo do anel — mesma lógica de zona de `corDoValor`,
+// mas devolvendo texto + par de cores fundo/texto claras (padrão "badge"
+// já usado em outras telas do app, ex.: STATUS_AGENDAMENTO_COR).
+function statusDoValor(
+  valor: number,
+  zonaVermelha: number,
+  zonaVerde: number,
+  invertido: boolean
+): { texto: string; corFundo: string; corTexto: string } {
+  const cor = corDoValor(valor, zonaVermelha, zonaVerde, invertido);
+  if (cor === COR_VERDE) return { texto: "Bom", corFundo: "#dcfce7", corTexto: "#15803d" };
+  if (cor === COR_AMBAR) return { texto: "Atenção", corFundo: "#fef3c7", corTexto: "#b45309" };
+  return { texto: "Crítico", corFundo: "#fee2e2", corTexto: "#b91c1c" };
+}
+
 export function GaugeIndicador({
   label,
   valor,
@@ -108,6 +137,9 @@ export function GaugeIndicador({
   const percentual = ((valorClampado - min) / (max - min)) * 100;
   const cor = temValor ? corDoValor(valor, zonaVermelha, zonaVerde, invertido) : COR_TRILHA;
   const textoValor = temValor ? formatarValor(valor, unidade) : semValorTexto;
+  const status = temValor
+    ? statusDoValor(valor, zonaVermelha, zonaVerde, invertido)
+    : { texto: "Sem dado", corFundo: COR_NEUTRA_BG, corTexto: COR_NEUTRA_TEXTO };
 
   return (
     <div className="card flex flex-col items-center p-4">
@@ -115,39 +147,33 @@ export function GaugeIndicador({
         {label} {ajudaChave && <AjudaIcon chave={ajudaChave} />}
       </p>
 
-      {/* Técnica: desenha um RadialBarChart de CÍRCULO INTEIRO (cx/cy 50%,
-          matemática de raio previsível, sem percentuais >100% nem cy
-          espremido no canto — mais confiável entre versões do recharts) num
-          box quadrado, e recorta a metade de baixo com `overflow-hidden` no
-          wrapper visível (metade da altura do box interno) — só a metade de
-          cima (o semicírculo do velocímetro) fica visível. */}
-      <div className="relative mx-auto mt-1 h-[110px] w-full max-w-[220px] overflow-hidden">
-        <div className="absolute inset-x-0 top-0" style={{ height: 220 }}>
-          <ResponsiveContainer width="100%" height={220}>
-            <RadialBarChart
-              cx="50%"
-              cy="50%"
-              innerRadius="72%"
-              outerRadius="100%"
-              barSize={14}
-              startAngle={180}
-              endAngle={0}
-              data={[{ valor: percentual }]}
-            >
-              <PolarAngleAxis type="number" domain={[0, 100]} tick={false} axisLine={false} />
-              <RadialBar dataKey="valor" cornerRadius={7} fill={cor} background={{ fill: COR_TRILHA }} isAnimationActive={false} />
-            </RadialBarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-1 flex flex-col items-center">
+      <div className="relative mx-auto mt-2 h-[160px] w-[160px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadialBarChart
+            cx="50%"
+            cy="50%"
+            innerRadius="70%"
+            outerRadius="100%"
+            barSize={16}
+            startAngle={90}
+            endAngle={-270}
+            data={[{ valor: percentual }]}
+          >
+            <PolarAngleAxis type="number" domain={[0, 100]} tick={false} axisLine={false} />
+            <RadialBar dataKey="valor" cornerRadius={8} fill={cor} background={{ fill: COR_TRILHA }} isAnimationActive={false} />
+          </RadialBarChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <p className="text-xl font-bold text-slate-900">{textoValor}</p>
         </div>
       </div>
 
-      <div className="mt-1 flex w-full max-w-[220px] justify-between text-[10px] text-slate-400">
-        <span>{formatarValor(min, unidade)}</span>
-        <span>{formatarValor(max, unidade)}</span>
-      </div>
+      <span
+        className="mt-2 rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+        style={{ backgroundColor: status.corFundo, color: status.corTexto }}
+      >
+        {status.texto}
+      </span>
     </div>
   );
 }

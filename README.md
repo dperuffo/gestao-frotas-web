@@ -8483,3 +8483,22 @@ RPC da página. `inteligencia-rede/page.tsx` passou a chamar com `{ p_empresa_id
 e loga erro se a chamada falhar (antes só fazia `data ?? []`, sem checar `error` — mesmo ajuste do
 bugfix anterior de Alertas de Preço). `database.types.ts` atualizado com o novo parâmetro. Validado:
 `npx tsc --noEmit` e `npx eslint` limpos.
+
+## Redesenho — velocímetro dos indicadores da frota (05/08/2026, mesmo dia)
+
+Feedback do Daniel sobre o gauge semicírculo da fase anterior: "Nao gostei muito deste modelo de
+velocimetro utilizado no grafico. Gostaria de uma outra sugestao de velocimetro, mais apresentavel,
+mais imponente". Mostrei 3 alternativas visuais (mockup, não código): (A) ponteiro clássico com
+faixas vermelho/âmbar/verde fixas no fundo, (B) o mesmo arco semicírculo de hoje só que bem mais
+grosso com marcações de escala, (C) anel completo (360°) com número grande no centro e selo de
+status embaixo. Daniel escolheu a **opção C**.
+
+`GaugeIndicador.tsx` trocou `startAngle={180}/endAngle={0}` (meia-lua) por
+`startAngle={90}/endAngle={-270}` (círculo cheio, começa no topo, sentido horário) — mesmo
+`RadialBarChart` do recharts, só a geometria do arco muda. Removido o wrapper `overflow-hidden` que
+recortava a metade de baixo (não precisa mais recortar nada, é um círculo completo). Removidos os
+rótulos de min/max embaixo (não faziam parte do visual aprovado). Adicionado um selo de status
+(pilula colorida "Crítico"/"Atenção"/"Bom"/"Sem dado") abaixo do anel, usando a mesma lógica de zona
+que já colore o próprio anel (`corDoValor` → `statusDoValor`, mesmo padrão de badge já usado em
+`STATUS_AGENDAMENTO_COR`). Nenhuma mudança de props ou de call sites em `page.tsx` — só o miolo
+visual do componente. Validado: `npx tsc --noEmit` e `npx eslint` limpos.
