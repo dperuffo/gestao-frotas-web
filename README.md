@@ -8603,3 +8603,50 @@ caminho literal, exatamente pra evitar esse tipo de divergência de normalizaç�
 
 `database.types.ts` atualizado com as 3 funções novas. Validado: `npx tsc --noEmit` e `npx eslint`
 limpos.
+
+## Correção dos 3 achados críticos da varredura de segurança (09/08/2026, mesmo dia)
+
+Pedido do Daniel logo após o relatório de segurança: "Vamos iniciar a correção dos pontos criticos
+mapeados no relatorio, que são 3". As três correções abaixo, na mesma ordem do relatório
+(`relatorio_seguranca_gestao_de_frotas.docx`).
+
+**C1 — `/api/postos/importar-precos` sem nenhuma autenticação.** A rota gravava direto em
+`historico_precos` usando o cliente de service role sem checar sessão nem perfil — era a única das 4
+rotas irmãs de importação sem essa checagem (as outras 3 já exigiam perfil admin). Corrigido
+adicionando a mesma checagem `perfil_usuario_atual() !== 'admin'` já usada em
+`/api/postos/importar-anp` e `/api/inteligencia-rede/importar-precos-anp`. Precisou renomear a
+variável do cliente de sessão pra `supabaseSessao` (a rota já tinha um `const supabase` mais abaixo
+pro cliente admin — colisão de nome pegou no `tsc`, não em produção).
+
+**C3 — escalação de privilégio em `/api/usuarios/convidar`.** A rota (usada pelo app Flutter)
+checava só se quem chamava pertencia à empresa de destino, nunca se tinha permissão de gerenciar
+usuários — qualquer perfil autenticado (inclusive gestor_frota ou posto) conseguia convidar alguém
+com `perfil: "admin"` pra qualquer empresa à qual pertencesse, virando administrador GLOBAL da
+plataforma assim que esse e-mail fizesse login (o campo `perfil` em `usuarios_app` é global por
+e-mail, lido por `ehBypassPermissao` em toda a aplicação). Essa exata falha já tinha sido encontrada
+e corrigida no lado web em 26/07/2026 (`exigirGerenciadorDeUsuarios` em `usuarios/actions.ts`), só
+não tinha sido replicada pra esta rota mobile gêmea. Corrigido replicando a mesma checagem (perfil
+admin ou analista) e, como defesa em profundidade adicional, validando o campo `perfil` recebido
+contra a lista `PERFIS` conhecida antes de gravar.
+
+**C2 — view `abastecimentos_unificado` sem `security_invoker` (achado nível ERROR do próprio linter
+do Supabase).** A view central usada em quase toda a aplicação (dashboard, abastecimentos,
+Conferência de Preços) rodava com o privilégio de quem a criou (ignorando RLS) em vez do privilégio
+de quem consulta. Corrigido com `alter view public.abastecimentos_unificado set (security_invoker =
+on);` (migração `fix_abastecimentos_unificado_security_invoker`).
+
+Achado real durante a validação: o primeiro teste de confirmação (impersonar um usuário via `set
+role authenticated` + `set request.jwt.claims`, técnica que reproduz exatamente como o PostgREST
+trata a sessão) comparou duas empresas que por acaso são do MESMO grupo econômico ("Grupo Frotas") —
+o resultado "ainda vê 11.887 linhas de duas empresas" parecia confirmar o vazamento, mas na verdade
+é o comportamento CORRETO e documentado (`empresas_do_usuario` expande de propósito pras empresas
+irmãs do grupo). Corrigido o teste: como as únicas empresas com abastecimento real no banco hoje são
+essas duas do mesmo grupo, criei duas linhas de teste TEMPORÁRIAS pra duas empresas genuinamente não
+relacionadas, tudo dentro de uma transação com `rollback` no final (nada foi gravado de verdade) —
+com isso, confirmado que um usuário de uma empresa NÃO vê a linha de teste da outra. Testado também
+o acesso legítimo do lado posto (via CNPJ, não por vínculo de empresa) pra confirmar que não quebrou
+nenhum caso de uso real. Rodado `mcp get_advisors` de novo depois da correção: zero achados nível
+ERROR no projeto (antes, era o único).
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos nos dois arquivos alterados (C1, C3). C2 é só
+migração de banco, já aplicada e validada diretamente no Supabase.

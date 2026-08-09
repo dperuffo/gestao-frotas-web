@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as criarClienteSupabase } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PERFIS } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
 
 // Fase FLT-2 — pedido do Daniel: expor "convidar novo usuário" (aba
@@ -60,6 +61,25 @@ export async function POST(request: Request) {
     );
   }
 
+  // Bugfix de segurança (09/08/2026, achado C3 da varredura de segurança) —
+  // esta rota checava só "o chamador pertence à empresa X" (ver comentário
+  // do topo do arquivo), mas nunca "o chamador TEM PERMISSÃO de gerenciar
+  // usuários" — qualquer perfil autenticado (inclusive gestor_frota ou
+  // posto) conseguia convidar alguém com perfil "admin" pra QUALQUER empresa
+  // à qual pertencesse, escalando privilégio pra administrador GLOBAL da
+  // plataforma assim que esse e-mail fizesse login (perfil em usuarios_app é
+  // um campo global por e-mail, lido por ehBypassPermissao). Mesma checagem
+  // que o Server Action equivalente do lado web já usa (exigirGerenciador-
+  // DeUsuarios em usuarios/actions.ts, achado real corrigido lá em
+  // 26/07/2026) — só não tinha sido replicada pra esta rota mobile gêmea.
+  const { data: perfilChamador } = await supabaseDoUsuario.rpc("perfil_usuario_atual");
+  if (perfilChamador !== "admin" && perfilChamador !== "analista") {
+    return NextResponse.json(
+      { erro: "Esta ação é exclusiva do time interno (perfil administrador ou analista)." },
+      { status: 403, headers: CORS_HEADERS }
+    );
+  }
+
   let corpo: {
     email?: string;
     nome?: string;
@@ -86,6 +106,13 @@ export async function POST(request: Request) {
   if (!email || !nome || !perfil || !empresaId) {
     return NextResponse.json(
       { erro: "E-mail, nome, perfil e empresa são obrigatórios." },
+      { status: 400, headers: CORS_HEADERS }
+    );
+  }
+
+  if (!(PERFIS as readonly string[]).includes(perfil)) {
+    return NextResponse.json(
+      { erro: `Perfil inválido: "${perfil}".` },
       { status: 400, headers: CORS_HEADERS }
     );
   }

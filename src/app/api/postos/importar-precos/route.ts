@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lerAba, indiceColunas, texto, textoOuNull, numero, data as celulaData, dedupePorChave } from "@/lib/xlsx";
 import { normalizarCNPJ, resolverUf } from "@/lib/utils";
@@ -84,7 +85,23 @@ function montarRegistroGenericoPreco(
 // escapar da regra do WAF que confunde o protocolo de Server Actions com o
 // CVE-2025-55183 (já corrigido nesta versão do Next, mas o Free plan da
 // Cloudflare não deixa criar exceção pra essa regra).
+// Bugfix de segurança (09/08/2026, achado C1 da varredura de segurança) —
+// esta rota gravava direto em historico_precos usando o cliente de
+// SERVICE ROLE sem checar absolutamente nada: nem sessão, nem perfil. Era a
+// única das 4 rotas irmãs de importação (postos, postos-anp, importar-precos,
+// inteligencia-rede/importar-precos-anp) sem essa checagem — as outras 3 já
+// exigem perfil admin, mesmo padrão replicado aqui agora. Confirmado ao vivo
+// antes da correção: POST sem nenhuma credencial processava a requisição
+// normalmente em produção.
 export async function POST(request: Request) {
+  const supabaseSessao = await createClient();
+  const { data: perfil } = await supabaseSessao.rpc("perfil_usuario_atual");
+  if (perfil !== "admin") {
+    return NextResponse.json<ResultadoImportacaoPrecos>({
+      erro: "Apenas administradores podem importar preços de postos.",
+    });
+  }
+
   const formData = await request.formData();
 
   const arquivo = formData.get("arquivo");
