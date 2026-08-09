@@ -93,6 +93,7 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/motoristas-parceiros": "aba_motoristas_parceiros",
   "/negociacoes": "aba_negociacoes",
   "/precos-postos": "aba_precos_postos",
+  "/conferencia-precos": "aba_conferencia_precos",
   "/combustivel-ideal": "aba_combustivel_ideal",
   "/manutencao-preditiva": "aba_manutencao",
   "/estoque-pecas": "aba_estoque_pecas",

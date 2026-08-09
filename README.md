@@ -8533,3 +8533,73 @@ assinaturas antigas das duas funções (`create or replace` com uma lista de par
 cria uma SOBRECARGA nova em vez de substituir — ficaram temporariamente 2 versões de cada, causando
 erro "function ... is not unique"; resolvido com `drop function` explícito das assinaturas antigas).
 `database.types.ts` atualizado. Validado: `npx tsc --noEmit` e `npx eslint` limpos.
+
+## Nova funcionalidade — Conferência de Preços do posto, com extrato diário e alerta intraday (09/08/2026)
+
+Pedido do Daniel: "Desenvolver na visao do posto, um mecanismo de conferencia do preço que foi
+praticado no abastecimento, com a regra comercial, acordo ou negociação e um extrato diario
+detalhado dos meios de pagamento, para que o usuario do posto consiga visualizar e tomar decisoes em
+relação a ajustes de abastecimentos por nao terem cumprido os acordos com os clientes. Alertas e
+notificacoes dentro do dia são importantes para a decisao do posto, para que nao sejam acumulados e
+vistos somente em fechamentos de ciclos com clientes".
+
+Investigação prévia mapeou o que já existia pra não duplicar nada: `negociacoes_postos` (status
+`aceita`, `preco_unitario` por combustível, com vigência) é o mecanismo de negociação VIVO do app (4
+acordos aceitos reais) — `acordos_precos` (import legado em lote) tem só 1 linha, não é fonte
+confiável hoje, ficou de fora. `ajustes_abastecimentos` já é uma máquina de estados completa de
+proposta/contraproposta/aceite entre cliente e posto pra corrigir campos de um abastecimento
+(incluindo preço) — é o mecanismo certo pra RESOLVER uma divergência encontrada, não precisava (nem
+devia) ser reinventado. O "Motor de Ação Automática" (`anomalias_abastecimento`) já compara preço
+contra benchmark REGIONAL/ANP do lado do cliente — eixo diferente do pedido aqui (posto comparando
+contra o acordo ESPECÍFICO que ele fechou com aquele cliente), por isso não foi estendido, foi
+construído um mecanismo paralelo.
+
+Três funções novas (migração `conferencia_precos_posto`), sem `SECURITY DEFINER` — a RLS de
+`abastecimentos_unificado` (via CNPJ do posto) e de `negociacoes_postos`/`ajustes_abastecimentos`
+(via `empresa_posto_id`) já libera exatamente o que cada posto pode ver, então as funções rodam com
+o privilégio de quem chama, sem bypassar nada:
+
+- `posto_conferencia_precos(p_empresa_posto_id, p_data_inicio, p_data_fim)` — base: 1 linha por
+  abastecimento fornecido pelo posto no período, com o preço acordado vigente resolvido via `LEFT
+  JOIN LATERAL` em `negociacoes_postos` (mesmo combustível, `status='aceita'`, vigência cobrindo a
+  data do abastecimento, mais recente primeiro) e a diferença em R$ e % já calculada.
+- `posto_divergencias_preco(..., p_tolerancia numeric default 0.01)` — filtra a base pra só o que
+  tem preço acordado E fugiu dele além da tolerância (parâmetro ajustável, ainda sem UI pra editar —
+  0,01 R$/L é um chute inicial, ajusto se o Daniel achar muito sensível ou muito frouxo depois de
+  usar), com uma flag `tem_ajuste_pendente` (olha `ajustes_abastecimentos` com status em aberto pro
+  mesmo abastecimento).
+- `posto_extrato_diario(...)` — agrega a base por dia + meio de pagamento (quantidade, litros, valor
+  total, quantidade e valor das divergências).
+
+Testado direto no banco com dados reais de produção antes de subir a página: achou divergências
+genuínas (ex.: posto cobrando R$5,83/L num acordo de R$5,29/L — 10,2% acima; e o caso oposto, R$5,73
+cobrado com acordo de R$6,49 — 11,2% abaixo, que também é uma divergência real, só que a favor do
+cliente).
+
+Página nova `/conferencia-precos` (só posto — mesmo padrão de `resolverEmpresaAtual` +
+`segmento==='Revenda'` já usado em `/negociacoes` e `AbastecimentosPosto.tsx`): banner vermelho
+sempre calculado pro dia de HOJE (independente do filtro de período escolhido — é o "alerta dentro
+do dia" pedido explicitamente), 5 indicadores do período filtrado, e duas abas por cima da mesma
+base — "Divergências de Preço" (com link direto pra tela de detalhe do abastecimento, onde mora o
+fluxo de solicitar ajuste já existente) e "Extrato Diário" (por dia + logo do meio de pagamento,
+reaproveitando `LogoProvedor`). Nomes dos clientes resolvidos via `nomes_empresas_publico` (mesmo
+padrão de `AbastecimentosPosto.tsx` — o posto nunca é membro RLS das empresas-clientes).
+
+Bolinha nova no menu (`/conferencia-precos`, ícone `Percent`, dentro de "Negociações" no menu do
+posto): conta as divergências de HOJE que ainda não têm ajuste em andamento, resolvendo as empresas
+do usuário via `usuarios_empresas` (vínculo direto de dono, mesmo padrão de `resolverEmpresaPropria`)
+em vez de expandir pra grupo — cada empresa é somada isoladamente. Adicionada também
+`aba_conferencia_precos` em `HREF_FUNCIONALIDADE` (sem linha na matriz `permissoes_perfil` ainda —
+fica liberado por padrão pra todo perfil até o admin decidir restringir, mesmo comportamento de
+qualquer funcionalidade nova).
+
+Achado do ambiente (não do app): o sandbox desta sessão tinha DOIS mount points para a mesma pasta
+"Gestão de Frotas" — um com "ã" decomposto (bytes reais do disco, projeto completo) e outro com "ã"
+precomposto (criado sem querer por um comando `mkdir`/`cat` que digitou o caminho literal em vez de
+usar glob) — os dois primeiros arquivos desta fase foram escritos no mount errado (só "src" vazio,
+sem `.git`/`package.json`) antes de eu perceber. Corrigido copiando os 2 arquivos pro mount real e
+removendo o mount fantasma; dali em diante usei sempre resolução via glob/`glob.glob()` em vez de
+caminho literal, exatamente pra evitar esse tipo de divergência de normalização Unicode de novo.
+
+`database.types.ts` atualizado com as 3 funções novas. Validado: `npx tsc --noEmit` e `npx eslint`
+limpos.

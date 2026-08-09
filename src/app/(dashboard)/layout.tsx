@@ -59,6 +59,7 @@ import {
   Briefcase,
   Bot,
   Megaphone,
+  Percent,
 } from "lucide-react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -81,6 +82,7 @@ import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
 import { contarCadastrosPendentesAcao } from "./cadastros-pendentes/actions";
 import { contarMultasPendentesAcao } from "./multas/actions";
 import { contarDuplicidadesPlacaGrupoAcao } from "./duplicidade-placas-grupo/actions";
+import { contarDivergenciasPrecoPostoAcao } from "./conferencia-precos/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
@@ -387,6 +389,11 @@ const menuPostoOperacao: ItemMenuLateral[] = [
   // pré-agendados), pra o posto confirmar antes de liberar o abastecimento.
   { href: "/pre-pedidos", label: "Pré-Pedidos", icon: ListChecks },
   { href: "/precos-postos", label: "Meus Preços", icon: Tag },
+  // Fase Conferência-de-Preços-Posto (09/08/2026, pedido do Daniel) —
+  // compara o preço praticado em cada abastecimento com o acordo/negociação
+  // vigente (negociacoes_postos), com extrato diário por meio de pagamento e
+  // alerta de divergência já dentro do dia (não só no fechamento de ciclo).
+  { href: "/conferencia-precos", label: "Conferência de Preços", icon: Percent },
   // Fase 27.94/27.95 — upload de NF-e (XML) por abastecimento + indicador
   // de % de recolha, do lado do posto.
   { href: "/notas-fiscais", label: "Notas Fiscais", icon: FileText },
@@ -582,6 +589,7 @@ export default async function DashboardLayout({
     cadastrosPendentes,
     multasPendentes,
     duplicidadesPlacaGrupo,
+    divergenciasPrecoPosto,
     logoutInatividadeMinutos,
     avisos,
     favoritosBrutos,
@@ -642,6 +650,13 @@ export default async function DashboardLayout({
       // mesma blindagem "falha vira 0" das demais contagens.
       contarDuplicidadesPlacaGrupoAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar duplicidades de placa (ignorado):", e);
+        return 0;
+      }),
+      // Fase Conferência-de-Preços-Posto (09/08/2026) — bolinha de
+      // divergências de preço de HOJE ainda sem ajuste em andamento, mesma
+      // blindagem "falha vira 0" das demais contagens.
+      contarDivergenciasPrecoPostoAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar divergências de preço (ignorado):", e);
         return 0;
       }),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
@@ -771,6 +786,7 @@ export default async function DashboardLayout({
     "/acoes-sugeridas": acoesSugeridasPendentes,
     "/multas": multasPendentes,
     "/chamados": chamadosNaoVistos,
+    "/conferencia-precos": divergenciasPrecoPosto,
   };
 
   const itensVisaoGeral = menuVisaoGeral.filter(podeAcessarItem);
