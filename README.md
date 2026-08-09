@@ -8650,3 +8650,150 @@ ERROR no projeto (antes, era o único).
 
 Validado: `npx tsc --noEmit` e `npx eslint` limpos nos dois arquivos alterados (C1, C3). C2 é só
 migração de banco, já aplicada e validada diretamente no Supabase.
+
+
+## Backlog de segurança — achados pendentes da varredura de 09/08/2026
+
+Pedido do Daniel após a correção dos 3 críticos: "Atuaremos nos proximos pontos de vulnerabilidades
+mapeadas em breve. Guarde no backlog." Os 11 achados abaixo (2 altos, 7 médios, 2 baixos) ficam
+registrados aqui como pendentes — nenhum deles foi corrigido ainda. Detalhe completo de cada um
+(evidência, impacto, recomendação passo a passo) está em `relatorio_seguranca_gestao_de_frotas.docx`;
+aqui vai só o essencial pra retomar o trabalho sem precisar reabrir o relatório inteiro.
+
+**H1 — dependências desatualizadas com CVEs conhecidas.** `npm audit` apontou 6 vulnerabilidades de
+severidade alta em produção: Next.js (15.5.20, precisa de 15.5.23+), postcss, sharp, nanoid e
+xlsx/SheetJS (este último sem correção disponível do fornecedor — vai exigir avaliar substituição da
+lib ou mitigação). Esforço estimado: baixo pros 4 primeiros (`npm update` + reteste), médio pro xlsx.
+
+**H2 — cerca de 150 funções `SECURITY DEFINER` executáveis por `anon`.** Inclui funções sensíveis
+como `motorista_definir_senha`, `decidir_ajuste_abastecimento`, `executar_acao_bloquear_motorista`,
+`baixar_conta_pagar`/`baixar_conta_receber` e `vincular_motorista_auth`. Precisa de uma varredura
+função a função pra confirmar que cada uma valida internamente quem está chamando (não basta a
+função existir — o risco é a que faltar essa validação interna). Esforço: alto (auditoria manual,
+não dá pra automatizar com segurança).
+
+**M1 — headers HTTP de segurança ausentes.** Sem CSP, X-Frame-Options, Referrer-Policy nem
+Permissions-Policy — só HSTS e X-Content-Type-Options aparecem (prováveis padrões da Cloudflare, não
+configurados pela aplicação). Também expõe `x-powered-by: Next.js`. Esforço: baixo (configuração em
+`next.config` ou middleware).
+
+**M2 — nenhum rate limiting.** Nenhuma rota tem limite de requisições por IP/usuário — abre espaço
+pra força bruta e abuso de API. Esforço: médio (precisa de infra, ex. Upstash/Redis ou solução no
+edge da Cloudflare).
+
+**M3 — comparação de segredo não é constant-time.** Rotas de webhook/cron comparam o segredo com
+`!==` (comum), o que em teoria permite ataque de timing pra descobrir o segredo caractere a
+caractere. Esforço: baixo (trocar por `crypto.timingSafeEqual`).
+
+**M4 — CORS com wildcard (`Access-Control-Allow-Origin: *`) em 3 rotas.** `/api/usuarios/convidar`,
+`/api/assistente` e `/api/ocr/documento` aceitam requisição de qualquer origem. Esforço: baixo
+(restringir à origem do app Flutter, já que nenhuma delas precisa aceitar navegador arbitrário).
+
+**M5 — proteção contra senha vazada desativada no Supabase Auth.** O Supabase oferece checagem
+contra bases de senha vazada (HaveIBeenPwned) e está desligada. Esforço: baixo (um toggle no painel
+do Supabase).
+
+**M6 — `function_search_path_mutable` em dezenas de funções.** Funções do banco sem `search_path`
+fixo, achado do próprio linter do Supabase — em tese permite manipulação de schema via `search_path`
+malicioso em cenários específicos. Esforço: médio (mexe em muitas funções, precisa validar uma a
+uma).
+
+**M7 — armazenamento de sessão/token no PWA sem storage seguro.** `pubspec.yaml` do
+estrada-que-cuida não usa `flutter_secure_storage`, cai no armazenamento padrão da plataforma (menos
+protegido contra outros apps/processos no aparelho). Esforço: médio (troca de dependência + migração
+de quem já tem sessão salva).
+
+**B1 — 8 tabelas com RLS ativado mas nenhuma policy.** `abastecimentos_mobile`, `audit_logs`,
+`notas_posto`, `postos_favoritos`, `solicitacoes_acesso`, `user_preferences`, `webhook_logs` e
+`webhook_registrations`. Com RLS ativado e zero policy, o comportamento padrão do Postgres já bloqueia
+tudo pra quem não é service role — não é um vazamento ativo, mas também significa que ninguém
+autenticado consegue ler essas tabelas via client normal hoje (vale confirmar se isso é intencional
+tabela por tabela). Esforço: baixo a médio, depende do caso.
+
+**B2 — extensions `unaccent` e `pg_net` instaladas no schema `public`.** Boa prática do Postgres é
+manter extensions fora do `public` (schema dedicado, ex. `extensions`), pra reduzir superfície de
+colisão de nome e permissão. Esforço: baixo, mas precisa janela de manutenção (mover extension pode
+exigir recriação).
+
+
+## Grupo Econômico Frota — billing e self-service (09/08/2026)
+
+Pedido do Daniel: "Empresas que atuam com grupo econômico, são empresas matriz e filiais... Uma empresa
+matriz com várias filiais abaixo dela deveria ser permitido pela aplicação para cadastro e visualização
+como grupo econômico... como devemos tratar este cenário na solução, onde teríamos a necessidade de ter
+uma conbrança de mensalidade". Esclarecimento conceitual dado ao Daniel antes de qualquer código: matriz/
+filial (mesma raiz de CNPJ) e grupo econômico de CNPJs juridicamente distintos já eram tratados de forma
+idêntica pelo app — o vínculo em `grupos_economicos_empresas` sempre foi manual, sem checar raiz de CNPJ.
+O que faltava era billing compartilhado — cada empresa mantinha plano/assinatura individual mesmo estando
+agrupada.
+
+Achado central: a tabela `grupos_economicos` já tinha TODA a infraestrutura de billing
+(`empresa_administradora_id`, `plano`, `status`, `stripe_customer_id`, `stripe_subscription_id`,
+`trial_ends_at`, `termo_aceito_em/por/hash`, `cancelado_em`) desde a Fase Posto/Rede — só estava travada
+pra `segmento='Revenda'` (Rede de Postos) por uma CHECK constraint e por várias policies de RLS. Em vez de
+construir billing de grupo do zero, esta fase destravou e replicou pro `segmento='Frota'` o que já rodava
+em produção pro posto, decisão validada com o Daniel via pergunta direta (escolhida: "plano próprio por
+grupo, espelha Posto").
+
+**Modelo de preço** (rascunho, ajustável a qualquer momento no Stripe sem migração): Grupo Profissional
+R$899/mês (até 5 empresas inclusas, cada uma com limites do Profissional individual, +R$150/empresa
+excedente) e Grupo Enterprise R$2.490/mês (até 20 empresas, limites Enterprise, +R$100/empresa
+excedente). Sem nível "Essencial" — grupo só existe a partir do Profissional pra cima, mesmo padrão do
+posto.
+
+**Banco de dados**: `grupos_economicos_plano_check` ampliada pra aceitar `grupo_frota_profissional`/
+`grupo_frota_enterprise`; nova RPC `criar_grupo_frota_self_service` (espelha
+`criar_rede_posto_self_service`); `database.types.ts` corrigido com os campos de billing que já existiam
+no banco. Achado real durante a implementação: as policies de RLS `grupos_insert`/`grupos_update` e a
+função `grupo_economico_e_revenda()` (usada por `gee_insere`) tinham a restrição a `segmento='Revenda'`
+HARDCODED — a generalização feita só na camada TypeScript (`ehAdminSuperusuarioOuMembroDaRede`) teria
+passado na checagem de código só pra ser rejeitada pelo Postgres na hora H. Corrigido com a migração
+`grupo_economico_frota_self_service_rls`, generalizando as três pro segmento certo.
+
+**Stripe**: 2 produtos (Grupo Profissional/Enterprise), 1 Meter (`empresa_excedente_grupo_frota`,
+agregação "last") e os 2 Price de excedente correspondentes, criados via Edge Function temporária
+(`temp-criar-produtos-grupo-frota`, mesmo padrão de `temp-criar-meter-posto`, já neutralizada).
+
+**Edge Functions**: `create-checkout-session`, `planos-precos` e `stripe-webhook` generalizados pra
+reconhecer os planos de grupo frota (antes só aceitavam grupo pra planos de posto); nova
+`reportar-excedente-empresas-grupo` com cron diário às 4h40 (mesmo padrão de `reportar-excedente-postos`,
+4h35). Bug real corrigido de brinde no `stripe-webhook`: ao cancelar uma Rede de Postos, o fallback dos
+membros gravava `plano="gratuito"` (valor de frotista, inválido pra posto) em vez de `"posto_essencial"`
+— bug pré-existente da Fase Posto/Rede, nunca detectado porque nenhuma rede tinha cancelado ainda em
+produção; corrigido junto por já estar mexendo na mesma função pra generalizá-la pros dois segmentos.
+
+**Termo de Adesão**: Cláusula 3ª própria pros 2 planos de grupo em `termoAdesao.ts`, hash SHA-256
+calculado com `npx tsx` a partir do texto canônico real (não hardcoded à mão) e sincronizado com a Edge
+Function.
+
+**Self-service**: `/grupo-economico/novo` passou a pedir a empresa fundadora (mesmo padrão de
+`/rede-postos/novo`, Fase 27.139) e usa a RPC self-service — deixa de ser admin-only. Confirmado via
+`pg_policies` que a policy `empresas_select_membro` já restringe corretamente o que cada usuário vê
+(RLS por `empresas_do_usuario()`), então abrir `/grupo-economico` e `/grupo-economico/[id]` pro cliente
+final não vaza dados de outros clientes — nenhuma mudança necessária nessas duas páginas além do que já
+existia.
+
+**Minha Assinatura**: nova seção "Grupo Econômico" espelhando a de "Rede de Postos" — empresa sem grupo
+vê CTA pra criar um; administradora de um grupo ativo vê o grid de planos de grupo (em vez do grid
+individual) e o aviso de excedente; membro não-administradora vê aviso "gerenciado por outra empresa".
+`BotaoAssinarPlano` generalizado (`tipoDoPlano`) pra reconhecer os três tipos de plano (frotista, posto,
+grupo frota) na hora de montar o Termo de Adesão certo.
+
+**Landing page**: nova seção `#precos-grupo-economico` entre a seção de preços de frotista e a de posto.
+
+**Migração dos grupos existentes**: só existe UM Grupo Econômico Frota real hoje ("Grupo Frotas", 2
+empresas vinculadas, `ativo=true`, sem `empresa_administradora_id`/`plano`/billing nenhum). Nenhuma ação
+técnica foi necessária — ele continua funcionando exatamente como antes (reuso operacional de
+motoristas/veículos entre as duas empresas, sem cobrança compartilhada). Fica como decisão do Daniel, não
+automatizada aqui: se quiser migrar esse grupo pra ter assinatura única, é só escolher qual das duas
+empresas vira a administradora (`empresa_administradora_id`) e ela assinar um plano de grupo pela tela de
+Assinatura — o resto (Stripe, webhook, propagação de limite pros membros) já funciona sozinho a partir
+daí.
+
+**Pendências explícitas antes de expor isso a clientes reais**: (1) validar os preços de lançamento
+R$899/R$2.490 — são só um rascunho baseado na mesma proporção de desconto por volume da Rede de Postos;
+(2) revisar o texto do Termo de Adesão dos 2 planos novos; (3) `git push` das mudanças de Next.js (tudo
+que está no Supabase — banco, Stripe, Edge Functions — já está live em produção; o que falta subir é só
+o código do repositório).
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterados/criados desta fase.

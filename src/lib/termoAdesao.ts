@@ -164,3 +164,56 @@ export function montarParagrafosTermoAdesaoPosto(plano: PlanoPostoComTermo): str
 export function textoCanonicoTermoAdesaoPosto(plano: PlanoPostoComTermo): string {
   return montarParagrafosTermoAdesaoPosto(plano).join("\n");
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// Fase Grupo-Economico-Frota-Billing (09/08/2026, pedido do Daniel) — Termo
+// de Adesão para os planos de GRUPO do segmento Frota (Grupo Econômico de
+// clientes — matriz/filiais ou empresas distintas do mesmo grupo, "unir
+// várias empresas com uma mensalidade abaixo do que já está mapeado"),
+// estrutura irmã da de Rede de Postos acima: Objeto (Cláusula 2ª) e
+// Cláusula 3ª próprios, PARTE II em diante reaproveita RODAPE_COMUM tal e
+// qual. Mesmo aviso dos blocos acima: hash calculado uma única vez sobre
+// montarParagrafosTermoAdesaoGrupoFrota(plano).join("\n"), hardcoded de
+// forma idêntica na Edge Function create-checkout-session.
+export type PlanoGrupoFrotaComTermo = "grupo_frota_profissional" | "grupo_frota_enterprise";
+
+export const HASH_TERMO_ADESAO_GRUPO_FROTA_POR_PLANO: Record<PlanoGrupoFrotaComTermo, string> = {
+  grupo_frota_profissional: "1bdc54c9148ffc5b8af971716279dbb82c5e0a077cc3262c11d8a997748d6c16",
+  grupo_frota_enterprise: "e11f78e5687244fad73cb297f72393d7a1cf162f901dfb0b2e007ad409ba3da0",
+};
+
+const CABECALHO_COMUM_GRUPO_FROTA = [
+  "FLEET NETWORK INTELLIGENCE — FNI Gestão de Frotas (fxgestaodefrotasonline.com)",
+  "",
+  "PARTE I — DAS PARTES E DO OBJETO",
+  "Cláusula 1ª — Das Partes. 1.1. CONTRATADA: FLEET NETWORK INTELLIGENCE LTDA. (FNI), operadora da plataforma SaaS FNI Gestão de Frotas, acessível em fxgestaodefrotasonline.com. 1.2. CONTRATANTE: empresa administradora de um Grupo Econômico de empresas clientes (frotistas), pessoa jurídica, que realiza a adesão eletrônica em nome de todas as empresas vinculadas ao grupo, doravante denominada CLIENTE.",
+  "Cláusula 2ª — Do Objeto. 2.1. Prestação de serviços de Software como Serviço (SaaS) de gestão inteligente de frotas, combustíveis e fretes (TMS/ERP para transportadoras), nos limites do plano contratado, em favor de todas as empresas vinculadas ao Grupo Econômico administrado pelo CLIENTE — sejam elas matriz e filiais de um mesmo CNPJ raiz, sejam empresas juridicamente distintas sob controle ou administração comum. 2.2. Recursos gerais da plataforma: consulta e análise de preços ANP (~38.000 postos); roteirização otimizada para frotas; dashboard analítico e comparativos ANP; relatórios exportáveis em PDF e Excel; Assistente IA; API e integrações com Ticket Log, Rede Frota, Veloe e Pró-Frotas. 2.3. As empresas vinculadas ao Grupo Econômico compartilham cadastros operacionais (motoristas e veículos) entre si, mas mantêm dados financeiros, fiscais e de acesso segregados entre elas — cada empresa só é visível às demais empresas do mesmo grupo, nunca a terceiros.",
+  "",
+];
+
+// Cláusula 3ª — específica por plano de grupo, mesmo espírito dos blocos
+// acima. Precisa continuar batendo com FEATURES_GRUPO_FROTA/FAIXA_EMPRESAS_
+// GRUPO_FROTA (src/lib/constants.ts) — se um desses mudar, revisar o texto
+// aqui também (e recalcular o hash do plano afetado). Os limites por
+// empresa membro citados abaixo espelham LIMITES_PLANO.profissional/
+// enterprise (cada empresa do grupo é tratada, individualmente, como uma
+// empresa frotista do tier equivalente — só a cobrança acontece no grupo).
+const CLAUSULA_3_POR_PLANO_GRUPO_FROTA: Record<PlanoGrupoFrotaComTermo, string> = {
+  grupo_frota_profissional:
+    "Cláusula 3ª — Plano Contratado: GRUPO PROFISSIONAL. 3.1. Aplicável a um Grupo Econômico de até 5 (cinco) empresas inclusas numa única assinatura, cuja cobrança é única e de responsabilidade exclusiva da empresa administradora do grupo, indicada no momento da criação — empresas excedentes à faixa inclusa são cobradas automaticamente à razão de R$ 150,00 (cento e cinquenta reais) por empresa/mês, também de responsabilidade da administradora. 3.2. Cada empresa vinculada ao grupo tem, individualmente, os mesmos limites e recursos do plano Profissional de frotista avulso: até 20 (vinte) usuários e até 200 (duzentos) veículos por empresa; módulo de Gestão de Fretes (TMS) com criação de até 30 (trinta) fretes por mês; emissão de CT-e/MDF-e e faturamento de fretes; Cotações e Tabelas de Frete; API e Webhooks. 3.3. Suporte técnico em até 24 (vinte e quatro) horas úteis.",
+  grupo_frota_enterprise:
+    "Cláusula 3ª — Plano Contratado: GRUPO ENTERPRISE. 3.1. Aplicável a um Grupo Econômico de até 20 (vinte) empresas inclusas numa única assinatura, cuja cobrança é única e de responsabilidade exclusiva da empresa administradora do grupo, indicada no momento da criação — empresas excedentes à faixa inclusa são cobradas automaticamente à razão de R$ 100,00 (cem reais) por empresa/mês, também de responsabilidade da administradora. 3.2. Cada empresa vinculada ao grupo tem, individualmente, os mesmos limites e recursos do plano Enterprise de frotista avulso: usuários e veículos ilimitados por empresa; módulo de Gestão de Fretes (TMS) sem limite de fretes criados por mês; Single Sign-On (SSO/SAML); integrações dedicadas com TOTVS/SAP. 3.3. SLA (Service Level Agreement) de disponibilidade de 99,95% e suporte técnico 24x7 (24 horas por dia, 7 dias por semana).",
+};
+
+export function montarParagrafosTermoAdesaoGrupoFrota(plano: PlanoGrupoFrotaComTermo): string[] {
+  return [
+    `TERMO DE ADESÃO E CONTRATO DE PRESTAÇÃO DE SERVIÇOS — Versão ${VERSAO_TERMO_ADESAO}`,
+    ...CABECALHO_COMUM_GRUPO_FROTA,
+    CLAUSULA_3_POR_PLANO_GRUPO_FROTA[plano],
+    ...RODAPE_COMUM,
+  ];
+}
+
+export function textoCanonicoTermoAdesaoGrupoFrota(plano: PlanoGrupoFrotaComTermo): string {
+  return montarParagrafosTermoAdesaoGrupoFrota(plano).join("\n");
+}

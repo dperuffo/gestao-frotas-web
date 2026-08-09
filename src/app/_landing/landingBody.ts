@@ -822,6 +822,31 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   </div>
 </section>
 
+<!-- Fase Grupo-Economico-Frota-Billing (09/08/2026, pedido do Daniel) —
+     seção de preços do Grupo Econômico (clientes frota com matriz/filiais
+     do mesmo CNPJ raiz, ou empresas distintas do mesmo grupo econômico),
+     mesmo espírito da seção de Rede de Postos abaixo, só que pro lado
+     frotista. Mesmos valores/planos de PLANOS_GRUPO_FROTA/
+     PLANO_GRUPO_FROTA_LABEL/FEATURES_GRUPO_FROTA/FAIXA_EMPRESAS_GRUPO_FROTA
+     em src/lib/constants.ts e da Cláusula 3ª por plano em
+     src/lib/termoAdesao.ts — se um mudar, revisar o outro. Sem nível
+     "Essencial": grupo só existe a partir do Profissional pra cima (quem
+     quer só 1 empresa usa os planos individuais da seção #precos acima).
+     Preços de lançamento — a validar com o Daniel antes de promover
+     amplamente, os valores no Stripe são fáceis de ajustar depois sem
+     mexer neste texto. -->
+<section class="pricing" id="precos-grupo-economico" style="background:transparent">
+  <div style="text-align:center">
+    <div class="sec-lbl">Grupo Econômico</div>
+    <div class="sec-title">Tem mais de uma empresa? Uma assinatura só.</div>
+    <p class="sec-sub" style="margin:0 auto">Matriz e filiais do mesmo CNPJ, ou empresas distintas do mesmo grupo — junte todas numa assinatura única, paga pela empresa administradora.</p>
+  </div>
+  <div class="pgrid" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:820px;margin:0 auto">
+    <div class="pc feat"><div class="pbadge">Mais popular</div><div class="pn">Grupo Profissional</div><div class="pp"><sup>R$</sup>899<span>/mês</span></div><div class="pd">Grupos pequenos e médios</div><ul class="pf"><li>Grupo Econômico — até 5 empresas inclusas</li><li>Assinatura única, paga pela matriz (+R$150/empresa excedente)</li><li>Cada empresa com os limites do Profissional (200 veículos, TMS até 30 fretes/mês)</li><li>Reuso de motoristas e veículos entre as empresas do grupo</li><li>Suporte em até 24h</li></ul><a href="/cadastro" class="pbtn p">Trial grátis 14 dias</a></div>
+    <div class="pc"><div class="pn">Grupo Enterprise</div><div class="pp"><sup>R$</sup>2.490<span>/mês</span></div><div class="pd">Grandes grupos econômicos</div><ul class="pf"><li>Grupo Econômico — até 20 empresas inclusas</li><li>Assinatura única, paga pela matriz (+R$100/empresa excedente)</li><li>Cada empresa com os limites do Enterprise (ilimitado, TMS sem limite de fretes)</li><li>Reuso de motoristas e veículos entre as empresas do grupo</li><li>SLA 99,95%</li></ul><a href="/cadastro" class="pbtn o">Assinar Grupo Enterprise</a></div>
+  </div>
+</section>
+
 <!-- Fase Posto/Rede (26/07/2026, pedido do Daniel) — seção de preços
      dedicada a postos revendedores, separada da seção .pricing#precos
      acima (que é só de frotista). Mesmos valores/planos de

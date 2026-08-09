@@ -1,47 +1,60 @@
-"use client";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { NovoGrupoForm } from "../_components/NovoGrupoForm";
 
-import { useState, useTransition, type FormEvent } from "react";
-import { criarGrupo } from "../actions";
+// Fase Grupo-Economico-Frota-Billing (09/08/2026) — pedido do Daniel: "Grupo
+// Econômico deveria ser permitido pela aplicação para cadastro e
+// visualização" pelo próprio cliente, não só pelo admin. Espelha
+// /rede-postos/novo/page.tsx (Fase 27.139) tal e qual, só trocando
+// segmento='Revenda' por 'Frota': sempre pede a empresa fundadora aqui —
+// pro self-service isso já resolve o problema de "grupo órfão sem membro"
+// (ver criarGrupoFrotaSelfService em gruposEconomicos.ts); pro admin,
+// mostra todas as empresas Frota pra escolher qualquer uma como fundadora.
+export default async function NovoGrupoPage() {
+  const supabase = await createClient();
 
-export default function NovoGrupoPage() {
-  const [erro, setErro] = useState<string | undefined>();
-  const [isPending, startTransition] = useTransition();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const ehAdmin = perfil === "admin" || user?.email === "d.peruffo@gmail.com";
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setErro(undefined);
-    const formData = new FormData(e.currentTarget);
-    startTransition(async () => {
-      const resultado = await criarGrupo(undefined, formData);
-      if (resultado?.erro) setErro(resultado.erro);
-    });
+  let empresasOpcoes: { id: string; nome: string }[] = [];
+  if (ehAdmin) {
+    const { data } = await supabase.from("empresas").select("id, nome").eq("segmento", "Frota").order("nome");
+    empresasOpcoes = data ?? [];
+  } else {
+    const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+    if (minhasEmpresasIds && minhasEmpresasIds.length > 0) {
+      const { data } = await supabase
+        .from("empresas")
+        .select("id, nome")
+        .eq("segmento", "Frota")
+        .in("id", minhasEmpresasIds)
+        .order("nome");
+      empresasOpcoes = data ?? [];
+    }
+  }
+
+  if (!ehAdmin && empresasOpcoes.length === 0) {
+    return (
+      <div>
+        <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Grupo Econômico</h1>
+        <div className="card p-6 text-sm text-slate-600">
+          Você precisa ter uma empresa cadastrada antes de criar um Grupo Econômico.{" "}
+          <Link href="/minha-empresa" className="font-medium text-frota-600 hover:underline">
+            Cadastre sua empresa em &quot;Minha Empresa&quot;
+          </Link>{" "}
+          e volte aqui em seguida.
+        </div>
+      </div>
+    );
   }
 
   return (
     <div>
       <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Grupo Econômico</h1>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
-        <section className="card max-w-lg p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
-                Nome do Grupo <span className="text-red-500">*</span>
-              </label>
-              <input name="nome" required className="input" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">CNPJ da Matriz (opcional)</label>
-              <input name="cnpj_matriz" className="input" />
-            </div>
-          </div>
-        </section>
-        <div className="flex justify-end">
-          <button type="submit" disabled={isPending} className="btn-primary">
-            {isPending ? "Salvando..." : "Salvar Grupo"}
-          </button>
-        </div>
-      </form>
+      <NovoGrupoForm empresasOpcoes={empresasOpcoes} />
     </div>
   );
 }

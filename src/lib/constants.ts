@@ -203,6 +203,62 @@ export const FAIXA_POSTOS_PLANO: Record<PlanoPosto, { postos_inclusos: number | 
   posto_enterprise: { postos_inclusos: 20, preco_excedente_centavos: 2000 },
 };
 
+// Fase Grupo-Economico-Frota-Billing (09/08/2026, pedido do Daniel: cenário
+// de clientes com matriz/filiais ou empresas distintas do mesmo grupo
+// econômico, "conta a possibilidade de unir várias empresas... com uma
+// mensalidade abaixo do que já está mapeado"). Mesma arquitetura da Rede de
+// Postos (grupos_economicos, segmento='Frota' aqui): assinatura ÚNICA do
+// GRUPO, paga pela empresa administradora (empresa_administradora_id), com
+// faixa de empresas inclusas + excedente por empresa — em vez de cada
+// empresa membro manter sua própria assinatura em `empresas.plano`. Sem
+// nível "essencial": grupo só existe a partir do Profissional pra cima,
+// mesmo padrão do posto (quem quer só 1 empresa usa os planos individuais
+// PLANOS/LIMITES_PLANO acima, sem grupo nenhum). Cada empresa dentro do
+// grupo herda os LIMITES_PLANO do nível equivalente (profissional/
+// enterprise) — não têm limite próprio menor.
+export const PLANOS_GRUPO_FROTA = ["grupo_frota_profissional", "grupo_frota_enterprise"] as const;
+export type PlanoGrupoFrota = (typeof PLANOS_GRUPO_FROTA)[number];
+
+export const PLANO_GRUPO_FROTA_LABEL: Record<PlanoGrupoFrota, string> = {
+  grupo_frota_profissional: "Grupo Profissional",
+  grupo_frota_enterprise: "Grupo Enterprise",
+};
+
+// Preços de lançamento (calibração inicial 09/08/2026, a validar com o
+// Daniel antes de criar os produtos no Stripe — mesma lógica de desconto
+// por volume usada em FAIXA_POSTOS_PLANO: ~5 empresas Profissional
+// individuais custariam R$2.745/mês avulsas, o grupo sai por R$899).
+export const PRECO_GRUPO_FROTA_CENTAVOS: Record<PlanoGrupoFrota, number> = {
+  grupo_frota_profissional: 89900,
+  grupo_frota_enterprise: 249000,
+};
+
+export const FEATURES_GRUPO_FROTA: Record<PlanoGrupoFrota, string[]> = {
+  grupo_frota_profissional: [
+    "Assinatura única — a empresa administradora paga por todo o grupo",
+    "Até 5 empresas inclusas, cada uma com os limites do plano Profissional",
+    "Reuso de motoristas e veículos entre as empresas do grupo",
+    "Empresa excedente: R$150/mês cada, acima da faixa inclusa",
+  ],
+  grupo_frota_enterprise: [
+    "Assinatura única — a empresa administradora paga por todo o grupo",
+    "Até 20 empresas inclusas, cada uma com os limites do plano Enterprise",
+    "Reuso de motoristas e veículos entre as empresas do grupo",
+    "Empresa excedente: R$100/mês cada, acima da faixa inclusa",
+  ],
+};
+
+// Faixa de empresas inclusa em cada plano de grupo + valor da empresa
+// excedente — mesmo padrão de FAIXA_POSTOS_PLANO, mas contando EMPRESAS
+// membras de uma grupos_economicos (segmento='Frota'). Cobrança automática
+// via Stripe: produto "Empresa Excedente (Grupo Frota)", medidor
+// empresa_excedente_grupo_frota, agregação "last" — reportado pela Edge
+// Function reportar-excedente-empresas-grupo (cron diário, a criar).
+export const FAIXA_EMPRESAS_GRUPO_FROTA: Record<PlanoGrupoFrota, { empresas_inclusas: number; preco_excedente_centavos: number }> = {
+  grupo_frota_profissional: { empresas_inclusas: 5, preco_excedente_centavos: 15000 },
+  grupo_frota_enterprise: { empresas_inclusas: 20, preco_excedente_centavos: 10000 },
+};
+
 // Duração do trial self-service (cadastro público em /cadastro) — precisa
 // bater com a régua de e-mails da Edge Function email-trials (D+3, D+7,
 // aviso em D+12 => expira por volta do D+14).

@@ -839,6 +839,28 @@ export interface Database {
           // Fase 27.87 — mesmos valores de empresas.segmento. 'Frota' =
           // Grupo Econômico (cliente); 'Revenda' = Rede de Postos.
           segmento: string;
+          // Fase billing_grupo_economico_posto (26/07/2026) — assinatura
+          // única do GRUPO (não da empresa membro individual): quem criou
+          // a Rede/Grupo (ou quem for designado depois) é quem paga.
+          // `plano` aceita 'posto_essencial/profissional/enterprise' (Rede
+          // de Postos, desde a Fase Posto/Rede) e, a partir da Fase
+          // Grupo-Economico-Frota-Billing (09/08/2026), também
+          // 'grupo_frota_profissional/enterprise' (Grupo Econômico de
+          // clientes frota — sem nível "essencial", grupo só existe a
+          // partir do intermediário pra cima, mesmo padrão do posto).
+          // Colunas já existiam no banco desde a Fase Posto/Rede, mas
+          // nunca tinham sido refletidas aqui (achado ao investigar
+          // billing de Grupo Econômico Frota).
+          empresa_administradora_id: string | null;
+          plano: string | null;
+          status: string | null;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          trial_ends_at: string | null;
+          termo_aceito_em: string | null;
+          termo_aceito_por: string | null;
+          termo_hash: string | null;
+          cancelado_em: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["grupos_economicos"]["Row"]> & {
           nome: string;
@@ -4628,6 +4650,12 @@ export interface Database {
       // posto (precisa controlar p_empresa_id) quanto admin/superusuário.
       // Retorna { ok: true, id } ou { ok: false, erro }.
       criar_rede_posto_self_service: {
+        Args: { p_nome: string; p_cnpj_matriz: string | null; p_empresa_id: string };
+        Returns: Json;
+      };
+      // Fase Grupo-Economico-Frota-Billing (09/08/2026) — equivalente exato
+      // de criar_rede_posto_self_service acima, pro segmento='Frota'.
+      criar_grupo_frota_self_service: {
         Args: { p_nome: string; p_cnpj_matriz: string | null; p_empresa_id: string };
         Returns: Json;
       };

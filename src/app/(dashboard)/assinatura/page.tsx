@@ -11,14 +11,20 @@ import {
   PLANO_POSTO_LABEL,
   FEATURES_PLANO_POSTO,
   FAIXA_POSTOS_PLANO,
+  PLANOS_GRUPO_FROTA,
+  PLANO_GRUPO_FROTA_LABEL,
+  FEATURES_GRUPO_FROTA,
+  FAIXA_EMPRESAS_GRUPO_FROTA,
   type Plano,
   type PlanoPosto,
+  type PlanoGrupoFrota,
   type StatusEmpresa,
 } from "@/lib/constants";
 import { buscarPrecosPlanos, formatarPrecoPlano } from "@/lib/planosPrecos";
 import { BotaoAssinarPlano } from "./_components/BotaoAssinarPlano";
 import { BotaoPortalPagamento } from "./_components/BotaoPortalPagamento";
 import { CriarRedeForm } from "./_components/CriarRedeForm";
+import { CriarGrupoFrotaForm } from "./_components/CriarGrupoFrotaForm";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 type SearchParams = { empresa?: string; checkout?: string; bloqueado?: string };
@@ -64,6 +70,25 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
   let redeDoPosto: RedeDoPosto | null = null;
   let qtdPostosNaRede = 0;
   let ehAdministradoraDaRede = false;
+
+  // Fase Grupo-Economico-Frota-Billing (09/08/2026) — equivalente exato de
+  // RedeDoPosto acima, pro segmento="Frota" (Grupo Econômico de clientes).
+  // Mesmo espírito: se esta empresa pertence a um Grupo Econômico com
+  // assinatura própria, é o GRUPO quem tem plano/status "de verdade", não
+  // a empresa isolada — mas ao contrário do posto, uma empresa frotista
+  // continua tendo seus próprios indicadores de uso (usuários/veículos são
+  // por empresa, nunca compartilhados entre membros do grupo).
+  type GrupoFrotaDoCliente = {
+    id: string;
+    nome: string;
+    empresa_administradora_id: string | null;
+    plano: string | null;
+    status: string | null;
+  };
+  let grupoFrotaDoCliente: GrupoFrotaDoCliente | null = null;
+  let qtdEmpresasNoGrupoFrota = 0;
+  let ehAdministradoraDoGrupoFrota = false;
+
   let invoices: { id: string; valor_cents: number | null; status: string; criado_em: string; periodo_inicio: string | null; periodo_fim: string | null }[] = [];
 
   if (empresaSelecionada) {
@@ -132,6 +157,31 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
         qtdPostosNaRede = 1; // posto avulso, sem rede
       }
     }
+
+    // Fase Grupo-Economico-Frota-Billing (09/08/2026) — mesma lógica acima,
+    // pro segmento "Frota" (Grupo Econômico de clientes). Uma empresa
+    // participa de no máximo um Grupo Econômico na prática, mesmo padrão
+    // de Rede de Postos.
+    if (empresaData?.segmento === "Frota") {
+      const { data: membroGrupo } = await supabase
+        .from("grupos_economicos_empresas")
+        .select("grupo_economico_id, grupos_economicos!inner(id, nome, segmento, empresa_administradora_id, plano, status)")
+        .eq("empresa_id", empresaSelecionada)
+        .eq("grupos_economicos.segmento", "Frota")
+        .limit(1)
+        .maybeSingle();
+
+      const grupo = (membroGrupo as unknown as { grupos_economicos: GrupoFrotaDoCliente } | null)?.grupos_economicos ?? null;
+      if (grupo) {
+        grupoFrotaDoCliente = grupo;
+        ehAdministradoraDoGrupoFrota = grupo.empresa_administradora_id === empresaSelecionada;
+        const { count } = await supabase
+          .from("grupos_economicos_empresas")
+          .select("empresa_id", { count: "exact", head: true })
+          .eq("grupo_economico_id", grupo.id);
+        qtdEmpresasNoGrupoFrota = count ?? 1;
+      }
+    }
   }
 
   const diasRestantesTrial =
@@ -157,8 +207,8 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
       : 0;
   // Preço real de cada plano, buscado direto do Stripe (via Edge Function
   // planos-precos) — nunca hardcoded aqui, pra não desatualizar se o preço
-  // mudar no Stripe. O mesmo objeto já traz tanto os planos de frotista
-  // quanto os de posto (planos-precos mescla os dois mapas).
+  // mudar no Stripe. O mesmo objeto já traz os planos de frotista, posto e
+  // (desde 09/08/2026) grupo frota — planos-precos mescla os três mapas.
   const precos = empresa ? await buscarPrecosPlanos() : null;
 
   // Fase Posto/Rede (26/07/2026) — decisão do Daniel: "assinatura única por
@@ -180,6 +230,30 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
   const planosPostoParaExibir = redeDoPosto
     ? (["posto_profissional", "posto_enterprise"] as const)
     : PLANOS_POSTO;
+
+  // Fase Grupo-Economico-Frota-Billing (09/08/2026) — mesma régua de
+  // exibição da Rede de Postos acima, pro Grupo Econômico de clientes.
+  // Diferença chave: o "plano efetivo" de exibição pro rótulo do cabeçalho
+  // (rotuloPlanoFrotista) prefere o nome do GRUPO ("Grupo Profissional")
+  // quando o grupo tem assinatura própria ativa — mas os indicadores de
+  // uso (usuários/veículos) continuam sempre por empresa, nunca somados
+  // entre membros do grupo.
+  const empresasExcedentes =
+    grupoFrotaDoCliente?.plano != null
+      ? Math.max(
+          0,
+          qtdEmpresasNoGrupoFrota -
+            (FAIXA_EMPRESAS_GRUPO_FROTA[grupoFrotaDoCliente.plano as PlanoGrupoFrota]?.empresas_inclusas ?? 0)
+        )
+      : 0;
+  const valorExcedenteGrupoFrotaCentavos =
+    empresasExcedentes > 0 && grupoFrotaDoCliente?.plano
+      ? empresasExcedentes * FAIXA_EMPRESAS_GRUPO_FROTA[grupoFrotaDoCliente.plano as PlanoGrupoFrota].preco_excedente_centavos
+      : 0;
+  const rotuloPlanoFrotista =
+    grupoFrotaDoCliente?.plano && grupoFrotaDoCliente.status === "ativo"
+      ? (PLANO_GRUPO_FROTA_LABEL[grupoFrotaDoCliente.plano as PlanoGrupoFrota] ?? grupoFrotaDoCliente.plano)
+      : (PLANO_LABEL[empresa?.plano as Plano] ?? empresa?.plano);
 
   return (
     <div>
@@ -255,7 +329,7 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
               </>
             ) : (
               <>
-                <Indicador label="Plano atual" valor={PLANO_LABEL[empresa.plano as Plano] ?? empresa.plano} ajudaChave="assinatura.plano_atual" />
+                <Indicador label="Plano atual" valor={rotuloPlanoFrotista ?? empresa.plano} ajudaChave="assinatura.plano_atual" />
                 <Indicador label="Status" valor={STATUS_EMPRESA_LABEL[empresa.status as StatusEmpresa] ?? empresa.status} />
                 <Indicador
                   label="Usuários"
@@ -279,7 +353,7 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
             </div>
           )}
 
-          {!ehPosto && veiculosExcedentes > 0 && (
+          {!ehPosto && !grupoFrotaDoCliente && veiculosExcedentes > 0 && (
             <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
               Sua frota tem {veiculosExcedentes} veículo{veiculosExcedentes === 1 ? "" : "s"} acima da faixa
               inclusa no plano {PLANO_LABEL[empresa!.plano as Plano]} ({faixaVeiculosAtual?.veiculos_inclusos}{" "}
@@ -305,6 +379,21 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
             </div>
           )}
 
+          {!ehPosto && ehAdministradoraDoGrupoFrota && empresasExcedentes > 0 && (
+            <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Seu grupo tem {empresasExcedentes} empresa{empresasExcedentes === 1 ? "" : "s"} acima da
+              faixa inclusa no plano{" "}
+              {grupoFrotaDoCliente?.plano ? PLANO_GRUPO_FROTA_LABEL[grupoFrotaDoCliente.plano as PlanoGrupoFrota] : ""} (
+              {grupoFrotaDoCliente?.plano ? FAIXA_EMPRESAS_GRUPO_FROTA[grupoFrotaDoCliente.plano as PlanoGrupoFrota].empresas_inclusas : 0}{" "}
+              inclusas). Excedente estimado:{" "}
+              <strong>
+                {(valorExcedenteGrupoFrotaCentavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês
+              </strong>
+              . Isso já é cobrado automaticamente (você, como administradora, é quem recebe a fatura) e
+              aparece na próxima fatura do grupo.
+            </div>
+          )}
+
           {ehPosto && !redeDoPosto && (
             <div className="card mb-6 p-6">
               <h2 className="mb-1 text-sm font-semibold text-slate-900">Rede de Postos</h2>
@@ -326,7 +415,37 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
             </div>
           )}
 
-          {(!ehPosto || (ehPosto && (!redeDoPosto || ehAdministradoraDaRede))) && (
+          {!ehPosto && !grupoFrotaDoCliente && (
+            <div className="card mb-6 p-6">
+              <h2 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+                Grupo Econômico <AjudaIcon chave="grupo_economico.pagina" />
+              </h2>
+              <p className="text-xs text-slate-500">
+                Tem mais de uma empresa — matriz e filiais do mesmo CNPJ raiz, ou empresas distintas do
+                mesmo grupo? Junte todas numa assinatura só, paga por você (a empresa administradora) em
+                nome de todo o grupo. Disponível a partir do plano Profissional. Também é possível{" "}
+                <Link href="/grupo-economico/novo" className="font-medium text-frota-600 hover:underline">
+                  criar o grupo pela tela de Grupo Econômico
+                </Link>
+                .
+              </p>
+              <CriarGrupoFrotaForm empresaId={empresa.id} />
+            </div>
+          )}
+
+          {!ehPosto && grupoFrotaDoCliente && !ehAdministradoraDoGrupoFrota && (
+            <div className="card mb-6 p-6">
+              <h2 className="mb-1 text-sm font-semibold text-slate-900">Grupo Econômico</h2>
+              <p className="text-sm text-slate-600">
+                Esta empresa faz parte do grupo <strong>{grupoFrotaDoCliente.nome}</strong>. Quando o
+                grupo tem assinatura própria, ela é única e gerenciada pela empresa administradora — fale
+                com ela para alterar o plano.
+              </p>
+            </div>
+          )}
+
+          {(!ehPosto || (ehPosto && (!redeDoPosto || ehAdministradoraDaRede))) &&
+            (ehPosto || !grupoFrotaDoCliente || ehAdministradoraDoGrupoFrota) && (
           <div className="card mb-6 p-6">
             <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
               Planos disponíveis <AjudaIcon chave="assinatura.termo_adesao" />
@@ -366,6 +485,51 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
                         <BotaoAssinarPlano
                           empresaId={empresa!.id}
                           grupoEconomicoId={redeDoPosto?.id}
+                          plano={plano}
+                          nomeEmpresa={empresa!.nome}
+                          cnpj={empresa!.cnpj}
+                          email={user?.email ?? ""}
+                          precoLabel={formatarPrecoPlano(precos?.[plano])}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : grupoFrotaDoCliente && ehAdministradoraDoGrupoFrota ? (
+              // Fase Grupo-Economico-Frota-Billing (09/08/2026) — empresa
+              // administradora de um Grupo Econômico ativo assina em nome
+              // de todo o grupo, mesmo padrão da Rede de Postos acima.
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {PLANOS_GRUPO_FROTA.map((plano) => {
+                  const faixaEmpresas = FAIXA_EMPRESAS_GRUPO_FROTA[plano];
+                  const ehAtual = grupoFrotaDoCliente!.plano === plano && grupoFrotaDoCliente!.status === "ativo";
+                  return (
+                    <div
+                      key={plano}
+                      className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : "border-slate-200"}`}
+                    >
+                      <p className="text-sm font-semibold text-slate-900">{PLANO_GRUPO_FROTA_LABEL[plano]}</p>
+                      <p className="mt-1 text-lg font-semibold text-frota-700">{formatarPrecoPlano(precos?.[plano])}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Inclui {faixaEmpresas.empresas_inclusas} empresas no grupo ·{" "}
+                        {(faixaEmpresas.preco_excedente_centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        /empresa excedente
+                      </p>
+                      <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+                        {FEATURES_GRUPO_FROTA[plano].map((feature) => (
+                          <li key={feature} className="flex items-start gap-1.5 text-xs text-slate-600">
+                            <span className="mt-0.5 text-frota-600">✓</span>
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {ehAtual ? (
+                        <span className="badge-ativo mt-3 inline-block">Plano atual</span>
+                      ) : (
+                        <BotaoAssinarPlano
+                          empresaId={empresa!.id}
+                          grupoEconomicoId={grupoFrotaDoCliente!.id}
                           plano={plano}
                           nomeEmpresa={empresa!.nome}
                           cnpj={empresa!.cnpj}

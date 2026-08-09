@@ -44,3 +44,41 @@ export async function criarRedePosto(
   revalidatePath("/assinatura");
   return undefined;
 }
+
+
+// Fase Grupo-Economico-Frota-Billing (09/08/2026) — equivalente exato de
+// criarRedePosto acima, pro segmento='Frota' (Grupo Econômico de
+// clientes). Reaproveita criar_grupo_frota_self_service (SECURITY
+// DEFINER), mesma decisão do Daniel de "matriz paga por todos" aplicada
+// aqui: quem cria o grupo vira empresa_administradora_id.
+export async function criarGrupoFrota(
+  empresaId: string,
+  _prev: CriarRedeFormState,
+  formData: FormData
+): Promise<CriarRedeFormState> {
+  const supabase = await createClient();
+
+  const nome = String(formData.get("nome") ?? "").trim();
+  const cnpjMatriz = String(formData.get("cnpj_matriz") ?? "").trim() || null;
+
+  if (!nome) {
+    return { erro: "Informe um nome para o grupo." };
+  }
+
+  const { data, error } = await supabase.rpc("criar_grupo_frota_self_service", {
+    p_nome: nome,
+    p_cnpj_matriz: cnpjMatriz,
+    p_empresa_id: empresaId,
+  });
+
+  if (error) {
+    return { erro: `Erro ao criar grupo: ${error.message}` };
+  }
+  const resultado = data as { ok: boolean; erro?: string } | null;
+  if (!resultado?.ok) {
+    return { erro: resultado?.erro ?? "Não foi possível criar o grupo." };
+  }
+
+  revalidatePath("/assinatura");
+  return undefined;
+}

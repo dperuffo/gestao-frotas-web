@@ -2,23 +2,38 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { PLANO_LABEL, PLANO_POSTO_LABEL } from "@/lib/constants";
+import { PLANO_LABEL, PLANO_POSTO_LABEL, PLANO_GRUPO_FROTA_LABEL } from "@/lib/constants";
 import {
   HASH_TERMO_ADESAO_POR_PLANO,
   HASH_TERMO_ADESAO_POSTO_POR_PLANO,
+  HASH_TERMO_ADESAO_GRUPO_FROTA_POR_PLANO,
   montarParagrafosTermoAdesao,
   montarParagrafosTermoAdesaoPosto,
+  montarParagrafosTermoAdesaoGrupoFrota,
   type PlanoComTermo,
   type PlanoPostoComTermo,
+  type PlanoGrupoFrotaComTermo,
 } from "@/lib/termoAdesao";
 import { ModalTermoAdesao } from "./ModalTermoAdesao";
 
-function ehPlanoPosto(plano: PlanoComTermo | PlanoPostoComTermo): plano is PlanoPostoComTermo {
-  return plano.startsWith("posto_");
+type PlanoComTodosOsTermos = PlanoComTermo | PlanoPostoComTermo | PlanoGrupoFrotaComTermo;
+
+// Fase Grupo-Economico-Frota-Billing (09/08/2026) — generaliza o que antes
+// só distinguia frotista/posto (`ehPlanoPosto`) pra também reconhecer
+// planos de Grupo Frota (`grupo_frota_*`), mesmo padrão de "assinatura
+// única, matriz paga por todos" que a Rede de Postos já tinha, agora
+// também disponível pro Grupo Econômico de clientes.
+function tipoDoPlano(plano: PlanoComTodosOsTermos): "posto" | "grupo_frota" | "frotista" {
+  if (plano.startsWith("posto_")) return "posto";
+  if (plano.startsWith("grupo_frota_")) return "grupo_frota";
+  return "frotista";
 }
 
-function rotuloDoPlano(plano: PlanoComTermo | PlanoPostoComTermo): string {
-  return ehPlanoPosto(plano) ? PLANO_POSTO_LABEL[plano] : PLANO_LABEL[plano];
+function rotuloDoPlano(plano: PlanoComTodosOsTermos): string {
+  const tipo = tipoDoPlano(plano);
+  if (tipo === "posto") return PLANO_POSTO_LABEL[plano as PlanoPostoComTermo];
+  if (tipo === "grupo_frota") return PLANO_GRUPO_FROTA_LABEL[plano as PlanoGrupoFrotaComTermo];
+  return PLANO_LABEL[plano as PlanoComTermo];
 }
 
 // Antes de chamar o checkout, o usuário precisa aceitar o Termo de Adesão
@@ -45,12 +60,13 @@ export function BotaoAssinarPlano({
   precoLabel,
 }: {
   empresaId: string;
-  // Fase Posto/Rede (26/07/2026) — quando informado, a assinatura é da REDE
+  // Fase Posto/Rede (26/07/2026), generalizado na Fase Grupo-Economico-
+  // Frota-Billing (09/08/2026) — quando informado, a assinatura é do GRUPO
   // (matriz paga por todos): empresaId continua sendo a empresa
   // administradora que clica em "Assinar", mas o Stripe cobra o
   // grupo_economico_id, não a empresa isolada. Ver create-checkout-session.
   grupoEconomicoId?: string;
-  plano: PlanoComTermo | PlanoPostoComTermo;
+  plano: PlanoComTodosOsTermos;
   nomeEmpresa: string;
   cnpj: string | null;
   email: string;
@@ -59,18 +75,25 @@ export function BotaoAssinarPlano({
   const [modalAberto, setModalAberto] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const planoPosto = ehPlanoPosto(plano);
+  const tipoPlano = tipoDoPlano(plano);
   const planoLabel = rotuloDoPlano(plano);
-  // Calibração TMS/ERP (23/07/2026) e Fase Posto/Rede (26/07/2026) — cada
-  // plano (frotista ou posto) tem sua própria Cláusula 3ª (ver
+  // Calibração TMS/ERP (23/07/2026), Fase Posto/Rede (26/07/2026) e Fase
+  // Grupo-Economico-Frota-Billing (09/08/2026) — cada plano (frotista,
+  // posto ou grupo frota) tem sua própria Cláusula 3ª (ver
   // src/lib/termoAdesao.ts), então os parágrafos e o hash já saem prontos
   // pro plano específico deste botão.
-  const paragrafosTermo = planoPosto
-    ? montarParagrafosTermoAdesaoPosto(plano)
-    : montarParagrafosTermoAdesao(plano);
-  const hashTermoFallback = planoPosto
-    ? HASH_TERMO_ADESAO_POSTO_POR_PLANO[plano]
-    : HASH_TERMO_ADESAO_POR_PLANO[plano];
+  const paragrafosTermo =
+    tipoPlano === "posto"
+      ? montarParagrafosTermoAdesaoPosto(plano as PlanoPostoComTermo)
+      : tipoPlano === "grupo_frota"
+        ? montarParagrafosTermoAdesaoGrupoFrota(plano as PlanoGrupoFrotaComTermo)
+        : montarParagrafosTermoAdesao(plano as PlanoComTermo);
+  const hashTermoFallback =
+    tipoPlano === "posto"
+      ? HASH_TERMO_ADESAO_POSTO_POR_PLANO[plano as PlanoPostoComTermo]
+      : tipoPlano === "grupo_frota"
+        ? HASH_TERMO_ADESAO_GRUPO_FROTA_POR_PLANO[plano as PlanoGrupoFrotaComTermo]
+        : HASH_TERMO_ADESAO_POR_PLANO[plano as PlanoComTermo];
 
   async function confirmarAceite() {
     setErro(null);

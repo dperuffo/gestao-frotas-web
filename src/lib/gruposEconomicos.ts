@@ -39,8 +39,14 @@ async function ehAdminOuSuperusuario(supabase: ClienteSupabase): Promise<boolean
 // que já é membro de uma Rede pode gerenciá-la (editar nome/CNPJ matriz,
 // vincular/desvincular postos que ele mesmo controla) sem precisar de
 // admin — mas só PARA REDES DAS QUAIS ELE JÁ FAZ PARTE (não pode mexer em
-// rede de outro grupo econômico só por saber o id). Grupo Econômico
-// (segmento='Frota') continua 100% admin-only, sem nenhuma mudança.
+// rede de outro grupo econômico só por saber o id).
+//
+// Fase Grupo-Economico-Frota-Billing (09/08/2026) — pedido do Daniel:
+// abrir o mesmo self-service pro Grupo Econômico de clientes (segmento=
+// 'Frota'), que até aqui era 100% admin-only. Removida a restrição
+// `grupo.segmento !== "Revenda"` — a checagem de "já é membro do grupo"
+// abaixo já garante isolamento entre grupos independente do segmento,
+// então basta aceitar os dois valores válidos da CHECK constraint.
 async function ehAdminSuperusuarioOuMembroDaRede(
   supabase: ClienteSupabase,
   grupoId: string
@@ -54,7 +60,7 @@ async function ehAdminSuperusuarioOuMembroDaRede(
   if (!minhasEmpresasIds || minhasEmpresasIds.length === 0) return false;
 
   const { data: grupo } = await supabase.from("grupos_economicos").select("segmento").eq("id", grupoId).maybeSingle();
-  if (!grupo || grupo.segmento !== "Revenda") return false;
+  if (!grupo) return false;
 
   const { data: vinculo } = await supabase
     .from("grupos_economicos_empresas")
@@ -126,6 +132,40 @@ export async function criarRedePostoSelfService(
   if (erroDocumentacao) return { erro: erroDocumentacao };
 
   const { data, error } = await supabase.rpc("criar_rede_posto_self_service", {
+    p_nome: nome,
+    p_cnpj_matriz: params.cnpjMatriz,
+    p_empresa_id: params.empresaId,
+  });
+  if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+
+  const resultado = data as { ok: boolean; id?: string; erro?: string };
+  if (!resultado.ok) return { erro: resultado.erro ?? "Não foi possível salvar." };
+  return { id: resultado.id! };
+}
+
+// Fase Grupo-Economico-Frota-Billing (09/08/2026) — equivalente exato de
+// criarRedePostoSelfService acima, pro segmento='Frota'. Resolve o mesmo
+// pedido do Daniel: "matriz/filiais ou empresas distintas do mesmo grupo
+// econômico... deveria ser permitido pela aplicação para cadastro e
+// visualização como grupo econômico" — o próprio cliente cria o grupo
+// (self-service, sem depender do admin) e vira a empresa_administradora_id
+// automaticamente, mesma regra de "quem cria é quem paga" já usada na Rede
+// de Postos.
+export async function criarGrupoFrotaSelfService(
+  supabase: ClienteSupabase,
+  params: { nome: string; cnpjMatriz: string | null; empresaId: string }
+): Promise<{ id: string } | { erro: string }> {
+  const nome = params.nome.trim();
+  if (!nome) return { erro: "Nome é obrigatório." };
+  if (!params.empresaId) return { erro: "Selecione a empresa fundadora do grupo." };
+
+  // Mesmo gate de documentação aprovada da Rede de Postos (Fase 27.149) —
+  // pedido do Daniel: "documentação deverá ser solicitada para análise e
+  // aprovação do admin" pra qualquer novo grupo/rede.
+  const erroDocumentacao = await exigirDocumentacaoAprovada(supabase, params.empresaId, "Criar um Grupo Econômico");
+  if (erroDocumentacao) return { erro: erroDocumentacao };
+
+  const { data, error } = await supabase.rpc("criar_grupo_frota_self_service", {
     p_nome: nome,
     p_cnpj_matriz: params.cnpjMatriz,
     p_empresa_id: params.empresaId,
