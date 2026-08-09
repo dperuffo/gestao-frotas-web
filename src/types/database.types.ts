@@ -6184,7 +6184,7 @@ export interface Database {
         }[];
       };
       manutencao_preditiva_base: {
-        Args: { p_empresa_id: string; p_placa?: string | null };
+        Args: { p_empresa_id: string; p_placa?: string | null; p_somente_empresa?: boolean };
         Returns: {
           placa: string;
           marca: string | null;
@@ -6243,7 +6243,7 @@ export interface Database {
         }[];
       };
       manutencao_preditiva_kpis: {
-        Args: { p_empresa_id: string; p_centro_custo_id?: string | null; p_busca?: string | null };
+        Args: { p_empresa_id: string; p_centro_custo_id?: string | null; p_busca?: string | null; p_somente_empresa?: boolean };
         Returns: {
           total_veiculos: number;
           total_criticos: number;

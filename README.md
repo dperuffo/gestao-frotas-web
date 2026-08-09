@@ -8502,3 +8502,34 @@ rótulos de min/max embaixo (não faziam parte do visual aprovado). Adicionado u
 que já colore o próprio anel (`corDoValor` → `statusDoValor`, mesmo padrão de badge já usado em
 `STATUS_AGENDAMENTO_COR`). Nenhuma mudança de props ou de call sites em `page.tsx` — só o miolo
 visual do componente. Validado: `npx tsc --noEmit` e `npx eslint` limpos.
+
+## Bugfix — card "Manutenção preditiva" do dashboard inicial vazava pro grupo econômico inteiro (05/08/2026)
+
+Achado real do Daniel: "No dashboard inicial, a empresa selecionada para ser visualizada nos
+indicadores, nao esta sendo respeitado... a indicacao de manutençao preventiva". Também citou o
+gráfico de previsão de consumo — testei `indicador_consumo_diario`/`indicador_padrao_dia_semana`
+direto no banco pras duas empresas do grupo "Grupo Frotas" (Frotas & Frotas Ltda vs Transportes de
+Cargas Testes Ltda) e os totais vieram corretamente distintos (35.185 L vs 365.623 L no mesmo
+período) — essas duas RPCs já filtram por `au.empresa_id = p_empresa_id` direto, sem expandir pro
+grupo. Não reproduzi vazamento aí; se a previsão de consumo ainda aparecer errada depois deste
+fix, precisamos de mais detalhe (quais duas empresas, período, valores vistos) pra investigar de
+novo.
+
+O card "Manutenção preditiva" (KPI resumido) **é** um vazamento real, confirmado: `manutencao_preditiva_kpis`
+chama `manutencao_preditiva_base`, que sempre expandia `p_empresa_id` pro GRUPO ECONÔMICO inteiro via
+`empresas_grupo_ids()` (que reaproveita `listar_empresas_alvo_replicacao`, a RPC de "Replicar para o
+grupo"). Isso é **deliberado** na tela dedicada `/manutencao-preditiva` (lista todos os veículos do
+grupo, com `empresa_dona_nome` rotulando os de fora da empresa selecionada — de propósito), mas o
+card resumido do dashboard inicial não tem esse contexto: o usuário escolhe UMA empresa no seletor
+único do topo e espera ver só os veículos DELA. Testado: Frotas & Frotas sozinha = 32 veículos (9
+críticos); Transportes de Cargas Testes sozinha = 2.364 veículos (2.314 críticos!) — o card do
+dashboard estava somando as duas (2.396 veículos) não importa qual empresa estivesse selecionada.
+
+Corrigido: `manutencao_preditiva_base`/`manutencao_preditiva_kpis` ganharam o parâmetro
+`p_somente_empresa` (default `false` = comportamento de sempre, grupo inteiro — preserva a tela
+dedicada e a tela de detalhe por placa sem nenhuma mudança). O card do dashboard
+(`dashboard/page.tsx`) passou a chamar com `p_somente_empresa: true`. Precisou remover as
+assinaturas antigas das duas funções (`create or replace` com uma lista de parâmetros diferente
+cria uma SOBRECARGA nova em vez de substituir — ficaram temporariamente 2 versões de cada, causando
+erro "function ... is not unique"; resolvido com `drop function` explícito das assinaturas antigas).
+`database.types.ts` atualizado. Validado: `npx tsc --noEmit` e `npx eslint` limpos.

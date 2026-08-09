@@ -304,7 +304,14 @@ export default async function DashboardPage({
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
         }),
-        supabase.rpc("manutencao_preditiva_kpis", { p_empresa_id: empresaSelecionada }),
+        // Fase 05/08/2026 (achado real do Daniel: "a empresa selecionada...
+        // nao esta sendo respeitado... a indicacao de manutençao
+        // preventiva") -- manutencao_preditiva_kpis por padrão expande pro
+        // GRUPO ECONÔMICO inteiro (ver manutencao_preditiva_base), deliberado
+        // na tela dedicada /manutencao-preditiva (mostra `empresa_dona_nome`
+        // de propósito), mas o card do dashboard tem que respeitar só a
+        // empresa escolhida no seletor único do topo -- daí `p_somente_empresa: true`.
+        supabase.rpc("manutencao_preditiva_kpis", { p_empresa_id: empresaSelecionada, p_somente_empresa: true }),
         supabase.rpc("indicador_variacao_precos", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
