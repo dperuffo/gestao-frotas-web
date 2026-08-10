@@ -28,6 +28,11 @@ export default function ImportarPrecosPage() {
           (cabeçalho por nome de coluna — CNPJ, Combustível, Preço e Data de Vigência são
           obrigatórios) — baixe, preencha com o layout do seu sistema e envie normalmente abaixo.
         </p>
+        <p className="mt-2">
+          Usuário de cliente: só são atualizados preços de postos que já fazem parte da sua rede
+          negociada — CNPJs fora dela são ignorados (não criam posto novo nem alteram preço de
+          outra empresa).
+        </p>
       </div>
 
       <ImportForm />

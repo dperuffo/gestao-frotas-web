@@ -52,6 +52,7 @@ function montarRegistroGenericoPreco(
   linha: unknown[],
   idx: Map<string, number>,
   empresaPorCnpj: Map<string, string | null>,
+  exigeEmpresaConhecida: boolean,
 ): LinhaPreco | null {
   const pegar = (nomeColuna: string) => {
     const i = idx.get(nomeColuna);
@@ -65,6 +66,12 @@ function montarRegistroGenericoPreco(
   const dataRef = celulaData(pegar("data de vigencia")) ?? celulaData(pegar("data de atualizacao"));
   if (!dataRef) return null;
 
+  // Fase abre-import-precos-cliente — usuário de cliente só pode atualizar
+  // preço de posto que já faz parte da rede negociada da SUA empresa (ver
+  // comentário grande mais abaixo, junto do carregamento de empresaPorCnpj).
+  const empresaId = empresaPorCnpj.get(cnpj) ?? null;
+  if (exigeEmpresaConhecida && !empresaId) return null;
+
   return {
     cnpj,
     combustivel,
@@ -75,7 +82,7 @@ function montarRegistroGenericoPreco(
     razao_social: textoOuNull(pegar("razao social")),
     municipio: textoOuNull(pegar("municipio")),
     uf: resolverUf(textoOuNull(pegar("uf"))),
-    empresa_id: empresaPorCnpj.get(cnpj) ?? null,
+    empresa_id: empresaId,
     bandeira: textoOuNull(pegar("bandeira")),
   };
 }
@@ -90,16 +97,59 @@ function montarRegistroGenericoPreco(
 // SERVICE ROLE sem checar absolutamente nada: nem sessão, nem perfil. Era a
 // única das 4 rotas irmãs de importação (postos, postos-anp, importar-precos,
 // inteligencia-rede/importar-precos-anp) sem essa checagem — as outras 3 já
-// exigem perfil admin, mesmo padrão replicado aqui agora. Confirmado ao vivo
-// antes da correção: POST sem nenhuma credencial processava a requisição
-// normalmente em produção.
+// exigem perfil admin, e esta foi corrigida pra exigir admin também.
+//
+// Fase abre-import-precos-cliente (10/08/2026) — Daniel pediu pra abrir essa
+// tela: "Importar preco_posto é da operação de cliente. Qualquer usuário
+// cliente com permissão deveria poder importar preços de postos do
+// relacionamento do cliente." Restringir a admin fazia sentido enquanto a
+// rota gravava sem NENHUM filtro (era literalmente cross-tenant irrestrito),
+// mas a operação do dia a dia é do cliente atualizar o preço da própria
+// rede — não devia depender de um admin.
+//
+// Desenho adotado (as 3 perguntas foram tiradas a limpo com o Daniel):
+//  1. Admin continua com o caminho antigo, sem filtro nenhum: service role,
+//     as duas planilhas (Pró-Frotas e modelo padrão), CNPJ sem cliente ainda
+//     grava com empresa_id null de propósito (é o uso real: uma planilha da
+//     Pró-Frotas mistura postos de vários clientes, muitos ainda não
+//     negociados por ninguém).
+//  2. Usuário de cliente (qualquer perfil vinculado a uma empresa — inclusive
+//     colaborador, não só gestor_frota/analista) pode importar as DUAS
+//     planilhas, mas só grava preço de posto que já pertence à rede
+//     negociada da própria empresa dele (postos_gf.empresa_id). Linha cujo
+//     CNPJ não é encontrado nessa rede é ignorada (vira "erro" no resultado,
+//     não cria posto novo nem vaza pra empresa de outro cliente).
+//  3. Pra isso o caminho de cliente usa o CLIENTE DE SESSÃO (não o de
+//     service role) tanto pra ler postos_gf quanto pra gravar em
+//     historico_precos — a RLS (`postos_gf_tenant_all`,
+//     `historico_precos_tenant_all`, ambas via `empresas_do_usuario()`) faz
+//     a segunda camada de proteção: mesmo que o filtro em código aqui tenha
+//     algum bug, o Postgres recusaria de qualquer forma gravar preço fora da
+//     rede do usuário. `empresas_do_usuario()` já expande de propósito pras
+//     empresas irmãs do mesmo grupo econômico (Rede de Postos) — comportamento
+//     documentado e reaproveitado aqui sem precisar de lógica nova.
 export async function POST(request: Request) {
   const supabaseSessao = await createClient();
   const { data: perfil } = await supabaseSessao.rpc("perfil_usuario_atual");
-  if (perfil !== "admin") {
-    return NextResponse.json<ResultadoImportacaoPrecos>({
-      erro: "Apenas administradores podem importar preços de postos.",
+  const isAdmin = perfil === "admin";
+
+  // Usuário de cliente precisa estar vinculado a pelo menos uma empresa —
+  // sem isso, `empresas_do_usuario()` (e a RLS que depende dela) não libera
+  // nenhuma linha de postos_gf, e a importação não teria o que atualizar.
+  // Checamos isso antes de processar o arquivo pra dar um erro claro em vez
+  // de "100% das linhas deram erro" sem explicação.
+  if (!isAdmin) {
+    const {
+      data: { user },
+    } = await supabaseSessao.auth.getUser();
+    const { data: minhasEmpresas } = await supabaseSessao.rpc("empresas_do_usuario", {
+      p_email: user?.email ?? "",
     });
+    if (!minhasEmpresas || minhasEmpresas.length === 0) {
+      return NextResponse.json<ResultadoImportacaoPrecos>({
+        erro: "Você não está vinculado a nenhuma empresa cliente — não é possível importar preços.",
+      });
+    }
   }
 
   const formData = await request.formData();
@@ -126,17 +176,21 @@ export async function POST(request: Request) {
     }
   }
 
-  // Esta importação é cross-tenant por natureza: uma única planilha da
-  // integração Pró-Frotas traz preços de postos de VÁRIOS clientes ao mesmo
-  // tempo (não há seletor de cliente nesta tela) e muitos CNPJs nem sequer
-  // pertencem a algum cliente ainda (empresa_id fica null de propósito).
-  // O RLS por tenant bloquearia a maioria das linhas, então usamos o cliente
-  // com chave de service role — mesma lógica de "operação administrativa"
-  // já usada para convite de usuários (ver src/lib/supabase/admin.ts).
-  const supabase = createAdminClient();
+  // Admin: rota cross-tenant por natureza (ver comentário grande acima) —
+  // usa service role, enxerga e grava em postos de qualquer cliente, CNPJ
+  // sem cliente ainda grava com empresa_id null de propósito.
+  //
+  // Cliente: usa o cliente de SESSÃO — a RLS de postos_gf e historico_precos
+  // já restringe automaticamente à rede do próprio usuário (e das empresas
+  // irmãs do mesmo grupo econômico, se houver). Nenhum filtro extra por
+  // empresa_id é necessário aqui: o que a SELECT abaixo devolve já É a rede
+  // dele.
+  const supabase = isAdmin ? createAdminClient() : supabaseSessao;
 
   // Casa o CNPJ do posto com o cliente dono dele (se já estiver na rede
-  // negociada em postos_gf) para preencher empresa_id automaticamente.
+  // negociada em postos_gf) para preencher empresa_id automaticamente. Pro
+  // caminho de cliente, isso também define quais CNPJs são "conhecidos" —
+  // os demais são rejeitados logo abaixo.
   const { data: postos } = await supabase.from("postos_gf").select("cnpj, empresa_id");
   const empresaPorCnpj = new Map((postos ?? []).map((p) => [normalizarCNPJ(p.cnpj), p.empresa_id]));
 
@@ -161,6 +215,14 @@ export async function POST(request: Request) {
         continue;
       }
 
+      const empresaId = empresaPorCnpj.get(cnpj) ?? null;
+      if (!isAdmin && !empresaId) {
+        // CNPJ fora da rede negociada do cliente — não cria posto novo nem
+        // atualiza preço de posto de outro cliente.
+        erros++;
+        continue;
+      }
+
       registros.push({
         cnpj,
         combustivel,
@@ -171,7 +233,7 @@ export async function POST(request: Request) {
         razao_social: textoOuNull(linha[COL.pontoDeVenda]),
         municipio: textoOuNull(linha[COL.cidade]),
         uf: resolverUf(textoOuNull(linha[COL.uf])),
-        empresa_id: empresaPorCnpj.get(cnpj) ?? null,
+        empresa_id: empresaId,
         codigo_profrotas: textoOuNull(linha[COL.codigoProfrotas]),
         codigo_abadi: textoOuNull(linha[COL.codigoAbadi]),
         preco_anterior: numero(linha[COL.precoAnterior]),
@@ -198,7 +260,7 @@ export async function POST(request: Request) {
     }
 
     for (let i = 1; i < linhas.length; i++) {
-      const registro = montarRegistroGenericoPreco(linhas[i], idx, empresaPorCnpj);
+      const registro = montarRegistroGenericoPreco(linhas[i], idx, empresaPorCnpj, !isAdmin);
       if (!registro) {
         erros++;
         continue;
