@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { parseAnpPrecosAcumulado } from "@/lib/anpPrecos";
-import { buscarPlanilhasAnpAcumuladas } from "@/lib/anpFetch";
+import { parseAnpPrecosXlsx } from "@/lib/anpPrecos";
+import { buscarPlanilhaAnpMaisRecente } from "@/lib/anpFetch";
 
 // Fase automatiza-anp-bigquery — atualização semanal automática da série de
 // preços de referência ANP (tabela anp_precos_referencia), sem depender de
@@ -17,43 +17,38 @@ import { buscarPlanilhasAnpAcumuladas } from "@/lib/anpFetch";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
+// ATUALIZAÇÃO (10/08/2026, fase automatiza-anp-fonte-fixa): esta rota
+// deixou de ser o caminho AGENDADO — o pg_cron passou a chamar
+// diretamente a Edge Function `atualizar-precos-anp` (Supabase), não mais
+// esta rota. Motivo: confirmamos nessa data que o egress do Railway está
+// bloqueado pro domínio www.gov.br (fetch failed, erro de rede/TCP puro —
+// testes de fora do Railway baixam o mesmo arquivo normalmente). Testando,
+// achamos que o egress do Supabase Edge Functions CONSEGUE alcançar o
+// gov.br — por isso a tarefa migrou de infra, não só de mecanismo.
+//
+// Esta rota continua funcional e é mantida como caminho de disparo manual
+// (ex.: `curl` com o CRON_SECRET) caso o bloqueio de rede do Railway seja
+// resolvido no futuro (proxy de saída, etc.) — nesse caso poderia voltar a
+// ser o caminho principal outra vez, sem precisar reescrever nada aqui.
+//
 // Achado real (27/07/2026, investigando por que a rotina de segunda-feira
 // "sumiu" — o Daniel reportou e conferimos junto): o disparo do pg_cron
 // chegou a acontecer (log do próprio pg_cron mostra sucesso), mas a
-// resposta HTTP foi um 502 "cru" da Cloudflare (texto puro "error code:
-// 502", SEM o corpo JSON que os catches abaixo devolvem) — ou seja, o
-// handler nunca chegou a rodar nenhum `return NextResponse.json(...)`.
+// resposta HTTP foi um 502 "cru" da Cloudflare — o handler nunca chegou a
+// rodar. CAUSA: Railway atrás de um proxy de borda com timeout próprio, e
+// o fetch pro gov.br não tinha timeout nenhum — corrigido com
+// `AbortSignal.timeout` em anpFetch.ts.
 //
-// CAUSA RAIZ CONFIRMADA: o app roda no Railway (não na Vercel), como UM
-// processo Node único (`npm run start`) atrás do proxy de borda do
-// próprio Railway — que tem um timeout de requisição (na prática, relatos
-// de ~5min mesmo com o teto documentado de 15min). O fetch pro site do
-// gov.br não tinha nenhum timeout — se o gov.br demorar demais pra
-// responder (comum, e pior ainda vindo de IP de datacenter), a promise
-// fica pendurada indefinidamente. Corrigido com `AbortSignal.timeout` em
-// cada tentativa de download (ver anpFetch.ts) — agora falha rápido e de
-// forma diagnosticável em vez de travar a requisição inteira.
-//
-// SEGUNDO ACHADO (10/08/2026, Daniel reportou de novo — rotina falhando
-// silenciosamente TODA segunda desde 18/07): dessa vez o `AbortSignal.
-// timeout` funcionou (falha em ~1.3s, log claro), mas o `fetch` continuava
-// retornando `fetch failed` — erro de rede/TCP puro, sem status HTTP —
-// pras 5 URLs candidatas. Confirmado por fora (curl de uma rede diferente
-// baixa o mesmo arquivo normalmente, HTTP 200 em <1s): é um bloqueio de
-// rede entre o egress do Railway e www.gov.br, não um bug de código. Isso
-// CONTINUA sem solução definitiva (precisa de proxy de saída ou mover essa
-// busca pra outra infra) — fica registrado aqui pra não se perder.
-//
-// Investigando esse segundo problema, achamos TAMBÉM que o mecanismo de
-// descoberta do arquivo (antes: adivinhar o nome por aritmética de data)
-// tinha uma segunda fragilidade independente do bloqueio de rede: a ANP
-// nem sempre nomeia o arquivo semanal do jeito esperado (achamos exceções
-// reais em 2026 — traço em vez de underscore, sufixo de reemissão). Por
-// isso trocamos, nesta mesma fase, pra buscar os arquivos ACUMULADOS de
-// URL fixa da ANP (nunca precisam ser adivinhados — ver anpFetch.ts) e um
-// parser novo que sabe ler esse formato (ver anpPrecos.ts). Isso NÃO
-// resolve o bloqueio de rede acima — é uma correção de robustez separada,
-// que evita um segundo motivo de falha independente do primeiro.
+// Achado real (10/08/2026, Daniel reportou de novo — rotina falhando
+// silenciosamente toda segunda desde 18/07): dessa vez o timeout
+// funcionou, mas o fetch retornava `fetch failed` — bloqueio de rede
+// Railway↔gov.br (não um bug de código, confirmado testando de fora).
+// Investigando isso, achamos TAMBÉM que o mecanismo de descoberta do
+// arquivo (adivinhar o nome por aritmética de data) tinha uma segunda
+// fragilidade independente: a ANP nem sempre nomeia o arquivo semanal do
+// jeito esperado (achamos exceções reais em 2026 — traço em vez de
+// underscore, sufixo de reemissão). Corrigido em anpFetch.ts lendo a
+// listagem real de arquivos da ANP em vez de adivinhar.
 async function executar(request: Request) {
   try {
     const segredoEsperado = process.env.CRON_SECRET;
@@ -65,31 +60,40 @@ async function executar(request: Request) {
       return NextResponse.json({ erro: "Não autorizado." }, { status: 401 });
     }
 
-    let buffers;
+    let busca;
     try {
-      buffers = await buscarPlanilhasAnpAcumuladas();
+      busca = await buscarPlanilhaAnpMaisRecente();
     } catch (e) {
-      console.error("[cron/atualizar-precos-anp] falha ao buscar planilhas:", e);
+      console.error("[cron/atualizar-precos-anp] falha ao buscar planilha:", e);
       return NextResponse.json(
-        { erro: e instanceof Error ? e.message : "Falha ao buscar as planilhas da ANP." },
+        { erro: e instanceof Error ? e.message : "Falha ao buscar a planilha da ANP." },
         { status: 502 }
       );
     }
 
     let resultadoParse;
     try {
-      resultadoParse = parseAnpPrecosAcumulado(buffers);
+      resultadoParse = parseAnpPrecosXlsx(busca.buffer);
     } catch (e) {
-      console.error("[cron/atualizar-precos-anp] falha ao interpretar as planilhas:", e);
+      console.error("[cron/atualizar-precos-anp] falha ao interpretar a planilha:", e);
       return NextResponse.json(
-        { erro: `Falha ao interpretar as planilhas baixadas: ${e instanceof Error ? e.message : String(e)}` },
+        {
+          erro: `Falha ao interpretar a planilha baixada: ${e instanceof Error ? e.message : String(e)}`,
+          urlEncontrada: busca.urlEncontrada,
+        },
         { status: 502 }
       );
     }
     const { registros, totalAntesDedupe, duplicadas, erros, porNivel } = resultadoParse;
 
     if (registros.length === 0) {
-      return NextResponse.json({ erro: "Planilhas baixadas não tinham nenhuma linha válida para a semana mais recente." }, { status: 502 });
+      return NextResponse.json(
+        {
+          erro: "Planilha baixada não tinha nenhuma linha válida.",
+          urlEncontrada: busca.urlEncontrada,
+        },
+        { status: 502 }
+      );
     }
 
     const supabase = createAdminClient();
@@ -102,7 +106,11 @@ async function executar(request: Request) {
         .upsert(lote, { onConflict: "nivel,data_inicial,data_final,regiao,estado,municipio,produto" });
       if (error) {
         return NextResponse.json(
-          { erro: `Falha ao gravar: ${error.message}. Lotes anteriores já foram mantidos.`, sucessoParcial: sucesso },
+          {
+            erro: `Falha ao gravar: ${error.message}. Lotes anteriores já foram mantidos.`,
+            urlEncontrada: busca.urlEncontrada,
+            sucessoParcial: sucesso,
+          },
           { status: 500 }
         );
       }
@@ -112,7 +120,8 @@ async function executar(request: Request) {
     revalidatePath("/inteligencia-rede");
 
     return NextResponse.json({
-      semana: registros[0] ? `${registros[0].data_inicial} a ${registros[0].data_final}` : null,
+      urlEncontrada: busca.urlEncontrada,
+      semana: `${busca.semanaInicio} a ${busca.semanaFim}`,
       total: totalAntesDedupe + erros,
       sucesso,
       erros,
