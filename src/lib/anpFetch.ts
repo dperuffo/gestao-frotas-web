@@ -1,111 +1,86 @@
 // Fase automatiza-anp-bigquery — a ANP publica o "Levantamento de Preços de
-// Combustíveis (últimas semanas pesquisadas)" num link previsível, descoberto
-// direto no site (não documentado em nenhuma API):
+// Combustíveis" também em arquivos ACUMULADOS de URL FIXA (nunca mudam de
+// nome), atualizados no mesmo lugar toda semana com a pesquisa mais recente
+// — descobertos em 10/08/2026 investigando uma alternativa ao mecanismo
+// antigo (removido nesta fase), que "adivinhava" o nome do arquivo semanal
+// por aritmética de data (resumo_semanal_lpc_{domingo}_{sabado}.xlsx).
 //
-//   https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/
-//   arquivos-lpc/{ano}/resumo_semanal_lpc_{domingo}_{sabado}.xlsx
+// Motivo da troca: o nome do arquivo semanal nem sempre segue esse padrão —
+// conferimos a listagem real de arquivos publicados em 2026 e achamos pelo
+// menos 3 exceções (dois arquivos de abril com traço em vez de underscore
+// entre as datas, um de março com sufixo "-1" de reemissão). Ou seja, o
+// "chute" podia falhar mesmo com a rede 100% ok. As URLs fixas abaixo
+// eliminam esse problema por completo: nunca precisam ser adivinhadas, só
+// filtramos a semana mais recente de dentro de cada arquivo (que carrega o
+// histórico inteiro desde 2013, ~1 arquivo por nível geográfico).
 //
-// onde {domingo}/{sabado} são as datas (AAAA-MM-DD) do início/fim da semana
-// da pesquisa (domingo a sábado). Confirmado manualmente em 18/07/2026: o
-// arquivo da semana corrente (2026-07-12 a 2026-07-18) já existia no próprio
-// sábado, então a ANP publica/atualiza esse arquivo ao longo da semana, não
-// só depois dela fechar — por isso tentamos a semana atual primeiro e caímos
-// pra semanas anteriores só se ela ainda não existir.
-const BASE_URL =
-  "https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/arquivos-lpc";
+// Ressalva: essas URLs continuam em www.gov.br — não resolvem sozinhas o
+// bloqueio de rede Railway↔gov.br identificado em 10/08/2026 (ver
+// route.ts do cron). São uma correção de robustez independente disso.
+const BASE_SHLP =
+  "https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/precos-revenda-e-de-distribuicao-combustiveis/shlp";
 
-function formatarData(d: Date): string {
-  return d.toISOString().slice(0, 10);
+export type NivelAcumuladoAnp = "brasil" | "regiao" | "estado" | "municipio";
+
+// O arquivo de município é o único que troca de nome (1x por ano, rodando
+// por ano civil — provavelmente pra não crescer sem limite: só ele já
+// tinha 72 mil linhas em 7 meses de 2026). É o único ponto que ainda
+// "adivinha" algo, mas só o ano corrente — risco bem menor que adivinhar
+// toda semana como no mecanismo antigo.
+export function urlsAcumuladasAnp(referencia: Date = new Date()): { nivel: NivelAcumuladoAnp; url: string }[] {
+  const ano = referencia.getUTCFullYear();
+  return [
+    { nivel: "brasil", url: `${BASE_SHLP}/semanal/semanal-brasil-desde-2013.xlsx` },
+    { nivel: "regiao", url: `${BASE_SHLP}/semanal/semanal-regioes-desde-2013.xlsx` },
+    { nivel: "estado", url: `${BASE_SHLP}/semanal/semanal-estados-desde-2013.xlsx` },
+    { nivel: "municipio", url: `${BASE_SHLP}/semanal/semanal-municipios-${ano}.xlsx` },
+  ];
 }
 
-// Dado um sábado de referência, devolve o domingo daquela mesma semana
-// (6 dias antes).
-function domingoDaSemana(sabado: Date): Date {
-  const d = new Date(sabado);
-  d.setUTCDate(d.getUTCDate() - 6);
-  return d;
-}
+export type BuffersAcumuladosAnp = Record<NivelAcumuladoAnp, ArrayBuffer>;
 
-// Constrói a lista de URLs candidatas, da semana mais recente pra mais
-// antiga, a partir de hoje. offsetMaximo=4 cobre um mês pra trás — mais que
-// suficiente pra um job semanal que às vezes atrasa um pouco.
-export function candidatosUrlSemanaAnp(referencia: Date = new Date(), offsetMaximo = 4): { url: string; inicio: string; fim: string }[] {
-  const candidatos: { url: string; inicio: string; fim: string }[] = [];
+// Timeout bem maior que o do mecanismo antigo (15s) — esses arquivos
+// carregam o histórico inteiro desde 2013 e já passam de 12MB (estados),
+// crescendo ~1MB/ano. Um timeout curto demais confundiria "arquivo grande,
+// mas rede ok" com o cenário de rede travada que motivou o
+// AbortSignal.timeout em primeiro lugar (achado de 27/07/2026, ver
+// route.ts do cron) — o objetivo do timeout é falhar rápido quando a
+// resposta realmente nunca vem, não punir arquivos legitimamente grandes.
+const TIMEOUT_FETCH_ANP_MS = 60_000;
 
-  // Acha o sábado mais recente (hoje, se hoje já for sábado) — recuando
-  // dia a dia a partir de hoje até cair num sábado.
-  const sabado = new Date(referencia);
-  while (sabado.getUTCDay() !== 6) {
-    sabado.setUTCDate(sabado.getUTCDate() - 1);
+async function baixar(url: string): Promise<ArrayBuffer> {
+  const resposta = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(TIMEOUT_FETCH_ANP_MS) });
+  if (!resposta.ok) throw new Error(`${url} → HTTP ${resposta.status}`);
+  const buffer = await resposta.arrayBuffer();
+  if (buffer.byteLength < 1000) {
+    // Resposta "ok" mas claramente não é uma planilha de verdade.
+    throw new Error(`${url} → resposta suspeita (${buffer.byteLength} bytes)`);
   }
-
-  for (let offset = 0; offset <= offsetMaximo; offset++) {
-    const sabadoDaVez = new Date(sabado);
-    sabadoDaVez.setUTCDate(sabadoDaVez.getUTCDate() - offset * 7);
-    const domingoDaVez = domingoDaSemana(sabadoDaVez);
-    const inicio = formatarData(domingoDaVez);
-    const fim = formatarData(sabadoDaVez);
-    const ano = domingoDaVez.getUTCFullYear();
-    candidatos.push({
-      url: `${BASE_URL}/${ano}/resumo_semanal_lpc_${inicio}_${fim}.xlsx`,
-      inicio,
-      fim,
-    });
-  }
-
-  return candidatos;
+  return buffer;
 }
 
-export type ResultadoBuscaAnp = {
-  buffer: ArrayBuffer;
-  urlEncontrada: string;
-  semanaInicio: string;
-  semanaFim: string;
-};
+// Baixa os 4 arquivos acumulados em paralelo. Diferente do mecanismo
+// antigo (que caía pra semana anterior em caso de falha pontual), aqui uma
+// falha em qualquer um dos 4 aborta a atualização inteira — os 4 níveis
+// vêm sempre juntos da mesma semana, então gravar só 3 deles deixaria a
+// tabela inconsistente entre níveis pra semana corrente.
+export async function buscarPlanilhasAnpAcumuladas(referencia: Date = new Date()): Promise<BuffersAcumuladosAnp> {
+  const alvos = urlsAcumuladasAnp(referencia);
+  const resultados = await Promise.allSettled(alvos.map((alvo) => baixar(alvo.url)));
 
-// Tenta baixar o arquivo da semana mais recente possível, caindo pras
-// semanas anteriores em caso de 404 (arquivo da semana atual ainda não
-// publicado). Lança erro se nenhum candidato responder.
-// Achado real (27/07/2026): o app roda no Railway (não na Vercel — cada
-// `maxDuration` deste arquivo é herança de um deploy antigo/hipotético na
-// Vercel e não tem NENHUM efeito no Railway, que só respeita o timeout do
-// seu próprio proxy de borda). O `fetch` abaixo não tinha timeout nenhum —
-// se o site do gov.br demorar demais pra responder (comum em sites públicos
-// brasileiros, e pior ainda vindo de IP de datacenter), a promise fica
-// pendurada indefinidamente. Um `await` pendurado não gera exceção nenhuma
-// (os try/catch do route.ts nunca disparam), só faz a requisição inteira
-// nunca terminar — até o proxy do Railway desistir de esperar e devolver um
-// 502 "cru" pro Cloudflare repassar, sem log nenhum do lado da aplicação
-// (bate 100% com o sintoma observado: 502 sem corpo JSON, sem nada nos logs
-// do Railway). `AbortSignal.timeout` força cada tentativa a falhar rápido
-// e de forma diagnosticável em vez de travar a requisição inteira.
-const TIMEOUT_FETCH_ANP_MS = 15_000;
-
-export async function buscarPlanilhaAnpMaisRecente(referencia: Date = new Date()): Promise<ResultadoBuscaAnp> {
-  const candidatos = candidatosUrlSemanaAnp(referencia);
   const falhas: string[] = [];
-
-  for (const candidato of candidatos) {
-    try {
-      const resposta = await fetch(candidato.url, {
-        cache: "no-store",
-        signal: AbortSignal.timeout(TIMEOUT_FETCH_ANP_MS),
-      });
-      if (!resposta.ok) {
-        falhas.push(`${candidato.url} → HTTP ${resposta.status}`);
-        continue;
-      }
-      const buffer = await resposta.arrayBuffer();
-      if (buffer.byteLength < 1000) {
-        // Resposta "ok" mas claramente não é uma planilha de verdade.
-        falhas.push(`${candidato.url} → resposta suspeita (${buffer.byteLength} bytes)`);
-        continue;
-      }
-      return { buffer, urlEncontrada: candidato.url, semanaInicio: candidato.inicio, semanaFim: candidato.fim };
-    } catch (e) {
-      falhas.push(`${candidato.url} → ${e instanceof Error ? e.message : "erro de rede"}`);
+  const buffers = {} as BuffersAcumuladosAnp;
+  resultados.forEach((resultado, i) => {
+    if (resultado.status === "fulfilled") {
+      buffers[alvos[i].nivel] = resultado.value;
+    } else {
+      const motivo = resultado.reason instanceof Error ? resultado.reason.message : "erro de rede";
+      falhas.push(`${alvos[i].url} → ${motivo}`);
     }
-  }
+  });
 
-  throw new Error(`Nenhuma planilha semanal da ANP encontrada. Tentativas:\n${falhas.join("\n")}`);
+  if (falhas.length > 0) {
+    throw new Error(`Falha ao baixar planilha(s) acumuladas da ANP:\n${falhas.join("\n")}`);
+  }
+  return buffers;
 }
