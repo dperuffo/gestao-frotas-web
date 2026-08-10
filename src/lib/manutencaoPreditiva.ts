@@ -62,6 +62,20 @@ export function corBarraScore(score: number) {
 // função SQL casa esses itens com os 8 componentes acima por palavra-chave
 // (ex: qualquer item contendo "óleo" conta pro componente "oleo"), não por
 // igualdade exata, já que dados antigos usam rótulos um pouco diferentes.
+//
+// Achado (10/08/2026, Daniel reportou pela tela de manutenção preditiva):
+// "Lubrificação Geral" e "Monitoramento de Ruídos" (2 dos 8 componentes
+// calculados por manutencao_preditiva_base, ver ORDEM_COMPONENTES acima)
+// não tinham NENHUM item aqui que casasse com as palavras-chave 'lubrific'
+// e 'ruido' da função SQL — ou seja, mesmo o usuário registrando manutenção
+// via este formulário, esses dois cards nunca saíam do modo "estimado"
+// (nunca dava pra "confirmar" que o serviço foi feito, ficavam sempre
+// vencidos pelo módulo do hodômetro). Adicionados "Lubrificação geral" e
+// "Verificação de ruídos e vibrações" — únicos dois itens novos, resto
+// inalterado. Pendência: o app Flutter citado acima (fora deste repo) tem
+// a mesma lista hardcoded e precisa dos mesmos dois itens novos pra manter
+// o vocabulário igual entre os dois apps — não localizamos esse arquivo
+// nas pastas conectadas nesta sessão.
 export const ITENS_MANUTENCAO = [
   "Troca de óleo e filtro",
   "Revisão de freios",
@@ -79,6 +93,8 @@ export const ITENS_MANUTENCAO = [
   "Troca de fluido de freio",
   "Revisão de transmissão",
   "Troca de amortecedores",
+  "Lubrificação geral",
+  "Verificação de ruídos e vibrações",
 ] as const;
 
 export type ComponenteResultado = {
