@@ -8994,10 +8994,65 @@ tudo pra quem não é service role — não é um vazamento ativo, mas também s
 autenticado consegue ler essas tabelas via client normal hoje (vale confirmar se isso é intencional
 tabela por tabela). Esforço: baixo a médio, depende do caso.
 
+✅ **CONFIRMADO, SEM ALTERAÇÃO NECESSÁRIA (11/08/2026)** — investigadas as 8, tabela por tabela:
+nenhuma tem hoje um caller que dependa do client de sessão (RLS-scoped) do usuário — ou seja, o
+bloqueio total "RLS ligado + zero policy" não quebra nada em produção agora, é o comportamento
+correto (fail-closed) e intencional. Detalhe por tabela:
+
+- `postos_favoritos`, `user_preferences`, `webhook_logs`, `webhook_registrations` — únicos callers
+  são o app Streamlit legado (`estudo-de-rede`), que usa `service_role` (ignora RLS por design,
+  confirmado no `.env.example` desse projeto). Sem risco.
+- `audit_logs` — escrita só pelo trigger `fn_audit_log()` (`SECURITY DEFINER`, ignora RLS na
+  gravação). Ninguém lê a tabela hoje (não existe tela de log de auditoria). Sem risco; só fica a
+  nota de que um futuro viewer de auditoria vai precisar de uma policy de SELECT por
+  `empresa_id`/admin.
+- `notas_posto`, `solicitacoes_acesso` — tabelas órfãs, nenhum caller encontrado em nenhum
+  repositório (Next.js ou Streamlit legado). Candidatas a limpeza futura (decisão de produto, fora
+  do escopo de segurança), não representam risco.
+- `abastecimentos_mobile` — **único caso com um caller real usando anon key** (sem login):
+  `estudo-de-rede/mobile/fni-mobile.html`, uma PWA estática solta de "check-in" de abastecimento, já
+  confirmada anteriormente no README como fora de uso. Registrado como risco latente, não ativo: se
+  essa PWA for reativada no futuro sem que ninguém lembre deste RLS, os inserts vão falhar
+  silenciosamente (anon + zero policy = bloqueado) — bom lembrete pra quando/se isso acontecer, não
+  uma ação a tomar agora.
+
 **B2 — extensions `unaccent` e `pg_net` instaladas no schema `public`.** Boa prática do Postgres é
 manter extensions fora do `public` (schema dedicado, ex. `extensions`), pra reduzir superfície de
 colisão de nome e permissão. Esforço: baixo, mas precisa janela de manutenção (mover extension pode
 exigir recriação).
+
+✅ **CORRIGIDO PARCIALMENTE (11/08/2026)** — as duas extensions têm situações bem diferentes:
+
+- **`unaccent` — movida para `extensions`.** Só uma função própria do app chama `unaccent()`
+  diretamente: `normalizar_texto_anp(text)`, usada em cadeia por `uf_para_estado_anp` →
+  `postos_gf_desvio_anp`/`postos_gf_alertas_preco` (as duas últimas são `SECURITY DEFINER` expostas
+  via RPC ao frontend — comparativo de preço ANP). Sequência aplicada com segurança: (1) testado
+  antes com `BEGIN; ALTER EXTENSION unaccent SET SCHEMA extensions; ROLLBACK;` pra confirmar
+  permissão sem aplicar nada; (2) `ALTER FUNCTION normalizar_texto_anp SET search_path = 'public',
+  'extensions'` — sem esse passo primeiro, mover a extension quebraria a função na hora (a chamada
+  `unaccent(...)` deixaria de resolver); (3) `ALTER EXTENSION unaccent SET SCHEMA extensions`.
+  Validado chamando `normalizar_texto_anp`, `uf_para_estado_anp` e `postos_gf_desvio_anp` depois da
+  mudança — resultado correto, sem erro (`normalizar_texto_anp('Coração de Maria')` →
+  `"CORACAO DE MARIA"`). Nenhum índice/view/text search config dependia de `unaccent` (confirmado
+  antes de mexer), então não havia o risco mais perigoso desse tipo de migração.
+- **`pg_net` — won't-fix, por limitação da própria extensão.** `ALTER EXTENSION pg_net SET SCHEMA`
+  é **impossível tecnicamente**: o control file da extensão declara `extrelocatable = false`, então
+  o Postgres rejeita a mudança incondicionalmente, não é questão de permissão. Além disso, o achado
+  do linter aqui é praticamente cosmético: os objetos funcionais de verdade (`net.http_post`,
+  `net.http_request_queue`, etc., usados por 7 jobs ativos em `cron.job`) já vivem isolados no
+  schema `net` desde a instalação — só o registro do catálogo da extensão aparecia associado a
+  `public`. A única forma de "corrigir" seria `DROP EXTENSION` + `CREATE EXTENSION ... WITH SCHEMA
+  extensions`, o que perde o histórico de `net._http_response`/`net.http_request_queue` e mexe no
+  worker de background gerenciado pela própria plataforma Supabase — risco desproporcional pra um
+  ganho cosmético no linter. Mantido como está, de propósito.
+
+**Achado à parte, fora do escopo original do B2 (fica registrado pra decisão futura):** vários jobs
+de `cron.job` (`sync-profrotas-hourly`, `atualizar-fipe-mensal`, `atualizar-precos-anp-semanal`,
+`alertas-sla-fretes-cron`, entre outros) têm o Bearer token/segredo gravado em **texto puro** dentro
+do `command` do job, visível a quem tiver acesso de leitura a `cron.job`/`cron.job_run_details`. A
+documentação da Supabase recomenda usar `vault.decrypted_secrets` em vez de hardcodar o segredo no
+comando. Não corrigido nesta rodada (fora do escopo do B1/B2 pedido) — acho que vale um item novo no
+backlog se quiser tratar.
 
 
 ## Grupo Econômico Frota — billing e self-service (09/08/2026)
