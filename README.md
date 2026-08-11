@@ -9046,13 +9046,32 @@ exigir recriação).
   worker de background gerenciado pela própria plataforma Supabase — risco desproporcional pra um
   ganho cosmético no linter. Mantido como está, de propósito.
 
-**Achado à parte, fora do escopo original do B2 (fica registrado pra decisão futura):** vários jobs
-de `cron.job` (`sync-profrotas-hourly`, `atualizar-fipe-mensal`, `atualizar-precos-anp-semanal`,
-`alertas-sla-fretes-cron`, entre outros) têm o Bearer token/segredo gravado em **texto puro** dentro
-do `command` do job, visível a quem tiver acesso de leitura a `cron.job`/`cron.job_run_details`. A
-documentação da Supabase recomenda usar `vault.decrypted_secrets` em vez de hardcodar o segredo no
-comando. Não corrigido nesta rodada (fora do escopo do B1/B2 pedido) — acho que vale um item novo no
-backlog se quiser tratar.
+**Achado à parte, fora do escopo original do B2 — corrigido a pedido do Daniel (11/08/2026).**
+8 jobs de `cron.job` tinham o token de autorização gravado em **texto puro** dentro do `command`.
+Conferido antes de corrigir quem realmente conseguia ler isso: `information_schema.role_table_grants`
+mostra que só o role `postgres` tem SELECT em `cron.job` — ou seja, a exposição real era pra quem tem
+acesso ao SQL Editor/Studio do projeto (qualquer colaborador com acesso ao dashboard), não pública
+pela internet; mesmo assim, vale corrigir (reduz o raio de dano se uma conta de colaborador for
+comprometida, e evita o segredo aparecer em prints/exports/logs de query). Eram dois segredos
+diferentes, com sensibilidade bem diferente:
+
+- **`CRON_SECRET` real do Next.js** (o mesmo protegido por comparação constant-time no M3) — exposto
+  em 2 jobs que chamam rotas `/api/cron/*` diretamente: `sync-profrotas-hourly`,
+  `atualizar-fipe-mensal`. Este é sensível de verdade.
+- **Anon key do Supabase** — exposta (repetida 6 vezes) nos jobs que chamam Edge Functions:
+  `fni-email-trials`, `reportar-excedente-veiculos-diario`, `reportar-excedente-postos-diario`,
+  `alertas-sla-fretes-cron`, `reportar-excedente-empresas-grupo-diario`,
+  `atualizar-precos-anp-semanal`. Tecnicamente não é confidencial (é a mesma chave pública embutida
+  em qualquer app cliente — a segurança vem do RLS, não do sigilo dela), mas movida pro Vault também,
+  por consistência.
+
+Solução: **Supabase Vault** (extension `supabase_vault`, já habilitada no projeto). Criados 2
+segredos via `vault.create_secret()` — `cron_secret` e `supabase_anon_key_cron` — e os 8 jobs
+atualizados via `cron.alter_job()` pra resolver o valor em tempo de execução
+(`(select decrypted_secret from vault.decrypted_secrets where name = '...')`) em vez de conter o
+texto puro. Validado: reconsultei `cron.job.command` depois da mudança (nenhum segredo em texto puro
+restante) e testei que `vault.decrypted_secrets` resolve exatamente pro valor original em cada um dos
+2 segredos.
 
 
 ## Grupo Econômico Frota — billing e self-service (09/08/2026)
