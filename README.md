@@ -8665,6 +8665,36 @@ severidade alta em produção: Next.js (15.5.20, precisa de 15.5.23+), postcss, 
 xlsx/SheetJS (este último sem correção disponível do fornecedor — vai exigir avaliar substituição da
 lib ou mitigação). Esforço estimado: baixo pros 4 primeiros (`npm update` + reteste), médio pro xlsx.
 
+✅ **CORRIGIDO (11/08/2026).** `npm audit` foi de 8 vulnerabilidades altas (o número tinha subido desde
+09/08 — mais achados novos, não regressão) pra **0**. `next` 15.5.20 → 15.5.23 (última versão da linha
+15.x — 16.x é major, fora de escopo aqui). Achado real: mesmo com next em 15.5.23, `postcss` e `sharp`
+continuavam vulneráveis porque o Next.js empacota cópias PRÓPRIAS dessas duas libs dentro de
+`node_modules/next/node_modules/` — bumpar a versão direta não alcança essas cópias aninhadas. Resolvido
+com `overrides` no `package.json` (`sharp: ^0.35.3`; `postcss` já tinha dependência direta, só precisou
+subir a versão pra `^8.5.26` e adicionar em `overrides` também, porque o Next referencia sua própria
+cópia aninhada independente da declarada no projeto). `fast-xml-parser` (dependência direta) subiu de
+`^5.9.3` pra `^5.10.1`. `nanoid`/`brace-expansion`/`js-yaml` (transitivos do eslint) resolvidos sozinhos
+ao reinstalar do zero (lockfile antigo prendia versões velhas por causa do dedupe).
+
+**xlsx/SheetJS**: sem fix no registro do npm (fabricante abandonou o pacote lá, `xlsx@0.18.5` é a última
+versão publicada e é vulnerável — 2 CVEs: Prototype Pollution e ReDoS). A SheetJS move a distribuição
+oficial pro CDN próprio (`cdn.sheetjs.com`) desde então; os próprios mantenedores confirmam publicamente
+que ferramentas tipo Snyk reportando isso como "não corrigido" têm um bug de detecção — a versão 0.19.3+
+(usamos 0.20.3, a mais recente) resolve as duas falhas. Pergunta feita ao Daniel antes de mudar (é uma
+URL externa em vez do registro do npm) — optou por trocar. `package.json`:
+`"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"`. Validado com teste funcional real (gerar
++ ler planilha via `src/lib/xlsx.ts`, único ponto do código que importa `xlsx` diretamente) — API idêntica
+à 0.18.5 pro uso daqui (sem qualquer chamada a `fs`/stream), zero mudança de código necessária.
+
+Nota de ambiente: `npm install` dentro desta sessão de trabalho (pasta montada) ficou instável em
+reinstalações repetidas — o SO da sandbox recusa apagar/renomear alguns arquivos de `node_modules` já
+existentes (`ENOTEMPTY`/`EPERM`), deixando pastas de versões antigas presas mesmo depois do
+`package-lock.json` já apontar pra versão nova. Isso não afeta o resultado: `package.json` e
+`package-lock.json` já estão corretos e commitados; rode `npm install` normalmente na sua máquina (onde
+não existe essa restrição) depois do `git pull`. Toda a validação de fato (tsc, eslint, `next build`
+completo gerando as 192 páginas, teste funcional do xlsx novo) foi feita numa cópia limpa fora dessa
+pasta, sem esse problema.
+
 **H2 — cerca de 150 funções `SECURITY DEFINER` executáveis por `anon`.** Inclui funções sensíveis
 como `motorista_definir_senha`, `decidir_ajuste_abastecimento`, `executar_acao_bloquear_motorista`,
 `baixar_conta_pagar`/`baixar_conta_receber` e `vincular_motorista_auth`. Precisa de uma varredura
