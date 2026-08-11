@@ -8702,36 +8702,290 @@ função a função pra confirmar que cada uma valida internamente quem está ch
 função existir — o risco é a que faltar essa validação interna). Esforço: alto (auditoria manual,
 não dá pra automatizar com segurança).
 
+✅ **CORRIGIDO (11/08/2026).** Auditadas as 153 funções (subagente leu o corpo de cada uma via
+`pg_get_functiondef`, resultado revisado e testado a dedo antes de aplicar qualquer coisa). 13
+confirmadas vulneráveis de verdade + 6 de risco baixo (contagem agregada/enumeração) corrigidas — total
+19 funções alteradas, `anon`/`authenticated` executável caiu de 153 para 139. As 3 restantes (`nfe_stats_periodo`,
+`empresa_dona_do_veiculo`, `contar_anomalias_nao_revisadas`) e as 11 do primeiro lote somam os 14 REVOKE;
+mais 5 (`empresas_do_usuario`, `ultimo_hodometro_veiculo`, `_reputacao_motorista`,
+`usuario_app_cpf_duplicado`, `contar_veiculos_reais_empresa`) ganharam validação interna sem perder
+acesso; `motorista_tem_senha` foi revisada e mantida de propósito (RPC pré-login, exigir sessão quebraria
+o fluxo de entrar no app); `buscar_motorista_documento` já validava corretamente.
+
+**Achado de processo (armadilha real, guarde pra próxima auditoria de função no Postgres/Supabase):**
+`REVOKE EXECUTE ... FROM anon, authenticated` não teve efeito nenhum na primeira tentativa — o
+`has_function_privilege('anon', ...)` continuava `true` depois do revoke. Causa: boa parte das 153
+funções tinha o `EXECUTE` concedido ao role `PUBLIC` (entrada `=X` na ACL, é o padrão do Postgres quando
+a função é criada sem `REVOKE` explícito) — `anon`/`authenticated` herdam de `PUBLIC` automaticamente,
+então revogar deles individualmente não tira nada enquanto o grant de `PUBLIC` continuar de pé. Já outro
+grupo menor (`nfe_stats_periodo`, `empresa_dona_do_veiculo`, `contar_anomalias_nao_revisadas`) tinha
+grant EXPLÍCITO e direto pra `anon`/`authenticated` (sem entrada de `PUBLIC`), então pra essas o
+`REVOKE ... FROM PUBLIC` também não fazia nada — precisou dos dois REVOKEs diferentes, um pra cada
+padrão, conferindo `proacl` de cada função antes de decidir qual usar. `postgres`/`service_role` nunca
+foram afetados (sempre têm entrada própria e independente na ACL).
+
+**As 14 REVOKE (Grupo A — sem NENHUM uso legítimo via `anon`/`authenticated`, só `service_role`/pg_cron/
+chamada interna por outra função `SECURITY DEFINER` que já valida antes):**
+`_candidatos_nota_fiscal_core`, `_inserir_nota_fiscal_core` (helpers internos, prefixo `_`, só chamados
+pelas 2 versões de `buscar_abastecimentos_candidatos_nota_fiscal`/`inserir_nota_fiscal_abastecimento`) ·
+`buscar_abastecimentos_candidatos_nota_fiscal`/`inserir_nota_fiscal_abastecimento` — só o overload
+"confiável" (6/21 args, com `p_empresa_posto_id_confiavel`); o comentário no próprio
+`database.types.ts` já dizia "só o service_role pode chamar (REVOKE de anon/authenticated na
+migration)" — nunca tinha sido aplicado de fato, `/api/integracoes/notas-fiscais` já usa
+`createAdminClient()`, não precisava do grant · `alocar_abastecimento_saldo` (só chamada pelos 2
+triggers `trg_alocar_abastecimento_*`) · `aplicar_bloqueio_se_configurado` (só chamada pelas
+`executar_acao_*`, que já validam antes) · `gerar_faturas_postos_robo`, `gerar_notas_fiscais_teste_robo`,
+`gerar_abastecimentos_meios_pagamento_robo`, `gerar_abastecimentos_postos_robo` (confirmado via
+`cron.job`: as 4 só rodam por `pg_cron`, que executa como `postgres`, não precisa de grant nenhum) ·
+`fn_inserir_historico` (zero callers em qualquer um dos 3 apps — INSERT arbitrário em `historico_precos`
+a partir de jsonb livre, teria deixado qualquer anônimo forjar preço de combustível) ·
+`nfe_stats_periodo` (só chamada por `nfe_recolha_por_ciclo`, que já valida) · `empresa_dona_do_veiculo`
+(só chamada pelo trigger `trg_preencher_empresa_id_profrotas_abastecimentos`) ·
+`contar_anomalias_nao_revisadas` (zero callers — sobra da época de "Anomalias", virou "Ações Sugeridas").
+
+**As 5 com validação nova adicionada (Grupo B — precisam continuar chamáveis, mas não validavam o
+parâmetro recebido):**
+`empresas_do_usuario(p_email)` — a função mais crítica de todas: é o helper central usado por ~30
+tabelas via RLS e por praticamente toda tela da web/PWA pra resolver "quais empresas esse usuário
+enxerga". Recebia `p_email` sem checar se batia com quem estava chamando — dava pra qualquer usuário
+autenticado (ou até anônimo, tinha grant pra `anon` também) descobrir a quais empresas um e-mail
+arbitrário está vinculado, só chamando a RPC direto. Conferido nos 3 apps (Next.js, Flutter
+estudo-de-rede, Flutter estrada-que-cuida) e em toda policy de RLS que usa essa função: TODO caller
+legítimo já manda o e-mail da PRÓPRIA sessão, nunca de terceiro — corrigido pra só devolver resultado de
+verdade quando `p_email` bate com quem chama (ou é admin/bypass do Daniel), senão devolve array vazio.
+Zero mudança de assinatura, zero impacto em quem já usava certo. `cnpjs_do_usuario` não precisou de fix
+separado: chama `empresas_do_usuario` por baixo, herdou a proteção de graça. · `ultimo_hodometro_veiculo`
+— o comentário no código já dizia "não expõe hodômetro de placa arbitrária pra qualquer um", mas o SQL
+nunca checava isso (só confirmava que ALGUM motorista estava logado) — qualquer motorista autenticado
+lia o hodômetro de qualquer placa da plataforma. Corrigido replicando a mesma lógica de vínculo
+motorista↔placa já usada em `registrar_inspecao_motorista` (mesma tela, app estrada-que-cuida). ·
+`_reputacao_motorista`, `usuario_app_cpf_duplicado` — cross-tenant por natureza (cartão de reputação de
+motorista parceiro em fretes, checagem de CPF duplicado na base toda), mas sem exigir nem que o
+chamador estivesse vinculado a alguma empresa; adicionado o mesmo padrão que `buscar_motorista_documento`
+já usava (precisa estar autenticado E vinculado a pelo menos 1 empresa, ou ser admin) — não restringe à
+MESMA empresa de propósito, quebraria a busca cross-tenant que é a razão de existir dessas duas. ·
+`contar_veiculos_reais_empresa` — usada por `limitePlano.ts` (bloqueio de limite de frota do plano) e
+`assinatura/page.tsx`, sempre com o `p_empresa_id` da própria sessão — essa sim ganhou a checagem
+estrita (só responde pra empresa do próprio chamador, ou admin).
+
+**Revisada e mantida sem alteração:** `motorista_tem_senha(p_telefone)` — é a RPC chamada ANTES do
+login (tela de telefone do app estrada-que-cuida), comentário no próprio código já explica
+"RPC pública porque ainda não existe sessão aqui" — exigir autenticação quebraria o próprio fluxo de
+entrar no app. Risco residual (telefone cadastrado é enumerável) é o mesmo de qualquer fluxo de
+login por telefone/e-mail do mercado, aceito de propósito.
+
+**132 confirmadas seguras** (públicas por design, funções de trigger, ou já validavam corretamente) —
+lista completa nos comentários da migration `h2_seguranca_definer_grupo_a_revoke_e_grupo_b_validacao` e
+`h2_seguranca_definer_grupo_c_baixo_risco`. Um caso revisado e mantido de propósito, fora do escopo do
+H2 (não é falta de validação, é decisão de produto já tomada): `preco_meios_pagamento_por_posto` devolve
+o preço pago por QUALQUER cliente num posto (não só o de quem chama) — o próprio comentário em
+`database.types.ts` já documentava que é intencional ("preço de referência agregado visível a qualquer
+cliente"), usado em `precoVigente.ts` como um dos níveis da cascata de preço vigente.
+
 **M1 — headers HTTP de segurança ausentes.** Sem CSP, X-Frame-Options, Referrer-Policy nem
 Permissions-Policy — só HSTS e X-Content-Type-Options aparecem (prováveis padrões da Cloudflare, não
 configurados pela aplicação). Também expõe `x-powered-by: Next.js`. Esforço: baixo (configuração em
 `next.config` ou middleware).
 
+✅ **CORRIGIDO (11/08/2026)** — adicionados os 5 headers em `next.config.mjs` via `headers()`
+(aplicados a `/:path*`, então valem pra toda rota, incluindo API):
+
+- `Content-Security-Policy` — construída listando de verdade cada domínio externo que o app carrega
+  no navegador, em vez de copiar uma CSP genérica de tutorial. Levantamento feito revisando o código
+  (não adivinhando): tiles do Leaflet (`*.tile.openstreetmap.org`, usado em 5 mapas), o ícone padrão
+  do marcador do Leaflet que só funciona hoje via `unpkg.com` (achado real em `MapaRota.tsx` — o
+  caminho relativo do pacote quebra com o bundler do Next), Storage do Supabase
+  (`nedthbeekvwzcjrhsghp.supabase.co`, imagens/anexos), API/Auth/Realtime do Supabase (inclui `wss://`
+  pro chat de fretes), Nominatim (busca de endereço client-side em `CampoLocalFrete.tsx`), Google
+  Identity Services (`accounts.google.com`, login com Google) e Hotjar (`*.hotjar.com`, só ativo em
+  produção). Confirmado que Stripe **não** entra na CSP: tanto o checkout quanto o portal de
+  pagamento fazem `window.location.href` (redirect de página inteira), não um embed/iframe.
+  Confirmado também que BigQuery, o SDK da Anthropic e o tesseract.js (OCR) rodam 100% server-side —
+  não tocam o bundle do navegador, então não entram em nenhuma diretiva.
+  **Limitação conhecida, documentada de propósito:** `script-src`/`style-src` usam `'unsafe-inline'`
+  em vez de nonce por requisição. Uma CSP "strict" de verdade exigiria gerar um nonce a cada request
+  (via middleware) e propagá-lo pra cada `<script>`/`<style>` da árvore, incluindo o snippet do
+  Hotjar (que é injetado via `dangerouslySetInnerHTML`) — esforço bem maior do que o "baixo" estimado
+  pra este item. A CSP como está já bloqueia a superfície de ataque principal (carregar recurso de
+  qualquer domínio não listado — ex. exfiltrar dados pra um domínio de atacante via XSS) e adiciona
+  `frame-ancestors 'none'` contra clickjacking; só não impede um script inline malicioso já injetado
+  na página de rodar. Se quiser fechar esse último ponto no futuro, é um item à parte (nonce-based CSP).
+- `X-Frame-Options: DENY` e `frame-ancestors 'none'` (CSP) — reforço duplo contra clickjacking (o
+  primeiro pros navegadores mais antigos que não olham `frame-ancestors`).
+- `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`.
+- `Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=(), interest-cohort=()`
+  — geolocalização liberada só pra própria origem porque é usada de propósito (botão "Usar minha
+  localização" em `/meu-posto`, `MeuPostoForm.tsx`); as demais (câmera, microfone, pagamento, USB)
+  negadas — nenhuma tela usa essas APIs do navegador.
+- `poweredByHeader: false` — remove o `x-powered-by: Next.js`.
+
+**Nota de ambiente:** não foi possível rodar `next build` completo até o fim no sandbox desta sessão
+(o processo passa do tempo-limite de cada chamada de terminal antes de terminar, mesma limitação de
+`npm install` já registrada na correção do H1) — a validação foi feita confirmando que
+`next.config.mjs` carrega sem erro e que `headers()` devolve exatamente a estrutura que o Next.js
+espera (`[{ source, headers: [{ key, value }] }]`, conferido com `node --check` + execução direta da
+função). Recomendo, ao rodar `npm run build`/`npm run dev` localmente antes do deploy, abrir o
+DevTools (aba Console) e navegar pelas telas que carregam recurso de terceiro — login (Google),
+qualquer mapa (Roteirização, Densidade, etc.) e Fretes (chat/busca de endereço) — pra confirmar que
+nenhuma violação de CSP aparece. Se aparecer alguma, é sinal de um domínio que passou despercebido
+no levantamento e precisa ser adicionado à diretiva correspondente em `next.config.mjs`.
+
 **M2 — nenhum rate limiting.** Nenhuma rota tem limite de requisições por IP/usuário — abre espaço
 pra força bruta e abuso de API. Esforço: médio (precisa de infra, ex. Upstash/Redis ou solução no
 edge da Cloudflare).
+
+✅ **CORRIGIDO PARCIALMENTE (11/08/2026)** — decisão tomada com o Daniel: implementar sem depender de
+infra nova (sem contratar Redis/Upstash), já que o deploy hoje roda como UM container Node
+persistente no Railway (não múltiplas instâncias serverless efêmeras como a Vercel) — nesse modelo,
+um contador em memória do próprio processo já funciona corretamente sem coordenação externa. Criado
+`src/lib/rateLimit.ts` (`verificarLimite(chave, max, janelaMs)`, janela fixa, limpeza automática de
+chaves expiradas) e aplicado nas rotas de maior risco real, levantadas revisando TODAS as 39 rotas de
+`src/app/api/**` (nenhuma ficou sem autenticação nenhuma — todas já exigiam sessão, chave de API ou
+segredo compartilhado; o que faltava era só o limite de volume):
+
+- **5 rotas protegidas só por segredo compartilhado** (`CRON_SECRET`/`*_WEBHOOK_SECRET` via header) —
+  maior prioridade, porque o segredo pode ser tentado por força bruta sem limite: os 3 crons
+  (`atualizar-precos-anp`, `atualizar-fipe`, `sync-profrotas`) e os 2 webhooks (`cobranca`, `fiscal`).
+  Limite por IP (20-30 requisições / 5 min) — a comparação do segredo já é constant-time (M3), isso
+  limita o VOLUME de tentativas, defesa em profundidade.
+- **Rotas com credencial válida mas custo por uso real** — protegidas por usuário/IP mesmo exigindo
+  sessão, porque um token válido (ou vazado) não devia conseguir gerar custo ilimitado: `/api/assistente`
+  (API paga da Anthropic, 20/10min por usuário), `/api/ocr/documento` (CPU do tesseract.js, 30/10min
+  por usuário), `/api/admin/anp-bigquery-check` (cota do BigQuery, 10/10min por IP), e os 4 endpoints
+  de importação de planilha — `postos/importar`, `postos/importar-anp`, `postos/importar-precos`,
+  `inteligencia-rede/importar-precos-anp` (parsing pesado de milhares de linhas, 10-15/10min).
+
+**Ficou fora desta rodada, de propósito** — as ~30 rotas de `cadastros/*` e `integracoes/*`
+(autenticadas por chave de API com hash no banco) e `usuarios/convidar`: todas já exigem credencial
+válida, não chamam API paga nem fazem processamento pesado — aplicar rate limit nelas é bem-vindo mas
+não urgente, decisão de escopo pra não inflar demais uma única rodada. Fica registrado aqui como
+próximo passo natural se quiser fechar 100% da superfície.
+
+**Limitação conhecida, documentada de propósito:** por ser em memória e por instância, se o Railway
+algum dia escalar pra múltiplas réplicas, o limite efetivo vira "N × réplicas" (cada réplica conta
+separado) — nesse cenário futuro, trocar a implementação interna de `rateLimit.ts` por um client
+Redis compartilhado resolve sem precisar mudar a assinatura usada nas rotas. Também reseta a cada
+deploy/reinício do processo (memória, não persiste em disco/banco) — aceitável pra esse tipo de
+limite (não é dado que precise sobreviver a reinício).
+
+Validado com `tsc --noEmit` e `eslint` (ambos limpos) nas 13 rotas + arquivo novo alterados.
 
 **M3 — comparação de segredo não é constant-time.** Rotas de webhook/cron comparam o segredo com
 `!==` (comum), o que em teoria permite ataque de timing pra descobrir o segredo caractere a
 caractere. Esforço: baixo (trocar por `crypto.timingSafeEqual`).
 
+✅ **CORRIGIDO (11/08/2026)** — criada `src/lib/segredoConstante.ts` com `segredoConfere(recebido,
+esperado)`: em vez de comparar os textos crus (que já vazaria informação pelo próprio tamanho
+diferente, já que `crypto.timingSafeEqual` exige buffers do mesmo tamanho), a função faz hash SHA-256
+dos dois lados primeiro (sempre 32 bytes, tamanho fixo) e só então compara os hashes com
+`timingSafeEqual`. Trocado o `!==` direto pelas 5 ocorrências reais encontradas no projeto (levantamento
+feito revisando `src/app/api/**/route.ts` por completo, não só grep superficial):
+
+- `src/app/api/cron/atualizar-precos-anp/route.ts` — `Authorization: Bearer <CRON_SECRET>`
+- `src/app/api/cron/atualizar-fipe/route.ts` — `Authorization: Bearer <CRON_SECRET>`
+- `src/app/api/cron/sync-profrotas/route.ts` — `Authorization: Bearer <CRON_SECRET>`
+- `src/app/api/webhooks/cobranca/route.ts` — header `x-webhook-secret` / `COBRANCA_WEBHOOK_SECRET`
+- `src/app/api/webhooks/fiscal/route.ts` — header `x-webhook-secret` / `FISCAL_WEBHOOK_SECRET`
+
+**Revisado e descartado do escopo do M3:** `src/lib/apiAuth.ts` (`autenticarRequisicaoApi`, usado por
+todas as rotas de `/api/integracoes/**` e `/api/cadastros/**`) já não compara a chave de API em texto
+puro — ela calcula o SHA-256 da chave recebida e busca no banco por `hash_chave` (`.eq()`), então a
+comparação real acontece no Postgres sobre o hash, não em JS sobre o segredo. Não há integração com
+Stripe neste repositório (o billing usa Edge Functions do Supabase, fora do Next.js), então não existe
+comparação manual de `stripe-signature` a corrigir aqui.
+
+Validado com `tsc --noEmit` e `eslint` (ambos limpos) nos 6 arquivos alterados/criados.
+
 **M4 — CORS com wildcard (`Access-Control-Allow-Origin: *`) em 3 rotas.** `/api/usuarios/convidar`,
 `/api/assistente` e `/api/ocr/documento` aceitam requisição de qualquer origem. Esforço: baixo
 (restringir à origem do app Flutter, já que nenhuma delas precisa aceitar navegador arbitrário).
 
+✅ **CORRIGIDO (11/08/2026)** — criada `src/lib/corsOrigens.ts` (`resolverCorsHeaders(request)`),
+usada pelas 3 rotas. Em vez de `"*"` fixo, a rota agora lê o header `Origin` da requisição e só ecoa
+de volta como `Access-Control-Allow-Origin` se ele estiver numa lista de origens conhecidas — senão
+o header simplesmente não é incluído na resposta (o navegador do chamador bloqueia a leitura). Lista
+levantada revisando de verdade quem chama cada rota (não adivinhada):
+
+- `https://mobile.fxgestaodefrotasonline.com` — PWA Cliente/Posto (`estudo-de-rede/flutter`, chama
+  `/api/assistente` e `/api/usuarios/convidar`).
+- `https://estrada.fxgestaodefrotasonline.com` — PWA Motorista (`estrada-que-cuida`, chama
+  `/api/ocr/documento`).
+- `http://localhost:<qualquer porta>` — só fora de produção (`NODE_ENV !== "production"`), pra não
+  travar o teste local dos dois apps Flutter (`flutter run -d web-server`, porta variável).
+
+Confirmado que nenhuma dessas rotas é chamada por app nativo (Android/iOS publicado) hoje — mas
+mesmo que fosse, CORS é enforçado só pelo navegador; um client nativo ignora esse header, então a
+restrição não quebraria um uso nativo futuro (o Bearer token continua sendo a proteção real contra
+chamada não autenticada). Adicionado também `Vary: Origin`, pra qualquer cache/CDN intermediário não
+misturar a resposta calculada pra uma origem com a de outra. Validado com `tsc --noEmit` e `eslint`
+(ambos limpos).
+
 **M5 — proteção contra senha vazada desativada no Supabase Auth.** O Supabase oferece checagem
 contra bases de senha vazada (HaveIBeenPwned) e está desligada. Esforço: baixo (um toggle no painel
 do Supabase).
+
+✅ **CORRIGIDO (11/08/2026)** — não era automatizável pelas ferramentas de MCP desta sessão (é
+configuração do painel de Auth, não tabela/função do banco — fora do alcance de `execute_sql`/
+`apply_migration`), então o Daniel ativou direto no painel: Supabase Dashboard → Authentication →
+Providers → Email → "Prevent use of leaked passwords" (checagem contra a base HaveIBeenPwned).
+Confirmado por print do painel: toggle ligado.
 
 **M6 — `function_search_path_mutable` em dezenas de funções.** Funções do banco sem `search_path`
 fixo, achado do próprio linter do Supabase — em tese permite manipulação de schema via `search_path`
 malicioso em cenários específicos. Esforço: médio (mexe em muitas funções, precisa validar uma a
 uma).
 
+✅ **CORRIGIDO (11/08/2026)** — o número real era bem menor do que "dezenas": consultando
+`pg_proc.proconfig` diretamente (funções de `public`, `prokind = 'f'`, sem entrada
+`search_path=...` na config), achei 19 funções sem `search_path` fixo — 4 delas
+(`unaccent(text)`, `unaccent(regdictionary, text)`, `unaccent_init(internal)`,
+`unaccent_lexize(internal,internal,internal,internal)`) são da própria extension `unaccent` (não são
+código do app — ficam registradas no item B2, que trata da extension estar instalada em `public`, e
+não devem ser alteradas por mim). As outras 15 são funções próprias do app, corrigidas via
+`ALTER FUNCTION ... SET search_path = 'public'` (migration
+`m6_fixa_search_path_funcoes_proprias`) — esse comando só anexa a configuração à função, não
+redefine o corpo, então o comportamento não muda, só passa a ignorar qualquer `search_path`
+customizado da sessão que a chamar:
+
+`_criar_politica_tenant`, `_motorista_no_alvo_frete`, `ciclo_data_geracao_boleto`,
+`ciclo_janela_fim`, `ciclo_janela_inicio`, `compativel_veiculo_frete`, `fn_audit_log` (SECURITY
+DEFINER — trigger de auditoria), `fn_inserir_historico` (SECURITY DEFINER), `haversine_km`,
+`manutencao_preditiva_kpis`, `manutencao_preditiva_resumo`, `resumo_vendas_diarias_posto`,
+`set_tenant_context`, `set_updated_at`, `tocar_atualizado_em_conteudo_ajuda`.
+
+Validado reconsultando `pg_proc` após a migration (só as 4 funções da extension continuam sem
+`search_path`, exatamente como esperado) e chamando `haversine_km`/`ciclo_janela_inicio` direto pra
+confirmar que continuam devolvendo o resultado certo.
+
 **M7 — armazenamento de sessão/token no PWA sem storage seguro.** `pubspec.yaml` do
 estrada-que-cuida não usa `flutter_secure_storage`, cai no armazenamento padrão da plataforma (menos
 protegido contra outros apps/processos no aparelho). Esforço: médio (troca de dependência + migração
 de quem já tem sessão salva).
+
+⚠️ **Investigado (11/08/2026) — sem alteração de código, de propósito.** Levantamento em
+`estrada-que-cuida`: nenhum pacote de storage é usado diretamente pelo app — `shared_preferences`
+entra só como dependência transitiva do `supabase_flutter` (`^2.5.6`, resolvido em `2.16.0`), que
+`Supabase.initialize()` usa sem nenhum `authOptions`/`LocalStorage` customizado
+(`lib/core/services/supabase_service.dart`). Não há nenhum outro dado sensível (PIN, CPF, token
+separado) salvo localmente pelo app — só a sessão gerenciada internamente pelo SDK.
+
+**O achado central que muda a correção certa:** este app roda 100% como PWA hoje — as pastas
+`android/`/`ios/` são scaffold padrão do `flutter create` (bundle id já ajustado, mas sem CI/CD nem
+qualquer evidência de build/publicação nativa real). No **navegador**, `flutter_secure_storage` cai
+de volta pra `window.localStorage` com uma ofuscação leve — não é criptografia de verdade como
+Keychain (iOS) ou Keystore (Android). Ou seja, do jeito que o item foi descrito no backlog (trocar a
+dependência), a correção **não muda o modelo de ameaça real no navegador** — token continua acessível
+a qualquer JavaScript rodando na mesma origem (o risco de verdade é XSS, não "outro app no
+aparelho", que é o cenário que motiva `flutter_secure_storage` em apps NATIVOS). Aplicar a troca
+mesmo assim daria uma falsa sensação de segurança resolvida sem ganho real — decisão tomada com o
+Daniel (pergunta direta): documentar a limitação em vez de trocar dependência à toa.
+
+Registrado como referência pra quando fizer sentido revisitar: se um build Android/iOS nativo for de
+fato publicado no futuro, aí sim vale condicionar `flutter_secure_storage` via `kIsWeb` (nativo ganha
+proteção real; web mantém o padrão). Pro cenário PWA atual, a mitigação que teria efeito real contra
+roubo de token por XSS seria outra — ex. expiração de sessão mais curta, rotação de refresh token, ou
+CSP restritiva no próprio PWA (gerenciada fora deste repositório Next.js) — nenhuma delas foi pedida
+neste backlog, então ficou fora do escopo desta rodada.
 
 **B1 — 8 tabelas com RLS ativado mas nenhuma policy.** `abastecimentos_mobile`, `audit_logs`,
 `notas_posto`, `postos_favoritos`, `solicitacoes_acesso`, `user_preferences`, `webhook_logs` e
