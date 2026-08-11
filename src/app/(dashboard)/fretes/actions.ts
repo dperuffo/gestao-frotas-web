@@ -235,11 +235,70 @@ export async function criarFrete(empresaId: string, _prev: FreteFormState, formD
   redirect(`/fretes?empresa=${empresaId}`);
 }
 
-export async function cancelarFrete(id: string, empresaId: string) {
+// Achado real (11/08/2026, pergunta direta do Daniel: "se eu cancelar um
+// frete onde uma parte já foi paga ao motorista, como o sistema trata sobre
+// o valor pago?") — esta Server Action fazia um UPDATE cru (status =
+// "cancelado"), sem checar se havia parcela já paga ao motorista. O valor
+// pago ficava com o motorista sem nenhum registro/estorno, e continuava
+// contando pra sempre no financeiro sem rastreabilidade de volta ao frete
+// (mesma lacuna que Contas a Pagar/Receber já tinham fechado com
+// cancelar_conta_pagar/cancelar_conta_receber, nunca replicada aqui).
+//
+// Agora delega pra RPC cancelar_frete (SECURITY DEFINER), que: bloqueia
+// cancelar frete concluído/já cancelado; se há parcela paga, NÃO cancela na
+// primeira chamada — devolve o total pago pra UI mostrar um aviso explícito
+// (`precisaConfirmarPagamento`); só cancela de verdade com
+// `confirmarComPagamento=true` (2ª chamada, depois que o usuário viu o
+// aviso). Quando cancela com pagamento, a RPC também reclassifica o
+// lançamento em custos_fixos (origem "frete" -> "frete_cancelado", mantendo
+// o valor — o dinheiro realmente saiu, não é estornado) e lança a perda em
+// Contas a Pagar (status "perda", pedido também do Daniel: "identificar no
+// financeiro como uma perda, no contas a pagar").
+export type CancelarFreteResultado =
+  | { ok: true }
+  | { ok: false; erro: string }
+  | { ok: false; precisaConfirmarPagamento: true; totalPago: number; qtdParcelasPagas: number };
+
+export async function cancelarFrete(
+  id: string,
+  empresaId: string,
+  confirmarComPagamento = false
+): Promise<CancelarFreteResultado> {
   const supabase = await createClient();
-  if (!(await empresaPertenceAoUsuario(supabase, empresaId))) return;
-  await supabase.from("fretes").update({ status: "cancelado", atualizado_em: new Date().toISOString() }).eq("id", id);
+  if (!(await empresaPertenceAoUsuario(supabase, empresaId))) {
+    return { ok: false, erro: "Você não tem permissão para cancelar fretes nesta empresa." };
+  }
+
+  const { data, error } = await supabase.rpc("cancelar_frete", {
+    p_frete_id: id,
+    p_confirmar_com_pagamento: confirmarComPagamento,
+  });
+  if (error) return { ok: false, erro: error.message };
+
+  const resultado = data as {
+    ok: boolean;
+    erro?: string;
+    precisa_confirmar_pagamento?: boolean;
+    total_pago?: number;
+    qtd_parcelas_pagas?: number;
+  };
+
+  if (!resultado.ok) {
+    if (resultado.precisa_confirmar_pagamento) {
+      return {
+        ok: false,
+        precisaConfirmarPagamento: true,
+        totalPago: resultado.total_pago ?? 0,
+        qtdParcelasPagas: resultado.qtd_parcelas_pagas ?? 0,
+      };
+    }
+    return { ok: false, erro: resultado.erro ?? "Não foi possível cancelar o frete." };
+  }
+
   revalidatePath("/fretes");
+  revalidatePath(`/fretes/${id}`);
+  revalidatePath("/financeiro");
+  return { ok: true };
 }
 
 // Reabre pro mercado (limpa motorista_id) — usado quando o motorista

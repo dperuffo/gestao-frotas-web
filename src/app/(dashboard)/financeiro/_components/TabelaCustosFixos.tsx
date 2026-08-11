@@ -28,6 +28,12 @@ export type LinhaCustoFixo = {
 // Plano de Viagem é concluído com diárias de refeição/pernoite/banho/lavagem.
 function badgeOrigem(origem: string) {
   if (origem === "frete") return { classe: "badge-ativo", label: "Frete" };
+  // Fase Fretes-Cancelamento-Pagamento (11/08/2026) — lançamento que ERA
+  // "Frete" normal, mas o frete foi cancelado DEPOIS de já pago (ver
+  // cancelar_frete). Não some nem zera — só fica identificável separado,
+  // com destaque de alerta.
+  if (origem === "frete_cancelado")
+    return { classe: "rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700", label: "⚠️ Perda (frete cancelado)" };
   if (origem === "plano_viagem") return { classe: "badge-ativo", label: "Plano de Viagem" };
   if (origem === "api") return { classe: "badge-ativo", label: "Integração" };
   return { classe: "badge-atencao", label: "Manual" };

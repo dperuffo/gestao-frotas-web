@@ -19,7 +19,15 @@ export type ReputacaoMotorista = {
   // Fase Destaques-Automaticos — tags que o cliente marcou na avaliação e
   // que se repetiram em 2+ avaliações diferentes (ver _reputacao_motorista).
   tags_destaque: { tag: string; quantidade: number }[];
+  // Fase Fretes-Cancelamento-Pagamento (11/08/2026, pedido do Daniel: "marcar
+  // o motorista com uma flag informando sobre cancelamentos") — calculado ao
+  // vivo em _reputacao_motorista (fretes desse motorista cancelados DEPOIS
+  // de já ter parcela paga a ele), não é uma coluna fixa em `motoristas`.
+  fretes_cancelados_com_pagamento: number;
+  valor_nao_recuperado_cancelamento: number;
 };
+
+const formatoMoedaReputacao = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 function formatarTempoCadastro(dias: number | null): string {
   if (dias === null) return "—";
@@ -40,10 +48,21 @@ export function CartaoReputacaoMotorista({ reputacao }: { reputacao: ReputacaoMo
     dias_cadastro,
     selo_verificado,
     tags_destaque,
+    fretes_cancelados_com_pagamento,
+    valor_nao_recuperado_cancelamento,
   } = reputacao;
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      {fretes_cancelados_com_pagamento > 0 && (
+        <span
+          className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700"
+          title="Frete(s) cancelado(s) depois de já ter parcela paga a este motorista — valor não recuperado."
+        >
+          ⚠️ {fretes_cancelados_com_pagamento} cancelamento{fretes_cancelados_com_pagamento === 1 ? "" : "s"} com pagamento
+          ({formatoMoedaReputacao.format(valor_nao_recuperado_cancelamento)})
+        </span>
+      )}
       {selo_verificado && (
         <span className="rounded-full bg-status-ativo/15 px-2 py-0.5 text-[11px] font-semibold text-status-ativo">
           ✅ Motorista verificado

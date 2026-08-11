@@ -1966,7 +1966,10 @@ export interface Database {
           // referencia multas.id; 'orcamento_oficina' referencia
           // propostas_orcamento_oficina.id (ver referencia_id — renomeada
           // na fase marketplace-pecas, 04/08/2026).
-          origem: "fatura_meio_pagamento" | "avulso" | "multa" | "orcamento_oficina";
+          // Fase Fretes-Cancelamento-Pagamento (11/08/2026) — 'frete_cancelado'
+          // é lançado por cancelar_frete quando um frete com parcela já paga
+          // ao motorista é cancelado (referencia_id aponta pro frete.id).
+          origem: "fatura_meio_pagamento" | "avulso" | "multa" | "orcamento_oficina" | "frete_cancelado";
           referencia_id: string | null;
           credor_nome: string | null;
           credor_cnpj: string | null;
@@ -1974,7 +1977,11 @@ export interface Database {
           valor_original: number;
           valor_pago: number;
           vencimento: string;
-          status: "aberto" | "pago" | "cancelado" | "baixado_parcial";
+          // 'perda' — distinto de 'cancelado' (que tem o sentido OPOSTO nesta
+          // tabela: dívida cancelada ANTES de ser paga, ver
+          // cancelar_conta_pagar). 'perda' é o contrário: já foi pago, o
+          // frete caiu depois, valor não recuperável.
+          status: "aberto" | "pago" | "cancelado" | "baixado_parcial" | "perda";
           pago_em: string | null;
           observacoes: string | null;
           criado_por: string | null;
@@ -1983,7 +1990,7 @@ export interface Database {
         };
         Insert: Partial<Database["public"]["Tables"]["contas_pagar"]["Row"]> & {
           empresa_id: string;
-          origem: "fatura_meio_pagamento" | "avulso" | "multa" | "orcamento_oficina";
+          origem: "fatura_meio_pagamento" | "avulso" | "multa" | "orcamento_oficina" | "frete_cancelado";
           valor_original: number;
           vencimento: string;
         };
@@ -3088,6 +3095,12 @@ export interface Database {
           // lançamento por plano; trigger em planos_viagem faz upsert/delete
           // conforme o status vira/deixa de ser 'concluido'.
           plano_viagem_id: string | null;
+          // Fase Fretes-Cancelamento-Pagamento (11/08/2026) — FK opcional pra
+          // parcela de frete que originou o lançamento (quando origem =
+          // 'frete' ou 'frete_cancelado'). Populado por marcar_pagamento_frete;
+          // usado por cancelar_frete pra reclassificar origem 'frete' ->
+          // 'frete_cancelado' sem apagar o lançamento original.
+          frete_pagamento_id: string | null;
           criado_em: string | null;
           criado_por: string | null;
         };
@@ -3118,6 +3131,13 @@ export interface Database {
             columns: ["plano_viagem_id"];
             isOneToOne: false;
             referencedRelation: "planos_viagem";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "custos_fixos_frete_pagamento_id_fkey";
+            columns: ["frete_pagamento_id"];
+            isOneToOne: false;
+            referencedRelation: "fretes_pagamentos";
             referencedColumns: ["id"];
           },
         ];
@@ -5652,6 +5672,10 @@ export interface Database {
           // Fase Destaques-Automaticos — tags recorrentes (2+ avaliações),
           // ver _reputacao_motorista().
           tags_destaque: { tag: string; quantidade: number }[];
+          // Fase Fretes-Cancelamento-Pagamento (11/08/2026) — histórico de
+          // cancelamentos após pagamento, ver _reputacao_motorista().
+          fretes_cancelados_com_pagamento: number;
+          valor_nao_recuperado_cancelamento: number;
         }[];
       };
       // Fase Fretes — negociação e listagem.
@@ -5678,6 +5702,9 @@ export interface Database {
           dias_cadastro: number | null;
           selo_verificado: boolean;
           tags_destaque: { tag: string; quantidade: number }[];
+          // Fase Fretes-Cancelamento-Pagamento (11/08/2026).
+          fretes_cancelados_com_pagamento: number;
+          valor_nao_recuperado_cancelamento: number;
         }[];
       };
       meus_fretes_empresa: {
@@ -5694,6 +5721,11 @@ export interface Database {
           nome_motorista: string | null;
           telefone_motorista: string | null;
           criado_em: string;
+          // Fase Fretes-Cancelamento-Pagamento (11/08/2026) — valor pago ao
+          // motorista antes do cancelamento, não recuperado (aba
+          // "Cancelados"), ver cancelar_frete().
+          valor_pago_nao_recuperado: number;
+          qtd_parcelas_pagas: number;
         }[];
       };
       abrir_negociacao_frete: {
@@ -5781,6 +5813,16 @@ export interface Database {
       // (achado ao rodar tsc, RPC já existe de verdade no banco).
       recolocar_frete_para_base: {
         Args: { p_frete_id: string; p_motorista_id?: string | null };
+        Returns: Json;
+      };
+      // Fase Fretes-Cancelamento-Pagamento (11/08/2026) — cancela um frete;
+      // se houver parcela já paga ao motorista, exige p_confirmar_com_pagamento
+      // = true (o front primeiro chama sem confirmar, mostra o valor pago, e
+      // só então rechama confirmando). Não estorna o valor: reclassifica o
+      // custos_fixos como origem 'frete_cancelado' e cria uma linha em
+      // contas_pagar com status 'perda'.
+      cancelar_frete: {
+        Args: { p_frete_id: string; p_confirmar_com_pagamento?: boolean };
         Returns: Json;
       };
       // Fase Fretes-Adiantamento-Combustível (19/07).

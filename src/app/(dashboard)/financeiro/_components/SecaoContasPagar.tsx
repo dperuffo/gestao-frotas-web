@@ -35,6 +35,23 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
 
   const abertas = contas ?? [];
 
+  // Fase Fretes-Cancelamento-Pagamento (11/08/2026, pedido do Daniel:
+  // "identificar no financeiro como uma perda, no contas a pagar") — status
+  // 'perda' é lançado por cancelar_frete quando um frete com parcela já paga
+  // ao motorista é cancelado. Diferente de 'cancelado' (que já existe nesta
+  // tabela com o sentido OPOSTO — dívida cancelada ANTES de ser paga): aqui
+  // o dinheiro já saiu e não tem mais volta, por isso seção própria, fora do
+  // fluxo normal de "a pagar em aberto".
+  const { data: perdasRaw } = await supabase
+    .from("contas_pagar")
+    .select("id, credor_nome, descricao, valor_original, vencimento")
+    .eq("empresa_id", empresaId)
+    .eq("status", "perda")
+    .order("vencimento", { ascending: false })
+    .limit(200);
+  const perdas = perdasRaw ?? [];
+  const totalPerdas = perdas.reduce((s, p) => s + p.valor_original, 0);
+
   const { data: contasDaEmpresa } = await supabase.from("contas_pagar").select("id").eq("empresa_id", empresaId);
   const idsContas = (contasDaEmpresa ?? []).map((c) => c.id);
   let pagoNoMes = 0;
@@ -86,7 +103,7 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
         </p>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
         <div className="card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">A pagar (em aberto)</p>
           <p className="mt-1 text-xl font-semibold text-slate-900">{formatoMoeda.format(totalEmAberto)}</p>
@@ -98,6 +115,10 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
         <div className="card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Pago no mês</p>
           <p className="mt-1 text-xl font-semibold text-status-ativo">{formatoMoeda.format(pagoNoMes)}</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Perdas (fretes cancelados)</p>
+          <p className="mt-1 text-xl font-semibold text-red-600">{formatoMoeda.format(totalPerdas)}</p>
         </div>
       </div>
 
@@ -194,6 +215,38 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
           </tbody>
         </table>
       </div>
+
+      {perdas.length > 0 && (
+        <div className="card mb-4 overflow-x-auto p-4">
+          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">
+            ⚠️ Perdas — valores pagos a motoristas em fretes cancelados
+          </h3>
+          <p className="mb-3 text-xs text-slate-500">
+            Fretes que já tiveram alguma parcela paga ao motorista e foram cancelados depois — o valor não é
+            estornado automaticamente, fica registrado aqui como perda confirmada.
+          </p>
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase text-slate-400">
+              <tr>
+                <th className="py-1.5 pr-3">Motorista</th>
+                <th className="py-1.5 pr-3">Descrição</th>
+                <th className="py-1.5 pr-3">Data</th>
+                <th className="py-1.5 text-right">Valor</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {perdas.map((p) => (
+                <tr key={p.id}>
+                  <td className="py-2 pr-3 text-slate-700">{p.credor_nome ?? "—"}</td>
+                  <td className="py-2 pr-3 text-slate-500">{p.descricao ?? "—"}</td>
+                  <td className="py-2 pr-3 text-slate-500">{formatarDataBr(p.vencimento)}</td>
+                  <td className="py-2 text-right font-medium text-red-600">{formatoMoeda.format(p.valor_original)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="card p-4">
         <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Lançar conta a pagar avulsa</h3>

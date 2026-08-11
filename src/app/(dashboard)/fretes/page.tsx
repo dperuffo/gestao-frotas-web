@@ -27,6 +27,11 @@ type FreteRow = {
   nome_motorista: string | null;
   telefone_motorista: string | null;
   criado_em: string;
+  // Fase Fretes-Cancelamento-Pagamento (11/08/2026) — quanto já foi pago ao
+  // motorista neste frete (relevante sobretudo pra aba Cancelados: mostra o
+  // valor não recuperado direto no card, sem precisar abrir o detalhe).
+  valor_pago_nao_recuperado: number;
+  qtd_parcelas_pagas: number;
 };
 
 const LABEL_STATUS: Record<string, string> = {
@@ -81,9 +86,12 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
 
   const negociacao = fretesFiltrados.filter((f) => f.status === "disponivel" || f.status === "aguardando_confirmacao");
   const andamento = fretesFiltrados.filter((f) => f.status === "aceito" || f.status === "em_andamento");
-  const concluidos = fretesFiltrados.filter(
-    (f) => f.status === "concluido" || f.status === "cancelado" || f.status === "recusado"
-  );
+  const concluidos = fretesFiltrados.filter((f) => f.status === "concluido");
+  // Fase Fretes-Cancelamento-Pagamento (11/08/2026, pedido do Daniel: "crie
+  // uma aba de fretes cancelados para acomodar estes registros") — antes
+  // ficavam misturados dentro de "Concluídos"; separados numa aba própria
+  // pra dar visibilidade a quando houve pagamento não recuperado.
+  const cancelados = fretesFiltrados.filter((f) => f.status === "cancelado" || f.status === "recusado");
 
   return (
     <div>
@@ -181,6 +189,11 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
               label: `Concluídos${concluidos.length > 0 ? ` (${concluidos.length})` : ""}`,
               conteudo: renderGrid(concluidos, empresaSelecionada, formatoMoeda, "Nenhum frete concluído ainda."),
             },
+            {
+              id: "cancelados",
+              label: `Cancelados${cancelados.length > 0 ? ` (${cancelados.length})` : ""}`,
+              conteudo: renderGrid(cancelados, empresaSelecionada, formatoMoeda, "Nenhum frete cancelado ou recusado."),
+            },
           ]}
         />
       )}
@@ -227,6 +240,17 @@ function renderGrid(
           {f.nome_motorista && (
             <p className="text-xs text-slate-500">
               Motorista: <span className="font-medium text-slate-700">{f.nome_motorista}</span>
+            </p>
+          )}
+
+          {/* Fase Fretes-Cancelamento-Pagamento (11/08/2026) — só aparece
+              quando há valor pago não recuperado (frete cancelado depois de
+              já ter parcela paga ao motorista); reflete a mesma perda que
+              está registrada em Contas a Pagar. */}
+          {f.status === "cancelado" && f.valor_pago_nao_recuperado > 0 && (
+            <p className="rounded-md bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700">
+              ⚠️ {formatoMoeda.format(f.valor_pago_nao_recuperado)} já pago ao motorista ({f.qtd_parcelas_pagas} parcela
+              {f.qtd_parcelas_pagas === 1 ? "" : "s"}) — não recuperado, registrado como perda no Financeiro.
             </p>
           )}
 
