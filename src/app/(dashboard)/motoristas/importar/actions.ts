@@ -34,6 +34,8 @@ function normalizarCpf(valor: string): string {
   return valor.replace(/[^0-9]/g, "");
 }
 
+type Irmao = { motorista_id: string; empresa_id: string; empresa_nome: string };
+
 export async function importarMotoristas(
   _prev: ResultadoImportacao | undefined,
   formData: FormData
@@ -191,25 +193,51 @@ export async function importarMotoristas(
     }
   }
 
-  // Passo 2: busca em lote os motoristas já cadastrados das empresas
-  // envolvidas, casando por empresa_id + CPF normalizado (só dígitos) --
-  // mesma normalização de motoristas_empresa_cpf_norm_uidx.
-  //
-  // Fase Corrige-Import-Empresa-Errada-Grupo (12/08/2026, achado do Daniel
-  // no import de veículos, mesmo risco confirmado aqui) — agora também
-  // busca `status`: se o único registro deste CPF NESTA empresa estiver
-  // Inativo (fantasma deixado por uma resolução de duplicidade anterior),
-  // não dá pra tratar como "o registro certo pra atualizar" sem checar
-  // primeiro se existe um irmão Ativo no grupo -- ver Passo 3.
+  // Passo 2: busca em lote os ids do grupo econômico de cada empresa
+  // ENVOLVIDA (poucas chamadas, não 1 por linha -- ver Fase
+  // Corrige-Timeout-Import abaixo), e então busca de uma vez só os
+  // motoristas de TODAS as empresas relevantes: as que aparecem na
+  // planilha (cnpj_cliente) MAIS as dos grupos econômicos delas -- assim
+  // um irmão ativo que não apareça explicitamente na planilha ainda é
+  // encontrado (empresa_id é FK de verdade aqui, então casa direto, sem o
+  // problema de formatação inconsistente que veiculos/importar tem com
+  // cnpj_frota).
   const empresaIdsEnvolvidas = [...new Set(validas.map((v) => v.empresaId))];
+  const grupoIdsPorEmpresa = new Map<string, Set<string>>();
+  const todasEmpresaIds = new Set<string>(empresaIdsEnvolvidas);
+  for (const empresaId of empresaIdsEnvolvidas) {
+    const { data: grupoIds } = await supabase.rpc("grupo_ids_da_empresa", { p_empresa_id: empresaId });
+    const set = new Set(grupoIds ?? []);
+    grupoIdsPorEmpresa.set(empresaId, set);
+    for (const gid of set) todasEmpresaIds.add(gid);
+  }
+
   const { data: existentes } =
-    empresaIdsEnvolvidas.length > 0
-      ? await supabase.from("motoristas").select("id, empresa_id, cpf, status").in("empresa_id", empresaIdsEnvolvidas)
+    todasEmpresaIds.size > 0
+      ? await supabase.from("motoristas").select("id, empresa_id, cpf, status").in("empresa_id", [...todasEmpresaIds])
       : { data: [] };
   const existentePorChave = new Map<string, { id: string; ativo: boolean }>();
+  const existentesPorCpfNorm = new Map<string, { id: string; empresa_id: string; ativo: boolean }[]>();
   for (const m of existentes ?? []) {
     if (!m.cpf) continue;
-    existentePorChave.set(`${m.empresa_id}|${normalizarCpf(m.cpf)}`, { id: m.id, ativo: m.status === "Ativo" });
+    const cpfNorm = normalizarCpf(m.cpf);
+    const ativo = m.status === "Ativo";
+    existentePorChave.set(`${m.empresa_id}|${cpfNorm}`, { id: m.id, ativo });
+    const lista = existentesPorCpfNorm.get(cpfNorm) ?? [];
+    lista.push({ id: m.id, empresa_id: m.empresa_id, ativo });
+    existentesPorCpfNorm.set(cpfNorm, lista);
+  }
+
+  function irmaosAtivosDoGrupo(v: LinhaValida): Irmao[] {
+    const grupoIds = grupoIdsPorEmpresa.get(v.empresaId) ?? new Set<string>();
+    const candidatos = existentesPorCpfNorm.get(normalizarCpf(v.cpf)) ?? [];
+    const irmaos: Irmao[] = [];
+    for (const c of candidatos) {
+      if (!c.ativo || c.empresa_id === v.empresaId) continue;
+      if (!grupoIds.has(c.empresa_id)) continue;
+      irmaos.push({ motorista_id: c.id, empresa_id: c.empresa_id, empresa_nome: nomePorEmpresaId.get(c.empresa_id) ?? "" });
+    }
+    return irmaos;
   }
 
   // Passo 3: grava -- update parcial se o motorista já existe (Ativo) nesta
@@ -232,18 +260,11 @@ export async function importarMotoristas(
     let redirecionadoPara: string | null = null;
     let avisoSincronizacao = "";
     try {
-      // Fase Corrige-Erro-Import-Empresa-Errada (12/08/2026) -- mesma
-      // correcao aplicada em veiculos/importar/actions.ts: essa checagem de
-      // irmaos Ativos precisa estar DENTRO do try, senao uma falha na RPC
-      // derruba a Server Action inteira em vez de reportar erro so na linha.
-      let irmaosAtivos: { motorista_id: string; empresa_id: string; empresa_nome: string }[] = [];
-      if (!existenteProprio?.ativo && temCaracteristicas) {
-        const { data } = await supabase.rpc("motoristas_grupo_mesmo_cpf", {
-          p_empresa_id: v.empresaId,
-          p_cpf: v.cpf,
-        });
-        irmaosAtivos = data ?? [];
-      }
+      // Fase Corrige-Erro-Import-Empresa-Errada (12/08/2026) -- checagem
+      // dentro do try como rede de segurança; desde a rodada de
+      // performance (Fase Corrige-Timeout-Import) ela não faz mais RPC
+      // nenhuma por linha, só lê os mapas pré-carregados no Passo 2.
+      const irmaosAtivos = temCaracteristicas ? irmaosAtivosDoGrupo(v) : [];
 
       if (existenteProprio?.ativo) {
         const { error } = await supabase.from("motoristas").update(v.camposUpdate).eq("id", existenteProprio.id);
@@ -276,12 +297,8 @@ export async function importarMotoristas(
       // irmão -- nesse caso já sincronizamos acima), propaga dados
       // pessoais/CNH pros demais irmãos Ativos do grupo econômico.
       if (!redirecionadoPara && temCaracteristicas) {
-        const { data: irmaos } =
-          existenteProprio?.ativo || existenteProprio
-            ? await supabase.rpc("motoristas_grupo_mesmo_cpf", { p_empresa_id: v.empresaId, p_cpf: v.cpf })
-            : { data: irmaosAtivos };
         const nomesSincronizados: string[] = [];
-        for (const irmao of irmaos ?? []) {
+        for (const irmao of irmaosAtivos) {
           const { error: erroIrmao } = await supabase
             .from("motoristas")
             .update(v.camposCaracteristicas)

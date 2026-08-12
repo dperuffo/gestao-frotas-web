@@ -5156,6 +5156,10 @@ export interface Database {
       // pela reimportação em lote pra achar veículos já cadastrados mesmo
       // quando cnpj_frota está salvo em formato antigo (texto copiado, não
       // FK), ver comentário em veiculos/importar/actions.ts.
+      grupo_ids_da_empresa: {
+        Args: { p_empresa_id: string };
+        Returns: string[];
+      };
       veiculos_existentes_por_placa: {
         Args: { p_placas: string[] };
         Returns: { id: string; cnpj_frota_norm: string; placa_norm: string; ativo: boolean }[];

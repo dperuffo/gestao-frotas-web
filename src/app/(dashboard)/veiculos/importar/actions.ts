@@ -54,6 +54,8 @@ function normalizarChave(valor: string): string {
   return valor.toUpperCase().replace(/[^0-9A-Z]/g, "");
 }
 
+type Irmao = { veiculo_id: string; empresa_id: string; empresa_nome: string };
+
 export async function importarVeiculos(
   _prev: ResultadoImportacao | undefined,
   formData: FormData
@@ -311,8 +313,46 @@ export async function importarVeiculos(
       ? await supabase.rpc("veiculos_existentes_por_placa", { p_placas: placasEnvolvidas })
       : { data: [] };
   const existentePorChave = new Map<string, { id: string; ativo: boolean }>();
+  const existentesPorPlacaNorm = new Map<string, { id: string; cnpj_frota_norm: string; ativo: boolean }[]>();
   for (const v of existentes ?? []) {
     existentePorChave.set(`${v.cnpj_frota_norm}|${v.placa_norm}`, { id: v.id, ativo: v.ativo });
+    const lista = existentesPorPlacaNorm.get(v.placa_norm) ?? [];
+    lista.push({ id: v.id, cnpj_frota_norm: v.cnpj_frota_norm, ativo: v.ativo });
+    existentesPorPlacaNorm.set(v.placa_norm, lista);
+  }
+
+  // Fase Corrige-Timeout-Import (12/08/2026, achado do Daniel: planilha com
+  // 33 linhas travou 125s e o navegador desistiu da conexão, HTTP 499) --
+  // a primeira versão desta checagem de "irmão ativo no grupo" chamava a
+  // RPC veiculos_grupo_mesma_placa uma ou duas vezes POR LINHA, sequencial.
+  // Pra dezenas de linhas isso vira dezenas de idas-e-voltas ao banco só
+  // pra essa checagem, muito lento. Agora isso é feito em lote: 1 chamada
+  // de grupo_ids_da_empresa por EMPRESA envolvida (normalmente 1, no
+  // máximo poucas), e o cruzamento com os dados que a RPC do passo 2 já
+  // trouxe é feito em memória — nenhuma chamada de rede a mais por linha.
+  const empresaIdsEnvolvidas = [...new Set(validas.map((v) => v.empresaId))];
+  const grupoIdsPorEmpresa = new Map<string, Set<string>>();
+  for (const empresaId of empresaIdsEnvolvidas) {
+    const { data: grupoIds } = await supabase.rpc("grupo_ids_da_empresa", { p_empresa_id: empresaId });
+    grupoIdsPorEmpresa.set(empresaId, new Set(grupoIds ?? []));
+  }
+
+  function irmaosAtivosDoGrupo(v: LinhaValida): Irmao[] {
+    const grupoIds = grupoIdsPorEmpresa.get(v.empresaId) ?? new Set<string>();
+    const candidatos = existentesPorPlacaNorm.get(normalizarChave(v.placa)) ?? [];
+    const irmaos: Irmao[] = [];
+    for (const c of candidatos) {
+      if (!c.ativo) continue;
+      const empresaIdCandidato = empresaIdPorCnpj.get(c.cnpj_frota_norm);
+      if (!empresaIdCandidato || empresaIdCandidato === v.empresaId) continue;
+      if (!grupoIds.has(empresaIdCandidato)) continue;
+      irmaos.push({
+        veiculo_id: c.id,
+        empresa_id: empresaIdCandidato,
+        empresa_nome: nomePorEmpresaId.get(empresaIdCandidato) ?? "",
+      });
+    }
+    return irmaos;
   }
 
   // Passo 3: grava -- update parcial se o veículo já existe (ativo) nesta
@@ -339,19 +379,11 @@ export async function importarVeiculos(
     let avisoSincronizacao = "";
     try {
       // Fase Corrige-Erro-Import-Empresa-Errada (12/08/2026, achado do
-      // Daniel: tela de erro generica ao reimportar) -- essa checagem de
-      // irmaos ATIVOS precisa estar DENTRO do try: antes ficava fora, e se
-      // essa chamada de RPC falhasse (rede, timeout etc.) o erro escapava
-      // sem tratamento e derrubava a Server Action inteira (todas as
-      // linhas), em vez de reportar erro so nessa linha.
-      let irmaosAtivos: { veiculo_id: string; empresa_id: string; empresa_nome: string }[] = [];
-      if (!existenteProprio?.ativo && temCaracteristicas) {
-        const { data } = await supabase.rpc("veiculos_grupo_mesma_placa", {
-          p_empresa_id: v.empresaId,
-          p_placa: v.placa,
-        });
-        irmaosAtivos = data ?? [];
-      }
+      // Daniel: tela de erro genérica ao reimportar) -- essa checagem
+      // precisa estar DENTRO do try. Desde a rodada de performance acima
+      // ela não faz mais RPC nenhuma (só lê os mapas já pré-carregados),
+      // mas mantemos o try/catch por linha como rede de segurança.
+      const irmaosAtivos = temCaracteristicas ? irmaosAtivosDoGrupo(v) : [];
 
       if (existenteProprio?.ativo) {
         // Caminho normal: já existe um registro ATIVO desta placa nesta
@@ -389,12 +421,8 @@ export async function importarVeiculos(
       // trata placa repetida no grupo como erro a corrigir/inativar), aqui
       // a decisão do Daniel foi tratar como o mesmo veículo de verdade.
       if (!redirecionadoPara && temCaracteristicas) {
-        const { data: irmaos } =
-          existenteProprio?.ativo || existenteProprio
-            ? await supabase.rpc("veiculos_grupo_mesma_placa", { p_empresa_id: v.empresaId, p_placa: v.placa })
-            : { data: irmaosAtivos };
         const nomesSincronizados: string[] = [];
-        for (const irmao of irmaos ?? []) {
+        for (const irmao of irmaosAtivos) {
           const { error: erroIrmao } = await supabase
             .from("cadastro_veiculos")
             .update(v.camposCaracteristicas)
