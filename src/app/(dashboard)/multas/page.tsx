@@ -2,6 +2,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { STATUS_MULTA_LABEL, STATUS_MULTA_COR, GRAVIDADE_MULTA_LABEL } from "@/lib/multas";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { ClipboardList, AlertTriangle, Wallet } from "lucide-react";
 
 type SearchParams = { empresa?: string; q?: string; status?: string };
 
@@ -129,23 +133,20 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
         </p>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Pendentes de indicação</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{pendentesIndicacao}</p>
-            </div>
-            <div className={`card p-4 ${vencendoEmBreve > 0 ? "border-red-200 bg-red-50/50" : ""}`}>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Prazo vencendo (7 dias)</p>
-              <p className={`mt-1 text-2xl font-semibold ${vencendoEmBreve > 0 ? "text-red-700" : "text-slate-900"}`}>
-                {vencendoEmBreve}
-              </p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Valor em aberto</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">
-                {valorEmAberto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-              </p>
-            </div>
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <IndicadorColorido cor="sky" icon={ClipboardList} label="Pendentes de indicação" valor={String(pendentesIndicacao)} />
+            <IndicadorColorido
+              cor={vencendoEmBreve > 0 ? "red" : "green"}
+              icon={AlertTriangle}
+              label="Prazo vencendo (7 dias)"
+              valor={String(vencendoEmBreve)}
+            />
+            <IndicadorColorido
+              cor="amber"
+              icon={Wallet}
+              label="Valor em aberto"
+              valor={valorEmAberto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            />
           </div>
 
           <div className="card overflow-x-auto">
@@ -164,7 +165,7 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {multas.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50">
+                  <tr key={m.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3 text-slate-600">{new Date(`${m.data_infracao}T00:00:00`).toLocaleDateString("pt-BR")}</td>
                     <td className="px-4 py-3">
                       <Link href={`/multas/${m.id}`} className="font-medium text-frota-600 hover:underline">

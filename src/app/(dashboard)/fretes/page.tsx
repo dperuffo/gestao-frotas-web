@@ -219,7 +219,7 @@ function renderGrid(
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {lista.map((f) => (
-        <div key={f.id} className="card flex flex-col gap-3 p-5">
+        <div key={f.id} className="card flex flex-col gap-3 p-5 transition hover:border-frota-300">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-slate-900">{f.titulo}</h3>
             <span className={COR_STATUS[f.status] ?? "badge-inativo"}>

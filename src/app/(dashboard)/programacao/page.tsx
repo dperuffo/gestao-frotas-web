@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Truck, Navigation, CheckCircle2, AlertTriangle } from "lucide-react";
 
 // Fase Programacao-Frota (03/08/2026, benchmark FNI vs Rodopar/Datapar,
 // Grupo 1 item 1) — quadro de alocação de veículos: mostra, pra cada
@@ -97,25 +101,16 @@ export default async function ProgramacaoFrotaPage({
 
       {empresaSelecionada && (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Veículos ativos</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{ativos.length}</p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Em viagem</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{emViagem.length}</p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Livres</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-700">{livres.length}</p>
-            </div>
-            <div className={`card p-4 ${semMotorista.length > 0 ? "border-amber-200 bg-amber-50/50" : ""}`}>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Sem motorista vinculado</p>
-              <p className={`mt-1 text-2xl font-semibold ${semMotorista.length > 0 ? "text-amber-700" : "text-slate-900"}`}>
-                {semMotorista.length}
-              </p>
-            </div>
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <IndicadorColorido cor="sky" icon={Truck} label="Veículos ativos" valor={String(ativos.length)} />
+            <IndicadorColorido cor="violet" icon={Navigation} label="Em viagem" valor={String(emViagem.length)} />
+            <IndicadorColorido cor="green" icon={CheckCircle2} label="Livres" valor={String(livres.length)} />
+            <IndicadorColorido
+              cor={semMotorista.length > 0 ? "amber" : "green"}
+              icon={AlertTriangle}
+              label="Sem motorista vinculado"
+              valor={String(semMotorista.length)}
+            />
           </div>
 
           {ativos.length === 0 ? (
@@ -139,7 +134,7 @@ export default async function ProgramacaoFrotaPage({
                 </thead>
                 <tbody>
                   {ativos.map((v) => (
-                    <tr key={v.veiculo_id} className="border-b border-slate-100 last:border-0">
+                    <tr key={v.veiculo_id} className="border-b border-slate-100 transition-colors last:border-0 hover:bg-frota-50/60">
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-900">{v.placa}</p>
                         <p className="text-xs text-slate-500">

@@ -73,7 +73,7 @@ export function CatalogoOficinasComSelecao({
         {oficinas.map((o) => (
           <label
             key={o.id}
-            className={`card cursor-pointer p-4 transition ${selecionadas.has(o.id) ? "ring-2 ring-frota-500" : ""} ${!empresaId ? "cursor-default" : ""}`}
+            className={`card cursor-pointer p-4 transition hover:border-frota-300 ${selecionadas.has(o.id) ? "ring-2 ring-frota-500" : ""} ${!empresaId ? "cursor-default" : ""}`}
           >
             <div className="flex items-start justify-between gap-2">
               <div>
