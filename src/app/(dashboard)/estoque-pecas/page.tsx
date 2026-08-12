@@ -2,6 +2,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/estoquePecas";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Boxes, AlertTriangle, Wallet } from "lucide-react";
 
 type SearchParams = { empresa?: string; q?: string };
 
@@ -91,21 +95,15 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
         </p>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Peças ativas</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{ativas.length}</p>
-            </div>
-            <div className={`card p-4 ${abaixoDoMinimo.length > 0 ? "border-red-200 bg-red-50/50" : ""}`}>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Abaixo do estoque mínimo</p>
-              <p className={`mt-1 text-2xl font-semibold ${abaixoDoMinimo.length > 0 ? "text-red-700" : "text-slate-900"}`}>
-                {abaixoDoMinimo.length}
-              </p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Valor em estoque</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{formatarMoeda(valorEmEstoque)}</p>
-            </div>
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <IndicadorColorido cor="sky" icon={Boxes} label="Peças ativas" valor={String(ativas.length)} />
+            <IndicadorColorido
+              cor={abaixoDoMinimo.length > 0 ? "red" : "green"}
+              icon={AlertTriangle}
+              label="Abaixo do estoque mínimo"
+              valor={String(abaixoDoMinimo.length)}
+            />
+            <IndicadorColorido cor="violet" icon={Wallet} label="Valor em estoque" valor={formatarMoeda(valorEmEstoque)} />
           </div>
 
           <div className="card overflow-x-auto">
@@ -124,7 +122,7 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
                 {pecas.map((p) => {
                   const abaixo = p.quantidade_atual <= p.quantidade_minima;
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50">
+                    <tr key={p.id} className="transition-colors hover:bg-frota-50/60">
                       <td className="px-4 py-3">
                         <Link href={`/estoque-pecas/${p.id}?empresa=${empresaSelecionada}`} className="font-medium text-frota-600 hover:underline">
                           {p.nome}

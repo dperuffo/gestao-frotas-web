@@ -2,6 +2,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Truck, Wallet, TrendingDown, Coins, AlertTriangle } from "lucide-react";
 
 // Fase Grupo 2 (Rodopar/Datapar, item 6, 03/08/2026) — Patrimônio formal:
 // depreciação contábil (linha reta pela vida útil) e correções do ativo,
@@ -93,15 +97,16 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
 
       {empresaSelecionada && !error && (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <Indicador label="Veículos c/ aquisição" valor={String(comAquisicao.length)} />
-            <Indicador label="Valor de aquisição total" valor={formatarMoeda(valorAquisicaoTotal)} />
-            <Indicador label="Depreciação acumulada" valor={formatarMoeda(depreciacaoTotal)} />
-            <Indicador label="Valor contábil líquido" valor={formatarMoeda(valorContabilTotal)} />
-            <Indicador
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <IndicadorColorido cor="sky" icon={Truck} label="Veículos c/ aquisição" valor={String(comAquisicao.length)} />
+            <IndicadorColorido cor="violet" icon={Wallet} label="Valor de aquisição total" valor={formatarMoeda(valorAquisicaoTotal)} />
+            <IndicadorColorido cor="amber" icon={TrendingDown} label="Depreciação acumulada" valor={formatarMoeda(depreciacaoTotal)} />
+            <IndicadorColorido cor="green" icon={Coins} label="Valor contábil líquido" valor={formatarMoeda(valorContabilTotal)} />
+            <IndicadorColorido
+              cor={vidaUtilEsgotada > 0 ? "red" : "green"}
+              icon={AlertTriangle}
               label="Vida útil esgotada"
               valor={String(vidaUtilEsgotada)}
-              destaque={vidaUtilEsgotada > 0 ? "aviso" : undefined}
             />
           </div>
 
@@ -130,7 +135,7 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {veiculos.map((v) => (
-                  <tr key={v.placa} className="hover:bg-slate-50">
+                  <tr key={v.placa} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
                       <Link
                         href={`/patrimonio/${v.placa}?empresa=${empresaSelecionada}`}
@@ -189,21 +194,5 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-}: {
-  label: string;
-  valor: string;
-  destaque?: "aviso";
-}) {
-  return (
-    <div className={`card p-4 ${destaque === "aviso" ? "border-amber-200 bg-amber-50/50" : ""}`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`mt-1 text-xl font-semibold ${destaque === "aviso" ? "text-amber-700" : "text-slate-900"}`}>
-        {valor}
-      </p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

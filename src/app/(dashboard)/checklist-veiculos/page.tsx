@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { formatDate } from "@/lib/utils";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Truck, AlertTriangle, HelpCircle } from "lucide-react";
 
 type SearchParams = { empresa?: string; busca?: string };
 
@@ -98,10 +102,15 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
 
       {empresaSelecionada && !error && (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Indicador label="Veículos" valor={String(lista.length)} />
-            <Indicador label="Com pendência aberta" valor={String(comPendencia)} destaque={comPendencia > 0} />
-            <Indicador label="Nunca inspecionados" valor={String(nuncaInspecionados)} />
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <IndicadorColorido cor="sky" icon={Truck} label="Veículos" valor={String(lista.length)} />
+            <IndicadorColorido
+              cor={comPendencia > 0 ? "red" : "green"}
+              icon={AlertTriangle}
+              label="Com pendência aberta"
+              valor={String(comPendencia)}
+            />
+            <IndicadorColorido cor="amber" icon={HelpCircle} label="Nunca inspecionados" valor={String(nuncaInspecionados)} />
           </div>
 
           <div className="card overflow-x-auto">
@@ -117,7 +126,7 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {lista.map((v) => (
-                  <tr key={v.placa} className="hover:bg-slate-50">
+                  <tr key={v.placa} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
                       <Link href={`/checklist-veiculos/${v.placa}`} className="font-medium text-frota-600 hover:underline">
                         {v.placa}
@@ -156,11 +165,5 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
   );
 }
 
-function Indicador({ label, valor, destaque }: { label: string; valor: string; destaque?: boolean }) {
-  return (
-    <div className={`card p-4 ${destaque ? "border-red-200 bg-red-50/50" : ""}`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold ${destaque ? "text-red-700" : "text-slate-900"}`}>{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).
