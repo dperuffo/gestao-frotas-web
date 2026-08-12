@@ -3,6 +3,11 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda, formatarDataSemFuso, sugerirContas, STATUS_EXTRATO_LABEL, STATUS_EXTRATO_COR, type ContaEmAberto } from "@/lib/conciliacaoBancaria";
 import { FormImportarExtrato } from "./_components/FormImportarExtrato";
 import { AcoesLancamentoExtrato } from "./_components/AcoesLancamentoExtrato";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// em Dashboard/Veículos/Financeiro/Abastecimentos/Manutenção/Notas
+// Fiscais/Centros de Custo.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { ListChecks, Wallet, CheckCircle2 } from "lucide-react";
 
 type SearchParams = { empresa?: string };
 
@@ -113,19 +118,10 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
         </p>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Pendentes</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{pendentes.length}</p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Valor pendente</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{formatarMoeda(valorPendente)}</p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Conciliados no mês</p>
-              <p className="mt-1 text-2xl font-semibold text-status-ativo">{conciliadosNoMes.length}</p>
-            </div>
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <IndicadorColorido cor="amber" icon={ListChecks} label="Pendentes" valor={String(pendentes.length)} />
+            <IndicadorColorido cor="sky" icon={Wallet} label="Valor pendente" valor={formatarMoeda(valorPendente)} />
+            <IndicadorColorido cor="green" icon={CheckCircle2} label="Conciliados no mês" valor={String(conciliadosNoMes.length)} />
           </div>
 
           <div className="card mb-6 p-6">
@@ -151,7 +147,7 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
                   const contasCandidatas = l.tipo === "debito" ? contasPagarAbertas : contasReceberAbertas;
                   const sugestoes = sugerirContas({ data: l.data, valor: Math.abs(l.valor) }, contasCandidatas);
                   return (
-                    <tr key={l.id} className="hover:bg-slate-50">
+                    <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
                       <td className="px-4 py-3 text-slate-600 align-top">{formatarDataSemFuso(l.data)}</td>
                       <td className="px-4 py-3 text-slate-700 align-top">
                         {l.descricao}
@@ -201,7 +197,7 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
                 {lancamentos
                   .filter((l) => l.status !== "pendente")
                   .map((l) => (
-                    <tr key={l.id} className="hover:bg-slate-50">
+                    <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
                       <td className="px-4 py-3 text-slate-600">{formatarDataSemFuso(l.data)}</td>
                       <td className="px-4 py-3 text-slate-700">{l.descricao}</td>
                       <td className={`px-4 py-3 tabular-nums font-medium ${l.tipo === "debito" ? "text-red-700" : "text-green-700"}`}>

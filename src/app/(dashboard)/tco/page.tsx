@@ -2,7 +2,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
-import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app. AjudaIcon saiu daqui: só era usado
+// dentro do Indicador() local removido — IndicadorColorido já expõe
+// ajudaChave por conta própria.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Truck, Coins, Gauge, AlertTriangle } from "lucide-react";
 
 const TAMANHO_PAGINA = 50;
 
@@ -166,22 +171,27 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
 
       {empresaSelecionada && !error && (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <Indicador label="Veículos no período" valor={String(veiculos.length)} />
-            <Indicador
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <IndicadorColorido cor="sky" icon={Truck} label="Veículos no período" valor={String(veiculos.length)} />
+            <IndicadorColorido
+              cor="violet"
+              icon={Coins}
               label="TCO total da frota"
               valor={formatarMoeda(tcoTotalFrota)}
               ajudaChave="tco.total"
             />
-            <Indicador
+            <IndicadorColorido
+              cor="sky"
+              icon={Gauge}
               label="Custo/km médio"
               valor={custoPorKmMedio > 0 ? `${formatarMoeda(custoPorKmMedio)}/km` : "—"}
               ajudaChave="tco.custo_por_km"
             />
-            <Indicador
+            <IndicadorColorido
+              cor="amber"
+              icon={AlertTriangle}
               label="Sem dado de aquisição"
               valor={String(veiculosSemAquisicao)}
-              destaque={veiculosSemAquisicao > 0 ? "aviso" : undefined}
               ajudaChave="tco.completo"
             />
           </div>
@@ -212,7 +222,7 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {veiculos.map((v) => (
-                  <tr key={v.placa} className="hover:bg-slate-50">
+                  <tr key={v.placa} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
                       <Link href={`/tco/${v.placa}`} className="font-medium text-frota-600 hover:underline">
                         {v.placa}
@@ -290,25 +300,7 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-  ajudaChave,
-}: {
-  label: string;
-  valor: string;
-  destaque?: "aviso";
-  ajudaChave?: string;
-}) {
-  return (
-    <div className={`card p-4 ${destaque === "aviso" ? "border-amber-200 bg-amber-50/50" : ""}`}>
-      <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-        {label} {ajudaChave && <AjudaIcon chave={ajudaChave} />}
-      </p>
-      <p className={`mt-1 text-2xl font-semibold ${destaque === "aviso" ? "text-amber-700" : "text-slate-900"}`}>
-        {valor}
-      </p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas). O
+// destaque de "sem dado de aquisição" agora é a própria cor do card
+// (cor="amber"), não mais uma variante condicional.

@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
-import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// em Dashboard/Veículos/Financeiro/Abastecimentos/Manutenção/Notas Fiscais.
+// AjudaIcon saiu daqui: só era usado dentro do Indicador() local removido
+// abaixo — IndicadorColorido já expõe ajudaChave por conta própria.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Receipt, CheckCircle2, Truck } from "lucide-react";
 
 type SearchParams = { empresa?: string };
 
@@ -88,10 +93,16 @@ export default async function CentrosCustoPage({
 
       {empresaSelecionada && (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Indicador label="Total de centros" valor={totalCentros} />
-            <Indicador label="Ativos" valor={totalAtivos} />
-            <Indicador label="Veículos alocados" valor={totalVeiculosAlocados} ajudaChave="centros_custo.veiculos_alocados" />
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <IndicadorColorido cor="sky" icon={Receipt} label="Total de centros" valor={String(totalCentros)} />
+            <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos" valor={String(totalAtivos)} />
+            <IndicadorColorido
+              cor="violet"
+              icon={Truck}
+              label="Veículos alocados"
+              valor={String(totalVeiculosAlocados)}
+              ajudaChave="centros_custo.veiculos_alocados"
+            />
           </div>
 
           <div className="mb-4 flex justify-end gap-3">
@@ -134,7 +145,7 @@ export default async function CentrosCustoPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {centros.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50">
+                  <tr key={c.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
                       <Link href={`/centros-custo/${c.id}`} className="font-medium text-frota-600 hover:underline">
                         {c.nome}
@@ -164,13 +175,5 @@ export default async function CentrosCustoPage({
   );
 }
 
-function Indicador({ label, valor, ajudaChave }: { label: string; valor: number; ajudaChave?: string }) {
-  return (
-    <div className="card p-4">
-      <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-        {label} {ajudaChave && <AjudaIcon chave={ajudaChave} />}
-      </p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app. Esta tela não tinha nenhum indicador de
+// resumo — adicionado (total/valor/abertas/pagas), no mesmo padrão.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Receipt, Wallet, Clock, CheckCircle2 } from "lucide-react";
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -59,6 +64,10 @@ export default async function FaturasFretesPage({
       )
     : faturasRaw;
 
+  const valorTotalFaturas = faturasRaw.reduce((soma, f) => soma + f.valor_total, 0);
+  const totalAbertas = faturasRaw.filter((f) => f.status === "aberta").length;
+  const totalPagas = faturasRaw.filter((f) => f.status === "paga").length;
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -92,6 +101,15 @@ export default async function FaturasFretesPage({
             Filtrar
           </button>
         </form>
+      )}
+
+      {empresaSelecionada && faturasRaw.length > 0 && (
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <IndicadorColorido cor="sky" icon={Receipt} label="Total de faturas" valor={String(faturasRaw.length)} />
+          <IndicadorColorido cor="violet" icon={Wallet} label="Valor total" valor={formatoMoeda.format(valorTotalFaturas)} />
+          <IndicadorColorido cor="amber" icon={Clock} label="Abertas" valor={String(totalAbertas)} />
+          <IndicadorColorido cor="green" icon={CheckCircle2} label="Pagas" valor={String(totalPagas)} />
+        </div>
       )}
 
       {empresaSelecionada && faturasRaw.length > 0 && (
@@ -131,7 +149,7 @@ export default async function FaturasFretesPage({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {faturas.map((f) => (
-                <tr key={f.id}>
+                <tr key={f.id} className="transition-colors hover:bg-frota-50/60">
                   <td className="px-4 py-3 font-mono text-xs text-slate-500">{f.numero_fatura}</td>
                   <td className="px-4 py-3">
                     <Link href={`/faturas-fretes/${f.id}?empresa=${empresaSelecionada}`} className="font-medium text-frota-600 hover:underline">
