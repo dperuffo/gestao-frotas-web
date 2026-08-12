@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { lerPlanilhaComoTexto, data as parseData, emLotes } from "@/lib/xlsx";
+import { lerPlanilhaComoTexto, data as parseData } from "@/lib/xlsx";
 import { normalizarCNPJ } from "@/lib/utils";
 import { CLASSIFICACAO, type Classificacao } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
@@ -18,12 +18,6 @@ export type LinhaResultado = {
   status: "ok" | "erro";
   mensagem: string;
 };
-
-export type ResultadoImportacao =
-  | { erro: string }
-  | { total: number; sucesso: number; erros: number; linhas: LinhaResultado[] };
-
-const COLUNAS_OBRIGATORIAS = ["placa", "cnpj_cliente"];
 
 function numeroOuNull(valor: string) {
   const texto = valor.trim();
@@ -58,10 +52,47 @@ function normalizarChave(valor: string): string {
 
 type Irmao = { veiculo_id: string; empresa_id: string; empresa_nome: string };
 
-export async function importarVeiculos(
-  _prev: ResultadoImportacao | undefined,
+// Fase Indicador-Progresso-Import (12/08/2026, pedido do Daniel: planilhas
+// de milhares de linhas sem nenhum indicador de andamento) -- uma Server
+// Action é uma "caixa preta" pro cliente até terminar: não dá pra reportar
+// progresso de DENTRO de uma única chamada. A importação foi dividida em
+// duas etapas:
+//   1) prepararImportacaoVeiculos -- lê a planilha, valida cada linha e
+//      decide, PRA CADA UMA, se vai inserir, atualizar o próprio registro
+//      ou redirecionar pro irmão ativo do grupo (mesma lógica de antes,
+//      olhando os mapas já carregados em lote). Não grava nada ainda --
+//      só devolve o "plano" de cada linha já pronto (LinhaPreparada).
+//   2) processarLoteVeiculos -- recebe um PEDAÇO desse plano (um lote
+//      escolhido pelo próprio navegador) e só executa as gravações. O
+//      navegador chama isso várias vezes, um lote de cada vez, e atualiza
+//      uma barra de progresso entre uma chamada e outra.
+// Isso também elimina de vez o risco de timeout (achado anterior, HTTP 499
+// aos 125s): cada chamada agora é pequena e rápida, não uma só carregando
+// milhares de linhas de uma vez.
+export type LinhaPreparada = {
+  numeroLinha: number;
+  placa: string;
+  empresaId: string;
+  empresaNome: string;
+  camposInsert: VeiculoInsert;
+  camposUpdate: VeiculoUpdate;
+  camposCaracteristicas: VeiculoUpdate;
+  avisoCentroCusto: string;
+  existenteProprio: { id: string; ativo: boolean } | null;
+  irmaosAtivos: Irmao[];
+};
+
+export type PreparacaoImportacao =
+  | { erro: string }
+  | {
+      totalLinhas: number;
+      errosIniciais: LinhaResultado[];
+      preparadas: LinhaPreparada[];
+    };
+
+export async function prepararImportacaoVeiculos(
   formData: FormData,
-): Promise<ResultadoImportacao> {
+): Promise<PreparacaoImportacao> {
   const arquivo = formData.get("arquivo");
   if (!(arquivo instanceof File) || arquivo.size === 0) {
     return { erro: "Selecione um arquivo Excel (.xlsx) para importar." };
@@ -81,9 +112,6 @@ export async function importarVeiculos(
     marca: indice("marca"),
     modelo: indice("modelo"),
     tipo_veiculo: indice("tipo_veiculo"),
-    // Fase Corrige-Reimportação-Veículos (12/08/2026, 4ª rodada) — campos
-    // que já existiam no formulário manual (VeiculoForm.tsx) mas nunca
-    // tinham entrado no template de importação em lote.
     tipo: indice("tipo"),
     classificacao: indice("classificacao"),
     motor: indice("motor"),
@@ -101,9 +129,6 @@ export async function importarVeiculos(
     municipio: indice("municipio"),
     uf_veiculo: indice("uf_veiculo"),
     centro_custo: indice("centro_custo"),
-    // TCO / Patrimônio (VeiculoForm.tsx) — nunca propagam pro grupo
-    // econômico (ver camposNumeroAdministrativos abaixo): são dados
-    // contábeis da aquisição, específicos de cada empresa dona do bem.
     valor_aquisicao: indice("valor_aquisicao"),
     data_aquisicao: indice("data_aquisicao"),
     valor_residual_estimado: indice("valor_residual_estimado"),
@@ -111,6 +136,7 @@ export async function importarVeiculos(
     cnpj_cliente: indice("cnpj_cliente"),
   };
 
+  const COLUNAS_OBRIGATORIAS = ["placa", "cnpj_cliente"];
   const faltando = COLUNAS_OBRIGATORIAS.filter((c) => indice(c) === -1);
   if (faltando.length > 0) {
     return {
@@ -151,20 +177,14 @@ export async function importarVeiculos(
     numeroLinha: number;
     placa: string;
     chave: string;
-    cnpjFrota: string;
     empresaId: string;
     camposInsert: VeiculoInsert;
     camposUpdate: VeiculoUpdate;
-    // Fase Sincronizar-Caracteristicas-Grupo (12/08/2026) — subconjunto de
-    // camposUpdate só com as características físicas do veículo (sem
-    // classificação nem centro de custo, que são específicos de cada
-    // empresa). É isso que se propaga pros irmãos do mesmo grupo
-    // econômico com a mesma placa, ver passo 4.
     camposCaracteristicas: VeiculoUpdate;
     avisoCentroCusto: string;
   };
 
-  const resultado: LinhaResultado[] = [];
+  const errosIniciais: LinhaResultado[] = [];
   const validas: LinhaValida[] = [];
 
   // Passo 1: parseia e valida cada linha (resolve cliente, centro de
@@ -227,10 +247,6 @@ export async function importarVeiculos(
         ["numero_eixos", pegar(colunas, "numero_eixos")],
         ["capacidade_kg", pegar(colunas, "capacidade_kg")],
       ];
-      // TCO / Patrimônio -- números que vão pro cadastro, mas NUNCA
-      // propagam pro grupo econômico (ver mais abaixo): valor de aquisição,
-      // valor residual e vida útil são dados contábeis da empresa dona do
-      // bem, não características físicas do veículo.
       const camposNumeroAdministrativos: [string, string][] = [
         ["valor_aquisicao", pegar(colunas, "valor_aquisicao")],
         ["valor_residual_estimado", pegar(colunas, "valor_residual_estimado")],
@@ -252,9 +268,6 @@ export async function importarVeiculos(
       };
       const camposCaracteristicas: VeiculoUpdate = {};
 
-      // Os campos de texto/número acima são todos colunas de mesmo tipo
-      // (string | null / number | null) em cadastro_veiculos -- o cast por
-      // campo evita ter que repetir 15x o mesmo par insert/característica.
       for (const [campo, valor] of camposTexto) {
         (camposInsert as unknown as Record<string, string | null>)[campo] =
           valor || null;
@@ -271,9 +284,6 @@ export async function importarVeiculos(
             numero;
       }
 
-      // camposUpdate = características (propagáveis pro grupo) + campos
-      // específicos desta empresa (classificação, centro de custo, TCO),
-      // que NUNCA propagam.
       const camposUpdate: VeiculoUpdate = { ...camposCaracteristicas };
       if (classificacaoValida) camposUpdate.classificacao = classificacaoValida;
       if (centroCustoId) {
@@ -293,7 +303,6 @@ export async function importarVeiculos(
         numeroLinha,
         placa,
         chave: `${normalizarChave(cnpjFrota)}|${normalizarChave(placa)}`,
-        cnpjFrota,
         empresaId,
         camposInsert,
         camposUpdate,
@@ -301,7 +310,7 @@ export async function importarVeiculos(
         avisoCentroCusto,
       });
     } catch (e) {
-      resultado.push({
+      errosIniciais.push({
         linha: numeroLinha,
         identificacao: placa || "(sem placa)",
         status: "erro",
@@ -311,23 +320,10 @@ export async function importarVeiculos(
   }
 
   // Passo 2: busca em lote os veículos já cadastrados com alguma dessas
-  // placas. Usa a RPC veiculos_existentes_por_placa em vez de
-  // .select().in("cnpj_frota", ...) de propósito: cnpj_frota é texto
-  // copiado (não FK) e ficou com formatação inconsistente entre lotes de
-  // importação antigos ("25265787000144" vs "25.265.787/0001-44" pro
-  // mesmo cliente) -- filtrar pelo texto exato de empresas.cnpj perdia
-  // linhas salvas no formato antigo. A RPC já devolve cnpj_frota e placa
-  // normalizados (mesma expressão do índice único
-  // cadastro_veiculos_cnpj_placa_norm_uidx), então o casamento abaixo é
-  // sempre por valor normalizado dos dois lados.
-  //
-  // Fase Corrige-Import-Empresa-Errada-Grupo (12/08/2026, achado do Daniel)
-  // — a RPC agora também devolve `ativo`, porque o índice por chave
-  // (empresa+placa) sozinho não bastava: quando a empresa "dona" da linha
-  // (cnpj_cliente) só tem um registro INATIVO daquela placa (fantasma
-  // deixado pela tela de Duplicidades, que já resolveu a colisão a favor da
-  // empresa irmã), o código precisa saber disso pra NÃO reviver o fantasma
-  // silenciosamente -- ver Passo 3.
+  // placas, via RPC (normalizada -- ver comentário original mais abaixo no
+  // README/histórico sobre cnpj_frota com formatação inconsistente), e os
+  // ids do grupo econômico de cada empresa envolvida (1 chamada por
+  // empresa, não por linha).
   const placasEnvolvidas = [...new Set(validas.map((v) => v.placa))];
   const { data: existentes } =
     placasEnvolvidas.length > 0
@@ -354,15 +350,6 @@ export async function importarVeiculos(
     existentesPorPlacaNorm.set(v.placa_norm, lista);
   }
 
-  // Fase Corrige-Timeout-Import (12/08/2026, achado do Daniel: planilha com
-  // 33 linhas travou 125s e o navegador desistiu da conexão, HTTP 499) --
-  // a primeira versão desta checagem de "irmão ativo no grupo" chamava a
-  // RPC veiculos_grupo_mesma_placa uma ou duas vezes POR LINHA, sequencial.
-  // Pra dezenas de linhas isso vira dezenas de idas-e-voltas ao banco só
-  // pra essa checagem, muito lento. Agora isso é feito em lote: 1 chamada
-  // de grupo_ids_da_empresa por EMPRESA envolvida (normalmente 1, no
-  // máximo poucas), e o cruzamento com os dados que a RPC do passo 2 já
-  // trouxe é feito em memória — nenhuma chamada de rede a mais por linha.
   const empresaIdsEnvolvidas = [...new Set(validas.map((v) => v.empresaId))];
   const grupoIdsPorEmpresa = new Map<string, Set<string>>();
   for (const empresaId of empresaIdsEnvolvidas) {
@@ -391,139 +378,127 @@ export async function importarVeiculos(
     return irmaos;
   }
 
-  // Passo 3: grava -- update parcial se o veículo já existe (ativo) nesta
-  // própria empresa, insert completo se não existe em lugar nenhum.
-  //
-  // Fase Corrige-Import-Empresa-Errada-Grupo (12/08/2026) — caso novo: a
-  // empresa desta linha (cnpj_cliente) NÃO tem registro ativo desta placa,
-  // mas uma empresa IRMÃ do mesmo grupo econômico tem. Antes disso, o
-  // código caía direto no "senão insere" (se não achasse a própria chave)
-  // ou, pior, achava e atualizava um registro INATIVO desta própria
-  // empresa (reativando um fantasma sem querer) -- e o Passo 4 (sincronizar
-  // características pros irmãos ATIVOS) então sobrescrevia o registro ATIVO
-  // da empresa irmã, dando a impressão de que a importação "foi parar" lá.
-  // Agora: se existe irmão ativo no grupo, o alvo da atualização é ELE (só
-  // as características físicas -- nunca classificação/centro de custo,
-  // que são específicos da empresa da linha), e nenhum registro é
-  // criado/reativado nesta empresa. Isso evita duplicidade E deixa claro
-  // pro usuário, na mensagem, onde o dado realmente foi parar.
-  // Fase Corrige-Timeout-Import-Grande (12/08/2026, achado do Daniel:
-  // planilha com mais de 2500 linhas) -- gravar uma linha de cada vez,
-  // sequencial, não escala: cada linha faz pelo menos 1 ida-e-volta ao
-  // banco (grava), às vezes mais (sincroniza irmãos), e nada disso é
-  // paralelo. Com milhares de linhas isso passa de minutos e a conexão do
-  // navegador é derrubada bem antes (ver achado anterior, HTTP 499). Usa o
-  // mesmo helper emLotes já usado nos outros importadores grandes do
-  // sistema (posto/preços): processa TAMANHO_LOTE linhas EM PARALELO por
-  // vez, em vez de todas de uma vez (que abriria conexões demais com o
-  // banco) ou uma por uma (lento demais). O array `resultado` recebe
-  // pushes fora de ordem por causa do paralelismo -- por isso o sort por
-  // `linha` no final da função.
-  const TAMANHO_LOTE = 40;
-  await emLotes(validas, TAMANHO_LOTE, async (lote) => {
-    await Promise.all(
-      lote.map(async (v) => {
-        const existenteProprio = existentePorChave.get(v.chave);
-        const temCaracteristicas =
-          Object.keys(v.camposCaracteristicas).length > 0;
-
-        let redirecionadoPara: string | null = null;
-        let avisoSincronizacao = "";
-        try {
-          // Fase Corrige-Erro-Import-Empresa-Errada (12/08/2026, achado do
-          // Daniel: tela de erro genérica ao reimportar) -- essa checagem
-          // precisa estar DENTRO do try. Ela não faz RPC nenhuma (só lê os
-          // mapas já pré-carregados), mas mantemos o try/catch por linha
-          // como rede de segurança.
-          const irmaosAtivos = temCaracteristicas ? irmaosAtivosDoGrupo(v) : [];
-
-          if (existenteProprio?.ativo) {
-            // Caminho normal: já existe um registro ATIVO desta placa nesta
-            // própria empresa -- atualiza ele.
-            const { error } = await supabase
-              .from("cadastro_veiculos")
-              .update(v.camposUpdate)
-              .eq("id", existenteProprio.id);
-            if (error) throw new Error(error.message);
-          } else if (irmaosAtivos.length > 0) {
-            // Não há registro ativo desta placa NESTA empresa, mas existe em
-            // uma empresa irmã do grupo -- atualiza lá em vez de duplicar ou
-            // reviver um fantasma inativo aqui.
-            const nomes: string[] = [];
-            for (const irmao of irmaosAtivos) {
-              const { error: erroIrmao } = await supabase
-                .from("cadastro_veiculos")
-                .update(v.camposCaracteristicas)
-                .eq("id", irmao.veiculo_id);
-              if (!erroIrmao) nomes.push(irmao.empresa_nome);
-            }
-            if (nomes.length > 0) redirecionadoPara = nomes.join(", ");
-          } else if (existenteProprio) {
-            // Só existe um registro INATIVO desta placa nesta própria empresa,
-            // e nenhum irmão ativo no grupo -- atualiza os dados nele mesmo
-            // assim (sem reativar), em vez de criar um segundo registro.
-            const { error } = await supabase
-              .from("cadastro_veiculos")
-              .update(v.camposUpdate)
-              .eq("id", existenteProprio.id);
-            if (error) throw new Error(error.message);
-          } else {
-            const { error } = await supabase
-              .from("cadastro_veiculos")
-              .insert(v.camposInsert);
-            if (error) throw new Error(error.message);
-          }
-
-          // Passo 4: se a escrita foi NESTA empresa (não redirecionada pro
-          // irmão -- nesse caso já sincronizamos acima), propaga as
-          // características pros demais irmãos ativos do grupo econômico, pra
-          // não ficarem descasados. Diferente da tela de Duplicidades (que
-          // trata placa repetida no grupo como erro a corrigir/inativar), aqui
-          // a decisão do Daniel foi tratar como o mesmo veículo de verdade.
-          if (!redirecionadoPara && temCaracteristicas) {
-            const nomesSincronizados: string[] = [];
-            for (const irmao of irmaosAtivos) {
-              const { error: erroIrmao } = await supabase
-                .from("cadastro_veiculos")
-                .update(v.camposCaracteristicas)
-                .eq("id", irmao.veiculo_id);
-              if (!erroIrmao) nomesSincronizados.push(irmao.empresa_nome);
-            }
-            if (nomesSincronizados.length > 0) {
-              avisoSincronizacao = ` Também sincronizado em: ${nomesSincronizados.join(", ")}.`;
-            }
-          }
-
-          resultado.push({
-            linha: v.numeroLinha,
-            identificacao: v.placa,
-            status: "ok",
-            mensagem: redirecionadoPara
-              ? `Este veículo já está ativo na empresa "${redirecionadoPara}" (mesmo grupo econômico) — características atualizadas lá. Nenhum registro foi criado/alterado em "${nomePorEmpresaId.get(v.empresaId) ?? "empresa desta linha"}" pra evitar duplicidade; campos específicos desta empresa (classificação, centro de custo) não se aplicam.`
-              : existenteProprio
-                ? `Veículo já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
-                : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
-          });
-        } catch (e) {
-          resultado.push({
-            linha: v.numeroLinha,
-            identificacao: v.placa,
-            status: "erro",
-            mensagem: e instanceof Error ? e.message : "Erro desconhecido.",
-          });
-        }
-      }),
-    );
+  // Fase Corrige-Import-Empresa-Errada-Grupo (12/08/2026) — pra cada linha,
+  // já decide de antemão pra onde a gravação vai: registro ativo da própria
+  // empresa, irmão ativo do grupo (quando esta empresa não tem registro
+  // ativo desta placa), ou registro inativo próprio como último recurso.
+  // Ver comentário completo em processarLoteVeiculos, onde essa decisão é
+  // efetivamente executada.
+  const preparadas: LinhaPreparada[] = validas.map((v) => {
+    const existenteProprio = existentePorChave.get(v.chave) ?? null;
+    const temCaracteristicas = Object.keys(v.camposCaracteristicas).length > 0;
+    const irmaosAtivos = temCaracteristicas ? irmaosAtivosDoGrupo(v) : [];
+    return {
+      numeroLinha: v.numeroLinha,
+      placa: v.placa,
+      empresaId: v.empresaId,
+      empresaNome: nomePorEmpresaId.get(v.empresaId) ?? "empresa desta linha",
+      camposInsert: v.camposInsert,
+      camposUpdate: v.camposUpdate,
+      camposCaracteristicas: v.camposCaracteristicas,
+      avisoCentroCusto: v.avisoCentroCusto,
+      existenteProprio,
+      irmaosAtivos,
+    };
   });
 
-  resultado.sort((a, b) => a.linha - b.linha);
+  return {
+    totalLinhas: preparadas.length + errosIniciais.length,
+    errosIniciais,
+    preparadas,
+  };
+}
+
+// Fase Indicador-Progresso-Import (12/08/2026) — executa só a gravação de
+// um LOTE já decidido (ver prepararImportacaoVeiculos acima). O navegador
+// chama isso repetidamente, um lote de cada vez, e atualiza a barra de
+// progresso entre uma chamada e outra -- ver ImportForm.tsx.
+export async function processarLoteVeiculos(
+  lote: LinhaPreparada[],
+): Promise<LinhaResultado[]> {
+  const supabase = await createClient();
+  const resultado: LinhaResultado[] = [];
+
+  await Promise.all(
+    lote.map(async (v) => {
+      const temCaracteristicas =
+        Object.keys(v.camposCaracteristicas).length > 0;
+      let redirecionadoPara: string | null = null;
+      let avisoSincronizacao = "";
+      try {
+        if (v.existenteProprio?.ativo) {
+          // Caminho normal: já existe um registro ATIVO desta placa nesta
+          // própria empresa -- atualiza ele.
+          const { error } = await supabase
+            .from("cadastro_veiculos")
+            .update(v.camposUpdate)
+            .eq("id", v.existenteProprio.id);
+          if (error) throw new Error(error.message);
+        } else if (v.irmaosAtivos.length > 0) {
+          // Não há registro ativo desta placa NESTA empresa, mas existe em
+          // uma empresa irmã do grupo -- atualiza lá em vez de duplicar ou
+          // reviver um fantasma inativo aqui.
+          const nomes: string[] = [];
+          for (const irmao of v.irmaosAtivos) {
+            const { error: erroIrmao } = await supabase
+              .from("cadastro_veiculos")
+              .update(v.camposCaracteristicas)
+              .eq("id", irmao.veiculo_id);
+            if (!erroIrmao) nomes.push(irmao.empresa_nome);
+          }
+          if (nomes.length > 0) redirecionadoPara = nomes.join(", ");
+        } else if (v.existenteProprio) {
+          // Só existe um registro INATIVO desta placa nesta própria
+          // empresa, e nenhum irmão ativo no grupo -- atualiza os dados
+          // nele mesmo assim (sem reativar), em vez de criar um segundo
+          // registro.
+          const { error } = await supabase
+            .from("cadastro_veiculos")
+            .update(v.camposUpdate)
+            .eq("id", v.existenteProprio.id);
+          if (error) throw new Error(error.message);
+        } else {
+          const { error } = await supabase
+            .from("cadastro_veiculos")
+            .insert(v.camposInsert);
+          if (error) throw new Error(error.message);
+        }
+
+        if (!redirecionadoPara && temCaracteristicas) {
+          const nomesSincronizados: string[] = [];
+          for (const irmao of v.irmaosAtivos) {
+            const { error: erroIrmao } = await supabase
+              .from("cadastro_veiculos")
+              .update(v.camposCaracteristicas)
+              .eq("id", irmao.veiculo_id);
+            if (!erroIrmao) nomesSincronizados.push(irmao.empresa_nome);
+          }
+          if (nomesSincronizados.length > 0) {
+            avisoSincronizacao = ` Também sincronizado em: ${nomesSincronizados.join(", ")}.`;
+          }
+        }
+
+        resultado.push({
+          linha: v.numeroLinha,
+          identificacao: v.placa,
+          status: "ok",
+          mensagem: redirecionadoPara
+            ? `Este veículo já está ativo na empresa "${redirecionadoPara}" (mesmo grupo econômico) — características atualizadas lá. Nenhum registro foi criado/alterado em "${v.empresaNome}" pra evitar duplicidade; campos específicos desta empresa (classificação, centro de custo) não se aplicam.`
+            : v.existenteProprio
+              ? `Veículo já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
+              : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
+        });
+      } catch (e) {
+        resultado.push({
+          linha: v.numeroLinha,
+          identificacao: v.placa,
+          status: "erro",
+          mensagem: e instanceof Error ? e.message : "Erro desconhecido.",
+        });
+      }
+    }),
+  );
 
   revalidatePath("/veiculos");
-
-  return {
-    total: resultado.length,
-    sucesso: resultado.filter((r) => r.status === "ok").length,
-    erros: resultado.filter((r) => r.status === "erro").length,
-    linhas: resultado,
-  };
+  return resultado;
 }
