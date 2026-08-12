@@ -72,6 +72,14 @@ export interface Database {
           // parados no período) × esse valor. Editável só por admin em
           // /clientes/[id]; null = não incluir esse componente no cálculo.
           custo_diario_downtime: number | null;
+          // Fase Apuracao-ICMS-Combustivel (12/08/2026) — preenchido pelo
+          // próprio cliente na tela /apuracao-tributaria. simples_nacional
+          // não dá direito a crédito de ICMS; normal (RPA) dá, se elegível.
+          regime_tributario: string | null;
+          // Autodeclaração do cliente: presta serviço de transporte
+          // tributado por ICMS e NÃO é optante por crédito outorgado. null =
+          // ainda não confirmado.
+          elegivel_credito_icms_combustivel: boolean | null;
           // Fase 27.50 — "Frota" (cliente de gestão de frotas) ou "Revenda"
           // (posto revendedor com conta própria, feature de Negociação).
           segmento: string;
@@ -3665,6 +3673,17 @@ export interface Database {
           xml_storage_path: string;
           enviado_por: string;
           criado_em: string;
+          // Fase Apuracao-ICMS-Combustivel (12/08/2026) — extraídos do XML
+          // (src/lib/nfe.ts) quando presentes; null em notas de antes desta
+          // fase ou sem o grupo <ICMS61>. vICMSMonoRet é o valor do crédito
+          // apurável já calculado pelo emitente, base da tela de apuração.
+          cst_icms: string | null;
+          cfop: string | null;
+          uf_emitente: string | null;
+          uf_destinatario: string | null;
+          q_bc_mono_ret: number | null;
+          ad_rem_icms_ret: number | null;
+          v_icms_mono_ret: number | null;
         };
         // Sem política de RLS de INSERT/UPDATE — toda escrita passa pela RPC
         // inserir_nota_fiscal_abastecimento (SECURITY DEFINER). O tipo aqui
@@ -4924,6 +4943,35 @@ export interface Database {
           p_xml_storage_path: string;
           p_empresa_posto_id_confiavel?: string;
           p_enviado_por?: string;
+          // Fase Apuracao-ICMS-Combustivel (12/08/2026) — campos fiscais
+          // opcionais extraídos do grupo <ICMS61> + CFOP + UF do XML (ver
+          // src/lib/nfe.ts). null quando o XML não traz o grupo.
+          p_cst_icms?: string | null;
+          p_cfop?: string | null;
+          p_uf_emitente?: string | null;
+          p_uf_destinatario?: string | null;
+          p_q_bc_mono_ret?: number | null;
+          p_ad_rem_icms_ret?: number | null;
+          p_v_icms_mono_ret?: number | null;
+        };
+        Returns: Json;
+      };
+      // Fase Apuracao-ICMS-Combustivel (12/08/2026) — reprocessa campos
+      // fiscais (CST/CFOP/UF/ICMS61) numa nota JÁ vinculada, a partir do XML
+      // já arquivado no Storage (não refaz a validação de matching — só
+      // enriquece; nunca sobrescreve um valor já preenchido). Usada pelo
+      // botão "Reprocessar notas antigas" em /apuracao-tributaria.
+      atualizar_campos_fiscais_nota_fiscal: {
+        Args: {
+          p_nota_id: string;
+          p_chave_acesso: string;
+          p_cst_icms: string | null;
+          p_cfop: string | null;
+          p_uf_emitente: string | null;
+          p_uf_destinatario: string | null;
+          p_q_bc_mono_ret: number | null;
+          p_ad_rem_icms_ret: number | null;
+          p_v_icms_mono_ret: number | null;
         };
         Returns: Json;
       };

@@ -32,6 +32,26 @@ export type NfeExtraida = {
   valorUnitario: number;
   valorTotal: number;
   valorNfTotal: number;
+  // Fase Apuracao-ICMS-Combustivel (12/08/2026) — pedido do Daniel: base pra
+  // apurar o crédito de ICMS monofásico (LC 192/2022, Convênio ICMS 26/2023)
+  // sobre diesel/GLP usado como insumo por transportadoras. Todos opcionais
+  // de propósito — uma NF-e sem o grupo <ICMS61> (ex.: combustível fora da
+  // tributação monofásica, ou um XML mais antigo) continua sendo aceita
+  // normalmente, só não alimenta a apuração automática.
+  cfop?: string;
+  ufEmitente?: string;
+  ufDestinatario?: string;
+  // CST do grupo ICMS do item de combustível (ex.: "61" = tributação
+  // monofásica cobrada anteriormente — Ajuste SINIEF 01/2023).
+  cstIcms?: string;
+  // Grupo N08a/<ICMS61>: qBCMonoRet (quantidade tributada retida
+  // anteriormente), adRemICMSRet (alíquota ad rem) e vICMSMonoRet (valor do
+  // ICMS retido anteriormente = qBCMonoRet × adRemICMSRet). vICMSMonoRet é
+  // o valor JÁ CALCULADO pelo emitente — é a base do crédito apurável, não
+  // uma estimativa nossa.
+  qBcMonoRet?: number;
+  adRemIcmsRet?: number;
+  vIcmsMonoRet?: number;
 };
 
 // Fase 27.101 — achado real testando o upload em lote: quando o XML é
@@ -180,6 +200,42 @@ export function parsearXmlNfe(xmlTexto: string): ResultadoParseNfe {
   const prod = detsComCombustivel[0].prod as Record<string, unknown>;
   const comb = prod.comb as Record<string, unknown>;
 
+  // Fase Apuracao-ICMS-Combustivel — CFOP e UF de emitente/destinatário
+  // (usados na tela de apuração; UF é só informativa, NÃO usamos como UF de
+  // "início da operação de transporte" — ver nota na tela de apuração sobre
+  // por que essa é uma simplificação deliberada).
+  const cfop = prod.CFOP !== undefined && prod.CFOP !== null ? String(prod.CFOP) : undefined;
+  const enderEmit = emit.enderEmit as Record<string, unknown> | undefined;
+  const enderDest = dest.enderDest as Record<string, unknown> | undefined;
+  const ufEmitente = enderEmit?.UF !== undefined && enderEmit?.UF !== null ? String(enderEmit.UF) : undefined;
+  const ufDestinatario = enderDest?.UF !== undefined && enderDest?.UF !== null ? String(enderDest.UF) : undefined;
+
+  // Fase Apuracao-ICMS-Combustivel — grupo <ICMS> do item de combustível vem
+  // como <ICMS><ICMS61>...</ICMS61></ICMS> (a tag filha varia com o CST —
+  // ICMS00, ICMS60, ICMS61 etc. — não dá pra fixar o nome, por isso pega a
+  // primeira chave que começa com "ICMS" dentro do grupo). Quando não é
+  // ICMS61 (ou o grupo não existe), os campos ficam undefined — a nota
+  // continua válida, só não entra automaticamente na apuração.
+  const impostoDet = detsComCombustivel[0].imposto as Record<string, unknown> | undefined;
+  const icmsGrupo = impostoDet?.ICMS as Record<string, unknown> | undefined;
+  let cstIcms: string | undefined;
+  let qBcMonoRet: number | undefined;
+  let adRemIcmsRet: number | undefined;
+  let vIcmsMonoRet: number | undefined;
+  if (icmsGrupo) {
+    const chaveVariante = Object.keys(icmsGrupo).find((k) => k.startsWith("ICMS"));
+    const variante = chaveVariante ? (icmsGrupo[chaveVariante] as Record<string, unknown>) : undefined;
+    if (variante) {
+      cstIcms = variante.CST !== undefined && variante.CST !== null ? String(variante.CST) : undefined;
+      const qBc = numero(variante.qBCMonoRet);
+      const adRem = numero(variante.adRemICMSRet);
+      const vIcms = numero(variante.vICMSMonoRet);
+      if (Number.isFinite(qBc)) qBcMonoRet = qBc;
+      if (Number.isFinite(adRem)) adRemIcmsRet = adRem;
+      if (Number.isFinite(vIcms)) vIcmsMonoRet = vIcms;
+    }
+  }
+
   const cnpjEmitente = normalizarCnpj(emit.CNPJ);
   const cnpjDestinatario = normalizarCnpj(dest.CNPJ);
   if (cnpjEmitente.length !== 14) {
@@ -225,6 +281,13 @@ export function parsearXmlNfe(xmlTexto: string): ResultadoParseNfe {
       valorUnitario,
       valorTotal,
       valorNfTotal: Number.isFinite(valorNfTotal) ? valorNfTotal : valorTotal,
+      cfop,
+      ufEmitente,
+      ufDestinatario,
+      cstIcms,
+      qBcMonoRet,
+      adRemIcmsRet,
+      vIcmsMonoRet,
     },
   };
 }

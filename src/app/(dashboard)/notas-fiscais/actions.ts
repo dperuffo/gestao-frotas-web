@@ -341,6 +341,16 @@ export async function enviarNotaFiscalAcao(formData: FormData): Promise<Resultad
     p_valor_total: nfe.valorTotal,
     p_valor_nf_total: nfe.valorNfTotal,
     p_xml_storage_path: `${provedor}-${abastecimentoId}/${nfe.chaveAcesso}.xml`,
+    // Fase Apuracao-ICMS-Combustivel — campos fiscais opcionais extraídos do
+    // XML (grupo ICMS61 + CFOP + UF); undefined quando o XML não traz o
+    // grupo — a RPC aceita null pra todos.
+    p_cst_icms: nfe.cstIcms ?? null,
+    p_cfop: nfe.cfop ?? null,
+    p_uf_emitente: nfe.ufEmitente ?? null,
+    p_uf_destinatario: nfe.ufDestinatario ?? null,
+    p_q_bc_mono_ret: nfe.qBcMonoRet ?? null,
+    p_ad_rem_icms_ret: nfe.adRemIcmsRet ?? null,
+    p_v_icms_mono_ret: nfe.vIcmsMonoRet ?? null,
   });
 
   if (erroRpc) {

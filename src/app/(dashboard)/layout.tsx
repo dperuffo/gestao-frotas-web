@@ -184,6 +184,12 @@ const menuRoteirizacaoAbastecimento: ItemMenuLateral[] = [
   // Fase 27.94/27.95 — status de NF-e por abastecimento (emitida/pendente)
   // + indicador de % de recolha, do lado do cliente.
   { href: "/notas-fiscais", label: "Notas Fiscais", icon: FileText }, // PWA: Icons.description
+  // Fase Apuracao-ICMS-Combustivel (12/08/2026) — pedido do Daniel: extensão
+  // natural de Notas Fiscais — apura o crédito de ICMS monofásico sobre
+  // diesel/GLP (LC 192/2022, Convênio ICMS 26/2023) a partir do XML das
+  // notas já vinculadas, com regime tributário confirmado pelo próprio
+  // cliente.
+  { href: "/apuracao-tributaria", label: "Apuração de Crédito Tributário", icon: Scale },
   // Fase Onda-2 (benchmark TicketLog, item #6) — pedido do Daniel: comparador
   // de combustível ideal por veículo/região, reaproveitando os preços
   // regionais já usados no índice público de preços.
