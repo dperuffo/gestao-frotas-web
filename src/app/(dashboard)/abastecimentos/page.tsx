@@ -5,6 +5,10 @@ import { formatDate } from "@/lib/utils";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
 import { AbastecimentosPosto } from "./_components/AbastecimentosPosto";
 import { LogoProvedor } from "@/components/LogoProvedor";
+// Fase Redesign-Telas-Densas (12/08/2026) — pedido do Daniel: mesmo toque
+// visual do Dashboard/Veículos/Financeiro (cor + ícone por indicador).
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { ClipboardList, Droplet, Wallet, Gauge } from "lucide-react";
 
 const POR_PAGINA = 30;
 
@@ -316,11 +320,11 @@ export default async function AbastecimentosPage({
 
       {!semClienteEscolhido && (
       <>
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Indicador label="Registros" valor={String(totalRegistros)} />
-        <Indicador label="Litros abastecidos" valor={litrosTotais.toLocaleString("pt-BR")} />
-        <Indicador label="Valor total" valor={formatarMoeda(valorTotal)} />
-        <Indicador label="Custo médio por litro" valor={formatarMoeda(custoMedioLitro)} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <IndicadorColorido cor="sky" icon={ClipboardList} label="Registros" valor={String(totalRegistros)} />
+        <IndicadorColorido cor="green" icon={Droplet} label="Litros abastecidos" valor={litrosTotais.toLocaleString("pt-BR")} />
+        <IndicadorColorido cor="amber" icon={Wallet} label="Valor total" valor={formatarMoeda(valorTotal)} />
+        <IndicadorColorido cor="violet" icon={Gauge} label="Custo médio por litro" valor={formatarMoeda(custoMedioLitro)} />
       </div>
 
       {listaResumoProvedores.length > 0 && (
@@ -440,7 +444,7 @@ export default async function AbastecimentosPage({
                 </>
               );
               return (
-                <tr key={`${r.provedor}-${r.id}`} className="hover:bg-slate-50">
+                <tr key={`${r.provedor}-${r.id}`} className="transition-colors hover:bg-frota-50/60">
                   <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">
                     {r.codigo_abastecimento ?? "—"}
                   </td>
@@ -500,11 +504,5 @@ export default async function AbastecimentosPage({
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: string }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

@@ -4,6 +4,10 @@ import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
 import { FormularioRegimeTributario } from "./_components/FormularioRegimeTributario";
 import { BotaoReprocessarNotas } from "./_components/BotaoReprocessarNotas";
+// Fase Redesign-Telas-Densas (12/08/2026) — pedido do Daniel: mesmo toque
+// visual do Dashboard/Veículos/Financeiro/Abastecimentos/Manutenção.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Coins, FileCheck2, FileWarning } from "lucide-react";
 
 // Fase Apuracao-ICMS-Combustivel (12/08/2026) — pedido do Daniel: "Criar aba
 // de Apuração de crédito tributário sobre combustível. Extensão natural do
@@ -183,23 +187,20 @@ export default async function ApuracaoTributariaPage({
       )}
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            {podeCreditar ? "Crédito apurável no mês" : "Valor identificado no mês (informativo)"}
-          </p>
-          <p className={`mt-1 text-2xl font-semibold ${podeCreditar ? "text-status-ativo" : "text-slate-400"}`}>
-            {formatarMoeda(totalCredito)}
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Notas com dado de crédito</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">
-            {notasComCredito.length} de {todasNotas.length}
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Notas sem grupo ICMS61</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{notasSemDado}</p>
+        <IndicadorColorido
+          cor={podeCreditar ? "green" : "sky"}
+          icon={Coins}
+          label={podeCreditar ? "Crédito apurável no mês" : "Valor identificado no mês (informativo)"}
+          valor={formatarMoeda(totalCredito)}
+        />
+        <IndicadorColorido
+          cor="violet"
+          icon={FileCheck2}
+          label="Notas com dado de crédito"
+          valor={`${notasComCredito.length} de ${todasNotas.length}`}
+        />
+        <div>
+          <IndicadorColorido cor="amber" icon={FileWarning} label="Notas sem grupo ICMS61" valor={String(notasSemDado)} />
           {notasSemDado > 0 && <BotaoReprocessarNotas empresaId={empresaSelecionada} />}
         </div>
       </div>
@@ -215,7 +216,7 @@ export default async function ApuracaoTributariaPage({
           <table className="w-full text-left text-sm">
             <tbody className="divide-y divide-slate-100">
               {[...porUf.entries()].sort((a, b) => b[1] - a[1]).map(([uf, valor]) => (
-                <tr key={uf}>
+                <tr key={uf} className="transition-colors hover:bg-frota-50/60">
                   <td className="py-1.5 text-slate-600">{uf}</td>
                   <td className="py-1.5 text-right text-slate-900">{formatarMoeda(valor)}</td>
                 </tr>
@@ -244,7 +245,7 @@ export default async function ApuracaoTributariaPage({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {todasNotas.map((n) => (
-              <tr key={n.id} className="hover:bg-slate-50">
+              <tr key={n.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 whitespace-nowrap text-slate-500">{formatarDataBr(n.data_emissao)}</td>
                 <td className="px-4 py-3 text-slate-600">{n.numero_nf}</td>
                 <td className="px-4 py-3 text-slate-600">{n.nome_emitente}</td>

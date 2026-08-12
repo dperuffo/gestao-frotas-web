@@ -287,7 +287,7 @@ export default async function NotasFiscaisPage({
                 provedor, senão um id PróFrotas e um id externo que
                 coincidem por acaso colidiriam no React. */}
             {(linhas ?? []).map((l) => (
-              <tr key={`${l.provedor}-${l.abastecimento_id}`} className="hover:bg-slate-50">
+              <tr key={`${l.provedor}-${l.abastecimento_id}`} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{l.codigo_abastecimento ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-700">{formatarDataBr(l.data_abastecimento)}</td>
                 <td className="px-4 py-3 text-slate-600">{l.cliente_nome ?? "—"}</td>

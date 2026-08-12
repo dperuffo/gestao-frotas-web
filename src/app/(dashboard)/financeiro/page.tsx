@@ -22,6 +22,11 @@ import { TabelaCustosFixos, type LinhaCustoFixo } from "./_components/TabelaCust
 import { SecaoDreFrota, type DreFrotaDados } from "./_components/SecaoDreFrota";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { LogoProvedor } from "@/components/LogoProvedor";
+// Fase Redesign-Telas-Densas (12/08/2026) — pedido do Daniel: aplicar o
+// mesmo toque visual do Dashboard/Veículos (cor + ícone por indicador) nas
+// telas mais usadas do dia a dia. Ver @/components/IndicadorColorido.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { DollarSign, Gauge, ClipboardList, TrendingUp, TrendingDown, Fuel, Wrench, Receipt } from "lucide-react";
 
 type SearchParams = { empresa?: string };
 
@@ -387,27 +392,69 @@ export default async function FinanceiroPage({
 
       {empresaSelecionada && indicadores && (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Indicador label="Custo total do mês" valor={formatarMoeda(indicadores.custo_total)} ajudaChave="financeiro.custo_total" />
-            <Indicador
-              label="Custo por km"
-              valor={indicadores.custo_por_km != null ? formatarMoeda(indicadores.custo_por_km) : "—"}
-              ajudaChave="financeiro.custo_por_km"
-            />
-            <Indicador label="Orçamento planejado" valor={formatarMoeda(indicadores.orcamento_planejado)} ajudaChave="financeiro.orcamento_planejado" />
-            <Indicador
-              label="Saldo do orçamento"
-              valor={formatarMoeda(indicadores.orcamento_planejado - indicadores.custo_total)}
-              destaque={indicadores.orcamento_planejado > 0 && indicadores.custo_total > indicadores.orcamento_planejado ? "negativo" : "positivo"}
-              ajudaChave="financeiro.saldo_orcamento"
-            />
-          </div>
+          {(() => {
+            const estourouOrcamento =
+              indicadores.orcamento_planejado > 0 && indicadores.custo_total > indicadores.orcamento_planejado;
+            const saldo = indicadores.orcamento_planejado - indicadores.custo_total;
+            return (
+              <>
+                <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <IndicadorColorido
+                    cor="sky"
+                    icon={DollarSign}
+                    label="Custo total do mês"
+                    valor={formatarMoeda(indicadores.custo_total)}
+                    ajudaChave="financeiro.custo_total"
+                  />
+                  <IndicadorColorido
+                    cor="violet"
+                    icon={Gauge}
+                    label="Custo por km"
+                    valor={indicadores.custo_por_km != null ? formatarMoeda(indicadores.custo_por_km) : "—"}
+                    ajudaChave="financeiro.custo_por_km"
+                  />
+                  <IndicadorColorido
+                    cor="amber"
+                    icon={ClipboardList}
+                    label="Orçamento planejado"
+                    valor={formatarMoeda(indicadores.orcamento_planejado)}
+                    ajudaChave="financeiro.orcamento_planejado"
+                  />
+                  <IndicadorColorido
+                    cor={estourouOrcamento ? "red" : "green"}
+                    icon={estourouOrcamento ? TrendingDown : TrendingUp}
+                    label="Saldo do orçamento"
+                    valor={formatarMoeda(saldo)}
+                    ajudaChave="financeiro.saldo_orcamento"
+                  />
+                </div>
 
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Indicador label="Combustível" valor={formatarMoeda(indicadores.custo_combustivel)} ajudaChave="financeiro.combustivel" />
-            <Indicador label="Manutenção" valor={formatarMoeda(indicadores.custo_manutencao)} ajudaChave="financeiro.manutencao" />
-            <Indicador label="Custos fixos" valor={formatarMoeda(indicadores.custo_fixos)} ajudaChave="financeiro.custos_fixos" />
-          </div>
+                <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <IndicadorColorido
+                    cor="sky"
+                    icon={Fuel}
+                    label="Combustível"
+                    valor={formatarMoeda(indicadores.custo_combustivel)}
+                    ajudaChave="financeiro.combustivel"
+                  />
+                  <IndicadorColorido
+                    cor="amber"
+                    icon={Wrench}
+                    label="Manutenção"
+                    valor={formatarMoeda(indicadores.custo_manutencao)}
+                    ajudaChave="financeiro.manutencao"
+                  />
+                  <IndicadorColorido
+                    cor="violet"
+                    icon={Receipt}
+                    label="Custos fixos"
+                    valor={formatarMoeda(indicadores.custo_fixos)}
+                    ajudaChave="financeiro.custos_fixos"
+                  />
+                </div>
+              </>
+            );
+          })()}
 
           {indicadoresPorProvedor.length > 0 && (
             <div className="card mb-6 overflow-x-auto p-6">
@@ -428,7 +475,7 @@ export default async function FinanceiroPage({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {indicadoresPorProvedor.map((p) => (
-                    <tr key={p.provedor}>
+                    <tr key={p.provedor} className="transition-colors hover:bg-frota-50/60">
                       <td className="py-2.5 pr-4">
                         <LogoProvedor provedor={p.provedor} className="h-5 w-auto" />
                       </td>
@@ -532,29 +579,5 @@ export default async function FinanceiroPage({
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-  ajudaChave,
-}: {
-  label: string;
-  valor: string;
-  destaque?: "positivo" | "negativo";
-  ajudaChave?: string;
-}) {
-  return (
-    <div className="card p-4">
-      <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-        {label} {ajudaChave && <AjudaIcon chave={ajudaChave} />}
-      </p>
-      <p
-        className={`mt-1 text-xl font-semibold ${
-          destaque === "negativo" ? "text-red-600" : destaque === "positivo" ? "text-green-700" : "text-slate-900"
-        }`}
-      >
-        {valor}
-      </p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

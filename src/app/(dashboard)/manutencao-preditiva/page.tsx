@@ -4,6 +4,10 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { StatusBadge } from "./_components/StatusBadge";
 import { ScoreBar } from "./_components/ScoreBar";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+// Fase Redesign-Telas-Densas (12/08/2026) — pedido do Daniel: mesmo toque
+// visual do Dashboard/Veículos/Financeiro/Abastecimentos.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Truck, AlertTriangle, Bell, CheckCircle2, Gauge } from "lucide-react";
 
 const TAMANHO_PAGINA = 50;
 
@@ -174,12 +178,24 @@ export default async function ManutencaoPreditivaPage({
 
       {empresaSelecionada && !error && (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
-            <Indicador label="Veículos" valor={String(totalVeiculos)} />
-            <Indicador label="🔴 Críticos" valor={String(totalCriticos)} destaque={totalCriticos > 0 ? "critico" : undefined} ajudaChave="manutencao.status" />
-            <Indicador label="🟡 Em alerta" valor={String(totalAlertas)} ajudaChave="manutencao.status" />
-            <Indicador label="🟢 OK" valor={String(totalOk)} ajudaChave="manutencao.status" />
-            <Indicador label="Score médio" valor={`${Math.round(scoreMedio)}/100`} ajudaChave="manutencao.proxima_prevista" />
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <IndicadorColorido cor="sky" icon={Truck} label="Veículos" valor={String(totalVeiculos)} />
+            <IndicadorColorido
+              cor="red"
+              icon={AlertTriangle}
+              label="Críticos"
+              valor={String(totalCriticos)}
+              ajudaChave="manutencao.status"
+            />
+            <IndicadorColorido cor="amber" icon={Bell} label="Em alerta" valor={String(totalAlertas)} ajudaChave="manutencao.status" />
+            <IndicadorColorido cor="green" icon={CheckCircle2} label="OK" valor={String(totalOk)} ajudaChave="manutencao.status" />
+            <IndicadorColorido
+              cor="violet"
+              icon={Gauge}
+              label="Score médio"
+              valor={`${Math.round(scoreMedio)}/100`}
+              ajudaChave="manutencao.proxima_prevista"
+            />
           </div>
 
           {totalCriticos > 0 && (
@@ -204,7 +220,7 @@ export default async function ManutencaoPreditivaPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {veiculos.map((v) => (
-                  <tr key={v.placa} className="hover:bg-slate-50">
+                  <tr key={v.placa} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
                       <StatusBadge status={v.status} />
                     </td>
@@ -274,25 +290,7 @@ export default async function ManutencaoPreditivaPage({
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-  ajudaChave,
-}: {
-  label: string;
-  valor: string;
-  destaque?: "critico";
-  ajudaChave?: string;
-}) {
-  return (
-    <div className={`card p-4 ${destaque === "critico" ? "border-red-200 bg-red-50/50" : ""}`}>
-      <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-        {label} {ajudaChave && <AjudaIcon chave={ajudaChave} />}
-      </p>
-      <p className={`mt-1 text-2xl font-semibold ${destaque === "critico" ? "text-red-700" : "text-slate-900"}`}>
-        {valor}
-      </p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas). O
+// destaque de "críticos" agora é a própria cor do card (cor="red"), não
+// mais uma variante condicional.
