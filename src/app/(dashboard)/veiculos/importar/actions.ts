@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { lerPlanilhaComoTexto } from "@/lib/xlsx";
 import { normalizarCNPJ } from "@/lib/utils";
 import { CLASSIFICACAO, type Classificacao } from "@/lib/constants";
+import type { Database } from "@/types/database.types";
+
+type VeiculoInsert = Database["public"]["Tables"]["cadastro_veiculos"]["Insert"];
+type VeiculoUpdate = Database["public"]["Tables"]["cadastro_veiculos"]["Update"];
 
 export type LinhaResultado = {
   linha: number;
@@ -24,6 +28,30 @@ function numeroOuNull(valor: string) {
   if (!texto) return null;
   const numero = Number(texto);
   return Number.isFinite(numero) ? numero : null;
+}
+
+// Fase Corrige-Reimportação-Veículos (12/08/2026, achado real do Daniel): a
+// planilha de importação em lote também é usada como atalho pra EDITAR
+// veículos já cadastrados (baixa o modelo/exporta, ajusta os dados de vários
+// veículos numa tabela só, reenvia) -- só que o import era insert-only, e
+// qualquer linha cujo placa+cliente já existisse virava erro de
+// duplicidade. Pior: existem DOIS índices únicos cobrindo isso
+// (cadastro_veiculos_cnpj_frota_placa_key, sobre o texto puro, e
+// cadastro_veiculos_cnpj_placa_norm_uidx, sobre o texto normalizado --
+// maiúsculo, sem pontuação), então nem dava pra resolver só com um
+// .upsert(onConflict: ...) do PostgREST, que só mira UM constraint por vez
+// e não pega o outro.
+//
+// Solução: buscar os veículos já cadastrados do(s) cliente(s) envolvidos,
+// casar cada linha da planilha contra eles usando a MESMA normalização do
+// norm_uidx, e decidir update x insert por linha. O update é PARCIAL --
+// só sobrescreve o campo que veio preenchido na planilha; célula em branco
+// não apaga o que já estava cadastrado (community/ERP convention: em
+// branco = "não mexer", não "limpar"). Isso deixa o usuário reexportar,
+// ajustar só as colunas que quer mudar e reimportar sem medo de perder
+// dado que não tocou.
+function normalizarChave(valor: string): string {
+  return valor.toUpperCase().replace(/[^0-9A-Z]/g, "");
 }
 
 export async function importarVeiculos(
@@ -96,8 +124,22 @@ export async function importarVeiculos(
     return idx >= 0 ? (colunas[idx] ?? "").trim() : "";
   };
 
-  const resultado: LinhaResultado[] = [];
+  type LinhaValida = {
+    numeroLinha: number;
+    placa: string;
+    chave: string;
+    cnpjFrota: string;
+    camposInsert: VeiculoInsert;
+    camposUpdate: VeiculoUpdate;
+    avisoCentroCusto: string;
+  };
 
+  const resultado: LinhaResultado[] = [];
+  const validas: LinhaValida[] = [];
+
+  // Passo 1: parseia e valida cada linha (resolve cliente, centro de
+  // custo), sem gravar nada ainda -- só depois de validar todas é que dá
+  // pra saber quais clientes buscar em lote no passo 2.
   for (let i = 1; i < linhas.length; i++) {
     const colunas = linhas[i];
     const numeroLinha = i + 1;
@@ -105,9 +147,9 @@ export async function importarVeiculos(
     const placa = pegar(colunas, "placa").toUpperCase();
     const cnpjBruto = pegar(colunas, "cnpj_cliente");
     const classificacaoBruta = pegar(colunas, "classificacao");
-    const classificacao: Classificacao = CLASSIFICACAO.includes(classificacaoBruta as Classificacao)
+    const classificacaoValida = CLASSIFICACAO.includes(classificacaoBruta as Classificacao)
       ? (classificacaoBruta as Classificacao)
-      : "Próprio";
+      : null;
     const centroCustoNomeBruto = pegar(colunas, "centro_custo");
 
     try {
@@ -120,47 +162,70 @@ export async function importarVeiculos(
       const cnpjFrota = cnpjPorEmpresaId.get(empresaId)!;
 
       let centroCustoId: string | null = null;
-      let centroCustoNome: string | null = null;
       let avisoCentroCusto = "";
       if (centroCustoNomeBruto) {
         centroCustoId = centroIdPorNome.get(centroCustoNomeBruto.toLowerCase()) ?? null;
-        if (centroCustoId) {
-          centroCustoNome = centroCustoNomeBruto;
-        } else {
-          avisoCentroCusto = ` (centro de custo "${centroCustoNomeBruto}" não encontrado — deixado em branco)`;
+        if (!centroCustoId) {
+          avisoCentroCusto = ` (centro de custo "${centroCustoNomeBruto}" não encontrado — deixado como estava)`;
         }
       }
 
-      const { error } = await supabase.from("cadastro_veiculos").insert({
+      const camposTexto: [string, string][] = [
+        ["marca", pegar(colunas, "marca")],
+        ["modelo", pegar(colunas, "modelo")],
+        ["tipo_veiculo", pegar(colunas, "tipo_veiculo")],
+        ["motor", pegar(colunas, "motor")],
+        ["combustivel", pegar(colunas, "combustivel")],
+        ["cor", pegar(colunas, "cor")],
+        ["chassi", pegar(colunas, "chassi")],
+        ["renavam", pegar(colunas, "renavam")],
+        ["municipio", pegar(colunas, "municipio")],
+        ["uf_veiculo", pegar(colunas, "uf_veiculo")],
+      ];
+      const camposNumero: [string, string][] = [
+        ["ano_modelo", pegar(colunas, "ano_modelo")],
+        ["ano_fabricacao", pegar(colunas, "ano_fabricacao")],
+        ["tanque", pegar(colunas, "tanque")],
+        ["autonomia", pegar(colunas, "autonomia")],
+        ["numero_eixos", pegar(colunas, "numero_eixos")],
+      ];
+
+      const camposInsert: VeiculoInsert = {
         cnpj_frota: cnpjFrota,
         placa,
-        marca: pegar(colunas, "marca") || null,
-        modelo: pegar(colunas, "modelo") || null,
-        tipo_veiculo: pegar(colunas, "tipo_veiculo") || null,
-        classificacao,
-        motor: pegar(colunas, "motor") || null,
-        ano_modelo: numeroOuNull(pegar(colunas, "ano_modelo")),
-        ano_fabricacao: numeroOuNull(pegar(colunas, "ano_fabricacao")),
-        combustivel: pegar(colunas, "combustivel") || null,
-        tanque: numeroOuNull(pegar(colunas, "tanque")),
-        autonomia: numeroOuNull(pegar(colunas, "autonomia")),
-        numero_eixos: numeroOuNull(pegar(colunas, "numero_eixos")),
-        cor: pegar(colunas, "cor") || null,
-        chassi: pegar(colunas, "chassi") || null,
-        renavam: pegar(colunas, "renavam") || null,
-        municipio: pegar(colunas, "municipio") || null,
-        uf_veiculo: pegar(colunas, "uf_veiculo") || null,
+        classificacao: classificacaoValida ?? "Próprio",
         centro_custo_id: centroCustoId,
-        centro_custo_nome: centroCustoNome,
+        centro_custo_nome: centroCustoId ? centroCustoNomeBruto : null,
         ativo: true,
-      });
-      if (error) throw new Error(error.message);
+      };
+      const camposUpdate: VeiculoUpdate = {};
 
-      resultado.push({
-        linha: numeroLinha,
-        identificacao: placa,
-        status: "ok",
-        mensagem: `Importado com sucesso.${avisoCentroCusto}`,
+      // Os campos de texto/número acima são todos colunas de mesmo tipo
+      // (string | null / number | null) em cadastro_veiculos -- o cast por
+      // campo evita ter que repetir 15x o mesmo par insert/update.
+      for (const [campo, valor] of camposTexto) {
+        (camposInsert as unknown as Record<string, string | null>)[campo] = valor || null;
+        if (valor) (camposUpdate as unknown as Record<string, string>)[campo] = valor;
+      }
+      for (const [campo, valor] of camposNumero) {
+        const numero = numeroOuNull(valor);
+        (camposInsert as unknown as Record<string, number | null>)[campo] = numero;
+        if (valor && numero !== null) (camposUpdate as unknown as Record<string, number>)[campo] = numero;
+      }
+      if (classificacaoValida) camposUpdate.classificacao = classificacaoValida;
+      if (centroCustoId) {
+        camposUpdate.centro_custo_id = centroCustoId;
+        camposUpdate.centro_custo_nome = centroCustoNomeBruto;
+      }
+
+      validas.push({
+        numeroLinha,
+        placa,
+        chave: `${normalizarChave(cnpjFrota)}|${normalizarChave(placa)}`,
+        cnpjFrota,
+        camposInsert,
+        camposUpdate,
+        avisoCentroCusto,
       });
     } catch (e) {
       resultado.push({
@@ -171,6 +236,57 @@ export async function importarVeiculos(
       });
     }
   }
+
+  // Passo 2: busca em lote os veículos já cadastrados dos clientes
+  // envolvidos, casando pela mesma normalização do índice único
+  // cadastro_veiculos_cnpj_placa_norm_uidx (maiúsculo, sem pontuação) --
+  // pega tanto o veículo cadastrado com a placa "ABC-1234" quanto
+  // "abc1234" reenviados como "ABC1234".
+  const cnpjsFrotaEnvolvidos = [...new Set(validas.map((v) => v.cnpjFrota))];
+  const { data: existentes } =
+    cnpjsFrotaEnvolvidos.length > 0
+      ? await supabase.from("cadastro_veiculos").select("id, cnpj_frota, placa").in("cnpj_frota", cnpjsFrotaEnvolvidos)
+      : { data: [] };
+  const idPorChave = new Map<string, string>();
+  for (const v of existentes ?? []) {
+    idPorChave.set(`${normalizarChave(v.cnpj_frota)}|${normalizarChave(v.placa)}`, v.id);
+  }
+
+  // Passo 3: grava -- update parcial se o veículo já existe, insert
+  // completo se não.
+  for (const v of validas) {
+    const idExistente = idPorChave.get(v.chave);
+    try {
+      if (idExistente) {
+        const { error } = await supabase.from("cadastro_veiculos").update(v.camposUpdate).eq("id", idExistente);
+        if (error) throw new Error(error.message);
+        resultado.push({
+          linha: v.numeroLinha,
+          identificacao: v.placa,
+          status: "ok",
+          mensagem: `Veículo já cadastrado — dados atualizados.${v.avisoCentroCusto}`,
+        });
+      } else {
+        const { error } = await supabase.from("cadastro_veiculos").insert(v.camposInsert);
+        if (error) throw new Error(error.message);
+        resultado.push({
+          linha: v.numeroLinha,
+          identificacao: v.placa,
+          status: "ok",
+          mensagem: `Importado com sucesso.${v.avisoCentroCusto}`,
+        });
+      }
+    } catch (e) {
+      resultado.push({
+        linha: v.numeroLinha,
+        identificacao: v.placa,
+        status: "erro",
+        mensagem: e instanceof Error ? e.message : "Erro desconhecido.",
+      });
+    }
+  }
+
+  resultado.sort((a, b) => a.linha - b.linha);
 
   revalidatePath("/veiculos");
 
