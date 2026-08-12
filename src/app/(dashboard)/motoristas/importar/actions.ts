@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { lerPlanilhaComoTexto } from "@/lib/xlsx";
+import { lerPlanilhaComoTexto, emLotes } from "@/lib/xlsx";
 import { normalizarCNPJ } from "@/lib/utils";
 import { CLASSIFICACAO, type Classificacao } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
@@ -38,7 +38,7 @@ type Irmao = { motorista_id: string; empresa_id: string; empresa_nome: string };
 
 export async function importarMotoristas(
   _prev: ResultadoImportacao | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<ResultadoImportacao> {
   const arquivo = formData.get("arquivo");
   if (!(arquivo instanceof File) || arquivo.size === 0) {
@@ -73,15 +73,20 @@ export async function importarMotoristas(
 
   const supabase = await createClient();
 
-  const { data: empresas } = await supabase.from("empresas").select("id, cnpj, nome");
+  const { data: empresas } = await supabase
+    .from("empresas")
+    .select("id, cnpj, nome");
   const empresaIdPorCnpj = new Map<string, string>();
   const nomePorEmpresaId = new Map<string, string>();
   for (const empresa of empresas ?? []) {
-    if (empresa.cnpj) empresaIdPorCnpj.set(normalizarCNPJ(empresa.cnpj), empresa.id);
+    if (empresa.cnpj)
+      empresaIdPorCnpj.set(normalizarCNPJ(empresa.cnpj), empresa.id);
     nomePorEmpresaId.set(empresa.id, empresa.nome);
   }
 
-  const { data: centros } = await supabase.from("centros_custo").select("id, nome");
+  const { data: centros } = await supabase
+    .from("centros_custo")
+    .select("id, nome");
   const centroIdPorNome = new Map<string, string>();
   for (const centro of centros ?? []) {
     centroIdPorNome.set(centro.nome.trim().toLowerCase(), centro.id);
@@ -116,13 +121,18 @@ export async function importarMotoristas(
     const cpf = (colunas[iCpf] ?? "").trim();
     const telefone = iTelefone >= 0 ? (colunas[iTelefone] ?? "").trim() : "";
     const email = iEmail >= 0 ? (colunas[iEmail] ?? "").trim() : "";
-    const classificacaoBruta = iClassificacao >= 0 ? (colunas[iClassificacao] ?? "").trim() : "";
-    const classificacaoValida = CLASSIFICACAO.includes(classificacaoBruta as Classificacao)
+    const classificacaoBruta =
+      iClassificacao >= 0 ? (colunas[iClassificacao] ?? "").trim() : "";
+    const classificacaoValida = CLASSIFICACAO.includes(
+      classificacaoBruta as Classificacao,
+    )
       ? (classificacaoBruta as Classificacao)
       : null;
     const cnh = iCnh >= 0 ? (colunas[iCnh] ?? "").trim() : "";
-    const cnhVencimento = iCnhVencimento >= 0 ? (colunas[iCnhVencimento] ?? "").trim() : "";
-    const centroCustoNomeBruto = iCentroCusto >= 0 ? (colunas[iCentroCusto] ?? "").trim() : "";
+    const cnhVencimento =
+      iCnhVencimento >= 0 ? (colunas[iCnhVencimento] ?? "").trim() : "";
+    const centroCustoNomeBruto =
+      iCentroCusto >= 0 ? (colunas[iCentroCusto] ?? "").trim() : "";
     const cnpjBruto = (colunas[iCnpj] ?? "").trim();
 
     try {
@@ -141,7 +151,8 @@ export async function importarMotoristas(
       let centroCustoId: string | null = null;
       let avisoCentroCusto = "";
       if (centroCustoNomeBruto) {
-        centroCustoId = centroIdPorNome.get(centroCustoNomeBruto.toLowerCase()) ?? null;
+        centroCustoId =
+          centroIdPorNome.get(centroCustoNomeBruto.toLowerCase()) ?? null;
         if (!centroCustoId) {
           avisoCentroCusto = ` (centro de custo "${centroCustoNomeBruto}" não encontrado — deixado como estava)`;
         }
@@ -159,7 +170,9 @@ export async function importarMotoristas(
         centro_custo_id: centroCustoId,
         status: "Ativo",
       };
-      const camposCaracteristicas: MotoristaUpdate = { nome_completo: nomeCompleto };
+      const camposCaracteristicas: MotoristaUpdate = {
+        nome_completo: nomeCompleto,
+      };
       if (telefone) camposCaracteristicas.telefone = telefone;
       if (email) camposCaracteristicas.email = email;
       if (cnh) camposCaracteristicas.cnh = cnh;
@@ -206,7 +219,9 @@ export async function importarMotoristas(
   const grupoIdsPorEmpresa = new Map<string, Set<string>>();
   const todasEmpresaIds = new Set<string>(empresaIdsEnvolvidas);
   for (const empresaId of empresaIdsEnvolvidas) {
-    const { data: grupoIds } = await supabase.rpc("grupo_ids_da_empresa", { p_empresa_id: empresaId });
+    const { data: grupoIds } = await supabase.rpc("grupo_ids_da_empresa", {
+      p_empresa_id: empresaId,
+    });
     const set = new Set(grupoIds ?? []);
     grupoIdsPorEmpresa.set(empresaId, set);
     for (const gid of set) todasEmpresaIds.add(gid);
@@ -214,10 +229,16 @@ export async function importarMotoristas(
 
   const { data: existentes } =
     todasEmpresaIds.size > 0
-      ? await supabase.from("motoristas").select("id, empresa_id, cpf, status").in("empresa_id", [...todasEmpresaIds])
+      ? await supabase
+          .from("motoristas")
+          .select("id, empresa_id, cpf, status")
+          .in("empresa_id", [...todasEmpresaIds])
       : { data: [] };
   const existentePorChave = new Map<string, { id: string; ativo: boolean }>();
-  const existentesPorCpfNorm = new Map<string, { id: string; empresa_id: string; ativo: boolean }[]>();
+  const existentesPorCpfNorm = new Map<
+    string,
+    { id: string; empresa_id: string; ativo: boolean }[]
+  >();
   for (const m of existentes ?? []) {
     if (!m.cpf) continue;
     const cpfNorm = normalizarCpf(m.cpf);
@@ -235,7 +256,11 @@ export async function importarMotoristas(
     for (const c of candidatos) {
       if (!c.ativo || c.empresa_id === v.empresaId) continue;
       if (!grupoIds.has(c.empresa_id)) continue;
-      irmaos.push({ motorista_id: c.id, empresa_id: c.empresa_id, empresa_nome: nomePorEmpresaId.get(c.empresa_id) ?? "" });
+      irmaos.push({
+        motorista_id: c.id,
+        empresa_id: c.empresa_id,
+        empresa_nome: nomePorEmpresaId.get(c.empresa_id) ?? "",
+      });
     }
     return irmaos;
   }
@@ -253,82 +278,101 @@ export async function importarMotoristas(
   // grupo, o alvo da atualização é ELE (só dados pessoais/CNH -- nunca
   // classificação/centro de custo/status, específicos da empresa da
   // linha), e nenhum registro é criado/reativado nesta empresa.
-  for (const v of validas) {
-    const existenteProprio = existentePorChave.get(v.chave);
-    const temCaracteristicas = Object.keys(v.camposCaracteristicas).length > 0;
+  // Fase Corrige-Timeout-Import-Grande (12/08/2026, achado do Daniel:
+  // planilha com mais de 2500 linhas) -- mesma correção aplicada em
+  // veiculos/importar/actions.ts: gravar uma linha de cada vez não escala
+  // pra milhares de linhas. Processa em lotes de TAMANHO_LOTE linhas em
+  // paralelo via emLotes (mesmo helper já usado nos outros importadores
+  // grandes do sistema).
+  const TAMANHO_LOTE = 40;
+  await emLotes(validas, TAMANHO_LOTE, async (lote) => {
+    await Promise.all(
+      lote.map(async (v) => {
+        const existenteProprio = existentePorChave.get(v.chave);
+        const temCaracteristicas =
+          Object.keys(v.camposCaracteristicas).length > 0;
 
-    let redirecionadoPara: string | null = null;
-    let avisoSincronizacao = "";
-    try {
-      // Fase Corrige-Erro-Import-Empresa-Errada (12/08/2026) -- checagem
-      // dentro do try como rede de segurança; desde a rodada de
-      // performance (Fase Corrige-Timeout-Import) ela não faz mais RPC
-      // nenhuma por linha, só lê os mapas pré-carregados no Passo 2.
-      const irmaosAtivos = temCaracteristicas ? irmaosAtivosDoGrupo(v) : [];
+        let redirecionadoPara: string | null = null;
+        let avisoSincronizacao = "";
+        try {
+          // Fase Corrige-Erro-Import-Empresa-Errada (12/08/2026) --
+          // checagem dentro do try como rede de segurança; ela não faz RPC
+          // nenhuma por linha, só lê os mapas pré-carregados no Passo 2.
+          const irmaosAtivos = temCaracteristicas ? irmaosAtivosDoGrupo(v) : [];
 
-      if (existenteProprio?.ativo) {
-        const { error } = await supabase.from("motoristas").update(v.camposUpdate).eq("id", existenteProprio.id);
-        if (error) throw new Error(error.message);
-      } else if (irmaosAtivos.length > 0) {
-        // Não há registro Ativo deste CPF NESTA empresa, mas existe em uma
-        // empresa irmã do grupo -- atualiza lá em vez de duplicar ou
-        // reviver um fantasma Inativo aqui.
-        const nomes: string[] = [];
-        for (const irmao of irmaosAtivos) {
-          const { error: erroIrmao } = await supabase
-            .from("motoristas")
-            .update(v.camposCaracteristicas)
-            .eq("id", irmao.motorista_id);
-          if (!erroIrmao) nomes.push(irmao.empresa_nome);
+          if (existenteProprio?.ativo) {
+            const { error } = await supabase
+              .from("motoristas")
+              .update(v.camposUpdate)
+              .eq("id", existenteProprio.id);
+            if (error) throw new Error(error.message);
+          } else if (irmaosAtivos.length > 0) {
+            // Não há registro Ativo deste CPF NESTA empresa, mas existe em uma
+            // empresa irmã do grupo -- atualiza lá em vez de duplicar ou
+            // reviver um fantasma Inativo aqui.
+            const nomes: string[] = [];
+            for (const irmao of irmaosAtivos) {
+              const { error: erroIrmao } = await supabase
+                .from("motoristas")
+                .update(v.camposCaracteristicas)
+                .eq("id", irmao.motorista_id);
+              if (!erroIrmao) nomes.push(irmao.empresa_nome);
+            }
+            if (nomes.length > 0) redirecionadoPara = nomes.join(", ");
+          } else if (existenteProprio) {
+            // Só existe um registro Inativo deste CPF nesta própria empresa, e
+            // nenhum irmão Ativo no grupo -- atualiza os dados nele mesmo
+            // assim (sem reativar), em vez de criar um segundo registro.
+            const { error } = await supabase
+              .from("motoristas")
+              .update(v.camposUpdate)
+              .eq("id", existenteProprio.id);
+            if (error) throw new Error(error.message);
+          } else {
+            const { error } = await supabase
+              .from("motoristas")
+              .insert(v.camposInsert);
+            if (error) throw new Error(error.message);
+          }
+
+          // Passo 4: se a escrita foi NESTA empresa (não redirecionada pro
+          // irmão -- nesse caso já sincronizamos acima), propaga dados
+          // pessoais/CNH pros demais irmãos Ativos do grupo econômico.
+          if (!redirecionadoPara && temCaracteristicas) {
+            const nomesSincronizados: string[] = [];
+            for (const irmao of irmaosAtivos) {
+              const { error: erroIrmao } = await supabase
+                .from("motoristas")
+                .update(v.camposCaracteristicas)
+                .eq("id", irmao.motorista_id);
+              if (!erroIrmao) nomesSincronizados.push(irmao.empresa_nome);
+            }
+            if (nomesSincronizados.length > 0) {
+              avisoSincronizacao = ` Também sincronizado em: ${nomesSincronizados.join(", ")}.`;
+            }
+          }
+
+          resultado.push({
+            linha: v.numeroLinha,
+            identificacao: `${v.nomeCompleto} (${v.cpf})`,
+            status: "ok",
+            mensagem: redirecionadoPara
+              ? `Este motorista já está Ativo na empresa "${redirecionadoPara}" (mesmo grupo econômico) — dados pessoais/CNH atualizados lá. Nenhum registro foi criado/alterado em "${nomePorEmpresaId.get(v.empresaId) ?? "empresa desta linha"}" pra evitar duplicidade; campos específicos desta empresa (classificação, centro de custo, status) não se aplicam.`
+              : existenteProprio
+                ? `Motorista já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
+                : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
+          });
+        } catch (e) {
+          resultado.push({
+            linha: v.numeroLinha,
+            identificacao: `${v.nomeCompleto} (${v.cpf})`,
+            status: "erro",
+            mensagem: e instanceof Error ? e.message : "Erro desconhecido.",
+          });
         }
-        if (nomes.length > 0) redirecionadoPara = nomes.join(", ");
-      } else if (existenteProprio) {
-        // Só existe um registro Inativo deste CPF nesta própria empresa, e
-        // nenhum irmão Ativo no grupo -- atualiza os dados nele mesmo
-        // assim (sem reativar), em vez de criar um segundo registro.
-        const { error } = await supabase.from("motoristas").update(v.camposUpdate).eq("id", existenteProprio.id);
-        if (error) throw new Error(error.message);
-      } else {
-        const { error } = await supabase.from("motoristas").insert(v.camposInsert);
-        if (error) throw new Error(error.message);
-      }
-
-      // Passo 4: se a escrita foi NESTA empresa (não redirecionada pro
-      // irmão -- nesse caso já sincronizamos acima), propaga dados
-      // pessoais/CNH pros demais irmãos Ativos do grupo econômico.
-      if (!redirecionadoPara && temCaracteristicas) {
-        const nomesSincronizados: string[] = [];
-        for (const irmao of irmaosAtivos) {
-          const { error: erroIrmao } = await supabase
-            .from("motoristas")
-            .update(v.camposCaracteristicas)
-            .eq("id", irmao.motorista_id);
-          if (!erroIrmao) nomesSincronizados.push(irmao.empresa_nome);
-        }
-        if (nomesSincronizados.length > 0) {
-          avisoSincronizacao = ` Também sincronizado em: ${nomesSincronizados.join(", ")}.`;
-        }
-      }
-
-      resultado.push({
-        linha: v.numeroLinha,
-        identificacao: `${v.nomeCompleto} (${v.cpf})`,
-        status: "ok",
-        mensagem: redirecionadoPara
-          ? `Este motorista já está Ativo na empresa "${redirecionadoPara}" (mesmo grupo econômico) — dados pessoais/CNH atualizados lá. Nenhum registro foi criado/alterado em "${nomePorEmpresaId.get(v.empresaId) ?? "empresa desta linha"}" pra evitar duplicidade; campos específicos desta empresa (classificação, centro de custo, status) não se aplicam.`
-          : existenteProprio
-            ? `Motorista já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
-            : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
-      });
-    } catch (e) {
-      resultado.push({
-        linha: v.numeroLinha,
-        identificacao: `${v.nomeCompleto} (${v.cpf})`,
-        status: "erro",
-        mensagem: e instanceof Error ? e.message : "Erro desconhecido.",
-      });
-    }
-  }
+      }),
+    );
+  });
 
   resultado.sort((a, b) => a.linha - b.linha);
 

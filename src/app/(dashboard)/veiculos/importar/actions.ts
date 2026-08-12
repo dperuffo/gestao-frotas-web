@@ -2,13 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { lerPlanilhaComoTexto, data as parseData } from "@/lib/xlsx";
+import { lerPlanilhaComoTexto, data as parseData, emLotes } from "@/lib/xlsx";
 import { normalizarCNPJ } from "@/lib/utils";
 import { CLASSIFICACAO, type Classificacao } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
 
-type VeiculoInsert = Database["public"]["Tables"]["cadastro_veiculos"]["Insert"];
-type VeiculoUpdate = Database["public"]["Tables"]["cadastro_veiculos"]["Update"];
+type VeiculoInsert =
+  Database["public"]["Tables"]["cadastro_veiculos"]["Insert"];
+type VeiculoUpdate =
+  Database["public"]["Tables"]["cadastro_veiculos"]["Update"];
 
 export type LinhaResultado = {
   linha: number;
@@ -58,7 +60,7 @@ type Irmao = { veiculo_id: string; empresa_id: string; empresa_nome: string };
 
 export async function importarVeiculos(
   _prev: ResultadoImportacao | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<ResultadoImportacao> {
   const arquivo = formData.get("arquivo");
   if (!(arquivo instanceof File) || arquivo.size === 0) {
@@ -118,7 +120,9 @@ export async function importarVeiculos(
 
   const supabase = await createClient();
 
-  const { data: empresas } = await supabase.from("empresas").select("id, cnpj, nome");
+  const { data: empresas } = await supabase
+    .from("empresas")
+    .select("id, cnpj, nome");
   const cnpjPorEmpresaId = new Map<string, string>();
   const empresaIdPorCnpj = new Map<string, string>();
   const nomePorEmpresaId = new Map<string, string>();
@@ -130,7 +134,9 @@ export async function importarVeiculos(
     nomePorEmpresaId.set(empresa.id, empresa.nome);
   }
 
-  const { data: centros } = await supabase.from("centros_custo").select("id, nome");
+  const { data: centros } = await supabase
+    .from("centros_custo")
+    .select("id, nome");
   const centroIdPorNome = new Map<string, string>();
   for (const centro of centros ?? []) {
     centroIdPorNome.set(centro.nome.trim().toLowerCase(), centro.id);
@@ -171,7 +177,9 @@ export async function importarVeiculos(
     const placa = pegar(colunas, "placa").toUpperCase();
     const cnpjBruto = pegar(colunas, "cnpj_cliente");
     const classificacaoBruta = pegar(colunas, "classificacao");
-    const classificacaoValida = CLASSIFICACAO.includes(classificacaoBruta as Classificacao)
+    const classificacaoValida = CLASSIFICACAO.includes(
+      classificacaoBruta as Classificacao,
+    )
       ? (classificacaoBruta as Classificacao)
       : null;
     const centroCustoNomeBruto = pegar(colunas, "centro_custo");
@@ -180,15 +188,18 @@ export async function importarVeiculos(
       if (!placa) throw new Error("Placa é obrigatória.");
 
       const cnpjNormalizado = normalizarCNPJ(cnpjBruto);
-      if (!cnpjNormalizado) throw new Error("Informe o CNPJ do cliente (coluna cnpj_cliente).");
+      if (!cnpjNormalizado)
+        throw new Error("Informe o CNPJ do cliente (coluna cnpj_cliente).");
       const empresaId = empresaIdPorCnpj.get(cnpjNormalizado);
-      if (!empresaId) throw new Error(`Nenhum cliente cadastrado com o CNPJ ${cnpjBruto}.`);
+      if (!empresaId)
+        throw new Error(`Nenhum cliente cadastrado com o CNPJ ${cnpjBruto}.`);
       const cnpjFrota = cnpjPorEmpresaId.get(empresaId)!;
 
       let centroCustoId: string | null = null;
       let avisoCentroCusto = "";
       if (centroCustoNomeBruto) {
-        centroCustoId = centroIdPorNome.get(centroCustoNomeBruto.toLowerCase()) ?? null;
+        centroCustoId =
+          centroIdPorNome.get(centroCustoNomeBruto.toLowerCase()) ?? null;
         if (!centroCustoId) {
           avisoCentroCusto = ` (centro de custo "${centroCustoNomeBruto}" não encontrado — deixado como estava)`;
         }
@@ -226,7 +237,9 @@ export async function importarVeiculos(
         ["vida_util_anos", pegar(colunas, "vida_util_anos")],
       ];
       const dataAquisicaoBruta = pegar(colunas, "data_aquisicao");
-      const dataAquisicao = dataAquisicaoBruta ? parseData(dataAquisicaoBruta) : null;
+      const dataAquisicao = dataAquisicaoBruta
+        ? parseData(dataAquisicaoBruta)
+        : null;
 
       const camposInsert: VeiculoInsert = {
         cnpj_frota: cnpjFrota,
@@ -243,13 +256,19 @@ export async function importarVeiculos(
       // (string | null / number | null) em cadastro_veiculos -- o cast por
       // campo evita ter que repetir 15x o mesmo par insert/característica.
       for (const [campo, valor] of camposTexto) {
-        (camposInsert as unknown as Record<string, string | null>)[campo] = valor || null;
-        if (valor) (camposCaracteristicas as unknown as Record<string, string>)[campo] = valor;
+        (camposInsert as unknown as Record<string, string | null>)[campo] =
+          valor || null;
+        if (valor)
+          (camposCaracteristicas as unknown as Record<string, string>)[campo] =
+            valor;
       }
       for (const [campo, valor] of camposNumero) {
         const numero = numeroOuNull(valor);
-        (camposInsert as unknown as Record<string, number | null>)[campo] = numero;
-        if (valor && numero !== null) (camposCaracteristicas as unknown as Record<string, number>)[campo] = numero;
+        (camposInsert as unknown as Record<string, number | null>)[campo] =
+          numero;
+        if (valor && numero !== null)
+          (camposCaracteristicas as unknown as Record<string, number>)[campo] =
+            numero;
       }
 
       // camposUpdate = características (propagáveis pro grupo) + campos
@@ -263,8 +282,10 @@ export async function importarVeiculos(
       }
       for (const [campo, valor] of camposNumeroAdministrativos) {
         const numero = numeroOuNull(valor);
-        (camposInsert as unknown as Record<string, number | null>)[campo] = numero;
-        if (valor && numero !== null) (camposUpdate as unknown as Record<string, number>)[campo] = numero;
+        (camposInsert as unknown as Record<string, number | null>)[campo] =
+          numero;
+        if (valor && numero !== null)
+          (camposUpdate as unknown as Record<string, number>)[campo] = numero;
       }
       if (dataAquisicao) camposUpdate.data_aquisicao = dataAquisicao;
 
@@ -310,14 +331,26 @@ export async function importarVeiculos(
   const placasEnvolvidas = [...new Set(validas.map((v) => v.placa))];
   const { data: existentes } =
     placasEnvolvidas.length > 0
-      ? await supabase.rpc("veiculos_existentes_por_placa", { p_placas: placasEnvolvidas })
+      ? await supabase.rpc("veiculos_existentes_por_placa", {
+          p_placas: placasEnvolvidas,
+        })
       : { data: [] };
   const existentePorChave = new Map<string, { id: string; ativo: boolean }>();
-  const existentesPorPlacaNorm = new Map<string, { id: string; cnpj_frota_norm: string; ativo: boolean }[]>();
+  const existentesPorPlacaNorm = new Map<
+    string,
+    { id: string; cnpj_frota_norm: string; ativo: boolean }[]
+  >();
   for (const v of existentes ?? []) {
-    existentePorChave.set(`${v.cnpj_frota_norm}|${v.placa_norm}`, { id: v.id, ativo: v.ativo });
+    existentePorChave.set(`${v.cnpj_frota_norm}|${v.placa_norm}`, {
+      id: v.id,
+      ativo: v.ativo,
+    });
     const lista = existentesPorPlacaNorm.get(v.placa_norm) ?? [];
-    lista.push({ id: v.id, cnpj_frota_norm: v.cnpj_frota_norm, ativo: v.ativo });
+    lista.push({
+      id: v.id,
+      cnpj_frota_norm: v.cnpj_frota_norm,
+      ativo: v.ativo,
+    });
     existentesPorPlacaNorm.set(v.placa_norm, lista);
   }
 
@@ -333,13 +366,16 @@ export async function importarVeiculos(
   const empresaIdsEnvolvidas = [...new Set(validas.map((v) => v.empresaId))];
   const grupoIdsPorEmpresa = new Map<string, Set<string>>();
   for (const empresaId of empresaIdsEnvolvidas) {
-    const { data: grupoIds } = await supabase.rpc("grupo_ids_da_empresa", { p_empresa_id: empresaId });
+    const { data: grupoIds } = await supabase.rpc("grupo_ids_da_empresa", {
+      p_empresa_id: empresaId,
+    });
     grupoIdsPorEmpresa.set(empresaId, new Set(grupoIds ?? []));
   }
 
   function irmaosAtivosDoGrupo(v: LinhaValida): Irmao[] {
     const grupoIds = grupoIdsPorEmpresa.get(v.empresaId) ?? new Set<string>();
-    const candidatos = existentesPorPlacaNorm.get(normalizarChave(v.placa)) ?? [];
+    const candidatos =
+      existentesPorPlacaNorm.get(normalizarChave(v.placa)) ?? [];
     const irmaos: Irmao[] = [];
     for (const c of candidatos) {
       if (!c.ativo) continue;
@@ -371,88 +407,114 @@ export async function importarVeiculos(
   // que são específicos da empresa da linha), e nenhum registro é
   // criado/reativado nesta empresa. Isso evita duplicidade E deixa claro
   // pro usuário, na mensagem, onde o dado realmente foi parar.
-  for (const v of validas) {
-    const existenteProprio = existentePorChave.get(v.chave);
-    const temCaracteristicas = Object.keys(v.camposCaracteristicas).length > 0;
+  // Fase Corrige-Timeout-Import-Grande (12/08/2026, achado do Daniel:
+  // planilha com mais de 2500 linhas) -- gravar uma linha de cada vez,
+  // sequencial, não escala: cada linha faz pelo menos 1 ida-e-volta ao
+  // banco (grava), às vezes mais (sincroniza irmãos), e nada disso é
+  // paralelo. Com milhares de linhas isso passa de minutos e a conexão do
+  // navegador é derrubada bem antes (ver achado anterior, HTTP 499). Usa o
+  // mesmo helper emLotes já usado nos outros importadores grandes do
+  // sistema (posto/preços): processa TAMANHO_LOTE linhas EM PARALELO por
+  // vez, em vez de todas de uma vez (que abriria conexões demais com o
+  // banco) ou uma por uma (lento demais). O array `resultado` recebe
+  // pushes fora de ordem por causa do paralelismo -- por isso o sort por
+  // `linha` no final da função.
+  const TAMANHO_LOTE = 40;
+  await emLotes(validas, TAMANHO_LOTE, async (lote) => {
+    await Promise.all(
+      lote.map(async (v) => {
+        const existenteProprio = existentePorChave.get(v.chave);
+        const temCaracteristicas =
+          Object.keys(v.camposCaracteristicas).length > 0;
 
-    let redirecionadoPara: string | null = null;
-    let avisoSincronizacao = "";
-    try {
-      // Fase Corrige-Erro-Import-Empresa-Errada (12/08/2026, achado do
-      // Daniel: tela de erro genérica ao reimportar) -- essa checagem
-      // precisa estar DENTRO do try. Desde a rodada de performance acima
-      // ela não faz mais RPC nenhuma (só lê os mapas já pré-carregados),
-      // mas mantemos o try/catch por linha como rede de segurança.
-      const irmaosAtivos = temCaracteristicas ? irmaosAtivosDoGrupo(v) : [];
+        let redirecionadoPara: string | null = null;
+        let avisoSincronizacao = "";
+        try {
+          // Fase Corrige-Erro-Import-Empresa-Errada (12/08/2026, achado do
+          // Daniel: tela de erro genérica ao reimportar) -- essa checagem
+          // precisa estar DENTRO do try. Ela não faz RPC nenhuma (só lê os
+          // mapas já pré-carregados), mas mantemos o try/catch por linha
+          // como rede de segurança.
+          const irmaosAtivos = temCaracteristicas ? irmaosAtivosDoGrupo(v) : [];
 
-      if (existenteProprio?.ativo) {
-        // Caminho normal: já existe um registro ATIVO desta placa nesta
-        // própria empresa -- atualiza ele.
-        const { error } = await supabase.from("cadastro_veiculos").update(v.camposUpdate).eq("id", existenteProprio.id);
-        if (error) throw new Error(error.message);
-      } else if (irmaosAtivos.length > 0) {
-        // Não há registro ativo desta placa NESTA empresa, mas existe em
-        // uma empresa irmã do grupo -- atualiza lá em vez de duplicar ou
-        // reviver um fantasma inativo aqui.
-        const nomes: string[] = [];
-        for (const irmao of irmaosAtivos) {
-          const { error: erroIrmao } = await supabase
-            .from("cadastro_veiculos")
-            .update(v.camposCaracteristicas)
-            .eq("id", irmao.veiculo_id);
-          if (!erroIrmao) nomes.push(irmao.empresa_nome);
+          if (existenteProprio?.ativo) {
+            // Caminho normal: já existe um registro ATIVO desta placa nesta
+            // própria empresa -- atualiza ele.
+            const { error } = await supabase
+              .from("cadastro_veiculos")
+              .update(v.camposUpdate)
+              .eq("id", existenteProprio.id);
+            if (error) throw new Error(error.message);
+          } else if (irmaosAtivos.length > 0) {
+            // Não há registro ativo desta placa NESTA empresa, mas existe em
+            // uma empresa irmã do grupo -- atualiza lá em vez de duplicar ou
+            // reviver um fantasma inativo aqui.
+            const nomes: string[] = [];
+            for (const irmao of irmaosAtivos) {
+              const { error: erroIrmao } = await supabase
+                .from("cadastro_veiculos")
+                .update(v.camposCaracteristicas)
+                .eq("id", irmao.veiculo_id);
+              if (!erroIrmao) nomes.push(irmao.empresa_nome);
+            }
+            if (nomes.length > 0) redirecionadoPara = nomes.join(", ");
+          } else if (existenteProprio) {
+            // Só existe um registro INATIVO desta placa nesta própria empresa,
+            // e nenhum irmão ativo no grupo -- atualiza os dados nele mesmo
+            // assim (sem reativar), em vez de criar um segundo registro.
+            const { error } = await supabase
+              .from("cadastro_veiculos")
+              .update(v.camposUpdate)
+              .eq("id", existenteProprio.id);
+            if (error) throw new Error(error.message);
+          } else {
+            const { error } = await supabase
+              .from("cadastro_veiculos")
+              .insert(v.camposInsert);
+            if (error) throw new Error(error.message);
+          }
+
+          // Passo 4: se a escrita foi NESTA empresa (não redirecionada pro
+          // irmão -- nesse caso já sincronizamos acima), propaga as
+          // características pros demais irmãos ativos do grupo econômico, pra
+          // não ficarem descasados. Diferente da tela de Duplicidades (que
+          // trata placa repetida no grupo como erro a corrigir/inativar), aqui
+          // a decisão do Daniel foi tratar como o mesmo veículo de verdade.
+          if (!redirecionadoPara && temCaracteristicas) {
+            const nomesSincronizados: string[] = [];
+            for (const irmao of irmaosAtivos) {
+              const { error: erroIrmao } = await supabase
+                .from("cadastro_veiculos")
+                .update(v.camposCaracteristicas)
+                .eq("id", irmao.veiculo_id);
+              if (!erroIrmao) nomesSincronizados.push(irmao.empresa_nome);
+            }
+            if (nomesSincronizados.length > 0) {
+              avisoSincronizacao = ` Também sincronizado em: ${nomesSincronizados.join(", ")}.`;
+            }
+          }
+
+          resultado.push({
+            linha: v.numeroLinha,
+            identificacao: v.placa,
+            status: "ok",
+            mensagem: redirecionadoPara
+              ? `Este veículo já está ativo na empresa "${redirecionadoPara}" (mesmo grupo econômico) — características atualizadas lá. Nenhum registro foi criado/alterado em "${nomePorEmpresaId.get(v.empresaId) ?? "empresa desta linha"}" pra evitar duplicidade; campos específicos desta empresa (classificação, centro de custo) não se aplicam.`
+              : existenteProprio
+                ? `Veículo já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
+                : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
+          });
+        } catch (e) {
+          resultado.push({
+            linha: v.numeroLinha,
+            identificacao: v.placa,
+            status: "erro",
+            mensagem: e instanceof Error ? e.message : "Erro desconhecido.",
+          });
         }
-        if (nomes.length > 0) redirecionadoPara = nomes.join(", ");
-      } else if (existenteProprio) {
-        // Só existe um registro INATIVO desta placa nesta própria empresa,
-        // e nenhum irmão ativo no grupo -- atualiza os dados nele mesmo
-        // assim (sem reativar), em vez de criar um segundo registro.
-        const { error } = await supabase.from("cadastro_veiculos").update(v.camposUpdate).eq("id", existenteProprio.id);
-        if (error) throw new Error(error.message);
-      } else {
-        const { error } = await supabase.from("cadastro_veiculos").insert(v.camposInsert);
-        if (error) throw new Error(error.message);
-      }
-
-      // Passo 4: se a escrita foi NESTA empresa (não redirecionada pro
-      // irmão -- nesse caso já sincronizamos acima), propaga as
-      // características pros demais irmãos ativos do grupo econômico, pra
-      // não ficarem descasados. Diferente da tela de Duplicidades (que
-      // trata placa repetida no grupo como erro a corrigir/inativar), aqui
-      // a decisão do Daniel foi tratar como o mesmo veículo de verdade.
-      if (!redirecionadoPara && temCaracteristicas) {
-        const nomesSincronizados: string[] = [];
-        for (const irmao of irmaosAtivos) {
-          const { error: erroIrmao } = await supabase
-            .from("cadastro_veiculos")
-            .update(v.camposCaracteristicas)
-            .eq("id", irmao.veiculo_id);
-          if (!erroIrmao) nomesSincronizados.push(irmao.empresa_nome);
-        }
-        if (nomesSincronizados.length > 0) {
-          avisoSincronizacao = ` Também sincronizado em: ${nomesSincronizados.join(", ")}.`;
-        }
-      }
-
-      resultado.push({
-        linha: v.numeroLinha,
-        identificacao: v.placa,
-        status: "ok",
-        mensagem: redirecionadoPara
-          ? `Este veículo já está ativo na empresa "${redirecionadoPara}" (mesmo grupo econômico) — características atualizadas lá. Nenhum registro foi criado/alterado em "${nomePorEmpresaId.get(v.empresaId) ?? "empresa desta linha"}" pra evitar duplicidade; campos específicos desta empresa (classificação, centro de custo) não se aplicam.`
-          : existenteProprio
-            ? `Veículo já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
-            : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
-      });
-    } catch (e) {
-      resultado.push({
-        linha: v.numeroLinha,
-        identificacao: v.placa,
-        status: "erro",
-        mensagem: e instanceof Error ? e.message : "Erro desconhecido.",
-      });
-    }
-  }
+      }),
+    );
+  });
 
   resultado.sort((a, b) => a.linha - b.linha);
 
