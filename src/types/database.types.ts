@@ -5682,6 +5682,69 @@ export interface Database {
           valor_divergencia: number;
         }[];
       };
+      cliente_conferencia_precos: {
+        Args: { p_empresa_cliente_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          id: string;
+          provedor: string;
+          codigo_abastecimento: string | null;
+          data_abastecimento: string;
+          empresa_posto_id: string | null;
+          posto_nome: string | null;
+          placa: string | null;
+          combustivel: string | null;
+          litros: number | null;
+          valor_total: number | null;
+          preco_praticado: number | null;
+          negociacao_id: string | null;
+          preco_acordado: number | null;
+          diferenca_rs: number | null;
+          diferenca_pct: number | null;
+        }[];
+      };
+      cliente_divergencias_preco: {
+        Args: {
+          p_empresa_cliente_id: string;
+          p_data_inicio: string;
+          p_data_fim: string;
+          p_tolerancia?: number;
+        };
+        Returns: {
+          id: string;
+          provedor: string;
+          codigo_abastecimento: string | null;
+          data_abastecimento: string;
+          empresa_posto_id: string | null;
+          posto_nome: string | null;
+          placa: string | null;
+          combustivel: string | null;
+          litros: number | null;
+          valor_total: number | null;
+          preco_praticado: number | null;
+          negociacao_id: string | null;
+          preco_acordado: number | null;
+          diferenca_rs: number | null;
+          diferenca_pct: number | null;
+          tem_ajuste_pendente: boolean;
+        }[];
+      };
+      cliente_extrato_diario: {
+        Args: {
+          p_empresa_cliente_id: string;
+          p_data_inicio: string;
+          p_data_fim: string;
+          p_tolerancia?: number;
+        };
+        Returns: {
+          dia: string;
+          provedor: string;
+          qtd_abastecimentos: number;
+          litros: number;
+          valor_total: number;
+          qtd_divergencias: number;
+          valor_divergencia: number;
+        }[];
+      };
       indicadores_centro_custo: {
         Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
         Returns: {

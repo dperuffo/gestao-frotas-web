@@ -82,7 +82,7 @@ import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
 import { contarCadastrosPendentesAcao } from "./cadastros-pendentes/actions";
 import { contarMultasPendentesAcao } from "./multas/actions";
 import { contarDuplicidadesPlacaGrupoAcao } from "./duplicidade-placas-grupo/actions";
-import { contarDivergenciasPrecoPostoAcao } from "./conferencia-precos/actions";
+import { contarDivergenciasPrecoPostoAcao, contarDivergenciasPrecoClienteAcao } from "./conferencia-precos/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
@@ -196,6 +196,13 @@ const menuRoteirizacaoAbastecimento: ItemMenuLateral[] = [
   { href: "/combustivel-ideal", label: "Combustível Ideal", icon: Leaf }, // PWA: Icons.eco
   { href: "/precos-postos", label: "Preços dos Postos Parceiros", icon: Tag }, // PWA: Icons.sell
   { href: "/negociacoes", label: "Negociações com Postos", icon: Handshake }, // PWA: Icons.handshake
+  // Fase Conferencia-Precos-Cliente (12/08/2026) — pedido do Daniel: "Eu
+  // acho importante esta tela tambem estar na visao da frota para que
+  // possa analisar o comportamento dos abastecimentos x com o que foi
+  // acordado com os postos". Mesma tela de /conferencia-precos que já
+  // existia só pro posto (ver menuPostoOperacao abaixo), agora também
+  // aberta pro lado cliente.
+  { href: "/conferencia-precos", label: "Conferência de Preços", icon: Percent },
   // Fase 27.140 — preferências de emissão de nota fiscal por CNPJ da frota,
   // consultadas por ERPs/automação de posto via API (Hub de Integrações).
   { href: "/parametros-nf", label: "Parâmetros de NF", icon: Receipt }, // PWA: Icons.receipt_long
@@ -596,6 +603,7 @@ export default async function DashboardLayout({
     multasPendentes,
     duplicidadesPlacaGrupo,
     divergenciasPrecoPosto,
+    divergenciasPrecoCliente,
     logoutInatividadeMinutos,
     avisos,
     favoritosBrutos,
@@ -663,6 +671,12 @@ export default async function DashboardLayout({
       // blindagem "falha vira 0" das demais contagens.
       contarDivergenciasPrecoPostoAcao().catch((e) => {
         console.error("[dashboard/layout] falha ao contar divergências de preço (ignorado):", e);
+        return 0;
+      }),
+      // Fase Conferencia-Precos-Cliente (12/08/2026) — mesma bolinha, lado
+      // cliente (ver comentário na Server Action).
+      contarDivergenciasPrecoClienteAcao().catch((e) => {
+        console.error("[dashboard/layout] falha ao contar divergências de preço (cliente, ignorado):", e);
         return 0;
       }),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
@@ -792,7 +806,9 @@ export default async function DashboardLayout({
     "/acoes-sugeridas": acoesSugeridasPendentes,
     "/multas": multasPendentes,
     "/chamados": chamadosNaoVistos,
-    "/conferencia-precos": divergenciasPrecoPosto,
+    // Soma os dois lados: pra qualquer usuário, só um dos dois vem
+    // diferente de zero (posto vs. cliente, ver as duas Server Actions).
+    "/conferencia-precos": divergenciasPrecoPosto + divergenciasPrecoCliente,
   };
 
   const itensVisaoGeral = menuVisaoGeral.filter(podeAcessarItem);

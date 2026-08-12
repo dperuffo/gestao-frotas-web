@@ -4,6 +4,10 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarDataBr, formatarDataHoraBr } from "@/lib/utils";
 import { LogoProvedor } from "@/components/LogoProvedor";
 import { caminhoAbastecimento, type IdentificadorAbastecimento } from "@/lib/ajustesAbastecimentos";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { ClipboardList, Droplet, Wallet, AlertTriangle, TrendingDown } from "lucide-react";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -19,18 +23,21 @@ function isoMenosDias(diasAtras: number) {
   return d.toISOString().slice(0, 10);
 }
 
+// Fase Conferencia-Precos-Cliente (12/08/2026) — a linha já vem normalizada
+// pro mesmo formato dos dois lados (posto ou cliente): `contraparteNome` é
+// "Cliente" (do ponto de vista do posto) ou "Posto" (do ponto de vista do
+// cliente) — resolvido na hora de montar `divergencias`/`divergenciasHoje`
+// mais abaixo, pra não espalhar `souPosto ? ... : ...` pelo JSX inteiro.
 type Divergencia = {
   id: string;
   provedor: string;
-  codigo_abastecimento: string | null;
   data_abastecimento: string;
-  empresa_cliente_id: string;
+  contraparteNome: string;
   placa: string | null;
   combustivel: string | null;
   litros: number | null;
   valor_total: number | null;
   preco_praticado: number | null;
-  negociacao_id: string | null;
   preco_acordado: number | null;
   diferenca_rs: number | null;
   diferenca_pct: number | null;
@@ -77,6 +84,14 @@ type SearchParams = { empresa?: string; tab?: string; de?: string; ate?: string 
 // (ajustes_abastecimentos, ver /abastecimentos/[id] e
 // /abastecimentos/externo/[id]) — não duplicamos essa máquina de estados,
 // só apontamos pra ela via o link "Ver e solicitar ajuste".
+//
+// Fase Conferencia-Precos-Cliente (12/08/2026) — pedido do Daniel: "Eu acho
+// importante esta tela tambem estar na visao da frota para que possa
+// analisar o comportamento dos abastecimentos x com o que foi acordado com
+// os postos". Mesma tela, mesmas duas abas — só troca qual conjunto de RPCs
+// chama (cliente_* em vez de posto_*, ver migração
+// "conferencia_precos_visao_cliente") conforme o segmento da empresa
+// selecionada, do mesmo jeito que /negociacoes já faz pros dois lados.
 export default async function ConferenciaPrecosPage({
   searchParams,
 }: {
@@ -97,12 +112,12 @@ export default async function ConferenciaPrecosPage({
     segmentoSelecionado = data?.segmento ?? null;
   }
   const souPosto = segmentoSelecionado === "Revenda";
+  const rotuloContraparte = souPosto ? "Cliente" : "Posto";
 
   let divergencias: Divergencia[] = [];
   let divergenciasHoje: Divergencia[] = [];
   let extrato: ExtratoDia[] = [];
   let erro: string | undefined;
-  let nomesClientes = new Map<string, string>();
 
   if (empresaSelecionada && souPosto) {
     const [
@@ -110,21 +125,9 @@ export default async function ConferenciaPrecosPage({
       { data: hojeRaw, error: erroHoje },
       { data: extratoRaw, error: erroExtrato },
     ] = await Promise.all([
-      supabase.rpc("posto_divergencias_preco", {
-        p_empresa_posto_id: empresaSelecionada,
-        p_data_inicio: de,
-        p_data_fim: ate,
-      }),
-      supabase.rpc("posto_divergencias_preco", {
-        p_empresa_posto_id: empresaSelecionada,
-        p_data_inicio: hoje,
-        p_data_fim: hoje,
-      }),
-      supabase.rpc("posto_extrato_diario", {
-        p_empresa_posto_id: empresaSelecionada,
-        p_data_inicio: de,
-        p_data_fim: ate,
-      }),
+      supabase.rpc("posto_divergencias_preco", { p_empresa_posto_id: empresaSelecionada, p_data_inicio: de, p_data_fim: ate }),
+      supabase.rpc("posto_divergencias_preco", { p_empresa_posto_id: empresaSelecionada, p_data_inicio: hoje, p_data_fim: hoje }),
+      supabase.rpc("posto_extrato_diario", { p_empresa_posto_id: empresaSelecionada, p_data_inicio: de, p_data_fim: ate }),
     ]);
 
     if (erroDivergencias) console.error("[conferencia-precos] falha ao buscar divergências:", erroDivergencias);
@@ -132,15 +135,37 @@ export default async function ConferenciaPrecosPage({
     if (erroExtrato) console.error("[conferencia-precos] falha ao buscar extrato diário:", erroExtrato);
     if (erroDivergencias || erroExtrato) erro = "Não foi possível carregar todos os dados. Tente novamente em instantes.";
 
-    divergencias = divergenciasRaw ?? [];
-    divergenciasHoje = hojeRaw ?? [];
-    extrato = extratoRaw ?? [];
-
-    const idsClientes = Array.from(new Set(divergencias.map((d) => d.empresa_cliente_id)));
+    const idsClientes = Array.from(
+      new Set([...(divergenciasRaw ?? []), ...(hojeRaw ?? [])].map((d) => d.empresa_cliente_id))
+    );
+    let nomesClientes = new Map<string, string>();
     if (idsClientes.length > 0) {
       const { data: empresasData } = await supabase.rpc("nomes_empresas_publico", { p_empresa_ids: idsClientes });
       nomesClientes = new Map((empresasData ?? []).map((e) => [e.id, e.nome ?? "—"]));
     }
+
+    divergencias = (divergenciasRaw ?? []).map((d) => ({ ...d, contraparteNome: nomesClientes.get(d.empresa_cliente_id) ?? "—" }));
+    divergenciasHoje = (hojeRaw ?? []).map((d) => ({ ...d, contraparteNome: nomesClientes.get(d.empresa_cliente_id) ?? "—" }));
+    extrato = extratoRaw ?? [];
+  } else if (empresaSelecionada && !souPosto) {
+    const [
+      { data: divergenciasRaw, error: erroDivergencias },
+      { data: hojeRaw, error: erroHoje },
+      { data: extratoRaw, error: erroExtrato },
+    ] = await Promise.all([
+      supabase.rpc("cliente_divergencias_preco", { p_empresa_cliente_id: empresaSelecionada, p_data_inicio: de, p_data_fim: ate }),
+      supabase.rpc("cliente_divergencias_preco", { p_empresa_cliente_id: empresaSelecionada, p_data_inicio: hoje, p_data_fim: hoje }),
+      supabase.rpc("cliente_extrato_diario", { p_empresa_cliente_id: empresaSelecionada, p_data_inicio: de, p_data_fim: ate }),
+    ]);
+
+    if (erroDivergencias) console.error("[conferencia-precos] falha ao buscar divergências:", erroDivergencias);
+    if (erroHoje) console.error("[conferencia-precos] falha ao buscar divergências de hoje:", erroHoje);
+    if (erroExtrato) console.error("[conferencia-precos] falha ao buscar extrato diário:", erroExtrato);
+    if (erroDivergencias || erroExtrato) erro = "Não foi possível carregar todos os dados. Tente novamente em instantes.";
+
+    divergencias = (divergenciasRaw ?? []).map((d) => ({ ...d, contraparteNome: d.posto_nome ?? "—" }));
+    divergenciasHoje = (hojeRaw ?? []).map((d) => ({ ...d, contraparteNome: d.posto_nome ?? "—" }));
+    extrato = extratoRaw ?? [];
   }
 
   const valorDivergenciaHoje = divergenciasHoje.reduce((soma, d) => soma + Math.abs(d.diferenca_rs ?? 0) * (d.litros ?? 0), 0);
@@ -170,8 +195,9 @@ export default async function ConferenciaPrecosPage({
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Conferência de Preços</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Compare o preço praticado em cada abastecimento com o acordo/negociação vigente, e acompanhe o extrato diário
-          por meio de pagamento{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
+          Compare o preço praticado em cada abastecimento com o acordo/negociação vigente
+          {souPosto ? " com o cliente" : " com o posto"}, e acompanhe o extrato diário por meio de pagamento
+          {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
         </p>
       </div>
 
@@ -200,40 +226,47 @@ export default async function ConferenciaPrecosPage({
         </p>
       )}
 
-      {empresaSelecionada && !souPosto && (
-        <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Esta tela é exclusiva para postos revendedores.
-        </p>
-      )}
-
       {erro && <p className="mb-4 text-sm text-red-600">{erro}</p>}
 
-      {empresaSelecionada && souPosto && (
+      {empresaSelecionada && (
         <>
           {/* Fase Conferência-de-Preços-Posto — alerta SEMPRE do dia de hoje,
               independente do período escolhido no filtro abaixo: é o pedido
               explícito do Daniel de não deixar acumular pra só ver no
-              fechamento de ciclo. */}
+              fechamento de ciclo. Vale pros dois lados. */}
           {divergenciasHoje.length > 0 && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              🚨 <strong>{divergenciasHoje.length} abastecimento(s) hoje</strong> fora do preço acordado com o cliente —
-              impacto de {formatarMoeda(valorDivergenciaHoje)} até agora. Confira abaixo antes do fechamento do dia.
+              🚨 <strong>{divergenciasHoje.length} abastecimento(s) hoje</strong> fora do preço acordado
+              {souPosto ? " com o cliente" : " com o posto"} — impacto de {formatarMoeda(valorDivergenciaHoje)} até
+              agora. Confira abaixo antes do fechamento do dia.
             </div>
           )}
 
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
-            <Indicador label="Abastecimentos no período" valor={totalAbastecimentosPeriodo.toLocaleString("pt-BR")} />
-            <Indicador label="Volume no período" valor={`${totalLitrosPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`} />
-            <Indicador label="Receita no período" valor={formatarMoeda(totalReceitaPeriodo)} />
-            <Indicador
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <IndicadorColorido
+              cor="sky"
+              icon={ClipboardList}
+              label="Abastecimentos no período"
+              valor={totalAbastecimentosPeriodo.toLocaleString("pt-BR")}
+            />
+            <IndicadorColorido
+              cor="green"
+              icon={Droplet}
+              label="Volume no período"
+              valor={`${totalLitrosPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`}
+            />
+            <IndicadorColorido cor="violet" icon={Wallet} label={souPosto ? "Receita no período" : "Custo no período"} valor={formatarMoeda(totalReceitaPeriodo)} />
+            <IndicadorColorido
+              cor={totalDivergenciasPeriodo > 0 ? "red" : "green"}
+              icon={AlertTriangle}
               label="Divergências no período"
               valor={String(totalDivergenciasPeriodo)}
-              destaque={totalDivergenciasPeriodo > 0}
             />
-            <Indicador
+            <IndicadorColorido
+              cor={totalValorDivergenciaPeriodo !== 0 ? "amber" : "green"}
+              icon={TrendingDown}
               label="Impacto das divergências"
               valor={formatarMoeda(totalValorDivergenciaPeriodo)}
-              destaque={totalValorDivergenciaPeriodo !== 0}
             />
           </div>
 
@@ -275,7 +308,7 @@ export default async function ConferenciaPrecosPage({
                 <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                   <tr>
                     <th className="px-4 py-3">Data</th>
-                    <th className="px-4 py-3">Cliente</th>
+                    <th className="px-4 py-3">{rotuloContraparte}</th>
                     <th className="px-4 py-3">Placa</th>
                     <th className="px-4 py-3">Combustível</th>
                     <th className="px-4 py-3">Meio de pagamento</th>
@@ -289,9 +322,9 @@ export default async function ConferenciaPrecosPage({
                   {divergencias.map((d) => {
                     const acimaDoAcordo = (d.diferenca_rs ?? 0) > 0;
                     return (
-                      <tr key={`${d.provedor}-${d.id}`} className="hover:bg-slate-50">
+                      <tr key={`${d.provedor}-${d.id}`} className="transition-colors hover:bg-frota-50/60">
                         <td className="px-4 py-3 text-slate-600">{formatarDataHoraBr(d.data_abastecimento)}</td>
-                        <td className="px-4 py-3 text-slate-700">{nomesClientes.get(d.empresa_cliente_id) ?? "—"}</td>
+                        <td className="px-4 py-3 text-slate-700">{d.contraparteNome}</td>
                         <td className="px-4 py-3 text-slate-600">{d.placa ?? "—"}</td>
                         <td className="px-4 py-3 text-slate-600">{d.combustivel ?? "—"}</td>
                         <td className="px-4 py-3">
@@ -348,7 +381,7 @@ export default async function ConferenciaPrecosPage({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {extrato.map((e) => (
-                    <tr key={`${e.dia}-${e.provedor}`} className="hover:bg-slate-50">
+                    <tr key={`${e.dia}-${e.provedor}`} className="transition-colors hover:bg-frota-50/60">
                       <td className="px-4 py-3 text-slate-700">{formatarDataBr(e.dia)}</td>
                       <td className="px-4 py-3">
                         <LogoProvedor provedor={e.provedor} className="h-5 w-auto" />
@@ -382,15 +415,6 @@ export default async function ConferenciaPrecosPage({
           )}
         </>
       )}
-    </div>
-  );
-}
-
-function Indicador({ label, valor, destaque }: { label: string; valor: string; destaque?: boolean }) {
-  return (
-    <div className={`card p-4 ${destaque ? "border-red-200 bg-red-50/50" : ""}`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold ${destaque ? "text-red-700" : "text-slate-900"}`}>{valor}</p>
     </div>
   );
 }
