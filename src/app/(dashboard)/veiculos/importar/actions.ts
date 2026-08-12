@@ -116,14 +116,16 @@ export async function importarVeiculos(
 
   const supabase = await createClient();
 
-  const { data: empresas } = await supabase.from("empresas").select("id, cnpj");
+  const { data: empresas } = await supabase.from("empresas").select("id, cnpj, nome");
   const cnpjPorEmpresaId = new Map<string, string>();
   const empresaIdPorCnpj = new Map<string, string>();
+  const nomePorEmpresaId = new Map<string, string>();
   for (const empresa of empresas ?? []) {
     if (empresa.cnpj) {
       empresaIdPorCnpj.set(normalizarCNPJ(empresa.cnpj), empresa.id);
       cnpjPorEmpresaId.set(empresa.id, empresa.cnpj);
     }
+    nomePorEmpresaId.set(empresa.id, empresa.nome);
   }
 
   const { data: centros } = await supabase.from("centros_custo").select("id, nome");
@@ -295,41 +297,96 @@ export async function importarVeiculos(
   // normalizados (mesma expressão do índice único
   // cadastro_veiculos_cnpj_placa_norm_uidx), então o casamento abaixo é
   // sempre por valor normalizado dos dois lados.
+  //
+  // Fase Corrige-Import-Empresa-Errada-Grupo (12/08/2026, achado do Daniel)
+  // — a RPC agora também devolve `ativo`, porque o índice por chave
+  // (empresa+placa) sozinho não bastava: quando a empresa "dona" da linha
+  // (cnpj_cliente) só tem um registro INATIVO daquela placa (fantasma
+  // deixado pela tela de Duplicidades, que já resolveu a colisão a favor da
+  // empresa irmã), o código precisa saber disso pra NÃO reviver o fantasma
+  // silenciosamente -- ver Passo 3.
   const placasEnvolvidas = [...new Set(validas.map((v) => v.placa))];
   const { data: existentes } =
     placasEnvolvidas.length > 0
       ? await supabase.rpc("veiculos_existentes_por_placa", { p_placas: placasEnvolvidas })
       : { data: [] };
-  const idPorChave = new Map<string, string>();
+  const existentePorChave = new Map<string, { id: string; ativo: boolean }>();
   for (const v of existentes ?? []) {
-    idPorChave.set(`${v.cnpj_frota_norm}|${v.placa_norm}`, v.id);
+    existentePorChave.set(`${v.cnpj_frota_norm}|${v.placa_norm}`, { id: v.id, ativo: v.ativo });
   }
 
-  // Passo 3: grava -- update parcial se o veículo já existe, insert
-  // completo se não. Passo 4 (logo abaixo, achado do Daniel 12/08/2026):
-  // depois de gravar, propaga as CARACTERÍSTICAS (não classificação, não
-  // centro de custo) pros veículos irmãos com a mesma placa em outras
-  // empresas do mesmo grupo econômico -- pra não ficarem descasados.
-  // Diferente da tela de Duplicidades (que trata placa repetida no grupo
-  // como erro a corrigir/inativar), aqui a decisão do Daniel foi tratar
-  // como o mesmo veículo de verdade.
+  // Passo 3: grava -- update parcial se o veículo já existe (ativo) nesta
+  // própria empresa, insert completo se não existe em lugar nenhum.
+  //
+  // Fase Corrige-Import-Empresa-Errada-Grupo (12/08/2026) — caso novo: a
+  // empresa desta linha (cnpj_cliente) NÃO tem registro ativo desta placa,
+  // mas uma empresa IRMÃ do mesmo grupo econômico tem. Antes disso, o
+  // código caía direto no "senão insere" (se não achasse a própria chave)
+  // ou, pior, achava e atualizava um registro INATIVO desta própria
+  // empresa (reativando um fantasma sem querer) -- e o Passo 4 (sincronizar
+  // características pros irmãos ATIVOS) então sobrescrevia o registro ATIVO
+  // da empresa irmã, dando a impressão de que a importação "foi parar" lá.
+  // Agora: se existe irmão ativo no grupo, o alvo da atualização é ELE (só
+  // as características físicas -- nunca classificação/centro de custo,
+  // que são específicos da empresa da linha), e nenhum registro é
+  // criado/reativado nesta empresa. Isso evita duplicidade E deixa claro
+  // pro usuário, na mensagem, onde o dado realmente foi parar.
   for (const v of validas) {
-    const idExistente = idPorChave.get(v.chave);
+    const existenteProprio = existentePorChave.get(v.chave);
+    const temCaracteristicas = Object.keys(v.camposCaracteristicas).length > 0;
+
+    let irmaosAtivos: { veiculo_id: string; empresa_id: string; empresa_nome: string }[] = [];
+    if (!existenteProprio?.ativo && temCaracteristicas) {
+      const { data } = await supabase.rpc("veiculos_grupo_mesma_placa", {
+        p_empresa_id: v.empresaId,
+        p_placa: v.placa,
+      });
+      irmaosAtivos = data ?? [];
+    }
+
+    let redirecionadoPara: string | null = null;
     let avisoSincronizacao = "";
     try {
-      if (idExistente) {
-        const { error } = await supabase.from("cadastro_veiculos").update(v.camposUpdate).eq("id", idExistente);
+      if (existenteProprio?.ativo) {
+        // Caminho normal: já existe um registro ATIVO desta placa nesta
+        // própria empresa -- atualiza ele.
+        const { error } = await supabase.from("cadastro_veiculos").update(v.camposUpdate).eq("id", existenteProprio.id);
+        if (error) throw new Error(error.message);
+      } else if (irmaosAtivos.length > 0) {
+        // Não há registro ativo desta placa NESTA empresa, mas existe em
+        // uma empresa irmã do grupo -- atualiza lá em vez de duplicar ou
+        // reviver um fantasma inativo aqui.
+        const nomes: string[] = [];
+        for (const irmao of irmaosAtivos) {
+          const { error: erroIrmao } = await supabase
+            .from("cadastro_veiculos")
+            .update(v.camposCaracteristicas)
+            .eq("id", irmao.veiculo_id);
+          if (!erroIrmao) nomes.push(irmao.empresa_nome);
+        }
+        if (nomes.length > 0) redirecionadoPara = nomes.join(", ");
+      } else if (existenteProprio) {
+        // Só existe um registro INATIVO desta placa nesta própria empresa,
+        // e nenhum irmão ativo no grupo -- atualiza os dados nele mesmo
+        // assim (sem reativar), em vez de criar um segundo registro.
+        const { error } = await supabase.from("cadastro_veiculos").update(v.camposUpdate).eq("id", existenteProprio.id);
         if (error) throw new Error(error.message);
       } else {
         const { error } = await supabase.from("cadastro_veiculos").insert(v.camposInsert);
         if (error) throw new Error(error.message);
       }
 
-      if (Object.keys(v.camposCaracteristicas).length > 0) {
-        const { data: irmaos } = await supabase.rpc("veiculos_grupo_mesma_placa", {
-          p_empresa_id: v.empresaId,
-          p_placa: v.placa,
-        });
+      // Passo 4: se a escrita foi NESTA empresa (não redirecionada pro
+      // irmão -- nesse caso já sincronizamos acima), propaga as
+      // características pros demais irmãos ativos do grupo econômico, pra
+      // não ficarem descasados. Diferente da tela de Duplicidades (que
+      // trata placa repetida no grupo como erro a corrigir/inativar), aqui
+      // a decisão do Daniel foi tratar como o mesmo veículo de verdade.
+      if (!redirecionadoPara && temCaracteristicas) {
+        const { data: irmaos } =
+          existenteProprio?.ativo || existenteProprio
+            ? await supabase.rpc("veiculos_grupo_mesma_placa", { p_empresa_id: v.empresaId, p_placa: v.placa })
+            : { data: irmaosAtivos };
         const nomesSincronizados: string[] = [];
         for (const irmao of irmaos ?? []) {
           const { error: erroIrmao } = await supabase
@@ -347,9 +404,11 @@ export async function importarVeiculos(
         linha: v.numeroLinha,
         identificacao: v.placa,
         status: "ok",
-        mensagem: idExistente
-          ? `Veículo já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
-          : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
+        mensagem: redirecionadoPara
+          ? `Este veículo já está ativo na empresa "${redirecionadoPara}" (mesmo grupo econômico) — características atualizadas lá. Nenhum registro foi criado/alterado em "${nomePorEmpresaId.get(v.empresaId) ?? "empresa desta linha"}" pra evitar duplicidade; campos específicos desta empresa (classificação, centro de custo) não se aplicam.`
+          : existenteProprio
+            ? `Veículo já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
+            : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
       });
     } catch (e) {
       resultado.push({

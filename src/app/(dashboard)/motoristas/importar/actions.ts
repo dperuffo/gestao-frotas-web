@@ -71,10 +71,12 @@ export async function importarMotoristas(
 
   const supabase = await createClient();
 
-  const { data: empresas } = await supabase.from("empresas").select("id, cnpj");
+  const { data: empresas } = await supabase.from("empresas").select("id, cnpj, nome");
   const empresaIdPorCnpj = new Map<string, string>();
+  const nomePorEmpresaId = new Map<string, string>();
   for (const empresa of empresas ?? []) {
     if (empresa.cnpj) empresaIdPorCnpj.set(normalizarCNPJ(empresa.cnpj), empresa.id);
+    nomePorEmpresaId.set(empresa.id, empresa.nome);
   }
 
   const { data: centros } = await supabase.from("centros_custo").select("id, nome");
@@ -192,58 +194,110 @@ export async function importarMotoristas(
   // Passo 2: busca em lote os motoristas já cadastrados das empresas
   // envolvidas, casando por empresa_id + CPF normalizado (só dígitos) --
   // mesma normalização de motoristas_empresa_cpf_norm_uidx.
+  //
+  // Fase Corrige-Import-Empresa-Errada-Grupo (12/08/2026, achado do Daniel
+  // no import de veículos, mesmo risco confirmado aqui) — agora também
+  // busca `status`: se o único registro deste CPF NESTA empresa estiver
+  // Inativo (fantasma deixado por uma resolução de duplicidade anterior),
+  // não dá pra tratar como "o registro certo pra atualizar" sem checar
+  // primeiro se existe um irmão Ativo no grupo -- ver Passo 3.
   const empresaIdsEnvolvidas = [...new Set(validas.map((v) => v.empresaId))];
   const { data: existentes } =
     empresaIdsEnvolvidas.length > 0
-      ? await supabase.from("motoristas").select("id, empresa_id, cpf").in("empresa_id", empresaIdsEnvolvidas)
+      ? await supabase.from("motoristas").select("id, empresa_id, cpf, status").in("empresa_id", empresaIdsEnvolvidas)
       : { data: [] };
-  const idPorChave = new Map<string, string>();
+  const existentePorChave = new Map<string, { id: string; ativo: boolean }>();
   for (const m of existentes ?? []) {
     if (!m.cpf) continue;
-    idPorChave.set(`${m.empresa_id}|${normalizarCpf(m.cpf)}`, m.id);
+    existentePorChave.set(`${m.empresa_id}|${normalizarCpf(m.cpf)}`, { id: m.id, ativo: m.status === "Ativo" });
   }
 
-  // Passo 3: grava -- update parcial se o motorista já existe, insert
-  // completo se não. Passo 4 (achado do Daniel 12/08/2026): depois de
-  // gravar, propaga dados pessoais/CNH pros motoristas irmãos com o mesmo
-  // CPF em outras empresas do mesmo grupo econômico -- pra não ficarem
-  // descasados (classificação, centro de custo e status continuam
-  // específicos de cada empresa, nunca propagam).
+  // Passo 3: grava -- update parcial se o motorista já existe (Ativo) nesta
+  // própria empresa, insert completo se não existe em lugar nenhum.
+  //
+  // Fase Corrige-Import-Empresa-Errada-Grupo (12/08/2026) — caso novo: a
+  // empresa desta linha (cnpj_cliente) NÃO tem registro Ativo deste CPF,
+  // mas uma empresa IRMÃ do mesmo grupo econômico tem. Antes, o código
+  // caía direto em "atualiza o que achou" (mesmo que Inativo) ou "insere
+  // novo" -- e o Passo 4 (sincronizar características pros irmãos Ativos)
+  // então sobrescrevia o registro Ativo da empresa irmã, dando a impressão
+  // de que a importação "foi parar" lá. Agora: se existe irmão Ativo no
+  // grupo, o alvo da atualização é ELE (só dados pessoais/CNH -- nunca
+  // classificação/centro de custo/status, específicos da empresa da
+  // linha), e nenhum registro é criado/reativado nesta empresa.
   for (const v of validas) {
-    const idExistente = idPorChave.get(v.chave);
+    const existenteProprio = existentePorChave.get(v.chave);
+    const temCaracteristicas = Object.keys(v.camposCaracteristicas).length > 0;
+
+    let irmaosAtivos: { motorista_id: string; empresa_id: string; empresa_nome: string }[] = [];
+    if (!existenteProprio?.ativo && temCaracteristicas) {
+      const { data } = await supabase.rpc("motoristas_grupo_mesmo_cpf", {
+        p_empresa_id: v.empresaId,
+        p_cpf: v.cpf,
+      });
+      irmaosAtivos = data ?? [];
+    }
+
+    let redirecionadoPara: string | null = null;
     let avisoSincronizacao = "";
     try {
-      if (idExistente) {
-        const { error } = await supabase.from("motoristas").update(v.camposUpdate).eq("id", idExistente);
+      if (existenteProprio?.ativo) {
+        const { error } = await supabase.from("motoristas").update(v.camposUpdate).eq("id", existenteProprio.id);
+        if (error) throw new Error(error.message);
+      } else if (irmaosAtivos.length > 0) {
+        // Não há registro Ativo deste CPF NESTA empresa, mas existe em uma
+        // empresa irmã do grupo -- atualiza lá em vez de duplicar ou
+        // reviver um fantasma Inativo aqui.
+        const nomes: string[] = [];
+        for (const irmao of irmaosAtivos) {
+          const { error: erroIrmao } = await supabase
+            .from("motoristas")
+            .update(v.camposCaracteristicas)
+            .eq("id", irmao.motorista_id);
+          if (!erroIrmao) nomes.push(irmao.empresa_nome);
+        }
+        if (nomes.length > 0) redirecionadoPara = nomes.join(", ");
+      } else if (existenteProprio) {
+        // Só existe um registro Inativo deste CPF nesta própria empresa, e
+        // nenhum irmão Ativo no grupo -- atualiza os dados nele mesmo
+        // assim (sem reativar), em vez de criar um segundo registro.
+        const { error } = await supabase.from("motoristas").update(v.camposUpdate).eq("id", existenteProprio.id);
         if (error) throw new Error(error.message);
       } else {
         const { error } = await supabase.from("motoristas").insert(v.camposInsert);
         if (error) throw new Error(error.message);
       }
 
-      const { data: irmaos } = await supabase.rpc("motoristas_grupo_mesmo_cpf", {
-        p_empresa_id: v.empresaId,
-        p_cpf: v.cpf,
-      });
-      const nomesSincronizados: string[] = [];
-      for (const irmao of irmaos ?? []) {
-        const { error: erroIrmao } = await supabase
-          .from("motoristas")
-          .update(v.camposCaracteristicas)
-          .eq("id", irmao.motorista_id);
-        if (!erroIrmao) nomesSincronizados.push(irmao.empresa_nome);
-      }
-      if (nomesSincronizados.length > 0) {
-        avisoSincronizacao = ` Também sincronizado em: ${nomesSincronizados.join(", ")}.`;
+      // Passo 4: se a escrita foi NESTA empresa (não redirecionada pro
+      // irmão -- nesse caso já sincronizamos acima), propaga dados
+      // pessoais/CNH pros demais irmãos Ativos do grupo econômico.
+      if (!redirecionadoPara && temCaracteristicas) {
+        const { data: irmaos } =
+          existenteProprio?.ativo || existenteProprio
+            ? await supabase.rpc("motoristas_grupo_mesmo_cpf", { p_empresa_id: v.empresaId, p_cpf: v.cpf })
+            : { data: irmaosAtivos };
+        const nomesSincronizados: string[] = [];
+        for (const irmao of irmaos ?? []) {
+          const { error: erroIrmao } = await supabase
+            .from("motoristas")
+            .update(v.camposCaracteristicas)
+            .eq("id", irmao.motorista_id);
+          if (!erroIrmao) nomesSincronizados.push(irmao.empresa_nome);
+        }
+        if (nomesSincronizados.length > 0) {
+          avisoSincronizacao = ` Também sincronizado em: ${nomesSincronizados.join(", ")}.`;
+        }
       }
 
       resultado.push({
         linha: v.numeroLinha,
         identificacao: `${v.nomeCompleto} (${v.cpf})`,
         status: "ok",
-        mensagem: idExistente
-          ? `Motorista já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
-          : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
+        mensagem: redirecionadoPara
+          ? `Este motorista já está Ativo na empresa "${redirecionadoPara}" (mesmo grupo econômico) — dados pessoais/CNH atualizados lá. Nenhum registro foi criado/alterado em "${nomePorEmpresaId.get(v.empresaId) ?? "empresa desta linha"}" pra evitar duplicidade; campos específicos desta empresa (classificação, centro de custo, status) não se aplicam.`
+          : existenteProprio
+            ? `Motorista já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
+            : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
       });
     } catch (e) {
       resultado.push({

@@ -5158,7 +5158,7 @@ export interface Database {
       // FK), ver comentário em veiculos/importar/actions.ts.
       veiculos_existentes_por_placa: {
         Args: { p_placas: string[] };
-        Returns: { id: string; cnpj_frota_norm: string; placa_norm: string }[];
+        Returns: { id: string; cnpj_frota_norm: string; placa_norm: string; ativo: boolean }[];
       };
       // Fase Sincronizar-Caracteristicas-Grupo (12/08/2026, 3ª rodada) —
       // acha o(s) veículo(s) irmão(s) com a mesma placa em outra(s)
@@ -6485,6 +6485,29 @@ export interface Database {
           litros_total: number;
           preco_medio: number | null;
           custo_total: number | null;
+        }[];
+      };
+      // Fase Desempenho-Por-Ativo (12/08/2026) — pedido do Daniel: comparar
+      // km/L, R$/L, custo/km (TCO) e score de manutenção agrupado por
+      // marca+modelo+motor, pra decisão de compra/customização de frota.
+      // Compõe indicador_eficiencia_veiculos + tco_frota_resumo +
+      // manutencao_preditiva_resumo (ver comentário na migração).
+      desempenho_veiculos_grupo: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          marca: string;
+          modelo: string;
+          motor: string;
+          qtd_veiculos: number;
+          km_total: number | null;
+          litros_total: number | null;
+          media_km_l: number | null;
+          preco_medio_litro: number | null;
+          custo_combustivel_total: number | null;
+          tco_total: number | null;
+          custo_por_km: number | null;
+          score_manutencao_medio: number | null;
+          qtd_criticos: number;
         }[];
       };
       // Fase Motor-de-Ação-Automática — central de ações sugeridas (ver
