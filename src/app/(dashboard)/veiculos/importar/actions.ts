@@ -335,18 +335,24 @@ export async function importarVeiculos(
     const existenteProprio = existentePorChave.get(v.chave);
     const temCaracteristicas = Object.keys(v.camposCaracteristicas).length > 0;
 
-    let irmaosAtivos: { veiculo_id: string; empresa_id: string; empresa_nome: string }[] = [];
-    if (!existenteProprio?.ativo && temCaracteristicas) {
-      const { data } = await supabase.rpc("veiculos_grupo_mesma_placa", {
-        p_empresa_id: v.empresaId,
-        p_placa: v.placa,
-      });
-      irmaosAtivos = data ?? [];
-    }
-
     let redirecionadoPara: string | null = null;
     let avisoSincronizacao = "";
     try {
+      // Fase Corrige-Erro-Import-Empresa-Errada (12/08/2026, achado do
+      // Daniel: tela de erro generica ao reimportar) -- essa checagem de
+      // irmaos ATIVOS precisa estar DENTRO do try: antes ficava fora, e se
+      // essa chamada de RPC falhasse (rede, timeout etc.) o erro escapava
+      // sem tratamento e derrubava a Server Action inteira (todas as
+      // linhas), em vez de reportar erro so nessa linha.
+      let irmaosAtivos: { veiculo_id: string; empresa_id: string; empresa_nome: string }[] = [];
+      if (!existenteProprio?.ativo && temCaracteristicas) {
+        const { data } = await supabase.rpc("veiculos_grupo_mesma_placa", {
+          p_empresa_id: v.empresaId,
+          p_placa: v.placa,
+        });
+        irmaosAtivos = data ?? [];
+      }
+
       if (existenteProprio?.ativo) {
         // Caminho normal: já existe um registro ATIVO desta placa nesta
         // própria empresa -- atualiza ele.

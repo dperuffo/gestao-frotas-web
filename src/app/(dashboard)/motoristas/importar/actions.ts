@@ -229,18 +229,22 @@ export async function importarMotoristas(
     const existenteProprio = existentePorChave.get(v.chave);
     const temCaracteristicas = Object.keys(v.camposCaracteristicas).length > 0;
 
-    let irmaosAtivos: { motorista_id: string; empresa_id: string; empresa_nome: string }[] = [];
-    if (!existenteProprio?.ativo && temCaracteristicas) {
-      const { data } = await supabase.rpc("motoristas_grupo_mesmo_cpf", {
-        p_empresa_id: v.empresaId,
-        p_cpf: v.cpf,
-      });
-      irmaosAtivos = data ?? [];
-    }
-
     let redirecionadoPara: string | null = null;
     let avisoSincronizacao = "";
     try {
+      // Fase Corrige-Erro-Import-Empresa-Errada (12/08/2026) -- mesma
+      // correcao aplicada em veiculos/importar/actions.ts: essa checagem de
+      // irmaos Ativos precisa estar DENTRO do try, senao uma falha na RPC
+      // derruba a Server Action inteira em vez de reportar erro so na linha.
+      let irmaosAtivos: { motorista_id: string; empresa_id: string; empresa_nome: string }[] = [];
+      if (!existenteProprio?.ativo && temCaracteristicas) {
+        const { data } = await supabase.rpc("motoristas_grupo_mesmo_cpf", {
+          p_empresa_id: v.empresaId,
+          p_cpf: v.cpf,
+        });
+        irmaosAtivos = data ?? [];
+      }
+
       if (existenteProprio?.ativo) {
         const { error } = await supabase.from("motoristas").update(v.camposUpdate).eq("id", existenteProprio.id);
         if (error) throw new Error(error.message);
