@@ -6353,6 +6353,9 @@ export interface Database {
           p_ordenar?: string | null;
           p_limit?: number | null;
           p_offset?: number | null;
+          // Fase 12/08/2026 — respeita o seletor "Cliente" da tela, ver
+          // comentário em manutencao-preditiva/page.tsx.
+          p_somente_empresa?: boolean;
         };
         Returns: {
           placa: string;

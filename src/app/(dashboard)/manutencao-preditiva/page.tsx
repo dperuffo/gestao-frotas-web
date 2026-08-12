@@ -39,6 +39,12 @@ export default async function ManutencaoPreditivaPage({
     ? await supabase.from("centros_custo").select("id, nome").eq("empresa_id", empresaSelecionada).order("nome")
     : { data: [] };
 
+  // Achado real do Daniel (12/08/2026): esta tela tem um seletor "Cliente"
+  // explícito — selecionar um cliente do grupo econômico deve mostrar só a
+  // frota dele, não o grupo inteiro. manutencao_preditiva_base expande pro
+  // grupo por padrão (p_somente_empresa default false); mesmo ajuste já
+  // feito no card do dashboard (ver fase 05/08/2026 em dashboard/page.tsx),
+  // agora replicado aqui.
   const { data: resumo, error } = empresaSelecionada
     ? await supabase.rpc("manutencao_preditiva_resumo", {
         p_empresa_id: empresaSelecionada,
@@ -48,6 +54,7 @@ export default async function ManutencaoPreditivaPage({
         p_ordenar: ordenar,
         p_limit: TAMANHO_PAGINA,
         p_offset: offset,
+        p_somente_empresa: true,
       })
     : { data: null, error: null };
 
@@ -64,6 +71,7 @@ export default async function ManutencaoPreditivaPage({
         p_empresa_id: empresaSelecionada,
         p_centro_custo_id: centroCusto || null,
         p_busca: busca || null,
+        p_somente_empresa: true,
       })
     : { data: null };
 
