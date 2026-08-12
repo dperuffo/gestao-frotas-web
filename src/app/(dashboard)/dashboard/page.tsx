@@ -13,12 +13,15 @@ import { GraficoEvolutivoPostos, type PontoEvolutivoPostos } from "./_components
 import { GraficoTopPostos } from "./_components/GraficoTopPostos";
 import { RankingGasto, type ItemRankingGasto } from "./_components/RankingGasto";
 import { GraficoEficienciaVeiculos, type ItemEficienciaVeiculo } from "./_components/GraficoEficienciaVeiculos";
+import { TabelaDesempenhoPorAtivo, type ItemDesempenhoAtivo } from "./_components/TabelaDesempenhoPorAtivo";
 import { PrimeirosPassos } from "./_components/PrimeirosPassos";
 import { DashboardPosto } from "./_components/DashboardPosto";
+import { GraficoMeiosPagamento } from "./_components/GraficoMeiosPagamento";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { PRODUTOS_POSTO } from "@/lib/constants";
-import { LogoProvedor } from "@/components/LogoProvedor";
+import { Users, Truck, Droplet, Wallet, AlertTriangle, Building2, Trophy } from "lucide-react";
+import { IndicadorColorido } from "@/components/IndicadorColorido";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -34,6 +37,31 @@ function rotuloMes(data: Date) {
 
 function paraDataISO(data: Date) {
   return data.toISOString().slice(0, 10);
+}
+
+// Fase Dashboard-Redesign (12/08/2026) — "X% vs mês passado" nos cards do
+// topo (pedido do Daniel, ver benchmark de UX apps bancários). Número
+// sozinho diz pouco; número com contexto diz muito. positivoQuandoCai:
+// true pros indicadores em que CAIR é bom (custo, gasto); undefined pros
+// que são só informativos (litros — mais atividade não é bom nem ruim por
+// si só, então fica sempre em tom neutro).
+function calcularDelta(
+  atual: number,
+  anterior: number,
+  opts?: { positivoQuandoCai?: boolean }
+): { texto: string; tom: "positivo" | "negativo" | "neutro" } | undefined {
+  if (!anterior || anterior <= 0) return undefined;
+  const variacaoPct = ((atual - anterior) / anterior) * 100;
+  const arredondado = Math.round(Math.abs(variacaoPct));
+  if (arredondado === 0) return { texto: "≈ igual ao mês passado", tom: "neutro" };
+  const subiu = variacaoPct > 0;
+  const seta = subiu ? "↑" : "↓";
+  let tom: "positivo" | "negativo" | "neutro" = "neutro";
+  if (opts?.positivoQuandoCai !== undefined) {
+    const bom = opts.positivoQuandoCai ? !subiu : subiu;
+    tom = bom ? "positivo" : "negativo";
+  }
+  return { texto: `${seta} ${arredondado}% vs mês passado`, tom };
 }
 
 const NOMES_MES = [
@@ -59,6 +87,13 @@ export default async function DashboardPage({
   const inicioMesAtual = inicioDoMes(agora);
   const seisMesesAtras = new Date(agora.getFullYear(), agora.getMonth() - 5, 1);
   const daqui30Dias = new Date(agora.getTime() + 30 * 24 * 60 * 60 * 1000);
+  // Fase Dashboard-Redesign (12/08/2026) — pedido do Daniel: cards de
+  // indicador com comparação ao mês anterior e saudação personalizada no
+  // topo (mesmo padrão de app de banco pesquisado no benchmark de UX).
+  const inicioMesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
+  const fimMesAnterior = new Date(agora.getFullYear(), agora.getMonth(), 0);
+  const hora = agora.getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
 
   // Cliente e período do seletor único do topo — resolvido antes das
   // demais consultas pra poder filtrar por ele os indicadores operacionais
@@ -133,10 +168,12 @@ export default async function DashboardPage({
     { count: totalPostosProprios },
     { data: cnhVencendo },
     { data: indicadoresPorProvedorMes },
+    { data: indicadoresPorProvedorMesAnterior },
     { data: evolucaoMensalRaw },
     { data: topClientesRaw },
     { data: veiculosDaEmpresa },
     resumoAjustes,
+    nomeUsuarioLogado,
   ] = await Promise.all([
     supabase.from("empresas").select("id", { count: "exact", head: true }),
     supabase.from("empresas").select("id", { count: "exact", head: true }).eq("status", "ativo"),
@@ -169,6 +206,13 @@ export default async function DashboardPage({
       p_data_inicio: paraDataISO(inicioMesAtual),
       p_data_fim: paraDataISO(agora),
     }),
+    // Mesmo indicador do mês atual, só que do mês anterior inteiro — usado
+    // só pra calcular a comparação percentual mostrada nos cards do topo.
+    supabase.rpc("indicadores_financeiros_por_provedor", {
+      p_empresa_id: empresaSelecionada,
+      p_data_inicio: paraDataISO(inicioMesAnterior),
+      p_data_fim: paraDataISO(fimMesAnterior),
+    }),
     supabase.rpc("dashboard_evolucao_mensal", {
       p_empresa_id: empresaSelecionada,
       p_data_inicio: paraDataISO(seisMesesAtras),
@@ -196,12 +240,24 @@ export default async function DashboardPage({
       ? buscarTodosVeiculosDaEmpresa(supabase, empresaSelecionada)
       : Promise.resolve({ data: null }),
     resumoAjustesPromise,
+    // Primeiro nome do usuário logado, pra saudação no topo da página —
+    // mesmo padrão de busca (tabela usuarios_app por e-mail) já usado em
+    // (dashboard)/layout.tsx pro nome exibido na barra lateral.
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.email) return null;
+      const { data } = await supabase.from("usuarios_app").select("nome").eq("email", user.email).maybeSingle();
+      return data?.nome ?? null;
+    })(),
   ]);
 
   const totalVeiculos = empresaSelecionada ? (veiculosDaEmpresa ?? []).length : totalVeiculosGlobal;
   const veiculosAtivos = empresaSelecionada
     ? (veiculosDaEmpresa ?? []).filter((v) => v.ativo).length
     : veiculosAtivosGlobal;
+  const primeiroNome = nomeUsuarioLogado ? String(nomeUsuarioLogado).trim().split(" ")[0] : null;
 
   // Fase Dashboard-Provedores-Bug — litros/valor do mês e o consolidado por
   // meio de pagamento agora vêm agregados direto do banco (RPC
@@ -214,6 +270,15 @@ export default async function DashboardPage({
   const litrosMes = (indicadoresPorProvedorMes ?? []).reduce((soma, r) => soma + (r.litros ?? 0), 0);
   const valorMes = (indicadoresPorProvedorMes ?? []).reduce((soma, r) => soma + (r.custo_combustivel ?? 0), 0);
   const custoMedioLitroMes = litrosMes > 0 ? valorMes / litrosMes : 0;
+  const litrosMesAnterior = (indicadoresPorProvedorMesAnterior ?? []).reduce((soma, r) => soma + (r.litros ?? 0), 0);
+  const valorMesAnterior = (indicadoresPorProvedorMesAnterior ?? []).reduce(
+    (soma, r) => soma + (r.custo_combustivel ?? 0),
+    0
+  );
+  const custoMedioLitroMesAnterior = litrosMesAnterior > 0 ? valorMesAnterior / litrosMesAnterior : 0;
+  const deltaLitros = calcularDelta(litrosMes, litrosMesAnterior);
+  const deltaValor = calcularDelta(valorMes, valorMesAnterior, { positivoQuandoCai: true });
+  const deltaCustoMedio = calcularDelta(custoMedioLitroMes, custoMedioLitroMesAnterior, { positivoQuandoCai: true });
 
   // Gráfico: 6 meses fixos (mesmo os sem abastecimento nenhum aparecem
   // zerados) preenchidos com o que a RPC dashboard_evolucao_mensal trouxe
@@ -297,6 +362,7 @@ export default async function DashboardPage({
     { data: rankingVeiculos },
     { data: rankingMotoristas },
     { data: eficienciaVeiculos },
+    { data: desempenhoPorAtivo },
   ] = empresaSelecionada
     ? await Promise.all([
         supabase.rpc("indicadores_centro_custo", {
@@ -353,9 +419,20 @@ export default async function DashboardPage({
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
         }),
+        // Fase Desempenho-Por-Ativo (12/08/2026) — pedido do Daniel: comparar
+        // desempenho de veículos agrupado por marca/modelo/motor (não por
+        // placa individual), pra apoiar decisão de compra/customização de
+        // frota. Compõe 3 RPCs já existentes (ver comentário na migração
+        // desempenho_veiculos_grupo).
+        supabase.rpc("desempenho_veiculos_grupo", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+        }),
       ])
     : [
         { data: null, error: null },
+        { data: null },
         { data: null },
         { data: null },
         { data: null },
@@ -478,11 +555,51 @@ export default async function DashboardPage({
     custoTotal: v.custo_total,
   }));
 
+  // Fase Dashboard-Redesign — "Destaque do mês": veículo com melhor km/L no
+  // período, comparado à média da frota. Mesmo dado do indicador 8 abaixo,
+  // resumido num card no topo — storytelling em vez de só número cru (ver
+  // benchmark de UX apps bancários).
+  const mediasKmLValidas = itensEficienciaVeiculos
+    .map((v) => v.mediaKmL)
+    .filter((v): v is number => v != null && v > 0);
+  const mediaGeralKmL =
+    mediasKmLValidas.length > 0 ? mediasKmLValidas.reduce((s, v) => s + v, 0) / mediasKmLValidas.length : null;
+  const veiculoDestaque = itensEficienciaVeiculos.reduce<ItemEficienciaVeiculo | null>((melhor, v) => {
+    if (v.mediaKmL == null) return melhor;
+    if (melhor == null || (melhor.mediaKmL ?? 0) < v.mediaKmL) return v;
+    return melhor;
+  }, null);
+  const percentualAcimaMedia =
+    veiculoDestaque?.mediaKmL != null && mediaGeralKmL
+      ? Math.round(((veiculoDestaque.mediaKmL - mediaGeralKmL) / mediaGeralKmL) * 100)
+      : null;
+
+  // Indicador 9 — Desempenho por marca/modelo/motor (agregado, não por
+  // placa individual, ver TabelaDesempenhoPorAtivo).
+  const itensDesempenhoPorAtivo: ItemDesempenhoAtivo[] = (desempenhoPorAtivo ?? []).map((d) => ({
+    marca: d.marca,
+    modelo: d.modelo,
+    motor: d.motor,
+    qtdVeiculos: d.qtd_veiculos,
+    kmTotal: d.km_total,
+    litrosTotal: d.litros_total,
+    mediaKmL: d.media_km_l,
+    precoMedioLitro: d.preco_medio_litro,
+    custoCombustivelTotal: d.custo_combustivel_total,
+    tcoTotal: d.tco_total,
+    custoPorKm: d.custo_por_km,
+    scoreManutencaoMedio: d.score_manutencao_medio,
+    qtdCriticos: d.qtd_criticos,
+  }));
+
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-500">Visão geral da frota.</p>
+        <h1 className="text-xl font-semibold text-slate-900">
+          {saudacao}
+          {primeiroNome ? `, ${primeiroNome}` : ""}
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">Aqui está o resumo da sua frota hoje.</p>
       </div>
 
       <div className="mb-6 card p-4">
@@ -535,27 +652,34 @@ export default async function DashboardPage({
         />
       )}
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <Indicador label="Clientes ativos" valor={String(clientesAtivos ?? 0)} sub={`de ${totalClientes ?? 0}`} ajudaChave="dashboard.clientes_ativos" />
-        <Indicador label="Motoristas ativos" valor={String(motoristasAtivos ?? 0)} sub={`de ${totalMotoristas ?? 0}`} ajudaChave="dashboard.motoristas_veiculos_ativos" />
-        <Indicador label="Veículos ativos" valor={String(veiculosAtivos ?? 0)} sub={`de ${totalVeiculos ?? 0}`} ajudaChave="dashboard.motoristas_veiculos_ativos" />
-        <Indicador label="Litros no mês" valor={litrosMes.toLocaleString("pt-BR")} ajudaChave="dashboard.litros_mes" />
-        <Indicador label="Valor no mês" valor={formatarMoeda(valorMes)} ajudaChave="dashboard.valor_mes" />
-        <Indicador label="Custo médio/litro" valor={formatarMoeda(custoMedioLitroMes)} ajudaChave="dashboard.custo_medio_litro" />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <IndicadorColorido cor="violet" icon={Building2} label="Clientes ativos" valor={String(clientesAtivos ?? 0)} sub={`de ${totalClientes ?? 0}`} ajudaChave="dashboard.clientes_ativos" />
+        <IndicadorColorido cor="sky" icon={Users} label="Motoristas ativos" valor={String(motoristasAtivos ?? 0)} sub={`de ${totalMotoristas ?? 0}`} ajudaChave="dashboard.motoristas_veiculos_ativos" />
+        <IndicadorColorido cor="sky" icon={Truck} label="Veículos ativos" valor={String(veiculosAtivos ?? 0)} sub={`de ${totalVeiculos ?? 0}`} ajudaChave="dashboard.motoristas_veiculos_ativos" />
+        <IndicadorColorido cor="green" icon={Droplet} label="Litros no mês" valor={litrosMes.toLocaleString("pt-BR")} delta={deltaLitros} ajudaChave="dashboard.litros_mes" />
+        <IndicadorColorido cor="amber" icon={Wallet} label="Valor no mês" valor={formatarMoeda(valorMes)} delta={deltaValor} ajudaChave="dashboard.valor_mes" />
+        <IndicadorColorido cor="red" icon={AlertTriangle} label="Custo médio/litro" valor={formatarMoeda(custoMedioLitroMes)} delta={deltaCustoMedio} ajudaChave="dashboard.custo_medio_litro" />
       </div>
+
+      {empresaSelecionada && veiculoDestaque && veiculoDestaque.mediaKmL != null && (
+        <div className="mb-6 card flex items-center gap-3 p-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-frota-500">
+            <Trophy className="h-5 w-5 text-white" aria-hidden="true" />
+          </div>
+          <p className="text-sm text-slate-600">
+            Destaque do mês: a placa <span className="font-medium text-slate-900">{veiculoDestaque.placa}</span> teve
+            o melhor km/L da frota ({veiculoDestaque.mediaKmL.toFixed(2)} km/l)
+            {percentualAcimaMedia != null && percentualAcimaMedia > 0 && <>, {percentualAcimaMedia}% acima da média</>}.
+          </p>
+        </div>
+      )}
 
       {empresaSelecionada && listaProvedoresMes.length > 0 && (
         <div className="mb-6 card p-4">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">
             Meios de pagamento no mês
           </p>
-          <div className="flex flex-wrap gap-2">
-            {listaProvedoresMes.map(([provedor, valor]) => (
-              <span key={provedor} className="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                <LogoProvedor provedor={provedor} className="h-4 w-auto" /> {formatarMoeda(valor)}
-              </span>
-            ))}
-          </div>
+          <GraficoMeiosPagamento dados={listaProvedoresMes.map(([provedor, valor]) => ({ provedor, valor }))} />
         </div>
       )}
 
@@ -582,15 +706,34 @@ export default async function DashboardPage({
             CNH vencendo em 30 dias <AjudaIcon chave="dashboard.cnh_vencendo" />
           </h2>
           {cnhVencendo && cnhVencendo.length > 0 ? (
-            <ul className="space-y-2 text-sm">
-              {cnhVencendo.map((m) => (
-                <li key={m.id} className="flex items-center justify-between">
-                  <Link href={`/motoristas/${m.id}`} className="text-frota-600 hover:underline">
-                    {m.nome_completo}
-                  </Link>
-                  <span className="badge-atencao">{formatDate(m.cnh_vencimento)}</span>
-                </li>
-              ))}
+            <ul className="space-y-3 text-sm">
+              {cnhVencendo.map((m) => {
+                const dias = Math.max(
+                  0,
+                  Math.ceil((new Date(`${m.cnh_vencimento}T00:00:00`).getTime() - agora.getTime()) / 86400000)
+                );
+                const urgente = dias <= 7;
+                return (
+                  <li key={m.id}>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <Link href={`/motoristas/${m.id}`} className="text-frota-600 hover:underline">
+                        {m.nome_completo}
+                      </Link>
+                      <span
+                        className={`whitespace-nowrap text-xs font-medium ${urgente ? "text-status-inativo" : "text-status-atencao"}`}
+                      >
+                        {dias} {dias === 1 ? "dia" : "dias"} · {formatDate(m.cnh_vencimento)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className={`h-full rounded-full ${urgente ? "bg-status-inativo" : "bg-status-atencao"}`}
+                        style={{ width: `${Math.min(100, Math.max(6, (dias / 30) * 100))}%` }}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-sm text-slate-400">Nenhuma CNH vencendo nos próximos 30 dias.</p>
@@ -840,6 +983,15 @@ export default async function DashboardPage({
               </p>
               <GraficoEficienciaVeiculos dados={itensEficienciaVeiculos} />
             </div>
+
+            <div className="card p-4">
+              <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">9. Desempenho por marca/modelo/motor <AjudaIcon chave="dashboard.desempenho_por_ativo" /></h3>
+              <p className="mb-3 text-xs text-slate-500">
+                Km/L, R$/L pago, custo por km (TCO) e score de manutenção agrupados pelas características do veículo —
+                use pra comparar se vale continuar comprando essa marca/modelo/motor ou trocar de fornecedor.
+              </p>
+              <TabelaDesempenhoPorAtivo dados={itensDesempenhoPorAtivo} />
+            </div>
           </div>
         )}
       </div>
@@ -847,27 +999,9 @@ export default async function DashboardPage({
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  sub,
-  ajudaChave,
-}: {
-  label: string;
-  valor: string;
-  sub?: string;
-  ajudaChave?: string;
-}) {
-  return (
-    <div className="card p-4">
-      <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-        {label} {ajudaChave && <AjudaIcon chave={ajudaChave} />}
-      </p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-      {sub && <p className="text-xs text-slate-400">{sub}</p>}
-    </div>
-  );
-}
+// IndicadorColorido agora vive em @/components/IndicadorColorido — extraído
+// pra cá pra ser reaproveitado também na tela de Veículos (ver Fase
+// Dashboard-Redesign).
 
 function MiniIndicador({ label, valor }: { label: string; valor: string }) {
   return (

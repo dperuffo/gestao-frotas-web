@@ -6,6 +6,11 @@ import { ToggleAtivoVeiculo } from "./_components/ToggleAtivoVeiculo";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
+// Fase Dashboard-Redesign (12/08/2026) — mesmo toque visual do Dashboard
+// (cor + ícone por indicador, ver benchmark de UX apps bancários) aplicado
+// aqui como exemplo de tela densa (pedido do Daniel).
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Truck, CheckCircle2, XCircle } from "lucide-react";
 
 const POR_PAGINA = 30;
 
@@ -142,10 +147,10 @@ export default async function VeiculosPage({
         <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver a frota dele.</p>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Indicador label="Total de veículos" valor={totalGeral} />
-            <Indicador label="Ativos" valor={totalAtivos} />
-            <Indicador label="Inativos" valor={totalGeral - totalAtivos} />
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <IndicadorColorido cor="sky" icon={Truck} label="Total de veículos" valor={String(totalGeral)} />
+            <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos" valor={String(totalAtivos)} />
+            <IndicadorColorido cor="red" icon={XCircle} label="Inativos" valor={String(totalGeral - totalAtivos)} />
           </div>
 
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
@@ -213,9 +218,10 @@ export default async function VeiculosPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {veiculosDaPagina.map((v) => (
-                  <tr key={v.id} className="hover:bg-slate-50">
+                  <tr key={v.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
+                        <Truck className="h-4 w-4 shrink-0 text-slate-300" aria-hidden="true" />
                         <Link href={`/veiculos/${v.id}`} className="font-medium text-frota-600 hover:underline">
                           {v.placa}
                         </Link>
@@ -270,11 +276,5 @@ export default async function VeiculosPage({
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: number }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Dashboard-Redesign).
