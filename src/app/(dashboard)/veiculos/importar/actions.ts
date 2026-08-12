@@ -129,8 +129,15 @@ export async function importarVeiculos(
     placa: string;
     chave: string;
     cnpjFrota: string;
+    empresaId: string;
     camposInsert: VeiculoInsert;
     camposUpdate: VeiculoUpdate;
+    // Fase Sincronizar-Caracteristicas-Grupo (12/08/2026) — subconjunto de
+    // camposUpdate só com as características físicas do veículo (sem
+    // classificação nem centro de custo, que são específicos de cada
+    // empresa). É isso que se propaga pros irmãos do mesmo grupo
+    // econômico com a mesma placa, ver passo 4.
+    camposCaracteristicas: VeiculoUpdate;
     avisoCentroCusto: string;
   };
 
@@ -198,20 +205,25 @@ export async function importarVeiculos(
         centro_custo_nome: centroCustoId ? centroCustoNomeBruto : null,
         ativo: true,
       };
-      const camposUpdate: VeiculoUpdate = {};
+      const camposCaracteristicas: VeiculoUpdate = {};
 
       // Os campos de texto/número acima são todos colunas de mesmo tipo
       // (string | null / number | null) em cadastro_veiculos -- o cast por
-      // campo evita ter que repetir 15x o mesmo par insert/update.
+      // campo evita ter que repetir 15x o mesmo par insert/característica.
       for (const [campo, valor] of camposTexto) {
         (camposInsert as unknown as Record<string, string | null>)[campo] = valor || null;
-        if (valor) (camposUpdate as unknown as Record<string, string>)[campo] = valor;
+        if (valor) (camposCaracteristicas as unknown as Record<string, string>)[campo] = valor;
       }
       for (const [campo, valor] of camposNumero) {
         const numero = numeroOuNull(valor);
         (camposInsert as unknown as Record<string, number | null>)[campo] = numero;
-        if (valor && numero !== null) (camposUpdate as unknown as Record<string, number>)[campo] = numero;
+        if (valor && numero !== null) (camposCaracteristicas as unknown as Record<string, number>)[campo] = numero;
       }
+
+      // camposUpdate = características (propagáveis pro grupo) + campos
+      // específicos desta empresa (classificação, centro de custo), que
+      // NUNCA propagam.
+      const camposUpdate: VeiculoUpdate = { ...camposCaracteristicas };
       if (classificacaoValida) camposUpdate.classificacao = classificacaoValida;
       if (centroCustoId) {
         camposUpdate.centro_custo_id = centroCustoId;
@@ -223,8 +235,10 @@ export async function importarVeiculos(
         placa,
         chave: `${normalizarChave(cnpjFrota)}|${normalizarChave(placa)}`,
         cnpjFrota,
+        empresaId,
         camposInsert,
         camposUpdate,
+        camposCaracteristicas,
         avisoCentroCusto,
       });
     } catch (e) {
@@ -258,29 +272,51 @@ export async function importarVeiculos(
   }
 
   // Passo 3: grava -- update parcial se o veículo já existe, insert
-  // completo se não.
+  // completo se não. Passo 4 (logo abaixo, achado do Daniel 12/08/2026):
+  // depois de gravar, propaga as CARACTERÍSTICAS (não classificação, não
+  // centro de custo) pros veículos irmãos com a mesma placa em outras
+  // empresas do mesmo grupo econômico -- pra não ficarem descasados.
+  // Diferente da tela de Duplicidades (que trata placa repetida no grupo
+  // como erro a corrigir/inativar), aqui a decisão do Daniel foi tratar
+  // como o mesmo veículo de verdade.
   for (const v of validas) {
     const idExistente = idPorChave.get(v.chave);
+    let avisoSincronizacao = "";
     try {
       if (idExistente) {
         const { error } = await supabase.from("cadastro_veiculos").update(v.camposUpdate).eq("id", idExistente);
         if (error) throw new Error(error.message);
-        resultado.push({
-          linha: v.numeroLinha,
-          identificacao: v.placa,
-          status: "ok",
-          mensagem: `Veículo já cadastrado — dados atualizados.${v.avisoCentroCusto}`,
-        });
       } else {
         const { error } = await supabase.from("cadastro_veiculos").insert(v.camposInsert);
         if (error) throw new Error(error.message);
-        resultado.push({
-          linha: v.numeroLinha,
-          identificacao: v.placa,
-          status: "ok",
-          mensagem: `Importado com sucesso.${v.avisoCentroCusto}`,
-        });
       }
+
+      if (Object.keys(v.camposCaracteristicas).length > 0) {
+        const { data: irmaos } = await supabase.rpc("veiculos_grupo_mesma_placa", {
+          p_empresa_id: v.empresaId,
+          p_placa: v.placa,
+        });
+        const nomesSincronizados: string[] = [];
+        for (const irmao of irmaos ?? []) {
+          const { error: erroIrmao } = await supabase
+            .from("cadastro_veiculos")
+            .update(v.camposCaracteristicas)
+            .eq("id", irmao.veiculo_id);
+          if (!erroIrmao) nomesSincronizados.push(irmao.empresa_nome);
+        }
+        if (nomesSincronizados.length > 0) {
+          avisoSincronizacao = ` Também sincronizado em: ${nomesSincronizados.join(", ")}.`;
+        }
+      }
+
+      resultado.push({
+        linha: v.numeroLinha,
+        identificacao: v.placa,
+        status: "ok",
+        mensagem: idExistente
+          ? `Veículo já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
+          : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
+      });
     } catch (e) {
       resultado.push({
         linha: v.numeroLinha,

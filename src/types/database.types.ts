@@ -5160,6 +5160,19 @@ export interface Database {
         Args: { p_placas: string[] };
         Returns: { id: string; cnpj_frota_norm: string; placa_norm: string }[];
       };
+      // Fase Sincronizar-Caracteristicas-Grupo (12/08/2026, 3ª rodada) —
+      // acha o(s) veículo(s) irmão(s) com a mesma placa em outra(s)
+      // empresa(s) do mesmo grupo econômico, pra propagar edição de
+      // características (não confundir com listar_duplicidades_placa_grupo,
+      // que trata a mesma coincidência como erro a resolver).
+      veiculos_grupo_mesma_placa: {
+        Args: { p_empresa_id: string; p_placa: string };
+        Returns: { veiculo_id: string; empresa_id: string; empresa_nome: string }[];
+      };
+      motoristas_grupo_mesmo_cpf: {
+        Args: { p_empresa_id: string; p_cpf: string };
+        Returns: { motorista_id: string; empresa_id: string; empresa_nome: string }[];
+      };
       registrar_acesso_menu: {
         Args: { p_href: string };
         Returns: void;

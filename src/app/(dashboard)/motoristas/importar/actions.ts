@@ -91,6 +91,12 @@ export async function importarMotoristas(
     empresaId: string;
     camposInsert: MotoristaInsert;
     camposUpdate: MotoristaUpdate;
+    // Fase Sincronizar-Caracteristicas-Grupo (12/08/2026) — subconjunto de
+    // camposUpdate só com dados pessoais/CNH do motorista (sem
+    // classificação nem centro de custo, específicos de cada empresa).
+    // Propagado pros irmãos do mesmo grupo econômico com o mesmo CPF, ver
+    // passo 4.
+    camposCaracteristicas: MotoristaUpdate;
     avisoCentroCusto: string;
   };
 
@@ -149,12 +155,17 @@ export async function importarMotoristas(
         centro_custo_id: centroCustoId,
         status: "Ativo",
       };
-      const camposUpdate: MotoristaUpdate = { nome_completo: nomeCompleto };
-      if (telefone) camposUpdate.telefone = telefone;
-      if (email) camposUpdate.email = email;
+      const camposCaracteristicas: MotoristaUpdate = { nome_completo: nomeCompleto };
+      if (telefone) camposCaracteristicas.telefone = telefone;
+      if (email) camposCaracteristicas.email = email;
+      if (cnh) camposCaracteristicas.cnh = cnh;
+      if (cnhVencimento) camposCaracteristicas.cnh_vencimento = cnhVencimento;
+
+      // camposUpdate = características (propagáveis pro grupo) + campos
+      // específicos desta empresa (classificação, centro de custo, status),
+      // que NUNCA propagam.
+      const camposUpdate: MotoristaUpdate = { ...camposCaracteristicas };
       if (classificacaoValida) camposUpdate.classificacao = classificacaoValida;
-      if (cnh) camposUpdate.cnh = cnh;
-      if (cnhVencimento) camposUpdate.cnh_vencimento = cnhVencimento;
       if (centroCustoId) camposUpdate.centro_custo_id = centroCustoId;
 
       validas.push({
@@ -165,6 +176,7 @@ export async function importarMotoristas(
         empresaId,
         camposInsert,
         camposUpdate,
+        camposCaracteristicas,
         avisoCentroCusto,
       });
     } catch (e) {
@@ -192,29 +204,47 @@ export async function importarMotoristas(
   }
 
   // Passo 3: grava -- update parcial se o motorista já existe, insert
-  // completo se não.
+  // completo se não. Passo 4 (achado do Daniel 12/08/2026): depois de
+  // gravar, propaga dados pessoais/CNH pros motoristas irmãos com o mesmo
+  // CPF em outras empresas do mesmo grupo econômico -- pra não ficarem
+  // descasados (classificação, centro de custo e status continuam
+  // específicos de cada empresa, nunca propagam).
   for (const v of validas) {
     const idExistente = idPorChave.get(v.chave);
+    let avisoSincronizacao = "";
     try {
       if (idExistente) {
         const { error } = await supabase.from("motoristas").update(v.camposUpdate).eq("id", idExistente);
         if (error) throw new Error(error.message);
-        resultado.push({
-          linha: v.numeroLinha,
-          identificacao: `${v.nomeCompleto} (${v.cpf})`,
-          status: "ok",
-          mensagem: `Motorista já cadastrado — dados atualizados.${v.avisoCentroCusto}`,
-        });
       } else {
         const { error } = await supabase.from("motoristas").insert(v.camposInsert);
         if (error) throw new Error(error.message);
-        resultado.push({
-          linha: v.numeroLinha,
-          identificacao: `${v.nomeCompleto} (${v.cpf})`,
-          status: "ok",
-          mensagem: `Importado com sucesso.${v.avisoCentroCusto}`,
-        });
       }
+
+      const { data: irmaos } = await supabase.rpc("motoristas_grupo_mesmo_cpf", {
+        p_empresa_id: v.empresaId,
+        p_cpf: v.cpf,
+      });
+      const nomesSincronizados: string[] = [];
+      for (const irmao of irmaos ?? []) {
+        const { error: erroIrmao } = await supabase
+          .from("motoristas")
+          .update(v.camposCaracteristicas)
+          .eq("id", irmao.motorista_id);
+        if (!erroIrmao) nomesSincronizados.push(irmao.empresa_nome);
+      }
+      if (nomesSincronizados.length > 0) {
+        avisoSincronizacao = ` Também sincronizado em: ${nomesSincronizados.join(", ")}.`;
+      }
+
+      resultado.push({
+        linha: v.numeroLinha,
+        identificacao: `${v.nomeCompleto} (${v.cpf})`,
+        status: "ok",
+        mensagem: idExistente
+          ? `Motorista já cadastrado — dados atualizados.${v.avisoCentroCusto}${avisoSincronizacao}`
+          : `Importado com sucesso.${v.avisoCentroCusto}${avisoSincronizacao}`,
+      });
     } catch (e) {
       resultado.push({
         linha: v.numeroLinha,
