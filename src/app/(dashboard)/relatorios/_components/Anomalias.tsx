@@ -138,7 +138,7 @@ export function Anomalias({ historico }: { historico: RegistroHistorico[] }) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {outliersFiltrados.slice(0, 200).map((o, i) => (
-                  <tr key={`${o.cnpj}__${o.combustivel}__${o.dataRef}__${i}`}>
+                  <tr key={`${o.cnpj}__${o.combustivel}__${o.dataRef}__${i}`} className="transition-colors hover:bg-frota-50/60">
                     <td className="py-2 pr-3 text-slate-700">{o.razaoSocial ?? o.cnpj}</td>
                     <td className="py-2 pr-3 text-slate-600">
                       {o.municipio}/{o.uf}
@@ -183,7 +183,7 @@ export function Anomalias({ historico }: { historico: RegistroHistorico[] }) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {postosInconsistentes.slice(0, 50).map((p, i) => (
-                  <tr key={`${p.cnpj}__${p.combustivel}__${i}`}>
+                  <tr key={`${p.cnpj}__${p.combustivel}__${i}`} className="transition-colors hover:bg-frota-50/60">
                     <td className="py-2 pr-3 text-slate-700">{p.razaoSocial ?? p.cnpj}</td>
                     <td className="py-2 pr-3 text-slate-600">{p.uf}</td>
                     <td className="py-2 pr-3 text-slate-600">{p.combustivel}</td>

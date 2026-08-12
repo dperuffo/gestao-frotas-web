@@ -193,7 +193,7 @@ export function PerformancePorPosto({ historico }: { historico: RegistroHistoric
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {consistencia.map((c) => (
-                  <tr key={c.combustivel}>
+                  <tr key={c.combustivel} className="transition-colors hover:bg-frota-50/60">
                     <td className="py-2 pr-3 text-slate-700">{c.combustivel}</td>
                     <td className="py-2 pr-3 tabular-nums text-slate-600">{c.registros}</td>
                     <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(c.min)}</td>

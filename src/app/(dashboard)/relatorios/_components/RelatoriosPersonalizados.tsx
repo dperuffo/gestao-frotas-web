@@ -947,7 +947,7 @@ export function RelatoriosPersonalizados({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {resultado.map((r) => (
-                  <tr key={r.chave}>
+                  <tr key={r.chave} className="transition-colors hover:bg-frota-50/60">
                     <td className="py-2 pr-3 text-slate-700">{r.chave}</td>
                     {metricasAtuais.map((m) => (
                       <td key={m.id} className="py-2 pr-3 tabular-nums font-medium text-slate-900">

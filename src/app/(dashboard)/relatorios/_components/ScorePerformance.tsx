@@ -3,6 +3,10 @@
 import { useMemo } from "react";
 import { CartesianGrid, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from "recharts";
 import { calcularScorePosto, CORES_GRADE } from "@/lib/scorePosto";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { TrendingUp, CheckCircle2, AlertTriangle, HelpCircle } from "lucide-react";
 import type { RegistroHistorico } from "./Anomalias";
 import type { DesvioAnpFrota, ServicoPostoFrota } from "../../postos/_components/ScoreFrota";
 
@@ -91,10 +95,16 @@ export function ScorePerformance({
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <QuadranteKpi titulo="🟢 Oportunidade de crescer" valor={quadrantes.investir.length} descricao="Score alto, uso baixo" />
-        <QuadranteKpi titulo="✅ Manter" valor={quadrantes.manter.length} descricao="Score alto, uso alto" />
-        <QuadranteKpi titulo="🔴 Risco" valor={quadrantes.risco.length} descricao="Score baixo, uso alto" />
-        <QuadranteKpi titulo="⚠️ Revisar" valor={quadrantes.revisar.length} descricao="Score baixo, uso baixo" />
+        <IndicadorColorido
+          cor="green"
+          icon={TrendingUp}
+          label="Oportunidade de crescer"
+          valor={String(quadrantes.investir.length)}
+          sub="Score alto, uso baixo"
+        />
+        <IndicadorColorido cor="sky" icon={CheckCircle2} label="Manter" valor={String(quadrantes.manter.length)} sub="Score alto, uso alto" />
+        <IndicadorColorido cor="red" icon={AlertTriangle} label="Risco" valor={String(quadrantes.risco.length)} sub="Score baixo, uso alto" />
+        <IndicadorColorido cor="amber" icon={HelpCircle} label="Revisar" valor={String(quadrantes.revisar.length)} sub="Score baixo, uso baixo" />
       </div>
 
       <ResponsiveContainer width="100%" height={420}>
@@ -145,7 +155,7 @@ export function ScorePerformance({
               {quadrantes.risco
                 .sort((a, b) => b.utilizacao - a.utilizacao)
                 .map((p) => (
-                  <tr key={p.cnpj}>
+                  <tr key={p.cnpj} className="transition-colors hover:bg-frota-50/60">
                     <td className="py-2 pr-3 text-slate-700">{p.razaoSocial ?? p.cnpj}</td>
                     <td className="py-2 pr-3 text-slate-600">{p.uf}</td>
                     <td className="py-2 pr-3 tabular-nums font-medium" style={{ color: CORES_GRADE[p.grade] }}>
@@ -162,12 +172,5 @@ export function ScorePerformance({
   );
 }
 
-function QuadranteKpi({ titulo, valor, descricao }: { titulo: string; valor: number; descricao: string }) {
-  return (
-    <div className="card p-3">
-      <p className="text-xs font-medium text-slate-500">{titulo}</p>
-      <p className="mt-1 text-xl font-semibold text-slate-900">{valor}</p>
-      <p className="text-xs text-slate-400">{descricao}</p>
-    </div>
-  );
-}
+// QuadranteKpi() local removido — troca pelo IndicadorColorido
+// compartilhado (ver Fase Redesign-Telas-Densas).

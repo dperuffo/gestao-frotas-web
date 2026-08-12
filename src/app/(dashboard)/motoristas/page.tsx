@@ -6,6 +6,11 @@ import { ToggleAtivoMotorista } from "./_components/ToggleAtivoMotorista";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
+// Fase Redesign-Telas-Densas (12/08/2026) — pedido do Daniel: "tem
+// motoristas tambem para padronizar" — mesmo toque visual já aplicado em
+// Veículos (mesmo padrão de ícones: total/ativos/inativos).
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Users, CheckCircle2, XCircle } from "lucide-react";
 
 const POR_PAGINA = 30;
 
@@ -145,10 +150,10 @@ export default async function MotoristasPage({
         <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver os motoristas dele.</p>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Indicador label="Total de motoristas" valor={totalGeral} />
-            <Indicador label="Ativos" valor={totalAtivos} />
-            <Indicador label="Inativos" valor={totalGeral - totalAtivos} />
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <IndicadorColorido cor="sky" icon={Users} label="Total de motoristas" valor={String(totalGeral)} />
+            <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos" valor={String(totalAtivos)} />
+            <IndicadorColorido cor="red" icon={XCircle} label="Inativos" valor={String(totalGeral - totalAtivos)} />
           </div>
 
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
@@ -210,7 +215,7 @@ export default async function MotoristasPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {motoristas.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50">
+                  <tr key={m.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Link href={`/motoristas/${m.id}`} className="font-medium text-frota-600 hover:underline">
@@ -262,11 +267,5 @@ export default async function MotoristasPage({
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: number }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

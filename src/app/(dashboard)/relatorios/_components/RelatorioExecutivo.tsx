@@ -6,6 +6,10 @@ import { UFS } from "@/lib/constants";
 import { anoMesDeIso, formatarDataBr, formatarDataCurta } from "@/lib/utils";
 import type { RegistroHistorico } from "./Anomalias";
 import BotaoBaixarPdfExecutivoLazy from "./BotaoBaixarPdfExecutivoLazy";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Fuel, ClipboardList, Wallet, MapPin } from "lucide-react";
 
 const MESES: Record<number, string> = {
   1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio", 6: "Junho",
@@ -225,10 +229,10 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
       ) : (
         <>
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Kpi label="⛽ Postos monitorados" valor={formatarInt(kpis.nPostos)} />
-            <Kpi label="📊 Registros de preço" valor={formatarInt(kpis.nRegistros)} />
-            <Kpi label="💰 Preço médio" valor={formatarMoeda(kpis.precoMedio)} />
-            <Kpi label="🗺️ UFs cobertas" valor={String(kpis.nUfs)} />
+            <IndicadorColorido cor="sky" icon={Fuel} label="Postos monitorados" valor={formatarInt(kpis.nPostos)} />
+            <IndicadorColorido cor="violet" icon={ClipboardList} label="Registros de preço" valor={formatarInt(kpis.nRegistros)} />
+            <IndicadorColorido cor="amber" icon={Wallet} label="Preço médio" valor={formatarMoeda(kpis.precoMedio)} />
+            <IndicadorColorido cor="green" icon={MapPin} label="UFs cobertas" valor={String(kpis.nUfs)} />
           </div>
 
           <h3 className="mb-2 text-sm font-semibold text-slate-700">📈 Evolução de preços</h3>
@@ -261,7 +265,7 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {savings.map((s) => (
-                  <tr key={s.combustivel}>
+                  <tr key={s.combustivel} className="transition-colors hover:bg-frota-50/60">
                     <td className="py-2 pr-3 text-slate-700">{s.combustivel}</td>
                     <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda(s.precoGf)}</td>
                     <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(s.refMercado)}</td>
@@ -291,7 +295,7 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {riscos.map((r, i) => (
-                    <tr key={`${r.tipo}__${i}`}>
+                    <tr key={`${r.tipo}__${i}`} className="transition-colors hover:bg-frota-50/60">
                       <td className="py-2 pr-3 text-slate-700">{r.tipo}</td>
                       <td className="py-2 pr-3 tabular-nums text-slate-600">{r.qtd}</td>
                       <td className="py-2 text-slate-600">{r.detalhe}</td>
@@ -327,11 +331,5 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
   );
 }
 
-function Kpi({ label, valor }: { label: string; valor: string }) {
-  return (
-    <div className="card p-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Kpi() local removido — troca pelo IndicadorColorido compartilhado (ver
+// Fase Redesign-Telas-Densas).
