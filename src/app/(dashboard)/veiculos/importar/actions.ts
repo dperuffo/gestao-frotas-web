@@ -237,19 +237,24 @@ export async function importarVeiculos(
     }
   }
 
-  // Passo 2: busca em lote os veículos já cadastrados dos clientes
-  // envolvidos, casando pela mesma normalização do índice único
-  // cadastro_veiculos_cnpj_placa_norm_uidx (maiúsculo, sem pontuação) --
-  // pega tanto o veículo cadastrado com a placa "ABC-1234" quanto
-  // "abc1234" reenviados como "ABC1234".
-  const cnpjsFrotaEnvolvidos = [...new Set(validas.map((v) => v.cnpjFrota))];
+  // Passo 2: busca em lote os veículos já cadastrados com alguma dessas
+  // placas. Usa a RPC veiculos_existentes_por_placa em vez de
+  // .select().in("cnpj_frota", ...) de propósito: cnpj_frota é texto
+  // copiado (não FK) e ficou com formatação inconsistente entre lotes de
+  // importação antigos ("25265787000144" vs "25.265.787/0001-44" pro
+  // mesmo cliente) -- filtrar pelo texto exato de empresas.cnpj perdia
+  // linhas salvas no formato antigo. A RPC já devolve cnpj_frota e placa
+  // normalizados (mesma expressão do índice único
+  // cadastro_veiculos_cnpj_placa_norm_uidx), então o casamento abaixo é
+  // sempre por valor normalizado dos dois lados.
+  const placasEnvolvidas = [...new Set(validas.map((v) => v.placa))];
   const { data: existentes } =
-    cnpjsFrotaEnvolvidos.length > 0
-      ? await supabase.from("cadastro_veiculos").select("id, cnpj_frota, placa").in("cnpj_frota", cnpjsFrotaEnvolvidos)
+    placasEnvolvidas.length > 0
+      ? await supabase.rpc("veiculos_existentes_por_placa", { p_placas: placasEnvolvidas })
       : { data: [] };
   const idPorChave = new Map<string, string>();
   for (const v of existentes ?? []) {
-    idPorChave.set(`${normalizarChave(v.cnpj_frota)}|${normalizarChave(v.placa)}`, v.id);
+    idPorChave.set(`${v.cnpj_frota_norm}|${v.placa_norm}`, v.id);
   }
 
   // Passo 3: grava -- update parcial se o veículo já existe, insert

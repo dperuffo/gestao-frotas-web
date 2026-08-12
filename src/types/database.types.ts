@@ -5152,6 +5152,14 @@ export interface Database {
         Args: { p_cnpj_frota: string; p_placa: string; p_excluir_id?: string | null };
         Returns: boolean;
       };
+      // Fase Corrige-Reimportação-Veículos (12/08/2026, 2ª rodada) — usada
+      // pela reimportação em lote pra achar veículos já cadastrados mesmo
+      // quando cnpj_frota está salvo em formato antigo (texto copiado, não
+      // FK), ver comentário em veiculos/importar/actions.ts.
+      veiculos_existentes_por_placa: {
+        Args: { p_placas: string[] };
+        Returns: { id: string; cnpj_frota_norm: string; placa_norm: string }[];
+      };
       registrar_acesso_menu: {
         Args: { p_href: string };
         Returns: void;
