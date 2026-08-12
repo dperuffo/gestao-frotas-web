@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { lerPlanilhaComoTexto } from "@/lib/xlsx";
+import { lerPlanilhaComoTexto, data as parseData } from "@/lib/xlsx";
 import { normalizarCNPJ } from "@/lib/utils";
 import { CLASSIFICACAO, type Classificacao } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
@@ -77,6 +77,10 @@ export async function importarVeiculos(
     marca: indice("marca"),
     modelo: indice("modelo"),
     tipo_veiculo: indice("tipo_veiculo"),
+    // Fase Corrige-Reimportação-Veículos (12/08/2026, 4ª rodada) — campos
+    // que já existiam no formulário manual (VeiculoForm.tsx) mas nunca
+    // tinham entrado no template de importação em lote.
+    tipo: indice("tipo"),
     classificacao: indice("classificacao"),
     motor: indice("motor"),
     ano_modelo: indice("ano_modelo"),
@@ -84,13 +88,22 @@ export async function importarVeiculos(
     combustivel: indice("combustivel"),
     tanque: indice("tanque"),
     autonomia: indice("autonomia"),
+    hodometro_atual: indice("hodometro_atual"),
     numero_eixos: indice("numero_eixos"),
+    capacidade_kg: indice("capacidade_kg"),
     cor: indice("cor"),
     chassi: indice("chassi"),
     renavam: indice("renavam"),
     municipio: indice("municipio"),
     uf_veiculo: indice("uf_veiculo"),
     centro_custo: indice("centro_custo"),
+    // TCO / Patrimônio (VeiculoForm.tsx) — nunca propagam pro grupo
+    // econômico (ver camposNumeroAdministrativos abaixo): são dados
+    // contábeis da aquisição, específicos de cada empresa dona do bem.
+    valor_aquisicao: indice("valor_aquisicao"),
+    data_aquisicao: indice("data_aquisicao"),
+    valor_residual_estimado: indice("valor_residual_estimado"),
+    vida_util_anos: indice("vida_util_anos"),
     cnpj_cliente: indice("cnpj_cliente"),
   };
 
@@ -181,6 +194,7 @@ export async function importarVeiculos(
         ["marca", pegar(colunas, "marca")],
         ["modelo", pegar(colunas, "modelo")],
         ["tipo_veiculo", pegar(colunas, "tipo_veiculo")],
+        ["tipo", pegar(colunas, "tipo")],
         ["motor", pegar(colunas, "motor")],
         ["combustivel", pegar(colunas, "combustivel")],
         ["cor", pegar(colunas, "cor")],
@@ -194,8 +208,21 @@ export async function importarVeiculos(
         ["ano_fabricacao", pegar(colunas, "ano_fabricacao")],
         ["tanque", pegar(colunas, "tanque")],
         ["autonomia", pegar(colunas, "autonomia")],
+        ["hodometro_atual", pegar(colunas, "hodometro_atual")],
         ["numero_eixos", pegar(colunas, "numero_eixos")],
+        ["capacidade_kg", pegar(colunas, "capacidade_kg")],
       ];
+      // TCO / Patrimônio -- números que vão pro cadastro, mas NUNCA
+      // propagam pro grupo econômico (ver mais abaixo): valor de aquisição,
+      // valor residual e vida útil são dados contábeis da empresa dona do
+      // bem, não características físicas do veículo.
+      const camposNumeroAdministrativos: [string, string][] = [
+        ["valor_aquisicao", pegar(colunas, "valor_aquisicao")],
+        ["valor_residual_estimado", pegar(colunas, "valor_residual_estimado")],
+        ["vida_util_anos", pegar(colunas, "vida_util_anos")],
+      ];
+      const dataAquisicaoBruta = pegar(colunas, "data_aquisicao");
+      const dataAquisicao = dataAquisicaoBruta ? parseData(dataAquisicaoBruta) : null;
 
       const camposInsert: VeiculoInsert = {
         cnpj_frota: cnpjFrota,
@@ -203,6 +230,7 @@ export async function importarVeiculos(
         classificacao: classificacaoValida ?? "Próprio",
         centro_custo_id: centroCustoId,
         centro_custo_nome: centroCustoId ? centroCustoNomeBruto : null,
+        data_aquisicao: dataAquisicao,
         ativo: true,
       };
       const camposCaracteristicas: VeiculoUpdate = {};
@@ -221,14 +249,20 @@ export async function importarVeiculos(
       }
 
       // camposUpdate = características (propagáveis pro grupo) + campos
-      // específicos desta empresa (classificação, centro de custo), que
-      // NUNCA propagam.
+      // específicos desta empresa (classificação, centro de custo, TCO),
+      // que NUNCA propagam.
       const camposUpdate: VeiculoUpdate = { ...camposCaracteristicas };
       if (classificacaoValida) camposUpdate.classificacao = classificacaoValida;
       if (centroCustoId) {
         camposUpdate.centro_custo_id = centroCustoId;
         camposUpdate.centro_custo_nome = centroCustoNomeBruto;
       }
+      for (const [campo, valor] of camposNumeroAdministrativos) {
+        const numero = numeroOuNull(valor);
+        (camposInsert as unknown as Record<string, number | null>)[campo] = numero;
+        if (valor && numero !== null) (camposUpdate as unknown as Record<string, number>)[campo] = numero;
+      }
+      if (dataAquisicao) camposUpdate.data_aquisicao = dataAquisicao;
 
       validas.push({
         numeroLinha,

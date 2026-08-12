@@ -21,13 +21,17 @@ export default function ImportarVeiculosPage() {
         <p className="mt-1">
           <code>placa</code> e <code>cnpj_cliente</code> (CNPJ do cliente já cadastrado) são
           obrigatórias. Todas as demais (<code>marca</code>, <code>modelo</code>,{" "}
-          <code>tipo_veiculo</code>, <code>classificacao</code>: Próprio ou Agregado,{" "}
+          <code>tipo_veiculo</code>, <code>tipo</code>: Leve ou Pesado,{" "}
+          <code>classificacao</code>: Próprio ou Agregado,{" "}
           <code>motor</code>, <code>ano_modelo</code>, <code>ano_fabricacao</code>,{" "}
           <code>combustivel</code>, <code>tanque</code>, <code>autonomia</code>,{" "}
-          <code>numero_eixos</code>, <code>cor</code>, <code>chassi</code>,{" "}
-          <code>renavam</code>, <code>municipio</code>, <code>uf_veiculo</code> e{" "}
-          <code>centro_custo</code> — nome exato de um centro de custo já cadastrado) são
-          opcionais.
+          <code>hodometro_atual</code>, <code>numero_eixos</code>, <code>capacidade_kg</code>,{" "}
+          <code>cor</code>, <code>chassi</code>,{" "}
+          <code>renavam</code>, <code>municipio</code>, <code>uf_veiculo</code>,{" "}
+          <code>centro_custo</code> — nome exato de um centro de custo já cadastrado,{" "}
+          <code>valor_aquisicao</code>, <code>data_aquisicao</code> — formato dd/mm/aaaa,{" "}
+          <code>valor_residual_estimado</code> e <code>vida_util_anos</code> — usados no TCO e
+          no Patrimônio) são opcionais.
         </p>
       </div>
 
