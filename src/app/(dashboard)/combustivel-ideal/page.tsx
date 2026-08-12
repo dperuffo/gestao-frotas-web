@@ -3,6 +3,10 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ListaVeiculosCombustivelIdeal } from "./_components/ListaVeiculosCombustivelIdeal";
 import { ListaVeiculosDieselIdeal } from "./_components/ListaVeiculosDieselIdeal";
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Truck, Leaf, Fuel, Sparkles } from "lucide-react";
 
 // Fase Onda-2 (benchmark TicketLog, item #6 — "Comparador combustível ideal
 // por região") — pedido do Daniel: "Etanol ou gasolina, conforme o
@@ -95,10 +99,10 @@ export default async function CombustivelIdealPage({
               label: "🌱⛽ Flex",
               conteudo: (
                 <>
-                  <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                    <Indicador label="Veículos" valor={String(linhas.length)} />
-                    <Indicador label="Etanol compensa" valor={String(totalEtanol)} destaque />
-                    <Indicador label="Gasolina compensa" valor={String(totalGasolina)} />
+                  <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <IndicadorColorido cor="sky" icon={Truck} label="Veículos" valor={String(linhas.length)} />
+                    <IndicadorColorido cor="green" icon={Leaf} label="Etanol compensa" valor={String(totalEtanol)} />
+                    <IndicadorColorido cor="amber" icon={Fuel} label="Gasolina compensa" valor={String(totalGasolina)} />
                   </div>
 
                   <div className="card mb-6 p-4 text-xs leading-relaxed text-slate-500">
@@ -143,10 +147,10 @@ export default async function CombustivelIdealPage({
                   </p>
 
                   {linhasDiesel.length > 0 && (
-                    <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                      <Indicador label="Veículo × família" valor={String(linhasDiesel.length)} />
-                      <Indicador label="Aditivado compensa" valor={String(totalAditivadoCompensa)} destaque />
-                      <Indicador label="Comum compensa" valor={String(totalComumCompensa)} />
+                    <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <IndicadorColorido cor="sky" icon={Truck} label="Veículo × família" valor={String(linhasDiesel.length)} />
+                      <IndicadorColorido cor="green" icon={Sparkles} label="Aditivado compensa" valor={String(totalAditivadoCompensa)} />
+                      <IndicadorColorido cor="amber" icon={Fuel} label="Comum compensa" valor={String(totalComumCompensa)} />
                     </div>
                   )}
 
@@ -167,11 +171,5 @@ export default async function CombustivelIdealPage({
   );
 }
 
-function Indicador({ label, valor, destaque }: { label: string; valor: string; destaque?: boolean }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold ${destaque ? "text-emerald-600" : "text-slate-900"}`}>{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

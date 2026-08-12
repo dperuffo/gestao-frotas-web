@@ -3,6 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { STATUS_NEGOCIACAO, STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
 import { formatarDataBr, formatarDataHoraBr } from "@/lib/utils";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app. Esta tela serve tanto o lado cliente
+// quanto o lado posto (ver comentário acima) — o redesign cobre os dois de
+// uma vez só.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Handshake, Clock, CheckCircle2, Calendar } from "lucide-react";
 
 type SearchParams = { empresa?: string; status?: string; q?: string };
 
@@ -174,11 +180,21 @@ export default async function NegociacoesPage({
         </p>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Indicador label="Negociações" valor={negociacoes.length} />
-            <Indicador label={`Aguardando ${souPosto ? "você" : "sua resposta"}`} valor={pendentesDoMeuLado} />
-            <Indicador label="Aceitas" valor={negociacoes.filter((n) => n.status === "aceita").length} />
-            <Indicador label="Vigentes agora" valor={totalVigentes} />
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <IndicadorColorido cor="sky" icon={Handshake} label="Negociações" valor={String(negociacoes.length)} />
+            <IndicadorColorido
+              cor={pendentesDoMeuLado > 0 ? "amber" : "green"}
+              icon={Clock}
+              label={`Aguardando ${souPosto ? "você" : "sua resposta"}`}
+              valor={String(pendentesDoMeuLado)}
+            />
+            <IndicadorColorido
+              cor="green"
+              icon={CheckCircle2}
+              label="Aceitas"
+              valor={String(negociacoes.filter((n) => n.status === "aceita").length)}
+            />
+            <IndicadorColorido cor="violet" icon={Calendar} label="Vigentes agora" valor={String(totalVigentes)} />
           </div>
 
           <div className="mb-4 flex flex-wrap gap-2">
@@ -244,7 +260,7 @@ export default async function NegociacoesPage({
                     n.vigencia_inicio <= hojeIso &&
                     n.vigencia_fim >= hojeIso;
                   return (
-                    <tr key={n.id} className="hover:bg-slate-50">
+                    <tr key={n.id} className="transition-colors hover:bg-frota-50/60">
                       <td className="px-4 py-3 text-slate-700">
                         {souPosto ? (n.cliente_nome ?? "—") : (n.posto_nome ?? n.posto_cnpj)}
                       </td>
@@ -300,11 +316,5 @@ export default async function NegociacoesPage({
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: number }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor.toLocaleString("pt-BR")}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

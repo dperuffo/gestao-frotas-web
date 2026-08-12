@@ -10,6 +10,10 @@ import { PrecosChips } from "./_components/PrecosChips";
 import MapaRotaLazy from "./_components/MapaRotaLazy";
 import { SalvarConsultaForm } from "./_components/SalvarConsultaForm";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { MapPin, Fuel } from "lucide-react";
 
 type SearchParams = { empresa?: string; uf?: string; municipio?: string };
 
@@ -123,15 +127,9 @@ export default async function RoteirizacaoUfPage({
 
       {postos.length > 0 && (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Postos encontrados</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{postos.length}</p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Combustíveis com preço</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{ranking.length}</p>
-            </div>
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <IndicadorColorido cor="sky" icon={MapPin} label="Postos encontrados" valor={String(postos.length)} />
+            <IndicadorColorido cor="green" icon={Fuel} label="Combustíveis com preço" valor={String(ranking.length)} />
           </div>
 
           <div className="mb-6">
@@ -196,7 +194,7 @@ export default async function RoteirizacaoUfPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {postos.map((p) => (
-                  <tr key={p.cnpj}>
+                  <tr key={p.cnpj} className="transition-colors hover:bg-frota-50/60">
                     <td className="py-2.5 pr-4 align-top">
                       <ScoreBadge score={p.score} />
                     </td>

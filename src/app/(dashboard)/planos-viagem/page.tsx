@@ -4,6 +4,10 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda, formatarDataSemFuso } from "@/lib/financeiro";
 import { STATUS_PLANO_VIAGEM, STATUS_PLANO_VIAGEM_LABEL } from "@/lib/constants";
 import { BotaoExcluirPlano } from "./_components/BotaoExcluirPlano";
+// Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
+// nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Luggage, Wallet, Gauge, TrendingUp, TrendingDown } from "lucide-react";
 
 type LinhaPlano = {
   id: string;
@@ -117,14 +121,20 @@ export default async function PlanosViagemPage({
 
       {!semClienteEscolhido && (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Indicador label="Planos de viagem" valor={String(totalPlanos)} />
-            <Indicador label="Orçamento total estimado" valor={formatarMoeda(orcamentoTotalEstimado)} />
-            <Indicador label="Custo médio por km" valor={custoMedioPorKm > 0 ? `${formatarMoeda(custoMedioPorKm)}/km` : "—"} />
-            <Indicador
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <IndicadorColorido cor="sky" icon={Luggage} label="Planos de viagem" valor={String(totalPlanos)} />
+            <IndicadorColorido cor="violet" icon={Wallet} label="Orçamento total estimado" valor={formatarMoeda(orcamentoTotalEstimado)} />
+            <IndicadorColorido
+              cor="amber"
+              icon={Gauge}
+              label="Custo médio por km"
+              valor={custoMedioPorKm > 0 ? `${formatarMoeda(custoMedioPorKm)}/km` : "—"}
+            />
+            <IndicadorColorido
+              cor={margemEstimada >= 0 ? "green" : "red"}
+              icon={margemEstimada >= 0 ? TrendingUp : TrendingDown}
               label="Margem estimada (receita − custo)"
               valor={formatarMoeda(margemEstimada)}
-              destaque={margemEstimada >= 0 ? "positivo" : "negativo"}
             />
           </div>
 
@@ -165,7 +175,7 @@ export default async function PlanosViagemPage({
                 {linhas.map((p) => {
                   const margem = (p.receita_viagem ?? 0) - (p.custo_total_estimado ?? 0);
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50">
+                    <tr key={p.id} className="transition-colors hover:bg-frota-50/60">
                       <td className="px-4 py-3">
                         <Link href={`/planos-viagem/${p.id}/editar`} className="font-medium text-frota-600 hover:underline">
                           {p.nome}
@@ -212,7 +222,7 @@ export default async function PlanosViagemPage({
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Desempenho por Veículo</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {veiculosOrdenados.map(([veiculoPlaca, dados]) => (
-                  <div key={veiculoPlaca} className="card p-4">
+                  <div key={veiculoPlaca} className="card p-4 transition hover:border-frota-300">
                     <p className="text-sm font-semibold text-slate-900">{veiculoPlaca}</p>
                     <dl className="mt-2 space-y-1 text-sm">
                       <div className="flex justify-between">
@@ -245,25 +255,5 @@ export default async function PlanosViagemPage({
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-}: {
-  label: string;
-  valor: string;
-  destaque?: "positivo" | "negativo";
-}) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p
-        className={`mt-1 text-xl font-semibold ${
-          destaque === "negativo" ? "text-red-600" : destaque === "positivo" ? "text-green-700" : "text-slate-900"
-        }`}
-      >
-        {valor}
-      </p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).
