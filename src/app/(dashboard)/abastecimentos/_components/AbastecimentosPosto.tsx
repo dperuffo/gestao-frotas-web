@@ -5,6 +5,10 @@ import { PRODUTOS_POSTO } from "@/lib/constants";
 import { mensagemMotivoPendencia } from "@/lib/nfe";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
 import { LogoProvedor } from "@/components/LogoProvedor";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas telas do lado cliente.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { ClipboardList, Droplet, Wallet, Tag } from "lucide-react";
 
 const POR_PAGINA = 30;
 
@@ -441,11 +445,16 @@ export async function AbastecimentosPosto({
         </p>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Indicador label="Abastecimentos" valor={totalRegistros.toLocaleString("pt-BR")} />
-        <Indicador label="Volume total" valor={`${volumeTotal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`} />
-        <Indicador label="Receita total" valor={formatarMoeda(receitaTotal)} />
-        <Indicador label="Preço médio/L" valor={formatarMoeda(precoMedio)} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <IndicadorColorido cor="sky" icon={ClipboardList} label="Abastecimentos" valor={totalRegistros.toLocaleString("pt-BR")} />
+        <IndicadorColorido
+          cor="green"
+          icon={Droplet}
+          label="Volume total"
+          valor={`${volumeTotal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`}
+        />
+        <IndicadorColorido cor="violet" icon={Wallet} label="Receita total" valor={formatarMoeda(receitaTotal)} />
+        <IndicadorColorido cor="amber" icon={Tag} label="Preço médio/L" valor={formatarMoeda(precoMedio)} />
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -596,7 +605,7 @@ export async function AbastecimentosPosto({
                 ? idsComAjusteAbertoProfrotas.has(idNum)
                 : idsComAjusteAbertoExterno.has(idNum);
               return (
-                <tr key={`${r.provedor}-${r.id}`} className="hover:bg-slate-50">
+                <tr key={`${r.provedor}-${r.id}`} className="transition-colors hover:bg-frota-50/60">
                   <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">
                     {r.codigo_abastecimento ?? "—"}
                   </td>
@@ -688,11 +697,5 @@ export async function AbastecimentosPosto({
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: string }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

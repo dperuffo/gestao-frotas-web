@@ -5,6 +5,11 @@ import { STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoe
 import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
 import { SecaoAjustesAbastecimentos } from "../../_components/SecaoAjustesAbastecimentos";
 import { GraficoEvolutivoPostos, type PontoEvolutivoPostos } from "./GraficoEvolutivoPostos";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas telas do lado cliente (ver
+// @/components/IndicadorColorido), agora chegando na visão posto.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { ClipboardList, Droplet, Wallet, Tag, Receipt, Clock, Calendar, Users } from "lucide-react";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -204,12 +209,17 @@ export async function DashboardPosto({
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Desempenho de vendas — últimos {JANELA_DESEMPENHO_DIAS} dias
       </p>
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <Indicador label="Abastecimentos" valor={totalAbastecimentos.toLocaleString("pt-BR")} />
-        <Indicador label="Volume transacionado" valor={`${volumeVendido.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`} />
-        <Indicador label="Receita total" valor={formatarMoeda(receitaVendida)} />
-        <Indicador label="Preço médio praticado" valor={formatarMoeda(precoMedioGeral)} />
-        <Indicador label="Ticket médio" valor={formatarMoeda(ticketMedio)} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <IndicadorColorido cor="sky" icon={ClipboardList} label="Abastecimentos" valor={totalAbastecimentos.toLocaleString("pt-BR")} />
+        <IndicadorColorido
+          cor="green"
+          icon={Droplet}
+          label="Volume transacionado"
+          valor={`${volumeVendido.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`}
+        />
+        <IndicadorColorido cor="violet" icon={Wallet} label="Receita total" valor={formatarMoeda(receitaVendida)} />
+        <IndicadorColorido cor="amber" icon={Tag} label="Preço médio praticado" valor={formatarMoeda(precoMedioGeral)} />
+        <IndicadorColorido cor="sky" icon={Receipt} label="Ticket médio" valor={formatarMoeda(ticketMedio)} />
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -229,7 +239,7 @@ export async function DashboardPosto({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {desempenhoPorCombustivel.map((d) => (
-                <tr key={d.combustivel} className="hover:bg-slate-50">
+                <tr key={d.combustivel} className="transition-colors hover:bg-frota-50/60">
                   <td className="px-4 py-3 text-slate-700">{d.combustivel}</td>
                   <td className="px-4 py-3 text-slate-500">{d.volume.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L</td>
                   <td className="px-4 py-3 text-slate-500">{formatarMoeda(d.precoMedio)}</td>
@@ -259,11 +269,18 @@ export async function DashboardPosto({
       </div>
 
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Negociações</p>
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Indicador label="Aguardando sua resposta" valor={String(pendentes ?? 0)} />
-        <Indicador label="Negociações vigentes" valor={String(vigentes ?? 0)} />
-        <Indicador label="Clientes com negociação aceita" valor={String(clientesAtivos)} />
-        <Indicador
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <IndicadorColorido
+          cor={(pendentes ?? 0) > 0 ? "amber" : "green"}
+          icon={Clock}
+          label="Aguardando sua resposta"
+          valor={String(pendentes ?? 0)}
+        />
+        <IndicadorColorido cor="violet" icon={Calendar} label="Negociações vigentes" valor={String(vigentes ?? 0)} />
+        <IndicadorColorido cor="green" icon={Users} label="Clientes com negociação aceita" valor={String(clientesAtivos)} />
+        <IndicadorColorido
+          cor="sky"
+          icon={Droplet}
           label="Volume mín. contratado/mês"
           valor={`${volumeContratado.toLocaleString("pt-BR")} L`}
         />
@@ -286,7 +303,7 @@ export async function DashboardPosto({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {vigentesLista.map((n) => (
-              <tr key={n.id} className="hover:bg-slate-50">
+              <tr key={n.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 text-slate-700">{n.cliente_nome ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-500">{n.combustivel ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-500">
@@ -339,7 +356,7 @@ export async function DashboardPosto({
                 .filter((n) => n.status === "pendente_posto")
                 .slice(0, 10)
                 .map((n) => (
-                  <tr key={n.id} className="hover:bg-slate-50">
+                  <tr key={n.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3 text-slate-700">{n.cliente_nome ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
@@ -361,11 +378,5 @@ export async function DashboardPosto({
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: string }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

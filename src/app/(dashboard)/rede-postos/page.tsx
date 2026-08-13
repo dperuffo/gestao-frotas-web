@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas telas do lado cliente.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Network, CheckCircle2 } from "lucide-react";
 
 // Fase 27.87 — pedido do Daniel: "Criar a mesma mecanica de grupo economico
 // para postos, só que em postos deve ser denominado de 'Rede de Postos' e
@@ -42,9 +46,9 @@ export default async function RedePostosPage() {
         </Link>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Indicador label="Total de redes" valor={totalRedes} />
-        <Indicador label="Ativas" valor={totalAtivas} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <IndicadorColorido cor="sky" icon={Network} label="Total de redes" valor={String(totalRedes)} />
+        <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativas" valor={String(totalAtivas)} />
       </div>
 
       <div className="card overflow-x-auto">
@@ -60,7 +64,7 @@ export default async function RedePostosPage() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {redes?.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50">
+              <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3">
                   <Link href={`/rede-postos/${r.id}`} className="font-medium text-frota-600 hover:underline">
                     {r.nome}
@@ -91,11 +95,5 @@ export default async function RedePostosPage() {
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: number }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

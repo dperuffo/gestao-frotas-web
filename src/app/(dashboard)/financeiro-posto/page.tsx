@@ -23,6 +23,10 @@ import { GraficoFluxoCaixaPosto, type PontoFluxoCaixaPosto } from "./_components
 import { FormularioDespesaPosto } from "./_components/FormularioDespesaPosto";
 import { BotaoAcaoFinanceiraPosto } from "./_components/BotaoAcaoFinanceiraPosto";
 import { SecaoDrePosto, type DrePostoDados } from "./_components/SecaoDrePosto";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado em /financeiro (lado cliente).
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Wallet, AlertTriangle, TrendingUp, TrendingDown, Receipt, CheckCircle2 } from "lucide-react";
 import { marcarDespesaPagaAcao, excluirDespesaAcao } from "./actions";
 
 type SearchParams = { empresa?: string; periodo?: string; inicio?: string; fim?: string };
@@ -366,16 +370,17 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
             Período: {formatarDataBr(inicio)} – {formatarDataBr(fim)}
           </p>
 
-          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
-            <Indicador label="A receber (em aberto)" valor={formatarMoeda(aReceberAberto)} />
-            <Indicador label="Vencido (inadimplência)" valor={formatarMoeda(vencido)} destaque="vermelho" />
-            <Indicador label="Recebido no período" valor={formatarMoeda(recebidoNoPeriodo)} destaque="verde" />
-            <Indicador label="A pagar (em aberto)" valor={formatarMoeda(aPagarAberto)} />
-            <Indicador label="Pago no período" valor={formatarMoeda(pagoNoPeriodo)} destaque="verde" />
-            <Indicador
+          <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <IndicadorColorido cor="sky" icon={Wallet} label="A receber (em aberto)" valor={formatarMoeda(aReceberAberto)} />
+            <IndicadorColorido cor="red" icon={AlertTriangle} label="Vencido (inadimplência)" valor={formatarMoeda(vencido)} />
+            <IndicadorColorido cor="green" icon={TrendingUp} label="Recebido no período" valor={formatarMoeda(recebidoNoPeriodo)} />
+            <IndicadorColorido cor="amber" icon={Receipt} label="A pagar (em aberto)" valor={formatarMoeda(aPagarAberto)} />
+            <IndicadorColorido cor="green" icon={CheckCircle2} label="Pago no período" valor={formatarMoeda(pagoNoPeriodo)} />
+            <IndicadorColorido
+              cor={saldoPrevistoPeriodo < 0 ? "red" : "green"}
+              icon={saldoPrevistoPeriodo < 0 ? TrendingDown : TrendingUp}
               label="Saldo previsto do período"
               valor={formatarMoeda(saldoPrevistoPeriodo)}
-              destaque={saldoPrevistoPeriodo < 0 ? "vermelho" : "verde"}
             />
           </div>
 
@@ -478,7 +483,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
                 {despesas.map((d) => {
                   const statusExib = statusFaturaExibicao(d.status, d.vencimento, hojeIso);
                   return (
-                    <tr key={d.id} className="hover:bg-slate-50">
+                    <tr key={d.id} className="transition-colors hover:bg-frota-50/60">
                       <td className="px-4 py-3 text-slate-700">{TIPO_DESPESA_POSTO_LABEL[d.tipo as keyof typeof TIPO_DESPESA_POSTO_LABEL] ?? d.tipo}</td>
                       <td className="px-4 py-3 text-slate-500">{d.descricao ?? "—"}</td>
                       <td className="px-4 py-3 text-slate-500">{formatarDataBr(d.vencimento)}</td>
@@ -525,23 +530,8 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-}: {
-  label: string;
-  valor: string;
-  destaque?: "verde" | "vermelho";
-}) {
-  const cor = destaque === "vermelho" ? "text-red-600" : destaque === "verde" ? "text-green-600" : "text-slate-900";
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`mt-1 text-xl font-semibold ${cor}`}>{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).
 
 function BadgeStatus({ status }: { status: keyof typeof STATUS_FATURA_LABEL }) {
   const cores: Record<string, string> = {
