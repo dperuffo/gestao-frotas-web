@@ -458,7 +458,7 @@ function SeletorMetricas({
       {aberto && (
         <div className="absolute z-10 mt-1 w-64 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg">
           {opcoes.map((m) => (
-            <label key={m.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-slate-50">
+            <label key={m.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-frota-50/60">
               <input
                 type="checkbox"
                 checked={selecionadas.includes(m.id)}

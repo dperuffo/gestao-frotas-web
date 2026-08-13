@@ -68,7 +68,7 @@ export function CampoLocalFrete({
               <button
                 type="button"
                 onClick={() => escolher(s)}
-                className="block w-full px-3 py-2 text-left hover:bg-slate-50"
+                className="block w-full px-3 py-2 text-left transition-colors hover:bg-frota-50/60"
               >
                 {s.label}
               </button>

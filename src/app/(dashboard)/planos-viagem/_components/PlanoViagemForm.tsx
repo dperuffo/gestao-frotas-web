@@ -490,7 +490,7 @@ export function PlanoViagemForm({
                             <button
                               type="button"
                               onMouseDown={() => selecionarSugestaoPraca(i, s)}
-                              className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-slate-50"
+                              className="flex w-full flex-col items-start px-3 py-2 text-left text-sm transition-colors hover:bg-frota-50/60"
                             >
                               <span className="font-medium text-slate-800">
                                 {s.nome} {s.uf ? `— ${s.uf}` : ""}

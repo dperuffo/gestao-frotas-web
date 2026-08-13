@@ -92,7 +92,7 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rotogramas.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50">
+              <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 text-slate-500">{r.numero}</td>
                 <td className="px-4 py-3">
                   <Link href={`/rotograma/${r.id}`} className="font-medium text-frota-600 hover:underline">

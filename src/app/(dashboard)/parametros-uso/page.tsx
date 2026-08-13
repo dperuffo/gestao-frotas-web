@@ -264,7 +264,7 @@ async function ConteudoAba({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {vinculos.map((v) => (
-                <tr key={v.id} className="hover:bg-slate-50">
+                <tr key={v.id} className="transition-colors hover:bg-frota-50/60">
                   <td className="px-4 py-3 font-medium text-slate-900">{v.placa}</td>
                   <td className="px-4 py-3 text-slate-600">{v.motoristas?.nome_completo ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">{v.motoristas?.cpf ?? "—"}</td>

@@ -81,7 +81,7 @@ export function SecaoCota({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {linhas.map((l) => (
-              <tr key={l.id} className="hover:bg-slate-50">
+              <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 font-medium text-slate-900">{l.placa}</td>
                 <td className="px-4 py-3 text-slate-600">{l.tipo === "Valor" ? "Valor (R$)" : "Volume (L)"}</td>
                 <td className="px-4 py-3 text-slate-600">{formatarValor(l.tipo, l.limite)}</td>

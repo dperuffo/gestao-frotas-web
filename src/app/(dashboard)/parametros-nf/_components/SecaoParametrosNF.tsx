@@ -116,7 +116,7 @@ export function SecaoParametrosNF({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {linhas.map((l) => (
-              <tr key={l.id} className="hover:bg-slate-50">
+              <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 font-medium text-slate-900">{l.cnpj_frota ?? "Todos (regra padrão)"}</td>
                 <td className="px-4 py-3 text-slate-600">{l.exige_nota_fiscal}</td>
                 <td className="px-4 py-3 text-slate-600">{l.separar_nf_combustivel}</td>

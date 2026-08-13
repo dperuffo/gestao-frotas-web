@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { FAIXAS_AGING, diasEmAtraso } from "@/lib/financeiroPostos";
 import { FormularioContaPagarAvulsa } from "./FormularioContaPagarAvulsa";
 import { BotaoBaixarContaPagar, BotaoCancelarContaPagar } from "./BotaoBaixarContaPagar";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Wallet, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -103,23 +107,16 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
         </p>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <div className="card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">A pagar (em aberto)</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{formatoMoeda.format(totalEmAberto)}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Vencido</p>
-          <p className="mt-1 text-xl font-semibold text-red-600">{formatoMoeda.format(totalVencido)}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Pago no mês</p>
-          <p className="mt-1 text-xl font-semibold text-status-ativo">{formatoMoeda.format(pagoNoMes)}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Perdas (fretes cancelados)</p>
-          <p className="mt-1 text-xl font-semibold text-red-600">{formatoMoeda.format(totalPerdas)}</p>
-        </div>
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <IndicadorColorido cor="amber" icon={Wallet} label="A pagar (em aberto)" valor={formatoMoeda.format(totalEmAberto)} />
+        <IndicadorColorido
+          cor={totalVencido > 0 ? "red" : "green"}
+          icon={AlertTriangle}
+          label="Vencido"
+          valor={formatoMoeda.format(totalVencido)}
+        />
+        <IndicadorColorido cor="green" icon={CheckCircle2} label="Pago no mês" valor={formatoMoeda.format(pagoNoMes)} />
+        <IndicadorColorido cor="red" icon={XCircle} label="Perdas (fretes cancelados)" valor={formatoMoeda.format(totalPerdas)} />
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -189,7 +186,7 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
               const saldo = c.valor_original - c.valor_pago;
               const vencida = c.vencimento < hojeIso;
               return (
-                <tr key={c.id} className="hover:bg-slate-50">
+                <tr key={c.id} className="transition-colors hover:bg-frota-50/60">
                   <td className="py-2 pr-3 text-slate-700">{c.credor_nome ?? "—"}</td>
                   <td className="py-2 pr-3 text-slate-500">{c.descricao ?? "—"}</td>
                   <td className={`py-2 pr-3 ${vencida ? "font-medium text-red-600" : "text-slate-500"}`}>

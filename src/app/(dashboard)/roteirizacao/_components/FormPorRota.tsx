@@ -465,7 +465,7 @@ export function FormPorRota({
                       <tr
                         key={c.cnpj}
                         onClick={() => alternarPosto(c.cnpj)}
-                        className={`cursor-pointer ${selecionado ? "bg-frota-50" : "hover:bg-slate-50"}`}
+                        className={`cursor-pointer transition-colors ${selecionado ? "bg-frota-50" : "hover:bg-frota-50/60"}`}
                       >
                         <td className="py-2.5 pr-4 align-top">
                           <input type="checkbox" checked={selecionado} readOnly className="h-4 w-4" />

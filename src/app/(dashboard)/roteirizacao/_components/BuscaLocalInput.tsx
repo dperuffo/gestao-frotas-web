@@ -60,7 +60,7 @@ export function BuscaLocalInput({
             <li key={i}>
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-frota-50/60"
                 onClick={() => {
                   setTexto(s.label);
                   setMostrar(false);

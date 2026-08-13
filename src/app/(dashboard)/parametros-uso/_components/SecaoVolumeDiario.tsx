@@ -59,7 +59,7 @@ export function SecaoVolumeDiario({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {linhas.map((l) => (
-              <tr key={l.id} className="hover:bg-slate-50">
+              <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 text-slate-600">{l.placa ?? "Todos"}</td>
                 <td className="px-4 py-3 text-slate-600">{l.volume_maximo} L</td>
                 <td className="px-4 py-3">

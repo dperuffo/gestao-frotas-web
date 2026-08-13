@@ -111,7 +111,7 @@ export default async function MotoristasParceirosPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {parceiros.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
+                  <tr key={p.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-900">{p.nome_completo}</p>
                       <CartaoReputacaoMotorista reputacao={p} />

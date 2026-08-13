@@ -7,6 +7,10 @@ import { RegistrarManutencaoForm } from "../_components/RegistrarManutencaoForm"
 import { HistoricoManutencoes } from "../_components/HistoricoManutencoes";
 import { ORDEM_COMPONENTES, gerarRecomendacoes, type StatusManutencao } from "@/lib/manutencaoPreditiva";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Gauge, Droplet, TrendingDown, Building2 } from "lucide-react";
 
 type SearchParams = { empresa?: string };
 
@@ -121,17 +125,26 @@ export default async function DetalheManutencaoPreditivaPage({
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Indicador label="Km atual" valor={primeiro.km_atual > 0 ? `${Math.round(primeiro.km_atual).toLocaleString("pt-BR")} km` : "—"} />
-        <Indicador
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <IndicadorColorido
+          cor="sky"
+          icon={Gauge}
+          label="Km atual"
+          valor={primeiro.km_atual > 0 ? `${Math.round(primeiro.km_atual).toLocaleString("pt-BR")} km` : "—"}
+        />
+        <IndicadorColorido
+          cor="violet"
+          icon={Droplet}
           label="Consumo atual"
           valor={primeiro.consumo_atual != null ? `${primeiro.consumo_atual.toFixed(2)} km/L` : "—"}
         />
-        <Indicador
+        <IndicadorColorido
+          cor={primeiro.degradacao > 0.1 ? "red" : primeiro.degradacao > 0 ? "amber" : "green"}
+          icon={TrendingDown}
           label="Degradação de consumo"
           valor={primeiro.degradacao > 0 ? `${Math.round(primeiro.degradacao * 100)}%` : "—"}
         />
-        <Indicador label="Centro de custo" valor={primeiro.centro_custo_nome ?? "—"} />
+        <IndicadorColorido cor="amber" icon={Building2} label="Centro de custo" valor={primeiro.centro_custo_nome ?? "—"} />
       </div>
 
       {recomendacoes.length > 0 && (
@@ -170,11 +183,5 @@ export default async function DetalheManutencaoPreditivaPage({
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: string }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

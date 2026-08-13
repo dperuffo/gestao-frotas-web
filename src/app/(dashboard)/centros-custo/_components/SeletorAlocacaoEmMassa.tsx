@@ -146,7 +146,7 @@ export function SeletorAlocacaoEmMassa({
             <ul className="divide-y divide-slate-100">
               {disponiveisFiltrados.map((item) => (
                 <li key={item.chave}>
-                  <label className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50">
+                  <label className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-frota-50/60">
                     <input
                       type="checkbox"
                       checked={selecionadosDisponiveis.has(item.chave)}
@@ -205,7 +205,7 @@ export function SeletorAlocacaoEmMassa({
             )}
             <ul className="divide-y divide-slate-100">
               {alocadosFiltrados.map((item) => (
-                <li key={item.chave} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50">
+                <li key={item.chave} className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-frota-50/60">
                   <input
                     type="checkbox"
                     checked={selecionadosAlocados.has(item.chave)}
