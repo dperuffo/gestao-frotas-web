@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { X, Zap } from "lucide-react";
 import { alternarFavoritoMenuAcao } from "@/lib/menuFavoritos";
 
 // Fase Acesso-Rápido-Favoritos — bugfix pós-deploy (04/08/2026): `icon` era
@@ -44,15 +44,26 @@ export function BarraAtalhosFavoritos({ itensIniciais }: { itensIniciais: ItemAt
     });
   }
 
+  // Fase Acesso-Rápido-Destaque (13/08/2026, pedido do Daniel) — os pills
+  // eram quase invisíveis (fundo branco sobre fundo branco/cinza claro,
+  // borda cinza, ícone pequeno) — quem não soubesse que a barra existia
+  // dificilmente reparava nela. Troca pra "chip" tingido na cor da marca
+  // (mesmo espírito do IndicadorColorido: fundo leve + texto/ícone na cor),
+  // com texto em negrito e ícone maior, mais fácil de notar de relance nas
+  // 3 visões (posto/cliente/admin, que compartilham este mesmo componente
+  // via (dashboard)/layout.tsx).
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-2">
-      <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Acesso rápido</span>
+    <div className="mb-6 flex flex-wrap items-center gap-2.5">
+      <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-frota-600">
+        <Zap className="h-3.5 w-3.5 fill-frota-500 text-frota-500" />
+        Acesso rápido
+      </span>
       {itens.map((item) => (
         <span
           key={item.href}
-          className="group flex items-center gap-1.5 rounded-full border border-slate-200 bg-white py-1.5 pl-3 pr-2 text-sm text-slate-700 shadow-sm transition hover:border-frota-300"
+          className="group flex items-center gap-2 rounded-full border border-frota-100 bg-frota-50 py-2 pl-3.5 pr-2.5 text-sm font-semibold text-frota-800 shadow-sm transition hover:border-frota-500 hover:bg-frota-100 hover:shadow-md"
         >
-          <Link href={item.href} className="flex items-center gap-1.5">
+          <Link href={item.href} className="flex items-center gap-2">
             {item.icon}
             {item.label}
           </Link>
@@ -60,7 +71,7 @@ export function BarraAtalhosFavoritos({ itensIniciais }: { itensIniciais: ItemAt
             type="button"
             onClick={() => remover(item.href)}
             title="Remover do acesso rápido"
-            className="rounded-full p-0.5 text-slate-300 opacity-0 transition hover:bg-slate-100 hover:text-slate-500 group-hover:opacity-100"
+            className="rounded-full p-0.5 text-frota-400 opacity-0 transition hover:bg-frota-200 hover:text-frota-700 group-hover:opacity-100"
           >
             <X className="h-3 w-3" />
           </button>

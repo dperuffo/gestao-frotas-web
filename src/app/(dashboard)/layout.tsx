@@ -773,7 +773,7 @@ export default async function DashboardLayout({
         ? {
             href: f.href,
             label: item.label,
-            icon: item.icon ? <item.icon className="h-3.5 w-3.5 shrink-0 text-frota-600" /> : undefined,
+            icon: item.icon ? <item.icon className="h-4 w-4 shrink-0 text-frota-600" /> : undefined,
           }
         : null;
     })
