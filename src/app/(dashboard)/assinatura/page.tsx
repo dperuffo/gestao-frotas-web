@@ -26,6 +26,10 @@ import { BotaoPortalPagamento } from "./_components/BotaoPortalPagamento";
 import { CriarRedeForm } from "./_components/CriarRedeForm";
 import { CriarGrupoFrotaForm } from "./_components/CriarGrupoFrotaForm";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Tag, Activity, Network, Building2, Users, Truck } from "lucide-react";
 
 type SearchParams = { empresa?: string; checkout?: string; bloqueado?: string };
 
@@ -312,31 +316,41 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
             {ehPosto ? (
               <>
-                <Indicador
+                <IndicadorColorido
+                  cor="sky"
+                  icon={Tag}
                   label="Plano atual"
                   valor={planoAtualPosto ? (PLANO_POSTO_LABEL[planoAtualPosto] ?? planoAtualPosto) : "Sem plano"}
                   ajudaChave="assinatura.plano_atual"
                 />
-                <Indicador
+                <IndicadorColorido
+                  cor="violet"
+                  icon={Activity}
                   label="Status"
                   valor={statusAtualPosto ? (STATUS_EMPRESA_LABEL[statusAtualPosto as StatusEmpresa] ?? statusAtualPosto) : "—"}
                 />
-                <Indicador label="Postos na rede" valor={`${qtdPostosNaRede}`} />
-                <Indicador
+                <IndicadorColorido cor="green" icon={Network} label="Postos na rede" valor={`${qtdPostosNaRede}`} />
+                <IndicadorColorido
+                  cor="amber"
+                  icon={Building2}
                   label="Administração"
                   valor={redeDoPosto ? (ehAdministradoraDaRede ? "Você (matriz)" : redeDoPosto.nome) : "Posto avulso"}
                 />
               </>
             ) : (
               <>
-                <Indicador label="Plano atual" valor={rotuloPlanoFrotista ?? empresa.plano} ajudaChave="assinatura.plano_atual" />
-                <Indicador label="Status" valor={STATUS_EMPRESA_LABEL[empresa.status as StatusEmpresa] ?? empresa.status} />
-                <Indicador
+                <IndicadorColorido cor="sky" icon={Tag} label="Plano atual" valor={rotuloPlanoFrotista ?? empresa.plano} ajudaChave="assinatura.plano_atual" />
+                <IndicadorColorido cor="violet" icon={Activity} label="Status" valor={STATUS_EMPRESA_LABEL[empresa.status as StatusEmpresa] ?? empresa.status} />
+                <IndicadorColorido
+                  cor="green"
+                  icon={Users}
                   label="Usuários"
                   valor={`${qtdUsuarios} / ${limitesDoPlano && limitesDoPlano.max_usuarios >= 0 ? limitesDoPlano.max_usuarios : "∞"}`}
                   ajudaChave="assinatura.saldo_uso"
                 />
-                <Indicador
+                <IndicadorColorido
+                  cor="amber"
+                  icon={Truck}
                   label="Veículos"
                   valor={`${qtdVeiculos} / ${limitesDoPlano && limitesDoPlano.max_veiculos >= 0 ? limitesDoPlano.max_veiculos : "∞"}`}
                   ajudaChave="assinatura.saldo_uso"
@@ -656,13 +670,5 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
   );
 }
 
-function Indicador({ label, valor, ajudaChave }: { label: string; valor: string; ajudaChave?: string }) {
-  return (
-    <div className="card p-4">
-      <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-        {label} {ajudaChave && <AjudaIcon chave={ajudaChave} />}
-      </p>
-      <p className="mt-1 text-xl font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

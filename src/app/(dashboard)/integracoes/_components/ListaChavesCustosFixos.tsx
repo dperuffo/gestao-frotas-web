@@ -54,7 +54,7 @@ export function ListaChavesCustosFixos({ chaves }: { chaves: ChaveCustosFixos[] 
         </thead>
         <tbody className="divide-y divide-slate-100">
           {chaves.map((c) => (
-            <tr key={c.id} className="hover:bg-slate-50">
+            <tr key={c.id} className="transition-colors hover:bg-frota-50/60">
               <td className="px-4 py-3 font-medium text-slate-700">{c.empresa_nome ?? "—"}</td>
               <td className="px-4 py-3 text-slate-600">{c.nome}</td>
               <td className="px-4 py-3">

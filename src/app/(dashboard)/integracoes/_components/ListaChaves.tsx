@@ -96,7 +96,7 @@ export function ListaChaves({ chaves }: { chaves: ChaveProfrotas[] }) {
         </thead>
         <tbody className="divide-y divide-slate-100">
           {chaves.map((c) => (
-            <tr key={c.id} className="align-top hover:bg-slate-50">
+            <tr key={c.id} className="align-top transition-colors hover:bg-frota-50/60">
               <td className="px-4 py-3 font-medium text-slate-700">
                 {c.nome_empresa}
                 {c.avisoLimite && (

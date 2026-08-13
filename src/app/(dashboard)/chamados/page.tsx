@@ -16,8 +16,13 @@ import {
   type TicketStatus,
   type TicketTipo,
 } from "@/lib/chamados";
-import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app. AjudaIcon saiu
+// daqui porque a única chamada era dentro do Indicador() local removido
+// abaixo — IndicadorColorido já importa o próprio AjudaIcon internamente.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Inbox, Search, CheckCircle2, Bell } from "lucide-react";
 
 const POR_PAGINA = 30;
 
@@ -171,11 +176,11 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
         </button>
       </form>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Indicador label="Abertos" valor={totalAbertos} corDestaque="text-amber-600" ajudaChave="chamados.status" />
-        <Indicador label="Em análise" valor={totalEmAnalise} corDestaque="text-blue-600" ajudaChave="chamados.status" />
-        <Indicador label="Resolvidos" valor={totalResolvidos} corDestaque="text-emerald-600" ajudaChave="chamados.status" />
-        <Indicador label="Com atualização não vista" valor={totalNaoVistos} corDestaque="text-red-600" />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <IndicadorColorido cor="amber" icon={Inbox} label="Abertos" valor={String(totalAbertos)} ajudaChave="chamados.status" />
+        <IndicadorColorido cor="sky" icon={Search} label="Em análise" valor={String(totalEmAnalise)} ajudaChave="chamados.status" />
+        <IndicadorColorido cor="green" icon={CheckCircle2} label="Resolvidos" valor={String(totalResolvidos)} ajudaChave="chamados.status" />
+        <IndicadorColorido cor="red" icon={Bell} label="Com atualização não vista" valor={String(totalNaoVistos)} />
       </div>
 
       <div className="card overflow-x-auto">
@@ -198,7 +203,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
               const corStatus = CORES_STATUS[c.status as TicketStatus] ?? CORES_STATUS.aberto;
               const corPrioridade = CORES_PRIORIDADE[(c.prioridade as TicketPrioridade) ?? "media"] ?? CORES_PRIORIDADE.media;
               return (
-                <tr key={c.id} className={`hover:bg-slate-50 ${naoVisto ? "bg-red-50/40" : ""}`}>
+                <tr key={c.id} className={`transition-colors hover:bg-frota-50/60 ${naoVisto ? "bg-red-50/40" : ""}`}>
                   <td className="px-4 py-3 text-slate-500">#{c.numero}</td>
                   <td className="px-4 py-3">
                     <Link href={`/chamados/${c.id}`} className="flex items-center gap-2 font-medium text-frota-600 hover:underline">
@@ -246,23 +251,5 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  corDestaque,
-  ajudaChave,
-}: {
-  label: string;
-  valor: number;
-  corDestaque: string;
-  ajudaChave?: string;
-}) {
-  return (
-    <div className="card p-4">
-      <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-        {label} {ajudaChave && <AjudaIcon chave={ajudaChave} />}
-      </p>
-      <p className={`mt-1 text-2xl font-semibold ${corDestaque}`}>{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

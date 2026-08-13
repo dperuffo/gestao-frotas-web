@@ -9,6 +9,11 @@ import { AtualizarStatusResgateProprio } from "./_components/AtualizarStatusResg
 import { QueimarVoucherForm } from "./_components/QueimarVoucherForm";
 import { MissoesGlobaisGestao } from "./_components/MissoesGlobaisGestao";
 import { listarMissoesGlobaisCriadasPor, type MissaoRow } from "../fidelidade-motoristas/missoesActions";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app. Tela
+// compartilhada posto/cliente — redesenhar aqui cobre os dois lados.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Clock, Ticket, Award, XCircle } from "lucide-react";
 
 // Parcerias Locais (Fase 17/07) — tela self-service, acessível tanto pro
 // perfil posto quanto cliente (ver menuOperacao/menuPostoOperacao em
@@ -185,22 +190,15 @@ export default async function ParceriasLocaisPage({
           <QueimarVoucherForm empresaId={empresaSelecionada} />
 
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="card p-4">
-              <p className="text-xs uppercase text-slate-500">Pendentes de atendimento</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{pendentes.length}</p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs uppercase text-slate-500">Vouchers queimados</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{queimados.length}</p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs uppercase text-slate-500">Pontos queimados</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{pontosQueimados.toLocaleString("pt-BR")}</p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs uppercase text-slate-500">Cancelados</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{cancelados.length}</p>
-            </div>
+            <IndicadorColorido
+              cor={pendentes.length > 0 ? "amber" : "green"}
+              icon={Clock}
+              label="Pendentes de atendimento"
+              valor={String(pendentes.length)}
+            />
+            <IndicadorColorido cor="sky" icon={Ticket} label="Vouchers queimados" valor={String(queimados.length)} />
+            <IndicadorColorido cor="violet" icon={Award} label="Pontos queimados" valor={pontosQueimados.toLocaleString("pt-BR")} />
+            <IndicadorColorido cor="red" icon={XCircle} label="Cancelados" valor={String(cancelados.length)} />
           </div>
 
           <h2 className="mb-3 text-sm font-semibold text-slate-900">Pendentes de atendimento</h2>
@@ -218,7 +216,7 @@ export default async function ParceriasLocaisPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {pendentes.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50">
+                  <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3 font-mono text-xs text-slate-600">{r.numero_voucher ?? "—"}</td>
                     <td className="px-4 py-3 font-medium text-slate-900">
                       {r.titulo}
@@ -264,7 +262,7 @@ export default async function ParceriasLocaisPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {queimados.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50">
+                  <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3 font-mono text-xs text-slate-600">{r.numero_voucher ?? "—"}</td>
                     <td className="px-4 py-3 font-medium text-slate-900">
                       {r.titulo}

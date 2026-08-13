@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { STATUS_AJUSTE_LABEL, caminhoAbastecimento, type ItemResumoAjuste } from "@/lib/ajustesAbastecimentos";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app. Este componente é
+// usado nos 4 lugares citados no comentário abaixo — redesenhar aqui cobre
+// os dois lados (posto e cliente) de uma vez.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Clock, CheckCircle2, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -29,17 +35,19 @@ export function SecaoAjustesAbastecimentos({
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Ajustes de abastecimento — últimos {diasPeriodo} dias
       </p>
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Indicador
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <IndicadorColorido
+          cor={pendentes > 0 ? "amber" : "green"}
+          icon={Clock}
           label="Pendentes de resposta"
           valor={String(pendentes)}
-          destaque={pendentes > 0 ? "negativo" : undefined}
         />
-        <Indicador label="Aceitos no período" valor={String(aceitosNoPeriodo)} />
-        <Indicador
+        <IndicadorColorido cor="green" icon={CheckCircle2} label="Aceitos no período" valor={String(aceitosNoPeriodo)} />
+        <IndicadorColorido
+          cor={impactoFinanceiro < 0 ? "red" : impactoFinanceiro > 0 ? "green" : "sky"}
+          icon={impactoFinanceiro < 0 ? TrendingDown : impactoFinanceiro > 0 ? TrendingUp : Wallet}
           label="Impacto financeiro"
           valor={formatarMoeda(impactoFinanceiro)}
-          destaque={impactoFinanceiro < 0 ? "negativo" : impactoFinanceiro > 0 ? "positivo" : undefined}
         />
       </div>
 
@@ -59,7 +67,7 @@ export function SecaoAjustesAbastecimentos({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {ultimosAjustes.map((a) => (
-              <tr key={a.id} className="hover:bg-slate-50">
+              <tr key={a.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 text-slate-700">#{a.identificador.id}</td>
                 <td className="px-4 py-3 text-slate-500">{a.origem === "cliente" ? "Cliente" : "Posto"}</td>
                 <td className="px-4 py-3">
@@ -89,25 +97,5 @@ export function SecaoAjustesAbastecimentos({
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-}: {
-  label: string;
-  valor: string;
-  destaque?: "positivo" | "negativo";
-}) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p
-        className={`mt-1 text-2xl font-semibold ${
-          destaque === "negativo" ? "text-red-600" : destaque === "positivo" ? "text-green-700" : "text-slate-900"
-        }`}
-      >
-        {valor}
-      </p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

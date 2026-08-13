@@ -4,6 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app. Tela acessível
+// às 3 visões (cliente, posto, admin) — redesenhar aqui cobre as 3 de vez.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Calendar, Clock, Activity, Droplet, Wallet, FileWarning } from "lucide-react";
 
 // Fase 27.93 — pedido do Daniel (com print de "Ciclos por posto"): o ciclo
 // em andamento (ainda não fechado pelo robô, Fase 27.84) só mostrava
@@ -104,25 +109,28 @@ export default async function CicloAbertoPage({
         automaticamente quando o ciclo termina, virando uma fatura de verdade.
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-6">
-        <Indicador
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-6">
+        <IndicadorColorido
+          cor="sky"
+          icon={Calendar}
           label="Período (previsto)"
           valor={`${formatarDataBr(ciclo.periodo_inicio)} – ${formatarDataBr(ciclo.periodo_fim_previsto)}`}
         />
-        <Indicador label="Vencimento (previsto)" valor={formatarDataBr(ciclo.vencimento_previsto)} />
-        <Indicador label="Status" valor="Em andamento" />
-        <Indicador label="Volume acumulado" valor={`${ciclo.volume_acumulado.toLocaleString("pt-BR")} L`} />
-        <Indicador label="Valor acumulado" valor={formatarMoeda(ciclo.valor_acumulado)} />
+        <IndicadorColorido cor="violet" icon={Clock} label="Vencimento (previsto)" valor={formatarDataBr(ciclo.vencimento_previsto)} />
+        <IndicadorColorido cor="green" icon={Activity} label="Status" valor="Em andamento" />
+        <IndicadorColorido cor="sky" icon={Droplet} label="Volume acumulado" valor={`${ciclo.volume_acumulado.toLocaleString("pt-BR")} L`} />
+        <IndicadorColorido cor="violet" icon={Wallet} label="Valor acumulado" valor={formatarMoeda(ciclo.valor_acumulado)} />
         {/* Fase 27.105 — regra do Daniel: só entra na fatura quem tem NF-e
             vinculada; mostra aqui o que ainda está represado esperando nota. */}
-        <Indicador
+        <IndicadorColorido
+          cor={ciclo.quantidade_pendente_nfe > 0 ? "red" : "green"}
+          icon={FileWarning}
           label="Pendente NF-e"
           valor={
             ciclo.quantidade_pendente_nfe > 0
               ? `${formatarMoeda(ciclo.valor_pendente_nfe)} (${ciclo.quantidade_pendente_nfe})`
               : "—"
           }
-          destaque={ciclo.quantidade_pendente_nfe > 0}
         />
       </div>
 
@@ -173,7 +181,7 @@ export default async function CicloAbertoPage({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {abastecimentos.map((a) => (
-              <tr key={a.id} className="hover:bg-slate-50">
+              <tr key={a.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 text-slate-700">
                   {a.data_abastecimento ? formatarDataBr(a.data_abastecimento) : "—"}
                 </td>
@@ -221,19 +229,5 @@ export default async function CicloAbertoPage({
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-}: {
-  label: string;
-  valor: string;
-  destaque?: boolean;
-}) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`mt-1 text-lg font-semibold ${destaque ? "text-red-600" : "text-slate-900"}`}>{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

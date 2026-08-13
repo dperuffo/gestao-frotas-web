@@ -234,7 +234,7 @@ async function PainelCliente({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {lista.map((p) => (
-                  <tr key={p.combustivel} className="hover:bg-slate-50">
+                  <tr key={p.combustivel} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3 text-slate-700">{p.combustivel}</td>
                     <td className="px-4 py-3 text-slate-700">
                       {p.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}

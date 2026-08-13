@@ -4,6 +4,10 @@ import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { ToggleAtivoUsuario } from "./_components/ToggleAtivoUsuario";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Users, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export default async function UsuariosPage({
   searchParams,
@@ -81,10 +85,10 @@ export default async function UsuariosPage({
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Indicador label="Total de usuários" valor={totalUsuarios} />
-        <Indicador label="Ativos" valor={totalAtivos} />
-        <Indicador label="Com MFA habilitado" valor={totalMfa} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <IndicadorColorido cor="sky" icon={Users} label="Total de usuários" valor={String(totalUsuarios)} />
+        <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos" valor={String(totalAtivos)} />
+        <IndicadorColorido cor="violet" icon={ShieldCheck} label="Com MFA habilitado" valor={String(totalMfa)} />
       </div>
 
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
@@ -138,7 +142,7 @@ export default async function UsuariosPage({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {usuarios?.map((u) => (
-              <tr key={u.email} className="hover:bg-slate-50">
+              <tr key={u.email} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3">
                   <Link href={`/usuarios/${encodeURIComponent(u.email)}`} className="font-medium text-frota-600 hover:underline">
                     {u.nome ?? "(sem nome)"}
@@ -179,11 +183,5 @@ export default async function UsuariosPage({
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: number }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

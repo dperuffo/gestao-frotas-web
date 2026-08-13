@@ -229,7 +229,7 @@ export default async function LgpdPage() {
                   {todasExclusoes.map((e) => {
                     const status = STATUS_EXCLUSAO_LABEL[e.status] ?? { texto: e.status, classe: "badge-atencao" };
                     return (
-                      <tr key={e.id} className="hover:bg-slate-50">
+                      <tr key={e.id} className="transition-colors hover:bg-frota-50/60">
                         <td className="px-4 py-3 text-slate-600">{nomeEmpresa(e.empresa_id)}</td>
                         <td className="px-4 py-3 text-slate-600">{e.email}</td>
                         <td className="px-4 py-3 text-slate-600">{formatarDataHora(e.solicitado_em)}</td>

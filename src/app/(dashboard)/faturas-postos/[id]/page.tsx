@@ -7,6 +7,11 @@ import { gerarPayloadPix, gerarQrCodePixDataUrl } from "@/lib/pix";
 import BotaoBaixarPdfFaturaLazy from "./_components/BotaoBaixarPdfFaturaLazy";
 import type { ItemExtratoFaturaPdf, ParteBoletoPdf } from "./_components/FaturaPdf";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app. Tela acessível
+// às 3 visões (cliente, posto, admin) — redesenhar aqui cobre as 3 de vez.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Calendar, Clock, Activity, Droplet, Wallet } from "lucide-react";
 
 function formatarEndereco(p: {
   logradouro: string | null;
@@ -200,12 +205,17 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
-        <Indicador label="Período" valor={`${formatarDataBr(fatura.periodo_inicio)} – ${formatarDataBr(fatura.periodo_fim)}`} />
-        <Indicador label="Vencimento" valor={boletoJaGerado ? formatarDataBr(fatura.vencimento) : "—"} />
-        <Indicador label="Status" valor={STATUS_CICLO_FATURA_LABEL[statusExib]} />
-        <Indicador label="Volume total" valor={boletoJaGerado ? `${fatura.volume_total.toLocaleString("pt-BR")} L` : "—"} />
-        <Indicador label="Valor total" valor={boletoJaGerado ? formatarMoeda(fatura.valor_total) : "—"} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <IndicadorColorido
+          cor="sky"
+          icon={Calendar}
+          label="Período"
+          valor={`${formatarDataBr(fatura.periodo_inicio)} – ${formatarDataBr(fatura.periodo_fim)}`}
+        />
+        <IndicadorColorido cor="violet" icon={Clock} label="Vencimento" valor={boletoJaGerado ? formatarDataBr(fatura.vencimento) : "—"} />
+        <IndicadorColorido cor="green" icon={Activity} label="Status" valor={STATUS_CICLO_FATURA_LABEL[statusExib]} />
+        <IndicadorColorido cor="sky" icon={Droplet} label="Volume total" valor={boletoJaGerado ? `${fatura.volume_total.toLocaleString("pt-BR")} L` : "—"} />
+        <IndicadorColorido cor="violet" icon={Wallet} label="Valor total" valor={boletoJaGerado ? formatarMoeda(fatura.valor_total) : "—"} />
       </div>
 
       {!boletoJaGerado ? (
@@ -254,7 +264,7 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
           </thead>
           <tbody className="divide-y divide-slate-100">
             {abastecimentos.map((a) => (
-              <tr key={a.id} className="hover:bg-slate-50">
+              <tr key={a.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 text-slate-700">
                   {a.data_abastecimento ? formatarDataBr(a.data_abastecimento) : "—"}
                 </td>
@@ -287,11 +297,5 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: string }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

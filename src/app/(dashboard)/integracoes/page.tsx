@@ -8,6 +8,10 @@ import { ListaChavesCustosFixos } from "./_components/ListaChavesCustosFixos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { AbasPainel, type Aba } from "../inteligencia-rede/_components/AbasPainel";
 import { LogoProvedor } from "@/components/LogoProvedor";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Building2, CheckCircle2, RefreshCw } from "lucide-react";
 
 type ChaveCustosFixosRow = {
   id: string;
@@ -134,10 +138,10 @@ export default async function IntegracoesPage() {
             Conecte a frota de um cliente à API da PróFrotas para que os abastecimentos cheguem
             automaticamente, sem lançamento manual.
           </p>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Indicador label="Clientes conectados" valor={total} />
-            <Indicador label="Ativos" valor={totalAtivas} />
-            <Indicador label="Registros sincronizados" valor={totalRegistros} />
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <IndicadorColorido cor="sky" icon={Building2} label="Clientes conectados" valor={String(total)} />
+            <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos" valor={String(totalAtivas)} />
+            <IndicadorColorido cor="violet" icon={RefreshCw} label="Registros sincronizados" valor={totalRegistros.toLocaleString("pt-BR")} />
           </div>
           <div className="mb-6">
             <NovaChaveForm />
@@ -653,11 +657,5 @@ function SecaoHub({
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: number }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor.toLocaleString("pt-BR")}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

@@ -171,7 +171,7 @@ async function ConteudoEquipe({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {membros.map((m) => (
-              <tr key={m.user_email} className="hover:bg-slate-50">
+              <tr key={m.user_email} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 text-slate-700">{m.nome ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-500">{m.user_email}</td>
                 <td className="px-4 py-3 text-slate-500">{PERFIL_LABEL[m.perfil as Perfil] ?? m.perfil}</td>
