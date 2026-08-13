@@ -6,7 +6,22 @@ import { TogglePermissao } from "./_components/TogglePermissao";
 
 // Deixa "aba_dashboard" -> "Aba: Dashboard" e "func_exportar" -> "Função: Exportar",
 // só para ficar mais legível na tela. Não muda nada no banco.
+//
+// Achado real (13/08/2026) — Daniel reportou que "sumiram todas as abas do
+// Programa de Fidelidade" na visão do posto; a causa era este toggle
+// desligado (perfil posto, empresa_id global), mas o rótulo humanizado
+// ("Aba: Parcerias Locais") não deixava óbvio que essa é a ÚNICA porta de
+// entrada pro programa "Estrada que Cuida" do lado posto (catálogo de
+// benefícios + vouchers pendentes/queimados + missões, tudo numa página só
+// — ver /parcerias-locais). Rótulos especiais abaixo cobrem esse e outros
+// nomes técnicos que não deixam claro o que a aba realmente contém.
+const RÓTULOS_ESPECIAIS: Record<string, string> = {
+  aba_parcerias_locais: "Aba: Parcerias Locais (Programa de Fidelidade)",
+  aba_fidelidade_motoristas: "Aba: Fidelidade dos Motoristas (Programa de Fidelidade)",
+};
+
 function formatarFuncionalidade(nome: string) {
+  if (RÓTULOS_ESPECIAIS[nome]) return RÓTULOS_ESPECIAIS[nome];
   if (nome.startsWith("aba_")) {
     return `Aba: ${humanizar(nome.slice(4))}`;
   }
@@ -195,7 +210,7 @@ export default async function PermissoesPage({
               {funcionalidades.map((funcionalidade) => {
                 const porPerfil = matriz.get(funcionalidade)!;
                 return (
-                  <tr key={funcionalidade} className="hover:bg-slate-50">
+                  <tr key={funcionalidade} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3 text-slate-700">{formatarFuncionalidade(funcionalidade)}</td>
                     {perfisVisiveis.map((perfil) => {
                       const valor = porPerfil.get(perfil);
