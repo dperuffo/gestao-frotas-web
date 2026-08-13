@@ -174,13 +174,29 @@ export default async function PermissoesPage({
       )}
 
       {!souAdmin && empresaEdicao && (
-        <div className="mb-4 flex justify-end">
-          <ReplicarParaGrupoButton
-            chaveTabela="permissoes_perfil"
-            empresaId={empresaEdicao}
-            rotuloRegistro="as permissões personalizadas desta empresa"
-          />
-        </div>
+        <>
+          {/* Achado real (13/08/2026, auditoria da tela) — a personalização
+              por empresa feita aqui embaixo NÃO bloqueia a URL de verdade
+              pra ninguém (isso só o padrão global do Administrador faz); ela
+              só decide o que fica liberado automaticamente quando alguém da
+              sua empresa pede acesso a um colega. Antes esse comportamento
+              só estava documentado em comentário no código — deixando
+              parecer, na própria tela, que desligar um interruptor aqui
+              bloqueia o colega de acessar a tela, quando na prática não
+              bloqueia. */}
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Estes interruptores personalizam só o que fica liberado por padrão quando alguém da sua empresa pede
+            acesso a um colega — eles não bloqueiam, por si só, o acesso de ninguém à tela. O bloqueio de verdade
+            (impedir o acesso direto pela URL) é definido só pelo Administrador, no padrão global do sistema.
+          </div>
+          <div className="mb-4 flex justify-end">
+            <ReplicarParaGrupoButton
+              chaveTabela="permissoes_perfil"
+              empresaId={empresaEdicao}
+              rotuloRegistro="as permissões personalizadas desta empresa"
+            />
+          </div>
+        </>
       )}
 
       <div className="card overflow-x-auto">

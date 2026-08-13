@@ -311,7 +311,7 @@ const menuEngajamento: ItemMenuLateral[] = [
   // Fase Parcerias Locais (17/07) — o cliente cria seus próprios benefícios
   // (treinamentos, marketplace, telemedicina etc.) no catálogo de
   // fidelidade; mesma tela também vive em menuPostoOperacao (ver abaixo).
-  { href: "/parcerias-locais", label: "Parcerias Locais", icon: Gift }, // PWA: Icons.card_giftcard
+  { href: "/parcerias-locais", label: "Parcerias Locais (Fidelidade)", icon: Gift }, // PWA: Icons.card_giftcard
 ];
 
 // Fase reorganizacao-menu — o que era o topo da antiga Gestão (Assistente,
@@ -396,7 +396,7 @@ const menuPostoOperacao: ItemMenuLateral[] = [
   // da conveniência etc.) no catálogo de fidelidade "Estrada que Cuida",
   // publicados pra rede toda de motoristas resgatar. Mesma tela do lado
   // cliente (ver menuEngajamento acima) — RLS escopa por criador_empresa_id.
-  { href: "/parcerias-locais", label: "Parcerias Locais", icon: Gift },
+  { href: "/parcerias-locais", label: "Parcerias Locais (Fidelidade)", icon: Gift },
   // Fase Pré-Pedido — pedido do Daniel: consulta do Pré-Pedido gerado no
   // Plano de Viagem do cliente (número + pontos de abastecimento
   // pré-agendados), pra o posto confirmar antes de liberar o abastecimento.
