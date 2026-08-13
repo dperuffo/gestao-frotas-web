@@ -19,6 +19,10 @@ import { CruzamentosAvancados } from "./_components/CruzamentosAvancados";
 import { CoberturaDemanda } from "./_components/CoberturaDemanda";
 import { PrecosPorMeioPagamento } from "./_components/PrecosPorMeioPagamento";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Fuel, Building2, Truck, Wallet, AlertTriangle, CheckCircle2, TrendingUp, BarChart3 } from "lucide-react";
 
 // Macrorregiões brasileiras (agrupamento IBGE) e total de municípios de cada
 // uma (fonte: IBGE) — usado só pra calcular % de cobertura da rede GF por
@@ -552,15 +556,19 @@ export default async function InteligenciaRedePage({
         <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
           📊 Visão Geral da Rede <AjudaIcon chave="inteligencia_rede.visao_geral" />
         </h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Indicador label="⛽ Postos GF" valor={formatarInt(totalGf)} sub={`${estadosComPosto.size} estados`} />
-          <Indicador
-            label="🏙️ Municípios"
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <IndicadorColorido cor="sky" icon={Fuel} label="Postos GF" valor={formatarInt(totalGf)} sub={`${estadosComPosto.size} estados`} />
+          <IndicadorColorido
+            cor="violet"
+            icon={Building2}
+            label="Municípios"
             valor={formatarInt(municipiosUnicos)}
             sub={`${coberturaBr}% dos estados`}
           />
-          <Indicador
-            label="🚛 Diesel Médio GF"
+          <IndicadorColorido
+            cor="amber"
+            icon={Truck}
+            label="Diesel Médio GF"
             valor={dieselGf > 0 ? formatarMoeda3(dieselGf) : "—"}
             sub={
               dieselGf > 0 && deltaDieselPct != null
@@ -568,8 +576,10 @@ export default async function InteligenciaRedePage({
                 : "Sem dados de preço"
             }
           />
-          <Indicador
-            label="💰 Saving Potencial/Ano"
+          <IndicadorColorido
+            cor="green"
+            icon={Wallet}
+            label="Saving Potencial/Ano"
             valor={`R$ ${(savingPotencialAno / 1e6).toFixed(1)}M`.replace(".", ",")}
             sub="base: 100 L/sem × postos GF"
           />
@@ -675,11 +685,17 @@ export default async function InteligenciaRedePage({
                   Postos GF com preço mais de 5% acima da referência ANP (município → estado → Brasil).
                 </p>
 
-                <div className="mb-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  <Indicador label="⚠️ Postos em Alerta" valor={formatarInt(totalAlertas)} sub={`${pctAlerta.toFixed(0)}% da base`} />
-                  <Indicador label="✅ Dentro da Média" valor={formatarInt(totalAvaliados - totalAlertas)} />
-                  <Indicador label="📈 Pior Desvio" valor={`+${piorDesvio.toFixed(1)}%`} />
-                  <Indicador label="📊 Desvio Médio" valor={`+${desvioMedio.toFixed(1)}%`} />
+                <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <IndicadorColorido
+                    cor={totalAlertas > 0 ? "red" : "green"}
+                    icon={AlertTriangle}
+                    label="Postos em Alerta"
+                    valor={formatarInt(totalAlertas)}
+                    sub={`${pctAlerta.toFixed(0)}% da base`}
+                  />
+                  <IndicadorColorido cor="green" icon={CheckCircle2} label="Dentro da Média" valor={formatarInt(totalAvaliados - totalAlertas)} />
+                  <IndicadorColorido cor="red" icon={TrendingUp} label="Pior Desvio" valor={`+${piorDesvio.toFixed(1)}%`} />
+                  <IndicadorColorido cor="amber" icon={BarChart3} label="Desvio Médio" valor={`+${desvioMedio.toFixed(1)}%`} />
                 </div>
 
                 {alertasPorEstado.length > 0 ? (
@@ -972,12 +988,5 @@ export default async function InteligenciaRedePage({
   );
 }
 
-function Indicador({ label, valor, sub }: { label: string; valor: string; sub?: string }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-      {sub && <p className="text-xs text-slate-400">{sub}</p>}
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

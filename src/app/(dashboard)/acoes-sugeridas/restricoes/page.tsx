@@ -168,7 +168,7 @@ export default async function RestricoesAbastecimentoPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {bloqueiosAtivos.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50">
+                  <tr key={b.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
                       <span className="text-xs uppercase tracking-wide text-slate-400">
                         {b.alvo_tipo === "motorista" ? "Motorista" : "Veículo"}

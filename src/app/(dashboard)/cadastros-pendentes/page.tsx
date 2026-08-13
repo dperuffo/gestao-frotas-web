@@ -107,7 +107,7 @@ export default async function CadastrosPendentesPage({
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {veiculosPendentes.map((v) => (
-                      <tr key={v.id} className="hover:bg-slate-50">
+                      <tr key={v.id} className="transition-colors hover:bg-frota-50/60">
                         <td className="px-4 py-3 font-medium text-slate-700">{v.placa}</td>
                         <td className="px-4 py-3 text-slate-500">
                           {[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}
@@ -146,7 +146,7 @@ export default async function CadastrosPendentesPage({
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {motoristasPendentes.map((m) => (
-                      <tr key={m.id} className="hover:bg-slate-50">
+                      <tr key={m.id} className="transition-colors hover:bg-frota-50/60">
                         <td className="px-4 py-3 font-medium text-slate-700">{m.nome_completo}</td>
                         <td className="px-4 py-3 text-slate-500">{m.telefone ?? "—"}</td>
                         <td className="px-4 py-3 text-right">

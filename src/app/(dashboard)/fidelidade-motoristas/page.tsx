@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { MissoesGestao } from "./MissoesGestao";
 import { listarMissoes } from "./missoesActions";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Users, Droplet, Award, Gift } from "lucide-react";
 
 // Painel de indicadores do programa "Estrada que Cuida" (app do motorista)
 // por motorista — pedido do Daniel em 17/07: visão do cliente (só os
@@ -106,35 +110,30 @@ export default async function FidelidadeMotoristasPage({
           <MissoesGestao empresaId={empresaSelecionada} missoesIniciais={missoes} />
 
           <div className="mb-4 mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="card p-4">
-              <p className="text-xs uppercase text-slate-500">Motoristas aderidos</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">
-                {aderidos.length}
-                <span className="text-sm font-normal text-slate-400"> / {indicadores.length}</span>
-              </p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs uppercase text-slate-500">Abastecimentos confirmados</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">
-                {indicadores.reduce((soma, i) => soma + i.abastecimentos_confirmados, 0)}
-              </p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs uppercase text-slate-500">Missões concluídas</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">
-                {indicadores.reduce((soma, i) => soma + i.missoes_concluidas, 0)}
-              </p>
-            </div>
-            <div className="card p-4">
-              <p className="text-xs uppercase text-slate-500">Resgates (concluídos / total)</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">
-                {indicadores.reduce((soma, i) => soma + i.resgates_concluidos, 0)}
-                <span className="text-sm font-normal text-slate-400">
-                  {" "}
-                  / {indicadores.reduce((soma, i) => soma + i.resgates_total, 0)}
-                </span>
-              </p>
-            </div>
+            <IndicadorColorido
+              cor="sky"
+              icon={Users}
+              label="Motoristas aderidos"
+              valor={`${aderidos.length} / ${indicadores.length}`}
+            />
+            <IndicadorColorido
+              cor="violet"
+              icon={Droplet}
+              label="Abastecimentos confirmados"
+              valor={String(indicadores.reduce((soma, i) => soma + i.abastecimentos_confirmados, 0))}
+            />
+            <IndicadorColorido
+              cor="amber"
+              icon={Award}
+              label="Missões concluídas"
+              valor={String(indicadores.reduce((soma, i) => soma + i.missoes_concluidas, 0))}
+            />
+            <IndicadorColorido
+              cor="green"
+              icon={Gift}
+              label="Resgates (concluídos / total)"
+              valor={`${indicadores.reduce((soma, i) => soma + i.resgates_concluidos, 0)} / ${indicadores.reduce((soma, i) => soma + i.resgates_total, 0)}`}
+            />
           </div>
 
           <div className="card overflow-x-auto">
@@ -153,7 +152,7 @@ export default async function FidelidadeMotoristasPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {indicadores.map((m) => (
-                  <tr key={m.motorista_id} className="hover:bg-slate-50">
+                  <tr key={m.motorista_id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3 font-medium text-slate-900">{m.nome_completo}</td>
                     <td className="px-4 py-3">
                       <span className={m.aderido ? "badge-ativo" : "badge-inativo"}>

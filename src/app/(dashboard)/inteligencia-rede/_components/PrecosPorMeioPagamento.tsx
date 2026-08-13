@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Cell } from "recharts";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Droplet, Wallet, ClipboardList, Trophy } from "lucide-react";
 
 // Fase Inteligência-Rede-Meios-Pagamento — pedido do Daniel: "Criar um
 // painel de preços médios com os preços praticados nos abastecimentos nos
@@ -153,16 +157,22 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
 
   return (
     <div>
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Indicador label="Volume total" valor={formatarLitros(litrosTotal)} />
-        <Indicador label="Valor total" valor={valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} />
-        <Indicador label="Abastecimentos" valor={formatarInt(qtdTotal)} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <IndicadorColorido cor="sky" icon={Droplet} label="Volume total" valor={formatarLitros(litrosTotal)} />
+        <IndicadorColorido
+          cor="violet"
+          icon={Wallet}
+          label="Valor total"
+          valor={valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+        />
+        <IndicadorColorido cor="amber" icon={ClipboardList} label="Abastecimentos" valor={formatarInt(qtdTotal)} />
         {maisVantajoso && (
-          <Indicador
+          <IndicadorColorido
+            cor="green"
+            icon={Trophy}
             label="Meio mais vantajoso"
             valor={maisVantajoso.provedor}
             sub={formatarMoeda3(maisVantajoso.precoMedio) + "/L (média geral)"}
-            destaque
           />
         )}
       </div>
@@ -360,12 +370,5 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
   );
 }
 
-function Indicador({ label, valor, sub, destaque }: { label: string; valor: string; sub?: string; destaque?: boolean }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`mt-1 text-xl font-semibold ${destaque ? "text-emerald-600" : "text-slate-900"}`}>{valor}</p>
-      {sub && <p className="text-xs text-slate-400">{sub}</p>}
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

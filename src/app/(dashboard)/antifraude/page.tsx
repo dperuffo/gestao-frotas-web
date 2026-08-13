@@ -187,7 +187,7 @@ export default async function AntifraudePage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {regras.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50">
+                  <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3 font-medium text-slate-900">{r.nome}</td>
                     <td className="px-4 py-3 text-slate-600">
                       {LABEL_ESCOPO[r.escopo] ?? r.escopo}
