@@ -120,6 +120,17 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/administracao/pisos-antt": "aba_pisos_antt",
   "/administracao/central-avisos": "aba_central_avisos",
   "/administracao/oficinas-credenciadas": "aba_oficinas_credenciadas",
+  // Achado real (13/08/2026, auditoria da tela /permissoes) — estas duas
+  // rotas existem e são acessíveis direto por URL, mas nunca tiveram uma
+  // "aba_" própria na matriz: ficavam permanentemente liberadas pra
+  // qualquer perfil, sem nenhum controle possível. Adicionadas aqui pra
+  // ficarem bloqueáveis daqui pra frente — mas só passam a aparecer de
+  // fato na tela de Permissões depois que existir ao menos 1 linha em
+  // permissoes_perfil pra cada uma (a UI só lista funcionalidades que já
+  // têm linha cadastrada, ver funcionalidades = Array.from(matriz.keys())
+  // em permissoes/page.tsx). Ver README/handoff pro SQL de inserção.
+  "/antifraude": "aba_antifraude",
+  "/apuracao-tributaria": "aba_apuracao_tributaria",
 };
 
 // Rotas que NUNCA são bloqueadas por permissão, mesmo que a matriz diga

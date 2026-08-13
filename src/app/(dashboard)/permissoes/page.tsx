@@ -217,10 +217,19 @@ export default async function PermissoesPage({
                       return (
                         <td key={perfil} className="px-4 py-3 text-center">
                           <div className="flex flex-col items-center gap-1">
+                            {/* Achado real (13/08/2026, auditoria da tela) — quando não
+                                existe linha cadastrada pra este par funcionalidade×perfil
+                                (ex.: "colaborador" nunca tem linha própria, ver comentário
+                                em permissoes.ts), o enforcement real (temAcesso, em
+                                permissoes.ts) trata isso como LIBERADO. Antes este toggle
+                                caía em `?? false` e mostrava desligado — parecia bloqueado
+                                sem estar, escondendo do admin/gestor que aquele perfil já
+                                tinha acesso liberado por padrão. Corrigido pra refletir o
+                                mesmo "sem linha = liberado" usado no bloqueio de verdade. */}
                             <TogglePermissao
                               funcionalidade={funcionalidade}
                               perfil={perfil}
-                              permitido={valor?.permitido ?? false}
+                              permitido={valor?.permitido ?? true}
                               empresaId={empresaEdicao!}
                             />
                             {!souAdmin && valor?.customizado && (
