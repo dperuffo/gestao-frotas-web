@@ -16,13 +16,23 @@ export function RegistrarMovimentoForm({ pecaId, empresaId, manutencoes }: { pec
     e.preventDefault();
     setErro(undefined);
     const formData = new FormData(e.currentTarget);
+    const formEl = e.currentTarget;
     startTransition(async () => {
-      const resultado = await registrarMovimentoAcao(pecaId, empresaId, undefined, formData);
-      if (resultado?.erro) setErro(resultado.erro);
-      else {
-        (e.currentTarget as HTMLFormElement).reset();
-        setTipo("saida");
-        router.refresh();
+      try {
+        const resultado = await registrarMovimentoAcao(pecaId, empresaId, undefined, formData);
+        if (resultado?.erro) setErro(resultado.erro);
+        else {
+          formEl.reset();
+          setTipo("saida");
+          router.refresh();
+        }
+      } catch {
+        // Fase Hardening-Estoque-Pecas (13/08/2026) — mesma blindagem do lado
+        // cliente: se por algum motivo a Server Action ainda assim lançar (ex.:
+        // falha de rede na própria chamada RPC do Server Action), mostra o
+        // banner vermelho de sempre em vez de deixar o error.tsx da rota inteira
+        // assumir a tela (achado real reportado pelo Daniel).
+        setErro("Falha pontual ao registrar o movimento. Tente novamente.");
       }
     });
   }

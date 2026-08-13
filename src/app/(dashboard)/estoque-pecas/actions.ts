@@ -78,45 +78,58 @@ export async function registrarMovimentoAcao(
   _prev: EstoquePecasFormState,
   formData: FormData
 ): Promise<EstoquePecasFormState> {
-  const supabase = await createClient();
-  const tipoMovimento = String(formData.get("tipo_movimento") ?? "").trim();
-  const quantidade = numeroOuNull(formData.get("quantidade"));
-  const custoUnitario = numeroOuNull(formData.get("custo_unitario"));
-  const placa = String(formData.get("placa") ?? "").trim().toUpperCase() || null;
-  const manutencaoId = String(formData.get("manutencao_id") ?? "").trim() || null;
-  const motivo = String(formData.get("motivo") ?? "").trim() || null;
+  // Achado real (13/08/2026, reportado pelo Daniel): clicar em "Registrar
+  // Movimento" as vezes cai na tela de erro genérica em vez de mostrar a
+  // mensagem inline de sempre — sinal de uma exceção não tratada escapando
+  // da Server Action (ex.: falha pontual de rede/sessão ao chamar
+  // supabase.auth.getUser() ou o insert), já que o resto da função só
+  // RETORNA `{ erro }`, nunca lança. Envolve tudo num try/catch pra
+  // qualquer falha inesperada também virar `{ erro }` — o form já sabe
+  // mostrar isso como banner vermelho, sem derrubar a tela inteira.
+  try {
+    const supabase = await createClient();
+    const tipoMovimento = String(formData.get("tipo_movimento") ?? "").trim();
+    const quantidade = numeroOuNull(formData.get("quantidade"));
+    const custoUnitario = numeroOuNull(formData.get("custo_unitario"));
+    const placa = String(formData.get("placa") ?? "").trim().toUpperCase() || null;
+    const manutencaoId = String(formData.get("manutencao_id") ?? "").trim() || null;
+    const motivo = String(formData.get("motivo") ?? "").trim() || null;
 
-  if (tipoMovimento !== "entrada" && tipoMovimento !== "saida") return { erro: "Selecione o tipo de movimento." };
-  if (!quantidade || quantidade <= 0) return { erro: "Informe uma quantidade válida." };
+    if (tipoMovimento !== "entrada" && tipoMovimento !== "saida") return { erro: "Selecione o tipo de movimento." };
+    if (!quantidade || quantidade <= 0) return { erro: "Informe uma quantidade válida." };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const { error } = await supabase.from("pecas_estoque_movimentos").insert({
-    empresa_id: empresaId,
-    peca_id: pecaId,
-    tipo_movimento: tipoMovimento,
-    quantidade,
-    custo_unitario: tipoMovimento === "entrada" ? custoUnitario : null,
-    placa,
-    manutencao_id: manutencaoId ? Number(manutencaoId) : null,
-    motivo,
-    criado_por: user?.email ?? null,
-  });
+    const { error } = await supabase.from("pecas_estoque_movimentos").insert({
+      empresa_id: empresaId,
+      peca_id: pecaId,
+      tipo_movimento: tipoMovimento,
+      quantidade,
+      custo_unitario: tipoMovimento === "entrada" ? custoUnitario : null,
+      placa,
+      manutencao_id: manutencaoId ? Number(manutencaoId) : null,
+      motivo,
+      criado_por: user?.email ?? null,
+    });
 
-  if (error) {
-    // A CHECK constraint de saldo negativo chega aqui como erro do Postgres
-    // (23514) — traduz pra uma mensagem que faz sentido pro usuário.
-    if (error.code === "23514") {
-      return { erro: "Saída maior que o saldo disponível em estoque." };
+    if (error) {
+      // A CHECK constraint de saldo negativo chega aqui como erro do Postgres
+      // (23514) — traduz pra uma mensagem que faz sentido pro usuário.
+      if (error.code === "23514") {
+        return { erro: "Saída maior que o saldo disponível em estoque." };
+      }
+      return { erro: `Não foi possível registrar o movimento: ${error.message}` };
     }
-    return { erro: `Não foi possível registrar o movimento: ${error.message}` };
-  }
 
-  revalidatePath("/estoque-pecas");
-  revalidatePath(`/estoque-pecas/${pecaId}`);
-  return { ok: true };
+    revalidatePath("/estoque-pecas");
+    revalidatePath(`/estoque-pecas/${pecaId}`);
+    return { ok: true };
+  } catch (e) {
+    console.error("[estoque-pecas] falha inesperada ao registrar movimento:", e);
+    return { erro: "Falha pontual ao registrar o movimento. Tente novamente." };
+  }
 }
 
 export async function editarPecaAcao(pecaId: string, dados: { nome?: string; codigo?: string | null; unidade_medida?: string; quantidade_minima?: number }) {
