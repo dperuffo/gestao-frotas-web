@@ -36,6 +36,15 @@ function quantil(valores: number[], q: number) {
 function rotulo(d: { marca: string; modelo: string; motor: string }) {
   return `${d.marca} ${d.modelo}${d.motor !== "Não informado" ? ` (${d.motor})` : ""}`;
 }
+// Achado real (13/08/2026) — o rótulo completo ("Marca Modelo (Motor)") é
+// longo demais pra caber numa linha só no eixo Y dos gráficos horizontais;
+// o Recharts quebra a categoria em várias linhas de SVG, que acabam
+// invadindo o espaço da barra vizinha (texto "acavalado"). O eixo mostra a
+// versão truncada; o nome completo continua disponível no tooltip (hover)
+// e na tabela comparativa logo abaixo.
+function truncar(texto: string, tamanho: number) {
+  return texto.length > tamanho ? `${texto.slice(0, tamanho - 1).trimEnd()}…` : texto;
+}
 
 // Desempenho por ativo (marca/modelo/motor) — pedido do Daniel (12/08/2026):
 // comparar km/L, R$/L, custo/km (TCO) e score de manutenção agrupado pelas
@@ -55,7 +64,8 @@ export function TabelaDesempenhoPorAtivo({ dados }: { dados: ItemDesempenhoAtivo
       .slice(0, 12)
       .map((d) => ({
         ...d,
-        nome: rotulo(d),
+        nome: truncar(rotulo(d), 22),
+        nomeCompleto: rotulo(d),
         cor: (d.mediaKmL as number) >= q66 ? "#43A047" : (d.mediaKmL as number) >= q33 ? "#F57C00" : "#E53935",
       }));
   }, [comKml]);
@@ -69,7 +79,8 @@ export function TabelaDesempenhoPorAtivo({ dados }: { dados: ItemDesempenhoAtivo
       .slice(0, 12)
       .map((d) => ({
         ...d,
-        nome: rotulo(d),
+        nome: truncar(rotulo(d), 22),
+        nomeCompleto: rotulo(d),
         cor: (d.custoPorKm as number) <= q33 ? "#43A047" : (d.custoPorKm as number) <= q66 ? "#F57C00" : "#E53935",
       }));
   }, [comCustoKm]);
@@ -100,12 +111,17 @@ export function TabelaDesempenhoPorAtivo({ dados }: { dados: ItemDesempenhoAtivo
           {top12Kml.length === 0 ? (
             <p className="p-4 text-sm text-slate-400">Sem dados suficientes para calcular km/L.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={Math.max(280, top12Kml.length * 30)}>
+            <ResponsiveContainer width="100%" height={Math.max(280, top12Kml.length * 36)}>
               <BarChart data={top12Kml} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis type="category" dataKey="nome" width={140} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(v: number) => `${v.toFixed(1)} km/L`} />
+                <YAxis type="category" dataKey="nome" width={150} tick={{ fontSize: 10 }} interval={0} />
+                <Tooltip
+                  formatter={(v: number) => `${v.toFixed(1)} km/L`}
+                  labelFormatter={(_, payload) =>
+                    payload && payload[0] ? (payload[0].payload as { nomeCompleto: string }).nomeCompleto : ""
+                  }
+                />
                 <Bar dataKey="mediaKmL" name="km/L" radius={[0, 4, 4, 0]}>
                   {top12Kml.map((d) => (
                     <Cell key={d.nome} fill={d.cor} />
@@ -121,12 +137,17 @@ export function TabelaDesempenhoPorAtivo({ dados }: { dados: ItemDesempenhoAtivo
           {top12CustoKm.length === 0 ? (
             <p className="p-4 text-sm text-slate-400">Sem dados suficientes para calcular custo/km.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={Math.max(280, top12CustoKm.length * 30)}>
+            <ResponsiveContainer width="100%" height={Math.max(280, top12CustoKm.length * 36)}>
               <BarChart data={top12CustoKm} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis type="category" dataKey="nome" width={140} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(v: number) => formatarMoeda(v, 2)} />
+                <YAxis type="category" dataKey="nome" width={150} tick={{ fontSize: 10 }} interval={0} />
+                <Tooltip
+                  formatter={(v: number) => formatarMoeda(v, 2)}
+                  labelFormatter={(_, payload) =>
+                    payload && payload[0] ? (payload[0].payload as { nomeCompleto: string }).nomeCompleto : ""
+                  }
+                />
                 <Bar dataKey="custoPorKm" name="Custo/km" radius={[0, 4, 4, 0]}>
                   {top12CustoKm.map((d) => (
                     <Cell key={d.nome} fill={d.cor} />
