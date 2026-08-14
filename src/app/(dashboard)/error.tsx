@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
-// Fase 27.22 — error boundary do Next.js pra qualquer página dentro do
-// dashboard. Até aqui, um erro não tratado em qualquer tela (ex.: o crash de
-// anexo de chamado que motivou essa fase) caía na página genérica do Next
-// ("Application error: a server-side exception has occurred..."), sem
-// contexto nem caminho de volta — o usuário só tinha a opção de fechar a aba
-// ou recarregar tudo. Esse arquivo intercepta qualquer erro dentro de
-// `(dashboard)/**` e mostra uma tela com uma explicação simples, um botão
-// de tentar de novo (`reset()`, que tenta re-renderizar sem recarregar a
-// página) e um link de volta ao Dashboard — o menu lateral (definido em
-// layout.tsx) continua visível normalmente, porque o erro só derruba o
-// conteúdo da página, não o layout ao redor.
-export default function DashboardError({
+// Fase Observabilidade-Fundacao (14/08/2026, pedido do Daniel: "todo erro
+// deve ter stack trace completa e contexto") — primeiro `error.tsx` da
+// aplicação inteira (confirmado por busca: não existia nenhum antes). Sem
+// isto, qualquer erro não tratado durante a renderização de uma tela do
+// dashboard mostrava a tela branca padrão do Next.js — sem aviso pro
+// usuário, e sem o Daniel nunca saber que aconteceu (o erro só ia pro
+// console do navegador de quem estava usando, que ninguém olha). Este
+// arquivo captura esse erro, mostra uma tela de recuperação, e relay o
+// stack completo pro servidor via /api/log-cliente — assim fica gravado no
+// log estruturado do Railway, com Request ID quando disponível.
+//
+// Component obrigatoriamente Client (Error Boundary do Next.js só funciona
+// assim) — por isso não dá pra usar `logger.ts`/`headers()` direto aqui.
+export default function ErroDashboard({
   error,
   reset,
 }: {
@@ -22,31 +24,43 @@ export default function DashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[dashboard] erro não tratado:", error);
+    fetch("/api/log-cliente", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mensagem: error.message,
+        stack: error.stack,
+        digest: error.digest,
+        pathname: typeof window !== "undefined" ? window.location.pathname : undefined,
+      }),
+      // Não bloqueia a renderização da tela de erro por causa de uma
+      // falha de rede ao tentar logar — best effort.
+      keepalive: true,
+    }).catch(() => {});
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="card max-w-md space-y-4 p-8 text-center">
-        <p className="text-3xl">⚠️</p>
-        <h1 className="text-lg font-semibold text-slate-900">Algo deu errado nesta tela</h1>
-        <p className="text-sm text-slate-500">
-          Não conseguimos concluir essa ação. Isso pode ter sido algo pontual — tente de novo, ou
-          volte ao Dashboard e tente novamente a partir de lá.
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      <div className="card max-w-md p-8">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+          <AlertTriangle className="h-6 w-6 text-red-600" />
+        </div>
+        <h2 className="text-lg font-semibold text-gray-900">Algo deu errado nesta tela</h2>
+        <p className="mt-2 text-sm text-gray-500">
+          O erro já foi registrado automaticamente. Você pode tentar novamente ou voltar para o
+          início.
         </p>
         {error.digest && (
-          <p className="text-xs text-slate-400">
-            Código do erro: <span className="font-mono">{error.digest}</span> — informe esse código
-            se abrir um chamado sobre o problema.
-          </p>
+          <p className="mt-3 text-xs text-gray-400">Código de referência: {error.digest}</p>
         )}
-        <div className="flex justify-center gap-3 pt-2">
-          <button onClick={() => reset()} className="btn-primary">
+        <div className="mt-6 flex justify-center gap-3">
+          <button onClick={() => reset()} className="btn-primary inline-flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
             Tentar novamente
           </button>
-          <Link href="/dashboard" className="btn-secondary">
-            Voltar ao Dashboard
-          </Link>
+          <a href="/dashboard" className="btn-secondary">
+            Ir para o início
+          </a>
         </div>
       </div>
     </div>

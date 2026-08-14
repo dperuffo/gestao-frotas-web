@@ -118,7 +118,7 @@ export function TabelaComparacaoVeiculos({ veiculos, placaSelecionada }: { veicu
         </thead>
         <tbody className="divide-y divide-slate-100">
           {ordenados.map((v) => (
-            <tr key={v.placa} className={`hover:bg-slate-50 ${placaSelecionada === v.placa ? "bg-frota-50" : ""}`}>
+            <tr key={v.placa} className={`transition-colors hover:bg-frota-50/60 ${placaSelecionada === v.placa ? "bg-frota-50" : ""}`}>
               <td className="px-4 py-2.5">
                 <Link href={hrefComVeiculo(v.placa)} className="font-medium text-frota-600 hover:underline">
                   {v.placa}

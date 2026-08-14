@@ -2,8 +2,15 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
-import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { agregarVeiculos, veiculoParaExibicao, type VeiculoKpi, type KpisExibicao } from "@/lib/indicadoresFrota";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app. Os gauges
+// (GaugeIndicador) já têm identidade visual própria — só os 2 cards
+// "planos" que restavam (veículo/sinistros) trocam pelo IndicadorColorido.
+// AjudaIcon saiu daqui: a única chamada era dentro do Indicador() local
+// removido abaixo — IndicadorColorido já importa o próprio AjudaIcon.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Truck, AlertTriangle } from "lucide-react";
 import { TabelaComparacaoVeiculos } from "./_components/TabelaComparacaoVeiculos";
 import { GaugeIndicador } from "./_components/GaugeIndicador";
 
@@ -393,7 +400,12 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               semValorTexto="Sem manutenção classificada"
               ajudaChave="indicadores_frota.corretiva"
             />
-            <Indicador label={veiculoSelecionado ? "Veículo" : "Veículos no filtro"} valor={veiculoSelecionado ? veiculoSelecionado.placa : String(kpis.totalVeiculos)} />
+            <IndicadorColorido
+              cor="sky"
+              icon={Truck}
+              label={veiculoSelecionado ? "Veículo" : "Veículos no filtro"}
+              valor={veiculoSelecionado ? veiculoSelecionado.placa : String(kpis.totalVeiculos)}
+            />
             <GaugeIndicador
               label="Taxa de conformidade (checklist)"
               valor={kpis.conformidadePct}
@@ -430,11 +442,12 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                 ajudaChave="indicadores_frota.sinistralidade"
               />
             ) : (
-              <Indicador
+              <IndicadorColorido
+                cor={kpis.totalSinistros > 0 ? "amber" : "green"}
+                icon={AlertTriangle}
                 label="Sinistros no período"
                 valor={String(kpis.totalSinistros)}
                 ajudaChave="indicadores_frota.sinistralidade"
-                destaque={kpis.totalSinistros > 0 ? "aviso" : undefined}
               />
             )}
           </div>
@@ -475,25 +488,5 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-  ajudaChave,
-}: {
-  label: string;
-  valor: string;
-  destaque?: "aviso";
-  ajudaChave?: string;
-}) {
-  return (
-    <div className={`card p-4 ${destaque === "aviso" ? "border-amber-200 bg-amber-50/50" : ""}`}>
-      <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-        {label} {ajudaChave && <AjudaIcon chave={ajudaChave} />}
-      </p>
-      <p className={`mt-1 text-2xl font-semibold ${destaque === "aviso" ? "text-amber-700" : "text-slate-900"}`}>
-        {valor}
-      </p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

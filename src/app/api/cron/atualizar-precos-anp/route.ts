@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseAnpPrecosXlsx } from "@/lib/anpPrecos";
 import { buscarPlanilhaAnpMaisRecente } from "@/lib/anpFetch";
+import { segredoConfere } from "@/lib/segredoConstante";
+import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
 
 // Fase automatiza-anp-bigquery — atualização semanal automática da série de
 // preços de referência ANP (tabela anp_precos_referencia), sem depender de
@@ -56,9 +58,16 @@ async function executar(request: Request) {
       return NextResponse.json({ erro: "CRON_SECRET não configurado no servidor." }, { status: 500 });
     }
     const autorizacao = request.headers.get("authorization");
-    if (autorizacao !== `Bearer ${segredoEsperado}`) {
+    if (!segredoConfere(autorizacao, `Bearer ${segredoEsperado}`)) {
       return NextResponse.json({ erro: "Não autorizado." }, { status: 401 });
     }
+
+    // M2 — defesa em profundidade contra tentativa de adivinhar o CRON_SECRET
+    // por força bruta (a comparação já é constant-time, isso limita o VOLUME
+    // de tentativas, não o tempo de cada uma). Generoso o bastante pra não
+    // atrapalhar disparo manual repetido do próprio Daniel.
+    const limite = verificarLimite(`cron-anp:${ipDaRequisicao(request)}`, 20, 5 * 60 * 1000);
+    if (!limite.permitido) return respostaLimiteExcedido(limite);
 
     let busca;
     try {

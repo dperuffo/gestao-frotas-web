@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { lerAba, indiceColunas, texto, textoOuNull, numero, data as celulaData, dedupePorChave } from "@/lib/xlsx";
 import { normalizarCNPJ, resolverUf } from "@/lib/utils";
 import type { Database } from "@/types/database.types";
+import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
 
 export type ResultadoImportacaoPrecos =
   | { erro: string }
@@ -151,6 +152,10 @@ export async function POST(request: Request) {
       });
     }
   }
+
+  // M2 — protege processamento pesado (parsing de planilha).
+  const limite = verificarLimite(`importar-precos:${ipDaRequisicao(request)}`, 15, 10 * 60 * 1000);
+  if (!limite.permitido) return respostaLimiteExcedido(limite);
 
   const formData = await request.formData();
 

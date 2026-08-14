@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { lerAba, indiceColunas, texto, textoOuNull, numero, simNao, dedupePorChave } from "@/lib/xlsx";
 import { normalizarCNPJ, resolverUf } from "@/lib/utils";
 import type { Database } from "@/types/database.types";
+import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
 
 export type ResultadoImportacaoAnp =
   | { erro: string }
@@ -33,6 +34,10 @@ export async function POST(request: Request) {
       erro: "Apenas administradores podem importar o universo de postos ANP.",
     });
   }
+
+  // M2 — protege processamento pesado (planilha nacional, ~35 mil linhas).
+  const limite = verificarLimite(`importar-anp:${ipDaRequisicao(request)}`, 10, 10 * 60 * 1000);
+  if (!limite.permitido) return respostaLimiteExcedido(limite);
 
   const formData = await request.formData();
   const arquivo = formData.get("arquivo");

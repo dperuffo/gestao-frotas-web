@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { segredoConfere } from "@/lib/segredoConstante";
+import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
 
 // Fase P0.6 — webhook do provedor de cobrança (pagamento confirmado chega
 // aqui de forma assíncrona, quando um gateway real — Asaas/Cora — estiver
@@ -17,9 +19,15 @@ export async function POST(request: Request) {
   if (!segredoEsperado) {
     return NextResponse.json({ erro: "COBRANCA_WEBHOOK_SECRET não configurado no servidor." }, { status: 500 });
   }
-  if (request.headers.get("x-webhook-secret") !== segredoEsperado) {
+  if (!segredoConfere(request.headers.get("x-webhook-secret"), segredoEsperado)) {
     return NextResponse.json({ erro: "Não autorizado." }, { status: 401 });
   }
+
+  // M2 — defesa em profundidade contra força bruta do segredo do webhook
+  // (o gateway real manda eventos com baixa frequência; generoso o
+  // bastante pra reprocessamento manual não travar).
+  const limite = verificarLimite(`webhook-cobranca:${ipDaRequisicao(request)}`, 30, 5 * 60 * 1000);
+  if (!limite.permitido) return respostaLimiteExcedido(limite);
 
   let payload: unknown;
   try {

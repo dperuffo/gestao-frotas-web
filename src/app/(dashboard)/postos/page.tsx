@@ -11,6 +11,10 @@ import MapaDensidadeLazy from "../inteligencia-rede/_components/MapaDensidadeLaz
 import { ScoreFrota } from "./_components/ScoreFrota";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Fuel, CheckCircle2, Lock, Globe, Tag } from "lucide-react";
 
 const TAMANHO_PAGINA = 50;
 
@@ -273,10 +277,15 @@ async function ViewRede({
 
   return (
     <div>
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Indicador label="Postos na rede" valor={totalRede ?? 0} />
-        <Indicador label="Liberados para abastecimento" valor={(totalRede ?? 0) - (totalBloqueados ?? 0)} />
-        <Indicador label="Bloqueados pelo gestor" valor={totalBloqueados ?? 0} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <IndicadorColorido cor="sky" icon={Fuel} label="Postos na rede" valor={String(totalRede ?? 0)} />
+        <IndicadorColorido
+          cor="green"
+          icon={CheckCircle2}
+          label="Liberados para abastecimento"
+          valor={String((totalRede ?? 0) - (totalBloqueados ?? 0))}
+        />
+        <IndicadorColorido cor="amber" icon={Lock} label="Bloqueados pelo gestor" valor={String(totalBloqueados ?? 0)} />
       </div>
 
       <div className="mb-4 flex justify-end">
@@ -314,7 +323,7 @@ async function ViewRede({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {postos?.map((p) => (
-              <tr key={p.cnpj} className="hover:bg-slate-50">
+              <tr key={p.cnpj} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3">
                   <Link href={`/postos/${p.cnpj}`} className="font-medium text-frota-600 hover:underline">
                     {p.razao_social ?? p.cnpj}
@@ -618,10 +627,10 @@ async function ViewUniverso({
 
   return (
     <div>
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Indicador label="Universo ANP (nacional)" valor={totalGeral ?? 0} />
-        <Indicador label='Marcados "Gestão de Frotas"' valor={totalGestaoFrotas ?? 0} />
-        <Indicador label="Ativos no cliente selecionado" valor={statusPorCnpj.size} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <IndicadorColorido cor="sky" icon={Globe} label="Universo ANP (nacional)" valor={(totalGeral ?? 0).toLocaleString("pt-BR")} />
+        <IndicadorColorido cor="violet" icon={Tag} label='Marcados "Gestão de Frotas"' valor={(totalGestaoFrotas ?? 0).toLocaleString("pt-BR")} />
+        <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos no cliente selecionado" valor={String(statusPorCnpj.size)} />
       </div>
 
       <div className="card overflow-x-auto">
@@ -643,7 +652,7 @@ async function ViewUniverso({
               const estaNaRede = statusPorCnpj.has(cnpjNormalizado);
               const ativo = statusPorCnpj.get(cnpjNormalizado) ?? true;
               return (
-                <tr key={p.cnpj} className="hover:bg-slate-50">
+                <tr key={p.cnpj} className="transition-colors hover:bg-frota-50/60">
                   <td className="px-4 py-3">
                     {estaNaRede ? (
                       <Link
@@ -703,14 +712,8 @@ async function ViewUniverso({
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: number }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor.toLocaleString("pt-BR")}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).
 
 function AbaLink({
   params,

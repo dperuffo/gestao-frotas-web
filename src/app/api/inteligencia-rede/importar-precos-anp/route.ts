@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { parseAnpPrecosXlsx } from "@/lib/anpPrecos";
+import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
 
 export type ResultadoImportacaoPrecosAnp =
   | { erro: string }
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
       erro: "Apenas administradores podem importar a série de preços oficiais da ANP.",
     });
   }
+
+  // M2 — protege processamento pesado (5 abas, parsing de milhares de linhas).
+  const limite = verificarLimite(`importar-precos-anp:${ipDaRequisicao(request)}`, 10, 10 * 60 * 1000);
+  if (!limite.permitido) return respostaLimiteExcedido(limite);
 
   const formData = await request.formData();
   const arquivo = formData.get("arquivo");

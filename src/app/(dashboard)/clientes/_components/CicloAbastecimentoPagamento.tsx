@@ -12,6 +12,11 @@ import { SecaoCiclosAbertos } from "@/app/(dashboard)/_components/SecaoCiclosAbe
 import type { CicloAberto } from "@/lib/ciclosAbertos";
 import { BotaoAcaoFinanceiraPosto } from "@/app/(dashboard)/financeiro-posto/_components/BotaoAcaoFinanceiraPosto";
 import { marcarFaturaPagaAcao, cancelarFaturaAcao } from "@/app/(dashboard)/financeiro-posto/actions";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app. Componente
+// compartilhado admin (/clientes/[id]) e posto (/clientes-posto/[id]).
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Fuel, Calendar, Droplet, Wallet, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export type NegociacaoDoCliente = {
   id: string;
@@ -124,17 +129,18 @@ export function CicloAbastecimentoPagamento({
         </p>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <Indicador label="Postos com negociação" valor={String(postosComNegociacao)} />
-        <Indicador label="Negociações vigentes" valor={String(negociacoesVigentes.length)} />
-        <Indicador label="Volume mín. contratado/mês" valor={`${volumeContratadoTotal.toLocaleString("pt-BR")} L`} />
-        <Indicador label="Em aberto" valor={formatarMoeda(totalEmAberto)} />
-        <Indicador
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <IndicadorColorido cor="sky" icon={Fuel} label="Postos com negociação" valor={String(postosComNegociacao)} />
+        <IndicadorColorido cor="violet" icon={Calendar} label="Negociações vigentes" valor={String(negociacoesVigentes.length)} />
+        <IndicadorColorido cor="sky" icon={Droplet} label="Volume mín. contratado/mês" valor={`${volumeContratadoTotal.toLocaleString("pt-BR")} L`} />
+        <IndicadorColorido cor="amber" icon={Wallet} label="Em aberto" valor={formatarMoeda(totalEmAberto)} />
+        <IndicadorColorido
+          cor={totalVencido > 0 ? "red" : "green"}
+          icon={AlertTriangle}
           label="Vencido"
           valor={formatarMoeda(totalVencido)}
-          destaque={totalVencido > 0 ? "negativo" : undefined}
         />
-        <Indicador label="Pago (histórico)" valor={formatarMoeda(totalPago)} destaque="positivo" />
+        <IndicadorColorido cor="green" icon={CheckCircle2} label="Pago (histórico)" valor={formatarMoeda(totalPago)} />
       </div>
 
       {proximaFatura && (
@@ -166,7 +172,7 @@ export function CicloAbastecimentoPagamento({
             {faturas.map((f) => {
               const statusExib = statusCicloFaturaExibicao(f.status, f.vencimento, hojeIso);
               return (
-                <tr key={f.id} className="hover:bg-slate-50">
+                <tr key={f.id} className="transition-colors hover:bg-frota-50/60">
                   <td className="px-4 py-3 text-slate-700">{f.posto_nome ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-500">
                     {formatarDataBr(f.periodo_inicio)} – {formatarDataBr(f.periodo_fim)}
@@ -239,7 +245,7 @@ export function CicloAbastecimentoPagamento({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {negociacoes.map((n) => (
-              <tr key={n.id} className="hover:bg-slate-50">
+              <tr key={n.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 text-slate-700">{n.posto_nome ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-500">{n.combustivel ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-500">
@@ -281,28 +287,8 @@ export function CicloAbastecimentoPagamento({
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-}: {
-  label: string;
-  valor: string;
-  destaque?: "positivo" | "negativo";
-}) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p
-        className={`mt-1 text-lg font-semibold ${
-          destaque === "negativo" ? "text-red-600" : destaque === "positivo" ? "text-green-700" : "text-slate-900"
-        }`}
-      >
-        {valor}
-      </p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).
 
 function BadgeStatusFatura({ status }: { status: StatusCicloFaturaExibicao }) {
   const cores: Record<StatusCicloFaturaExibicao, string> = {

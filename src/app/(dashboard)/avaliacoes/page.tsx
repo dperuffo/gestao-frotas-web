@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { rotuloNota } from "@/lib/avaliacoes";
 import { RespostaAvaliacao } from "./_components/RespostaAvaliacao";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { ClipboardList, Clock } from "lucide-react";
 
 // Painel interno de Avaliações — exclusivo do time FNI (perfil admin), pra
 // acompanhar o feedback dos clientes e responder. Mesmo padrão de guarda de
@@ -66,24 +70,15 @@ export default async function AvaliacoesAdminPage({
 
       {error && <p className="mb-4 text-sm text-red-600">Erro ao carregar avaliações: {error.message}</p>}
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="card p-4">
-          <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-            Nota média <AjudaIcon chave="avaliacoes.nota" />
-          </p>
-          <p className="mt-1 flex items-center gap-2 text-xl font-semibold text-slate-900">
-            {notaMedia.toFixed(1)}
-            <Star size={18} className="fill-amber-400 text-amber-400" />
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Total de avaliações</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{total}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Pendentes de resposta</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{pendentes}</p>
-        </div>
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <IndicadorColorido cor="amber" icon={Star} label="Nota média" valor={notaMedia.toFixed(1)} ajudaChave="avaliacoes.nota" />
+        <IndicadorColorido cor="sky" icon={ClipboardList} label="Total de avaliações" valor={String(total)} />
+        <IndicadorColorido
+          cor={pendentes > 0 ? "amber" : "green"}
+          icon={Clock}
+          label="Pendentes de resposta"
+          valor={String(pendentes)}
+        />
       </div>
 
       {listaCompleta.length > 0 && (
@@ -100,7 +95,7 @@ export default async function AvaliacoesAdminPage({
 
       <div className="space-y-3">
         {lista.map((a) => (
-          <div key={a.id} className="card p-4">
+          <div key={a.id} className="card p-4 transition-colors hover:border-frota-300">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-medium text-slate-900">

@@ -2,6 +2,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { GitBranch, CheckCircle2 } from "lucide-react";
 
 export default async function GrupoEconomicoPage() {
   const supabase = await createClient();
@@ -34,9 +38,9 @@ export default async function GrupoEconomicoPage() {
         </Link>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Indicador label="Total de grupos" valor={totalGrupos} />
-        <Indicador label="Ativos" valor={totalAtivos} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <IndicadorColorido cor="sky" icon={GitBranch} label="Total de grupos" valor={String(totalGrupos)} />
+        <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos" valor={String(totalAtivos)} />
       </div>
 
       <div className="mb-4 flex justify-end">
@@ -71,7 +75,7 @@ export default async function GrupoEconomicoPage() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {grupos?.map((g) => (
-              <tr key={g.id} className="hover:bg-slate-50">
+              <tr key={g.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3">
                   <Link href={`/grupo-economico/${g.id}`} className="font-medium text-frota-600 hover:underline">
                     {g.nome}
@@ -102,11 +106,5 @@ export default async function GrupoEconomicoPage() {
   );
 }
 
-function Indicador({ label, valor }: { label: string; valor: number }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

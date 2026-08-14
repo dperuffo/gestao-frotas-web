@@ -70,7 +70,11 @@ export default async function PostosDuplicadosPage() {
               : null;
 
           return (
-            <div key={l.id} className="card p-4">
+            // Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) —
+            // layout de card-list (não é grid de KPI), mesmo toque de
+            // Oficinas/Fretes: hover:border-frota-300 em vez de trocar por
+            // IndicadorColorido.
+            <div key={l.id} className="card p-4 transition-colors hover:border-frota-300">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Posto recém-cadastrado</p>

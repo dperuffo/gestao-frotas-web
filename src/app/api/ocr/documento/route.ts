@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient as criarClienteSupabase } from "@supabase/supabase-js";
 import { extrairTextoDocumento } from "@/lib/ocr";
 import type { Database } from "@/types/database.types";
+import { resolverCorsHeaders } from "@/lib/corsOrigens";
+import { verificarLimite } from "@/lib/rateLimit";
 
 // Fase ocr-documentos (04/08/2026, item 8 do benchmark FNI vs KMM, Grupo 2)
 // — mesma razão de existir da rota /api/assistente (ver comentário lá):
@@ -11,17 +13,12 @@ import type { Database } from "@/types/database.types";
 // (Authorization: Bearer <token>) em vez de cookies — mesmo padrão.
 export const runtime = "nodejs";
 
-const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Authorization, Content-Type",
-};
-
-export function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+export function OPTIONS(request: Request) {
+  return new NextResponse(null, { status: 204, headers: resolverCorsHeaders(request) });
 }
 
 export async function POST(request: Request) {
+  const CORS_HEADERS = resolverCorsHeaders(request);
   const autorizacao = request.headers.get("authorization");
   const token = autorizacao?.startsWith("Bearer ") ? autorizacao.slice(7).trim() : null;
   if (!token) {
@@ -39,6 +36,16 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser(token);
   if (erroAuth || !user) {
     return NextResponse.json({ erro: "Sessão inválida ou expirada, faça login novamente." }, { status: 401, headers: CORS_HEADERS });
+  }
+
+  // M2 — protege custo de CPU (tesseract.js roda OCR de verdade a cada
+  // chamada): limite por usuário autenticado.
+  const limite = verificarLimite(`ocr:${user.id}`, 30, 10 * 60 * 1000);
+  if (!limite.permitido) {
+    return NextResponse.json(
+      { erro: "Muitas fotos em pouco tempo — tente novamente em instantes." },
+      { status: 429, headers: { ...CORS_HEADERS, "Retry-After": String(limite.tentarNovamenteEmSegundos) } }
+    );
   }
 
   let arquivo: File | null = null;

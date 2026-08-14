@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { lerAba, indiceColunas, texto, textoOuNull, numero, data as celulaData, simNao, dedupePorChave } from "@/lib/xlsx";
 import { normalizarCNPJ, resolverUf } from "@/lib/utils";
 import type { Database } from "@/types/database.types";
+import { verificarLimite, respostaLimiteExcedido } from "@/lib/rateLimit";
 
 export type ResultadoImportacaoPostosGf =
   | { erro: string }
@@ -173,6 +174,11 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json<ResultadoImportacaoPostosGf>({ erro: "Sessão expirada. Faça login novamente." });
   }
+
+  // M2 — protege processamento pesado (parsing de planilha de milhares de
+  // linhas): importação em lote é uma operação naturalmente esporádica.
+  const limite = verificarLimite(`importar-postos:${user.id}`, 10, 10 * 60 * 1000);
+  if (!limite.permitido) return respostaLimiteExcedido(limite);
 
   const formData = await request.formData();
 

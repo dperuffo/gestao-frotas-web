@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sincronizarProfrotas } from "@/lib/profrotas";
 import { verificarLimiteFrota, mensagemLimiteExcedido } from "@/lib/limitePlano";
+import { segredoConfere } from "@/lib/segredoConstante";
+import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
 
 // Sincronização automática agendada de todos os clientes com integração
 // PróFrotas ativa — substitui o worker em background por cliente que o
@@ -42,9 +44,14 @@ async function executar(request: Request) {
     return NextResponse.json({ erro: "CRON_SECRET não configurado no servidor." }, { status: 500 });
   }
   const autorizacao = request.headers.get("authorization");
-  if (autorizacao !== `Bearer ${segredoEsperado}`) {
+  if (!segredoConfere(autorizacao, `Bearer ${segredoEsperado}`)) {
     return NextResponse.json({ erro: "Não autorizado." }, { status: 401 });
   }
+
+  // M2 — mesma defesa em profundidade contra força bruta do CRON_SECRET
+  // usada em /api/cron/atualizar-precos-anp.
+  const limite = verificarLimite(`cron-profrotas:${ipDaRequisicao(request)}`, 20, 5 * 60 * 1000);
+  if (!limite.permitido) return respostaLimiteExcedido(limite);
 
   const supabase = createAdminClient();
   const { data: chaves, error } = await supabase

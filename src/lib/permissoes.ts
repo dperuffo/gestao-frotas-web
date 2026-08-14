@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { EMPRESA_ID_GLOBAL } from "@/lib/constants";
+import { logger } from "@/lib/logger";
 
 // Fase enforcement-permissoes (04/08/2026, pedido do Daniel: "as permissoes
 // deveriam travar se estiverem desligadas, tanto na web quanto no PWA") —
@@ -182,7 +183,9 @@ export async function carregarMapaPermissoes(
     .eq("perfil", perfil);
 
   if (error) {
-    console.error("[permissoes] falha ao carregar permissões (fail-open, ignorado):", error);
+    // Fase Observabilidade-Fundacao (14/08/2026) — migrado pro logger
+    // estruturado como demonstração do padrão novo (ver src/lib/logger.ts).
+    await logger.error("permissoes", "Falha ao carregar permissões (fail-open, ignorado)", error);
     return mapa;
   }
   for (const linha of data ?? []) mapa.set(linha.funcionalidade, linha.permitido ?? false);

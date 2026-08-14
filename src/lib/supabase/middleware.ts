@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { CABECALHO_REQUEST_ID } from "@/lib/request-id";
 
 // Mantém a sessão do usuário sempre renovada a cada requisição, e garante que
 // só quem tem sessão válida chegue às rotas do dashboard. A exigência de MFA
@@ -15,11 +16,24 @@ export async function updateSession(request: NextRequest) {
   // de validar). x-search só é usado hoje pro layout detectar
   // "?acesso=negado" e mostrar um aviso depois do redirect de bloqueio, sem
   // precisar tocar em cada page.tsx que já tem searchParams próprios.
+  // Fase Observabilidade-Fundacao (14/08/2026, pedido do Daniel: "todo
+  // endpoint da aplicação deve ter request ID único para rastreabilidade")
+  // — gerado sempre aqui, nunca aceito de header vindo do cliente (evita
+  // spoofing e garante que cada requisição tem um ID que só o servidor
+  // criou). Vai tanto pro header de REQUEST (mesmo mecanismo já usado pra
+  // x-pathname/x-search, lido via `headers()` em Server Component/Action —
+  // ver src/lib/logger.ts) quanto pro header de RESPONSE, em todo ponto de
+  // saída desta função, pra aparecer na aba Network do navegador e servir
+  // de referência quando o Daniel/usuário reportar um problema.
+  const requestId = crypto.randomUUID();
+
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", request.nextUrl.pathname);
   requestHeaders.set("x-search", request.nextUrl.search);
+  requestHeaders.set(CABECALHO_REQUEST_ID, requestId);
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set(CABECALHO_REQUEST_ID, requestId);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,6 +46,7 @@ export async function updateSession(request: NextRequest) {
         setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request: { headers: requestHeaders } });
+          response.headers.set(CABECALHO_REQUEST_ID, requestId);
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
@@ -84,7 +99,9 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isRotaPublica && !isRotaApi) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+    redirectResponse.headers.set(CABECALHO_REQUEST_ID, requestId);
+    return redirectResponse;
   }
 
   // Bloqueio de assinatura/trial expirado. `status = "suspenso"` cobre os
@@ -123,7 +140,9 @@ export async function updateSession(request: NextRequest) {
             const url = request.nextUrl.clone();
             url.pathname = "/assinatura";
             url.searchParams.set("bloqueado", "1");
-            return NextResponse.redirect(url);
+            const redirectResponse = NextResponse.redirect(url);
+            redirectResponse.headers.set(CABECALHO_REQUEST_ID, requestId);
+            return redirectResponse;
           }
         }
       }

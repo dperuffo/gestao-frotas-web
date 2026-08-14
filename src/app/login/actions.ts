@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { registrarAcessoCliente } from "@/lib/acessosClientes";
+import { logger } from "@/lib/logger";
 
 export type LoginFormState = { erro?: string } | undefined;
 
@@ -61,7 +62,9 @@ export async function entrarComGoogle(idToken: string, nonceCru: string): Promis
   });
 
   if (error) {
-    console.error("[login] Falha ao validar ID token do Google:", error.message);
+    // Fase Observabilidade-Fundacao (14/08/2026) — migrado pro logger
+    // estruturado como demonstração do padrão novo (ver src/lib/logger.ts).
+    await logger.error("login", "Falha ao validar ID token do Google", error);
     return { erro: "Não foi possível entrar com Google. Tente novamente." };
   }
 

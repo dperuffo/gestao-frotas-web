@@ -60,7 +60,7 @@ export function SecaoCiclosAbertos({
         </thead>
         <tbody className="divide-y divide-slate-100">
           {ciclos.map((c) => (
-            <tr key={c.negociacao_id} className="hover:bg-slate-50">
+            <tr key={c.negociacao_id} className="transition-colors hover:bg-frota-50/60">
               <td className="px-4 py-3 text-slate-700">
                 {(rotulo === "posto" ? c.cliente_nome : c.posto_nome) ?? "—"}
               </td>

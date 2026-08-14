@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buscarPrecoFipePorCodigo, buscarHistoricoFipe, parsePrecoFipe, type TipoVeiculoFipe } from "@/lib/fipe";
+import { segredoConfere } from "@/lib/segredoConstante";
+import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
+import { logger } from "@/lib/logger";
 
 // Fase TCO 2 (29/07/2026) — refresh mensal do valor FIPE de todo veículo já
 // vinculado (fipe_tipo_veiculo/codigo_fipe/fipe_ano_codigo preenchidos),
@@ -21,9 +24,14 @@ async function executar(request: Request) {
       return NextResponse.json({ erro: "CRON_SECRET não configurado no servidor." }, { status: 500 });
     }
     const autorizacao = request.headers.get("authorization");
-    if (autorizacao !== `Bearer ${segredoEsperado}`) {
+    if (!segredoConfere(autorizacao, `Bearer ${segredoEsperado}`)) {
       return NextResponse.json({ erro: "Não autorizado." }, { status: 401 });
     }
+
+    // M2 — mesma defesa em profundidade contra força bruta do CRON_SECRET
+    // usada em /api/cron/atualizar-precos-anp.
+    const limite = verificarLimite(`cron-fipe:${ipDaRequisicao(request)}`, 20, 5 * 60 * 1000);
+    if (!limite.permitido) return respostaLimiteExcedido(limite);
 
     const supabase = createAdminClient();
 
@@ -89,7 +97,10 @@ async function executar(request: Request) {
       detalheFalhas: falhas.slice(0, 20),
     });
   } catch (e) {
-    console.error("[cron/atualizar-fipe] falha inesperada:", e);
+    // Fase Observabilidade-Fundacao (14/08/2026) — migrado pro logger
+    // estruturado como demonstração do padrão novo (ver src/lib/logger.ts);
+    // "[cron/atualizar-fipe]" virou o nome do módulo.
+    await logger.error("cron/atualizar-fipe", "Falha inesperada", e);
     return NextResponse.json(
       { erro: e instanceof Error ? `Falha inesperada: ${e.message}` : "Falha inesperada." },
       { status: 500 }

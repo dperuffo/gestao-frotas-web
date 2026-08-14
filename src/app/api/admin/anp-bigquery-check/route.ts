@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getBigQueryClient, BASEDOSDADOS_PROJECT } from "@/lib/bigquery";
+import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
 
 // Fase automatiza-anp-bigquery — passo 1 (diagnóstico, não é a automação
 // final ainda). Antes de montar o pipeline semanal de verdade, precisamos
@@ -25,6 +26,11 @@ export async function GET(request: Request) {
   if (perfil !== "admin") {
     return NextResponse.json({ erro: "Apenas administradores podem rodar este diagnóstico." }, { status: 403 });
   }
+
+  // M2 — protege a cota (paga) do BigQuery: ferramenta de diagnóstico
+  // interno, uso legítimo é esporádico.
+  const limite = verificarLimite(`bigquery-check:${ipDaRequisicao(request)}`, 10, 10 * 60 * 1000);
+  if (!limite.permitido) return respostaLimiteExcedido(limite);
 
   const { searchParams } = new URL(request.url);
   const datasetId = searchParams.get("dataset");

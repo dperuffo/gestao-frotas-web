@@ -4,6 +4,11 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
 import { BotaoDetectarAcoes } from "./_components/BotaoDetectarAcoes";
 import { CardAcaoSugerida, type AcaoSugerida } from "./_components/CardAcaoSugerida";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app. Tela
+// compartilhada cliente/admin.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Clock, AlertTriangle, ClipboardList } from "lucide-react";
 
 const POR_PAGINA = 20;
 
@@ -143,10 +148,15 @@ export default async function AcoesSugeridasPage({
 
       {!(semClienteEscolhido && !ehAdmin) && (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Indicador label="Pendentes" valor={String(totalPendentes)} />
-            <Indicador label="Críticas (pendentes)" valor={String(totalCriticas)} destaque={totalCriticas > 0} />
-            <Indicador label="Nesta página" valor={String(linhas.length)} />
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <IndicadorColorido cor={totalPendentes > 0 ? "amber" : "green"} icon={Clock} label="Pendentes" valor={String(totalPendentes)} />
+            <IndicadorColorido
+              cor={totalCriticas > 0 ? "red" : "green"}
+              icon={AlertTriangle}
+              label="Críticas (pendentes)"
+              valor={String(totalCriticas)}
+            />
+            <IndicadorColorido cor="sky" icon={ClipboardList} label="Nesta página" valor={String(linhas.length)} />
           </div>
 
           <form className="mb-4 flex flex-wrap gap-3">
@@ -210,11 +220,5 @@ export default async function AcoesSugeridasPage({
   );
 }
 
-function Indicador({ label, valor, destaque }: { label: string; valor: string; destaque?: boolean }) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold ${destaque ? "text-red-600" : "text-slate-900"}`}>{valor}</p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

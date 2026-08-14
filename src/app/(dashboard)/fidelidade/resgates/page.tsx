@@ -121,7 +121,7 @@ export default async function ResgatesFidelidadePage({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {resgates.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50">
+              <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 text-slate-900">
                   {nomeMotorista.get(r.motorista_id) ?? r.motorista_id}
                   {r.dependente_id && (

@@ -2,6 +2,22 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PLANO_LABEL, STATUS_EMPRESA_LABEL, type Plano, type StatusEmpresa } from "@/lib/constants";
 import { buscarPrecosPlanos } from "@/lib/planosPrecos";
+// Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
+// toque visual já aplicado nas demais telas densas do app.
+import { IndicadorColorido } from "@/components/IndicadorColorido";
+import {
+  Building2,
+  Clock,
+  CheckCircle2,
+  PauseCircle,
+  XCircle,
+  Wallet,
+  TrendingUp,
+  AlertTriangle,
+  UserPlus,
+  UserMinus,
+  Percent,
+} from "lucide-react";
 
 function formatarMoeda(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -103,40 +119,42 @@ export async function IndicadoresFinanceirosFni() {
     <div>
       {error && <p className="mb-4 text-sm text-red-600">Erro ao carregar empresas: {error.message}</p>}
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <Indicador label="Total de clientes" valor={String(totalClientes)} />
-        <Indicador label="Em trial" valor={String(totalTrial)} />
-        <Indicador label="Ativos" valor={String(totalAtivos)} />
-        <Indicador label="Suspensos" valor={String(totalSuspensos)} />
-        <Indicador label="Cancelados" valor={String(totalCancelados)} />
-        <Indicador label="MRR estimado" valor={formatarMoeda(mrrCents)} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <IndicadorColorido cor="sky" icon={Building2} label="Total de clientes" valor={String(totalClientes)} />
+        <IndicadorColorido cor="amber" icon={Clock} label="Em trial" valor={String(totalTrial)} />
+        <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos" valor={String(totalAtivos)} />
+        <IndicadorColorido cor="amber" icon={PauseCircle} label="Suspensos" valor={String(totalSuspensos)} />
+        <IndicadorColorido cor="red" icon={XCircle} label="Cancelados" valor={String(totalCancelados)} />
+        <IndicadorColorido cor="violet" icon={Wallet} label="MRR estimado" valor={formatarMoeda(mrrCents)} />
       </div>
 
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Faturamento — {agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
       </p>
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Indicador label="Faturado no mês" valor={formatarMoeda(faturamentoMesCents)} />
-        <Indicador
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <IndicadorColorido cor="green" icon={TrendingUp} label="Faturado no mês" valor={formatarMoeda(faturamentoMesCents)} />
+        <IndicadorColorido
+          cor={invoicesFalhas.length > 0 ? "red" : "green"}
+          icon={AlertTriangle}
           label="Inadimplência no mês"
           valor={`${formatarMoeda(inadimplenciaMesCents)} (${invoicesFalhas.length})`}
-          destaque={invoicesFalhas.length > 0 ? "negativo" : undefined}
         />
-        <Indicador
+        <IndicadorColorido
+          cor={novosAssinantesDoMes.length > 0 ? "green" : "sky"}
+          icon={UserPlus}
           label="Novos assinantes"
           valor={String(novosAssinantesDoMes.length)}
-          destaque={novosAssinantesDoMes.length > 0 ? "positivo" : undefined}
         />
-        <Indicador
+        <IndicadorColorido
+          cor={churnDoMes.length > 0 ? "red" : "green"}
+          icon={UserMinus}
           label="Churn (cancelados)"
           valor={String(churnDoMes.length)}
-          destaque={churnDoMes.length > 0 ? "negativo" : undefined}
         />
       </div>
 
-      <div className="mb-6 card p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Taxa de conversão (ativos / total)</p>
-        <p className="mt-1 text-xl font-semibold text-slate-900">{taxaConversao}%</p>
+      <div className="mb-6">
+        <IndicadorColorido cor="sky" icon={Percent} label="Taxa de conversão (ativos / total)" valor={`${taxaConversao}%`} />
       </div>
 
       {trialsEmRisco.length > 0 && (
@@ -167,7 +185,7 @@ export async function IndicadoresFinanceirosFni() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {lista.map((e) => (
-              <tr key={e.id} className="hover:bg-slate-50">
+              <tr key={e.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 font-medium text-slate-900">{e.nome}</td>
                 <td className="px-4 py-3 text-slate-600">{PLANO_LABEL[e.plano as Plano] ?? e.plano}</td>
                 <td className="px-4 py-3">
@@ -203,25 +221,5 @@ export async function IndicadoresFinanceirosFni() {
   );
 }
 
-function Indicador({
-  label,
-  valor,
-  destaque,
-}: {
-  label: string;
-  valor: string;
-  destaque?: "positivo" | "negativo";
-}) {
-  return (
-    <div className="card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p
-        className={`mt-1 text-lg font-semibold ${
-          destaque === "negativo" ? "text-red-600" : destaque === "positivo" ? "text-green-700" : "text-slate-900"
-        }`}
-      >
-        {valor}
-      </p>
-    </div>
-  );
-}
+// Indicador() local removido — troca pelo IndicadorColorido compartilhado
+// (@/components/IndicadorColorido, ver Fase Redesign-Telas-Densas).

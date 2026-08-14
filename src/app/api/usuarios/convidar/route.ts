@@ -3,6 +3,7 @@ import { createClient as criarClienteSupabase } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PERFIS } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
+import { resolverCorsHeaders } from "@/lib/corsOrigens";
 
 // Fase FLT-2 — pedido do Daniel: expor "convidar novo usuário" (aba
 // Usuários) pro PWA Flutter. Mesma razão de existir de /api/assistente:
@@ -24,17 +25,12 @@ import type { Database } from "@/types/database.types";
 // resolverEmpresaAtual) — só depois disso troca pro client admin.
 export const runtime = "nodejs";
 
-const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Authorization, Content-Type",
-};
-
-export function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+export function OPTIONS(request: Request) {
+  return new NextResponse(null, { status: 204, headers: resolverCorsHeaders(request) });
 }
 
 export async function POST(request: Request) {
+  const CORS_HEADERS = resolverCorsHeaders(request);
   const autorizacao = request.headers.get("authorization");
   const token = autorizacao?.startsWith("Bearer ") ? autorizacao.slice(7).trim() : null;
   if (!token) {

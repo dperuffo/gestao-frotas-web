@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient as criarClienteSupabase } from "@supabase/supabase-js";
 import { perguntarAssistente, type MensagemChat } from "@/lib/assistenteIA";
 import type { Database } from "@/types/database.types";
+import { resolverCorsHeaders } from "@/lib/corsOrigens";
+import { verificarLimite } from "@/lib/rateLimit";
 
 // Fase FLT-2 — pedido do Daniel: expor o Assistente FNI também pro PWA
 // Flutter (visão posto). Diferença crucial em relação a TODAS as outras
@@ -19,17 +21,12 @@ import type { Database } from "@/types/database.types";
 // perguntarAssistente já usada pela web — zero lógica de IA duplicada.
 export const runtime = "nodejs";
 
-const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Authorization, Content-Type",
-};
-
-export function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+export function OPTIONS(request: Request) {
+  return new NextResponse(null, { status: 204, headers: resolverCorsHeaders(request) });
 }
 
 export async function POST(request: Request) {
+  const CORS_HEADERS = resolverCorsHeaders(request);
   const autorizacao = request.headers.get("authorization");
   const token = autorizacao?.startsWith("Bearer ") ? autorizacao.slice(7).trim() : null;
   if (!token) {
@@ -53,6 +50,17 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { erro: "Sessão inválida ou expirada, faça login novamente." },
       { status: 401, headers: CORS_HEADERS }
+    );
+  }
+
+  // M2 — protege custo (API paga da Anthropic por pergunta): limite por
+  // USUÁRIO autenticado, não por IP (um token válido não deve conseguir
+  // gerar custo ilimitado mesmo vindo do mesmo IP de sempre).
+  const limite = verificarLimite(`assistente:${user.id}`, 20, 10 * 60 * 1000);
+  if (!limite.permitido) {
+    return NextResponse.json(
+      { erro: "Muitas perguntas em pouco tempo — tente novamente em instantes." },
+      { status: 429, headers: { ...CORS_HEADERS, "Retry-After": String(limite.tentarNovamenteEmSegundos) } }
     );
   }
 

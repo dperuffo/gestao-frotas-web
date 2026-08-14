@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { segredoConfere } from "@/lib/segredoConstante";
+import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
 
 // Fase P0.1 — webhook do provedor fiscal (autorização/rejeição de CT-e e
 // MDF-e chegam por aqui de forma assíncrona, na P0.2+). Mesmo padrão de
@@ -17,9 +19,13 @@ export async function POST(request: Request) {
   if (!segredoEsperado) {
     return NextResponse.json({ erro: "FISCAL_WEBHOOK_SECRET não configurado no servidor." }, { status: 500 });
   }
-  if (request.headers.get("x-webhook-secret") !== segredoEsperado) {
+  if (!segredoConfere(request.headers.get("x-webhook-secret"), segredoEsperado)) {
     return NextResponse.json({ erro: "Não autorizado." }, { status: 401 });
   }
+
+  // M2 — defesa em profundidade contra força bruta do segredo do webhook.
+  const limite = verificarLimite(`webhook-fiscal:${ipDaRequisicao(request)}`, 30, 5 * 60 * 1000);
+  if (!limite.permitido) return respostaLimiteExcedido(limite);
 
   let payload: unknown;
   try {

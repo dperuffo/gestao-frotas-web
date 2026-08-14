@@ -106,7 +106,7 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
           </thead>
           <tbody className="divide-y divide-slate-100">
             {listaFiltrada.map((e) => (
-              <tr key={e.id} className="hover:bg-slate-50">
+              <tr key={e.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 font-medium text-slate-800">{e.nome}</td>
                 <td className="px-4 py-3 text-slate-600">{e.cnpj ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-600">{e.segmento === "Revenda" ? "Posto" : "Cliente"}</td>

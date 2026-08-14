@@ -111,7 +111,7 @@ export default async function FidelidadePage({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {itens.map((item) => (
-              <tr key={item.id} className="hover:bg-slate-50">
+              <tr key={item.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 font-medium text-slate-900">{item.titulo}</td>
                 <td className="px-4 py-3 text-slate-600">{LABEL_CATEGORIA[item.categoria] ?? item.categoria}</td>
                 <td className="px-4 py-3 text-slate-600">{item.parceiro_nome ?? "—"}</td>
