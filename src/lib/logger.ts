@@ -101,12 +101,41 @@ async function registrar(nivel: NivelLog, modulo: string, mensagem: string, erro
   }
 }
 
+// Fase Observabilidade-Fase2 (14/08/2026) — corrigido pra devolver a Promise
+// de `registrar` em vez de descartá-la com `void` (jeito como nasceu na
+// Fase 1). Sem isso, uma chamada tipo `logger.info(...)` sem `await` corria
+// o risco de nunca terminar de escrever no log — em ambiente serverless, o
+// processo pode ser encerrado assim que a resposta é enviada, antes da
+// linha de log realmente sair. Continua funcionando sem `await` (quem não
+// se importa com a garantia pode ignorar a Promise), mas agora quem
+// precisa da garantia (como o wrapper de query logging, chamado no meio de
+// uma query em andamento) pode dar `await`.
 export const logger = {
-  debug: (modulo: string, mensagem: string, contexto?: Contexto) => void registrar("debug", modulo, mensagem, undefined, contexto),
-  info: (modulo: string, mensagem: string, contexto?: Contexto) => void registrar("info", modulo, mensagem, undefined, contexto),
-  warn: (modulo: string, mensagem: string, contexto?: Contexto) => void registrar("warn", modulo, mensagem, undefined, contexto),
+  debug: (modulo: string, mensagem: string, contexto?: Contexto) => registrar("debug", modulo, mensagem, undefined, contexto),
+  info: (modulo: string, mensagem: string, contexto?: Contexto) => registrar("info", modulo, mensagem, undefined, contexto),
+  warn: (modulo: string, mensagem: string, contexto?: Contexto) => registrar("warn", modulo, mensagem, undefined, contexto),
   // Único nível que aceita `erro` — pedido explícito do Daniel ("todo erro
   // deve ter stack trace completa e contexto"): aqui sempre serializa o
   // erro (stack incluído quando existir) antes de gravar.
-  error: (modulo: string, mensagem: string, erro?: unknown, contexto?: Contexto) => void registrar("error", modulo, mensagem, erro, contexto),
+  error: (modulo: string, mensagem: string, erro?: unknown, contexto?: Contexto) => registrar("error", modulo, mensagem, erro, contexto),
 };
+
+// Fase Observabilidade-Fase2 (14/08/2026, pedido do Daniel: "o serviço deve
+// ter métricas de performance como tempo e outros") — helper genérico pra
+// cronometrar qualquer operação assíncrona (Server Action, Route Handler,
+// chamada a serviço externo) e logar sucesso/falha + duração, sem precisar
+// escrever esse try/catch/cronômetro toda vez à mão. Não substitui o
+// query-logging automático (src/lib/supabase/instrumentacao.ts) — serve pra
+// medir a operação INTEIRA (que pode incluir várias queries, chamada a API
+// externa, processamento etc.), não uma query isolada.
+export async function comMetricas<T>(modulo: string, operacao: string, executar: () => Promise<T>): Promise<T> {
+  const inicio = Date.now();
+  try {
+    const resultado = await executar();
+    await logger.info(modulo, `${operacao} concluído`, { operacao, duracaoMs: Date.now() - inicio, sucesso: true });
+    return resultado;
+  } catch (erro) {
+    await logger.error(modulo, `${operacao} falhou`, erro, { operacao, duracaoMs: Date.now() - inicio, sucesso: false });
+    throw erro;
+  }
+}

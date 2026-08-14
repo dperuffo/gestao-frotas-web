@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
+import { comQueryLogging } from "@/lib/supabase/instrumentacao";
 
 // Cliente Supabase com a chave de SERVICE ROLE — ignora RLS por completo.
 // Usar SOMENTE em código de servidor (Server Actions / Route Handlers),
@@ -12,9 +13,11 @@ export function createAdminClient() {
     );
   }
 
-  return createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-    { auth: { autoRefreshToken: false, persistSession: false } }
+  return comQueryLogging(
+    createSupabaseClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
   );
 }

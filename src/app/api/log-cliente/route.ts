@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { logger } from "@/lib/logger";
+import { alertar } from "@/lib/alertas";
 
 // Fase Observabilidade-Fundacao (14/08/2026) — erro que acontece só na
 // renderização do navegador (ex.: um `error.tsx` disparado) até agora só
@@ -26,11 +27,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  logger.error("cliente/error-boundary", corpo.mensagem ?? "Erro não descrito no cliente", undefined, {
+  const mensagem = corpo.mensagem ?? "Erro não descrito no cliente";
+  await logger.error("cliente/error-boundary", mensagem, undefined, {
     stack: corpo.stack ?? null,
     digest: corpo.digest ?? null,
     pathname: corpo.pathname ?? null,
     ...(corpo.contexto ?? {}),
+  });
+
+  // Fase Observabilidade-Fase2 — dedupe por mensagem+tela: se o mesmo bug
+  // estourar pra vários usuários na mesma tela ao mesmo tempo (o caso mais
+  // comum de erro em produção), manda um alerta só, não um por usuário.
+  await alertar("Erro na tela (cliente)", mensagem, { pathname: corpo.pathname ?? null, digest: corpo.digest ?? null }, {
+    dedupeChave: `cliente:${corpo.pathname ?? "?"}:${mensagem}`,
+    dedupeJanelaMs: 15 * 60_000,
   });
 
   return NextResponse.json({ ok: true });

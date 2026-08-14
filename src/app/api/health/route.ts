@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { logger, obterRequestIdAtual } from "@/lib/logger";
+import { logger, obterRequestIdAtual, comMetricas } from "@/lib/logger";
+import { alertar } from "@/lib/alertas";
 
 // Fase Observabilidade-Fundacao (14/08/2026, pedido do Daniel: "todo serviço
 // deve ter health check com status detalhado") — endpoint usado pelo Railway
@@ -45,7 +46,11 @@ export async function GET() {
   const requestId = await obterRequestIdAtual();
   const inicio = Date.now();
 
-  const banco = await checarBancoDeDados();
+  // Fase Observabilidade-Fase2 — demonstração do helper `comMetricas`
+  // (mede a operação inteira, não só a query em si — aqui coincide porque a
+  // checagem é uma query só, mas em rotas maiores cobriria a chamada
+  // inteira, com queries, chamadas externas etc. dentro).
+  const banco = await comMetricas("api/health", "checar banco de dados", checarBancoDeDados);
   const saudavel = banco.status === "ok";
 
   const corpo = {
@@ -60,7 +65,16 @@ export async function GET() {
   };
 
   if (!saudavel) {
-    logger.error("api/health", "Health check falhou", undefined, { checks: corpo.checks });
+    await logger.error("api/health", "Health check falhou", undefined, { checks: corpo.checks });
+    // Fase Observabilidade-Fase2 (pedido do Daniel: "alertas confiáveis para
+    // monitoramento") — dedupe de 5 min: se algo continuar chamando este
+    // endpoint em intervalo curto (ex.: um monitor externo tipo UptimeRobot
+    // configurado pra bater aqui a cada minuto), não manda um alerta por
+    // chamada, só um a cada 5 min enquanto o problema persistir.
+    await alertar("Health check falhou", banco.detalhe ?? "Banco de dados não respondeu como esperado", { checks: corpo.checks, requestId }, {
+      dedupeChave: "health-check",
+      dedupeJanelaMs: 5 * 60_000,
+    });
   }
 
   // 503 quando não saudável — é esse código que o healthcheckPath do

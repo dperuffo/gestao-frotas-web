@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { EMPRESA_ID_GLOBAL } from "@/lib/constants";
 import { logger } from "@/lib/logger";
+import { obterOuDefinir, invalidarPrefixo } from "@/lib/cache";
 
 // Fase enforcement-permissoes (04/08/2026, pedido do Daniel: "as permissoes
 // deveriam travar se estiverem desligadas, tanto na web quanto no PWA") —
@@ -171,25 +172,43 @@ export function ehBypassPermissao(perfil: string | null | undefined, email: stri
 // Falha de rede/banco não bloqueia (fail-open) — mesmo espírito "best
 // effort" já usado em `src/lib/limitePlano.ts` (uma falha aqui não deve
 // derrubar o dashboard inteiro, só deixa de aplicar o filtro desta vez).
+// Fase Observabilidade-Fase2 (14/08/2026, pedido do Daniel: "o cache deve
+// ter hit/miss tracking") — esta função roda em TODA navegação autenticada
+// (usada por (dashboard)/layout.tsx pra filtrar menu e checar acesso à
+// rota), sempre pro mesmo pequeno conjunto de perfis (admin, gestor_frota,
+// analista, posto, colaborador) — é o alvo mais óbvio da aplicação pra um
+// primeiro cache: poucas chaves possíveis, lidas o tempo todo, escritas
+// raramente (só quando alguém mexe em /permissoes). TTL de 30s: rápido o
+// bastante pra uma mudança em /permissoes valer sem precisar reiniciar
+// nada, e já reaproveitado por `invalidarCachePermissoes()` logo abaixo pra
+// não precisar nem esperar os 30s quando é o próprio Daniel quem mudou.
+const PREFIXO_CACHE_PERMISSOES = "permissoes:global:";
+
+export function invalidarCachePermissoes(): void {
+  invalidarPrefixo(PREFIXO_CACHE_PERMISSOES);
+}
+
 export async function carregarMapaPermissoes(
   supabase: SupabaseClient<Database>,
   perfil: string
 ): Promise<MapaPermissoes> {
-  const mapa: MapaPermissoes = new Map();
-  const { data, error } = await supabase
-    .from("permissoes_perfil")
-    .select("funcionalidade, permitido")
-    .eq("empresa_id", EMPRESA_ID_GLOBAL)
-    .eq("perfil", perfil);
+  return obterOuDefinir(`${PREFIXO_CACHE_PERMISSOES}${perfil}`, 30_000, async () => {
+    const mapa: MapaPermissoes = new Map();
+    const { data, error } = await supabase
+      .from("permissoes_perfil")
+      .select("funcionalidade, permitido")
+      .eq("empresa_id", EMPRESA_ID_GLOBAL)
+      .eq("perfil", perfil);
 
-  if (error) {
-    // Fase Observabilidade-Fundacao (14/08/2026) — migrado pro logger
-    // estruturado como demonstração do padrão novo (ver src/lib/logger.ts).
-    await logger.error("permissoes", "Falha ao carregar permissões (fail-open, ignorado)", error);
+    if (error) {
+      // Fase Observabilidade-Fundacao (14/08/2026) — migrado pro logger
+      // estruturado como demonstração do padrão novo (ver src/lib/logger.ts).
+      await logger.error("permissoes", "Falha ao carregar permissões (fail-open, ignorado)", error);
+      return mapa;
+    }
+    for (const linha of data ?? []) mapa.set(linha.funcionalidade, linha.permitido ?? false);
     return mapa;
-  }
-  for (const linha of data ?? []) mapa.set(linha.funcionalidade, linha.permitido ?? false);
-  return mapa;
+  });
 }
 
 export function temAcesso(mapa: MapaPermissoes, funcionalidade: string | null): boolean {
