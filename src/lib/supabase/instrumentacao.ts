@@ -10,12 +10,20 @@ import { logger } from "@/lib/logger";
 // admin.ts) — toda query feita a partir delas passa a ser cronometrada e
 // logada automaticamente, sem precisar mudar nenhum call-site.
 //
-// Como funciona: `.from(tabela)`/`.rpc(funcao)` do supabase-js devolvem um
-// "builder" — um objeto que só dispara a query de verdade quando alguém dá
-// `await` nele (ou chama `.then()`). A gente troca só o `.then` desse
-// builder específico por uma versão que cronometra e loga antes de deixar o
-// resultado seguir — o resto da cadeia (`.select()`, `.eq()`, `.order()`
-// etc.) continua funcionando exatamente igual, porque não mexemos nelas.
+// Como funciona: `.rpc(funcao)` do supabase-js já devolve direto um
+// "builder" thenable — um objeto que só dispara a query de verdade quando
+// alguém dá `await` nele (ou chama `.then()`). Já `.from(tabela)` devolve
+// primeiro um builder INTERMEDIÁRIO (ainda sem `.then`) — só vira thenable
+// depois de encadear `.select()`/`.insert()`/`.upsert()`/`.update()`/
+// `.delete()`. Bug real corrigido aqui (achado em produção pelo próprio
+// health check, 14/08/2026): a primeira versão tentava pegar `.then` direto
+// no retorno de `.from()`, que ainda não existe nesse ponto — quebrava TODA
+// query da aplicação com "Cannot read properties of undefined (reading
+// 'bind')". A correção intercepta os métodos terminais do builder
+// intermediário e só instrumenta o `.then` depois que ele existir de
+// verdade. O resto da cadeia (`.eq()`, `.order()` etc., chamados DEPOIS do
+// método terminal) continua funcionando igual, porque não mexemos nelas —
+// no postgrest-js elas mutam e devolvem o mesmo objeto já instrumentado.
 //
 // Não cobre acesso ao Supabase feito direto do navegador (client.ts,
 // Client Component) — lá a chamada vai direto pro Supabase, sem passar
@@ -23,6 +31,11 @@ import { logger } from "@/lib/logger";
 // próprio navegador (fora do escopo desta fase; o Supabase já expõe
 // estatística de query própria no painel deles).
 type BuilderComThen = PromiseLike<unknown> & { then: PromiseLike<unknown>["then"] };
+
+// Métodos do PostgrestQueryBuilder (retorno de `.from()`) que "fecham" a
+// consulta e só a partir daí devolvem algo thenable — os únicos pontos
+// onde faz sentido instrumentar quando a chamada começou por `.from()`.
+const METODOS_TERMINAIS_FROM = ["select", "insert", "upsert", "update", "delete"] as const;
 
 function instrumentarBuilder<T extends BuilderComThen>(builder: T, tipo: "from" | "rpc", alvo: string): T {
   const inicio = Date.now();
@@ -56,6 +69,23 @@ function instrumentarBuilder<T extends BuilderComThen>(builder: T, tipo: "from" 
   return builder;
 }
 
+// Embrulha o builder INTERMEDIÁRIO devolvido por `.from(tabela)` — ainda
+// não é thenable, só os métodos terminais (select/insert/upsert/update/
+// delete) é que devolvem algo pronto pra instrumentar.
+function instrumentarQueryBuilder(queryBuilder: unknown, tabela: string): unknown {
+  return new Proxy(queryBuilder as object, {
+    get(alvo, prop, receiver) {
+      const original = Reflect.get(alvo, prop, receiver);
+      if (typeof original !== "function") return original;
+
+      if ((METODOS_TERMINAIS_FROM as readonly string[]).includes(prop as string)) {
+        return (...args: unknown[]) => instrumentarBuilder(original.apply(alvo, args), "from", tabela);
+      }
+      return original.bind(alvo);
+    },
+  });
+}
+
 // Embrulha um cliente Supabase já criado — devolve um Proxy que se comporta
 // 100% igual ao cliente original, exceto que `.from()`/`.rpc()` passam pela
 // instrumentação acima primeiro. Tipagem genérica preserva o tipo do
@@ -67,7 +97,7 @@ export function comQueryLogging<C extends SupabaseClient<any, any, any>>(client:
       if (typeof original !== "function") return original;
 
       if (prop === "from") {
-        return (tabela: string) => instrumentarBuilder(original.call(alvo, tabela), "from", tabela);
+        return (tabela: string) => instrumentarQueryBuilder(original.call(alvo, tabela), tabela);
       }
       if (prop === "rpc") {
         return (fn: string, args?: unknown, opts?: unknown) =>

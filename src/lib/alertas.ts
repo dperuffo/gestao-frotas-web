@@ -6,11 +6,15 @@ import { jaVisto } from "@/lib/cache";
 // deve ter alertas confiáveis para monitoramento e análise") — não existia
 // nenhum canal de saída pra alerta antes desta fase (achado da recon: só
 // e-mail transacional do Supabase Auth, sem uso pra alerta operacional).
-// Daniel escolheu Teams: manda um cartão pro canal via "Incoming Webhook"
-// (recurso nativo do Teams — Configurações do canal → Conectores → Incoming
-// Webhook → gerar URL). A URL do webhook funciona como uma senha (quem tem
-// a URL consegue postar no canal) — por isso fica só em variável de
-// ambiente (TEAMS_WEBHOOK_URL no Railway), nunca no código.
+// Daniel forneceu uma URL de gatilho do Power Automate (não o antigo
+// "Incoming Webhook" clássico do Teams — a Microsoft descontinuou esse
+// conector; Power Automate é o caminho atual recomendado). Por isso o corpo
+// enviado é um JSON simples e genérico (titulo/mensagem/detalhe/contexto),
+// não o formato "MessageCard" do conector antigo — o Flow do Daniel é quem
+// decide como usar esses campos pra montar a mensagem no canal. A URL
+// funciona como uma senha (quem tem a URL consegue disparar o Flow) — por
+// isso fica só em variável de ambiente (TEAMS_WEBHOOK_URL no Railway),
+// nunca no código.
 //
 // Alerta é diferente de log: um log guarda TUDO (até o esperado), um alerta
 // deveria ser raro e sempre acionável. Por isso `alertar()` só é chamado em
@@ -51,20 +55,18 @@ export async function alertar(titulo: string, detalhe: string, contexto?: Contex
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        "@type": "MessageCard",
-        "@context": "http://schema.org/extensions",
-        summary: titulo,
-        themeColor: "D32F2F",
-        title: `🚨 FNI — ${titulo}`,
-        text: contexto ? `${detalhe}\n\n\`\`\`\n${JSON.stringify(contexto, null, 2)}\n\`\`\`` : detalhe,
+        titulo: `🚨 FNI — ${titulo}`,
+        mensagem: detalhe,
+        contexto: contexto ?? null,
+        timestamp: new Date().toISOString(),
       }),
     });
 
     if (!resposta.ok) {
-      await logger.warn("alertas", "Teams recusou o alerta", { status: resposta.status, titulo });
+      await logger.warn("alertas", "Power Automate recusou o alerta", { status: resposta.status, titulo });
     }
   } catch (erro) {
     // Falha ao alertar não pode derrubar o fluxo que chamou — só loga.
-    await logger.error("alertas", "Falha ao enviar alerta pro Teams", erro, { titulo });
+    await logger.error("alertas", "Falha ao enviar alerta pro Power Automate", erro, { titulo });
   }
 }
