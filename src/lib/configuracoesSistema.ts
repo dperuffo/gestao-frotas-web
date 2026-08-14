@@ -2,12 +2,23 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { logger } from "@/lib/logger";
 import { obterOuDefinir, invalidar } from "@/lib/cache";
+import {
+  LOGOUT_INATIVIDADE_MINUTOS_PADRAO,
+  validarLogoutInatividadeMinutos,
+} from "@/lib/configuracoesSistemaLimites";
+
+// Fase Observabilidade-Fase3 (14/08/2026) — os limites/validação puros
+// moraram aqui até um bug real em produção (ver comentário completo em
+// configuracoesSistemaLimites.ts): este arquivo agora importa `cache.ts`/
+// `logger.ts` (ambos `server-only`), então nada que um Client Component
+// precise pode continuar sendo definido aqui. Reexportados abaixo só pra
+// não quebrar quem já importava daqui do lado do SERVIDOR (actions.ts) —
+// o Client Component (FormularioLogoutInatividade.tsx) foi trocado pra
+// importar direto de configuracoesSistemaLimites.ts.
+export { LOGOUT_INATIVIDADE_MINUTOS_PADRAO, validarLogoutInatividadeMinutos };
+export { LOGOUT_INATIVIDADE_MINUTOS_MIN, LOGOUT_INATIVIDADE_MINUTOS_MAX } from "@/lib/configuracoesSistemaLimites";
 
 type ClienteSupabase = SupabaseClient<Database>;
-
-export const LOGOUT_INATIVIDADE_MINUTOS_PADRAO = 30;
-export const LOGOUT_INATIVIDADE_MINUTOS_MIN = 5;
-export const LOGOUT_INATIVIDADE_MINUTOS_MAX = 480;
 
 // Fase 27.86 — pedido do Daniel: "Implementar logout automatico por um
 // período de inatividade do usuario no sistema. Parametrizavel em tela de
@@ -40,16 +51,6 @@ export async function buscarLogoutInatividadeMinutos(supabase: ClienteSupabase):
     }
     return data.logout_inatividade_minutos;
   });
-}
-
-export function validarLogoutInatividadeMinutos(minutos: number): string | undefined {
-  if (!Number.isInteger(minutos)) {
-    return "O tempo precisa ser um número inteiro de minutos.";
-  }
-  if (minutos < LOGOUT_INATIVIDADE_MINUTOS_MIN || minutos > LOGOUT_INATIVIDADE_MINUTOS_MAX) {
-    return `O tempo precisa estar entre ${LOGOUT_INATIVIDADE_MINUTOS_MIN} e ${LOGOUT_INATIVIDADE_MINUTOS_MAX} minutos.`;
-  }
-  return undefined;
 }
 
 // Guarda de autorização manual (mesmo padrão de atualizarCicloPagamento,

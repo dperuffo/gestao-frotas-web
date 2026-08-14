@@ -5,7 +5,7 @@ import { atualizarLogoutInatividadeAcao } from "../actions";
 import {
   LOGOUT_INATIVIDADE_MINUTOS_MIN,
   LOGOUT_INATIVIDADE_MINUTOS_MAX,
-} from "@/lib/configuracoesSistema";
+} from "@/lib/configuracoesSistemaLimites";
 
 // Fase 27.86 — pedido do Daniel: "Implementar logout automatico por um
 // período de inatividade do usuario no sistema. Parametrizavel em tela de
