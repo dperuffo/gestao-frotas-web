@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export type EsqueciSenhaState = { erro?: string; sucesso?: boolean } | undefined;
 
@@ -41,7 +42,7 @@ export async function solicitarRecuperacaoSenha(
   // Não revela se o e-mail existe ou não na base (evita enumeração de
   // contas) — sempre responde sucesso, só loga o erro real no servidor.
   if (error) {
-    console.error("[esqueci-senha] erro ao solicitar recuperação:", error.message);
+    void logger.error("esqueci-senha", "Erro ao solicitar recuperação", error);
   }
   return { sucesso: true };
 }

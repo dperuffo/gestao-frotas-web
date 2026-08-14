@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { autenticarRequisicaoApi, marcarUsoChaveApi } from "@/lib/apiAuth";
 import { ESCOPO_ANTIFRAUDE_VERIFICAR } from "@/lib/apiKeys";
 import type { Json } from "@/types/database.types";
+import { logger } from "@/lib/logger";
 
 // Fase 27.15x — Regras Antifraude (proposta em PROPOSTA-ANTIFRAUDE.md): um
 // sistema externo (bandeira de cartão, posto, gateway de pagamento) chama
@@ -326,7 +327,7 @@ export async function POST(request: Request) {
       try {
         await supabase.functions.invoke("antifraude-email", { body: { falha_id: falhaRegistrada.id } });
       } catch (erroEmail) {
-        console.error("[antifraude] falha ao notificar por e-mail (ignorado):", erroEmail);
+        void logger.error("antifraude", "Falha ao notificar por e-mail (ignorado)", erroEmail);
       }
     }
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 // Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel: "mecanismo de
 // acesso rápido em funcionalidades mais utilizadas... uma espécie de
@@ -23,7 +24,7 @@ export async function registrarAcessoMenuAcao(href: string): Promise<void> {
     const supabase = await createClient();
     await supabase.rpc("registrar_acesso_menu", { p_href: href });
   } catch (e) {
-    console.error("[menuFavoritos] falha ao registrar acesso (ignorado):", e);
+    void logger.error("menuFavoritos", "Falha ao registrar acesso (ignorado)", e);
   }
 }
 

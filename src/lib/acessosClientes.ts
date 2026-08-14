@@ -1,4 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -32,9 +33,9 @@ export async function registrarAcessoCliente(supabase: Supabase, email: string |
 
     const { error } = await supabase.from("acessos_clientes").insert(linhas);
     if (error) {
-      console.error("[acessosClientes] falha ao registrar acesso:", error.message);
+      void logger.error("acessosClientes", "Falha ao registrar acesso", error);
     }
   } catch (e) {
-    console.error("[acessosClientes] falha ao registrar acesso:", e instanceof Error ? e.message : e);
+    void logger.error("acessosClientes", "Falha ao registrar acesso", e);
   }
 }

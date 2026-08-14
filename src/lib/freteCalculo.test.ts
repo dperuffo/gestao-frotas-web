@@ -125,4 +125,27 @@ describe("calcularFrete", () => {
     expect(resultado.valorAdValorem).toBe(10); // 1000 * 1%
     expect(resultado.subtotalAntesIcms).toBe(20); // 0 + 10 + 0 + 10 + 0 + 0
   });
+
+  // Fase Observabilidade-Fase3 (14/08/2026, pedido do Daniel: "ampliar os
+  // testes de regressão") — caso de borda perigoso: com alíquota de ICMS em
+  // 100%, a fórmula de gross-up (subtotal / (1 - alíquota)) divide por
+  // ZERO — daria Infinity/NaN numa cotação real se não fosse tratado. O
+  // código já trata isso (`aliquota < 1` na condição) — este teste existe
+  // pra travar esse comportamento pra sempre, não pra descobri-lo de novo.
+  it("com alíquota de ICMS em 100%, NÃO divide por zero — cai pro subtotal sem gross-up", () => {
+    const resultado = calcularFrete({
+      pesoKg: 100,
+      valorCarga: 1000,
+      faixas: [{ pesoMinKg: 0, pesoMaxKg: 1000, valorPorKg: 1, valorMinimo: 50 }],
+      percentualAdValorem: 0,
+      percentualGris: 0,
+      valorTde: 0,
+      valorTda: 0,
+      valorDespacho: 0,
+      valorPedagio: 0,
+      percentualIcms: 100,
+    });
+    expect(Number.isFinite(resultado.valorTotal)).toBe(true);
+    expect(resultado.valorTotal).toBe(resultado.subtotalAntesIcms);
+  });
 });

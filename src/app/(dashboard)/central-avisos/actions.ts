@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 // Fase Central-Avisos-Por-Empresa (04/08/2026) — achado real: o Daniel
 // liberou, como admin, a permissão "aba_central_avisos" pro perfil
@@ -36,7 +37,7 @@ export async function listarAvisosDaMinhaEmpresaAcao(): Promise<AvisoDaMinhaEmpr
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("listar_avisos_da_minha_empresa");
   if (error) {
-    console.error("[central-avisos/empresa] falha ao listar (ignorado):", error);
+    void logger.error("central-avisos/empresa", "Falha ao listar (ignorado)", error);
     return [];
   }
   return data ?? [];

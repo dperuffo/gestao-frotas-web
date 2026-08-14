@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BUCKET_ANEXOS, temAtualizacaoNaoVista, type AutorTipo, type TicketPrioridade, type TicketStatus, type TicketTipo } from "@/lib/chamados";
+import { logger } from "@/lib/logger";
 
 export type ChamadoFormState = { erro?: string } | undefined;
 
@@ -33,7 +34,7 @@ export async function resolverPapelAtual(supabase: Awaited<ReturnType<typeof cre
     const papel: AutorTipo = perfil === "admin" || email === "d.peruffo@gmail.com" ? "admin" : "usuario";
     return { email, papel };
   } catch (e) {
-    console.error("[chamados] resolverPapelAtual falhou:", e instanceof Error ? e.message : e);
+    void logger.error("chamados", "resolverPapelAtual falhou", e);
     return { email: "", papel: "usuario" };
   }
 }
@@ -90,7 +91,7 @@ export async function criarChamadoAcao(_prev: ChamadoFormState, formData: FormDa
       await enviarAnexo(supabase, data.id, arquivo, user.email);
     } catch (e) {
       anexoFalhou = true;
-      console.error("[chamados] falha ao enviar anexo na abertura do chamado:", e instanceof Error ? e.message : e);
+      void logger.error("chamados", "Falha ao enviar anexo na abertura do chamado", e);
     }
   }
 
@@ -172,7 +173,7 @@ export async function enviarAnexoAcao(formData: FormData): Promise<{ erro?: stri
     revalidatePath("/chamados");
     return {};
   } catch (e) {
-    console.error("[chamados] enviarAnexoAcao falhou:", e instanceof Error ? e.message : e);
+    void logger.error("chamados", "enviarAnexoAcao falhou", e);
     return { erro: e instanceof Error ? e.message : "Erro ao enviar anexo." };
   }
 }
@@ -203,7 +204,7 @@ export async function comentarAcao(ticketId: string, texto: string): Promise<{ e
     revalidatePath("/chamados");
     return {};
   } catch (e) {
-    console.error("[chamados] comentarAcao falhou:", e instanceof Error ? e.message : e);
+    void logger.error("chamados", "comentarAcao falhou", e);
     return { erro: e instanceof Error ? e.message : "Erro ao enviar mensagem." };
   }
 }

@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 // Fase 27.16 — achado real: um cliente novo se cadastrou, recebeu o e-mail
 // de confirmação, clicou no link e caiu numa tela de erro dizendo "Não foi
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
-    console.error("[auth/confirm] Falha ao verificar o token:", error.message);
+    void logger.error("auth/confirm", "Falha ao verificar o token", error);
   }
 
   return NextResponse.redirect(`${origin}/login?erro=confirmacao`);

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ANP_PRECO_REFERENCIA_FALLBACK, ESTADO_PARA_UF, PRODUTO_PARA_CATEGORIA_ANP } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { logger } from "@/lib/logger";
 import { GraficoCustoAnp } from "./_components/GraficoCustoAnp";
 import { GraficoTopMunicipios } from "./_components/GraficoTopMunicipios";
 import { GraficoSavingMensal } from "./_components/GraficoSavingMensal";
@@ -311,10 +312,10 @@ export default async function InteligenciaRedePage({
   // rastro; agora pelo menos loga no servidor pra dar pra diagnosticar
   // sem precisar reproduzir manualmente no banco.
   if (alertasErro) {
-    console.error("[inteligencia-rede] falha ao buscar alertas de preço (ignorado, mostra 0):", alertasErro);
+    void logger.error("inteligencia-rede", "Falha ao buscar alertas de preço (ignorado, mostra 0)", alertasErro);
   }
   if (universoAvaliadoErro) {
-    console.error("[inteligencia-rede] falha ao buscar universo avaliado de preço (ignorado, mostra 0):", universoAvaliadoErro);
+    void logger.error("inteligencia-rede", "Falha ao buscar universo avaliado de preço (ignorado, mostra 0)", universoAvaliadoErro);
   }
   const alertas = alertasRaw ?? [];
   const totalAvaliados = (universoAvaliadoRaw ?? []).length;
@@ -478,7 +479,7 @@ export default async function InteligenciaRedePage({
   // p_empresa_id, dependia só de RLS pra escopar) -- loga se a RPC falhar,
   // em vez de virar silenciosamente [].
   if (postosVisitadosErro) {
-    console.error("[inteligencia-rede] falha ao buscar postos visitados (ignorado, mostra 0):", postosVisitadosErro);
+    void logger.error("inteligencia-rede", "Falha ao buscar postos visitados (ignorado, mostra 0)", postosVisitadosErro);
   }
   const postosVisitados = (postosVisitadosRaw ?? []).map((r) => ({
     cnpj: r.cnpj,

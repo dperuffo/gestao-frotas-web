@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 // Fase Onda-2 (benchmark TicketLog, item #5) — Rede de Oficinas
 // Credenciadas com Orçamento, fluxo simples (v1): o cliente solicita, e
@@ -156,7 +157,7 @@ export async function decidirOrcamentoAcao(id: string, decisao: "aceito" | "recu
           criado_por: user?.email ?? null,
         })
         .then(({ error: erroContaPagar }) => {
-          if (erroContaPagar) console.error("[oficinas] falha ao lançar em contas_pagar (ignorado):", erroContaPagar);
+          if (erroContaPagar) void logger.error("oficinas", "Falha ao lançar em contas_pagar (ignorado)", erroContaPagar);
         });
     }
   }

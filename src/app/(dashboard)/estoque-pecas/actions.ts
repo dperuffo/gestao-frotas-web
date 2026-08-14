@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export type EstoquePecasFormState = { erro?: string; ok?: boolean } | undefined;
 
@@ -127,7 +128,7 @@ export async function registrarMovimentoAcao(
     revalidatePath(`/estoque-pecas/${pecaId}`);
     return { ok: true };
   } catch (e) {
-    console.error("[estoque-pecas] falha inesperada ao registrar movimento:", e);
+    void logger.error("estoque-pecas", "Falha inesperada ao registrar movimento", e);
     return { erro: "Falha pontual ao registrar o movimento. Tente novamente." };
   }
 }

@@ -8,6 +8,7 @@ import type { Database } from "@/types/database.types";
 import { calcularRotaOsrm, distanciasAcumuladas, type Ponto } from "@/lib/geo";
 import { buscarPracasPedagioNaRota } from "@/lib/pedagio";
 import { empresaOuIrmaDoGrupo } from "@/lib/empresasGrupo";
+import { logger } from "@/lib/logger";
 
 type PlanoViagemUpdate = Database["public"]["Tables"]["planos_viagem"]["Update"];
 
@@ -150,7 +151,7 @@ async function gerarPrePedidoSeHabilitado(
     .single();
 
   if (erroPrePedido || !prePedido) {
-    console.error("[planos-viagem] falha ao criar pré-pedido:", erroPrePedido?.message);
+    void logger.error("planos-viagem", "Falha ao criar pré-pedido", erroPrePedido);
     return;
   }
 
@@ -168,7 +169,7 @@ async function gerarPrePedidoSeHabilitado(
   );
 
   if (erroParadas) {
-    console.error("[planos-viagem] falha ao salvar paradas do pré-pedido:", erroParadas.message);
+    void logger.error("planos-viagem", "Falha ao salvar paradas do pré-pedido", erroParadas);
   }
 }
 
@@ -269,7 +270,7 @@ export async function criarPlanoViagem(
     if (erroPedagios) {
       // Best-effort: o plano já foi criado, não vale a pena reverter só por
       // causa dos pedágios — apenas loga pro Daniel investigar se acontecer.
-      console.error("[planos-viagem] falha ao salvar pedágios:", erroPedagios.message);
+      void logger.error("planos-viagem", "Falha ao salvar pedágios", erroPedagios);
     }
   }
 

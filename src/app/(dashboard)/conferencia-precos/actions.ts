@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 // Badge do menu (layout.tsx) — pedido do Daniel: "Alertas e notificacoes
 // dentro do dia são importantes para a decisao do posto, para que nao sejam
@@ -41,7 +42,7 @@ export async function contarDivergenciasPrecoPostoAcao(): Promise<number> {
       p_data_fim: hoje,
     });
     if (error) {
-      console.error("[conferencia-precos] falha ao contar divergências pendentes (ignorado):", error);
+      void logger.error("conferencia-precos", "Falha ao contar divergências pendentes (ignorado)", error);
       continue;
     }
     total += (data ?? []).filter((d) => !d.tem_ajuste_pendente).length;
@@ -85,7 +86,7 @@ export async function contarDivergenciasPrecoClienteAcao(): Promise<number> {
       p_data_fim: hoje,
     });
     if (error) {
-      console.error("[conferencia-precos] falha ao contar divergências pendentes (cliente, ignorado):", error);
+      void logger.error("conferencia-precos", "Falha ao contar divergências pendentes (cliente, ignorado)", error);
       continue;
     }
     total += (data ?? []).filter((d) => !d.tem_ajuste_pendente).length;

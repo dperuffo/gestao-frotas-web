@@ -83,4 +83,24 @@ describe("gerarPayloadPix", () => {
     const payloadB = gerarPayloadPix({ ...entrada, valor: 99.9 });
     expect(payloadA).not.toBe(payloadB);
   });
+
+  // Fase Observabilidade-Fase3 (14/08/2026, pedido do Daniel: "ampliar os
+  // testes de regressão") — o padrão EMV/BR Code exige limite rígido de
+  // tamanho pro nome (25) e cidade (15) do beneficiário; nome/cidade reais
+  // de posto às vezes passam desses limites. Sem o corte, o payload gerado
+  // ficaria com tamanho de campo divergente do conteúdo — banco recusaria
+  // o QR Code inteiro.
+  it("corta nome do beneficiário em 25 caracteres e cidade em 15 (limite do padrão EMV/BR Code)", () => {
+    const payload = gerarPayloadPix({
+      ...entrada,
+      nomeBeneficiario: "A".repeat(40),
+      cidadeBeneficiario: "B".repeat(30),
+    });
+    expect(payload).toContain(`59${String(25).padStart(2, "0")}${"A".repeat(25)}`);
+    expect(payload).toContain(`60${String(15).padStart(2, "0")}${"B".repeat(15)}`);
+    // Não deve sobrar um 26º "A" nem um 16º "B" colado (confirmaria que o
+    // corte realmente aconteceu, não só que o prefixo bate).
+    expect(payload).not.toContain("A".repeat(26));
+    expect(payload).not.toContain("B".repeat(16));
+  });
 });

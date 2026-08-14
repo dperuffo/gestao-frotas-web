@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
+import { logger } from "@/lib/logger";
 
 // Fase 27.84 — pedido do Daniel: os painéis financeiros só mostravam
 // ciclos JÁ FECHADOS (faturas_postos, gerada pelo robô
@@ -17,7 +18,7 @@ export async function buscarCiclosAbertos(
 ): Promise<CicloAberto[]> {
   const { data, error } = await supabase.rpc("ciclos_abertos_postos");
   if (error) {
-    console.error("[ciclosAbertos] falha ao buscar ciclos em andamento (ignorado):", error);
+    void logger.error("ciclosAbertos", "Falha ao buscar ciclos em andamento (ignorado)", error);
     return [];
   }
   return data ?? [];

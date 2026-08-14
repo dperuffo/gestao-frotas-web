@@ -7,6 +7,7 @@ import { ThreadChamado } from "../_components/ThreadChamado";
 import { ControlesAdminChamado } from "../_components/ControlesAdminChamado";
 import { BotaoResolverChamado } from "../_components/BotaoResolverChamado";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
+import { logger } from "@/lib/logger";
 
 // Fase 27.28 — achado real (em investigação): o crash mascarado e recorrente
 // ao enviar anexo numa resposta de chamado (visto de novo mesmo após alinhar
@@ -51,7 +52,7 @@ export default async function ChamadoDetalhePage({
         await supabase.from("tickets").update({ usuario_visto_em: agoraVisto }).eq("id", id);
       }
     } catch (e) {
-      console.error("[chamados/[id]] falha ao marcar como visto (ignorado):", e);
+      void logger.error("chamados/[id]", "Falha ao marcar como visto (ignorado)", e);
     }
 
     const [{ data: comentarios }, { data: anexos }] = await Promise.all([
@@ -68,7 +69,7 @@ export default async function ChamadoDetalhePage({
         } catch (e) {
           // Um anexo com objeto ausente/corrompido no Storage não pode
           // derrubar a tela inteira nem os outros anexos válidos.
-          console.error("[chamados/[id]] falha ao assinar URL de anexo (ignorado):", e);
+          void logger.error("chamados/[id]", "Falha ao assinar URL de anexo (ignorado)", e);
           return { ...a, urlAssinada: null as string | null };
         }
       })
@@ -137,7 +138,7 @@ export default async function ChamadoDetalhePage({
 
     const mensagem = e instanceof Error ? e.message : String(e);
     const stack = e instanceof Error ? e.stack : undefined;
-    console.error("[chamados/[id]] falha ao carregar a tela:", e);
+    void logger.error("chamados/[id]", "Falha ao carregar a tela", e);
     return (
       <div>
         <BotaoVoltar href="/chamados" label="Voltar para Chamados" />

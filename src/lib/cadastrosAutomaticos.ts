@@ -30,6 +30,7 @@
 // sincronização principal do abastecimento em si).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
+import { logger } from "@/lib/logger";
 
 export async function garantirVeiculoCadastrado(
   supabase: SupabaseClient<Database>,
@@ -52,7 +53,7 @@ export async function garantirVeiculoCadastrado(
     pendente_revisao: true,
   });
   if (error && error.code !== "23505") {
-    console.error(`garantirVeiculoCadastrado (${placa}): ${error.message}`);
+    void logger.error("cadastrosAutomaticos", `garantirVeiculoCadastrado (${placa})`, error);
   }
 }
 
@@ -94,7 +95,7 @@ export async function garantirMotoristaCadastrado(
     pendente_revisao: true,
   });
   if (error && error.code !== "23505") {
-    console.error(`garantirMotoristaCadastrado (${nome}): ${error.message}`);
+    void logger.error("cadastrosAutomaticos", `garantirMotoristaCadastrado (${nome})`, error);
   }
 }
 

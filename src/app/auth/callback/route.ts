@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 import { registrarAcessoCliente } from "@/lib/acessosClientes";
 
 // O Google redireciona para cá depois do login, com um "code" na URL.
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}${next}`);
     }
     // Loga o motivo real no terminal do servidor (npm run dev) para facilitar o diagnóstico.
-    console.error("[auth/callback] Falha ao trocar o code por sessão:", error.message);
+    void logger.error("auth/callback", "Falha ao trocar o code por sessão", error);
   }
 
   return NextResponse.redirect(`${origin}/login?erro=oauth`);

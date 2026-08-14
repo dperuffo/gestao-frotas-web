@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { logger } from "@/lib/logger";
 
 // Fase Duplicidade-Placas-Grupo (05/08/2026) — pedido do Daniel, a partir de
 // um erro real ao editar um veículo ("Já existe outro veículo cadastrado
@@ -35,7 +36,7 @@ export async function listarDuplicidadesPlacaGrupoAcao(empresaId: string): Promi
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("listar_duplicidades_placa_grupo", { p_empresa_id: empresaId });
   if (error) {
-    console.error("[duplicidade-placas-grupo] falha ao listar (ignorado):", error);
+    void logger.error("duplicidade-placas-grupo", "Falha ao listar (ignorado)", error);
     return [];
   }
   return (data ?? []).map((d) => ({

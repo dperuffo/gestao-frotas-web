@@ -8,6 +8,7 @@ import { caminhoAbastecimento, type IdentificadorAbastecimento } from "@/lib/aju
 // nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { ClipboardList, Droplet, Wallet, AlertTriangle, TrendingDown } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -130,9 +131,9 @@ export default async function ConferenciaPrecosPage({
       supabase.rpc("posto_extrato_diario", { p_empresa_posto_id: empresaSelecionada, p_data_inicio: de, p_data_fim: ate }),
     ]);
 
-    if (erroDivergencias) console.error("[conferencia-precos] falha ao buscar divergências:", erroDivergencias);
-    if (erroHoje) console.error("[conferencia-precos] falha ao buscar divergências de hoje:", erroHoje);
-    if (erroExtrato) console.error("[conferencia-precos] falha ao buscar extrato diário:", erroExtrato);
+    if (erroDivergencias) void logger.error("conferencia-precos", "Falha ao buscar divergências", erroDivergencias);
+    if (erroHoje) void logger.error("conferencia-precos", "Falha ao buscar divergências de hoje", erroHoje);
+    if (erroExtrato) void logger.error("conferencia-precos", "Falha ao buscar extrato diário", erroExtrato);
     if (erroDivergencias || erroExtrato) erro = "Não foi possível carregar todos os dados. Tente novamente em instantes.";
 
     const idsClientes = Array.from(
@@ -158,9 +159,9 @@ export default async function ConferenciaPrecosPage({
       supabase.rpc("cliente_extrato_diario", { p_empresa_cliente_id: empresaSelecionada, p_data_inicio: de, p_data_fim: ate }),
     ]);
 
-    if (erroDivergencias) console.error("[conferencia-precos] falha ao buscar divergências:", erroDivergencias);
-    if (erroHoje) console.error("[conferencia-precos] falha ao buscar divergências de hoje:", erroHoje);
-    if (erroExtrato) console.error("[conferencia-precos] falha ao buscar extrato diário:", erroExtrato);
+    if (erroDivergencias) void logger.error("conferencia-precos", "Falha ao buscar divergências", erroDivergencias);
+    if (erroHoje) void logger.error("conferencia-precos", "Falha ao buscar divergências de hoje", erroHoje);
+    if (erroExtrato) void logger.error("conferencia-precos", "Falha ao buscar extrato diário", erroExtrato);
     if (erroDivergencias || erroExtrato) erro = "Não foi possível carregar todos os dados. Tente novamente em instantes.";
 
     divergencias = (divergenciasRaw ?? []).map((d) => ({ ...d, contraparteNome: d.posto_nome ?? "—" }));

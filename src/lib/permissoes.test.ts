@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolverFuncionalidadeDaRota, ehBypassPermissao, temAcesso, type MapaPermissoes } from "@/lib/permissoes";
+import { resolverFuncionalidadeDaRota, ehBypassPermissao, temAcesso, HREF_FUNCIONALIDADE, type MapaPermissoes } from "@/lib/permissoes";
 
 // Fase Observabilidade-Fase2 (14/08/2026, pedido do Daniel: "os fluxos
 // críticos devem ter testes de regressão", escopo combinado: "login e
@@ -79,5 +79,36 @@ describe("temAcesso", () => {
   it("funcionalidade explicitamente ligada (true) libera", () => {
     const mapa: MapaPermissoes = new Map([["aba_financeiro", true]]);
     expect(temAcesso(mapa, "aba_financeiro")).toBe(true);
+  });
+});
+
+// Fase Observabilidade-Fase3 (14/08/2026, pedido do Daniel: "ampliar os
+// testes de regressão") — em vez de um exemplo isolado, este teste roda
+// sobre a matriz HREF_FUNCIONALIDADE REAL, inteira. É o guarda-chuva contra
+// a MESMA classe de bug já encontrada de verdade nesta tela (achado real,
+// auditoria de 13/08/2026): "/postos" capturando por engano "/postos-
+// duplicados" por causa de um match de prefixo malfeito. Se algum dia
+// alguém adicionar uma rota nova na matriz e reintroduzir esse tipo de
+// colisão, este teste falha sozinho, sem precisar lembrar de testar aquele
+// caso específico de novo.
+describe("HREF_FUNCIONALIDADE (matriz real) — nunca reintroduz o bug de prefixo mal casado", () => {
+  const hrefs = Object.keys(HREF_FUNCIONALIDADE);
+
+  it("toda rota cadastrada resolve pra própria funcionalidade (a menos que esteja na lista de nunca-bloqueadas)", () => {
+    for (const href of hrefs) {
+      const resultado = resolverFuncionalidadeDaRota(href);
+      if (resultado === null) continue; // rota também está em ROTAS_NUNCA_BLOQUEADAS — esperado
+      expect(resultado).toBe(HREF_FUNCIONALIDADE[href]);
+    }
+  });
+
+  it("um sufixo com hífen (não barra) NUNCA é capturado pela rota-mãe — mesma forma do bug real já corrigido", () => {
+    for (const href of hrefs) {
+      const irmaComHifen = `${href}-outra-tela-parecida`;
+      // Só testa quando esse "irmão fake" não é, ele mesmo, uma rota
+      // cadastrada de verdade na matriz (não queremos falso-positivo).
+      if (hrefs.includes(irmaComHifen)) continue;
+      expect(resolverFuncionalidadeDaRota(irmaComHifen)).not.toBe(HREF_FUNCIONALIDADE[href]);
+    }
   });
 });

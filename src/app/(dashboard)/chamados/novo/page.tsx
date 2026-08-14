@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ChamadoForm } from "../_components/ChamadoForm";
+import { logger } from "@/lib/logger";
 
 // Fase 27.26 — achado real: um cliente novo (perfil não-admin, 1 única
 // empresa vinculada) trava nessa tela com o erro genérico mascarado de
@@ -28,7 +29,7 @@ export default async function NovoChamadoPage() {
   } catch (e) {
     const mensagem = e instanceof Error ? e.message : String(e);
     const stack = e instanceof Error ? e.stack : undefined;
-    console.error("[chamados/novo] falha ao carregar a tela:", e);
+    void logger.error("chamados/novo", "Falha ao carregar a tela", e);
     return (
       <div>
         <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Chamado</h1>

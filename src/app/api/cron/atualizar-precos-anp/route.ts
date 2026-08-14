@@ -5,6 +5,7 @@ import { parseAnpPrecosXlsx } from "@/lib/anpPrecos";
 import { buscarPlanilhaAnpMaisRecente } from "@/lib/anpFetch";
 import { segredoConfere } from "@/lib/segredoConstante";
 import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
+import { logger } from "@/lib/logger";
 
 // Fase automatiza-anp-bigquery — atualização semanal automática da série de
 // preços de referência ANP (tabela anp_precos_referencia), sem depender de
@@ -73,7 +74,7 @@ async function executar(request: Request) {
     try {
       busca = await buscarPlanilhaAnpMaisRecente();
     } catch (e) {
-      console.error("[cron/atualizar-precos-anp] falha ao buscar planilha:", e);
+      void logger.error("cron/atualizar-precos-anp", "Falha ao buscar planilha", e);
       return NextResponse.json(
         { erro: e instanceof Error ? e.message : "Falha ao buscar a planilha da ANP." },
         { status: 502 }
@@ -84,7 +85,7 @@ async function executar(request: Request) {
     try {
       resultadoParse = parseAnpPrecosXlsx(busca.buffer);
     } catch (e) {
-      console.error("[cron/atualizar-precos-anp] falha ao interpretar a planilha:", e);
+      void logger.error("cron/atualizar-precos-anp", "Falha ao interpretar a planilha", e);
       return NextResponse.json(
         {
           erro: `Falha ao interpretar a planilha baixada: ${e instanceof Error ? e.message : String(e)}`,
@@ -141,7 +142,7 @@ async function executar(request: Request) {
     // Rede de segurança final — qualquer coisa não prevista acima (ex.:
     // exceção síncrona fora dos blocos já protegidos) ainda vira um JSON
     // de erro com log detalhado, em vez de um 502 opaco da plataforma.
-    console.error("[cron/atualizar-precos-anp] falha inesperada:", e);
+    void logger.error("cron/atualizar-precos-anp", "Falha inesperada", e);
     return NextResponse.json(
       { erro: e instanceof Error ? `Falha inesperada: ${e.message}` : "Falha inesperada." },
       { status: 500 }

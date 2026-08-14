@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizarNomeParaStorage } from "@/lib/storageUtils";
+import { logger } from "@/lib/logger";
 
 // Fase Central-Avisos (28/07/2026) — pedido do Daniel: canal oficial dentro
 // da aplicação pra comunicar novidades, correções, manutenções/
@@ -284,7 +285,7 @@ export async function contarAvisosNaoLidosAcao(): Promise<number> {
     const avisos = await listarAvisosAcao();
     return avisos.filter((a) => !a.lido).length;
   } catch (e) {
-    console.error("[central-avisos] falha ao contar avisos não lidos (ignorado):", e);
+    void logger.error("central-avisos", "Falha ao contar avisos não lidos (ignorado)", e);
     return 0;
   }
 }

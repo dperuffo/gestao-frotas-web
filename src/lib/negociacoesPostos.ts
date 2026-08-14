@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { DIAS_TRIAL, LIMITES_PLANO } from "@/lib/constants";
 import { exigirDocumentacaoAprovada } from "@/lib/empresasDocumentos";
+import { logger } from "@/lib/logger";
 
 // Fase 27.50 — Negociação com Postos Revendedores.
 //
@@ -53,7 +54,7 @@ async function notificarNegociacao(
   try {
     await supabase.functions.invoke("negociacao-email", { body: { negociacao_id: negociacaoId, evento } });
   } catch (e) {
-    console.error("[negociacoesPostos] falha ao notificar por e-mail (ignorado):", e);
+    void logger.error("negociacoesPostos", "Falha ao notificar por e-mail (ignorado)", e);
   }
 }
 

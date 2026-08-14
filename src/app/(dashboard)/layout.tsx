@@ -63,6 +63,7 @@ import {
 } from "lucide-react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 import {
   HREF_FUNCIONALIDADE,
   carregarMapaPermissoes,
@@ -609,74 +610,74 @@ export default async function DashboardLayout({
     favoritosBrutos,
   ] = await Promise.all([
       contarChamadosNaoVistosAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar chamados não vistos (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar chamados não vistos (ignorado)", e);
         return 0;
       }),
       contarAvaliacoesPendentesAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar avaliações pendentes (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar avaliações pendentes (ignorado)", e);
         return 0;
       }),
       contarAcessosClientesNaoVistosAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar acessos de clientes não vistos (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar acessos de clientes não vistos (ignorado)", e);
         return 0;
       }),
       contarNegociacoesPendentesAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar negociações pendentes (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar negociações pendentes (ignorado)", e);
         return 0;
       }),
       // Fase 27.65 — bolinha de ajustes de abastecimento aguardando resposta
       // deste usuário (cliente ou posto); mesma blindagem "falha vira 0" das
       // demais contagens.
       contarAjustesAbastecimentosPendentesAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar ajustes de abastecimento pendentes (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar ajustes de abastecimento pendentes (ignorado)", e);
         return 0;
       }),
       // Fase 27.150 — bolinha de notificação na chegada de documentos
       // societários/cadastrais (empresas com documentacao_status=pendente),
       // mesma blindagem "falha vira 0" das demais contagens.
       contarDocumentosPendentesAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar documentos pendentes (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar documentos pendentes (ignorado)", e);
         return 0;
       }),
       // Fase Motor-de-Ação-Automática — bolinha de ações sugeridas pendentes
       // (CNH vencida, posto acima da média, hodômetro fora do padrão),
       // mesma blindagem "falha vira 0" das demais contagens.
       contarAcoesSugeridasPendentesAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar ações sugeridas pendentes (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar ações sugeridas pendentes (ignorado)", e);
         return 0;
       }),
       // Fase auto-cadastro-abastecimento — bolinha de veículos/motoristas
       // criados automaticamente por integração de abastecimento, ainda sem
       // o resto do cadastro (mesma blindagem "falha vira 0" das demais).
       contarCadastrosPendentesAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar cadastros pendentes (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar cadastros pendentes (ignorado)", e);
         return 0;
       }),
       // Fase Onda-2 (benchmark TicketLog, item #4) — bolinha de multas
       // pendentes de indicação com prazo vencendo em até 7 dias, mesma
       // blindagem "falha vira 0" das demais contagens.
       contarMultasPendentesAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar multas pendentes (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar multas pendentes (ignorado)", e);
         return 0;
       }),
       // Fase Duplicidade-Placas-Grupo (05/08/2026) — bolinha de placas
       // duplicadas entre empresas do mesmo grupo econômico/rede de postos,
       // mesma blindagem "falha vira 0" das demais contagens.
       contarDuplicidadesPlacaGrupoAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar duplicidades de placa (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar duplicidades de placa (ignorado)", e);
         return 0;
       }),
       // Fase Conferência-de-Preços-Posto (09/08/2026) — bolinha de
       // divergências de preço de HOJE ainda sem ajuste em andamento, mesma
       // blindagem "falha vira 0" das demais contagens.
       contarDivergenciasPrecoPostoAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar divergências de preço (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar divergências de preço (ignorado)", e);
         return 0;
       }),
       // Fase Conferencia-Precos-Cliente (12/08/2026) — mesma bolinha, lado
       // cliente (ver comentário na Server Action).
       contarDivergenciasPrecoClienteAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao contar divergências de preço (cliente, ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao contar divergências de preço (cliente, ignorado)", e);
         return 0;
       }),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
@@ -689,7 +690,7 @@ export default async function DashboardLayout({
       // (badge) e o banner fixo (fixado=true) abaixo só filtram em memória,
       // sem query extra. Mesma blindagem "falha vira 0/[]" das demais.
       listarAvisosAcao().catch((e) => {
-        console.error("[dashboard/layout] falha ao listar avisos (ignorado):", e);
+        void logger.error("dashboard/layout", "Falha ao listar avisos (ignorado)", e);
         return [];
       }),
       // Fase Acesso-Rápido-Favoritos (04/08/2026) — lista já ordenada
@@ -704,7 +705,7 @@ export default async function DashboardLayout({
           if (error) throw error;
           return data ?? [];
         } catch (e) {
-          console.error("[dashboard/layout] falha ao buscar favoritos do menu (ignorado):", e);
+          void logger.error("dashboard/layout", "Falha ao buscar favoritos do menu (ignorado)", e);
           return [];
         }
       })(),
@@ -724,7 +725,7 @@ export default async function DashboardLayout({
       .maybeSingle();
     perfilUsuario = data;
   } catch (e) {
-    console.error("[dashboard/layout] falha ao buscar perfil do usuário (ignorado):", e);
+    void logger.error("dashboard/layout", "Falha ao buscar perfil do usuário (ignorado)", e);
   }
   const nomeExibido = perfilUsuario?.nome || user.email;
   const cargoExibido = perfilUsuario?.perfil

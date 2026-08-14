@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { empresaDonaDoVeiculoAcao, empresaOuIrmaDoGrupo } from "@/lib/empresasGrupo";
 import type { Database } from "@/types/database.types";
+import { logger } from "@/lib/logger";
 
 export type MultaFormState = { erro?: string; ok?: boolean; avisoAnexo?: string } | undefined;
 
@@ -110,7 +111,7 @@ export async function criarMultaAcao(empresaId: string, _prev: MultaFormState, f
         criado_por: user?.email ?? null,
       })
       .then(({ error: erroContaPagar }) => {
-        if (erroContaPagar) console.error("[multas] falha ao lançar em contas_pagar (ignorado):", erroContaPagar);
+        if (erroContaPagar) void logger.error("multas", "Falha ao lançar em contas_pagar (ignorado)", erroContaPagar);
       });
   }
 
@@ -204,7 +205,7 @@ export async function atualizarStatusMultaAcao(multaId: string, novoStatus: stri
         .update(patchConta)
         .eq("id", contaVinculada.id)
         .then(({ error: erroConta }) => {
-          if (erroConta) console.error("[multas] falha ao sincronizar contas_pagar (ignorado):", erroConta);
+          if (erroConta) void logger.error("multas", "Falha ao sincronizar contas_pagar (ignorado)", erroConta);
         });
     }
   }
@@ -230,7 +231,7 @@ export async function excluirMultaAcao(id: string) {
     .eq("origem", "multa")
     .eq("referencia_id", id)
     .then(({ error: erroConta }) => {
-      if (erroConta) console.error("[multas] falha ao remover contas_pagar vinculada (ignorado):", erroConta);
+      if (erroConta) void logger.error("multas", "Falha ao remover contas_pagar vinculada (ignorado)", erroConta);
     });
 
   const { error } = await supabase.from("multas").delete().eq("id", id);
