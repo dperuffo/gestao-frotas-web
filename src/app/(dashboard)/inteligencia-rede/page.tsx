@@ -200,14 +200,17 @@ export default async function InteligenciaRedePage({
     supabase.rpc("preco_medio_por_meio_pagamento", { p_empresa_id: empresaIdFiltro }),
   ]);
 
-  // Preço do diesel S10 por estado (ANP) — usado só no score de oportunidade
-  // de expansão; tabela pequena (~178 linhas em nível "estado"), não precisa
-  // de RPC.
-  const { data: dieselPorUfRaw } = await supabase
+  // Preço por estado (ANP), todos os produtos — tabela pequena (~178 linhas
+  // × poucas categorias), não precisa de RPC. Usado no score de oportunidade
+  // de expansão (só diesel) e, desde a Fase Frota-Real-Filtro-Combustivel
+  // (17/08/2026, pedido do Daniel: "está faltando filtro por combustível...
+  // só traz informações do Diesel"), como referência genérica por
+  // combustível na aba Frota Real (antes vinha hardcoded pra Diesel S10,
+  // mesmo pra frotas majoritariamente a gasolina).
+  const { data: anpPorEstadoRaw } = await supabase
     .from("anp_precos_referencia")
-    .select("estado, preco_medio")
-    .eq("nivel", "estado")
-    .eq("produto", "OLEO DIESEL S10");
+    .select("estado, produto, preco_medio")
+    .eq("nivel", "estado");
 
   // Referência oficial ANP (nível Brasil, semana mais recente importada).
   const { data: semanaMaisRecente } = await supabase
@@ -359,13 +362,20 @@ export default async function InteligenciaRedePage({
     })
     .sort((a, b) => b.coberturaPct - a.coberturaPct);
 
+  // Mapa genérico produto ANP -> UF -> preço médio, a partir do mesmo
+  // anpPorEstadoRaw buscado acima (agora sem filtro de produto).
+  const anpPorUfPorProduto = new Map<string, Map<string, number>>();
+  for (const r of anpPorEstadoRaw ?? []) {
+    if (r.preco_medio == null) continue;
+    const uf = ESTADO_PARA_UF[r.estado] ?? r.estado;
+    const mapaUf = anpPorUfPorProduto.get(r.produto) ?? new Map<string, number>();
+    mapaUf.set(uf, r.preco_medio as number);
+    anpPorUfPorProduto.set(r.produto, mapaUf);
+  }
+
   // Top oportunidades de expansão: UFs com baixa penetração GF + diesel ANP
   // caro pontuam mais alto — mesma fórmula do painel Executivo do Streamlit.
-  const dieselPorUf = new Map(
-    (dieselPorUfRaw ?? [])
-      .filter((r) => r.preco_medio != null)
-      .map((r) => [ESTADO_PARA_UF[r.estado] ?? r.estado, r.preco_medio as number])
-  );
+  const dieselPorUf = anpPorUfPorProduto.get("OLEO DIESEL S10") ?? new Map<string, number>();
   const dieselMax = Math.max(1, ...Array.from(dieselPorUf.values()));
   const oportunidades = Array.from(anpPorUf.keys())
     .map((uf) => {
@@ -488,11 +498,19 @@ export default async function InteligenciaRedePage({
     uf: r.uf,
     lat: r.lat,
     lon: r.lon,
+    combustivel: r.combustivel,
     visitas: r.visitas,
     precoMedio: r.preco_medio,
     litrosTotal: r.litros_total,
   }));
-  const dieselAnpPorUfObj = Object.fromEntries(dieselPorUf.entries());
+  // Objeto serializável (categoria ANP -> UF -> preço) pra passar pro client
+  // component — a Frota Real resolve "combustivel" (nome de venda) ->
+  // categoria ANP com PRODUTO_PARA_CATEGORIA_ANP, mesmo mapeamento usado no
+  // resto da tela.
+  const anpPorUfPorCombustivel: Record<string, Record<string, number>> = {};
+  for (const [produto, mapaUf] of anpPorUfPorProduto.entries()) {
+    anpPorUfPorCombustivel[produto] = Object.fromEntries(mapaUf.entries());
+  }
 
   // Cobertura x Demanda: demanda medida só por abastecimentos reais
   // (postosVisitados, já buscado acima) — de propósito NÃO soma rotas
@@ -878,7 +896,7 @@ export default async function InteligenciaRedePage({
                   historico={historicoDetalhado}
                   desvios={desvioAnp}
                   postosVisitados={postosVisitados}
-                  dieselAnpPorUf={dieselAnpPorUfObj}
+                  anpPorUfPorCombustivel={anpPorUfPorCombustivel}
                 />
               </div>
             ),

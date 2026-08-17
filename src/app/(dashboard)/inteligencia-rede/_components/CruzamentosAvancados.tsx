@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ReferenceLin
 import { AbasPainel } from "./AbasPainel";
 import MapaFrotaRealLazy from "./MapaFrotaRealLazy";
 import type { PontoFrotaReal } from "./MapaFrotaReal";
+import { PRODUTO_PARA_CATEGORIA_ANP } from "@/lib/constants";
 
 export type PrecoUf = { uf: string; combustivel: string; precoMedio: number; qtdPostos: number };
 export type RegistroPreco = { cnpj: string; razaoSocial: string | null; municipio: string | null; uf: string | null; combustivel: string; preco: number };
@@ -16,6 +17,7 @@ export type PostoVisitado = {
   uf: string | null;
   lat: number | null;
   lon: number | null;
+  combustivel: string;
   visitas: number;
   precoMedio: number;
   litrosTotal: number;
@@ -50,13 +52,13 @@ export function CruzamentosAvancados({
   historico,
   desvios,
   postosVisitados,
-  dieselAnpPorUf,
+  anpPorUfPorCombustivel,
 }: {
   precosPorUf: PrecoUf[];
   historico: RegistroPreco[];
   desvios: DesvioAnp[];
   postosVisitados: PostoVisitado[];
-  dieselAnpPorUf: Record<string, number>;
+  anpPorUfPorCombustivel: Record<string, Record<string, number>>;
 }) {
   const combustiveis = useMemo(() => Array.from(new Set(precosPorUf.map((p) => p.combustivel))).sort(), [precosPorUf]);
 
@@ -81,7 +83,7 @@ export function CruzamentosAvancados({
         {
           id: "frota-real",
           label: "🚛 Frota Real",
-          conteudo: <FrotaReal postosVisitados={postosVisitados} dieselAnpPorUf={dieselAnpPorUf} />,
+          conteudo: <FrotaReal postosVisitados={postosVisitados} anpPorUfPorCombustivel={anpPorUfPorCombustivel} />,
         },
       ]}
     />
@@ -440,32 +442,50 @@ function GfVsConcorrencia({ desvios, combustiveis }: { desvios: DesvioAnp[]; com
   );
 }
 
-function FrotaReal({ postosVisitados, dieselAnpPorUf }: { postosVisitados: PostoVisitado[]; dieselAnpPorUf: Record<string, number> }) {
-  const totalVisitas = postosVisitados.reduce((s, p) => s + p.visitas, 0);
-  const ufsCobertas = new Set(postosVisitados.map((p) => p.uf).filter(Boolean)).size;
-  const precoMedioPago = totalVisitas > 0 ? postosVisitados.reduce((s, p) => s + p.precoMedio * p.visitas, 0) / totalVisitas : 0;
+function FrotaReal({
+  postosVisitados,
+  anpPorUfPorCombustivel,
+}: {
+  postosVisitados: PostoVisitado[];
+  anpPorUfPorCombustivel: Record<string, Record<string, number>>;
+}) {
+  // Fase Frota-Real-Filtro-Combustivel (17/08/2026, pedido do Daniel: "está
+  // faltando filtro por combustível... só traz informações do Diesel") —
+  // achado real: a aba misturava Diesel, Gasolina e Etanol na mesma média e
+  // sempre comparava contra referência ANP de Diesel S10. Agora a RPC
+  // devolve 1 linha por posto+combustível, e aqui filtramos igual às outras
+  // abas (useCombustivelSelect), resolvendo a referência ANP certa por
+  // combustível via PRODUTO_PARA_CATEGORIA_ANP.
+  const combustiveis = useMemo(() => Array.from(new Set(postosVisitados.map((p) => p.combustivel))).sort(), [postosVisitados]);
+  const { atual, setSel } = useCombustivelSelect(combustiveis);
+  const postosFiltrados = useMemo(() => postosVisitados.filter((p) => p.combustivel === atual), [postosVisitados, atual]);
+  const anpPorUf = useMemo(() => anpPorUfPorCombustivel[PRODUTO_PARA_CATEGORIA_ANP[atual]] ?? {}, [anpPorUfPorCombustivel, atual]);
+
+  const totalVisitas = postosFiltrados.reduce((s, p) => s + p.visitas, 0);
+  const ufsCobertas = new Set(postosFiltrados.map((p) => p.uf).filter(Boolean)).size;
+  const precoMedioPago = totalVisitas > 0 ? postosFiltrados.reduce((s, p) => s + p.precoMedio * p.visitas, 0) / totalVisitas : 0;
 
   const { min, max } = useMemo(() => {
-    const precos = postosVisitados.map((p) => p.precoMedio);
+    const precos = postosFiltrados.map((p) => p.precoMedio);
     return { min: precos.length ? Math.min(...precos) : 0, max: precos.length ? Math.max(...precos) : 0 };
-  }, [postosVisitados]);
+  }, [postosFiltrados]);
 
   const pontosMapa = useMemo<PontoFrotaReal[]>(() => {
     const faixa = Math.max(max - min, 0.01);
-    return postosVisitados
+    return postosFiltrados
       .filter((p): p is PostoVisitado & { lat: number; lon: number } => p.lat != null && p.lon != null)
       .map((p) => {
         const norm = (p.precoMedio - min) / faixa;
         const cor = norm < 0.33 ? "#43A047" : norm < 0.66 ? "#F57C00" : "#E53935";
         return { cnpj: p.cnpj, razaoSocial: p.razaoSocial, municipio: p.municipio, uf: p.uf, visitas: p.visitas, precoMedio: p.precoMedio, cor, lat: p.lat, lon: p.lon };
       });
-  }, [postosVisitados, min, max]);
+  }, [postosFiltrados, min, max]);
 
-  const ranking = useMemo(() => [...postosVisitados].sort((a, b) => b.visitas - a.visitas).slice(0, 15), [postosVisitados]);
+  const ranking = useMemo(() => [...postosFiltrados].sort((a, b) => b.visitas - a.visitas).slice(0, 15), [postosFiltrados]);
 
   const porUf = useMemo(() => {
     const mapa = new Map<string, { soma: number; visitas: number }>();
-    for (const p of postosVisitados) {
+    for (const p of postosFiltrados) {
       if (!p.uf) continue;
       const at = mapa.get(p.uf) ?? { soma: 0, visitas: 0 };
       at.soma += p.precoMedio * p.visitas;
@@ -475,12 +495,12 @@ function FrotaReal({ postosVisitados, dieselAnpPorUf }: { postosVisitados: Posto
     return Array.from(mapa.entries())
       .map(([uf, v]) => {
         const precoReal = v.visitas > 0 ? v.soma / v.visitas : 0;
-        const anpRef = dieselAnpPorUf[uf];
+        const anpRef = anpPorUf[uf];
         const deltaPct = anpRef ? ((precoReal - anpRef) / anpRef) * 100 : null;
         return { uf, precoReal, visitas: v.visitas, anpRef: anpRef ?? null, deltaPct };
       })
       .sort((a, b) => b.precoReal - a.precoReal);
-  }, [postosVisitados, dieselAnpPorUf]);
+  }, [postosFiltrados, anpPorUf]);
 
   if (postosVisitados.length === 0) {
     return (
@@ -493,67 +513,75 @@ function FrotaReal({ postosVisitados, dieselAnpPorUf }: { postosVisitados: Posto
 
   return (
     <div>
+      <SeletorCombustivel opcoes={combustiveis} atual={atual} onChange={setSel} />
+
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MiniKpi label="⛽ Abastecimentos" valor={formatarInt(totalVisitas)} />
-        <MiniKpi label="📍 Postos distintos" valor={formatarInt(postosVisitados.length)} />
+        <MiniKpi label="📍 Postos distintos" valor={formatarInt(postosFiltrados.length)} />
         <MiniKpi label="🗺️ UFs cobertas" valor={formatarInt(ufsCobertas)} />
         <MiniKpi label="💰 Preço médio pago" valor={formatarMoeda(precoMedioPago)} />
       </div>
 
-      <p className="mb-2 text-xs font-medium text-slate-600">🌎 Mapa de calor — postos visitados pela frota</p>
-      <p className="mb-2 text-xs text-slate-400">Tamanho = frequência de visitas. Cor = preço médio pago (verde barato → vermelho caro).</p>
-      <MapaFrotaRealLazy pontos={pontosMapa} />
+      {postosFiltrados.length === 0 ? (
+        <p className="p-4 text-sm text-slate-400">Nenhum abastecimento de {atual} registrado ainda.</p>
+      ) : (
+        <>
+          <p className="mb-2 text-xs font-medium text-slate-600">🌎 Mapa de calor — postos visitados pela frota</p>
+          <p className="mb-2 text-xs text-slate-400">Tamanho = frequência de visitas. Cor = preço médio pago (verde barato → vermelho caro).</p>
+          <MapaFrotaRealLazy pontos={pontosMapa} />
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <p className="mb-2 text-xs font-medium text-slate-600">🏆 Ranking de postos mais utilizados</p>
-          <BarraHorizontal
-            dados={ranking.map((p) => ({ label: truncar(p.razaoSocial ?? p.cnpj, 30), valor: p.visitas, cor: "#283593", texto: formatarInt(p.visitas) }))}
-            eixoX="Abastecimentos"
-          />
-        </div>
-        <div className="lg:col-span-2">
-          <p className="mb-2 text-xs font-medium text-slate-600">📊 Preço pago por UF (ref.: Diesel S10 ANP)</p>
-          <ResponsiveContainer width="100%" height={Math.max(220, porUf.length * 26)}>
-            <BarChart data={porUf} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-              <YAxis type="category" dataKey="uf" width={32} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: number) => formatarMoeda(v)} />
-              <Legend />
-              <Bar dataKey="precoReal" name="Preço pago" fill="#E65100" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="anpRef" name="ANP Diesel S10" fill="#7B1FA2" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+          <div className="mt-6 grid gap-6 lg:grid-cols-5">
+            <div className="lg:col-span-3">
+              <p className="mb-2 text-xs font-medium text-slate-600">🏆 Ranking de postos mais utilizados</p>
+              <BarraHorizontal
+                dados={ranking.map((p) => ({ label: truncar(p.razaoSocial ?? p.cnpj, 30), valor: p.visitas, cor: "#283593", texto: formatarInt(p.visitas) }))}
+                eixoX="Abastecimentos"
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <p className="mb-2 text-xs font-medium text-slate-600">📊 Preço pago por UF (ref.: {atual} ANP)</p>
+              <ResponsiveContainer width="100%" height={Math.max(220, porUf.length * 26)}>
+                <BarChart data={porUf} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `R$ ${v.toFixed(2)}`} />
+                  <YAxis type="category" dataKey="uf" width={32} tick={{ fontSize: 11 }} />
+                  <Tooltip formatter={(v: number) => formatarMoeda(v)} />
+                  <Legend />
+                  <Bar dataKey="precoReal" name="Preço pago" fill="#E65100" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="anpRef" name={`ANP ${atual}`} fill="#7B1FA2" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
-            <tr>
-              <th className="py-2 pr-3">UF</th>
-              <th className="py-2 pr-3">Preço real</th>
-              <th className="py-2 pr-3">Abastecimentos</th>
-              <th className="py-2 pr-3">ANP ref. (Diesel S10)</th>
-              <th className="py-2">Δ% vs ANP</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {porUf.map((u) => (
-              <tr key={u.uf}>
-                <td className="py-2 pr-3 text-slate-700">{u.uf}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda(u.precoReal)}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-600">{u.visitas}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-600">{u.anpRef != null ? formatarMoeda(u.anpRef) : "—"}</td>
-                <td className="py-2 tabular-nums text-slate-600">
-                  {u.deltaPct != null ? `${u.deltaPct >= 0 ? "+" : ""}${u.deltaPct.toFixed(1)}%` : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="py-2 pr-3">UF</th>
+                  <th className="py-2 pr-3">Preço real</th>
+                  <th className="py-2 pr-3">Abastecimentos</th>
+                  <th className="py-2 pr-3">ANP ref. ({atual})</th>
+                  <th className="py-2">Δ% vs ANP</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {porUf.map((u) => (
+                  <tr key={u.uf}>
+                    <td className="py-2 pr-3 text-slate-700">{u.uf}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda(u.precoReal)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600">{u.visitas}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600">{u.anpRef != null ? formatarMoeda(u.anpRef) : "—"}</td>
+                    <td className="py-2 tabular-nums text-slate-600">
+                      {u.deltaPct != null ? `${u.deltaPct >= 0 ? "+" : ""}${u.deltaPct.toFixed(1)}%` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

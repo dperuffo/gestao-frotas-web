@@ -5552,6 +5552,7 @@ export interface Database {
           uf: string | null;
           lat: number | null;
           lon: number | null;
+          combustivel: string;
           visitas: number;
           preco_medio: number;
           litros_total: number;
