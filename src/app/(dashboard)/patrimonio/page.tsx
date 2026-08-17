@@ -20,15 +20,38 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
   const supabase = await createClient();
   const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
-  const { data: resumo, error } = empresaSelecionada
-    ? await supabase.rpc("patrimonio_frota_resumo", {
-        p_empresa_id: empresaSelecionada,
+  // Fase Auditoria-Paginacao (17/08/2026) — achado real: essa RPC devolve 1
+  // linha por veículo da frota, sem `.range()` — sujeita ao corte padrão de
+  // 1.000 linhas do PostgREST em frotas grandes (mesmo bug já corrigido em
+  // /veiculos, Fase 27.38). Busca em lotes de 1.000 até esgotar.
+  const LOTE_PATRIMONIO = 1000;
+  function buscarLotePatrimonio(empresaId: string, offset: number) {
+    return supabase
+      .rpc("patrimonio_frota_resumo", {
+        p_empresa_id: empresaId,
         p_busca: busca || null,
         p_ordenar: ordenar || null,
       })
-    : { data: null, error: null };
+      .range(offset, offset + LOTE_PATRIMONIO - 1);
+  }
 
-  const veiculos = resumo ?? [];
+  type LinhaPatrimonio = NonNullable<Awaited<ReturnType<typeof buscarLotePatrimonio>>["data"]>[number];
+  const veiculos: LinhaPatrimonio[] = [];
+  let error: { message: string } | null = null;
+  if (empresaSelecionada) {
+    let offsetBusca = 0;
+    for (;;) {
+      const { data: lote, error: erroLote } = await buscarLotePatrimonio(empresaSelecionada, offsetBusca);
+      if (erroLote) {
+        error = erroLote;
+        break;
+      }
+      if (!lote || lote.length === 0) break;
+      veiculos.push(...lote);
+      if (lote.length < LOTE_PATRIMONIO) break;
+      offsetBusca += LOTE_PATRIMONIO;
+    }
+  }
   const comAquisicao = veiculos.filter((v) => v.patrimonio_completo);
   const semAquisicao = veiculos.length - comAquisicao.length;
   const valorAquisicaoTotal = comAquisicao.reduce((s, v) => s + (v.valor_aquisicao ?? 0), 0);

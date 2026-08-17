@@ -47,13 +47,35 @@ export default async function ResgatesFidelidadePage({
     );
   }
 
-  let query = supabase
-    .from("fidelidade_resgates")
-    .select("id, motorista_id, dependente_id, categoria, titulo, pontos_gastos, status, solicitado_em")
-    .order("solicitado_em", { ascending: false });
-  if (statusParam && eStatusValido(statusParam)) query = query.eq("status", statusParam);
-  const { data, error } = await query;
-  const resgates = (data ?? []) as ResgateRow[];
+  // Fase Auditoria-Paginacao (17/08/2026) — achado real: tela admin,
+  // cross-tenant (resgates de TODOS os clientes), buscando tudo numa query
+  // só, sem `.range()` — sujeita ao corte padrão de 1.000 linhas do
+  // PostgREST conforme o programa de fidelidade acumula resgates (mesmo bug
+  // já corrigido em /veiculos, Fase 27.38). Busca em lotes de 1.000 até
+  // esgotar.
+  const LOTE_RESGATES = 1000;
+  const resgates: ResgateRow[] = [];
+  let error: { message: string } | null = null;
+  {
+    let offsetBusca = 0;
+    for (;;) {
+      let query = supabase
+        .from("fidelidade_resgates")
+        .select("id, motorista_id, dependente_id, categoria, titulo, pontos_gastos, status, solicitado_em")
+        .order("solicitado_em", { ascending: false })
+        .range(offsetBusca, offsetBusca + LOTE_RESGATES - 1);
+      if (statusParam && eStatusValido(statusParam)) query = query.eq("status", statusParam);
+      const { data: lote, error: erroLote } = await query;
+      if (erroLote) {
+        error = erroLote;
+        break;
+      }
+      if (!lote || lote.length === 0) break;
+      resgates.push(...(lote as ResgateRow[]));
+      if (lote.length < LOTE_RESGATES) break;
+      offsetBusca += LOTE_RESGATES;
+    }
+  }
 
   const motoristaIds = Array.from(new Set(resgates.map((r) => r.motorista_id)));
   const dependenteIds = Array.from(new Set(resgates.map((r) => r.dependente_id).filter((v): v is string => !!v)));

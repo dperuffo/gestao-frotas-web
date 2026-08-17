@@ -58,14 +58,28 @@ export default async function LgpdPage() {
   // executadas.
   const { empresas } = ehAdmin ? { empresas: [] } : await resolverEmpresaAtual(supabase);
 
-  let todasExclusoes: { id: string; empresa_id: string; email: string; status: string; solicitado_em: string | null; executado_em: string | null }[] = [];
+  // Fase Auditoria-Paginacao (17/08/2026) — achado real: painel admin,
+  // cross-tenant (solicitações de exclusão de TODOS os clientes), buscando
+  // tudo numa query só, sem `.range()` — sujeita ao corte padrão de 1.000
+  // linhas do PostgREST com o tempo (mesmo bug já corrigido em /veiculos,
+  // Fase 27.38). Busca em lotes de 1.000 até esgotar.
+  const LOTE_EXCLUSOES = 1000;
+  const todasExclusoes: { id: string; empresa_id: string; email: string; status: string; solicitado_em: string | null; executado_em: string | null }[] = [];
   let empresasTodas: { id: string; nome: string }[] = [];
   if (ehAdmin) {
-    const [{ data: exclusoesRaw }, { data: empresasRaw }] = await Promise.all([
-      supabase.from("lgpd_exclusoes").select("id, empresa_id, email, status, solicitado_em, executado_em").order("solicitado_em", { ascending: false }),
-      supabase.from("empresas").select("id, nome"),
-    ]);
-    todasExclusoes = exclusoesRaw ?? [];
+    let offsetBusca = 0;
+    for (;;) {
+      const { data: lote } = await supabase
+        .from("lgpd_exclusoes")
+        .select("id, empresa_id, email, status, solicitado_em, executado_em")
+        .order("solicitado_em", { ascending: false })
+        .range(offsetBusca, offsetBusca + LOTE_EXCLUSOES - 1);
+      if (!lote || lote.length === 0) break;
+      todasExclusoes.push(...lote);
+      if (lote.length < LOTE_EXCLUSOES) break;
+      offsetBusca += LOTE_EXCLUSOES;
+    }
+    const { data: empresasRaw } = await supabase.from("empresas").select("id, nome");
     empresasTodas = empresasRaw ?? [];
   }
   const nomeEmpresa = (id: string) => empresasTodas.find((e) => e.id === id)?.nome ?? "—";

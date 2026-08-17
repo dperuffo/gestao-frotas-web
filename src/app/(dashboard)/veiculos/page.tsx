@@ -63,25 +63,18 @@ export default async function VeiculosPage({
     veiculos = data;
     totalGeral = veiculos.length;
     totalAtivos = veiculos.filter((v) => v.ativo).length;
-  } else if (empresas.length === 0) {
-    // Admin sem nenhum cliente selecionado ainda: nada pra listar até
-    // escolher (evita repetir o vazamento cross-tenant que gerou este ajuste).
-    veiculos = [];
   } else {
-    // Só cai aqui pra quem tem exatamente 1 empresa (resolverEmpresaAtual já
-    // pré-seleciona nesse caso) — mantém o comportamento anterior via query
-    // direta, mais simples que passar por RPC quando não há ambiguidade.
-    let query = supabase
-      .from("cadastro_veiculos")
-      .select(
-        "id, placa, marca, modelo, tipo_veiculo, classificacao, tipo, ativo, centro_custo_nome, municipio, uf_veiculo, pendente_revisao"
-      )
-      .order("placa");
-    const { data, error: queryError } = await query;
-    error = queryError;
-    veiculos = data ?? [];
-    totalGeral = veiculos.length;
-    totalAtivos = veiculos.filter((v) => v.ativo).length;
+    // Fase Auditoria-Paginacao (17/08/2026) — achado real: este branch
+    // ("sem empresaSelecionada, mas com empresas.length !== 0") só é
+    // alcançável quando o usuário tem MAIS de uma empresa e ainda não
+    // escolheu (resolverEmpresaAtual já pré-seleciona sozinho quando há
+    // exatamente 1) — e nesse cenário exato a tela abaixo já esconde a
+    // tabela e pede pra selecionar um cliente primeiro. A query direta que
+    // existia aqui antes (sem `.range()`, sem paginação em lote como a RPC
+    // acima) nunca era realmente exibida — só rodava à toa, e ainda por
+    // cima arriscava o corte padrão de 1.000 linhas do PostgREST se algum
+    // dia passasse a ser usada. Removida; nada pra listar até escolher.
+    veiculos = [];
   }
 
   const termoBusca = (q ?? "").trim().toLowerCase();

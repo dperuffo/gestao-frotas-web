@@ -32,6 +32,29 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
     pendencias_abertas: number;
   };
 
+  // Fase Auditoria-Paginacao (17/08/2026) — achado real: checklist_veiculos_resumo
+  // devolve 1 linha por veículo, chamada sem `.range()` (uma vez pra empresa
+  // própria, mais uma vez por empresa "irmã" do grupo) — sujeita ao corte
+  // padrão de 1.000 linhas do PostgREST em frotas grandes (mesmo bug já
+  // corrigido em /veiculos, Fase 27.38). Busca em lotes de 1.000 por
+  // empresa, mantendo o paralelismo entre empresas do grupo.
+  const LOTE_CHECKLIST = 1000;
+  async function buscarChecklistCompleto(empresaId: string): Promise<{ data: VeiculoChecklist[]; error: { message: string } | null }> {
+    const todos: VeiculoChecklist[] = [];
+    let offsetBusca = 0;
+    for (;;) {
+      const { data: lote, error: erroLote } = await supabase
+        .rpc("checklist_veiculos_resumo", { p_empresa_id: empresaId, p_busca: busca || null })
+        .range(offsetBusca, offsetBusca + LOTE_CHECKLIST - 1);
+      if (erroLote) return { data: todos, error: erroLote };
+      if (!lote || lote.length === 0) break;
+      todos.push(...lote);
+      if (lote.length < LOTE_CHECKLIST) break;
+      offsetBusca += LOTE_CHECKLIST;
+    }
+    return { data: todos, error: null };
+  }
+
   let veiculosProprios: VeiculoChecklist[] | null = null;
   let error: { message: string } | null = null;
   let listaGrupo: (VeiculoChecklist & { empresaNome: string })[] = [];
@@ -39,12 +62,12 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
   if (empresaSelecionada) {
     const irmas = await empresasIrmasAcao(supabase, empresaSelecionada);
     const [resultadoProprio, resultadosGrupo] = await Promise.all([
-      supabase.rpc("checklist_veiculos_resumo", { p_empresa_id: empresaSelecionada, p_busca: busca || null }),
-      Promise.all(irmas.map((e) => supabase.rpc("checklist_veiculos_resumo", { p_empresa_id: e.id, p_busca: busca || null }))),
+      buscarChecklistCompleto(empresaSelecionada),
+      Promise.all(irmas.map((e) => buscarChecklistCompleto(e.id))),
     ]);
     veiculosProprios = resultadoProprio.data;
     error = resultadoProprio.error;
-    listaGrupo = resultadosGrupo.flatMap((r, i) => (r.data ?? []).map((v) => ({ ...v, empresaNome: irmas[i].nome })));
+    listaGrupo = resultadosGrupo.flatMap((r, i) => r.data.map((v) => ({ ...v, empresaNome: irmas[i].nome })));
   }
 
   const lista = [...(veiculosProprios ?? []).map((v) => ({ ...v, empresaNome: undefined as string | undefined })), ...listaGrupo];

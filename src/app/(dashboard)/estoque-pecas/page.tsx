@@ -31,14 +31,27 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
     ativa: boolean;
   };
 
-  let pecasRaw: PecaLinha[] = [];
+  // Fase Auditoria-Paginacao (17/08/2026) — achado real: busca o catálogo de
+  // peças inteiro sem `.range()` — sujeita ao corte padrão de 1.000 linhas
+  // do PostgREST em catálogos grandes (mesmo bug já corrigido em /veiculos,
+  // Fase 27.38). Busca em lotes de 1.000 até esgotar.
+  const LOTE_PECAS = 1000;
+  const pecasRaw: PecaLinha[] = [];
   if (empresaSelecionada) {
-    const { data } = await supabase
-      .from("pecas_estoque")
-      .select("id, nome, codigo, unidade_medida, quantidade_atual, quantidade_minima, custo_unitario_medio, ativa")
-      .eq("empresa_id", empresaSelecionada)
-      .order("nome");
-    pecasRaw = (data ?? []) as PecaLinha[];
+    let offsetBusca = 0;
+    for (;;) {
+      const { data } = await supabase
+        .from("pecas_estoque")
+        .select("id, nome, codigo, unidade_medida, quantidade_atual, quantidade_minima, custo_unitario_medio, ativa")
+        .eq("empresa_id", empresaSelecionada)
+        .order("nome")
+        .range(offsetBusca, offsetBusca + LOTE_PECAS - 1);
+      const lote = (data ?? []) as PecaLinha[];
+      if (lote.length === 0) break;
+      pecasRaw.push(...lote);
+      if (lote.length < LOTE_PECAS) break;
+      offsetBusca += LOTE_PECAS;
+    }
   }
 
   const termoBusca = (q ?? "").trim().toLowerCase();

@@ -62,18 +62,49 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
   }
   const empresaSelecionada = empresaParam && empresas.some((e) => e.id === empresaParam) ? empresaParam : null;
 
-  let query = supabase
-    .from("tickets")
-    .select("id, numero, empresa_id, user_email, tipo, titulo, status, prioridade, criado_em, atualizado_em, usuario_visto_em, admin_visto_em, empresas(nome)")
-    .order("criado_em", { ascending: false });
+  // Fase Auditoria-Paginacao (17/08/2026) — achado real: a visão admin (sem
+  // cliente selecionado, "Todos os clientes" é o padrão) buscava TODOS os
+  // chamados de TODOS os clientes numa query só, sem `.range()` — sujeita ao
+  // corte padrão de 1.000 linhas do PostgREST, igual ao bug já corrigido em
+  // /veiculos (Fase 27.38) e ao que derrubou o gráfico do posto (Fase
+  // 27.69). Corrigido com o MESMO padrão: busca em lotes de 1.000 até
+  // esgotar, mantendo os indicadores e a busca por texto calculados sobre a
+  // lista completa (igual já era, só que agora sem risco de corte
+  // silencioso).
+  const LOTE_CHAMADOS = 1000;
+  function buscarLoteChamados(offset: number) {
+    let query = supabase
+      .from("tickets")
+      .select("id, numero, empresa_id, user_email, tipo, titulo, status, prioridade, criado_em, atualizado_em, usuario_visto_em, admin_visto_em, empresas(nome)")
+      .order("criado_em", { ascending: false })
+      .range(offset, offset + LOTE_CHAMADOS - 1);
 
-  if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
-  if (statusParam) query = query.eq("status", statusParam as TicketStatus);
-  if (tipoParam) query = query.eq("tipo", tipoParam as TicketTipo);
-  if (prioridadeParam) query = query.eq("prioridade", prioridadeParam as TicketPrioridade);
+    if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
+    if (statusParam) query = query.eq("status", statusParam as TicketStatus);
+    if (tipoParam) query = query.eq("tipo", tipoParam as TicketTipo);
+    if (prioridadeParam) query = query.eq("prioridade", prioridadeParam as TicketPrioridade);
 
-  const { data: chamadosRaw, error } = await query;
-  const chamadosDoFiltro = chamadosRaw ?? [];
+    return query;
+  }
+
+  type LinhaChamado = NonNullable<Awaited<ReturnType<typeof buscarLoteChamados>>["data"]>[number];
+
+  const chamadosDoFiltro: LinhaChamado[] = [];
+  let error: { message: string } | null = null;
+  {
+    let offsetBusca = 0;
+    for (;;) {
+      const { data: lote, error: erroLote } = await buscarLoteChamados(offsetBusca);
+      if (erroLote) {
+        error = erroLote;
+        break;
+      }
+      if (!lote || lote.length === 0) break;
+      chamadosDoFiltro.push(...lote);
+      if (lote.length < LOTE_CHAMADOS) break;
+      offsetBusca += LOTE_CHAMADOS;
+    }
+  }
 
   // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
   // em telas que crescem com o tempo — chamados se acumulam a cada

@@ -54,6 +54,7 @@ import {
   AlertTriangle,
   Radar,
   CalendarClock,
+  Timer,
   Boxes,
   ArrowLeftRight,
   Briefcase,
@@ -136,6 +137,11 @@ const menuVisaoGeral: ItemMenuLateral[] = [
   // Fase Indicadores-da-Frota (30/07/2026) — disponibilidade, CPK, consumo,
   // utilização, sinistralidade e conformidade num só painel.
   { href: "/indicadores-frota", label: "Indicadores da Frota", icon: Gauge }, // PWA: Icons.speed
+  // Fase Painel-Jornada-Motorista (17/08/2026, pedido do Daniel: painel do
+  // gestor com indicadores de jornada a partir do que o motorista já
+  // registra no PWA) — quem tá dirigindo/em pausa/descansando agora, e
+  // alertas de aderência à Lei do Motorista (13.103/2015).
+  { href: "/jornada-motoristas", label: "Jornada dos Motoristas", icon: Timer },
   // Fase Motor-de-Ação-Automática — central que fecha o ciclo sugestão ->
   // aprovação -> execução real (bloquear motorista com CNH vencida, remover
   // posto acima da média, cadastrar regra de hodômetro).

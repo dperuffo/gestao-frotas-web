@@ -51,10 +51,24 @@ export default async function ProgramacaoFrotaPage({
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
+  // Fase Auditoria-Paginacao (17/08/2026) — achado real: essa RPC devolve 1
+  // linha por veículo da frota, sem `.range()` — sujeita ao corte padrão de
+  // 1.000 linhas do PostgREST em frotas grandes (mesmo bug já corrigido em
+  // /veiculos, Fase 27.38). Busca em lotes de 1.000 até esgotar.
+  const LOTE_PROGRAMACAO = 1000;
   let veiculos: VeiculoProgramacao[] = [];
   if (empresaSelecionada) {
-    const { data } = await supabase.rpc("programacao_frota_empresa", { p_empresa_id: empresaSelecionada });
-    veiculos = (data ?? []) as unknown as VeiculoProgramacao[];
+    let offsetBusca = 0;
+    for (;;) {
+      const { data } = await supabase
+        .rpc("programacao_frota_empresa", { p_empresa_id: empresaSelecionada })
+        .range(offsetBusca, offsetBusca + LOTE_PROGRAMACAO - 1);
+      const lote = (data ?? []) as unknown as VeiculoProgramacao[];
+      if (lote.length === 0) break;
+      veiculos.push(...lote);
+      if (lote.length < LOTE_PROGRAMACAO) break;
+      offsetBusca += LOTE_PROGRAMACAO;
+    }
   }
 
   const ativos = veiculos.filter((v) => v.ativo);

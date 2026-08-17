@@ -59,11 +59,26 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
+  // Fase Auditoria-Paginacao (17/08/2026) — achado real: essa RPC devolve 1
+  // linha por frete (histórico completo, sem limite natural), sem
+  // `.range()` — sujeita ao corte padrão de 1.000 linhas do PostgREST (mesmo
+  // bug já corrigido em /veiculos, Fase 27.38). Busca em lotes de 1.000 até
+  // esgotar.
+  const LOTE_FRETES = 1000;
   let fretes: FreteRow[] = [];
   let acesso: AcessoFretesResultado = { ok: true };
   if (empresaSelecionada) {
-    const { data } = await supabase.rpc("meus_fretes_empresa", { p_empresa_id: empresaSelecionada });
-    fretes = (data ?? []) as unknown as FreteRow[];
+    let offsetBusca = 0;
+    for (;;) {
+      const { data } = await supabase
+        .rpc("meus_fretes_empresa", { p_empresa_id: empresaSelecionada })
+        .range(offsetBusca, offsetBusca + LOTE_FRETES - 1);
+      const lote = (data ?? []) as unknown as FreteRow[];
+      if (lote.length === 0) break;
+      fretes.push(...lote);
+      if (lote.length < LOTE_FRETES) break;
+      offsetBusca += LOTE_FRETES;
+    }
 
     acesso = await verificarAcessoFretes(supabase, empresaSelecionada);
   }

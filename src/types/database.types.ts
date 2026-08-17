@@ -6250,6 +6250,39 @@ export interface Database {
       // proporção corretiva/preventiva), a partir dos "8 KPIs essenciais" de
       // um benchmark de mercado. Retorna uma única linha (agregado da
       // frota), não uma por veículo.
+      // Fase Painel-Jornada-Motorista (17/08/2026) — snapshot "ao vivo" do
+      // estado de cada motorista (dirigindo/pausa/descanso/nunca iniciou),
+      // calculado a partir do último evento em motoristas_jornada_eventos.
+      jornada_motorista_status_atual: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          motorista_id: string;
+          nome_completo: string;
+          estado: string;
+          ultimo_evento: string | null;
+          desde: string | null;
+          duracao_minutos: number | null;
+          excedeu_limite: boolean;
+        }[];
+      };
+      // Fase Painel-Jornada-Motorista (17/08/2026) — indicadores diários de
+      // jornada por motorista (horas dirigidas/pausa/descanso, alertas de
+      // aderência à Lei do Motorista 13.103/2015), agregados a partir dos
+      // segmentos entre eventos consecutivos.
+      jornada_motorista_indicadores_diarios: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          motorista_id: string;
+          nome_completo: string;
+          dia: string;
+          horas_dirigidas: number;
+          horas_pausa: number;
+          horas_descanso: number;
+          num_pausas: number;
+          alertas_conducao_continua: number;
+          alertas_descanso_insuficiente: number;
+        }[];
+      };
       kpis_frota_resumo: {
         Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
         Returns: {

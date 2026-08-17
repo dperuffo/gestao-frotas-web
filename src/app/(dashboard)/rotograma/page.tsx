@@ -10,14 +10,41 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
   const supabase = await createClient();
   const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
-  let query = supabase
-    .from("rotogramas")
-    .select("id, numero, origem, destino, motorista, placa, data_viagem, criado_em, empresas(nome)")
-    .order("criado_em", { ascending: false });
+  // Fase Auditoria-Paginacao (17/08/2026) — achado real: esta tela já
+  // reconhecia no comentário abaixo que "cresce sem limite natural", mas a
+  // busca continuava numa query só, sem `.range()` — sujeita ao corte
+  // padrão de 1.000 linhas do PostgREST (mesma classe de bug já corrigida
+  // em /veiculos, Fase 27.38, e /chamados). Busca em lotes de 1.000 até
+  // esgotar.
+  const LOTE_ROTOGRAMAS = 1000;
+  function buscarLoteRotogramas(offset: number) {
+    let query = supabase
+      .from("rotogramas")
+      .select("id, numero, origem, destino, motorista, placa, data_viagem, criado_em, empresas(nome)")
+      .order("criado_em", { ascending: false })
+      .range(offset, offset + LOTE_ROTOGRAMAS - 1);
 
-  if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
+    if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
+    return query;
+  }
 
-  const { data: rotogramasRaw, error } = await query;
+  type LinhaRotograma = NonNullable<Awaited<ReturnType<typeof buscarLoteRotogramas>>["data"]>[number];
+  const rotogramasRaw: LinhaRotograma[] = [];
+  let error: { message: string } | null = null;
+  {
+    let offsetBusca = 0;
+    for (;;) {
+      const { data: lote, error: erroLote } = await buscarLoteRotogramas(offsetBusca);
+      if (erroLote) {
+        error = erroLote;
+        break;
+      }
+      if (!lote || lote.length === 0) break;
+      rotogramasRaw.push(...lote);
+      if (lote.length < LOTE_ROTOGRAMAS) break;
+      offsetBusca += LOTE_ROTOGRAMAS;
+    }
+  }
 
   // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
   // em telas que, com o tempo, acumulam muitos registros — um Rotograma é
