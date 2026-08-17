@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { formatarDataHoraBr } from "@/lib/utils";
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Truck, Coffee, BedDouble, AlertTriangle, Timer } from "lucide-react";
 import { GraficoHorasDirigidas, type PontoJornada } from "./_components/GraficoHorasDirigidas";
 
-type SearchParams = { empresa?: string; inicio?: string; fim?: string };
+type SearchParams = { empresa?: string; inicio?: string; fim?: string; motorista?: string };
 
 type StatusAtual = {
   motorista_id: string;
@@ -26,6 +27,20 @@ type IndicadorDiario = {
   num_pausas: number;
   alertas_conducao_continua: number;
   alertas_descanso_insuficiente: number;
+};
+
+// Fase Painel-Jornada-Motorista (17/08/2026, pedido do Daniel: "senti falta
+// de um relatório que traga os tempos registrados... como se fosse um
+// tracking por motorista") — 1 linha por segmento (trecho contínuo
+// dirigindo/pausa/descanso entre dois eventos consecutivos).
+type RegistroDetalhado = {
+  motorista_id: string;
+  nome_completo: string;
+  tipo_segmento: "dirigindo" | "pausa" | "descanso";
+  inicio: string;
+  fim: string;
+  duracao_minutos: number;
+  em_andamento: boolean;
 };
 
 function paraISO(d: Date) {
@@ -54,6 +69,18 @@ const COR_BADGE_ESTADO: Record<StatusAtual["estado"], string> = {
   nunca_iniciado: "bg-slate-100 text-slate-500",
 };
 
+const LABEL_SEGMENTO: Record<RegistroDetalhado["tipo_segmento"], string> = {
+  dirigindo: "Dirigindo",
+  pausa: "Pausa",
+  descanso: "Descanso",
+};
+
+const COR_BADGE_SEGMENTO: Record<RegistroDetalhado["tipo_segmento"], string> = {
+  dirigindo: "bg-green-100 text-green-800",
+  pausa: "bg-amber-100 text-amber-800",
+  descanso: "bg-sky-100 text-sky-800",
+};
+
 // Fase Painel-Jornada-Motorista (17/08/2026, pedido do Daniel: "crie um
 // painel na visao do gestor, web e PWA, para controle da jornada do
 // motorista, trazendo indicadores e graficos com os dados registrados nas
@@ -70,7 +97,7 @@ const COR_BADGE_ESTADO: Record<StatusAtual["estado"], string> = {
 // motoristas_jornada_eventos/motoristas) — mesmo padrão seguro do resto do
 // app, sem precisar bypassar RLS.
 export default async function JornadaMotoristasPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { empresa: empresaParam, inicio, fim } = await searchParams;
+  const { empresa: empresaParam, inicio, fim, motorista: motoristaParam } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
@@ -80,7 +107,11 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
   const dataInicio = inicio || paraISO(inicioDefault);
   const dataFim = fim || paraISO(agora);
 
-  const [{ data: statusRaw, error: erroStatus }, { data: diariosRaw, error: erroDiarios }] = empresaSelecionada
+  const [
+    { data: statusRaw, error: erroStatus },
+    { data: diariosRaw, error: erroDiarios },
+    { data: registroRaw, error: erroRegistro },
+  ] = empresaSelecionada
     ? await Promise.all([
         supabase.rpc("jornada_motorista_status_atual", { p_empresa_id: empresaSelecionada }),
         supabase.rpc("jornada_motorista_indicadores_diarios", {
@@ -88,12 +119,30 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
           p_data_inicio: dataInicio,
           p_data_fim: dataFim,
         }),
+        supabase.rpc("jornada_motorista_registro_detalhado", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicio,
+          p_data_fim: dataFim,
+        }),
       ])
-    : [{ data: null, error: null }, { data: null, error: null }];
+    : [{ data: null, error: null }, { data: null, error: null }, { data: null, error: null }];
 
   const statusAtual = (statusRaw ?? []) as StatusAtual[];
   const indicadoresDiarios = (diariosRaw ?? []) as IndicadorDiario[];
-  const error = erroStatus ?? erroDiarios;
+  const registroDetalhado = (registroRaw ?? []) as RegistroDetalhado[];
+  const error = erroStatus ?? erroDiarios ?? erroRegistro;
+
+  // Fase Painel-Jornada-Motorista (17/08/2026) — "tracking" por motorista:
+  // lista de motoristas pro seletor (ordenada por nome, únicos), e os
+  // segmentos do motorista escolhido, mais recentes primeiro (a RPC já
+  // devolve nessa ordem).
+  const motoristasParaSelecao = Array.from(new Map(statusAtual.map((s) => [s.motorista_id, s.nome_completo])).entries())
+    .map(([id, nome]) => ({ id, nome }))
+    .sort((a, b) => a.nome.localeCompare(b.nome));
+  const registroDoMotorista = motoristaParam ? registroDetalhado.filter((r) => r.motorista_id === motoristaParam) : [];
+  const nomeMotoristaSelecionado = motoristaParam
+    ? (motoristasParaSelecao.find((m) => m.id === motoristaParam)?.nome ?? registroDoMotorista[0]?.nome_completo)
+    : undefined;
 
   // Cards "ao vivo".
   const dirigindoAgora = statusAtual.filter((s) => s.estado === "dirigindo").length;
@@ -199,6 +248,19 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
           <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
           <input type="date" name="fim" defaultValue={dataFim} className="input text-sm" />
         </div>
+        {motoristasParaSelecao.length > 0 && (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Registro detalhado de</label>
+            <select name="motorista" defaultValue={motoristaParam ?? ""} className="input text-sm">
+              <option value="">Selecione um motorista...</option>
+              {motoristasParaSelecao.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <button type="submit" className="btn-secondary text-sm">
           Filtrar
         </button>
@@ -324,6 +386,61 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="card mt-6 overflow-x-auto">
+            <div className="border-b border-slate-100 px-4 py-3">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Registro detalhado (tracking){nomeMotoristaSelecionado ? ` — ${nomeMotoristaSelecionado}` : ""}
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">
+                Cada linha é um trecho contínuo de condução, pausa ou descanso, com data/hora de início e fim, a
+                partir dos eventos registrados pelo motorista no app.
+              </p>
+            </div>
+            {!motoristaParam ? (
+              <p className="px-4 py-8 text-center text-sm text-slate-400">
+                Selecione um motorista no filtro acima para ver o registro detalhado.
+              </p>
+            ) : (
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Tipo</th>
+                    <th className="px-4 py-3">Início</th>
+                    <th className="px-4 py-3">Fim</th>
+                    <th className="px-4 py-3">Duração</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {registroDoMotorista.map((r, i) => (
+                    <tr key={`${r.motorista_id}-${r.inicio}-${i}`} className="transition-colors hover:bg-frota-50/60">
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${COR_BADGE_SEGMENTO[r.tipo_segmento]}`}>
+                          {LABEL_SEGMENTO[r.tipo_segmento]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{formatarDataHoraBr(r.inicio)}</td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {r.em_andamento ? (
+                          <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">Em andamento</span>
+                        ) : (
+                          formatarDataHoraBr(r.fim)
+                        )}
+                      </td>
+                      <td className="px-4 py-3 tabular-nums text-slate-700">{formatarDuracao(r.duracao_minutos)}</td>
+                    </tr>
+                  ))}
+                  {registroDoMotorista.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
+                        Nenhum registro encontrado para esse motorista no período.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </>
       )}

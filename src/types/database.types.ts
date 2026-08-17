@@ -6253,6 +6253,23 @@ export interface Database {
       // Fase Painel-Jornada-Motorista (17/08/2026) — snapshot "ao vivo" do
       // estado de cada motorista (dirigindo/pausa/descanso/nunca iniciou),
       // calculado a partir do último evento em motoristas_jornada_eventos.
+      // Fase Painel-Jornada-Motorista (17/08/2026, pedido do Daniel: "senti
+      // falta de um relatório que traga os tempos registrados... como se
+      // fosse um tracking por motorista") — segmentos individuais (início/
+      // fim de cada trecho dirigindo/pausa/descanso), não só o agregado
+      // diário de jornada_motorista_indicadores_diarios.
+      jornada_motorista_registro_detalhado: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          motorista_id: string;
+          nome_completo: string;
+          tipo_segmento: string;
+          inicio: string;
+          fim: string;
+          duracao_minutos: number;
+          em_andamento: boolean;
+        }[];
+      };
       jornada_motorista_status_atual: {
         Args: { p_empresa_id: string };
         Returns: {
