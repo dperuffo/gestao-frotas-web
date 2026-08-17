@@ -95,22 +95,44 @@ export default async function TorreDeControlePage({
     const irmas = await empresasIrmasAcao(supabase, empresaSelecionada);
     const idsEmpresasGrupo = [empresaSelecionada, ...irmas.map((e) => e.id)];
 
-    const [{ data }, { data: posicoesRaw }] = await Promise.all([
-      supabase.rpc("fretes_em_andamento_empresa", { p_empresa_id: empresaSelecionada }),
-      supabase
+    // Fase Auditoria-Paginacao (17/08/2026, risco médio) — achado real: cap
+    // fixo de 500 posições ordenadas por timestamp desc, deduplicadas depois
+    // por placa. Com frota grande e GPS reportando com frequência, os 500
+    // registros mais recentes podiam vir todos de um punhado de veículos
+    // "tagarelas", deixando outros veículos com posição real recente de fora
+    // do mapa. Busca em lotes de 1.000 até esgotar.
+    const LOTE_POSICOES = 1000;
+    const posicoesRaw: {
+      placa: string;
+      lat: number;
+      lon: number;
+      velocidade_kmh: number | null;
+      timestamp_gps: string;
+      provedor: string | null;
+    }[] = [];
+    let offsetPosicoes = 0;
+    for (;;) {
+      const { data: lote } = await supabase
         .from("veiculos_posicoes")
         .select("placa, lat, lon, velocidade_kmh, timestamp_gps, provedor")
         .in("empresa_id", idsEmpresasGrupo)
         .order("timestamp_gps", { ascending: false })
-        .limit(500),
-    ]);
+        .range(offsetPosicoes, offsetPosicoes + LOTE_POSICOES - 1);
+      const linhas = lote ?? [];
+      if (linhas.length === 0) break;
+      posicoesRaw.push(...linhas);
+      if (linhas.length < LOTE_POSICOES) break;
+      offsetPosicoes += LOTE_POSICOES;
+    }
+
+    const { data } = await supabase.rpc("fretes_em_andamento_empresa", { p_empresa_id: empresaSelecionada });
     fretes = (data ?? []) as unknown as FreteAndamento[];
 
     // Última posição por placa — dedupe em JS (sem DISTINCT ON via
     // PostgREST), mesmo padrão já usado em outras telas deste app pra
     // reduzir uma lista bruta ao "1 por chave" mais recente.
     const ultimaPorPlaca = new Map<string, PosicaoVeiculo>();
-    for (const p of posicoesRaw ?? []) {
+    for (const p of posicoesRaw) {
       if (ultimaPorPlaca.has(p.placa)) continue;
       ultimaPorPlaca.set(p.placa, {
         placa: p.placa,

@@ -71,25 +71,39 @@ export default async function NegociacoesPage({
     // empresas das quais é membro. Isso deixava o nome sempre em branco pro
     // lado de fora da negociação. Corrigido lendo direto as colunas
     // denormalizadas cliente_nome/posto_nome (ver src/lib/negociacoesPostos.ts).
-    let query = supabase
-      .from("negociacoes_postos")
-      .select(
-        "id, posto_cnpj, status, rodada_atual, criado_em, atualizado_em, atualizado_por, cliente_nome, posto_nome, vigencia_inicio, vigencia_fim"
-      )
-      .order("atualizado_em", { ascending: false })
-      .limit(500);
+    // Fase Auditoria-Paginacao (17/08/2026, risco médio) — cap fixo de 500
+    // alimentava os indicadores do topo (total, pendentes do meu lado,
+    // aceitas). Busca em lotes de 1.000 até esgotar.
+    const LOTE_NEGOCIACOES = 1000;
+    let offsetBusca = 0;
+    for (;;) {
+      let query = supabase
+        .from("negociacoes_postos")
+        .select(
+          "id, posto_cnpj, status, rodada_atual, criado_em, atualizado_em, atualizado_por, cliente_nome, posto_nome, vigencia_inicio, vigencia_fim"
+        )
+        .order("atualizado_em", { ascending: false })
+        .range(offsetBusca, offsetBusca + LOTE_NEGOCIACOES - 1);
 
-    query = souPosto ? query.eq("empresa_posto_id", empresaSelecionada) : query.eq("empresa_cliente_id", empresaSelecionada);
+      query = souPosto ? query.eq("empresa_posto_id", empresaSelecionada) : query.eq("empresa_cliente_id", empresaSelecionada);
 
-    if (status === FILTRO_VIGENTE) {
-      query = query.eq("status", "aceita").lte("vigencia_inicio", hojeIso).gte("vigencia_fim", hojeIso);
-    } else if (status && (STATUS_NEGOCIACAO as readonly string[]).includes(status)) {
-      query = query.eq("status", status as StatusNegociacao);
+      if (status === FILTRO_VIGENTE) {
+        query = query.eq("status", "aceita").lte("vigencia_inicio", hojeIso).gte("vigencia_fim", hojeIso);
+      } else if (status && (STATUS_NEGOCIACAO as readonly string[]).includes(status)) {
+        query = query.eq("status", status as StatusNegociacao);
+      }
+
+      const resultado = await query;
+      if (resultado.error) {
+        erro = resultado.error.message;
+        break;
+      }
+      const lote = (resultado.data ?? []) as typeof negociacoes;
+      if (lote.length === 0) break;
+      negociacoes.push(...lote);
+      if (lote.length < LOTE_NEGOCIACOES) break;
+      offsetBusca += LOTE_NEGOCIACOES;
     }
-
-    const resultado = await query;
-    if (resultado.error) erro = resultado.error.message;
-    negociacoes = (resultado.data ?? []) as typeof negociacoes;
 
     const emailsAtualizadoPor = Array.from(
       new Set(negociacoes.map((n) => n.atualizado_por).filter((e): e is string => !!e))

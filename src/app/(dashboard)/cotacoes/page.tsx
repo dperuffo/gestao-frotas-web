@@ -41,14 +41,25 @@ export default async function CotacoesPage({
     criado_em: string;
   }[] = [];
 
+  // Fase Auditoria-Paginacao (17/08/2026, risco médio) — comentário do
+  // código já avisava "cresce mês a mês" mas o cap era fixo em 100 sem UI de
+  // página 2. Busca em lotes de 1.000 até esgotar.
+  const LOTE_COTACOES = 1000;
   if (empresaSelecionada) {
-    const { data } = await supabase
-      .from("cotacoes")
-      .select("id, origem_label, destino_label, peso_kg, valor_total, piso_antt_alerta, status, criado_em")
-      .eq("empresa_id", empresaSelecionada)
-      .order("criado_em", { ascending: false })
-      .limit(100);
-    cotacoesRaw = data ?? [];
+    let offsetBusca = 0;
+    for (;;) {
+      const { data: lote } = await supabase
+        .from("cotacoes")
+        .select("id, origem_label, destino_label, peso_kg, valor_total, piso_antt_alerta, status, criado_em")
+        .eq("empresa_id", empresaSelecionada)
+        .order("criado_em", { ascending: false })
+        .range(offsetBusca, offsetBusca + LOTE_COTACOES - 1);
+      const linhas = lote ?? [];
+      if (linhas.length === 0) break;
+      cotacoesRaw.push(...linhas);
+      if (linhas.length < LOTE_COTACOES) break;
+      offsetBusca += LOTE_COTACOES;
+    }
   }
 
   // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica

@@ -35,15 +35,26 @@ export default async function SinistrosPage({ searchParams }: { searchParams: Pr
   const supabase = await createClient();
   const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
+  // Fase Auditoria-Paginacao (17/08/2026, risco médio) — mesmo achado de
+  // /multas: cap fixo de 200 alimentava também os indicadores do topo
+  // (com vítima, custo total). Busca em lotes de 1.000 até esgotar.
+  const LOTE_SINISTROS = 1000;
   let sinistrosRaw: Sinistro[] = [];
   if (empresaSelecionada) {
-    const { data } = await supabase
-      .from("sinistros_veiculos")
-      .select("id, placa, motorista_nome, data_sinistro, tipo, gravidade, houve_vitima, custo_estimado, local_ocorrencia")
-      .eq("empresa_id", empresaSelecionada)
-      .order("data_sinistro", { ascending: false })
-      .limit(200);
-    sinistrosRaw = data ?? [];
+    let offsetBusca = 0;
+    for (;;) {
+      const { data: lote } = await supabase
+        .from("sinistros_veiculos")
+        .select("id, placa, motorista_nome, data_sinistro, tipo, gravidade, houve_vitima, custo_estimado, local_ocorrencia")
+        .eq("empresa_id", empresaSelecionada)
+        .order("data_sinistro", { ascending: false })
+        .range(offsetBusca, offsetBusca + LOTE_SINISTROS - 1);
+      const linhas = lote ?? [];
+      if (linhas.length === 0) break;
+      sinistrosRaw.push(...linhas);
+      if (linhas.length < LOTE_SINISTROS) break;
+      offsetBusca += LOTE_SINISTROS;
+    }
   }
 
   const termoBusca = (q ?? "").trim().toLowerCase();

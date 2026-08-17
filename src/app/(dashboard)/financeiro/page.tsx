@@ -82,17 +82,11 @@ export default async function FinanceiroPage({
   // negociacoes_postos.
   let cicloFaturamentoDiasCliente = 30;
   if (empresaSelecionada) {
-    const [{ data: negociacoesData }, { data: faturasData }, { data: clienteEmpresa }] = await Promise.all([
+    const [{ data: negociacoesData }, { data: clienteEmpresa }] = await Promise.all([
       supabase
         .from("negociacoes_postos")
         .select("empresa_posto_id, posto_nome, status")
         .eq("empresa_cliente_id", empresaSelecionada),
-      supabase
-        .from("faturas_postos")
-        .select("id, empresa_posto_id, periodo_inicio, periodo_fim, vencimento, valor_total, status")
-        .eq("empresa_cliente_id", empresaSelecionada)
-        .order("vencimento", { ascending: false })
-        .limit(200),
       supabase
         .from("empresas")
         .select("ciclo_faturamento_dias")
@@ -103,7 +97,37 @@ export default async function FinanceiroPage({
       (n): n is typeof n & { empresa_posto_id: string } => n.empresa_posto_id !== null
     );
     const nomePorPostoId = new Map(negociacoesDoCliente.map((n) => [n.empresa_posto_id, n.posto_nome]));
-    faturasCobranca = (faturasData ?? []).map((f) => ({
+
+    // Fase Auditoria-Paginacao (17/08/2026, risco médio) — cap fixo de 200
+    // alimentava a "Cobrança em Aberto" (agrupamento por posto) — fatura mais
+    // antiga em aberto podia ficar de fora se a empresa já tivesse mais de
+    // 200 faturas históricas com esse posto. Busca em lotes de 1.000.
+    const LOTE_FATURAS_POSTOS = 1000;
+    const faturasData: {
+      id: string;
+      empresa_posto_id: string;
+      periodo_inicio: string;
+      periodo_fim: string;
+      vencimento: string;
+      valor_total: number;
+      status: string;
+    }[] = [];
+    let offsetFaturas = 0;
+    for (;;) {
+      const { data: lote } = await supabase
+        .from("faturas_postos")
+        .select("id, empresa_posto_id, periodo_inicio, periodo_fim, vencimento, valor_total, status")
+        .eq("empresa_cliente_id", empresaSelecionada)
+        .order("vencimento", { ascending: false })
+        .range(offsetFaturas, offsetFaturas + LOTE_FATURAS_POSTOS - 1);
+      const linhas = lote ?? [];
+      if (linhas.length === 0) break;
+      faturasData.push(...linhas);
+      if (linhas.length < LOTE_FATURAS_POSTOS) break;
+      offsetFaturas += LOTE_FATURAS_POSTOS;
+    }
+
+    faturasCobranca = faturasData.map((f) => ({
       ...f,
       posto_nome: nomePorPostoId.get(f.empresa_posto_id) ?? null,
     }));

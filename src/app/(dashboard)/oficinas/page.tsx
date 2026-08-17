@@ -71,17 +71,27 @@ export default async function OficinasPage({ searchParams }: { searchParams: Pro
     }[];
   };
 
+  // Fase Auditoria-Paginacao (17/08/2026, risco médio) — cap fixo de 100 sem
+  // UI de página 2. Busca em lotes de 1.000 até esgotar.
+  const LOTE_PEDIDOS = 1000;
   let pedidos: Pedido[] = [];
   if (empresaSelecionada) {
-    const { data } = await supabase
-      .from("pedidos_orcamento_oficina")
-      .select(
-        "id, placa, descricao_servico, status, criado_em, propostas_orcamento_oficina(id, status, valor_orcado, prazo_execucao, observacoes_oficina, oficinas_credenciadas(nome))"
-      )
-      .eq("empresa_id", empresaSelecionada)
-      .order("criado_em", { ascending: false })
-      .limit(100);
-    pedidos = (data ?? []) as unknown as Pedido[];
+    let offsetBusca = 0;
+    for (;;) {
+      const { data: lote } = await supabase
+        .from("pedidos_orcamento_oficina")
+        .select(
+          "id, placa, descricao_servico, status, criado_em, propostas_orcamento_oficina(id, status, valor_orcado, prazo_execucao, observacoes_oficina, oficinas_credenciadas(nome))"
+        )
+        .eq("empresa_id", empresaSelecionada)
+        .order("criado_em", { ascending: false })
+        .range(offsetBusca, offsetBusca + LOTE_PEDIDOS - 1);
+      const linhas = (lote ?? []) as unknown as Pedido[];
+      if (linhas.length === 0) break;
+      pedidos.push(...linhas);
+      if (linhas.length < LOTE_PEDIDOS) break;
+      offsetBusca += LOTE_PEDIDOS;
+    }
   }
 
   const ufsDisponiveis = Array.from(new Set((oficinasRaw ?? []).map((o) => o.uf).filter(Boolean))).sort() as string[];

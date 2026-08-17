@@ -40,14 +40,26 @@ export default async function FaturasFretesPage({
     status: string;
   }[] = [];
 
+  // Fase Auditoria-Paginacao (17/08/2026, risco médio) — cap fixo de 200
+  // alimentava os indicadores do topo (valor total, abertas, pagas).
+  // Comentário do código já avisava "cresce mês a mês sem limite natural" —
+  // busca em lotes de 1.000 até esgotar.
+  const LOTE_FATURAS = 1000;
   if (empresaSelecionada) {
-    const { data } = await supabase
-      .from("faturas_fretes")
-      .select("id, numero_fatura, tomador_nome, tomador_cnpj, periodo_inicio, periodo_fim, vencimento, valor_total, quantidade_ctes, status")
-      .eq("empresa_id", empresaSelecionada)
-      .order("criado_em", { ascending: false })
-      .limit(200);
-    faturasRaw = data ?? [];
+    let offsetBusca = 0;
+    for (;;) {
+      const { data: lote } = await supabase
+        .from("faturas_fretes")
+        .select("id, numero_fatura, tomador_nome, tomador_cnpj, periodo_inicio, periodo_fim, vencimento, valor_total, quantidade_ctes, status")
+        .eq("empresa_id", empresaSelecionada)
+        .order("criado_em", { ascending: false })
+        .range(offsetBusca, offsetBusca + LOTE_FATURAS - 1);
+      const linhas = lote ?? [];
+      if (linhas.length === 0) break;
+      faturasRaw.push(...linhas);
+      if (linhas.length < LOTE_FATURAS) break;
+      offsetBusca += LOTE_FATURAS;
+    }
   }
 
   // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica

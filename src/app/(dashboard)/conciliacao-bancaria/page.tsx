@@ -40,13 +40,7 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
   let contasReceberAbertas: ContaEmAberto[] = [];
 
   if (empresaSelecionada) {
-    const [{ data: lancamentosData }, { data: pagarData }, { data: receberData }] = await Promise.all([
-      supabase
-        .from("extrato_bancario_lancamentos")
-        .select("id, data, descricao, valor, tipo, conta_bancaria, status, conciliado_com_tipo, conciliado_com_id, conciliado_em")
-        .eq("empresa_id", empresaSelecionada)
-        .order("data", { ascending: false })
-        .limit(300),
+    const [{ data: pagarData }, { data: receberData }] = await Promise.all([
       supabase
         .from("contas_pagar")
         .select("id, credor_nome, descricao, valor_original, valor_pago, vencimento")
@@ -59,7 +53,28 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
         .in("status", ["aberto", "baixado_parcial"]),
     ]);
 
-    lancamentos = (lancamentosData ?? []) as LancamentoLinha[];
+    // Fase Auditoria-Paginacao (17/08/2026, risco médio) — achado real: cap
+    // fixo de 300 alimentava o indicador "Pendentes" (podia esconder
+    // pendências mais antigas que o extrato mais recente importado). Busca
+    // em lotes de 1.000 até esgotar.
+    const LOTE_LANCAMENTOS = 1000;
+    const lancamentosData: LancamentoLinha[] = [];
+    let offsetBusca = 0;
+    for (;;) {
+      const { data: lote } = await supabase
+        .from("extrato_bancario_lancamentos")
+        .select("id, data, descricao, valor, tipo, conta_bancaria, status, conciliado_com_tipo, conciliado_com_id, conciliado_em")
+        .eq("empresa_id", empresaSelecionada)
+        .order("data", { ascending: false })
+        .range(offsetBusca, offsetBusca + LOTE_LANCAMENTOS - 1);
+      const linhas = (lote ?? []) as LancamentoLinha[];
+      if (linhas.length === 0) break;
+      lancamentosData.push(...linhas);
+      if (linhas.length < LOTE_LANCAMENTOS) break;
+      offsetBusca += LOTE_LANCAMENTOS;
+    }
+
+    lancamentos = lancamentosData;
     contasPagarAbertas = (pagarData ?? []).map((c) => ({
       id: c.id,
       nome: c.credor_nome ?? "Credor não identificado",

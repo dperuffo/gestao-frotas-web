@@ -31,23 +31,42 @@ export default async function CrmComercialPage({ searchParams }: { searchParams:
   let clientes: ClienteLinha[] = [];
   let cotacoes: CotacaoLinha[] = [];
 
+  // Fase Auditoria-Paginacao (17/08/2026, risco médio) — cap fixo de 200 nas
+  // cotações do funil, e a carteira de clientes não tinha `.limit()` nenhum
+  // (sujeita ao corte padrão de 1.000 linhas do PostgREST). Busca as duas em
+  // lotes de 1.000 até esgotar, mesmo padrão de /veiculos (Fase 27.38).
+  const LOTE_CRM = 1000;
   if (empresaSelecionada) {
-    const [{ data: clientesData }, { data: cotacoesData }] = await Promise.all([
-      supabase
+    let offsetClientes = 0;
+    for (;;) {
+      const { data: lote } = await supabase
         .from("cadastros_parceiros")
         .select("id, razao_social, cnpj_cpf, telefone, email")
         .eq("empresa_id", empresaSelecionada)
         .eq("papel", "tomador")
-        .order("razao_social"),
-      supabase
+        .order("razao_social")
+        .range(offsetClientes, offsetClientes + LOTE_CRM - 1);
+      const linhas = lote ?? [];
+      if (linhas.length === 0) break;
+      clientes.push(...linhas);
+      if (linhas.length < LOTE_CRM) break;
+      offsetClientes += LOTE_CRM;
+    }
+
+    let offsetCotacoes = 0;
+    for (;;) {
+      const { data: lote } = await supabase
         .from("cotacoes")
         .select("id, origem_label, destino_label, valor_total, status, criado_em, cliente_tomador_id")
         .eq("empresa_id", empresaSelecionada)
         .order("criado_em", { ascending: false })
-        .limit(200),
-    ]);
-    clientes = clientesData ?? [];
-    cotacoes = cotacoesData ?? [];
+        .range(offsetCotacoes, offsetCotacoes + LOTE_CRM - 1);
+      const linhas = lote ?? [];
+      if (linhas.length === 0) break;
+      cotacoes.push(...linhas);
+      if (linhas.length < LOTE_CRM) break;
+      offsetCotacoes += LOTE_CRM;
+    }
   }
 
   const termoBusca = (q ?? "").trim().toLowerCase();

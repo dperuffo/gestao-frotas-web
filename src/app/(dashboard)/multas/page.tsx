@@ -34,19 +34,33 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
     motoristas: { nome_completo: string } | null;
   };
 
+  // Fase Auditoria-Paginacao (17/08/2026, risco médio) — achado real: cap
+  // fixo de 200 sem UI de página 2, usado inclusive pra calcular os
+  // indicadores do topo (pendentes, vencendo, valor em aberto) — cliente
+  // com mais de 200 multas tinha indicadores errados, não só lista
+  // incompleta. Busca em lotes de 1.000 até esgotar, mesmo padrão de
+  // /veiculos (Fase 27.38).
+  const LOTE_MULTAS = 1000;
   let multasRaw: MultaLinha[] = [];
   if (empresaSelecionada) {
-    let query = supabase
-      .from("multas")
-      .select(
-        "id, placa, numero_ait, data_infracao, data_limite_indicacao, descricao, gravidade, valor_original, valor_desconto, status, motorista_id, motoristas(nome_completo)"
-      )
-      .eq("empresa_id", empresaSelecionada)
-      .order("data_infracao", { ascending: false })
-      .limit(200);
-    if (status) query = query.eq("status", status);
-    const { data } = await query;
-    multasRaw = (data ?? []) as unknown as MultaLinha[];
+    let offsetBusca = 0;
+    for (;;) {
+      let query = supabase
+        .from("multas")
+        .select(
+          "id, placa, numero_ait, data_infracao, data_limite_indicacao, descricao, gravidade, valor_original, valor_desconto, status, motorista_id, motoristas(nome_completo)"
+        )
+        .eq("empresa_id", empresaSelecionada)
+        .order("data_infracao", { ascending: false })
+        .range(offsetBusca, offsetBusca + LOTE_MULTAS - 1);
+      if (status) query = query.eq("status", status);
+      const { data: lote } = await query;
+      const linhas = (lote ?? []) as unknown as MultaLinha[];
+      if (linhas.length === 0) break;
+      multasRaw.push(...linhas);
+      if (linhas.length < LOTE_MULTAS) break;
+      offsetBusca += LOTE_MULTAS;
+    }
   }
 
   // Fase busca-generica-listas — mesmo padrão ?q= já usado em /veiculos,
