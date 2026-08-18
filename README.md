@@ -8812,6 +8812,17 @@ configurados pela aplicação). Também expõe `x-powered-by: Next.js`. Esforço
   na página de rodar. Se quiser fechar esse último ponto no futuro, é um item à parte (nonce-based CSP).
 - `X-Frame-Options: DENY` e `frame-ancestors 'none'` (CSP) — reforço duplo contra clickjacking (o
   primeiro pros navegadores mais antigos que não olham `frame-ancestors`).
+
+✅ **AJUSTE (18/08/2026)** — achado real do Daniel: "exportar para PDF nao funcionou" em
+`/jornada-motoristas`. Console mostrava `WebAssembly.instantiate(): ... violates ... 'unsafe-eval' is
+not an allowed source`. Causa: `@react-pdf/renderer` usa o motor de layout Yoga (flexbox) compilado pra
+WebAssembly, e todo navegador exige permissão explícita em `script-src` pra **compilar** módulos wasm —
+a CSP não tinha essa permissão, então bloqueava silenciosamente (só aparecia no console, o botão
+simplesmente não fazia nada). Adicionado `'wasm-unsafe-eval'` em `script-src`. Ao contrário de
+`'unsafe-eval'`, essa diretiva libera só a instanciação de WebAssembly — não `eval()`/`Function()`
+arbitrário de JS — então não reabre a superfície de ataque que motivou não usar `'unsafe-eval'` de
+início. Afetava qualquer tela com `BotaoExportarTabela` (as 7 telas de Cadastros + agora Tracking de
+Jornada), não só a tela onde foi reportado.
 - `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`.
 - `Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=(), interest-cohort=()`
   — geolocalização liberada só pra própria origem porque é usada de propósito (botão "Usar minha

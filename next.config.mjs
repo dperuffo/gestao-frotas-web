@@ -17,7 +17,17 @@ const cspDiretivas = [
   "default-src 'self'",
   // Google Identity Services (botão "Entrar com Google") e Hotjar (heatmap/
   // session replay, só ativo em produção) são os únicos scripts de terceiro.
-  "script-src 'self' 'unsafe-inline' https://accounts.google.com https://static.hotjar.com https://*.hotjar.com",
+  //
+  // Fase Export-PDF-CSP (18/08/2026, achado real do Daniel: "exportar para
+  // PDF nao funcionou" — console mostrava
+  // "WebAssembly.instantiate(): ... violates ... 'unsafe-eval' is not an
+  // allowed source") — @react-pdf/renderer usa o motor de layout Yoga
+  // (flexbox) compilado pra WebAssembly, e todo navegador exige permissão
+  // explícita pra COMPILAR wasm via CSP. 'wasm-unsafe-eval' cobre só isso —
+  // ao contrário de 'unsafe-eval', não libera eval()/Function() arbitrários
+  // de JS, só a instanciação de módulos WebAssembly. Afeta qualquer tela que
+  // use BotaoExportarTabela (Cadastros, agora também Tracking de Jornada).
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://accounts.google.com https://static.hotjar.com https://*.hotjar.com",
   // Google Fonts (link direto, sem next/font) nas páginas de landing/legal.
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Tiles do Leaflet (OpenStreetMap), ícone padrão do marcador (CDN unpkg,
