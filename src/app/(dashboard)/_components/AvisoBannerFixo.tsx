@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { AvisoParaUsuario } from "../administracao/central-avisos/actions";
+import { dispensarAviso, obterAvisosDispensados } from "@/lib/avisosDispensados";
 
 const TIPO_ICONE: Record<AvisoParaUsuario["tipo"], string> = {
   novidade: "🆕",
@@ -19,12 +20,21 @@ const URGENCIA_ESTILO: Record<AvisoParaUsuario["urgencia"], string> = {
 // Fase Central-Avisos (28/07/2026) — banner fixo no topo do <main>, só pros
 // avisos marcados `fixado=true` (tipicamente manutenção em andamento ou
 // aviso crítico), mesmo modelo visual do LembretePwaBanner. Some sozinho
-// quando a data_expiracao passar (o layout já filtra isso ao buscar) — o
-// "dispensar" aqui é só local/da sessão (não grava leitura; a leitura pra
-// fins de badge é feita no drawer), então um aviso crítico ainda ativo volta
-// a aparecer numa sessão nova, de propósito.
+// quando a data_expiracao passar (o layout já filtra isso ao buscar).
+//
+// Fase Avisos-Reaparecer-Login (18/08/2026) — o "dispensar" (X) é da sessão
+// do navegador, não permanente: fica escondido em navegações/F5 dentro da
+// mesma sessão (sessionStorage, ver src/lib/avisosDispensados.ts), mas
+// sempre volta a aparecer no próximo login (limparAvisosDispensados() é
+// chamado em todo fluxo de logout). Não grava leitura — a leitura pra fins
+// de badge é feita no drawer.
 export function AvisoBannerFixo({ avisos }: { avisos: AvisoParaUsuario[] }) {
   const [dispensados, setDispensados] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setDispensados(obterAvisosDispensados());
+  }, []);
+
   const visiveis = avisos.filter((a) => !dispensados.has(a.id));
 
   if (visiveis.length === 0) return null;
@@ -44,7 +54,7 @@ export function AvisoBannerFixo({ avisos }: { avisos: AvisoParaUsuario[] }) {
           </div>
           <button
             type="button"
-            onClick={() => setDispensados((prev) => new Set(prev).add(a.id))}
+            onClick={() => setDispensados(dispensarAviso(a.id))}
             aria-label="Fechar aviso"
             className="text-slate-400 hover:text-slate-600"
           >

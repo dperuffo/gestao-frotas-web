@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { limparAvisosDispensados } from "@/lib/avisosDispensados";
 
 const CHAVE_ULTIMA_ATIVIDADE = "fni_ultima_atividade";
 const INTERVALO_VERIFICACAO_MS = 15_000;
@@ -85,6 +86,10 @@ export function MonitorInatividade({ minutos }: { minutos: number }) {
 
       cancelado = true;
       await supabase.auth.signOut();
+      // Fase Avisos-Reaparecer-Login (18/08/2026) — mesmo motivo do
+      // BotaoSair.tsx: logout automático também precisa liberar os avisos
+      // dispensados pro próximo login.
+      limparAvisosDispensados();
       router.push("/login?motivo=inatividade");
       router.refresh();
     }
