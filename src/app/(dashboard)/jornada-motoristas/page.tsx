@@ -2,10 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarDataHoraBr } from "@/lib/utils";
 import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
+import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 import { Truck, Coffee, BedDouble, AlertTriangle, Timer } from "lucide-react";
 import { GraficoHorasDirigidas, type PontoJornada } from "./_components/GraficoHorasDirigidas";
 
-type SearchParams = { empresa?: string; inicio?: string; fim?: string; motorista?: string };
+const POR_PAGINA_REGISTRO = 20;
+
+type SearchParams = { empresa?: string; inicio?: string; fim?: string; motorista?: string; page?: string };
 
 type StatusAtual = {
   motorista_id: string;
@@ -97,7 +101,7 @@ const COR_BADGE_SEGMENTO: Record<RegistroDetalhado["tipo_segmento"], string> = {
 // motoristas_jornada_eventos/motoristas) — mesmo padrão seguro do resto do
 // app, sem precisar bypassar RLS.
 export default async function JornadaMotoristasPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { empresa: empresaParam, inicio, fim, motorista: motoristaParam } = await searchParams;
+  const { empresa: empresaParam, inicio, fim, motorista: motoristaParam, page: pageParam } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
@@ -143,6 +147,20 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
   const nomeMotoristaSelecionado = motoristaParam
     ? (motoristasParaSelecao.find((m) => m.id === motoristaParam)?.nome ?? registroDoMotorista[0]?.nome_completo)
     : undefined;
+  // Fase Tracking-Motorista-Paginacao-Export (18/08/2026, pedido do Daniel:
+  // "colocar paginacao em tela e opcoes de exportar para PDF e excel") —
+  // paginação client-agnóstica (mesmo componente Paginacao/calcularPaginacao
+  // já usado em /veiculos etc.), e exportação (BotaoExportarTabela) sempre
+  // com TODOS os segmentos do período, não só a página em tela.
+  const { paginaAtual: paginaRegistro, totalPaginas: totalPaginasRegistro } = calcularPaginacao(
+    registroDoMotorista.length,
+    POR_PAGINA_REGISTRO,
+    pageParam
+  );
+  const registroPaginado = registroDoMotorista.slice(
+    (paginaRegistro - 1) * POR_PAGINA_REGISTRO,
+    paginaRegistro * POR_PAGINA_REGISTRO
+  );
 
   // Cards "ao vivo".
   const dirigindoAgora = statusAtual.filter((s) => s.estado === "dirigindo").length;
@@ -389,57 +407,90 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
           </div>
 
           <div className="card mt-6 overflow-x-auto">
-            <div className="border-b border-slate-100 px-4 py-3">
-              <h3 className="text-sm font-semibold text-slate-900">
-                Registro detalhado (tracking){nomeMotoristaSelecionado ? ` — ${nomeMotoristaSelecionado}` : ""}
-              </h3>
-              <p className="mt-1 text-xs text-slate-500">
-                Cada linha é um trecho contínuo de condução, pausa ou descanso, com data/hora de início e fim, a
-                partir dos eventos registrados pelo motorista no app.
-              </p>
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Registro detalhado (tracking){nomeMotoristaSelecionado ? ` — ${nomeMotoristaSelecionado}` : ""}
+                </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Cada linha é um trecho contínuo de condução, pausa ou descanso, com data/hora de início e fim, a
+                  partir dos eventos registrados pelo motorista no app.
+                </p>
+              </div>
+              {motoristaParam && registroDoMotorista.length > 0 && (
+                <BotaoExportarTabela
+                  nomeArquivo={`tracking-jornada-${(nomeMotoristaSelecionado ?? "motorista").toLowerCase().replace(/\s+/g, "-")}`}
+                  titulo={`Registro detalhado de jornada — ${nomeMotoristaSelecionado ?? ""}`}
+                  subtitulo={`Período: ${new Date(`${dataInicio}T12:00:00`).toLocaleDateString("pt-BR")} a ${new Date(`${dataFim}T12:00:00`).toLocaleDateString("pt-BR")}`}
+                  colunas={[
+                    { header: "Tipo", chave: "tipo" },
+                    { header: "Início", chave: "inicio" },
+                    { header: "Fim", chave: "fim" },
+                    { header: "Duração", chave: "duracao" },
+                  ]}
+                  linhas={registroDoMotorista.map((r) => ({
+                    tipo: LABEL_SEGMENTO[r.tipo_segmento],
+                    inicio: formatarDataHoraBr(r.inicio),
+                    fim: r.em_andamento ? "Em andamento" : formatarDataHoraBr(r.fim),
+                    duracao: formatarDuracao(r.duracao_minutos),
+                  }))}
+                />
+              )}
             </div>
             {!motoristaParam ? (
               <p className="px-4 py-8 text-center text-sm text-slate-400">
                 Selecione um motorista no filtro acima para ver o registro detalhado.
               </p>
             ) : (
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3">Tipo</th>
-                    <th className="px-4 py-3">Início</th>
-                    <th className="px-4 py-3">Fim</th>
-                    <th className="px-4 py-3">Duração</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {registroDoMotorista.map((r, i) => (
-                    <tr key={`${r.motorista_id}-${r.inicio}-${i}`} className="transition-colors hover:bg-frota-50/60">
-                      <td className="px-4 py-3">
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${COR_BADGE_SEGMENTO[r.tipo_segmento]}`}>
-                          {LABEL_SEGMENTO[r.tipo_segmento]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">{formatarDataHoraBr(r.inicio)}</td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {r.em_andamento ? (
-                          <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">Em andamento</span>
-                        ) : (
-                          formatarDataHoraBr(r.fim)
-                        )}
-                      </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-700">{formatarDuracao(r.duracao_minutos)}</td>
-                    </tr>
-                  ))}
-                  {registroDoMotorista.length === 0 && (
+              <>
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                     <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
-                        Nenhum registro encontrado para esse motorista no período.
-                      </td>
+                      <th className="px-4 py-3">Tipo</th>
+                      <th className="px-4 py-3">Início</th>
+                      <th className="px-4 py-3">Fim</th>
+                      <th className="px-4 py-3">Duração</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {registroPaginado.map((r, i) => (
+                      <tr key={`${r.motorista_id}-${r.inicio}-${i}`} className="transition-colors hover:bg-frota-50/60">
+                        <td className="px-4 py-3">
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${COR_BADGE_SEGMENTO[r.tipo_segmento]}`}>
+                            {LABEL_SEGMENTO[r.tipo_segmento]}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">{formatarDataHoraBr(r.inicio)}</td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {r.em_andamento ? (
+                            <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">Em andamento</span>
+                          ) : (
+                            formatarDataHoraBr(r.fim)
+                          )}
+                        </td>
+                        <td className="px-4 py-3 tabular-nums text-slate-700">{formatarDuracao(r.duracao_minutos)}</td>
+                      </tr>
+                    ))}
+                    {registroDoMotorista.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
+                          Nenhum registro encontrado para esse motorista no período.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+                <div className="px-4 pb-4">
+                  <Paginacao
+                    paginaAtual={paginaRegistro}
+                    totalPaginas={totalPaginasRegistro}
+                    totalRegistros={registroDoMotorista.length}
+                    porPagina={POR_PAGINA_REGISTRO}
+                    basePath="/jornada-motoristas"
+                    paramsAtuais={{ empresa: empresaSelecionada ?? undefined, inicio: dataInicio, fim: dataFim, motorista: motoristaParam }}
+                  />
+                </div>
+              </>
             )}
           </div>
         </>
