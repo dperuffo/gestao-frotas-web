@@ -904,7 +904,7 @@ export default async function DashboardLayout({
           de vista ao rolar o conteúdo) e ganha scroll PRÓPRIO
           (overflow-y-auto) pro caso do menu em si ser mais alto que a tela
           (perfil admin, com todas as seções abertas). */}
-      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col overflow-y-auto bg-frota-950 text-slate-100">
+      <aside className="glass-nav sticky top-0 flex h-screen w-64 shrink-0 flex-col overflow-y-auto">
         <div data-tour="logo" className="border-b border-white/10 px-5 py-6">
           <div className="rounded-xl border border-white/10 bg-white/95 p-3 shadow-lg shadow-frota-950/30">
             <Image
@@ -916,9 +916,9 @@ export default async function DashboardLayout({
               className="h-auto w-full"
             />
           </div>
-          <p className="mt-3 truncate text-sm font-semibold text-white">{nomeExibido}</p>
+          <p className="glass-nav-texto mt-3 truncate text-sm font-semibold">{nomeExibido}</p>
           {cargoExibido && (
-            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-frota-500">
+            <p className="glass-nav-acento mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em]">
               {cargoExibido}
             </p>
           )}
@@ -979,7 +979,7 @@ export default async function DashboardLayout({
             <>
               <p
                 data-tour="menu-administracao"
-                className="mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400"
+                className="glass-nav-texto-muted mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider"
               >
                 Administração
               </p>
@@ -988,10 +988,10 @@ export default async function DashboardLayout({
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                      className="glass-nav-texto flex items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-white/10"
                     >
                       <span className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4 shrink-0 text-slate-300" />
+                        <item.icon className="glass-nav-icone h-4 w-4 shrink-0" />
                         {item.label}
                       </span>
                       {item.href === "/avaliacoes" && avaliacoesPendentes > 0 && (
@@ -1019,7 +1019,7 @@ export default async function DashboardLayout({
           <BotaoSair />
         </div>
       </aside>
-      <main className="flex-1 bg-slate-50 p-8">
+      <main className="flex-1 p-8">
         {/* Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel) —
             barra de atalhos pras telas mais usadas (frecência) ou fixadas
             manualmente, primeira coisa visível no conteúdo. */}

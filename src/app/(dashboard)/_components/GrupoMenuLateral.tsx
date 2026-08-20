@@ -61,7 +61,7 @@ export function GrupoMenuLateral({
     <>
       <p
         data-tour={dataTourTitulo}
-        className={`mb-2 px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 ${primeiro ? "" : "mt-6"}`}
+        className={`glass-nav-texto-muted mb-2 px-2 pb-2 text-xs font-semibold uppercase tracking-wider ${primeiro ? "" : "mt-6"}`}
       >
         {titulo}
       </p>
@@ -73,10 +73,10 @@ export function GrupoMenuLateral({
               <Link
                 href={item.href}
                 data-tour={tourPorHref?.[item.href]}
-                className="flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                className="glass-nav-texto flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-white/10"
               >
                 <span className="flex items-center gap-2">
-                  {item.icon && <item.icon className="h-4 w-4 shrink-0 text-slate-300" />}
+                  {item.icon && <item.icon className="glass-nav-icone h-4 w-4 shrink-0" />}
                   {item.label}
                 </span>
                 {badge > 0 && (

@@ -18,23 +18,21 @@ export function AbasPainel({ abas }: { abas: Aba[] }) {
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-1 overflow-x-auto border-b border-slate-200">
-        {abas.map((aba) => (
-          <button
-            key={aba.id}
-            type="button"
-            onClick={() => setAtiva(aba.id)}
-            className={`whitespace-nowrap px-3 py-2 text-sm font-medium transition-colors ${
-              ativa === aba.id
-                ? "border-b-2 border-frota-600 text-frota-700"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {aba.label}
-          </button>
-        ))}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="glass-tabbar">
+          {abas.map((aba) => (
+            <button
+              key={aba.id}
+              type="button"
+              onClick={() => setAtiva(aba.id)}
+              className={`glass-tab ${ativa === aba.id ? "glass-tab-ativa" : ""}`}
+            >
+              {aba.label}
+            </button>
+          ))}
+        </div>
         {abaAtiva?.ajudaChave && (
-          <span className="ml-1 shrink-0">
+          <span className="shrink-0">
             <AjudaIcon chave={abaAtiva.ajudaChave} />
           </span>
         )}

@@ -12,13 +12,96 @@
   --status-inativo: #dc2626;
 }
 
+/* Fase Liquid-Glass (20/08/2026, pedido do Daniel: "implementar recursos de
+   liquid glass nas telas e abas de menu") — fundo com washes de cor bem
+   sutis, fixo ao viewport (background-attachment: fixed), pra dar aos
+   painéis translúcidos (.card, .glass-nav, .glass-tabbar) algo com
+   variação tonal pra desfocar/saturar por baixo. De propósito bem discreto
+   (não são blobs vibrantes de dribbble) — é um app B2B denso em tabela,
+   então o fundo não pode competir com o conteúdo nem prejudicar contraste;
+   ele só precisa dar "profundidade" o suficiente pro efeito vidro aparecer. */
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply text-slate-900 antialiased;
+  background:
+    radial-gradient(1200px circle at 8% -10%, rgba(14, 165, 233, 0.10), transparent 55%),
+    radial-gradient(1000px circle at 92% 0%, rgba(20, 184, 166, 0.08), transparent 50%),
+    radial-gradient(900px circle at 50% 100%, rgba(15, 42, 74, 0.06), transparent 55%),
+    #f8fafc;
+  background-attachment: fixed;
 }
 
-/* Componentes utilitários usados nas telas de Cadastros */
+/* Componentes utilitários usados nas telas de Cadastros.
+   Fase Liquid-Glass (20/08/2026) — .card é a classe central usada em ~150
+   telas (ver README, fases de Redesign-Telas-Densas), então trocar aqui
+   cascateia pro app inteiro sem precisar editar cada página. Opacidade
+   alta de propósito (80%, não 40-50% como glassmorphism "clássico") —
+   tabelas densas precisam de contraste forte; o efeito vidro vem do
+   desfoque + saturação + brilho na borda superior (inset), não de deixar
+   o conteúdo de trás aparecer através do texto. */
 .card {
-  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  @apply rounded-xl border border-white/70 bg-white/80 shadow-sm backdrop-blur-xl backdrop-saturate-150;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.7),
+    0 1px 2px 0 rgba(15, 23, 42, 0.05),
+    0 8px 24px -12px rgba(15, 23, 42, 0.12);
+}
+
+/* Menu lateral (aside, layout.tsx) e barra de abas (AbasPainel.tsx) — mesma
+   receita do .card (blur + saturate + brilho de borda), mas com uma
+   superfície de vidro em tom quente (bronze/champanhe), a pedido do
+   Daniel: "aplicar esta textura enviada na imagem" (referência: vidro
+   curvo bronze/creme, com realce claro acompanhando a curva e pequenos
+   brilhos especulares no topo) — substitui o navy azul usado antes. A
+   maior parte do painel fica no tom bronze/marrom escuro (mantém contraste
+   pro texto claro do menu); o realce creme fica concentrado num canto,
+   como na referência, não espalhado pelo painel inteiro. */
+.glass-nav {
+  background:
+    radial-gradient(120% 90% at 8% 0%, rgba(240, 224, 199, 0.55), transparent 42%),
+    radial-gradient(60% 40% at 85% 6%, rgba(255, 255, 255, 0.18), transparent 60%),
+    linear-gradient(160deg, rgba(196, 168, 132, 0.94) 0%, rgba(139, 108, 82, 0.94) 45%, rgba(74, 58, 42, 0.96) 100%);
+  @apply backdrop-blur-xl backdrop-saturate-150 border-r border-white/20;
+  box-shadow:
+    inset 1px 0 0 0 rgba(255, 255, 255, 0.16),
+    inset -1px 0 0 0 rgba(0, 0, 0, 0.12);
+}
+
+.glass-tabbar {
+  @apply inline-flex items-center gap-1 overflow-x-auto rounded-full border border-white/70 p-1 shadow-sm backdrop-blur-xl backdrop-saturate-150;
+  background: linear-gradient(135deg, rgba(250, 244, 234, 0.85), rgba(232, 214, 191, 0.7));
+}
+
+.glass-tab {
+  @apply whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700;
+}
+
+.glass-tab-ativa {
+  @apply shadow-sm;
+  background: linear-gradient(160deg, #f7ecdc, #d9bd9a);
+  color: #6b4a2b;
+}
+
+/* Fase Liquid-Glass-Texto (20/08/2026, pedido do Daniel: "ajustar textos e
+   icones/emojis o menu para ter otima visibilidade nesta textura") — os
+   cinzas frios (slate-200/300/400) usados quando o menu era navy sólido
+   ficavam sem contraste/destoando do vidro bronze/champanhe. Tons quentes
+   (creme/marfim) + text-shadow sutil garantem leitura mesmo na parte mais
+   clara do gradiente (o realce no canto superior esquerdo). */
+.glass-nav-texto {
+  color: #f8ecd9;
+  text-shadow: 0 1px 3px rgba(41, 26, 13, 0.55);
+}
+.glass-nav-texto-muted {
+  color: #e4cba8;
+  text-shadow: 0 1px 3px rgba(41, 26, 13, 0.5);
+}
+.glass-nav-icone {
+  color: #f0dcbc;
+  filter: drop-shadow(0 1px 2px rgba(41, 26, 13, 0.5));
+}
+.glass-nav-acento {
+  color: #ffd9a0;
+  text-shadow: 0 1px 3px rgba(41, 26, 13, 0.5);
 }
 
 .btn-primary {
