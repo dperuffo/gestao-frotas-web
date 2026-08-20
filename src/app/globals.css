@@ -47,19 +47,21 @@ body {
 }
 
 /* Menu lateral (aside, layout.tsx) e barra de abas (AbasPainel.tsx) — mesma
-   receita do .card (blur + saturate + brilho de borda), mas com uma
-   superfície de vidro em tom quente (bronze/champanhe), a pedido do
-   Daniel: "aplicar esta textura enviada na imagem" (referência: vidro
-   curvo bronze/creme, com realce claro acompanhando a curva e pequenos
-   brilhos especulares no topo) — substitui o navy azul usado antes. A
-   maior parte do painel fica no tom bronze/marrom escuro (mantém contraste
-   pro texto claro do menu); o realce creme fica concentrado num canto,
-   como na referência, não espalhado pelo painel inteiro. */
+   receita do .card (blur + saturate + brilho de borda). Fase
+   Liquid-Glass-Cinza (20/08/2026, pedido do Daniel: "queria este gradiente
+   na aplicação Web e PWA" — nova referência enviada: vidro curvo
+   cinza-arroxeado/azulado, escuro num canto e claro no outro, com uma
+   faixa de brilho na diagonal acompanhando a curva) — substitui a
+   superfície bronze/champanhe da fase anterior. Cores extraídas por
+   amostragem de pixel da própria imagem de referência. A faixa de brilho
+   vem do 2º radial-gradient, alongado na vertical e deslocado pro lado
+   direito do painel (não um brilho de canto como antes), pra imitar a
+   curva clara da referência; a base é o linear-gradient (claro→escuro). */
 .glass-nav {
   background:
-    radial-gradient(120% 90% at 8% 0%, rgba(240, 224, 199, 0.55), transparent 42%),
-    radial-gradient(60% 40% at 85% 6%, rgba(255, 255, 255, 0.18), transparent 60%),
-    linear-gradient(160deg, rgba(196, 168, 132, 0.94) 0%, rgba(139, 108, 82, 0.94) 45%, rgba(74, 58, 42, 0.96) 100%);
+    radial-gradient(35% 140% at 62% 40%, rgba(226, 228, 238, 0.5), transparent 55%),
+    radial-gradient(60% 40% at 85% 4%, rgba(255, 255, 255, 0.16), transparent 60%),
+    linear-gradient(160deg, rgba(171, 175, 186, 0.94) 0%, rgba(122, 132, 148, 0.94) 45%, rgba(61, 60, 78, 0.96) 100%);
   @apply backdrop-blur-xl backdrop-saturate-150 border-r border-white/20;
   box-shadow:
     inset 1px 0 0 0 rgba(255, 255, 255, 0.16),
@@ -68,7 +70,7 @@ body {
 
 .glass-tabbar {
   @apply inline-flex items-center gap-1 overflow-x-auto rounded-full border border-white/70 p-1 shadow-sm backdrop-blur-xl backdrop-saturate-150;
-  background: linear-gradient(135deg, rgba(250, 244, 234, 0.85), rgba(232, 214, 191, 0.7));
+  background: linear-gradient(135deg, rgba(240, 241, 247, 0.85), rgba(200, 204, 214, 0.7));
 }
 
 .glass-tab {
@@ -77,31 +79,29 @@ body {
 
 .glass-tab-ativa {
   @apply shadow-sm;
-  background: linear-gradient(160deg, #f7ecdc, #d9bd9a);
-  color: #6b4a2b;
+  background: linear-gradient(160deg, #f0f1f7, #c8ccd6);
+  color: #3d3c4e;
 }
 
-/* Fase Liquid-Glass-Texto (20/08/2026, pedido do Daniel: "ajustar textos e
-   icones/emojis o menu para ter otima visibilidade nesta textura") — os
-   cinzas frios (slate-200/300/400) usados quando o menu era navy sólido
-   ficavam sem contraste/destoando do vidro bronze/champanhe. Tons quentes
-   (creme/marfim) + text-shadow sutil garantem leitura mesmo na parte mais
-   clara do gradiente (o realce no canto superior esquerdo). */
+/* Fase Liquid-Glass-Texto (20/08/2026) — texto/ícone do menu em tons
+   claros neutros (antes creme/marfim, pensados pro fundo bronze) + sombra
+   escura arroxeada (antes marrom), pra continuar legível na nova
+   superfície cinza-arroxeada/azulada. */
 .glass-nav-texto {
-  color: #f8ecd9;
-  text-shadow: 0 1px 3px rgba(41, 26, 13, 0.55);
+  color: #f3f4f8;
+  text-shadow: 0 1px 3px rgba(26, 24, 38, 0.55);
 }
 .glass-nav-texto-muted {
-  color: #e4cba8;
-  text-shadow: 0 1px 3px rgba(41, 26, 13, 0.5);
+  color: #c9ccd6;
+  text-shadow: 0 1px 3px rgba(26, 24, 38, 0.5);
 }
 .glass-nav-icone {
-  color: #f0dcbc;
-  filter: drop-shadow(0 1px 2px rgba(41, 26, 13, 0.5));
+  color: #ececf3;
+  filter: drop-shadow(0 1px 2px rgba(26, 24, 38, 0.5));
 }
 .glass-nav-acento {
   color: #ffd9a0;
-  text-shadow: 0 1px 3px rgba(41, 26, 13, 0.5);
+  text-shadow: 0 1px 3px rgba(26, 24, 38, 0.5);
 }
 
 .btn-primary {
