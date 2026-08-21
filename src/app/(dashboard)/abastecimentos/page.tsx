@@ -37,10 +37,15 @@ const CORES_PROVEDOR: Record<string, string> = {
   RedeFrota: "bg-orange-100 text-orange-700",
   TicketLog: "bg-teal-100 text-teal-700",
   Veloe: "bg-pink-100 text-pink-700",
+  // Fase Abastecimento-Interno (21/08/2026) — abastecido na garagem própria
+  // do cliente (matriz/filial), não num posto revendedor externo.
+  interno: "bg-emerald-100 text-emerald-700",
 };
 
 function nomeProvedor(provedor: string) {
-  return provedor === "profrotas" ? "PróFrotas" : provedor;
+  if (provedor === "profrotas") return "PróFrotas";
+  if (provedor === "interno") return "Abastecimento Interno";
+  return provedor;
 }
 
 function BadgeProvedor({ provedor }: { provedor: string }) {
@@ -455,7 +460,13 @@ export default async function AbastecimentosPage({
                         o id real da tabela abastecimentos_externos (a view
                         abastecimentos_unificado não gera um id sintético). */}
                     <Link
-                      href={ehProfrotas ? `/abastecimentos/${r.id}` : `/abastecimentos/externo/${r.id}`}
+                      href={
+                        ehProfrotas
+                          ? `/abastecimentos/${r.id}`
+                          : r.provedor === "interno"
+                            ? `/abastecimentos/interno/${r.id}`
+                            : `/abastecimentos/externo/${r.id}`
+                      }
                       className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline"
                     >
                       {dataCelula}

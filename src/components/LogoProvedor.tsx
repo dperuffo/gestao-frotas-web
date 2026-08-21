@@ -43,7 +43,14 @@ export function logoDoProvedor(provedor: string) {
 // Nome legível de fallback pra provedor sem logo cadastrada ainda (parceiro
 // novo que a FNI não desenhou ícone específico) — mesmo texto que os
 // nomeProvedor() locais de /financeiro e /abastecimentos já usavam.
+//
+// Fase Abastecimento-Interno (21/08/2026) — "interno" nunca vai ter uma
+// logo de parceiro externo (não é um meio de pagamento de terceiro, é o
+// próprio posto/garagem do cliente) — trata igual ao caso "profrotas", com
+// rótulo fixo em vez de cair no fallback genérico (que mostraria o texto
+// cru "interno").
 export function nomeProvedor(provedor: string): string {
+  if (provedor === "interno") return "Abastecimento Interno";
   return logoDoProvedor(provedor)?.nome ?? (provedor === "profrotas" ? "Pró-Frotas" : provedor);
 }
 

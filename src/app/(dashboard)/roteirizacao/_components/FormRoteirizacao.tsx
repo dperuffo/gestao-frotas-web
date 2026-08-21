@@ -5,7 +5,13 @@ import Link from "next/link";
 import { BuscaLocalInput, type LocalSelecionado } from "./BuscaLocalInput";
 import { SalvarConsultaForm } from "./SalvarConsultaForm";
 import MapaRotaLazy from "./MapaRotaLazy";
-import { calcularRoteirizacaoAcao, buscarAlternativasRotaAcao, type ResultadoRoteirizacao } from "../actions";
+import {
+  calcularRoteirizacaoAcao,
+  buscarAlternativasRotaAcao,
+  buscarAbastecimentoInternoHojeAcao,
+  type ResultadoRoteirizacao,
+  type AbastecimentoInternoHoje,
+} from "../actions";
 import type { OpcaoRota } from "@/lib/geo";
 import { PERFIS_PESO, PERFIL_PADRAO } from "@/lib/roteirizacaoScore";
 import { PRODUTOS_POSTO, PRODUTOS_POR_TIPO_VEICULO } from "@/lib/constants";
@@ -90,6 +96,12 @@ export function FormRoteirizacao({
   const [opcoesCombustivel, setOpcoesCombustivel] = useState<readonly string[]>(PRODUTOS_POSTO);
   const [avisoCombustivel, setAvisoCombustivel] = useState<string | null>(null);
   const [combustivelInicial, setCombustivelInicial] = useState(estadoInicial?.combustivelInicial ?? 0);
+  // Fase Abastecimento-Interno (21/08/2026) — "busca automática": ao
+  // escolher o veículo, procura sozinho o abastecimento interno mais
+  // recente feito HOJE nessa placa (garagem própria, matriz ou filial) e já
+  // usa como ponto de partida do tanque, sem o gestor precisar digitar nada.
+  // O gestor ainda pode sobrescrever o campo manualmente depois.
+  const [abastecimentoInternoHoje, setAbastecimentoInternoHoje] = useState<AbastecimentoInternoHoje | null>(null);
   const [perfilChave, setPerfilChave] = useState(estadoInicial?.perfilChave ?? PERFIL_PADRAO);
   const [resultado, setResultado] = useState<ResultadoRoteirizacao | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -206,6 +218,26 @@ export function FormRoteirizacao({
       ).includes(termo)
     );
   }, [candidatosOrdenados, buscaPosto]);
+
+  // Fase Abastecimento-Interno — dispara a busca automática toda vez que a
+  // placa muda (seleção de veículo cadastrado OU digitação manual do
+  // "Manual (preencher abaixo)"). Sem abastecimento interno hoje pra essa
+  // placa, simplesmente não altera nada (campo continua no padrão: cheio).
+  useEffect(() => {
+    let cancelado = false;
+    if (!placa.trim()) {
+      setAbastecimentoInternoHoje(null);
+      return;
+    }
+    buscarAbastecimentoInternoHojeAcao(placa).then((achado) => {
+      if (cancelado) return;
+      setAbastecimentoInternoHoje(achado);
+      if (achado) setCombustivelInicial(achado.quantidade);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [placa]);
 
   function selecionarVeiculo(idPlaca: string) {
     setPlaca(idPlaca);
@@ -534,6 +566,12 @@ export function FormRoteirizacao({
               placeholder={`padrão: cheio (${capacidade} L)`}
               className="input"
             />
+            {abastecimentoInternoHoje && (
+              <p className="mt-1 text-xs text-emerald-700">
+                ⛽ Abastecimento interno hoje: {abastecimentoInternoHoje.quantidade} L de{" "}
+                {abastecimentoInternoHoje.combustivel} — já preenchido automaticamente.
+              </p>
+            )}
           </div>
         </div>
 
@@ -835,25 +873,35 @@ export function FormRoteirizacao({
                     🛢 Total abastecido: <span className="font-medium text-slate-900">{litrosTotalAtual} L</span>
                   </p>
                   <p className="text-slate-500">
-                    💰 Custo abastecimento:{" "}
+                    💰 Custo abastecimento (postos no trajeto):{" "}
                     <span className="font-medium text-slate-900">{formatarMoeda(custoTotalAtual)}</span>
                   </p>
                   <p className="text-slate-500">
                     ⛽ Paradas: <span className="font-medium text-slate-900">{paradasAtuais.paradas.length || "Nenhuma"}</span>
                   </p>
+                  {abastecimentoInternoHoje && (
+                    <p className="text-slate-500">
+                      🏭 Abastecimento interno (garagem, hoje):{" "}
+                      <span className="font-medium text-slate-900">{formatarMoeda(abastecimentoInternoHoje.valorTotal)}</span>
+                    </p>
+                  )}
                   {resultado.pracasPedagio.length > 0 && (
-                    <>
-                      <p className="text-slate-500">
-                        🎫 Pedágio estimado (carro):{" "}
-                        <span className="font-medium text-slate-900">{formatarMoeda(resultado.custoPedagioEstimado)}</span>
-                      </p>
-                      <p className="text-slate-500">
-                        💰 Total (combustível + pedágio):{" "}
-                        <span className="font-medium text-slate-900">
-                          {formatarMoeda(custoTotalAtual + resultado.custoPedagioEstimado)}
-                        </span>
-                      </p>
-                    </>
+                    <p className="text-slate-500">
+                      🎫 Pedágio estimado (carro):{" "}
+                      <span className="font-medium text-slate-900">{formatarMoeda(resultado.custoPedagioEstimado)}</span>
+                    </p>
+                  )}
+                  {(resultado.pracasPedagio.length > 0 || abastecimentoInternoHoje) && (
+                    <p className="text-slate-500">
+                      💰 Total (combustível + interno + pedágio):{" "}
+                      <span className="font-medium text-slate-900">
+                        {formatarMoeda(
+                          custoTotalAtual +
+                            resultado.custoPedagioEstimado +
+                            (abastecimentoInternoHoje?.valorTotal ?? 0)
+                        )}
+                      </span>
+                    </p>
                   )}
                 </div>
               </div>

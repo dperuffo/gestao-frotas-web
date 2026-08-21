@@ -448,6 +448,16 @@ export const PRODUTOS_POSTO = [
   "GLP",
 ] as const;
 
+// Fase Abastecimento-Interno (21/08/2026) — mesma lista de PRODUTOS_POSTO
+// (posto interno vende os mesmos combustíveis de um posto revendedor comum),
+// mais Arla32: NÃO é um combustível ANP (é um aditivo à base de ureia usado
+// só em motores Diesel com sistema SCR), por isso fica de fora de
+// PRODUTOS_POSTO/combustiveis_codigo_anp e é tratado como item opcional
+// lançado JUNTO de um abastecimento de Diesel (mesmo formulário/operação),
+// nunca como combustível avulso escolhido sozinho.
+export const ARLA32 = "Arla32" as const;
+export const COMBUSTIVEIS_POSTO_INTERNO = [...PRODUTOS_POSTO] as const;
+
 // De-para do tipo de motor do veículo (cadastro_veiculos.combustivel, que
 // usa os rótulos de CICLOS_COMBUSTIVEL) para os produtos de posto
 // compatíveis. Um veículo Flex pode abastecer com gasolina OU etanol — por

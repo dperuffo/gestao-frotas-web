@@ -4000,6 +4000,111 @@ export interface Database {
           },
         ];
       };
+      // Fase Abastecimento-Interno (21/08/2026) — posto próprio na garagem
+      // interna do cliente (matriz e/ou filial), separado da rede de postos
+      // revendedores externos (postos_gf acima).
+      postos_internos: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          nome: string | null;
+          ativo: boolean;
+          criado_em: string;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["postos_internos"]["Row"]> & { empresa_id: string };
+        Update: Partial<Database["public"]["Tables"]["postos_internos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "postos_internos_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: true;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      postos_internos_precos: {
+        Row: {
+          id: string;
+          posto_interno_id: string;
+          combustivel: string;
+          preco: number;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["postos_internos_precos"]["Row"]> & {
+          posto_interno_id: string;
+          combustivel: string;
+          preco: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["postos_internos_precos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "postos_internos_precos_posto_interno_id_fkey";
+            columns: ["posto_interno_id"];
+            isOneToOne: false;
+            referencedRelation: "postos_internos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      abastecimentos_internos: {
+        Row: {
+          id: number;
+          empresa_id: string;
+          posto_interno_id: string;
+          placa: string;
+          motorista_id: string | null;
+          motorista_nome: string | null;
+          hodometro: number | null;
+          data_abastecimento: string;
+          combustivel: string;
+          quantidade: number;
+          valor_unitario: number;
+          valor_total: number;
+          arla_quantidade: number | null;
+          arla_valor_unitario: number | null;
+          arla_valor_total: number | null;
+          origem: string;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["abastecimentos_internos"]["Row"]> & {
+          empresa_id: string;
+          posto_interno_id: string;
+          placa: string;
+          combustivel: string;
+          quantidade: number;
+          valor_unitario: number;
+          valor_total: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["abastecimentos_internos"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "abastecimentos_internos_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "abastecimentos_internos_posto_interno_id_fkey";
+            columns: ["posto_interno_id"];
+            isOneToOne: false;
+            referencedRelation: "postos_internos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "abastecimentos_internos_motorista_id_fkey";
+            columns: ["motorista_id"];
+            isOneToOne: false;
+            referencedRelation: "motoristas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Fase 27.137 — fila de revisão pra possíveis duplicados sinalizados
       // pelo matching de "Meu Posto" contra anp_postos/postos_gf (endereço/
       // coordenadas muito próximos de outro posto já cadastrado, com CNPJ
@@ -4606,6 +4711,27 @@ export interface Database {
       empresas_do_usuario: {
         Args: { p_email: string };
         Returns: string[];
+      };
+      // Fase Abastecimento-Interno (21/08/2026) — PWA Motorista: opções do
+      // formulário (placas autorizadas, empresas/postos internos do grupo
+      // econômico, preços por combustível) e registro do abastecimento.
+      // Retorno é jsonb (Json) porque o "status" varia (ok/nao_vinculado/
+      // veiculo_nao_autorizado/etc.) — o app decide o que fazer olhando essa
+      // chave, mesmo padrão de registrar_inspecao_motorista.
+      abastecimento_interno_formulario_motorista: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      registrar_abastecimento_interno: {
+        Args: {
+          p_empresa_id: string;
+          p_placa: string;
+          p_combustivel: string;
+          p_quantidade: number;
+          p_arla_quantidade?: number | null;
+          p_hodometro?: number | null;
+        };
+        Returns: Json;
       };
       // Fase Replicação-Grupo — mecanismo genérico "Replicar para o grupo"
       // (Grupo Econômico / Rede de Postos, mesmo mecanismo). Ver migração

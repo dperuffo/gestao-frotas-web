@@ -68,6 +68,11 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/duplicidade-placas-grupo": "aba_veiculos",
   "/centros-custo": "aba_centros_custo",
   "/postos": "aba_postos",
+  // Fase Abastecimento-Interno (21/08/2026) — reaproveita a mesma
+  // funcionalidade de "/postos" (mesmo tema — combustível/postos — já
+  // liberada pra todo perfil relevante), evitando precisar semear uma linha
+  // nova em permissoes_perfil pra cada empresa existente.
+  "/postos-internos": "aba_postos",
   "/abastecimentos": "aba_abastecimentos",
   "/notas-fiscais": "aba_notas_fiscais",
   // Fase Central-Avisos-Por-Empresa (04/08/2026) — reaproveita a MESMA

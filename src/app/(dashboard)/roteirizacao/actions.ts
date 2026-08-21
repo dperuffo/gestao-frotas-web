@@ -21,6 +21,45 @@ import { PRODUTO_PARA_CATEGORIA_ANP, UF_PARA_ESTADO_ANP } from "@/lib/constants"
 import { normalizarTexto } from "@/lib/utils";
 import { buscarPracasPedagioNaRota, custoPedagioTotal, type PracaPedagioNaRota } from "@/lib/pedagio";
 
+// Fase Abastecimento-Interno (21/08/2026, pedido do Daniel: "busca
+// automática" — o gestor não precisa informar manualmente o combustível já
+// no tanque, o sistema já sabe pelo abastecimento interno feito hoje na
+// garagem) — busca o abastecimento interno MAIS RECENTE de hoje pra essa
+// placa, em qualquer empresa do grupo econômico que o usuário enxergue (RLS
+// de abastecimentos_internos já expande pra matriz+filiais via
+// empresas_do_usuario — por isso não filtra por empresa_id aqui: o veículo
+// pode ter sido abastecido na garagem de QUALQUER empresa do grupo, não só
+// na selecionada na tela). Não filtra por p_empresa_id de propósito.
+export type AbastecimentoInternoHoje = {
+  combustivel: string;
+  quantidade: number;
+  valorTotal: number;
+  horario: string;
+};
+
+export async function buscarAbastecimentoInternoHojeAcao(placa: string): Promise<AbastecimentoInternoHoje | null> {
+  if (!placa.trim()) return null;
+  const supabase = await createClient();
+  const inicioHojeIso = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+
+  const { data } = await supabase
+    .from("abastecimentos_internos")
+    .select("combustivel, quantidade, valor_total, data_abastecimento")
+    .eq("placa", placa.trim().toUpperCase())
+    .gte("data_abastecimento", inicioHojeIso)
+    .order("data_abastecimento", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return null;
+  return {
+    combustivel: data.combustivel,
+    quantidade: Number(data.quantidade),
+    valorTotal: Number(data.valor_total),
+    horario: data.data_abastecimento,
+  };
+}
+
 // Os 10 campos booleanos de serviço que existem em postos_gf — usados como
 // denominador fixo do score (mesma contagem do Streamlit: n_servicos_max).
 const CAMPOS_SERVICO = [

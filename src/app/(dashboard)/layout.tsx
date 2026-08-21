@@ -17,6 +17,7 @@ import {
   IdCard,
   Car,
   Fuel,
+  Warehouse,
   FileText,
   Sparkles,
   Gift,
@@ -172,6 +173,10 @@ const menuCadastros: ItemMenuLateral[] = [
   { href: "/duplicidade-placas-grupo", label: "Placas Duplicadas (Grupo)", icon: Copy },
   { href: "/centros-custo", label: "Centros de Custo", icon: Receipt }, // PWA: Icons.receipt_long
   { href: "/postos", label: "Postos Revendedores", icon: Fuel }, // PWA: Icons.local_gas_station
+  // Fase Abastecimento-Interno (21/08/2026) — posto próprio na garagem
+  // interna do cliente (matriz e/ou filiais), self-service (mesmo padrão de
+  // /postos), separado da rede de postos revendedores externos.
+  { href: "/postos-internos", label: "Postos Internos", icon: Warehouse },
 ];
 
 // Fase reorganizacao-menu — o dia a dia de rota e combustível: da
