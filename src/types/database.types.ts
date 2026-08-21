@@ -4053,6 +4053,13 @@ export interface Database {
       abastecimentos_internos: {
         Row: {
           id: number;
+          // Fase Abastecimento-Interno — ajuste (21/08/2026, pedido do
+          // Daniel: "obrigatorio que todo abastecimento interno tenha um
+          // ID") — coluna GERADA (3000000000 + id), mesma convenção de
+          // profrotas_abastecimentos (prefixo 1) e abastecimentos_externos
+          // (prefixo 2). Nunca aparece no Insert (Postgres rejeita valor
+          // explícito em coluna GENERATED ALWAYS).
+          codigo_abastecimento: string;
           empresa_id: string;
           posto_interno_id: string;
           placa: string;

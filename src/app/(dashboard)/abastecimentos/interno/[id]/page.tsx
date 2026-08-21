@@ -31,7 +31,7 @@ export default async function EditarAbastecimentoInternoPage({ params }: { param
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Abastecimento Interno</h1>
         <p className="mt-1 text-xs text-slate-400">
-          ID {abastecimento.id} · {abastecimento.origem === "pwa_motorista" ? "Confirmado pelo motorista (app)" : "Lançamento manual"}
+          ID {abastecimento.codigo_abastecimento} · {abastecimento.origem === "pwa_motorista" ? "Confirmado pelo motorista (app)" : "Lançamento manual"}
         </p>
         <p className="mt-1 text-sm text-slate-500">
           Abastecimento feito na garagem/tanque interno do cliente, sem posto revendedor externo

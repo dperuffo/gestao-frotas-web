@@ -92,26 +92,32 @@ export async function criarAbastecimentoInternoAcao(
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase.from("abastecimentos_internos").insert({
-    empresa_id: empresaId,
-    posto_interno_id: posto.id,
-    placa,
-    motorista_nome: motoristaNome,
-    hodometro,
-    data_abastecimento: dataAbastecimento ? new Date(dataAbastecimento).toISOString() : new Date().toISOString(),
-    combustivel,
-    quantidade,
-    valor_unitario: valorUnitario,
-    valor_total: valorTotal,
-    arla_quantidade: arlaQuantidade,
-    arla_valor_unitario: arlaValorUnitario,
-    arla_valor_total: arlaValorTotal,
-    origem: "manual_web",
-    criado_por: user?.email ?? null,
-  });
+  const { data: inserido, error } = await supabase
+    .from("abastecimentos_internos")
+    .insert({
+      empresa_id: empresaId,
+      posto_interno_id: posto.id,
+      placa,
+      motorista_nome: motoristaNome,
+      hodometro,
+      data_abastecimento: dataAbastecimento ? new Date(dataAbastecimento).toISOString() : new Date().toISOString(),
+      combustivel,
+      quantidade,
+      valor_unitario: valorUnitario,
+      valor_total: valorTotal,
+      arla_quantidade: arlaQuantidade,
+      arla_valor_unitario: arlaValorUnitario,
+      arla_valor_total: arlaValorTotal,
+      origem: "manual_web",
+      criado_por: user?.email ?? null,
+    })
+    .select("codigo_abastecimento")
+    .single();
 
   if (error) return { erro: `Não foi possível lançar o abastecimento: ${error.message}` };
 
   revalidatePath("/abastecimentos");
-  return { ok: `Abastecimento interno registrado. Valor total: ${valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}` };
+  return {
+    ok: `Abastecimento interno registrado (ID ${inserido?.codigo_abastecimento}). Valor total: ${valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`,
+  };
 }
