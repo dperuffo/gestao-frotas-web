@@ -14,7 +14,7 @@ import { IndicadoresFinanceirosFni } from "../_components/IndicadoresFinanceiros
 import { CobrancaEmAberto, type FaturaCobranca } from "./_components/CobrancaEmAberto";
 import { SecaoContasReceberFretes } from "./_components/SecaoContasReceberFretes";
 import { SecaoContasPagar } from "./_components/SecaoContasPagar";
-import { GraficoEvolucaoFinanceira, type PontoFinanceiro } from "./_components/GraficoEvolucaoFinanceira";
+import GraficoEvolucaoFinanceiraLazy, { type PontoFinanceiro } from "./_components/GraficoEvolucaoFinanceiraLazy";
 import { FormularioOrcamento } from "./_components/FormularioOrcamento";
 import { FormularioCustoFixo } from "./_components/FormularioCustoFixo";
 import { TabelaOrcamento, type LinhaOrcamento } from "./_components/TabelaOrcamento";
@@ -524,7 +524,7 @@ export default async function FinanceiroPage({
                 Ver detalhamento por centro de custo →
               </Link>
             </div>
-            <GraficoEvolucaoFinanceira dados={evolucao} />
+            <GraficoEvolucaoFinanceiraLazy dados={evolucao} />
           </div>
 
           <div className="card mb-6 flex items-center justify-between p-6">

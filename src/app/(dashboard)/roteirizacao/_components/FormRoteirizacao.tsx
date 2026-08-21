@@ -13,7 +13,7 @@ import { corPorBandeira } from "@/lib/coresBandeira";
 import { formatCNPJ, normalizarTexto } from "@/lib/utils";
 import { calcularAbastecimentoParaSelecao } from "@/lib/roteirizacaoAlgoritmo";
 import { ComparativoEstrategias } from "./ComparativoEstrategias";
-import { GraficosRota } from "./GraficosRota";
+import GraficosRotaLazy from "./GraficosRotaLazy";
 import { ComparativoPrecos } from "./ComparativoPrecos";
 import { BotaoExportarGpx } from "./BotaoExportarGpx";
 import { BotaoGerarCardPng } from "./BotaoGerarCardPng";
@@ -772,7 +772,7 @@ export function FormRoteirizacao({
           {abaAtiva === "custo" && (
             <div className="card space-y-6 p-4">
               <ComparativoEstrategias comparativo={resultado.comparativoEstrategias} selecionada={perfilChave} />
-              <GraficosRota
+              <GraficosRotaLazy
                 paradas={paradasAtuais.paradas}
                 distanciaKm={resultado.distanciaKm}
                 origemLabel={origem.label}

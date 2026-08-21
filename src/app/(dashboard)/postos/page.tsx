@@ -4,8 +4,8 @@ import { normalizarCNPJ } from "@/lib/utils";
 import { UFS, ANP_PRECO_REFERENCIA_FALLBACK, PRODUTO_PARA_CATEGORIA_ANP } from "@/lib/constants";
 import { AcaoPosto } from "./_components/AcaoPosto";
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
-import { GraficoCustoAnp, type ItemCustoAnp } from "../inteligencia-rede/_components/GraficoCustoAnp";
-import { GraficoAlertasPorEstado, type ItemAlertaEstado } from "../inteligencia-rede/_components/GraficoAlertasPorEstado";
+import GraficoCustoAnpLazy, { type ItemCustoAnp } from "../inteligencia-rede/_components/GraficoCustoAnpLazy";
+import GraficoAlertasPorEstadoLazy, { type ItemAlertaEstado } from "../inteligencia-rede/_components/GraficoAlertasPorEstadoLazy";
 import { TendenciaSazonalidade } from "../inteligencia-rede/_components/TendenciaSazonalidade";
 import MapaDensidadeLazy from "../inteligencia-rede/_components/MapaDensidadeLazy";
 import { ScoreFrota } from "./_components/ScoreFrota";
@@ -491,7 +491,7 @@ async function ViewInteligencia({ empresaId }: { empresaId: string }) {
                     ? "Referência oficial ANP da semana mais recente importada. Combustíveis sem categoria oficial mapeada usam uma estimativa fixa."
                     : "Nenhuma planilha oficial da ANP foi importada ainda — usando estimativa fixa como referência provisória."}
                 </p>
-                <GraficoCustoAnp dados={precoPorCombustivel} />
+                <GraficoCustoAnpLazy dados={precoPorCombustivel} />
               </div>
               <div className="card p-4">
                 <h2 className="mb-1 text-sm font-semibold text-slate-900">📅 Tendência de preço e sazonalidade por UF</h2>
@@ -514,7 +514,7 @@ async function ViewInteligencia({ empresaId }: { empresaId: string }) {
                 <div className="mb-6 grid gap-4 lg:grid-cols-2">
                   <div>
                     <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Postos em alerta por estado</h3>
-                    <GraficoAlertasPorEstado dados={alertasPorEstado} />
+                    <GraficoAlertasPorEstadoLazy dados={alertasPorEstado} />
                   </div>
                   <div className="overflow-x-auto">
                     <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Top 20 com maior desvio</h3>

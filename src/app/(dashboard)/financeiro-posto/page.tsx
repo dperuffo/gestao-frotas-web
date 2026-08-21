@@ -19,7 +19,7 @@ import { buscarCiclosAbertos, agruparCiclosPorContraparte } from "@/lib/ciclosAb
 import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
 import { VisaoCiclosPorContraparte } from "../_components/VisaoCiclosPorContraparte";
 import { LogoProvedor } from "@/components/LogoProvedor";
-import { GraficoFluxoCaixaPosto, type PontoFluxoCaixaPosto } from "./_components/GraficoFluxoCaixaPosto";
+import GraficoFluxoCaixaPostoLazy, { type PontoFluxoCaixaPosto } from "./_components/GraficoFluxoCaixaPostoLazy";
 import { FormularioDespesaPosto } from "./_components/FormularioDespesaPosto";
 import { BotaoAcaoFinanceiraPosto } from "./_components/BotaoAcaoFinanceiraPosto";
 import { SecaoDrePosto, type DrePostoDados } from "./_components/SecaoDrePosto";
@@ -426,7 +426,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
               <p className="mb-3 text-xs text-slate-400">
                 Previsão: {formatarDataBr(inicioPrevisto)} – {formatarDataBr(fimPrevisto)}
               </p>
-              <GraficoFluxoCaixaPosto dados={dadosGrafico} />
+              <GraficoFluxoCaixaPostoLazy dados={dadosGrafico} />
             </div>
             <div className="card p-4">
               <h2 className="mb-3 text-sm font-semibold text-slate-900">Contas a receber vencidas, por atraso</h2>

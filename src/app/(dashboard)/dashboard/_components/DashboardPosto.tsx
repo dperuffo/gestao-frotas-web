@@ -4,7 +4,7 @@ import { formatarDataBr } from "@/lib/utils";
 import { STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
 import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
 import { SecaoAjustesAbastecimentos } from "../../_components/SecaoAjustesAbastecimentos";
-import { GraficoEvolutivoPostos, type PontoEvolutivoPostos } from "./GraficoEvolutivoPostos";
+import GraficoEvolutivoPostosLazy, { type PontoEvolutivoPostos } from "./GraficoEvolutivoPostosLazy";
 // Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
 // toque visual já aplicado nas telas do lado cliente (ver
 // @/components/IndicadorColorido), agora chegando na visão posto.
@@ -263,7 +263,7 @@ export async function DashboardPosto({
             <h2 className="text-sm font-semibold text-slate-900">Venda diária por combustível (L)</h2>
           </div>
           <div className="p-2">
-            <GraficoEvolutivoPostos dados={dadosGraficoDiario} postos={combustiveisNoPeriodo} />
+            <GraficoEvolutivoPostosLazy dados={dadosGraficoDiario} postos={combustiveisNoPeriodo} />
           </div>
         </div>
       </div>

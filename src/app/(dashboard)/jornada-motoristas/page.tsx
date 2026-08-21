@@ -5,7 +5,7 @@ import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 import { Truck, Coffee, BedDouble, AlertTriangle, Timer } from "lucide-react";
-import { GraficoHorasDirigidas, type PontoJornada } from "./_components/GraficoHorasDirigidas";
+import GraficoHorasDirigidasLazy, { type PontoJornada } from "./_components/GraficoHorasDirigidasLazy";
 
 const POR_PAGINA_REGISTRO = 20;
 
@@ -350,7 +350,7 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
             <div className="border-b border-slate-100 px-4 py-3">
               <h3 className="text-sm font-semibold text-slate-900">Horas por dia (dirigindo / pausa / descanso)</h3>
             </div>
-            <GraficoHorasDirigidas dados={dadosGrafico} />
+            <GraficoHorasDirigidasLazy dados={dadosGrafico} />
           </div>
 
           <div className="card overflow-x-auto">

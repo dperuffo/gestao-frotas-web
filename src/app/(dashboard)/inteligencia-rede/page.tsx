@@ -4,12 +4,12 @@ import { ANP_PRECO_REFERENCIA_FALLBACK, ESTADO_PARA_UF, PRODUTO_PARA_CATEGORIA_A
 import { formatDate } from "@/lib/utils";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { logger } from "@/lib/logger";
-import { GraficoCustoAnp } from "./_components/GraficoCustoAnp";
-import { GraficoTopMunicipios } from "./_components/GraficoTopMunicipios";
-import { GraficoSavingMensal } from "./_components/GraficoSavingMensal";
-import { GraficoAlertasPorEstado } from "./_components/GraficoAlertasPorEstado";
-import { GraficoCoberturaMacrorregiao } from "./_components/GraficoCoberturaMacrorregiao";
-import { GraficoOportunidadesExpansao } from "./_components/GraficoOportunidadesExpansao";
+import GraficoCustoAnpLazy from "./_components/GraficoCustoAnpLazy";
+import GraficoTopMunicipiosLazy from "./_components/GraficoTopMunicipiosLazy";
+import GraficoSavingMensalLazy from "./_components/GraficoSavingMensalLazy";
+import GraficoAlertasPorEstadoLazy from "./_components/GraficoAlertasPorEstadoLazy";
+import GraficoCoberturaMacrorregiaoLazy from "./_components/GraficoCoberturaMacrorregiaoLazy";
+import GraficoOportunidadesExpansaoLazy from "./_components/GraficoOportunidadesExpansaoLazy";
 import { ModoComparativo } from "./_components/ModoComparativo";
 import MapaDensidadeLazy from "./_components/MapaDensidadeLazy";
 import { AbasPainel } from "./_components/AbasPainel";
@@ -629,7 +629,7 @@ export default async function InteligenciaRedePage({
                   {precoPorCombustivel.length > 0 ? (
                     <>
                       <div className="mb-5">
-                        <GraficoCustoAnp dados={precoPorCombustivel} />
+                        <GraficoCustoAnpLazy dados={precoPorCombustivel} />
                       </div>
                       <table className="w-full text-left text-sm">
                         <thead className="text-xs uppercase text-slate-500">
@@ -689,7 +689,7 @@ export default async function InteligenciaRedePage({
                     Evolução mensal do preço médio GF. Barras verdes = abaixo do ANP (saving); vermelhas
                     = acima do ANP (custo extra).
                   </p>
-                  <GraficoSavingMensal dados={evolucaoMensal} referencias={referenciasPorCombustivel} />
+                  <GraficoSavingMensalLazy dados={evolucaoMensal} referencias={referenciasPorCombustivel} />
                 </div>
               </>
             ),
@@ -723,7 +723,7 @@ export default async function InteligenciaRedePage({
                       <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">
                         Postos em Alerta por Estado
                       </h3>
-                      <GraficoAlertasPorEstado dados={alertasPorEstado} />
+                      <GraficoAlertasPorEstadoLazy dados={alertasPorEstado} />
                     </div>
                     <div className="overflow-x-auto">
                       <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Resumo por Estado</h3>
@@ -824,7 +824,7 @@ export default async function InteligenciaRedePage({
                     % dos municípios de cada macrorregião que já têm ao menos 1 posto GF (total de
                     municípios por região: referência IBGE).
                   </p>
-                  <GraficoCoberturaMacrorregiao dados={coberturaMacrorregiao} />
+                  <GraficoCoberturaMacrorregiaoLazy dados={coberturaMacrorregiao} />
                 </div>
 
                 <div className="card p-4">
@@ -833,7 +833,7 @@ export default async function InteligenciaRedePage({
                     Ranqueamento dos estados com maior potencial: menor penetração GF e maior preço
                     de mercado (diesel ANP) = maior oportunidade.
                   </p>
-                  <GraficoOportunidadesExpansao dados={oportunidades} />
+                  <GraficoOportunidadesExpansaoLazy dados={oportunidades} />
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full text-left text-sm">
                       <thead className="text-xs uppercase text-slate-500">
@@ -966,7 +966,7 @@ export default async function InteligenciaRedePage({
 
                 <div className="mb-6 card p-4">
                   <h2 className="mb-3 text-sm font-semibold text-slate-900">Top 10 Municípios com Mais Postos GF</h2>
-                  <GraficoTopMunicipios dados={topMunicipios} />
+                  <GraficoTopMunicipiosLazy dados={topMunicipios} />
                 </div>
 
                 <div className="card p-4">

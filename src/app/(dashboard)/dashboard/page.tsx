@@ -5,18 +5,18 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { calcularPrevisaoConsumo } from "@/lib/previsaoConsumo";
 import { resumoAjustesAbastecimentos } from "@/lib/ajustesAbastecimentos";
 import { SecaoAjustesAbastecimentos } from "../_components/SecaoAjustesAbastecimentos";
-import { GraficoConsumo, type PontoConsumo } from "./_components/GraficoConsumo";
-import { GraficoVariacaoPrecos } from "./_components/GraficoVariacaoPrecos";
-import { GraficoPrevisaoConsumo } from "./_components/GraficoPrevisaoConsumo";
-import { GraficoEvolucaoPrecoMedio } from "./_components/GraficoEvolucaoPrecoMedio";
-import { GraficoEvolutivoPostos, type PontoEvolutivoPostos } from "./_components/GraficoEvolutivoPostos";
-import { GraficoTopPostos } from "./_components/GraficoTopPostos";
+import GraficoConsumoLazy, { type PontoConsumo } from "./_components/GraficoConsumoLazy";
+import GraficoVariacaoPrecosLazy from "./_components/GraficoVariacaoPrecosLazy";
+import GraficoPrevisaoConsumoLazy from "./_components/GraficoPrevisaoConsumoLazy";
+import GraficoEvolucaoPrecoMedioLazy from "./_components/GraficoEvolucaoPrecoMedioLazy";
+import GraficoEvolutivoPostosLazy, { type PontoEvolutivoPostos } from "./_components/GraficoEvolutivoPostosLazy";
+import GraficoTopPostosLazy from "./_components/GraficoTopPostosLazy";
 import { RankingGasto, type ItemRankingGasto } from "./_components/RankingGasto";
-import { GraficoEficienciaVeiculos, type ItemEficienciaVeiculo } from "./_components/GraficoEficienciaVeiculos";
+import GraficoEficienciaVeiculosLazy, { type ItemEficienciaVeiculo } from "./_components/GraficoEficienciaVeiculosLazy";
 import { TabelaDesempenhoPorAtivo, type ItemDesempenhoAtivo } from "./_components/TabelaDesempenhoPorAtivo";
 import { PrimeirosPassos } from "./_components/PrimeirosPassos";
 import { DashboardPosto } from "./_components/DashboardPosto";
-import { GraficoMeiosPagamento } from "./_components/GraficoMeiosPagamento";
+import GraficoMeiosPagamentoLazy from "./_components/GraficoMeiosPagamentoLazy";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { PRODUTOS_POSTO } from "@/lib/constants";
@@ -679,7 +679,7 @@ export default async function DashboardPage({
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">
             Meios de pagamento no mês
           </p>
-          <GraficoMeiosPagamento dados={listaProvedoresMes.map(([provedor, valor]) => ({ provedor, valor }))} />
+          <GraficoMeiosPagamentoLazy dados={listaProvedoresMes.map(([provedor, valor]) => ({ provedor, valor }))} />
         </div>
       )}
 
@@ -698,7 +698,7 @@ export default async function DashboardPage({
           <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
             Consumo e gasto — últimos 6 meses <AjudaIcon chave="dashboard.consumo_grafico" />
           </h2>
-          <GraficoConsumo dados={dadosGrafico} />
+          <GraficoConsumoLazy dados={dadosGrafico} />
         </div>
 
         <div className="card p-4">
@@ -927,7 +927,7 @@ export default async function DashboardPage({
               <p className="mb-3 text-xs text-slate-500">
                 Faixa de preço paga na rede do cliente, comparada à referência ANP do estado mais frequente.
               </p>
-              <GraficoVariacaoPrecos dados={variacaoPrecos ?? []} />
+              <GraficoVariacaoPrecosLazy dados={variacaoPrecos ?? []} />
             </div>
 
             <div className="card p-4">
@@ -936,7 +936,7 @@ export default async function DashboardPage({
                 Litros por dia; dias restantes do mês projetados com base no padrão de consumo por dia da semana
                 (últimos 90 dias).
               </p>
-              <GraficoPrevisaoConsumo dados={dadosPrevisaoConsumo} />
+              <GraficoPrevisaoConsumoLazy dados={dadosPrevisaoConsumo} />
               {isMesAtual && diaAtual < diasNoMes && (
                 <p className="mt-2 text-xs text-slate-500">
                   Realizado até o dia {diaAtual}: {totalLitrosMes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L
@@ -949,17 +949,17 @@ export default async function DashboardPage({
 
             <div className="card p-4">
               <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">3. Evolução do preço médio por abastecimento (R$/L) <AjudaIcon chave="dashboard.evolucao_preco_medio" /></h3>
-              <GraficoEvolucaoPrecoMedio dados={dadosPrecoMedio} />
+              <GraficoEvolucaoPrecoMedioLazy dados={dadosPrecoMedio} />
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <div className="card p-4">
                 <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">4. Evolutivo de volume — Top 5 postos <AjudaIcon chave="dashboard.volume_postos" /></h3>
-                <GraficoEvolutivoPostos dados={dadosEvolutivoPostos} postos={postosNomes} />
+                <GraficoEvolutivoPostosLazy dados={dadosEvolutivoPostos} postos={postosNomes} />
               </div>
               <div className="card p-4">
                 <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">5. Top 5 postos — maior volume no período <AjudaIcon chave="dashboard.ranking_top5" /></h3>
-                <GraficoTopPostos dados={dadosTopPostos} />
+                <GraficoTopPostosLazy dados={dadosTopPostos} />
               </div>
             </div>
 
@@ -981,7 +981,7 @@ export default async function DashboardPage({
                 meio de pagamento integrado (GF). Não inclui comparação com rota planejada — sem dado real de GPS/trajetória,
                 essa parte não é confiável para exibir aqui.
               </p>
-              <GraficoEficienciaVeiculos dados={itensEficienciaVeiculos} />
+              <GraficoEficienciaVeiculosLazy dados={itensEficienciaVeiculos} />
             </div>
 
             <div className="card p-4">
