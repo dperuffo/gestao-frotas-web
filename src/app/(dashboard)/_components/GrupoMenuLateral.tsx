@@ -1,22 +1,6 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { BotaoFavoritoMenu } from "./BotaoFavoritoMenu";
-
-// Fase Design-System-Corporate-Blue (26/08/2026) — design.md: "Navigation:
-// ... Active item: accent color indicator. Font weight 500 when active."
-// Achado real ao investigar: o menu nunca teve destaque de rota ativa (todo
-// item tinha o mesmo estilo, sempre) — corrigido aqui em vez de só trocar
-// cor, já que "menu" foi citado explicitamente no pedido do Daniel. Mesmo
-// critério de "/x cobre /x/qualquercoisa" já usado em resolverFuncionalidadeDaRota
-// (src/lib/permissoes.ts), pra Roteirização (/roteirizacao) ficar destacado
-// mesmo dentro de /roteirizacao/planejar.
-function ehRotaAtiva(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
+import { ItemMenuAtivo } from "./ItemMenuAtivo";
 
 // Fase reorganizacao-menu (04/08/2026, pedido do Daniel: "Fazer uma sugestao
 // de reorganizacao do menu" / "Organizacao de temas iguais" — a seção
@@ -37,6 +21,16 @@ function ehRotaAtiva(pathname: string, href: string): boolean {
 // FNI" costumava usar a logo da marca (`logo: true`, campo removido aqui)
 // em vez de um ícone lucide-react como todo o resto do menu; padronizado
 // pra `icon: Bot` como qualquer outro item.
+//
+// Fase Design-System-Corporate-Blue (26/08/2026) — design.md: "Navigation:
+// ... Active item: accent color indicator. Font weight 500 when active."
+// Este componente continua Server Component de propósito (não "use
+// client"): ele é quem renderiza `<item.icon />`, e isso só é seguro
+// server-side. O destaque de rota ativa (que exige usePathname, só
+// disponível em Client Component) fica isolado em ItemMenuAtivo.tsx — um
+// componente-folha que recebe apenas primitivos + o ícone/label já
+// renderizados (children), nunca a função do ícone em si. Ver o comentário
+// em ItemMenuAtivo.tsx pra o bug de produção que essa separação corrige.
 export type ItemMenuLateral = { href: string; label: string; icon?: LucideIcon };
 
 export function GrupoMenuLateral({
@@ -71,8 +65,6 @@ export function GrupoMenuLateral({
   // (sem passar por este componente) e ficou fora desta primeira rodada.
   favoritos?: Set<string>;
 }) {
-  const pathname = usePathname();
-
   if (itens.length === 0) return null;
 
   return (
@@ -86,13 +78,13 @@ export function GrupoMenuLateral({
       <ul className="space-y-1">
         {itens.map((item) => {
           const badge = badges?.[item.href] ?? 0;
-          const ativo = ehRotaAtiva(pathname, item.href);
           return (
             <li key={item.href} className="group flex items-center gap-1">
-              <Link
+              <ItemMenuAtivo
                 href={item.href}
-                data-tour={tourPorHref?.[item.href]}
-                className={`glass-nav-texto flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-white/10 ${ativo ? "glass-nav-ativo" : ""}`}
+                dataTour={tourPorHref?.[item.href]}
+                className="glass-nav-texto flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-white/10"
+                classNameAtivo="glass-nav-ativo"
               >
                 <span className="flex items-center gap-2">
                   {item.icon && <item.icon className="glass-nav-icone h-4 w-4 shrink-0" />}
@@ -103,7 +95,7 @@ export function GrupoMenuLateral({
                     {badge}
                   </span>
                 )}
-              </Link>
+              </ItemMenuAtivo>
               {favoritos && <BotaoFavoritoMenu href={item.href} favoritadoInicial={favoritos.has(item.href)} />}
             </li>
           );
