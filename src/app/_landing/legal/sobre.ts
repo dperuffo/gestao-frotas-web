@@ -3,19 +3,19 @@
 export const TITULO = 'Sobre &mdash; FNI Gest&atilde;o de Frotas';
 export const ESTILO = `
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Outfit',sans-serif;background:#04112e;color:#fff;min-height:100vh}
+body{font-family:'Inter',sans-serif;background:#0f172a;color:#fff;min-height:100vh}
 nav{display:flex;justify-content:space-between;align-items:center;padding:20px 6%;border-bottom:1px solid rgba(255,255,255,0.08)}
-.logo{font-size:1.2rem;font-weight:700;color:#fff}.logo span{color:#00b4d8}
+.logo{font-size:1.2rem;font-weight:700;color:#fff}.logo span{color:#3b82f6}
 nav a{color:#aac;text-decoration:none;font-size:.9rem;margin-left:24px}
-nav a:hover{color:#00b4d8}
+nav a:hover{color:#3b82f6}
 .hero{padding:80px 6% 60px;max-width:900px;margin:0 auto}
-h1{font-size:2.2rem;font-weight:700;margin-bottom:16px;background:linear-gradient(135deg,#fff,#00b4d8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-h2{font-size:1.3rem;font-weight:600;color:#00b4d8;margin:40px 0 12px}
+h1{font-size:2.2rem;font-weight:700;margin-bottom:16px;background:linear-gradient(135deg,#fff,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:1.3rem;font-weight:600;color:#3b82f6;margin:40px 0 12px}
 p{color:#aac;line-height:1.8;margin-bottom:12px;font-size:.95rem}
 .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:24px;margin-bottom:20px}
-.badge{display:inline-block;background:rgba(0,180,216,0.15);border:1px solid rgba(0,180,216,0.3);border-radius:20px;padding:4px 14px;font-size:.8rem;color:#00b4d8;margin:4px}
+.badge{display:inline-block;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:4px 14px;font-size:.8rem;color:#3b82f6;margin:4px}
 footer{padding:30px 6%;border-top:1px solid rgba(255,255,255,0.05);text-align:center;color:#556;font-size:.8rem;margin-top:60px}
-footer a{color:#00b4d8;text-decoration:none}
+footer a{color:#3b82f6;text-decoration:none}
 `;
 export const CORPO = `
 <nav>
@@ -54,8 +54,8 @@ export const CORPO = `
   </div>
   <h2>Contato</h2>
   <div class="card">
-    <p>&#128231; <strong>E-mail:</strong> <a href="mailto:contato@fxgestaodefrotasonline.com" style="color:#00b4d8">contato@fxgestaodefrotasonline.com</a></p>
-    <p>&#127760; <strong>Plataforma:</strong> <a href="https://fxgestaodefrotasonline.com" style="color:#00b4d8">fxgestaodefrotasonline.com</a></p>
+    <p>&#128231; <strong>E-mail:</strong> <a href="mailto:contato@fxgestaodefrotasonline.com" style="color:#3b82f6">contato@fxgestaodefrotasonline.com</a></p>
+    <p>&#127760; <strong>Plataforma:</strong> <a href="https://fxgestaodefrotasonline.com" style="color:#3b82f6">fxgestaodefrotasonline.com</a></p>
     <p>&#127463;&#127479; <strong>Pa&iacute;s:</strong> Brasil</p>
     <p style="margin-top:16px;font-size:.85rem;color:#556">O acesso &eacute; restrito a empresas com contrato ativo. Para solicitar acesso, entre em contato pelo e-mail acima.</p>
   </div>

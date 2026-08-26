@@ -36,7 +36,7 @@ export function RankingGasto({ itens, colunaExtra }: { itens: ItemRankingGasto[]
           <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v: number) => `R$ ${Math.round(v)}`} />
           <YAxis type="category" dataKey="nome" width={160} tick={{ fontSize: 11 }} />
           <Tooltip formatter={(v: number) => formatarMoeda(v)} />
-          <Bar dataKey="gasto" name="Gasto" fill="#0F2A4A" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="gasto" name="Gasto" fill="#1E40AF" radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
 

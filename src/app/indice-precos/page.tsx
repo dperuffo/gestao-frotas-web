@@ -50,32 +50,32 @@ export default async function IndicePrecosPage() {
     .pop();
 
   return (
-    <div className="min-h-screen bg-[#04112e] font-[Outfit,sans-serif] text-white">
+    <div className="min-h-screen bg-frota-950 text-white">
       {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router: link direto no Server Component é o padrão suportado, o lint ainda assume Pages Router */}
       <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet"
       />
 
       <nav className="flex items-center justify-between border-b border-white/10 px-[6%] py-5">
         <div className="text-lg font-bold">
-          FNI <span className="text-cyan-400">Gestão de Frotas</span>
+          FNI <span className="text-frota-500">Gestão de Frotas</span>
         </div>
         <div className="flex gap-6 text-sm text-slate-300">
-          <Link href="/" className="hover:text-cyan-400">
+          <Link href="/" className="hover:text-frota-500">
             Início
           </Link>
-          <Link href="/sobre" className="hover:text-cyan-400">
+          <Link href="/sobre" className="hover:text-frota-500">
             Sobre
           </Link>
-          <a href="mailto:contato@fxgestaodefrotasonline.com" className="hover:text-cyan-400">
+          <a href="mailto:contato@fxgestaodefrotasonline.com" className="hover:text-frota-500">
             Contato
           </a>
         </div>
       </nav>
 
       <div className="mx-auto max-w-5xl px-[6%] py-16">
-        <h1 className="mb-4 bg-gradient-to-r from-white to-cyan-400 bg-clip-text text-3xl font-bold text-transparent">
+        <h1 className="mb-4 bg-gradient-to-r from-white to-frota-500 bg-clip-text text-3xl font-bold text-transparent">
           Índice GF de Preço de Combustível
         </h1>
         <p className="mb-2 max-w-2xl text-slate-300">
@@ -100,7 +100,7 @@ export default async function IndicePrecosPage() {
                   : null;
               return (
                 <div key={n.combustivel} className="rounded-xl border border-white/10 bg-white/5 p-5">
-                  <p className="text-xs uppercase tracking-wide text-cyan-300">
+                  <p className="text-xs uppercase tracking-wide text-frota-500">
                     {COMBUSTIVEL_LABEL[n.combustivel] ?? n.combustivel}
                   </p>
                   <p className="mt-2 text-2xl font-bold">{formatarPreco(n.preco_medio_rede)}</p>
@@ -122,7 +122,7 @@ export default async function IndicePrecosPage() {
           </div>
         )}
 
-        <h2 className="mb-4 text-lg font-semibold text-cyan-300">Detalhamento por estado</h2>
+        <h2 className="mb-4 text-lg font-semibold text-frota-500">Detalhamento por estado</h2>
         {linhasUf.length > 0 ? (
           <TabelaIndicePrecos linhas={linhasUf} />
         ) : (
@@ -134,15 +134,15 @@ export default async function IndicePrecosPage() {
 
       <footer className="mt-16 border-t border-white/5 px-[6%] py-8 text-center text-sm text-slate-500">
         <p>
-          <Link href="/termos" className="text-cyan-400 hover:underline">
+          <Link href="/termos" className="text-frota-500 hover:underline">
             Termos de Uso
           </Link>{" "}
           ·{" "}
-          <Link href="/privacidade" className="text-cyan-400 hover:underline">
+          <Link href="/privacidade" className="text-frota-500 hover:underline">
             Privacidade
           </Link>{" "}
           ·{" "}
-          <Link href="/sobre" className="text-cyan-400 hover:underline">
+          <Link href="/sobre" className="text-frota-500 hover:underline">
             Sobre nós
           </Link>
         </p>

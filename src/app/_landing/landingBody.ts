@@ -65,7 +65,17 @@
 //   inserir_permissoes_rodopar_grupo1_grupo2).
 export const LANDING_BODY_HTML = `
 <style>
-:root{--navy:#04112e;--blue:#0d2d6b;--electric:#1a56f0;--cyan:#00b4d8;--cyan2:#00c2ff;--gold:#f5a623;--white:#ffffff;--gray:#8a9bb5;}
+/* Fase Design-System-Corporate-Blue (26/08/2026) — mesma ideia do
+   tailwind.config.ts: MESMOS nomes de variável de antes, valores trocados
+   pra bater com design.md ("SaaS Enterprise Analytics"). --navy agora é o
+   Dark Navy oficial (#0F172A, idêntico ao frota-950 do dashboard, não mais
+   um azul-marinho inventado à parte); --cyan/--cyan2 (antigo ciano-elétrico
+   que não fazia parte do design.md) viram os azuis oficiais (Blue/Light
+   Blue) — troca de matiz (ciano→azul), não só de tom, porque "sem cores
+   saturadas fora da paleta" é um dos Don'ts explícitos do documento. --gold
+   sai da paleta (não existe em design.md) e vira o mesmo azul secundário,
+   evitando uma terceira cor de destaque que o documento não previu. */
+:root{--navy:#0f172a;--blue:#1e40af;--electric:#3b82f6;--cyan:#3b82f6;--cyan2:#60a5fa;--gold:#1e40af;--white:#ffffff;--gray:#94a3b8;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 body{font-family:'Inter',sans-serif;background:var(--navy);color:var(--white);overflow-x:hidden;}
@@ -76,53 +86,53 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .nav-cta{background:var(--cyan);color:var(--navy);text-decoration:none;padding:10px 24px;border-radius:8px;font-size:0.88rem;font-weight:600;transition:all 0.2s;}
 .nav-cta:hover{background:var(--cyan2);transform:translateY(-1px);}
 .hero{min-height:100vh;display:flex;align-items:center;padding:130px 6% 90px;position:relative;overflow:hidden;}
-.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 65% 45%,rgba(0,180,216,0.12) 0%,transparent 65%),radial-gradient(ellipse 50% 40% at 20% 80%,rgba(26,86,240,0.10) 0%,transparent 60%);}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 65% 45%,rgba(59,130,246,0.12) 0%,transparent 65%),radial-gradient(ellipse 50% 40% at 20% 80%,rgba(30,64,175,0.10) 0%,transparent 60%);}
 .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 90% 80% at 50% 50%,black,transparent);}
 .hero-content{position:relative;z-index:2;max-width:680px;}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);padding:6px 16px;border-radius:100px;font-size:0.78rem;color:var(--cyan);font-weight:500;margin-bottom:32px;animation:fadeUp 0.6s ease both;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);padding:6px 16px;border-radius:100px;font-size:0.78rem;color:var(--cyan);font-weight:500;margin-bottom:32px;animation:fadeUp 0.6s ease both;}
 .dot{width:6px;height:6px;background:var(--cyan);border-radius:50%;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
-h1{font-family:'Outfit',sans-serif;font-size:clamp(2.4rem,4.5vw,3.6rem);font-weight:800;line-height:1.15;margin-bottom:24px;letter-spacing:-0.02em;animation:fadeUp 0.7s 0.1s ease both;}
-h1 em{font-style:normal;background:linear-gradient(135deg,var(--cyan),#1a56f0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+h1{font-family:'Inter',sans-serif;font-size:clamp(2.4rem,4.5vw,3.6rem);font-weight:800;line-height:1.15;margin-bottom:24px;letter-spacing:-0.02em;animation:fadeUp 0.7s 0.1s ease both;}
+h1 em{font-style:normal;background:linear-gradient(135deg,var(--cyan),#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .sub{font-size:1.08rem;color:var(--gray);line-height:1.75;margin-bottom:44px;font-weight:300;animation:fadeUp 0.7s 0.2s ease both;}
 .actions{display:flex;gap:14px;flex-wrap:wrap;animation:fadeUp 0.7s 0.3s ease both;}
-.btn-p{display:inline-flex;align-items:center;gap:8px;background:var(--cyan);color:var(--navy);text-decoration:none;padding:15px 32px;border-radius:10px;font-size:0.95rem;font-weight:600;transition:all 0.2s;box-shadow:0 8px 32px rgba(0,180,216,0.3);}
+.btn-p{display:inline-flex;align-items:center;gap:8px;background:var(--cyan);color:var(--navy);text-decoration:none;padding:15px 32px;border-radius:10px;font-size:0.95rem;font-weight:600;transition:all 0.2s;box-shadow:0 8px 32px rgba(59,130,246,0.3);}
 .btn-p:hover{background:var(--cyan2);transform:translateY(-2px);}
 .btn-s{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);color:var(--white);text-decoration:none;padding:15px 32px;border-radius:10px;font-size:0.95rem;font-weight:400;border:1px solid rgba(255,255,255,0.12);transition:all 0.2s;}
 .btn-s:hover{background:rgba(255,255,255,0.09);}
 .stats{display:flex;gap:48px;margin-top:56px;animation:fadeUp 0.7s 0.4s ease both;}
-.sn{font-family:'Outfit',sans-serif;font-size:2rem;font-weight:800;}
+.sn{font-family:'Inter',sans-serif;font-size:2rem;font-weight:800;}
 .sn span{color:var(--cyan);}
 .sl{font-size:0.78rem;color:var(--gray);margin-top:3px;}
 .strip{padding:44px 6%;border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);text-align:center;}
 .strip-lbl{font-size:0.75rem;color:var(--gray);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:24px;}
 .logos{display:flex;justify-content:center;align-items:center;gap:52px;flex-wrap:wrap;}
-.logo-i{font-family:'Outfit',sans-serif;font-weight:700;font-size:0.9rem;color:rgba(255,255,255,0.2);letter-spacing:0.06em;text-transform:uppercase;}
+.logo-i{font-family:'Inter',sans-serif;font-weight:700;font-size:0.9rem;color:rgba(255,255,255,0.2);letter-spacing:0.06em;text-transform:uppercase;}
 .section{padding:96px 6%;}
 .sec-lbl{font-size:0.75rem;color:var(--cyan);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:14px;font-weight:600;}
-.sec-title{font-family:'Outfit',sans-serif;font-size:clamp(1.9rem,3vw,2.6rem);font-weight:800;line-height:1.2;letter-spacing:-0.02em;margin-bottom:16px;}
+.sec-title{font-family:'Inter',sans-serif;font-size:clamp(1.9rem,3vw,2.6rem);font-weight:800;line-height:1.2;letter-spacing:-0.02em;margin-bottom:16px;}
 .sec-sub{font-size:1rem;color:var(--gray);line-height:1.75;max-width:520px;font-weight:300;}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:52px;}
 .card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:30px;transition:all 0.3s;position:relative;overflow:hidden;}
 .card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--electric));opacity:0;transition:opacity 0.3s;}
-.card:hover{border-color:rgba(0,180,216,0.25);transform:translateY(-4px);}
+.card:hover{border-color:rgba(59,130,246,0.25);transform:translateY(-4px);}
 .card:hover::after{opacity:1;}
-.icon{width:46px;height:46px;border-radius:12px;background:rgba(0,180,216,0.1);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:18px;}
-.ct{font-family:'Outfit',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:10px;}
+.icon{width:46px;height:46px;border-radius:12px;background:rgba(59,130,246,0.1);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:18px;}
+.ct{font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:10px;}
 .cd{font-size:0.875rem;color:var(--gray);line-height:1.7;font-weight:300;}
 .steps{display:flex;gap:0;margin-top:52px;position:relative;}
 .steps::before{content:'';position:absolute;top:27px;left:5%;right:5%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.3;}
 .step{flex:1;text-align:center;padding:0 16px;}
-.step-n{width:54px;height:54px;border-radius:50%;background:var(--navy);border:1.5px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;color:var(--cyan);margin:0 auto 18px;position:relative;z-index:2;}
-.step-t{font-family:'Outfit',sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:8px;}
+.step-n{width:54px;height:54px;border-radius:50%;background:var(--navy);border:1.5px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:800;font-size:1.1rem;color:var(--cyan);margin:0 auto 18px;position:relative;z-index:2;}
+.step-t{font-family:'Inter',sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:8px;}
 .step-d{font-size:0.83rem;color:var(--gray);line-height:1.65;font-weight:300;}
 .pricing{padding:96px 6%;background:rgba(255,255,255,0.012);}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;margin-top:52px;max-width:1080px;margin-left:auto;margin-right:auto;}
 .pc{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:32px 26px;display:flex;flex-direction:column;transition:all 0.3s;}
-.pc.feat{background:linear-gradient(145deg,rgba(0,180,216,0.12),rgba(26,86,240,0.08));border-color:rgba(0,180,216,0.4);transform:scale(1.03);box-shadow:0 20px 60px rgba(0,180,216,0.18);}
+.pc.feat{background:linear-gradient(145deg,rgba(59,130,246,0.12),rgba(30,64,175,0.08));border-color:rgba(59,130,246,0.4);transform:scale(1.03);box-shadow:0 20px 60px rgba(59,130,246,0.18);}
 .pbadge{display:inline-block;background:var(--cyan);color:var(--navy);font-size:0.68rem;font-weight:700;padding:4px 12px;border-radius:100px;margin-bottom:18px;align-self:flex-start;text-transform:uppercase;letter-spacing:0.08em;}
-.pn{font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:8px;}
-.pp{font-family:'Outfit',sans-serif;font-size:2.4rem;font-weight:800;margin-bottom:4px;letter-spacing:-0.02em;}
+.pn{font-family:'Inter',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:8px;}
+.pp{font-family:'Inter',sans-serif;font-size:2.4rem;font-weight:800;margin-bottom:4px;letter-spacing:-0.02em;}
 .pp sup{font-size:1rem;vertical-align:top;margin-top:8px;}
 .pp span{font-size:0.95rem;font-weight:400;color:var(--gray);}
 .pd{font-size:0.82rem;color:var(--gray);margin-bottom:24px;font-weight:300;}
@@ -131,14 +141,14 @@ h1 em{font-style:normal;background:linear-gradient(135deg,var(--cyan),#1a56f0);-
 .pf li::before{content:'✓';color:var(--cyan);font-weight:700;flex-shrink:0;font-size:0.8rem;}
 .pf li.off{color:rgba(255,255,255,0.25);}
 .pf li.off::before{content:'–';color:rgba(255,255,255,0.2);}
-.pbtn{display:block;text-align:center;text-decoration:none;padding:13px;border-radius:9px;font-size:0.9rem;font-weight:600;transition:all 0.2s;font-family:'Outfit',sans-serif;}
-.pbtn.p{background:var(--cyan);color:var(--navy);box-shadow:0 6px 20px rgba(0,180,216,0.3);}
+.pbtn{display:block;text-align:center;text-decoration:none;padding:13px;border-radius:9px;font-size:0.9rem;font-weight:600;transition:all 0.2s;font-family:'Inter',sans-serif;}
+.pbtn.p{background:var(--cyan);color:var(--navy);box-shadow:0 6px 20px rgba(59,130,246,0.3);}
 .pbtn.p:hover{background:var(--cyan2);transform:translateY(-2px);}
 .pbtn.o{border:1px solid rgba(255,255,255,0.18);color:var(--white);}
 .pbtn.o:hover{background:rgba(255,255,255,0.07);}
 .cta{padding:100px 6%;text-align:center;position:relative;overflow:hidden;}
-.cta::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:500px;background:radial-gradient(ellipse,rgba(0,180,216,0.12),transparent 70%);pointer-events:none;}
-.cta-t{font-family:'Outfit',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:18px;letter-spacing:-0.02em;position:relative;}
+.cta::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:500px;background:radial-gradient(ellipse,rgba(59,130,246,0.12),transparent 70%);pointer-events:none;}
+.cta-t{font-family:'Inter',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:18px;letter-spacing:-0.02em;position:relative;}
 .cta-s{font-size:1.05rem;color:var(--gray);margin-bottom:40px;position:relative;font-weight:300;}
 .cta-a{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;position:relative;}
 footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
@@ -148,7 +158,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 .fcopy{font-size:0.78rem;color:rgba(255,255,255,0.25);}
 .acgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;margin-top:52px;}
 .accard{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:18px;padding:28px 24px;text-align:center;transition:all 0.3s;}
-.accard:hover{border-color:rgba(0,180,216,0.25);transform:translateY(-4px);}
+.accard:hover{border-color:rgba(59,130,246,0.25);transform:translateY(-4px);}
 .accard svg{width:110px;margin:0 auto 18px;display:block;}
 .acqr{width:88px;height:88px;margin:14px auto 0;border-radius:8px;background:#fff;padding:6px;}
 .acbtn{display:inline-block;margin-top:16px;text-decoration:none;color:var(--navy);background:var(--cyan);font-weight:600;font-size:0.85rem;padding:10px 20px;border-radius:8px;transition:all 0.2s;}
@@ -157,7 +167,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 .acbtn.o:hover{background:rgba(255,255,255,0.07);}
 .acsteps{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-top:44px;max-width:820px;margin-left:auto;margin-right:auto;}
 .acstep{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:22px 24px;}
-.acstep h4{font-family:'Outfit',sans-serif;font-size:0.98rem;margin-bottom:12px;}
+.acstep h4{font-family:'Inter',sans-serif;font-size:0.98rem;margin-bottom:12px;}
 .acstep p{font-size:0.85rem;color:var(--gray);line-height:1.9;font-weight:300;}
 .acstep strong{color:var(--white);font-weight:600;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
@@ -212,15 +222,15 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 <style>
 /* ── Demo Section ── */
 .demo-section { padding: 80px 0; }
-.section-label { color: #00e5ff; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+.section-label { color: #60a5fa; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
 .section-title { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; color: #fff; margin-bottom: 12px; }
 .section-sub { color: #a0aec0; font-size: 15px; margin-bottom: 40px; }
 
 /* Tabs */
 .demo-tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px; }
 .demo-tab { padding: 10px 20px; border-radius: 24px; border: 1px solid rgba(0,229,255,0.25); background: rgba(0,229,255,0.05); color: #a0aec0; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
-.demo-tab:hover { border-color: #00e5ff; color: #00e5ff; }
-.demo-tab.active { background: rgba(0,229,255,0.15); border-color: #00e5ff; color: #00e5ff; }
+.demo-tab:hover { border-color: #60a5fa; color: #60a5fa; }
+.demo-tab.active { background: rgba(0,229,255,0.15); border-color: #60a5fa; color: #60a5fa; }
 
 /* Frame */
 .demo-frame { position: relative; }
@@ -241,16 +251,16 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 /* Dashboard */
 .mock-content.dash { display: flex; }
 .mock-sidebar { width: 160px; background: #111827; padding: 16px 10px; flex-shrink: 0; }
-.mock-logo-sm { color: #00e5ff; font-weight: 900; font-size: 16px; margin-bottom: 20px; padding: 0 4px; }
+.mock-logo-sm { color: #60a5fa; font-weight: 900; font-size: 16px; margin-bottom: 20px; padding: 0 4px; }
 .mock-nav-item { padding: 7px 8px; border-radius: 6px; font-size: 11px; color: #4a5568; margin-bottom: 4px; cursor: default; }
-.mock-nav-item.active-nav { background: rgba(0,229,255,0.1); color: #00e5ff; }
+.mock-nav-item.active-nav { background: rgba(0,229,255,0.1); color: #60a5fa; }
 .mock-main { flex: 1; padding: 16px; }
 .mock-header-bar { margin-bottom: 16px; }
 .mock-title-text { font-size: 13px; font-weight: 700; color: #e2e8f0; }
 .mock-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 16px; }
 .mock-kpi { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 10px 8px; text-align: center; }
 .mock-kpi-val { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
-.mock-kpi-val.cyan { color: #00e5ff; }
+.mock-kpi-val.cyan { color: #60a5fa; }
 .mock-kpi-val.green { color: #48bb78; }
 .mock-kpi-val.yellow { color: #ffd600; }
 .mock-kpi-val.blue { color: #63b3ed; }
@@ -269,7 +279,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 .map-svg { width: 100%; height: 100%; }
 .map-labels { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 6px; }
 .map-badge { background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 10px; font-size: 11px; color: #e2e8f0; backdrop-filter: blur(4px); }
-.map-info { background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); border-radius: 20px; padding: 4px 10px; font-size: 11px; color: #00e5ff; }
+.map-info { background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); border-radius: 20px; padding: 4px 10px; font-size: 11px; color: #60a5fa; }
 .mock-posto-list { padding: 12px 16px; background: #111827; }
 .mock-posto-title { font-size: 11px; color: #718096; margin-bottom: 8px; font-weight: 600; }
 .mock-posto { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; }
@@ -279,7 +289,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 .posto-rank.bronze { color: #ed8936; }
 .posto-nome { flex: 1; color: #e2e8f0; }
 .posto-preco { font-weight: 700; color: #718096; }
-.posto-preco.cyan { color: #00e5ff; }
+.posto-preco.cyan { color: #60a5fa; }
 
 /* IA */
 .mock-content.ia { padding: 16px; }
@@ -293,25 +303,25 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 .ia-msg.bot { background: rgba(255,255,255,0.05); color: #e2e8f0; align-self: flex-start; border-radius: 10px 10px 10px 2px; }
 .ia-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 700; background: #1a4731; color: #48bb78; margin-right: 6px; }
 .ia-badge.alert { background: #4a1a1a; color: #fc8181; }
-.ia-cursor { animation: blink 1s infinite; color: #00e5ff; }
+.ia-cursor { animation: blink 1s infinite; color: #60a5fa; }
 @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
 .ia-chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .ia-chip { padding: 5px 12px; border-radius: 16px; border: 1px solid rgba(127,119,221,0.3); font-size: 11px; color: #a0aec0; cursor: pointer; }
 
 /* Rotograma */
 .mock-content.rg { padding: 16px; }
-.rg-header { font-size: 14px; font-weight: 700; color: #00e5ff; margin-bottom: 14px; }
+.rg-header { font-size: 14px; font-weight: 700; color: #60a5fa; margin-bottom: 14px; }
 .rg-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .rg-section-title { font-size: 11px; font-weight: 700; color: #718096; margin-bottom: 8px; }
 .rg-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; font-size: 11px; }
 .rg-item.danger { background: rgba(231,76,60,0.1); border-left: 3px solid #E74C3C; }
 .rg-item.crime { background: rgba(192,57,43,0.1); border-left: 3px solid #C0392B; }
 .rg-item.warn { background: rgba(230,126,34,0.1); border-left: 3px solid #E67E22; }
-.rg-item.stop { background: rgba(0,229,255,0.05); border-left: 3px solid #00e5ff44; }
+.rg-item.stop { background: rgba(0,229,255,0.05); border-left: 3px solid #60a5fa44; }
 .rg-icon { font-size: 14px; flex-shrink: 0; }
 .rg-loc { color: #e2e8f0; font-weight: 600; margin-bottom: 2px; }
 .rg-detail { color: #718096; }
-.rg-emergency { margin-top: 12px; padding: 8px 10px; background: rgba(0,229,255,0.08); border-radius: 8px; font-size: 11px; color: #00e5ff; font-weight: 600; }
+.rg-emergency { margin-top: 12px; padding: 8px 10px; background: rgba(0,229,255,0.08); border-radius: 8px; font-size: 11px; color: #60a5fa; font-weight: 600; }
 
 /* Caption */
 .demo-caption { text-align: center; color: #718096; font-size: 14px; padding: 0 20px; }
@@ -349,8 +359,8 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 
 <style>
 .dtab2{padding:9px 18px;border-radius:24px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#718096;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
-.dtab2:hover{border-color:#00e5ff;color:#00e5ff}
-.dtab2.dtab-on{background:rgba(0,229,255,0.12);border-color:#00e5ff;color:#00e5ff}
+.dtab2:hover{border-color:#60a5fa;color:#60a5fa}
+.dtab2.dtab-on{background:rgba(0,229,255,0.12);border-color:#60a5fa;color:#60a5fa}
 .dp2{animation:fadeUp2 .3s ease}
 @keyframes fadeUp2{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes blink2{0%,49%{opacity:1}50%,100%{opacity:0}}
@@ -359,7 +369,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 <section id="demo" style="padding:80px 0;background:rgba(0,0,0,0.2)">
 <div class="container">
 <div style="text-align:center;margin-bottom:40px">
-  <div style="color:#00e5ff;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px" data-i18n="demo_lbl">Plataforma em ação</div>
+  <div style="color:#60a5fa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px" data-i18n="demo_lbl">Plataforma em ação</div>
   <h2 style="font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800;color:#fff;margin-bottom:12px" data-i18n="demo_title">Veja como funciona na prática</h2>
   <p style="color:#a0aec0;font-size:15px" data-i18n="demo_sub">Explore as principais funcionalidades da FNI Gestão de Frotas</p>
 </div>
@@ -383,8 +393,8 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
   </div>
   <div id="dp0" style="background:#0d1117;display:flex;min-height:360px">
     <div style="width:155px;background:#111827;padding:14px 10px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06)">
-      <div style="color:#00e5ff;font-weight:900;font-size:16px;margin-bottom:20px;padding:0 4px">FNI</div>
-      <div style="padding:7px 8px;border-radius:6px;background:rgba(0,229,255,0.1);color:#00e5ff;font-size:11px;font-weight:600;margin-bottom:4px">📈 Dashboard</div>
+      <div style="color:#60a5fa;font-weight:900;font-size:16px;margin-bottom:20px;padding:0 4px">FNI</div>
+      <div style="padding:7px 8px;border-radius:6px;background:rgba(0,229,255,0.1);color:#60a5fa;font-size:11px;font-weight:600;margin-bottom:4px">📈 Dashboard</div>
       <div style="padding:7px 8px;font-size:11px;color:#4a5568;margin-bottom:3px">🗺️ Por Rota</div>
       <div style="padding:7px 8px;font-size:11px;color:#4a5568;margin-bottom:3px">👥 Análise</div>
       <div style="padding:7px 8px;font-size:11px;color:#4a5568;margin-bottom:3px">📑 Relatórios</div>
@@ -393,7 +403,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     </div>
     <div style="flex:1;padding:16px;overflow:hidden">
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
-        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#00e5ff;margin-bottom:4px">2.960</div><div style="font-size:9px;color:#4a5568">Postos ANP</div></div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#60a5fa;margin-bottom:4px">2.960</div><div style="font-size:9px;color:#4a5568">Postos ANP</div></div>
         <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#48bb78;margin-bottom:4px">1.284</div><div style="font-size:9px;color:#4a5568">Abastecimentos</div></div>
         <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#ffd600;margin-bottom:4px">R$6,42</div><div style="font-size:9px;color:#4a5568">Preço médio/L</div></div>
         <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:#9f7aea;margin-bottom:4px">18 UFs</div><div style="font-size:9px;color:#4a5568">Cobertura</div></div>
@@ -402,7 +412,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#718096;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Penetração por UF</div>
           <div style="display:flex;flex-direction:column;gap:6px">
-            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#718096"><span style="width:22px">SP</span><div style="height:9px;border-radius:5px;background:#00e5ff;width:85%"></div><span>85%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#718096"><span style="width:22px">SP</span><div style="height:9px;border-radius:5px;background:#60a5fa;width:85%"></div><span>85%</span></div>
             <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#718096"><span style="width:22px">MG</span><div style="height:9px;border-radius:5px;background:rgba(0,229,255,0.8);width:72%"></div><span>72%</span></div>
             <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#718096"><span style="width:22px">RS</span><div style="height:9px;border-radius:5px;background:rgba(0,229,255,0.6);width:61%"></div><span>61%</span></div>
             <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#718096"><span style="width:22px">PR</span><div style="height:9px;border-radius:5px;background:rgba(0,229,255,0.4);width:54%"></div><span>54%</span></div>
@@ -412,13 +422,13 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#718096;margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Evolução Diesel S-10</div>
           <svg viewBox="0 0 180 80" style="width:100%;height:70px">
-            <defs><linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5ff" stop-opacity=".25"/><stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/></linearGradient></defs>
-            <path d="M0,62 L30,58 L60,61 L90,50 L120,44 L150,40 L180,35" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linejoin="round"/>
+            <defs><linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#60a5fa" stop-opacity=".25"/><stop offset="100%" stop-color="#60a5fa" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0,62 L30,58 L60,61 L90,50 L120,44 L150,40 L180,35" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linejoin="round"/>
             <path d="M0,62 L30,58 L60,61 L90,50 L120,44 L150,40 L180,35 L180,80 L0,80Z" fill="url(#lg2)"/>
             <text x="0" y="78" font-size="8" fill="#4a5568">Jan</text>
             <text x="55" y="78" font-size="8" fill="#4a5568">Mar</text>
             <text x="110" y="78" font-size="8" fill="#4a5568">Mai</text>
-            <text x="148" y="33" font-size="9" fill="#00e5ff" font-weight="600">R$6,05</text>
+            <text x="148" y="33" font-size="9" fill="#60a5fa" font-weight="600">R$6,05</text>
           </svg>
         </div>
       </div>
@@ -428,7 +438,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     <div style="background:#111827;padding:10px 14px;display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;border-bottom:1px solid rgba(255,255,255,0.06)">
       <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:7px 10px;font-size:12px;color:#e2e8f0">🟢 São Paulo, SP</div>
       <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:7px 10px;font-size:12px;color:#e2e8f0">🔴 Curitiba, PR</div>
-      <div style="background:#00e5ff;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:700;color:#0d1117;text-align:center">Buscar</div>
+      <div style="background:#60a5fa;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:700;color:#0d1117;text-align:center">Buscar</div>
     </div>
     <div style="position:relative;height:240px;overflow:hidden;background:#1a2744">
       <svg viewBox="0 0 600 240" style="width:100%;height:100%" preserveAspectRatio="xMidYMid slice">
@@ -439,21 +449,21 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
         <line x1="150" y1="0" x2="150" y2="240" stroke="#ffffff05" stroke-width="1"/>
         <line x1="300" y1="0" x2="300" y2="240" stroke="#ffffff05" stroke-width="1"/>
         <line x1="450" y1="0" x2="450" y2="240" stroke="#ffffff05" stroke-width="1"/>
-        <path d="M70,200 C130,175 200,150 270,122 C340,94 420,70 500,48 C530,40 550,36 570,32" fill="none" stroke="#00e5ff" stroke-width="9" opacity="0.1" stroke-linecap="round"/>
-        <path d="M70,200 C130,175 200,150 270,122 C340,94 420,70 500,48 C530,40 550,36 570,32" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1000" stroke-dashoffset="1000">
+        <path d="M70,200 C130,175 200,150 270,122 C340,94 420,70 500,48 C530,40 550,36 570,32" fill="none" stroke="#60a5fa" stroke-width="9" opacity="0.1" stroke-linecap="round"/>
+        <path d="M70,200 C130,175 200,150 270,122 C340,94 420,70 500,48 C530,40 550,36 570,32" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1000" stroke-dashoffset="1000">
           <animate attributeName="stroke-dashoffset" from="1000" to="0" dur="2s" fill="freeze"/>
         </path>
         <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur=".3s" begin="0.9s" fill="freeze"/>
-          <circle cx="180" cy="163" r="8" fill="#00e5ff"/>
-          <circle cx="180" cy="163" r="16" fill="none" stroke="#00e5ff" stroke-width="1.5"><animate attributeName="r" from="8" to="24" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" from="0.4" to="0" dur="2s" repeatCount="indefinite"/></circle>
+          <circle cx="180" cy="163" r="8" fill="#60a5fa"/>
+          <circle cx="180" cy="163" r="16" fill="none" stroke="#60a5fa" stroke-width="1.5"><animate attributeName="r" from="8" to="24" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" from="0.4" to="0" dur="2s" repeatCount="indefinite"/></circle>
           <rect x="190" y="149" width="68" height="16" rx="8" fill="rgba(0,0,0,0.85)"/>
-          <text x="224" y="161" text-anchor="middle" font-size="9" fill="#00e5ff" font-weight="700">R$5,66/L</text>
+          <text x="224" y="161" text-anchor="middle" font-size="9" fill="#60a5fa" font-weight="700">R$5,66/L</text>
         </g>
         <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur=".3s" begin="1.2s" fill="freeze"/>
-          <circle cx="290" cy="117" r="8" fill="#00e5ff"/>
-          <circle cx="290" cy="117" r="16" fill="none" stroke="#00e5ff" stroke-width="1.5"><animate attributeName="r" from="8" to="24" dur="2s" begin=".5s" repeatCount="indefinite"/><animate attributeName="opacity" from="0.4" to="0" dur="2s" begin=".5s" repeatCount="indefinite"/></circle>
+          <circle cx="290" cy="117" r="8" fill="#60a5fa"/>
+          <circle cx="290" cy="117" r="16" fill="none" stroke="#60a5fa" stroke-width="1.5"><animate attributeName="r" from="8" to="24" dur="2s" begin=".5s" repeatCount="indefinite"/><animate attributeName="opacity" from="0.4" to="0" dur="2s" begin=".5s" repeatCount="indefinite"/></circle>
           <rect x="300" y="103" width="60" height="16" rx="8" fill="rgba(0,0,0,0.85)"/>
-          <text x="330" y="115" text-anchor="middle" font-size="9" fill="#00e5ff">R$5,90/L</text>
+          <text x="330" y="115" text-anchor="middle" font-size="9" fill="#60a5fa">R$5,90/L</text>
         </g>
         <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur=".3s" begin="1.5s" fill="freeze"/>
           <circle cx="415" cy="72" r="8" fill="#ffd600"/>
@@ -470,14 +480,14 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
           <div style="background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:5px 12px;font-size:11px;color:#fff">🟢 São Paulo, SP</div>
           <div style="background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:5px 12px;font-size:11px;color:#fff">🔴 Curitiba, PR</div>
         </div>
-        <div style="background:rgba(0,229,255,0.15);border:1px solid rgba(0,229,255,0.4);border-radius:20px;padding:5px 14px;font-size:11px;color:#00e5ff;font-weight:600">⛽ 12 postos · 408 km · 4h 20min</div>
+        <div style="background:rgba(0,229,255,0.15);border:1px solid rgba(0,229,255,0.4);border-radius:20px;padding:5px 14px;font-size:11px;color:#60a5fa;font-weight:600">⛽ 12 postos · 408 km · 4h 20min</div>
       </div>
     </div>
     <div style="padding:12px 16px;background:#111827">
       <div style="font-size:11px;color:#718096;font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Melhores postos na rota — Diesel S-10</div>
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px"><span style="color:#ffd600;font-weight:800;width:24px;flex-shrink:0">1</span><span style="flex:1;color:#e2e8f0">Posto Dallas — Registro/SP</span><span style="color:#4a5568;font-size:10px;width:40px">2,1 km</span><span style="color:#00e5ff;font-weight:700;margin-right:6px">R$5,66/L</span><span style="background:rgba(72,187,120,0.15);color:#48bb78;padding:2px 8px;border-radius:10px;font-size:10px">-12% ANP</span></div>
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px"><span style="color:#a0aec0;font-weight:800;width:24px;flex-shrink:0">2</span><span style="flex:1;color:#e2e8f0">Auto Posto Kadoshi — Ponta Grossa/PR</span><span style="color:#4a5568;font-size:10px;width:40px">3,4 km</span><span style="color:#00e5ff;font-weight:700;margin-right:6px">R$5,90/L</span><span style="background:rgba(72,187,120,0.15);color:#48bb78;padding:2px 8px;border-radius:10px;font-size:10px">-8% ANP</span></div>
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:12px"><span style="color:#cd7f32;font-weight:800;width:24px;flex-shrink:0">3</span><span style="flex:1;color:#e2e8f0">Posto Muquém — Curitiba/PR</span><span style="color:#4a5568;font-size:10px;width:40px">1,8 km</span><span style="color:#00e5ff;font-weight:700;margin-right:6px">R$5,98/L</span><span style="background:rgba(72,187,120,0.15);color:#48bb78;padding:2px 8px;border-radius:10px;font-size:10px">-7% ANP</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px"><span style="color:#ffd600;font-weight:800;width:24px;flex-shrink:0">1</span><span style="flex:1;color:#e2e8f0">Posto Dallas — Registro/SP</span><span style="color:#4a5568;font-size:10px;width:40px">2,1 km</span><span style="color:#60a5fa;font-weight:700;margin-right:6px">R$5,66/L</span><span style="background:rgba(72,187,120,0.15);color:#48bb78;padding:2px 8px;border-radius:10px;font-size:10px">-12% ANP</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px"><span style="color:#a0aec0;font-weight:800;width:24px;flex-shrink:0">2</span><span style="flex:1;color:#e2e8f0">Auto Posto Kadoshi — Ponta Grossa/PR</span><span style="color:#4a5568;font-size:10px;width:40px">3,4 km</span><span style="color:#60a5fa;font-weight:700;margin-right:6px">R$5,90/L</span><span style="background:rgba(72,187,120,0.15);color:#48bb78;padding:2px 8px;border-radius:10px;font-size:10px">-8% ANP</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:12px"><span style="color:#cd7f32;font-weight:800;width:24px;flex-shrink:0">3</span><span style="flex:1;color:#e2e8f0">Posto Muquém — Curitiba/PR</span><span style="color:#4a5568;font-size:10px;width:40px">1,8 km</span><span style="color:#60a5fa;font-weight:700;margin-right:6px">R$5,98/L</span><span style="background:rgba(72,187,120,0.15);color:#48bb78;padding:2px 8px;border-radius:10px;font-size:10px">-7% ANP</span></div>
     </div>
   </div>
   <div id="dp2" style="display:none;background:#0d1117;padding:16px;min-height:360px">
@@ -487,7 +497,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
       <div style="padding:10px 14px;background:rgba(127,119,221,0.15);color:#c4b5fd;border-radius:12px 12px 2px 12px;font-size:13px;align-self:flex-end;max-width:88%;line-height:1.55">Qual foi meu maior gasto com combustível este mês?</div>
-      <div style="padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;border-radius:12px 12px 12px 2px;font-size:13px;max-width:88%;line-height:1.6"><span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#1a4731;color:#48bb78;margin-right:5px">insight</span> Seu maior gasto foi com <strong style="color:#00e5ff">Diesel S-10</strong> — <strong style="color:#00e5ff">R$ 128.450</strong> em 847 abastecimentos em 3 estados. Oportunidade de <strong style="color:#48bb78">R$ 9.200/mês</strong> em economia.</div>
+      <div style="padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;border-radius:12px 12px 12px 2px;font-size:13px;max-width:88%;line-height:1.6"><span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#1a4731;color:#48bb78;margin-right:5px">insight</span> Seu maior gasto foi com <strong style="color:#60a5fa">Diesel S-10</strong> — <strong style="color:#60a5fa">R$ 128.450</strong> em 847 abastecimentos em 3 estados. Oportunidade de <strong style="color:#48bb78">R$ 9.200/mês</strong> em economia.</div>
       <div style="padding:10px 14px;background:rgba(127,119,221,0.15);color:#c4b5fd;border-radius:12px 12px 2px 12px;font-size:13px;align-self:flex-end;max-width:88%;line-height:1.55">Onde estou perdendo mais dinheiro?</div>
       <div style="padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;border-radius:12px 12px 12px 2px;font-size:13px;max-width:88%;line-height:1.6"><span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#4a1a1a;color:#fc8181;margin-right:5px">alerta</span> 3 oportunidades: ES e GO pagam 9% acima da ANP, veículo PLB-3421 com consumo 22% abaixo da média, 47 abastecimentos fora do horário com preço 4% maior.</div>
     </div>
@@ -497,7 +507,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     </div>
   </div>
   <div id="dp3" style="display:none;background:#0d1117;padding:16px;min-height:360px">
-    <div style="font-size:15px;font-weight:700;color:#00e5ff;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08)">Rotograma — SP → BH <span style="font-size:11px;color:#4a5568;font-weight:400;margin-left:8px">João Silva · ABC-1234</span></div>
+    <div style="font-size:15px;font-weight:700;color:#60a5fa;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08)">Rotograma — SP → BH <span style="font-size:11px;color:#4a5568;font-weight:400;margin-left:8px">João Silva · ABC-1234</span></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div>
         <div style="font-size:10px;font-weight:700;color:#718096;letter-spacing:.5px;margin-bottom:10px;text-transform:uppercase">Pontos de Risco (3)</div>
@@ -511,13 +521,13 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
         <div style="padding:10px;border-radius:8px;border-left:3px solid rgba(0,229,255,0.5);background:rgba(0,229,255,0.05);margin-bottom:7px"><div style="font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:3px">Restaurante Rotatoria — km 310</div><div style="font-size:10px;color:#4a5568">Alimentacao · Aberto 24h</div></div>
         <div style="padding:10px;border-radius:8px;border-left:3px solid rgba(0,229,255,0.5);background:rgba(0,229,255,0.05)"><div style="font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:3px">Hotel Rodovario BH — km 490</div><div style="font-size:10px;color:#4a5568">Pernoite seguro · (31) 3333-4444</div></div>
       </div>
-      <div style="grid-column:1/-1;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#00e5ff;font-weight:600;text-align:center">PRF 191 · SAMU 192 · Bombeiros 193 · PM 190 · ANTT 166</div>
+      <div style="grid-column:1/-1;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#60a5fa;font-weight:600;text-align:center">PRF 191 · SAMU 192 · Bombeiros 193 · PM 190 · ANTT 166</div>
     </div>
   </div>
   <div id="dp4" style="display:none;background:#0d1117;padding:16px;min-height:360px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08)">
-      <div style="font-size:14px;font-weight:700;color:#00e5ff">Frete #1042 — São Paulo/SP → Curitiba/PR</div>
-      <span style="background:rgba(0,229,255,0.12);color:#00e5ff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:12px;flex-shrink:0">Aberto a propostas</span>
+      <div style="font-size:14px;font-weight:700;color:#60a5fa">Frete #1042 — São Paulo/SP → Curitiba/PR</div>
+      <span style="background:rgba(0,229,255,0.12);color:#60a5fa;font-size:10px;font-weight:700;padding:4px 10px;border-radius:12px;flex-shrink:0">Aberto a propostas</span>
     </div>
     <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px">
       <div>
@@ -526,7 +536,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
           <div style="font-size:12px;color:#e2e8f0;margin-bottom:6px">📍 Coleta: Av. Marginal, 1200 — Osasco/SP · 22/07 08h-10h</div>
           <div style="font-size:12px;color:#e2e8f0;margin-bottom:6px">📍 Entrega: Rod. BR-116, km 12 — Curitiba/PR · 23/07</div>
           <div style="font-size:12px;color:#e2e8f0;margin-bottom:6px">📦 Carga geral · 3,2t · 8m³ · Baú/Sider</div>
-          <div style="font-size:12px;color:#00e5ff;font-weight:600">💰 Valor ofertado: R$ 2.850</div>
+          <div style="font-size:12px;color:#60a5fa;font-weight:600">💰 Valor ofertado: R$ 2.850</div>
         </div>
         <div style="background:rgba(72,187,120,0.08);border:1px solid rgba(72,187,120,0.25);border-radius:8px;padding:12px 14px">
           <div style="font-size:10px;color:#48bb78;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🧮 Calculadora de lucro</div>
@@ -536,14 +546,14 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
       </div>
       <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:14px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#00e5ff,#1a56f0);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#04112e;flex-shrink:0">JS</div>
+          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#3b82f6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#0f172a;flex-shrink:0">JS</div>
           <div><div style="font-size:12px;font-weight:700;color:#e2e8f0">João Silva</div><div style="font-size:10px;color:#718096">Parceiro há 8 meses</div></div>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
           <span style="background:rgba(72,187,120,0.12);color:#48bb78;font-size:10px;padding:3px 8px;border-radius:10px">✅ Verificado</span>
           <span style="background:rgba(255,255,255,0.06);color:#a0aec0;font-size:10px;padding:3px 8px;border-radius:10px">⭐ 4.9 (62)</span>
-          <span style="background:rgba(0,229,255,0.1);color:#00e5ff;font-size:10px;padding:3px 8px;border-radius:10px">🏷️ Pontual</span>
-          <span style="background:rgba(0,229,255,0.1);color:#00e5ff;font-size:10px;padding:3px 8px;border-radius:10px">🏷️ Cuidado com a carga</span>
+          <span style="background:rgba(0,229,255,0.1);color:#60a5fa;font-size:10px;padding:3px 8px;border-radius:10px">🏷️ Pontual</span>
+          <span style="background:rgba(0,229,255,0.1);color:#60a5fa;font-size:10px;padding:3px 8px;border-radius:10px">🏷️ Cuidado com a carga</span>
         </div>
         <div style="font-size:11px;color:#718096;margin-bottom:4px">🪪 CNH válida · 📱 Telefone verificado · 🔒 2FA ativo</div>
         <div style="font-size:11px;color:#718096">📦 96% de conclusão · 📍 12 km até a coleta</div>
@@ -552,7 +562,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
   </div>
   <div id="dp5" style="display:none;background:#0d1117;padding:16px;min-height:360px">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08)">
-      <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#00e5ff,#1a56f0);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#04112e;flex-shrink:0">JS</div>
+      <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#3b82f6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#0f172a;flex-shrink:0">JS</div>
       <div>
         <div style="font-size:16px;font-weight:700;color:#e2e8f0">João Silva</div>
         <div style="font-size:11px;color:#718096">Motorista parceiro · Cadastrado há 8 meses</div>
@@ -564,26 +574,26 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#48bb78">96%</div><div style="font-size:9px;color:#4a5568">Conclusão</div></div>
-      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#00e5ff">184</div><div style="font-size:9px;color:#4a5568">Fretes concluídos</div></div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#60a5fa">184</div><div style="font-size:9px;color:#4a5568">Fretes concluídos</div></div>
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#9f7aea">✅</div><div style="font-size:9px;color:#4a5568">CNH válida</div></div>
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#48bb78">🔒</div><div style="font-size:9px;color:#4a5568">2FA ativo</div></div>
     </div>
     <div style="font-size:10px;color:#718096;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🏷️ Destaques automáticos (recorrentes em avaliações)</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
-      <span style="background:rgba(0,229,255,0.1);color:#00e5ff;font-size:11px;padding:5px 12px;border-radius:14px">🏷️ Pontual (14)</span>
-      <span style="background:rgba(0,229,255,0.1);color:#00e5ff;font-size:11px;padding:5px 12px;border-radius:14px">🏷️ Cuidado com a carga (11)</span>
-      <span style="background:rgba(0,229,255,0.1);color:#00e5ff;font-size:11px;padding:5px 12px;border-radius:14px">🏷️ Comunicativo (7)</span>
+      <span style="background:rgba(0,229,255,0.1);color:#60a5fa;font-size:11px;padding:5px 12px;border-radius:14px">🏷️ Pontual (14)</span>
+      <span style="background:rgba(0,229,255,0.1);color:#60a5fa;font-size:11px;padding:5px 12px;border-radius:14px">🏷️ Cuidado com a carga (11)</span>
+      <span style="background:rgba(0,229,255,0.1);color:#60a5fa;font-size:11px;padding:5px 12px;border-radius:14px">🏷️ Comunicativo (7)</span>
     </div>
     <div style="font-size:10px;color:#718096;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Últimas avaliações</div>
     <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:11px;color:#a0aec0">⭐⭐⭐⭐⭐ "Muito pontual e cuidadoso com a carga, recomendo." — Transportes Alfa</div>
     <div style="padding:8px 0;font-size:11px;color:#a0aec0">⭐⭐⭐⭐⭐ "Comunicação excelente durante toda a viagem." — Distribuidora Sul</div>
   </div>
   <div id="dp6" style="display:none;background:#0d1117;padding:16px;min-height:360px">
-    <div style="font-size:14px;font-weight:700;color:#00e5ff;margin-bottom:14px">🎮 Missões da Rede — Julho/2026</div>
+    <div style="font-size:14px;font-weight:700;color:#60a5fa;margin-bottom:14px">🎮 Missões da Rede — Julho/2026</div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px 14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px"><div style="font-size:12px;font-weight:600;color:#e2e8f0">Complete 10 fretes este mês</div><div style="font-size:11px;color:#ffd600;font-weight:700;flex-shrink:0">🎁 R$ 200 de bônus</div></div>
-        <div style="height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden"><div style="height:100%;width:70%;background:#00e5ff;border-radius:4px"></div></div>
+        <div style="height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden"><div style="height:100%;width:70%;background:#60a5fa;border-radius:4px"></div></div>
         <div style="font-size:10px;color:#718096;margin-top:4px">7 de 10 concluídos</div>
       </div>
       <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px 14px">
@@ -597,10 +607,10 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
         <div style="font-size:10px;color:#718096;margin-top:4px">19 de 50 — toda a rede de motoristas parceiros contribui</div>
       </div>
     </div>
-    <div style="margin-top:14px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:10px 14px;font-size:11px;color:#00e5ff">🏪 Parcerias locais desbloqueadas: 15% off na Borracharia Central e no Restaurante do Caminhoneiro</div>
+    <div style="margin-top:14px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:10px 14px;font-size:11px;color:#60a5fa">🏪 Parcerias locais desbloqueadas: 15% off na Borracharia Central e no Restaurante do Caminhoneiro</div>
   </div>
   <div id="dp7" style="display:none;background:#0d1117;padding:16px;min-height:360px">
-    <div style="font-size:14px;font-weight:700;color:#00e5ff;margin-bottom:14px">🛡️ Alertas Antifraude — últimas 24h</div>
+    <div style="font-size:14px;font-weight:700;color:#60a5fa;margin-bottom:14px">🛡️ Alertas Antifraude — últimas 24h</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:rgba(231,76,60,0.08);border-left:3px solid #e74c3c">
         <div style="font-size:15px">🚨</div>
@@ -610,7 +620,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
         <div style="font-size:15px">⚠️</div>
         <div><div style="font-size:12px;font-weight:600;color:#e2e8f0">Rota com desvio de 28 km sem justificativa</div><div style="font-size:10px;color:#4a5568">Frete #1038 · Motorista Carlos M. · Aguardando confirmação</div></div>
       </div>
-      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:rgba(0,229,255,0.05);border-left:3px solid #00e5ff44">
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:rgba(0,229,255,0.05);border-left:3px solid #60a5fa44">
         <div style="font-size:15px">✅</div>
         <div><div style="font-size:12px;font-weight:600;color:#e2e8f0">Abastecimento fora do horário revisado e aprovado</div><div style="font-size:10px;color:#4a5568">Veículo ABC-1234 · Confirmado pelo gestor de frota</div></div>
       </div>
@@ -618,7 +628,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     <div style="margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#e74c3c">3</div><div style="font-size:9px;color:#4a5568">Alertas ativos</div></div>
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#48bb78">R$ 4.180</div><div style="font-size:9px;color:#4a5568">Economizado no mês</div></div>
-      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#00e5ff">100%</div><div style="font-size:9px;color:#4a5568">Abastecimentos monitorados</div></div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#60a5fa">100%</div><div style="font-size:9px;color:#4a5568">Abastecimentos monitorados</div></div>
     </div>
   </div>
   <div id="dp8" style="display:none;background:#0d1117;padding:24px 16px;min-height:360px">
@@ -633,7 +643,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
         <div style="font-size:10px;color:#718096;font-weight:700;text-transform:uppercase;margin-bottom:6px">Próxima meta</div>
         <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 10px;margin-bottom:10px">
           <div style="font-size:11px;color:#e2e8f0;margin-bottom:6px">Complete 10 fretes → R$ 200</div>
-          <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.08)"><div style="height:100%;width:70%;background:#00e5ff;border-radius:3px"></div></div>
+          <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.08)"><div style="height:100%;width:70%;background:#60a5fa;border-radius:3px"></div></div>
         </div>
         <div style="font-size:10px;color:#718096;font-weight:700;text-transform:uppercase;margin-bottom:6px">Parcerias desbloqueadas</div>
         <div style="display:flex;flex-direction:column;gap:5px">
@@ -650,8 +660,8 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
 </section>
 <style>
 .dtab2{padding:9px 20px;border-radius:24px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#718096;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;outline:none}
-.dtab2:hover{border-color:#00e5ff;color:#00e5ff}
-.dtab2.dtab-on{background:rgba(0,229,255,0.12);border-color:#00e5ff;color:#00e5ff}
+.dtab2:hover{border-color:#60a5fa;color:#60a5fa}
+.dtab2.dtab-on{background:rgba(0,229,255,0.12);border-color:#60a5fa;color:#60a5fa}
 </style>
 <script data-cfasync="false">
 // Fase remove-toggle-idioma-landing (19/07) — pedido do Daniel: o toggle
@@ -776,7 +786,7 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   <p class="sec-sub" data-i18n="acesso_sub">Gestão de frotas na palma da mão: acompanhe tudo pelo computador ou instale o app no celular pra ter agilidade de onde estiver.</p>
   <div class="acgrid">
     <div class="accard">
-      <svg viewBox="0 0 200 200" role="img" aria-label="Painel web"><rect x="14" y="30" width="172" height="120" rx="8" fill="none" stroke="#00b4d8" stroke-width="3"/><rect x="14" y="30" width="172" height="18" rx="8" fill="#00b4d8" fill-opacity="0.15"/><circle cx="26" cy="39" r="3" fill="#00b4d8"/><circle cx="36" cy="39" r="3" fill="#00b4d8" fill-opacity="0.5"/><circle cx="46" cy="39" r="3" fill="#00b4d8" fill-opacity="0.3"/><rect x="28" y="66" width="60" height="34" rx="4" fill="#00b4d8" fill-opacity="0.12"/><rect x="96" y="66" width="60" height="34" rx="4" fill="#00b4d8" fill-opacity="0.12"/><rect x="28" y="108" width="128" height="30" rx="4" fill="#00b4d8" fill-opacity="0.08"/><rect x="70" y="160" width="60" height="10" rx="5" fill="#00b4d8" fill-opacity="0.3"/></svg>
+      <svg viewBox="0 0 200 200" role="img" aria-label="Painel web"><rect x="14" y="30" width="172" height="120" rx="8" fill="none" stroke="#3b82f6" stroke-width="3"/><rect x="14" y="30" width="172" height="18" rx="8" fill="#3b82f6" fill-opacity="0.15"/><circle cx="26" cy="39" r="3" fill="#3b82f6"/><circle cx="36" cy="39" r="3" fill="#3b82f6" fill-opacity="0.5"/><circle cx="46" cy="39" r="3" fill="#3b82f6" fill-opacity="0.3"/><rect x="28" y="66" width="60" height="34" rx="4" fill="#3b82f6" fill-opacity="0.12"/><rect x="96" y="66" width="60" height="34" rx="4" fill="#3b82f6" fill-opacity="0.12"/><rect x="28" y="108" width="128" height="30" rx="4" fill="#3b82f6" fill-opacity="0.08"/><rect x="70" y="160" width="60" height="10" rx="5" fill="#3b82f6" fill-opacity="0.3"/></svg>
       <div class="ct" data-i18n="accard0_t">Painel Web Completo</div>
       <div class="cd" data-i18n="accard0_d">Todos os recursos, ideal pra planejamento e análises no computador.</div>
       <a href="/login" class="acbtn" data-i18n="accard0_cta">Acessar plataforma →</a>
@@ -889,9 +899,9 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   </div>
   <div class="fcopy" style="line-height:1.9">
     &copy; 2026 <strong>Fleet Network Intelligence Ltda.</strong> &mdash; Plataforma SaaS B2B para Gest&atilde;o de Frotas<br>
-    <a href="mailto:contato@fxgestaodefrotasonline.com" style="color:#00b4d8">contato@fxgestaodefrotasonline.com</a>
+    <a href="mailto:contato@fxgestaodefrotasonline.com" style="color:#3b82f6">contato@fxgestaodefrotasonline.com</a>
     &nbsp;&middot;&nbsp; Brasil &nbsp;&middot;&nbsp;
-    <a href="/privacidade" style="color:#00b4d8">LGPD</a>
+    <a href="/privacidade" style="color:#3b82f6">LGPD</a>
   </div>
 </footer>
 

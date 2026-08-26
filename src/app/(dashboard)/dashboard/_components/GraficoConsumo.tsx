@@ -26,8 +26,8 @@ export function GraficoConsumo({ dados }: { dados: PontoConsumo[] }) {
           }
         />
         <Legend />
-        <Bar yAxisId="litros" dataKey="litros" name="Litros" fill="#0EA5E9" radius={[4, 4, 0, 0]} />
-        <Bar yAxisId="valor" dataKey="valor" name="Valor (R$)" fill="#0F2A4A" radius={[4, 4, 0, 0]} />
+        <Bar yAxisId="litros" dataKey="litros" name="Litros" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+        <Bar yAxisId="valor" dataKey="valor" name="Valor (R$)" fill="#1E40AF" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

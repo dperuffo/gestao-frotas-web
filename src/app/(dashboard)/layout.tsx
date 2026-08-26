@@ -981,39 +981,17 @@ export default async function DashboardLayout({
               bloco (Permissões, Inteligência de Rede, Assinaturas de todos
               os clientes, etc.), que são telas internas do time FNI. */}
           {ehAdmin && (
-            <>
-              <p
-                data-tour="menu-administracao"
-                className="glass-nav-texto-muted mb-2 mt-6 px-2 pb-2 text-xs font-semibold uppercase tracking-wider"
-              >
-                Administração
-              </p>
-              <ul className="space-y-1">
-                {menuAdministracao.map((item) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className="glass-nav-texto flex items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-white/10"
-                    >
-                      <span className="flex items-center gap-2">
-                        <item.icon className="glass-nav-icone h-4 w-4 shrink-0" />
-                        {item.label}
-                      </span>
-                      {item.href === "/avaliacoes" && avaliacoesPendentes > 0 && (
-                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                          {avaliacoesPendentes}
-                        </span>
-                      )}
-                      {item.href === "/documentos-empresas" && documentosPendentes > 0 && (
-                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                          {documentosPendentes}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </>
+            // Fase Design-System-Corporate-Blue (26/08/2026) — antes era um
+            // <ul> escrito à mão só pra este bloco (nunca teve destaque de
+            // rota ativa); trocado por GrupoMenuLateral, que já resolve
+            // isso (usePathname) e aceita o mesmo formato de badges por
+            // href que os 2 casos especiais daqui já usavam.
+            <GrupoMenuLateral
+              titulo="Administração"
+              itens={menuAdministracao}
+              badges={{ "/avaliacoes": avaliacoesPendentes, "/documentos-empresas": documentosPendentes }}
+              dataTourTitulo="menu-administracao"
+            />
           )}
           </>
           )}

@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+
+// Fase Design-System-Corporate-Blue (26/08/2026) — design.md pede Inter em
+// tudo (display/body/labels) e JetBrains Mono só pra valores técnicos. Antes
+// o app não definia nenhuma fonte própria (caía na sans-serif padrão do
+// navegador) — `next/font` carrega e aplica via CSS variable, cascateando
+// pra toda a aplicação através do `fontFamily.sans` do tailwind.config.ts.
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Gestão de Frotas",
@@ -24,7 +33,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
         {children}
         {process.env.NODE_ENV === "production" && HOTJAR_SITE_ID && (

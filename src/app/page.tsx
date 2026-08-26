@@ -41,12 +41,15 @@ function montarSecaoIndicePrecos(dados: LinhaIndiceBrasil[]): string {
       linha.preco_medio_anp && linha.preco_medio_anp > 0
         ? ((linha.preco_medio_rede - linha.preco_medio_anp) / linha.preco_medio_anp) * 100
         : null;
-    const corDiff = diffPct !== null && diffPct <= 0 ? "#4ade80" : "#f5a623";
+    // Fase Design-System-Corporate-Blue — mesmas cores de status usadas no
+    // resto do app (tailwind.config.ts `status.ativo`/`status.atencao`), em
+    // vez do verde/dourado soltos de antes (fora da paleta oficial).
+    const corDiff = diffPct !== null && diffPct <= 0 ? "#16A34A" : "#F59E0B";
     const diffHtml =
       diffPct !== null
         ? `<div style="margin-top:6px;font-size:0.78rem;color:${corDiff}">${diffPct > 0 ? "+" : ""}${diffPct.toFixed(1)}% vs. média ANP</div>`
         : "";
-    return `<div class="card"><div class="icon">${icone}</div><div class="ct">${label}</div><div style="font-family:'Outfit',sans-serif;font-size:2rem;font-weight:800;margin-top:8px;color:#fff">${formatarPreco(linha.preco_medio_rede)}<span style="font-size:0.85rem;font-weight:500;color:var(--gray)">/L</span></div>${diffHtml}<div style="margin-top:10px;font-size:0.75rem;color:var(--gray)">${linha.qtd_postos.toLocaleString("pt-BR")}+ postos monitorados</div></div>`;
+    return `<div class="card"><div class="icon">${icone}</div><div class="ct">${label}</div><div style="font-family:'Inter',sans-serif;font-size:2rem;font-weight:700;margin-top:8px;color:#fff">${formatarPreco(linha.preco_medio_rede)}<span style="font-size:0.85rem;font-weight:500;color:var(--gray)">/L</span></div>${diffHtml}<div style="margin-top:10px;font-size:0.75rem;color:var(--gray)">${linha.qtd_postos.toLocaleString("pt-BR")}+ postos monitorados</div></div>`;
   }).filter((c): c is string => c !== null);
 
   const corpoCards =
@@ -93,7 +96,7 @@ export default async function Home() {
     <>
       {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router: link direto no Server Component é o padrão suportado, o lint ainda assume Pages Router */}
       <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet"
       />
       <div dangerouslySetInnerHTML={{ __html: html }} />

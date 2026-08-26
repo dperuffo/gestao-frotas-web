@@ -3,119 +3,107 @@
 @tailwind utilities;
 
 :root {
-  --frota-950: #0b1220;
-  --frota-900: #0f2a4a;
-  --frota-600: #0e7490;
-  --frota-500: #0ea5e9;
+  --frota-950: #0f172a;
+  --frota-900: #132038;
+  --frota-600: #1e40af;
+  --frota-500: #3b82f6;
   --status-ativo: #16a34a;
   --status-atencao: #f59e0b;
   --status-inativo: #dc2626;
 }
 
-/* Fase Liquid-Glass (20/08/2026, pedido do Daniel: "implementar recursos de
-   liquid glass nas telas e abas de menu") — fundo com washes de cor bem
-   sutis, fixo ao viewport (background-attachment: fixed), pra dar aos
-   painéis translúcidos (.card, .glass-nav, .glass-tabbar) algo com
-   variação tonal pra desfocar/saturar por baixo. De propósito bem discreto
-   (não são blobs vibrantes de dribbble) — é um app B2B denso em tabela,
-   então o fundo não pode competir com o conteúdo nem prejudicar contraste;
-   ele só precisa dar "profundidade" o suficiente pro efeito vidro aparecer. */
+/* Fase Design-System-Corporate-Blue (26/08/2026, pedido do Daniel: "o tema
+   Liquid Glass não foi bem aceito pelos usuários" — substituir por um
+   design "SaaS Enterprise Analytics": corporativo, limpo, data-driven,
+   fundo claro, sem preto puro, sem blur/glassmorphism pesado). Fundo liso
+   (accent do design.md), sem os radial-gradients/blur da fase anterior —
+   telas densas em tabela precisam de contraste alto e neutro, não de
+   textura de fundo competindo com o conteúdo. */
 body {
-  @apply text-slate-900 antialiased;
-  background:
-    radial-gradient(1200px circle at 8% -10%, rgba(14, 165, 233, 0.10), transparent 55%),
-    radial-gradient(1000px circle at 92% 0%, rgba(20, 184, 166, 0.08), transparent 50%),
-    radial-gradient(900px circle at 50% 100%, rgba(15, 42, 74, 0.06), transparent 55%),
-    #f8fafc;
-  background-attachment: fixed;
+  @apply bg-frota-50 text-slate-900 antialiased;
 }
 
-/* Componentes utilitários usados nas telas de Cadastros.
-   Fase Liquid-Glass (20/08/2026) — .card é a classe central usada em ~150
-   telas (ver README, fases de Redesign-Telas-Densas), então trocar aqui
-   cascateia pro app inteiro sem precisar editar cada página. Opacidade
-   alta de propósito (80%, não 40-50% como glassmorphism "clássico") —
-   tabelas densas precisam de contraste forte; o efeito vidro vem do
-   desfoque + saturação + brilho na borda superior (inset), não de deixar
-   o conteúdo de trás aparecer através do texto. */
+/* .card é a classe central usada em ~150 telas (ver README, fases de
+   Redesign-Telas-Densas) — trocar aqui cascateia pro app inteiro sem
+   precisar editar cada página. Receita do design.md: superfície branca,
+   1px de borda, sombra suave (0 2px 12px rgba(0,0,0,0.06)), raio 12px —
+   sem blur/backdrop-filter (esse era o "vidro" que não pegou bem). */
 .card {
-  @apply rounded-xl border border-white/70 bg-white/80 shadow-sm backdrop-blur-xl backdrop-saturate-150;
-  box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.7),
-    0 1px 2px 0 rgba(15, 23, 42, 0.05),
-    0 8px 24px -12px rgba(15, 23, 42, 0.12);
+  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
 }
 
-/* Menu lateral (aside, layout.tsx) e barra de abas (AbasPainel.tsx) — mesma
-   receita do .card (blur + saturate + brilho de borda). Fase
-   Liquid-Glass-Anel (20/08/2026, pedido do Daniel: "o cinza anterior não
-   ficou bom" — 3ª referência enviada: fundo quase preto azul-marinho,
-   com um anel de luz azul-violeta brilhando só do lado esquerdo, tipo
-   borda de esfera/portal) — substitui a superfície cinza-arroxeada da
-   fase anterior. Cores extraídas por amostragem de pixel da imagem. O
-   anel vem do radial-gradient com um "buraco" no meio (transparent →
-   brilho → transparent de novo), centralizado fora do painel (à
-   esquerda), só a borda da esfera aparece. */
+/* Menu lateral (aside, layout.tsx) — design.md: "Navigation: Primary
+   surface background. Active item: accent color indicator." Fundo sólido
+   em Dark Navy (uma das cores oficiais da paleta, "Dark surface, primary
+   background") — flat, sem blur/anel de luz (era exatamente esse efeito
+   que não agradou). O item ativo ganha destaque via `.glass-nav-ativo`
+   (ver GrupoMenuLateral.tsx), não mais aqui. */
 .glass-nav {
-  background:
-    radial-gradient(140% 90% at -15% 50%, transparent 55%, rgba(141, 148, 202, 0.75) 60%, rgba(153, 158, 217, 0.55) 64%, transparent 70%),
-    linear-gradient(160deg, rgba(42, 42, 69, 0.95) 0%, rgba(28, 27, 47, 0.96) 45%, rgba(16, 16, 31, 0.97) 100%);
-  @apply backdrop-blur-xl backdrop-saturate-150 border-r border-white/10;
-  box-shadow:
-    inset 1px 0 0 0 rgba(255, 255, 255, 0.08),
-    inset -1px 0 0 0 rgba(0, 0, 0, 0.25);
+  @apply border-r border-white/10 bg-frota-950;
 }
 
+/* Barra de abas (AbasPainel.tsx) — vira um segmented control claro, comum
+   em produtos SaaS corporativos: trilho cinza-claro, aba ativa em branco
+   com sombra e texto na cor de destaque (peso 500, conforme design.md). */
 .glass-tabbar {
-  @apply inline-flex items-center gap-1 overflow-x-auto rounded-full border border-white/10 p-1 shadow-sm backdrop-blur-xl backdrop-saturate-150;
-  background: linear-gradient(135deg, rgba(28, 27, 47, 0.85), rgba(16, 16, 31, 0.75));
+  @apply inline-flex items-center gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-slate-100 p-1;
 }
 
 .glass-tab {
-  @apply whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium text-slate-400 transition-colors hover:text-slate-200;
+  @apply whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700;
 }
 
 .glass-tab-ativa {
-  @apply shadow-sm;
-  background: linear-gradient(160deg, #a7ade0, #6b70a8);
-  color: #14132a;
+  @apply bg-white text-frota-600 shadow-sm;
 }
 
-/* Fase Liquid-Glass-Texto (20/08/2026) — texto/ícone do menu quase branco
-   (fundo agora é quase preto, não precisa mais de tom quente pra
-   contraste) + sombra bem escura, pra continuar legível sobre o anel de
-   luz e o fundo escuro. */
+/* Texto/ícone do menu lateral sobre o fundo Dark Navy — branco/quase
+   branco pra contraste, sem sombra de texto (não precisa mais "brilhar"
+   sobre um fundo com textura, o fundo agora é liso). */
 .glass-nav-texto {
-  color: #f5f5fa;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  @apply text-slate-100;
 }
 .glass-nav-texto-muted {
-  color: #a5a6c4;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  @apply text-slate-400;
 }
 .glass-nav-icone {
-  color: #e8e9f5;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+  @apply text-slate-300;
+}
+/* Indicador de item ativo no menu — accent color (design.md: "Active item:
+   accent color indicator. Font weight 500 when active."), usado por
+   GrupoMenuLateral.tsx via usePathname(). */
+.glass-nav-ativo {
+  @apply bg-frota-500/15 font-medium text-white;
 }
 .glass-nav-acento {
-  color: #ffd9a0;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  @apply text-frota-500;
 }
 
+/* Fase Design-System-Corporate-Blue — botão primário (design.md): raio
+   12px, cor de destaque sólida, hover = escurece ~8%, active = leve
+   translo -1px (tátil), peso 600, sem glow. */
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-lg bg-frota-500 px-4 py-2
-    text-sm font-medium text-white transition hover:bg-frota-600
+  @apply inline-flex items-center justify-center rounded-xl bg-frota-500 px-4 py-2
+    text-sm font-semibold text-white shadow-sm transition
+    hover:bg-frota-600 hover:shadow-md active:translate-y-px
     disabled:cursor-not-allowed disabled:opacity-50;
 }
 
+/* Secundário/ghost (design.md): contorno 1.5px, texto na cor primária,
+   hover só preenche fundo suavemente. */
 .btn-secondary {
-  @apply inline-flex items-center justify-center rounded-lg border border-slate-300
-    bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50;
+  @apply inline-flex items-center justify-center rounded-xl border-[1.5px] border-slate-300
+    bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50
+    active:translate-y-px;
 }
 
+/* Inputs (design.md): label acima (já é o padrão dos formulários do app),
+   1px de borda, anel de foco 2px na cor de destaque com offset 2px — sem
+   "floating labels". */
 .input {
-  @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-    focus:border-frota-500 focus:outline-none focus:ring-2 focus:ring-frota-100;
+  @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+    focus:border-frota-500 focus:outline-none focus:ring-2 focus:ring-frota-500 focus:ring-offset-2;
 }
 
 .badge-ativo {
@@ -130,10 +118,10 @@ body {
 
 /* Variante escura dos inputs/labels, usada só nas 3 telas públicas de
    autenticação (login, MFA, cadastro) — o .input padrão pressupõe fundo
-   branco, e essas telas agora usam o cartão escuro (AuthCard) pra seguir
-   o mesmo visual da landing page. */
+   branco, e essas telas usam o cartão escuro (AuthCard) sobre o fundo
+   Dark Navy da landing/auth. */
 .input-dark {
-  @apply w-full rounded-lg border border-white/10 bg-frota-950/60 px-3 py-2 text-sm text-white
+  @apply w-full rounded-xl border border-white/10 bg-frota-950/60 px-3 py-2 text-sm text-white
     placeholder:text-slate-500
     focus:border-frota-500 focus:outline-none focus:ring-2 focus:ring-frota-500/30;
 }

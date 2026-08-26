@@ -21,7 +21,7 @@ export function GraficoEvolucaoPrecoMedio({ dados }: { dados: PontoPrecoMedio[] 
         <XAxis dataKey="diaLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
         <YAxis tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={(v: number) => `R$ ${v.toFixed(2)}`} />
         <Tooltip formatter={(v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} />
-        <Line type="monotone" dataKey="precoMedio" name="Preço médio (R$/L)" stroke="#0F2A4A" strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="precoMedio" name="Preço médio (R$/L)" stroke="#1E40AF" strokeWidth={2} dot={false} />
       </LineChart>
     </ResponsiveContainer>
   );

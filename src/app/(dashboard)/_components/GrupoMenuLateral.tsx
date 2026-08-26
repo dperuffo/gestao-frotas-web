@@ -1,6 +1,22 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { BotaoFavoritoMenu } from "./BotaoFavoritoMenu";
+
+// Fase Design-System-Corporate-Blue (26/08/2026) — design.md: "Navigation:
+// ... Active item: accent color indicator. Font weight 500 when active."
+// Achado real ao investigar: o menu nunca teve destaque de rota ativa (todo
+// item tinha o mesmo estilo, sempre) — corrigido aqui em vez de só trocar
+// cor, já que "menu" foi citado explicitamente no pedido do Daniel. Mesmo
+// critério de "/x cobre /x/qualquercoisa" já usado em resolverFuncionalidadeDaRota
+// (src/lib/permissoes.ts), pra Roteirização (/roteirizacao) ficar destacado
+// mesmo dentro de /roteirizacao/planejar.
+function ehRotaAtiva(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 // Fase reorganizacao-menu (04/08/2026, pedido do Daniel: "Fazer uma sugestao
 // de reorganizacao do menu" / "Organizacao de temas iguais" — a seção
@@ -55,6 +71,8 @@ export function GrupoMenuLateral({
   // (sem passar por este componente) e ficou fora desta primeira rodada.
   favoritos?: Set<string>;
 }) {
+  const pathname = usePathname();
+
   if (itens.length === 0) return null;
 
   return (
@@ -68,12 +86,13 @@ export function GrupoMenuLateral({
       <ul className="space-y-1">
         {itens.map((item) => {
           const badge = badges?.[item.href] ?? 0;
+          const ativo = ehRotaAtiva(pathname, item.href);
           return (
             <li key={item.href} className="group flex items-center gap-1">
               <Link
                 href={item.href}
                 data-tour={tourPorHref?.[item.href]}
-                className="glass-nav-texto flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-white/10"
+                className={`glass-nav-texto flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-white/10 ${ativo ? "glass-nav-ativo" : ""}`}
               >
                 <span className="flex items-center gap-2">
                   {item.icon && <item.icon className="glass-nav-icone h-4 w-4 shrink-0" />}

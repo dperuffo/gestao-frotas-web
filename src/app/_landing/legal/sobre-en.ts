@@ -2,11 +2,11 @@
 // Ver README Fase 26 para o que foi ajustado ao portar.
 export const TITULO = 'About Us — FNI Fleet Network Intelligence';
 export const ESTILO = `
-:root{--navy:#04112e;--blue:#0d2d6b;--electric:#1a56f0;--cyan:#00b4d8;--white:#ffffff;--gray:#8a9bb5;}
+:root{--navy:#0f172a;--blue:#1e40af;--electric:#3b82f6;--cyan:#3b82f6;--white:#ffffff;--gray:#94a3b8;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:var(--navy);color:var(--white);line-height:1.7;}
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 6%;background:rgba(4,17,46,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06);}
-.nav-logo{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;color:var(--white);text-decoration:none;}
+.nav-logo{font-family:'Inter',sans-serif;font-weight:800;font-size:1.1rem;color:var(--white);text-decoration:none;}
 .nav-logo span{color:var(--cyan);}
 .nav-links{display:flex;gap:28px;list-style:none;}
 .nav-links a{color:var(--gray);text-decoration:none;font-size:0.88rem;transition:color 0.2s;}
@@ -15,15 +15,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .lang-btn{background:none;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.8rem;color:var(--gray);}
 .lang-btn.active{border-color:var(--cyan);color:var(--cyan);}
 main{max-width:800px;margin:0 auto;padding:120px 6% 80px;}
-h1{font-family:'Outfit',sans-serif;font-size:clamp(2rem,4vw,2.8rem);font-weight:800;margin-bottom:24px;}
+h1{font-family:'Inter',sans-serif;font-size:clamp(2rem,4vw,2.8rem);font-weight:800;margin-bottom:24px;}
 h1 span{color:var(--cyan);}
-h2{font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:700;color:var(--cyan);margin:40px 0 16px;}
+h2{font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:700;color:var(--cyan);margin:40px 0 16px;}
 p{color:rgba(255,255,255,0.8);margin-bottom:16px;font-size:0.97rem;}
 .highlight{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:24px;margin:20px 0;}
 .highlight p{margin:0 0 12px;}
 .highlight p:last-child{margin:0;}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
-.chip{background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);border-radius:20px;padding:4px 14px;font-size:0.82rem;color:var(--cyan);}
+.chip{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:4px 14px;font-size:0.82rem;color:var(--cyan);}
 ul.check{list-style:none;margin:0;}
 ul.check li{padding:6px 0;color:rgba(255,255,255,0.8);font-size:0.95rem;}
 ul.check li::before{content:"✓ ";color:var(--cyan);font-weight:700;}
