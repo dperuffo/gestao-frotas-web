@@ -25,10 +25,10 @@ export default async function AbastecimentosPendentesAprovacaoPage({
   const { empresa: empresaParam } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
-  const semClienteEscolhido = empresas.length > 1 && !empresaSelecionada;
 
   type Pendente = {
     id: number;
+    empresa_id: string;
     placa: string;
     motorista_nome: string | null;
     data_abastecimento: string;
@@ -42,29 +42,44 @@ export default async function AbastecimentosPendentesAprovacaoPage({
     criado_em: string;
   };
 
-  let pendentes: (Pendente & { fotoUrl: string | null })[] = [];
-  if (empresaSelecionada) {
-    const { data } = await supabase
-      .from("abastecimentos_externos")
-      .select(
-        "id, placa, motorista_nome, data_abastecimento, hodometro, posto_nome, combustivel, quantidade, valor_unitario, valor_total, foto_path, criado_em"
-      )
-      .eq("empresa_id", empresaSelecionada)
-      .eq("provedor", "manual")
-      .eq("status", "pendente")
-      .order("criado_em", { ascending: false });
+  // Fase OCR-Abastecimento-Externo — correção (achado real, Daniel: "lançado
+  // um abastecimento pelo PWA Motorista mas não apareceu na tela de
+  // Abastecimentos para aprovação do gestor"): a versão anterior só buscava
+  // pendentes com uma empresa específica já selecionada — sem isso (usuário
+  // com acesso a várias empresas, sem ter escolhido nenhuma ainda), a tela
+  // pedia pra "selecionar um cliente" e o pendente ficava invisível até
+  // alguém adivinhar qual empresa olhar. Agora, sem empresa selecionada,
+  // busca em TODAS as que o usuário enxerga (RLS já escopa isso sozinha —
+  // mesmo padrão do card "Ações Sugeridas" da Central de Regras) e mostra
+  // o nome do cliente em cada card.
+  let query = supabase
+    .from("abastecimentos_externos")
+    .select(
+      "id, empresa_id, placa, motorista_nome, data_abastecimento, hodometro, posto_nome, combustivel, quantidade, valor_unitario, valor_total, foto_path, criado_em"
+    )
+    .eq("provedor", "manual")
+    .eq("status", "pendente")
+    .order("criado_em", { ascending: false });
+  if (empresaSelecionada) query = query.eq("empresa_id", empresaSelecionada);
+  const { data } = await query;
 
-    pendentes = await Promise.all(
-      (data ?? []).map(async (p) => {
-        let fotoUrl: string | null = null;
-        if (p.foto_path) {
-          const { data: assinada } = await supabase.storage.from("abastecimentos-evidencias").createSignedUrl(p.foto_path, 3600);
-          fotoUrl = assinada?.signedUrl ?? null;
-        }
-        return { ...p, fotoUrl };
-      })
-    );
+  const empresaIds = Array.from(new Set((data ?? []).map((p) => p.empresa_id)));
+  const nomesEmpresas: Record<string, string> = {};
+  if (empresaIds.length > 0) {
+    const { data: empresasData } = await supabase.from("empresas").select("id, nome").in("id", empresaIds);
+    for (const e of empresasData ?? []) nomesEmpresas[e.id] = e.nome;
   }
+
+  const pendentes: (Pendente & { fotoUrl: string | null })[] = await Promise.all(
+    (data ?? []).map(async (p) => {
+      let fotoUrl: string | null = null;
+      if (p.foto_path) {
+        const { data: assinada } = await supabase.storage.from("abastecimentos-evidencias").createSignedUrl(p.foto_path, 3600);
+        fotoUrl = assinada?.signedUrl ?? null;
+      }
+      return { ...p, fotoUrl };
+    })
+  );
 
   return (
     <div>
@@ -97,11 +112,7 @@ export default async function AbastecimentosPendentesAprovacaoPage({
         </form>
       )}
 
-      {semClienteEscolhido ? (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
-          Selecione um cliente acima pra ver os lançamentos manuais pendentes dele.
-        </p>
-      ) : pendentes.length === 0 ? (
+      {pendentes.length === 0 ? (
         <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
           Nenhum lançamento manual pendente de aprovação no momento.
         </p>
@@ -123,6 +134,11 @@ export default async function AbastecimentosPendentesAprovacaoPage({
                   </div>
                 )}
                 <div className="min-w-0 flex-1 space-y-1 text-sm">
+                  {!empresaSelecionada && (
+                    <p className="text-xs font-medium uppercase tracking-wide text-frota-600">
+                      {nomesEmpresas[p.empresa_id] ?? "Cliente não identificado"}
+                    </p>
+                  )}
                   <p className="font-medium text-slate-900">
                     {p.placa} · {p.motorista_nome ?? "Motorista não identificado"}
                   </p>

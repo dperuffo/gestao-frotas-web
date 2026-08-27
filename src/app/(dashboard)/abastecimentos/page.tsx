@@ -283,7 +283,7 @@ export default async function AbastecimentosPage({
   // motorista (cupom fiscal fotografado + OCR) fica pendente até o gestor
   // aprovar aqui; o link só aparece com contagem > 0 pra não poluir a tela
   // de quem não usa o recurso.
-  const pendentesManuaisCount = empresaSelecionada ? await contarAbastecimentosManuaisPendentesAcao(empresaSelecionada) : 0;
+  const pendentesManuaisCount = semClienteEscolhido ? 0 : await contarAbastecimentosManuaisPendentesAcao(empresaSelecionada ?? null);
 
   return (
     <div>

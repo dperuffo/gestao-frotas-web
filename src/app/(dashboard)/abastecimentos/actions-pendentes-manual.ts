@@ -37,14 +37,25 @@ export async function aprovarRejeitarAbastecimentoManualAcao(
 
 // Conta pendentes pra badge no menu/cabeçalho — mesmo espírito de
 // contarInsightsNovosAcao (Fase Insights de IA).
+//
+// Fase OCR-Abastecimento-Externo — correção (achado real, Daniel: "lançado
+// um abastecimento pelo PWA Motorista mas não apareceu na tela de
+// Abastecimentos para aprovação do gestor"): sem cliente selecionado
+// (usuário com acesso a várias empresas, ou admin olhando "todas"), a
+// versão anterior retornava 0 direto — o pendente existia, só não tinha
+// como aparecer sem escolher a empresa certa primeiro, e nada aqui indicava
+// QUAL empresa tinha o pendente. Agora, sem empresaId, conta em TODAS as
+// empresas que o usuário enxerga (a RLS de abastecimentos_externos já
+// escopa isso sozinha — mesmo padrão do card "Ações Sugeridas" em
+// Central de Regras, que também soma sem exigir cliente selecionado).
 export async function contarAbastecimentosManuaisPendentesAcao(empresaId: string | null): Promise<number> {
-  if (!empresaId) return 0;
   const supabase = await createClient();
-  const { count } = await supabase
+  let query = supabase
     .from("abastecimentos_externos")
     .select("id", { count: "exact", head: true })
-    .eq("empresa_id", empresaId)
     .eq("provedor", "manual")
     .eq("status", "pendente");
+  if (empresaId) query = query.eq("empresa_id", empresaId);
+  const { count } = await query;
   return count ?? 0;
 }
