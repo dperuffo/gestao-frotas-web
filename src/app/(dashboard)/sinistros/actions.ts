@@ -28,6 +28,8 @@ export async function criarSinistroAcao(empresaId: string, _prev: SinistroFormSt
   const custoEstimado = numeroOuNull(formData.get("custo_estimado"));
   const localOcorrencia = String(formData.get("local_ocorrencia") ?? "").trim() || null;
   const descricao = String(formData.get("descricao") ?? "").trim() || null;
+  // Fase Apolices-Seguro (27/08/2026) — vínculo opcional à apólice vigente.
+  const apoliceId = String(formData.get("apolice_id") ?? "").trim() || null;
 
   if (!placa) return { erro: "Placa é obrigatória." };
   if (!dataSinistro) return { erro: "Data do sinistro é obrigatória." };
@@ -51,6 +53,7 @@ export async function criarSinistroAcao(empresaId: string, _prev: SinistroFormSt
     custo_estimado: custoEstimado,
     local_ocorrencia: localOcorrencia,
     descricao,
+    apolice_id: apoliceId,
     criado_por: user?.email ?? null,
   });
 

@@ -74,6 +74,22 @@ export function MotoristaForm({
               className="input"
             />
           </Campo>
+          <Campo label="Exame toxicológico — vencimento">
+            <input
+              type="date"
+              name="exame_toxicologico_vencimento"
+              defaultValue={motorista?.exame_toxicologico_vencimento ?? ""}
+              className="input"
+            />
+          </Campo>
+          <Campo label="ASO — vencimento">
+            <input
+              type="date"
+              name="aso_vencimento"
+              defaultValue={motorista?.aso_vencimento ?? ""}
+              className="input"
+            />
+          </Campo>
           <Campo label="Centro de custo">
             <select name="centro_custo_id" defaultValue={motorista?.centro_custo_id ?? ""} className="input">
               <option value="">Nenhum</option>

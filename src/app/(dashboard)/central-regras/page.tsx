@@ -10,16 +10,23 @@ import { Sparkles, ShieldAlert, Bell, SlidersHorizontal } from "lucide-react";
 // próprias (Antifraude, Ações Sugeridas, Central de Avisos), cada uma com
 // lógica e banco próprios, sem 1 lugar só pra olhar tudo de uma vez.
 //
-// Escopo desta 1ª versão — decisão de projeto, não perguntei ao Daniel
-// porque é claramente a leitura correta do pedido: um HUB que resume as 3
-// telas (contadores + link direto) num painel só. NÃO tenta fundir os 3
-// sistemas num banco/motor único — isso reescreveria Antifraude e Ações
-// Sugeridas do zero (motores de detecção completamente diferentes: um é
-// configurável por limite numérico, o outro é uma bateria de 7 RPCs de
-// detecção fixas), um projeto bem maior e mais arriscado do que cabe numa
-// entrega ao lado de mais 3 features nesta mesma fase. "Configurar
-// limites" já existe e continua em /antifraude (regras com valor/janela de
-// tempo) — este hub só destaca isso, não duplica o formulário aqui.
+// Escopo — decisão de projeto: um HUB que resume as 3 telas (contadores +
+// link direto) num painel só. NÃO funde os 3 sistemas num banco/motor
+// único — isso reescreveria Antifraude e Ações Sugeridas do zero (motores
+// de detecção completamente diferentes; Central de Avisos nem é detecção,
+// é broadcast/CMS), risco desproporcional ao valor.
+//
+// Fase Motor-de-Regras-Unico (27/08/2026, pedido do Daniel: "unificar em
+// um motor de regras único") — o que ESSA parte do pedido pedia de
+// verdade ("o gestor configura limites, não regra fixa no código") ganhou
+// um lugar próprio de configuração em /central-regras/configuracoes: os
+// limites numéricos que hoje ficam hardcoded dentro da detecção de
+// anomalias (% acima do tanque, km/velocidade entre postos, dias parado,
+// desvios-padrão de preço, mínimo de ocorrências) viraram configuráveis
+// por empresa, com fallback pro comportamento de sempre pra quem não
+// mexer em nada. "Configurar limites de valor/janela de tempo" pra
+// abastecimento continua em /antifraude (é um sistema à parte, de
+// pré-autorização — ver comentário na migration).
 export default async function CentralRegrasPage({
   searchParams,
 }: {
@@ -75,9 +82,28 @@ export default async function CentralRegrasPage({
         </p>
       </div>
 
+      {empresas.length > 1 && (
+        <form className="mb-4 flex items-end gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
+              <option value="">Selecione um cliente...</option>
+              {empresas.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn-secondary text-sm">
+            Filtrar
+          </button>
+        </form>
+      )}
+
       {semClienteEscolhido ? (
         <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
-          Selecione um cliente no seletor do topo da página pra ver o resumo de regras e alertas dele.
+          Selecione um cliente acima pra ver o resumo de regras e alertas dele.
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -145,8 +171,17 @@ export default async function CentralRegrasPage({
           <SlidersHorizontal className="h-4 w-4 text-slate-400" />
           <h2 className="text-sm font-semibold text-slate-900">Quer configurar um limite?</h2>
         </div>
-        <p className="text-xs text-slate-500">
-          Limites de valor, quantidade e janela de tempo pra abastecimento ficam em{" "}
+        <p className="mb-3 text-xs text-slate-500">
+          Os limites que a detecção de anomalias e ações sugeridas usa (% acima do tanque, distância entre postos,
+          dias com hodômetro parado, e outros) ficam em{" "}
+          <Link
+            href={`/central-regras/configuracoes${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`}
+            className="font-medium text-frota-600 hover:underline"
+          >
+            Configurar limites
+          </Link>
+          . Limites de valor, quantidade e janela de tempo pra abastecimento (pré-autorização, sistema à parte)
+          ficam em{" "}
           <Link href="/antifraude" className="font-medium text-frota-600 hover:underline">
             Antifraude
           </Link>

@@ -84,6 +84,10 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/cadastro") ||
     path.startsWith("/esqueci-senha") ||
     path.startsWith("/redefinir-senha") ||
+    // Fase Rastreio-Publico (27/08/2026) — link de acompanhamento de frete
+    // sem login, protegido por token de alta entropia com expiração (ver
+    // rastreio_publico_frete()), não pelo cookie de sessão.
+    path.startsWith("/rastreio/") ||
     rotasLandingPublicas.has(path);
 
   // Rotas /api/* fazem a própria autenticação (Bearer token de sessão do

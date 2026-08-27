@@ -924,6 +924,11 @@ export interface Database {
           classificacao: "Próprio" | "Agregado";
           cnh: string | null;
           cnh_vencimento: string | null;
+          // Fase Exame-Toxicologico-ASO (27/08/2026) — mesmo padrão de
+          // cnh_vencimento, alimenta detectar_acoes_exame_toxicologico_vencido
+          // e detectar_acoes_aso_vencido (Ações Sugeridas).
+          exame_toxicologico_vencimento: string | null;
+          aso_vencimento: string | null;
           centro_custo_id: string | null;
           // Vínculo automático (trigger) com usuarios_app.email quando o CPF
           // normalizado bate dentro da mesma empresa — não editar manualmente.
@@ -1347,6 +1352,10 @@ export interface Database {
           // cada execução do cron.
           alerta_sla_proximo_enviado_em: string | null;
           alerta_sla_estourado_enviado_em: string | null;
+          // Fase Rastreio-Publico (27/08/2026) — link de acompanhamento sem
+          // login, ver rastreio_publico_frete().
+          token_rastreio: string | null;
+          token_rastreio_expira_em: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["fretes"]["Row"]> & {
           empresa_id: string;
@@ -2988,6 +2997,31 @@ export interface Database {
           },
         ];
       };
+      configuracoes_regras: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          chave: string;
+          valor: number;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["configuracoes_regras"]["Row"]> & {
+          empresa_id: string;
+          chave: string;
+          valor: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["configuracoes_regras"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "configuracoes_regras_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       bloqueios_abastecimento: {
         Row: {
           id: number;
@@ -3552,6 +3586,9 @@ export interface Database {
           descricao: string | null;
           criado_por: string | null;
           criado_em: string;
+          // Fase Apolices-Seguro (27/08/2026) — vínculo opcional à apólice
+          // vigente no momento do sinistro.
+          apolice_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["sinistros_veiculos"]["Row"]> & {
           empresa_id: string;
@@ -3561,7 +3598,123 @@ export interface Database {
           tipo: string;
         };
         Update: Partial<Database["public"]["Tables"]["sinistros_veiculos"]["Row"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "sinistros_veiculos_apolice_id_fkey";
+            columns: ["apolice_id"];
+            isOneToOne: false;
+            referencedRelation: "apolices_seguro";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pneus: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string;
+          posicao: string;
+          numero_fogo: string | null;
+          marca: string | null;
+          modelo: string | null;
+          medida: string | null;
+          status: "Em uso" | "Estepe" | "Removido" | "Descartado";
+          data_instalacao: string;
+          hodometro_instalacao: number;
+          valor_aquisicao: number | null;
+          numero_recapagens: number;
+          custo_recapagens_total: number;
+          data_remocao: string | null;
+          hodometro_remocao: number | null;
+          motivo_remocao: string | null;
+          observacoes: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pneus"]["Row"]> & {
+          empresa_id: string;
+          placa: string;
+          posicao: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["pneus"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "pneus_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      apolices_seguro: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string | null;
+          seguradora: string;
+          numero_apolice: string;
+          vigencia_inicio: string;
+          vigencia_fim: string;
+          cobertura: string | null;
+          valor_franquia: number | null;
+          valor_premio: number | null;
+          observacoes: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["apolices_seguro"]["Row"]> & {
+          empresa_id: string;
+          seguradora: string;
+          numero_apolice: string;
+          vigencia_inicio: string;
+          vigencia_fim: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["apolices_seguro"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "apolices_seguro_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      capacidade_ociosa_frota: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          placa: string | null;
+          tipo_veiculo: string | null;
+          origem_cidade: string;
+          origem_uf: string;
+          destino_pretendido: string | null;
+          disponivel_a_partir: string;
+          capacidade_kg: number | null;
+          observacoes: string | null;
+          status: "ativo" | "utilizada" | "cancelada";
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["capacidade_ociosa_frota"]["Row"]> & {
+          empresa_id: string;
+          origem_cidade: string;
+          origem_uf: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["capacidade_ociosa_frota"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "capacidade_ociosa_frota_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       solicitacoes_aprovacao: {
         Row: {
@@ -6999,6 +7152,14 @@ export interface Database {
         Args: { p_empresa_id?: string | null };
         Returns: number;
       };
+      detectar_acoes_exame_toxicologico_vencido: {
+        Args: { p_empresa_id?: string | null; p_dias_antecedencia?: number };
+        Returns: number;
+      };
+      detectar_acoes_aso_vencido: {
+        Args: { p_empresa_id?: string | null; p_dias_antecedencia?: number };
+        Returns: number;
+      };
       detectar_acoes_posto_caro: {
         Args: { p_empresa_id?: string | null; p_threshold?: number | null };
         Returns: number;
@@ -7008,6 +7169,14 @@ export interface Database {
         Returns: number;
       };
       executar_acao_bloquear_motorista: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
+      };
+      executar_acao_exame_toxicologico_vencido: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
+      };
+      executar_acao_aso_vencido: {
         Args: { p_acao_id: number };
         Returns: undefined;
       };
@@ -7127,6 +7296,41 @@ export interface Database {
         Args: { p_bloqueio_id: number };
         Returns: undefined;
       };
+      gerar_token_rastreio_frete: {
+        Args: { p_frete_id: string; p_dias_validade?: number };
+        Returns: string;
+      };
+      revogar_token_rastreio_frete: {
+        Args: { p_frete_id: string };
+        Returns: undefined;
+      };
+      rastreio_publico_frete: {
+        Args: { p_token: string };
+        Returns: {
+          titulo: string;
+          status: string;
+          origem_cidade: string | null;
+          origem_uf: string | null;
+          destino_cidade: string | null;
+          destino_uf: string | null;
+          motorista_primeiro_nome: string | null;
+          data_saida_prevista: string | null;
+          prazo_entrega: string | null;
+          atualizado_em: string;
+        }[];
+      };
+      registrar_recapagem_pneu: {
+        Args: { p_pneu_id: string; p_valor: number };
+        Returns: undefined;
+      };
+      salvar_configuracao_regra: {
+        Args: { p_empresa_id: string; p_chave: string; p_valor: number };
+        Returns: undefined;
+      };
+      restaurar_configuracao_regra_padrao: {
+        Args: { p_empresa_id: string; p_chave: string };
+        Returns: undefined;
+      };
       indice_publico_precos_brasil: {
         Args: Record<string, never>;
         Returns: {
@@ -7139,6 +7343,23 @@ export interface Database {
           preco_medio_anp: number | null;
           data_referencia_anp: string | null;
           atualizado_em: string | null;
+        }[];
+      };
+      bolsa_fretes_grupo: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          frete_id: string;
+          empresa_nome: string;
+          titulo: string;
+          origem_cidade: string | null;
+          origem_uf: string | null;
+          destino_cidade: string | null;
+          destino_uf: string | null;
+          tipo_carga: string | null;
+          peso_carga_kg: number | null;
+          km_estimado: number | null;
+          data_saida_prevista: string | null;
+          prazo_entrega: string | null;
         }[];
       };
     };

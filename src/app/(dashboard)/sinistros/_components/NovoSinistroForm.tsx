@@ -5,7 +5,17 @@ import { useRouter } from "next/navigation";
 import { criarSinistroAcao } from "../actions";
 import { TIPOS_SINISTRO, GRAVIDADES_SINISTRO } from "@/lib/checklist";
 
-export function NovoSinistroForm({ empresaId, placas }: { empresaId: string; placas: string[] }) {
+type ApoliceOpcao = { id: string; seguradora: string; numero_apolice: string; placa: string | null };
+
+export function NovoSinistroForm({
+  empresaId,
+  placas,
+  apolices = [],
+}: {
+  empresaId: string;
+  placas: string[];
+  apolices?: ApoliceOpcao[];
+}) {
   const router = useRouter();
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -81,6 +91,20 @@ export function NovoSinistroForm({ empresaId, placas }: { empresaId: string; pla
           <label className="mb-1 block text-sm font-medium text-slate-700">Custo estimado (R$)</label>
           <input type="number" name="custo_estimado" min={0} step="0.01" className="input" />
         </div>
+        {apolices.length > 0 && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Apólice vinculada</label>
+            <select name="apolice_id" defaultValue="" className="input">
+              <option value="">Nenhuma</option>
+              {apolices.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.seguradora} — {a.numero_apolice}
+                  {a.placa ? ` (${a.placa})` : " (frota toda)"}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="flex items-center gap-2 pt-6">
           <input type="checkbox" name="houve_vitima" id="houve_vitima" className="h-4 w-4 rounded border-slate-300" />
           <label htmlFor="houve_vitima" className="text-sm font-medium text-slate-700">

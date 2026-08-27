@@ -21,6 +21,15 @@ export default async function NovoSinistroPage({ searchParams }: { searchParams:
   const { data: veiculosDaEmpresa } = await supabase.rpc("veiculos_da_empresa", { p_empresa_id: empresaSelecionada });
   const placas = (veiculosDaEmpresa ?? []).map((v) => v.placa).filter((p): p is string => Boolean(p)).sort();
 
+  // Fase Apolices-Seguro (27/08/2026) — vínculo opcional à apólice vigente
+  // no momento do sinistro.
+  const { data: apolicesDaEmpresa } = await supabase
+    .from("apolices_seguro")
+    .select("id, seguradora, numero_apolice, placa")
+    .eq("empresa_id", empresaSelecionada)
+    .order("seguradora");
+  const apolices = apolicesDaEmpresa ?? [];
+
   return (
     <div>
       <div className="mb-6">
@@ -29,7 +38,7 @@ export default async function NovoSinistroPage({ searchParams }: { searchParams:
         </Link>
         <h1 className="mt-2 text-xl font-semibold text-slate-900">Novo Sinistro</h1>
       </div>
-      <NovoSinistroForm empresaId={empresaSelecionada} placas={placas} />
+      <NovoSinistroForm empresaId={empresaSelecionada} placas={placas} apolices={apolices} />
     </div>
   );
 }

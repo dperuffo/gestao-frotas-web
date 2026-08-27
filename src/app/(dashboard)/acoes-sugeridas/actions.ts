@@ -27,13 +27,52 @@ export async function executarDeteccaoAcoesSugeridasAcao(empresaId: string | nul
     return { erro: `Não foi possível rodar a detecção base de anomalias: ${anomalias.error.message}` };
   }
 
-  const [cnh, posto, hodometro, volumeTanque, geoDistancia, precoRegiao, postoNaoAutorizado] = await Promise.all([
+  // Fase Motor-de-Regras-Unico — posto_caro e o "mínimo de ocorrências" das
+  // demais detecções aceitam threshold/quantidade como parâmetro escalar,
+  // não fazem join com configuracoes_regras dentro do SQL (esses SIM
+  // processam várias empresas de uma vez quando empresaId é null pro admin,
+  // e um único escalar não daria pra representar 1 valor por empresa nesse
+  // caso). Por isso resolvemos aqui: com 1 empresa selecionada, lê o valor
+  // configurado dela (se houver) e passa; com empresaId null (admin vendo
+  // "todas"), cai no default de sempre — mesma limitação documentada na
+  // migration configuracoes_regras.
+  const configuracoes = empresaId
+    ? await supabase.from("configuracoes_regras").select("chave, valor").eq("empresa_id", empresaId)
+    : { data: null };
+  const config = new Map((configuracoes.data ?? []).map((r) => [r.chave, r.valor]));
+
+  const [cnh, toxicologico, aso, posto, hodometro, volumeTanque, geoDistancia, precoRegiao, postoNaoAutorizado] = await Promise.all([
     supabase.rpc("detectar_acoes_cnh_vencida", { p_empresa_id: empresaId }),
-    supabase.rpc("detectar_acoes_posto_caro", { p_empresa_id: empresaId }),
-    supabase.rpc("detectar_acoes_hodometro", { p_empresa_id: empresaId }),
-    supabase.rpc("detectar_acoes_volume_tanque", { p_empresa_id: empresaId }),
-    supabase.rpc("detectar_acoes_geo_distancia", { p_empresa_id: empresaId }),
-    supabase.rpc("detectar_acoes_preco_regiao", { p_empresa_id: empresaId }),
+    // Fase Exame-Toxicologico-ASO — mesmo motor, 2 tipos novos, com alerta
+    // antecipado configurável (ver regrasConfiguraveis.ts).
+    supabase.rpc("detectar_acoes_exame_toxicologico_vencido", {
+      p_empresa_id: empresaId,
+      p_dias_antecedencia: config.get("exame_toxicologico_dias_antecedencia") ?? 30,
+    }),
+    supabase.rpc("detectar_acoes_aso_vencido", {
+      p_empresa_id: empresaId,
+      p_dias_antecedencia: config.get("aso_dias_antecedencia") ?? 30,
+    }),
+    supabase.rpc("detectar_acoes_posto_caro", {
+      p_empresa_id: empresaId,
+      p_threshold: config.get("posto_acima_media_percentual_max") ?? 0.15,
+    }),
+    supabase.rpc("detectar_acoes_hodometro", {
+      p_empresa_id: empresaId,
+      p_minimo_ocorrencias: config.get("minimo_ocorrencias_hodometro") ?? 2,
+    }),
+    supabase.rpc("detectar_acoes_volume_tanque", {
+      p_empresa_id: empresaId,
+      p_minimo_ocorrencias: config.get("minimo_ocorrencias_volume_tanque") ?? 1,
+    }),
+    supabase.rpc("detectar_acoes_geo_distancia", {
+      p_empresa_id: empresaId,
+      p_minimo_ocorrencias: config.get("minimo_ocorrencias_geo_distancia") ?? 1,
+    }),
+    supabase.rpc("detectar_acoes_preco_regiao", {
+      p_empresa_id: empresaId,
+      p_minimo_ocorrencias: config.get("minimo_ocorrencias_preco_regiao") ?? 3,
+    }),
     // Fase Antifraude→Ações-Sugeridas — migrado do tipo "localizacao_posto"
     // de Antifraude: varre abastecimentos_unificado contra as listas de
     // postos autorizados em parametros_postos_permitidos.
@@ -41,13 +80,23 @@ export async function executarDeteccaoAcoesSugeridasAcao(empresaId: string | nul
   ]);
 
   const erro =
-    cnh.error ?? posto.error ?? hodometro.error ?? volumeTanque.error ?? geoDistancia.error ?? precoRegiao.error ?? postoNaoAutorizado.error;
+    cnh.error ??
+    toxicologico.error ??
+    aso.error ??
+    posto.error ??
+    hodometro.error ??
+    volumeTanque.error ??
+    geoDistancia.error ??
+    precoRegiao.error ??
+    postoNaoAutorizado.error;
   if (erro) {
     return { erro: `Não foi possível rodar a detecção: ${erro.message}` };
   }
 
   const inseridas =
     (cnh.data ?? 0) +
+    (toxicologico.data ?? 0) +
+    (aso.data ?? 0) +
     (posto.data ?? 0) +
     (hodometro.data ?? 0) +
     (volumeTanque.data ?? 0) +
@@ -66,6 +115,8 @@ export async function executarDeteccaoAcoesSugeridasAcao(empresaId: string | nul
 // que faltavam pra cobrir tudo que Anomalias detecta.
 const RPC_EXECUCAO: Record<string, string> = {
   cnh_vencida: "executar_acao_bloquear_motorista",
+  exame_toxicologico_vencido: "executar_acao_exame_toxicologico_vencido",
+  aso_vencido: "executar_acao_aso_vencido",
   posto_acima_media: "executar_acao_remover_posto_rede",
   hodometro_fora_padrao: "executar_acao_ajustar_hodometro",
   volume_tanque: "executar_acao_limitar_volume_diario",

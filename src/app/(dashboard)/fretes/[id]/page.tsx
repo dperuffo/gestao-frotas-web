@@ -15,6 +15,7 @@ import { ResolverPanicoButton } from "../_components/ResolverPanicoButton";
 import { AgendamentoPatioCard } from "../../agendamentos-patio/_components/AgendamentoPatioCard";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
+import { LinkRastreioFrete } from "../_components/LinkRastreioFrete";
 
 type FreteDetalhe = {
   id: string;
@@ -61,6 +62,9 @@ type FreteDetalhe = {
   carga_altura_m: number | null;
   veiculos_aceitos: string[] | null;
   carrocerias_aceitas: string[] | null;
+  // Fase Rastreio-Publico (27/08/2026).
+  token_rastreio: string | null;
+  token_rastreio_expira_em: string | null;
 };
 
 const LABEL_STATUS: Record<string, string> = {
@@ -91,7 +95,7 @@ export default async function FreteDetalhePage({
   const { data: frete } = await supabase
     .from("fretes")
     .select(
-      "id, empresa_id, titulo, descricao, status, publico_alvo, origem_label, destino_label, tipo_carga, peso_carga_kg, data_saida_prevista, prazo_entrega, km_estimado, valor_oferecido, motorista_id, coleta_rua, coleta_numero, coleta_bairro, coleta_cidade, coleta_uf, coleta_cep, coleta_referencia, coleta_data, coleta_hora, coleta_contato_nome, coleta_contato_telefone, entrega_rua, entrega_numero, entrega_bairro, entrega_cidade, entrega_uf, entrega_cep, entrega_referencia, entrega_data, entrega_hora, entrega_contato_nome, entrega_contato_telefone, carga_comprimento_m, carga_largura_m, carga_altura_m, veiculos_aceitos, carrocerias_aceitas"
+      "id, empresa_id, titulo, descricao, status, publico_alvo, origem_label, destino_label, tipo_carga, peso_carga_kg, data_saida_prevista, prazo_entrega, km_estimado, valor_oferecido, motorista_id, coleta_rua, coleta_numero, coleta_bairro, coleta_cidade, coleta_uf, coleta_cep, coleta_referencia, coleta_data, coleta_hora, coleta_contato_nome, coleta_contato_telefone, entrega_rua, entrega_numero, entrega_bairro, entrega_cidade, entrega_uf, entrega_cep, entrega_referencia, entrega_data, entrega_hora, entrega_contato_nome, entrega_contato_telefone, carga_comprimento_m, carga_largura_m, carga_altura_m, veiculos_aceitos, carrocerias_aceitas, token_rastreio, token_rastreio_expira_em"
     )
     .eq("id", id)
     .maybeSingle();
@@ -446,6 +450,12 @@ export default async function FreteDetalhePage({
           </div>
         )}
       </div>
+
+      <LinkRastreioFrete
+        freteId={freteTipado.id}
+        token={freteTipado.token_rastreio}
+        expiraEm={freteTipado.token_rastreio_expira_em}
+      />
 
       {(freteTipado.coleta_rua || freteTipado.entrega_rua) && (
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -14,6 +14,8 @@ const POR_PAGINA = 20;
 
 const TIPO_LABEL: Record<string, string> = {
   cnh_vencida: "CNH vencida",
+  exame_toxicologico_vencido: "Exame toxicológico vencido/vencendo",
+  aso_vencido: "ASO vencido/vencendo",
   posto_acima_media: "Posto acima da média",
   hodometro_fora_padrao: "Hodômetro fora do padrão",
   volume_tanque: "Volume acima do tanque",

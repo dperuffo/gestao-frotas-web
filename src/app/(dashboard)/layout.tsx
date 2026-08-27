@@ -65,6 +65,7 @@ import {
   Megaphone,
   Percent,
   CheckCircle2,
+  CircleDot,
 } from "lucide-react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -244,6 +245,11 @@ const menuFretes: ItemMenuLateral[] = [
   // motorista próprio/parceiro. Motoristas Parceiros é o cadastro de
   // terceiros/agregados usado pelo modo direto.
   { href: "/fretes", label: "Fretes", icon: Truck }, // PWA: Icons.local_shipping
+  // Fase Bolsa-Fretes-Grupo (27/08/2026, pedido do Daniel: "novas features
+  // de produto" — item do roadmap "Bolsa de fretes / marketplace de
+  // retorno"). Escopo restrito ao mesmo Grupo Econômico, por decisão
+  // explícita do Daniel (não é cross-tenant entre clientes diferentes).
+  { href: "/bolsa-fretes", label: "Bolsa de Fretes do Grupo", icon: MapPin },
   // Fase Programacao-Frota (03/08/2026, benchmark FNI vs Rodopar/Datapar,
   // Grupo 1 item 1) — visão por veículo (em vez de por frete): quem está
   // em viagem e até quando, quem está livre, quem não tem motorista.
@@ -287,6 +293,13 @@ const menuManutencaoAtivos: ItemMenuLateral[] = [
   // Fase Indicadores-da-Frota (30/07/2026) — registro de sinistros/acidentes,
   // alimenta o KPI de índice de sinistralidade em /indicadores-frota.
   { href: "/sinistros", label: "Sinistros", icon: AlertTriangle }, // PWA: Icons.warning_amber
+  // Fase Apolices-Seguro (27/08/2026, pedido do Daniel: "novas features de
+  // produto") — número da apólice, seguradora, vigência, cobertura e
+  // franquia, com alerta de vencimento e vínculo aos sinistros.
+  { href: "/apolices-seguro", label: "Apólices de Seguro", icon: ShieldCheck },
+  // Fase Gestao-Pneus (27/08/2026, pedido do Daniel: "novas features de
+  // produto") — posição no veículo, km rodado, recapagens e custo por km.
+  { href: "/pneus", label: "Gestão de Pneus", icon: CircleDot },
   // Fase Onda-2 (benchmark TicketLog, item #4) — pedido do Daniel: ciclo de
   // multas (captura manual, indicação de condutor reaproveitando o vínculo
   // Motorista<->Veículo, histórico e alerta de prazo pro desconto).

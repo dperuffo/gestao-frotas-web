@@ -21,6 +21,8 @@ function montarPayload(formData: FormData) {
     classificacao,
     cnh: String(formData.get("cnh") ?? "").trim() || null,
     cnh_vencimento: String(formData.get("cnh_vencimento") ?? "") || null,
+    exame_toxicologico_vencimento: String(formData.get("exame_toxicologico_vencimento") ?? "") || null,
+    aso_vencimento: String(formData.get("aso_vencimento") ?? "") || null,
     centro_custo_id: String(formData.get("centro_custo_id") ?? "") || null,
   };
 }

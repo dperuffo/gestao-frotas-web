@@ -444,3 +444,23 @@ export async function resolverAlertaPanicoAcao(freteId: string, eventoId: string
   revalidatePath(`/fretes/${freteId}`);
   revalidatePath("/torre-de-controle");
 }
+
+// Fase Rastreio-Publico (27/08/2026) — gerar/revogar o link público de
+// acompanhamento (sem login). Toda a checagem de permissão e geração do
+// token fica na RPC (SECURITY DEFINER) — ver comentário grande na
+// migration rastreio_publico_frete.
+export async function gerarLinkRastreioAcao(freteId: string): Promise<{ erro?: string; token?: string }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("gerar_token_rastreio_frete", { p_frete_id: freteId });
+  if (error) return { erro: error.message };
+  revalidatePath(`/fretes/${freteId}`);
+  return { token: data ?? undefined };
+}
+
+export async function revogarLinkRastreioAcao(freteId: string): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("revogar_token_rastreio_frete", { p_frete_id: freteId });
+  if (error) return { erro: error.message };
+  revalidatePath(`/fretes/${freteId}`);
+  return {};
+}
