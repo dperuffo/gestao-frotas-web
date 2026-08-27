@@ -3,7 +3,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, CornerDownLeft, X } from "lucide-react";
-import type { ItemMenuLateral } from "./GrupoMenuLateral";
+import type { ReactNode } from "react";
+
+// Fase UX-Navegacao — HOTFIX (27/08/2026): ItemBusca.icon é um
+// componente (LucideIcon, ou seja, uma função). Passar esse tipo direto
+// como prop de um Server Component (layout.tsx) pra este Client Component
+// quebra a produção ("Functions cannot be passed directly to Client
+// Components..." — mesma causa raiz já corrigida antes em
+// ItemMenuAtivo.tsx). A correção é a mesma: o servidor pré-renderiza o
+// ícone como JSX (`iconNode`) e só isso atravessa a fronteira — nunca o
+// componente cru.
+export type ItemBusca = { href: string; label: string; iconNode?: ReactNode };
 
 // Fase UX-Navegacao (27/08/2026, pedido do Daniel: "ajustes da experiência
 // do usuário e navegação", item do roadmap "Busca global (atalho de
@@ -26,7 +36,7 @@ function normalizar(texto: string): string {
     .toLowerCase();
 }
 
-export function BuscaGlobal({ itens }: { itens: ItemMenuLateral[] }) {
+export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [consulta, setConsulta] = useState("");
@@ -56,7 +66,7 @@ export function BuscaGlobal({ itens }: { itens: ItemMenuLateral[] }) {
         const pontuacao = label.startsWith(alvo) ? 0 : 1;
         return { item, pontuacao };
       })
-      .filter((v): v is { item: ItemMenuLateral; pontuacao: number } => v !== null)
+      .filter((v): v is { item: ItemBusca; pontuacao: number } => v !== null)
       .sort((a, b) => a.pontuacao - b.pontuacao || a.item.label.localeCompare(b.item.label));
     return comPontuacao.slice(0, 8).map((v) => v.item);
   }, [consulta, itensUnicos]);
@@ -177,7 +187,7 @@ export function BuscaGlobal({ itens }: { itens: ItemMenuLateral[] }) {
                       i === indiceSelecionado ? "bg-frota-50 text-frota-500" : "text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
+                    {item.iconNode}
                     <span className="flex-1 truncate">{item.label}</span>
                     {i === indiceSelecionado && <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
                   </button>

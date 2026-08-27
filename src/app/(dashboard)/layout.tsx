@@ -98,7 +98,7 @@ import { AvisoBannerFixo } from "./_components/AvisoBannerFixo";
 import { listarAvisosAcao } from "./administracao/central-avisos/actions";
 import { BarraAtalhosFavoritos, type ItemAtalho } from "./_components/BarraAtalhosFavoritos";
 import { RastreadorAcessoMenu } from "./_components/RastreadorAcessoMenu";
-import { BuscaGlobal } from "./_components/BuscaGlobal";
+import { BuscaGlobal, type ItemBusca } from "./_components/BuscaGlobal";
 import { PainelMobile } from "./_components/PainelMobile";
 
 // Fase 27.15 (histórico) — a "Assistente FNI" chegou a usar a logo da marca
@@ -893,7 +893,15 @@ export default async function DashboardLayout({
   // (BuscaGlobal.tsx). Reaproveita as MESMAS listas já filtradas por
   // permissão acima (itensXxx/itensPostoXxx) em vez de duplicar a lógica de
   // `podeAcessarItem` — a busca nunca mostra uma tela que o menu já esconde.
-  const itensBuscaGlobal = ehPosto
+  //
+  // HOTFIX (27/08/2026) — quebrou a produção: ItemMenuLateral.icon é um
+  // componente (função), e esse array (com a função dentro) atravessava de
+  // Server (aqui) pra Client (BuscaGlobal) como prop crua — exatamente a
+  // violação de Server/Client boundary já corrigida antes em
+  // ItemMenuAtivo.tsx. O `.map()` abaixo pré-renderiza cada ícone em JSX
+  // (`iconNode`) no servidor — só o resultado já renderizado atravessa a
+  // fronteira, nunca o componente em si.
+  const itensBuscaGlobal: ItemBusca[] = (ehPosto
     ? [
         ...itensPostoVisaoGeral,
         ...itensPostoCadastrosFiltrados,
@@ -914,7 +922,12 @@ export default async function DashboardLayout({
         ...itensContaAjuda,
         ...itensSistema,
         ...(ehAdmin ? menuAdministracao : []),
-      ];
+      ]
+  ).map((item) => ({
+    href: item.href,
+    label: item.label,
+    iconNode: item.icon ? <item.icon className="h-4 w-4 shrink-0" /> : undefined,
+  }));
 
   // Fase 27.114 — o passo "menu-administracao" só existe no DOM quando
   // ehAdmin (ver bloco {ehAdmin && (...)} abaixo, Fase 27.110); filtra ele
