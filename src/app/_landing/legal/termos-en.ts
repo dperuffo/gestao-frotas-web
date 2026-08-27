@@ -2,10 +2,10 @@
 // Ver README Fase 26 para o que foi ajustado ao portar.
 export const TITULO = 'Terms of Use — FNI Fleet Network Intelligence';
 export const ESTILO = `
-:root{--navy:#0f172a;--cyan:#3b82f6;--white:#ffffff;--gray:#94a3b8;}
+:root{--navy:#26303d;--cyan:#87ceeb;--white:#ffffff;--gray:#a9b4c0;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:var(--navy);color:var(--white);line-height:1.75;}
-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 6%;background:rgba(4,17,46,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06);}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 6%;background:rgba(38,48,61,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06);}
 .nav-logo{font-family:'Inter',sans-serif;font-weight:800;font-size:1.1rem;color:var(--white);text-decoration:none;}
 .nav-logo span{color:var(--cyan);}
 .nav-links{display:flex;gap:28px;list-style:none;}
