@@ -58,10 +58,13 @@ import {
   Timer,
   Boxes,
   ArrowLeftRight,
+  History,
+  ShieldAlert,
   Briefcase,
   Bot,
   Megaphone,
   Percent,
+  CheckCircle2,
 } from "lucide-react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -149,6 +152,16 @@ const menuVisaoGeral: ItemMenuLateral[] = [
   // aprovação -> execução real (bloquear motorista com CNH vencida, remover
   // posto acima da média, cadastrar regra de hodômetro).
   { href: "/acoes-sugeridas", label: "Ações Sugeridas", icon: Sparkles }, // PWA: Icons.auto_awesome
+  // Fase Gestao-Controles (27/08/2026, pedido do Daniel: "gestao e controles
+  // mais diretos" / item do roadmap "Central de Regras & Alertas unificada")
+  // — achado real: hoje os alertas vivem espalhados (Antifraude, Ações
+  // Sugeridas, Central de Avisos), cada um com tela própria, sem 1 lugar só
+  // pra olhar tudo. Escopo desta 1ª versão (ver comentário grande em
+  // central-regras/page.tsx): um HUB que resume as 3 telas e leva pra cada
+  // uma — NÃO substitui nem funde os 3 sistemas em 1 banco/motor só (seria
+  // um projeto muito maior, arriscado de mais pra entrar junto com as
+  // demais entregas desta fase).
+  { href: "/central-regras", label: "Central de Regras & Alertas", icon: ShieldAlert },
 ];
 
 const menuCadastros: ItemMenuLateral[] = [
@@ -296,6 +309,11 @@ const menuFinanceiro: ItemMenuLateral[] = [
   // Fase P0.1 (roadmap TMS/ERP) — configuração do emitente de CT-e/MDF-e
   // (dados fiscais, certificado A1 via provedor, teste de conexão).
   { href: "/fiscal", label: "Fiscal (CT-e/MDF-e)", icon: Receipt },
+  // Fase Gestao-Controles (27/08/2026, pedido do Daniel: "gestao e controles
+  // mais diretos") — solicitação -> aprovação (1 ou 2 níveis, conforme
+  // valor) -> execução, com histórico. Módulo autônomo por enquanto (ver
+  // comentário em aprovacoes/actions.ts).
+  { href: "/aprovacoes", label: "Aprovações", icon: CheckCircle2 },
 ];
 
 // Fase reorganizacao-menu — visão consolidada, fora do dia a dia
@@ -503,6 +521,11 @@ const menuAdministracao = [
   // Fase Onda-2 (benchmark TicketLog, item #5) — CRUD do catálogo nacional
   // de oficinas credenciadas, exibido pro cliente em /oficinas.
   { href: "/administracao/oficinas-credenciadas", label: "Oficinas Credenciadas", icon: Hammer },
+  // Fase Gestao-Controles (27/08/2026, pedido do Daniel: "gestao e controles
+  // mais diretos" / item do roadmap "Log de auditoria centralizado") —
+  // quem mudou o quê, quando, pras ações mais sensíveis (permissão, preço,
+  // exclusão de cadastro).
+  { href: "/log-auditoria", label: "Log de Auditoria", icon: History },
 ];
 
 // Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel) — mapa

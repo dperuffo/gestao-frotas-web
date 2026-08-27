@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CLASSIFICACAO, type Classificacao, TIPO_PORTE_VEICULO, type TipoPorteVeiculo } from "@/lib/constants";
 import { alocarVeiculoCentroCusto } from "@/lib/centroCusto";
 import { normalizarCNPJ } from "@/lib/utils";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 export type VeiculoFormState = { erro?: string } | undefined;
 
@@ -228,5 +229,15 @@ export async function atualizarVeiculo(
 export async function alternarAtivoVeiculo(id: string, ativo: boolean) {
   const supabase = await createClient();
   await supabase.from("cadastro_veiculos").update({ ativo }).eq("id", id);
+
+  // Fase Gestao-Controles (27/08/2026) — "exclusão de cadastro" é um dos 3
+  // exemplos citados pelo Daniel pro log de auditoria. Este app nunca faz
+  // hard-delete de veículo (preserva histórico de abastecimentos/
+  // manutenções — ver comentário em duplicidade-placas-grupo/actions.ts);
+  // inativar É a "exclusão" na prática, então é aqui que o log entra.
+  if (!ativo) {
+    await registrarAuditoria({ acao: "veiculo.inativar", entidade: "cadastro_veiculos", entidadeId: id });
+  }
+
   revalidatePath("/veiculos");
 }

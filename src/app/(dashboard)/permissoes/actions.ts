@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { EMPRESA_ID_GLOBAL } from "@/lib/constants";
 import { invalidarCachePermissoes } from "@/lib/permissoes";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 // Atualiza (ou cria, se ainda não existir) uma célula da matriz funcionalidade
 // x perfil, dentro de uma empresa específica (Fase 27.1 — empresa_id vem
@@ -40,6 +41,16 @@ export async function alternarPermissao(
   if (error) {
     throw new Error(`Não foi possível salvar a permissão: ${error.message}`);
   }
+
+  // Fase Gestao-Controles (27/08/2026) — "mudança de permissão" é
+  // literalmente um dos 3 exemplos citados pelo Daniel pro log de auditoria.
+  await registrarAuditoria({
+    acao: permitido ? "permissao.liberar" : "permissao.bloquear",
+    entidade: "permissoes_perfil",
+    entidadeId: `${funcionalidade}:${perfil}`,
+    empresaId: empresaId,
+    detalhes: { funcionalidade, perfil, permitido },
+  });
 
   // Fase Observabilidade-Fase2 (14/08/2026) — `carregarMapaPermissoes` agora
   // cacheia o padrão global por até 30s (ver src/lib/permissoes.ts); sem

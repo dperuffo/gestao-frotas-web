@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { PRODUTOS_POSTO } from "@/lib/constants";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 export type SalvarPrecosPostoState = { erro?: string; ok?: boolean } | undefined;
 
@@ -48,6 +49,15 @@ export async function salvarPrecosPostoAcao(
     .upsert(linhas, { onConflict: "empresa_posto_id,combustivel" });
 
   if (error) return { erro: error.message };
+
+  // Fase Gestao-Controles (27/08/2026) — "edição de preço" é um dos 3
+  // exemplos citados pelo Daniel pro log de auditoria.
+  await registrarAuditoria({
+    acao: "preco_posto.editar",
+    entidade: "precos_postos",
+    entidadeId: empresaPostoId,
+    detalhes: { precos: linhas.map((l) => ({ combustivel: l.combustivel, preco: l.preco })) },
+  });
 
   revalidatePath("/precos-postos");
   return { ok: true };

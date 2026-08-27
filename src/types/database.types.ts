@@ -3254,6 +3254,39 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["lgpd_exclusoes"]["Row"]>;
         Relationships: [];
       };
+      log_auditoria: {
+        Row: {
+          acao: string;
+          criado_em: string;
+          detalhes: Json | null;
+          empresa_id: string | null;
+          entidade: string;
+          entidade_id: string | null;
+          id: number;
+          usuario_email: string;
+        };
+        Insert: {
+          acao: string;
+          criado_em?: string;
+          detalhes?: Json | null;
+          empresa_id?: string | null;
+          entidade: string;
+          entidade_id?: string | null;
+          id?: never;
+          usuario_email: string;
+        };
+        Update: {
+          acao?: string;
+          criado_em?: string;
+          detalhes?: Json | null;
+          empresa_id?: string | null;
+          entidade?: string;
+          entidade_id?: string | null;
+          id?: never;
+          usuario_email?: string;
+        };
+        Relationships: [];
+      };
       // Registro de login de clientes (Fase 27.20) — tabela nova, criada só
       // pra este app (nada de legado). Cada linha é um evento de login
       // bem-sucedido de um usuário não-admin; alimenta o badge de
@@ -3529,6 +3562,100 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["sinistros_veiculos"]["Row"]>;
         Relationships: [];
+      };
+      solicitacoes_aprovacao: {
+        Row: {
+          categoria: string;
+          criado_em: string;
+          descricao: string | null;
+          empresa_id: string;
+          executado_em: string | null;
+          executado_por: string | null;
+          id: string;
+          niveis_necessarios: number;
+          nivel_atual: number;
+          solicitante_email: string;
+          status: string;
+          titulo: string;
+          valor: number;
+        };
+        Insert: {
+          categoria: string;
+          criado_em?: string;
+          descricao?: string | null;
+          empresa_id: string;
+          executado_em?: string | null;
+          executado_por?: string | null;
+          id?: string;
+          niveis_necessarios: number;
+          nivel_atual?: number;
+          solicitante_email: string;
+          status?: string;
+          titulo: string;
+          valor: number;
+        };
+        Update: {
+          categoria?: string;
+          criado_em?: string;
+          descricao?: string | null;
+          empresa_id?: string;
+          executado_em?: string | null;
+          executado_por?: string | null;
+          id?: string;
+          niveis_necessarios?: number;
+          nivel_atual?: number;
+          solicitante_email?: string;
+          status?: string;
+          titulo?: string;
+          valor?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_aprovacao_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      solicitacoes_aprovacao_decisoes: {
+        Row: {
+          aprovador_email: string;
+          comentario: string | null;
+          decidido_em: string;
+          decisao: string;
+          id: number;
+          nivel: number;
+          solicitacao_id: string;
+        };
+        Insert: {
+          aprovador_email: string;
+          comentario?: string | null;
+          decidido_em?: string;
+          decisao: string;
+          id?: never;
+          nivel: number;
+          solicitacao_id: string;
+        };
+        Update: {
+          aprovador_email?: string;
+          comentario?: string | null;
+          decidido_em?: string;
+          decisao?: string;
+          id?: never;
+          nivel?: number;
+          solicitacao_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_aprovacao_decisoes_solicitacao_id_fkey";
+            columns: ["solicitacao_id"];
+            isOneToOne: false;
+            referencedRelation: "solicitacoes_aprovacao";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       // Fase Pedágios — base pública nacional de praças de pedágio (federais
       // + estaduais), sem empresa_id, mesmo padrão de anp_postos acima.
@@ -4750,6 +4877,16 @@ export interface Database {
         Args: Record<PropertyKey, never>;
         Returns: Json;
       };
+      registrar_log_auditoria: {
+        Args: {
+          p_acao: string;
+          p_detalhes?: Json;
+          p_empresa_id?: string;
+          p_entidade: string;
+          p_entidade_id?: string;
+        };
+        Returns: undefined;
+      };
       registrar_abastecimento_interno: {
         Args: {
           p_empresa_id: string;
@@ -5010,6 +5147,28 @@ export interface Database {
       // segurança de abastecimentos_da_fatura: SECURITY DEFINER + guarda
       // manual (cross-tenant, nenhuma RLS direta em `empresas` cobriria
       // enxergar os dados da CONTRAPARTE).
+      criar_solicitacao_aprovacao: {
+        Args: {
+          p_categoria: string;
+          p_descricao: string;
+          p_empresa_id: string;
+          p_titulo: string;
+          p_valor: number;
+        };
+        Returns: string;
+      };
+      decidir_solicitacao_aprovacao: {
+        Args: {
+          p_comentario?: string;
+          p_decisao: string;
+          p_solicitacao_id: string;
+        };
+        Returns: undefined;
+      };
+      marcar_solicitacao_executada: {
+        Args: { p_solicitacao_id: string };
+        Returns: undefined;
+      };
       dados_boleto_fatura: {
         Args: { p_fatura_id: string };
         Returns: {
@@ -5361,6 +5520,10 @@ export interface Database {
       grupo_ids_da_empresa: {
         Args: { p_empresa_id: string };
         Returns: string[];
+      };
+      grupo_economico_painel_executivo: {
+        Args: { p_grupo_id: string };
+        Returns: Json;
       };
       veiculos_existentes_por_placa: {
         Args: { p_placas: string[] };
