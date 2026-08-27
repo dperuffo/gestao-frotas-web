@@ -98,6 +98,8 @@ import { AvisoBannerFixo } from "./_components/AvisoBannerFixo";
 import { listarAvisosAcao } from "./administracao/central-avisos/actions";
 import { BarraAtalhosFavoritos, type ItemAtalho } from "./_components/BarraAtalhosFavoritos";
 import { RastreadorAcessoMenu } from "./_components/RastreadorAcessoMenu";
+import { BuscaGlobal } from "./_components/BuscaGlobal";
+import { PainelMobile } from "./_components/PainelMobile";
 
 // Fase 27.15 (histórico) — a "Assistente FNI" chegou a usar a logo da marca
 // como ícone no menu, tratamento especial só dela (`item.logo`). Substituído
@@ -887,6 +889,33 @@ export default async function DashboardLayout({
     .filter(podeAcessarItem);
   const itensPostoSistema = menuPostoSistema.filter(podeAcessarItem);
 
+  // Fase UX-Navegacao (27/08/2026) — lista única pra alimentar a busca global
+  // (BuscaGlobal.tsx). Reaproveita as MESMAS listas já filtradas por
+  // permissão acima (itensXxx/itensPostoXxx) em vez de duplicar a lógica de
+  // `podeAcessarItem` — a busca nunca mostra uma tela que o menu já esconde.
+  const itensBuscaGlobal = ehPosto
+    ? [
+        ...itensPostoVisaoGeral,
+        ...itensPostoCadastrosFiltrados,
+        ...itensPostoOperacaoFiltrados,
+        ...itensPostoFinanceiro,
+        ...itensPostoContaAjuda,
+        ...itensPostoSistema,
+      ]
+    : [
+        ...itensVisaoGeral,
+        ...itensCadastrosFiltrados,
+        ...itensRoteirizacaoAbastecimento,
+        ...itensFretes,
+        ...itensManutencaoAtivos,
+        ...itensFinanceiro,
+        ...itensRelatorios,
+        ...itensEngajamento,
+        ...itensContaAjuda,
+        ...itensSistema,
+        ...(ehAdmin ? menuAdministracao : []),
+      ];
+
   // Fase 27.114 — o passo "menu-administracao" só existe no DOM quando
   // ehAdmin (ver bloco {ehAdmin && (...)} abaixo, Fase 27.110); filtra ele
   // fora do tour pra quem não é admin, senão o tour aponta pra um elemento
@@ -901,15 +930,23 @@ export default async function DashboardLayout({
       passos={ehPosto ? PASSOS_TOUR_POSTO : passosTourFrota}
     >
     <RastreadorAcessoMenu hrefsRastreaveis={HREFS_RASTREAVEIS} />
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen flex-col lg:flex-row">
       {/* Pedido do Daniel: "desacoplar o menu da tela de informações" — em
           telas com muito conteúdo, o <aside> (menu lateral) rolava junto com
           o <main>, saindo de vista quando o usuário descia a página. Fixado
           com sticky top-0 h-screen: o menu fica preso ao viewport (nunca sai
           de vista ao rolar o conteúdo) e ganha scroll PRÓPRIO
           (overflow-y-auto) pro caso do menu em si ser mais alto que a tela
-          (perfil admin, com todas as seções abertas). */}
-      <aside className="glass-nav sticky top-0 flex h-screen w-64 shrink-0 flex-col overflow-y-auto">
+          (perfil admin, com todas as seções abertas).
+          Fase UX-Navegacao (27/08/2026) — auditoria mobile achou esse
+          <aside> sempre visível como o maior bloqueio de uso do painel no
+          celular (256px fixos numa tela de 375px sobram ~119px pro
+          conteúdo). <PainelMobile> (client component) assume o <aside> por
+          dentro e vira ele numa gaveta só em telas menores que `lg`; em
+          telas `lg`+ continua idêntico a antes — fixo, sempre visível. */}
+      <PainelMobile
+        menu={
+          <>
         <div data-tour="logo" className="border-b border-white/10 px-5 py-6">
           <div className="rounded-xl border border-white/10 bg-white/95 p-3 shadow-lg shadow-frota-950/30">
             <Image
@@ -927,6 +964,9 @@ export default async function DashboardLayout({
               {cargoExibido}
             </p>
           )}
+        </div>
+        <div className="px-3 pt-3">
+          <BuscaGlobal itens={itensBuscaGlobal} />
         </div>
         <nav className="flex-1 px-3 py-4">
           {ehPosto ? (
@@ -1001,8 +1041,10 @@ export default async function DashboardLayout({
           <CentralAjuda />
           <BotaoSair />
         </div>
-      </aside>
-      <main className="flex-1 p-8">
+          </>
+        }
+      >
+      <main className="flex-1 p-4 sm:p-8">
         {/* Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel) —
             barra de atalhos pras telas mais usadas (frecência) ou fixadas
             manualmente, primeira coisa visível no conteúdo. */}
@@ -1024,6 +1066,7 @@ export default async function DashboardLayout({
         )}
         {children}
       </main>
+      </PainelMobile>
     </div>
     <MonitorInatividade minutos={logoutInatividadeMinutos} />
     </TourProvider>

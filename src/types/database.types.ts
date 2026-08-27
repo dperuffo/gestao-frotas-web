@@ -3830,6 +3830,27 @@ export interface Database {
           },
         ];
       };
+      preferencias_dashboard: {
+        Row: {
+          atualizado_em: string;
+          criado_em: string;
+          paineis_ocultos: string[];
+          usuario_email: string;
+        };
+        Insert: {
+          atualizado_em?: string;
+          criado_em?: string;
+          paineis_ocultos?: string[];
+          usuario_email: string;
+        };
+        Update: {
+          atualizado_em?: string;
+          criado_em?: string;
+          paineis_ocultos?: string[];
+          usuario_email?: string;
+        };
+        Relationships: [];
+      };
       profrotas_abastecimentos: {
         Row: {
           id: number;

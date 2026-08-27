@@ -10,21 +10,33 @@ import Link from "next/link";
 // centro de custo etc.) e deixa explícito que carregar a rede própria de
 // postos é OPCIONAL. Some sozinho assim que veículos e motoristas já
 // estiverem cadastrados (não incomoda quem já está operando).
+// Fase UX-Navegacao (27/08/2026, pedido do Daniel: "ajustes da experiência
+// do usuário e navegação", item do roadmap "onboarding guiado") — os 2
+// passos abaixo (centro de custo e equipe) foram adicionados aos 3
+// originais da Fase 27.35. Continuam OPCIONAIS de propósito, igual postos
+// próprios: nenhum dos dois bloqueia o cliente de operar (abastecimento,
+// roteirização etc. funcionam sem centro de custo nem equipe extra), só
+// aprofundam o uso da plataforma pra quem quer ratear despesas por centro
+// de custo ou dividir o acesso com outras pessoas.
 export function PrimeirosPassos({
   totalVeiculos,
   totalMotoristas,
   totalPostosProprios,
+  totalCentrosCusto,
+  totalVinculosEquipe,
 }: {
   totalVeiculos: number;
   totalMotoristas: number;
   totalPostosProprios: number;
+  totalCentrosCusto?: number;
+  totalVinculosEquipe?: number;
 }) {
   const veiculosOk = totalVeiculos > 0;
   const motoristasOk = totalMotoristas > 0;
 
   // Essenciais pra operação (abastecimento, manutenção, centro de custo
-  // etc.) — postos próprios ficam de fora dessa condição de saída porque
-  // são opcionais (ver comentário acima).
+  // etc.) — postos próprios, centro de custo e equipe ficam de fora dessa
+  // condição de saída porque são opcionais (ver comentário acima).
   if (veiculosOk && motoristasOk) return null;
 
   return (
@@ -68,6 +80,30 @@ export function PrimeirosPassos({
           }
           href="/postos/importar"
           textoAcao="Importar planilha de postos"
+        />
+        <PassoItem
+          feito={(totalCentrosCusto ?? 0) > 0}
+          opcional
+          titulo="Configure centros de custo"
+          descricao={
+            (totalCentrosCusto ?? 0) > 0
+              ? `${totalCentrosCusto} centro(s) de custo cadastrado(s).`
+              : "Opcional: agrupa veículos por filial, obra ou setor pra ratear despesas nos relatórios financeiros."
+          }
+          href="/centros-custo"
+          textoAcao="Configurar centros de custo"
+        />
+        <PassoItem
+          feito={(totalVinculosEquipe ?? 0) > 1}
+          opcional
+          titulo="Convide sua equipe"
+          descricao={
+            (totalVinculosEquipe ?? 0) > 1
+              ? `${totalVinculosEquipe} pessoa(s) com acesso à conta.`
+              : "Opcional: divida o acesso com outros gestores, cada um com sua própria permissão."
+          }
+          href="/minha-equipe"
+          textoAcao="Convidar pessoa"
         />
       </ul>
     </div>

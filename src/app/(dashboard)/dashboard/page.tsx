@@ -15,6 +15,8 @@ import { RankingGasto, type ItemRankingGasto } from "./_components/RankingGasto"
 import GraficoEficienciaVeiculosLazy, { type ItemEficienciaVeiculo } from "./_components/GraficoEficienciaVeiculosLazy";
 import { TabelaDesempenhoPorAtivo, type ItemDesempenhoAtivo } from "./_components/TabelaDesempenhoPorAtivo";
 import { PrimeirosPassos } from "./_components/PrimeirosPassos";
+import { ConfigPaineis, type OpcaoPainel } from "./_components/ConfigPaineis";
+import { buscarPaineisOcultosAcao } from "./preferenciasActions";
 import { DashboardPosto } from "./_components/DashboardPosto";
 import GraficoMeiosPagamentoLazy from "./_components/GraficoMeiosPagamentoLazy";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
@@ -158,6 +160,11 @@ export default async function DashboardPage({
     queryCnhVencendo = queryCnhVencendo.eq("empresa_id", empresaSelecionada);
   }
 
+  // Fase UX-Navegacao (27/08/2026) — disparado em paralelo com o Promise.all
+  // grande logo abaixo (não fica dentro dele pra não precisar destrinchar
+  // esse array gigante só por causa de mais 1 chamada independente).
+  const paineisOcultosPromise = buscarPaineisOcultosAcao();
+
   const [
     { count: totalClientes },
     { count: clientesAtivos },
@@ -166,6 +173,8 @@ export default async function DashboardPage({
     { count: totalVeiculosGlobal },
     { count: veiculosAtivosGlobal },
     { count: totalPostosProprios },
+    { count: totalCentrosCusto },
+    { count: totalVinculosEquipe },
     { data: cnhVencendo },
     { data: indicadoresPorProvedorMes },
     { data: indicadoresPorProvedorMesAnterior },
@@ -188,6 +197,18 @@ export default async function DashboardPage({
     // com esse número em zero.
     empresaSelecionada
       ? supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }).eq("empresa_id", empresaSelecionada)
+      : Promise.resolve({ count: 0 }),
+    // Fase UX-Navegacao (27/08/2026) — usados só pelo card "Primeiros
+    // passos" (PrimeirosPassos.tsx), extensão pedida no roadmap de
+    // navegação: além de veículo/motorista, informa se a empresa já
+    // configurou centro de custo (usado em rateio de despesas) e se já
+    // convidou alguém da equipe (além de quem criou a conta). Ambos
+    // opcionais — não bloqueiam nada, só orientam o próximo passo.
+    empresaSelecionada
+      ? supabase.from("centros_custo").select("id", { count: "exact", head: true }).eq("empresa_id", empresaSelecionada)
+      : Promise.resolve({ count: 0 }),
+    empresaSelecionada
+      ? supabase.from("usuarios_empresas").select("user_email", { count: "exact", head: true }).eq("empresa_id", empresaSelecionada)
       : Promise.resolve({ count: 0 }),
     queryCnhVencendo,
     // Fase Dashboard-Provedores-Bug — pedido do Daniel: "Todos os meios de
@@ -592,6 +613,23 @@ export default async function DashboardPage({
     qtdCriticos: d.qtd_criticos,
   }));
 
+  // Fase UX-Navegacao (27/08/2026) — painéis ocultos pelo próprio usuário
+  // (ver ConfigPaineis.tsx). Falha na leitura já retorna [] (ver
+  // preferenciasActions.ts), então na pior hipótese mostra todos os painéis.
+  const paineisOcultos = await paineisOcultosPromise;
+  const paineisOcultosSet = new Set(paineisOcultos);
+  const opcoesPaineis: OpcaoPainel[] = [
+    { chave: "dashboard.variacao_precos", titulo: "1. Variação de preços por combustível" },
+    { chave: "dashboard.consumo_diario", titulo: "2. Previsão de consumo" },
+    { chave: "dashboard.evolucao_preco_medio", titulo: "3. Evolução do preço médio" },
+    { chave: "dashboard.volume_postos", titulo: "4. Evolutivo de volume por posto" },
+    { chave: "dashboard.ranking_top5", titulo: "5. Top 5 postos" },
+    { chave: "dashboard.ranking_veiculos", titulo: "6. Ranking de veículos" },
+    { chave: "dashboard.ranking_motoristas", titulo: "7. Ranking de motoristas" },
+    { chave: "dashboard.eficiencia_veiculos", titulo: "8. Eficiência real por veículo" },
+    { chave: "dashboard.desempenho_por_ativo", titulo: "9. Desempenho por marca/modelo/motor" },
+  ];
+
   return (
     <div>
       <div className="mb-6">
@@ -649,6 +687,8 @@ export default async function DashboardPage({
           totalVeiculos={totalVeiculos ?? 0}
           totalMotoristas={totalMotoristas ?? 0}
           totalPostosProprios={totalPostosProprios ?? 0}
+          totalCentrosCusto={totalCentrosCusto ?? 0}
+          totalVinculosEquipe={totalVinculosEquipe ?? 0}
         />
       )}
 
@@ -746,6 +786,7 @@ export default async function DashboardPage({
           Top 5 clientes por gasto (últimos 6 meses) <AjudaIcon chave="dashboard.top_clientes" />
         </h2>
         {topClientes.length > 0 ? (
+          <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase text-slate-500">
               <tr>
@@ -762,6 +803,7 @@ export default async function DashboardPage({
               ))}
             </tbody>
           </table>
+          </div>
         ) : (
           <p className="text-sm text-slate-400">Ainda não há abastecimentos vinculados a um cliente.</p>
         )}
@@ -883,26 +925,29 @@ export default async function DashboardPage({
               posto). Campos ocultos preservam cliente/período já
               selecionados no topo da página (senão o submit deste form
               perderia esses filtros). */}
-          {empresaSelecionada && (
-            <form className="flex items-end gap-2">
-              <input type="hidden" name="empresa" value={empresaSelecionada} />
-              <input type="hidden" name="mesAno" value={`${indAno}-${indMes}`} />
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Combustível</label>
-                <select name="combustivel" defaultValue={combustivelSelecionado ?? ""} className="input text-sm">
-                  <option value="">Todos os combustíveis</option>
-                  {PRODUTOS_POSTO.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button type="submit" className="btn-secondary text-sm">
-                Filtrar
-              </button>
-            </form>
-          )}
+          <div className="flex items-end gap-2">
+            <ConfigPaineis opcoes={opcoesPaineis} ocultosIniciais={paineisOcultos} />
+            {empresaSelecionada && (
+              <form className="flex items-end gap-2">
+                <input type="hidden" name="empresa" value={empresaSelecionada} />
+                <input type="hidden" name="mesAno" value={`${indAno}-${indMes}`} />
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-500">Combustível</label>
+                  <select name="combustivel" defaultValue={combustivelSelecionado ?? ""} className="input text-sm">
+                    <option value="">Todos os combustíveis</option>
+                    {PRODUTOS_POSTO.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" className="btn-secondary text-sm">
+                  Filtrar
+                </button>
+              </form>
+            )}
+          </div>
         </div>
 
         {!empresaSelecionada && (
@@ -922,76 +967,96 @@ export default async function DashboardPage({
                 </Link>
               </p>
             )}
-            <div className="card p-4">
-              <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">1. Variação de preços por combustível <AjudaIcon chave="dashboard.variacao_precos" /></h3>
-              <p className="mb-3 text-xs text-slate-500">
-                Faixa de preço paga na rede do cliente, comparada à referência ANP do estado mais frequente.
-              </p>
-              <GraficoVariacaoPrecosLazy dados={variacaoPrecos ?? []} />
-            </div>
-
-            <div className="card p-4">
-              <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">2. Previsão de consumo — {opcoesMes.find((o) => o.ano === indAno && o.mes === indMes)?.label} <AjudaIcon chave="dashboard.consumo_diario" /></h3>
-              <p className="mb-3 text-xs text-slate-500">
-                Litros por dia; dias restantes do mês projetados com base no padrão de consumo por dia da semana
-                (últimos 90 dias).
-              </p>
-              <GraficoPrevisaoConsumoLazy dados={dadosPrevisaoConsumo} />
-              {isMesAtual && diaAtual < diasNoMes && (
-                <p className="mt-2 text-xs text-slate-500">
-                  Realizado até o dia {diaAtual}: {totalLitrosMes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L
-                  · Projeção para os {diasNoMes - diaAtual} dias restantes:{" "}
-                  {totalLitrosProjetado.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L · Total estimado do mês:{" "}
-                  <strong>{(totalLitrosMes + totalLitrosProjetado).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L</strong>
+            {!paineisOcultosSet.has("dashboard.variacao_precos") && (
+              <div className="card p-4">
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">1. Variação de preços por combustível <AjudaIcon chave="dashboard.variacao_precos" /></h3>
+                <p className="mb-3 text-xs text-slate-500">
+                  Faixa de preço paga na rede do cliente, comparada à referência ANP do estado mais frequente.
                 </p>
-              )}
-            </div>
-
-            <div className="card p-4">
-              <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">3. Evolução do preço médio por abastecimento (R$/L) <AjudaIcon chave="dashboard.evolucao_preco_medio" /></h3>
-              <GraficoEvolucaoPrecoMedioLazy dados={dadosPrecoMedio} />
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div className="card p-4">
-                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">4. Evolutivo de volume — Top 5 postos <AjudaIcon chave="dashboard.volume_postos" /></h3>
-                <GraficoEvolutivoPostosLazy dados={dadosEvolutivoPostos} postos={postosNomes} />
+                <GraficoVariacaoPrecosLazy dados={variacaoPrecos ?? []} />
               </div>
+            )}
+
+            {!paineisOcultosSet.has("dashboard.consumo_diario") && (
               <div className="card p-4">
-                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">5. Top 5 postos — maior volume no período <AjudaIcon chave="dashboard.ranking_top5" /></h3>
-                <GraficoTopPostosLazy dados={dadosTopPostos} />
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">2. Previsão de consumo — {opcoesMes.find((o) => o.ano === indAno && o.mes === indMes)?.label} <AjudaIcon chave="dashboard.consumo_diario" /></h3>
+                <p className="mb-3 text-xs text-slate-500">
+                  Litros por dia; dias restantes do mês projetados com base no padrão de consumo por dia da semana
+                  (últimos 90 dias).
+                </p>
+                <GraficoPrevisaoConsumoLazy dados={dadosPrevisaoConsumo} />
+                {isMesAtual && diaAtual < diasNoMes && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Realizado até o dia {diaAtual}: {totalLitrosMes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L
+                    · Projeção para os {diasNoMes - diaAtual} dias restantes:{" "}
+                    {totalLitrosProjetado.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L · Total estimado do mês:{" "}
+                    <strong>{(totalLitrosMes + totalLitrosProjetado).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L</strong>
+                  </p>
+                )}
               </div>
-            </div>
+            )}
 
-            <div className="card p-4">
-              <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">6. Ranking de veículos — maior gasto no período <AjudaIcon chave="dashboard.ranking_veiculos" /></h3>
-              <p className="mb-3 text-xs text-slate-500">Top 10 no gráfico; frota completa não cabe num único painel.</p>
-              <RankingGasto itens={itensRankingVeiculos} colunaExtra="Placa" />
-            </div>
+            {!paineisOcultosSet.has("dashboard.evolucao_preco_medio") && (
+              <div className="card p-4">
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">3. Evolução do preço médio por abastecimento (R$/L) <AjudaIcon chave="dashboard.evolucao_preco_medio" /></h3>
+                <GraficoEvolucaoPrecoMedioLazy dados={dadosPrecoMedio} />
+              </div>
+            )}
 
-            <div className="card p-4">
-              <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">7. Ranking de motoristas — maior gasto no período <AjudaIcon chave="dashboard.ranking_motoristas" /></h3>
-              <RankingGasto itens={itensRankingMotoristas} colunaExtra="Motorista" />
-            </div>
+            {(!paineisOcultosSet.has("dashboard.volume_postos") || !paineisOcultosSet.has("dashboard.ranking_top5")) && (
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {!paineisOcultosSet.has("dashboard.volume_postos") && (
+                  <div className="card p-4">
+                    <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">4. Evolutivo de volume — Top 5 postos <AjudaIcon chave="dashboard.volume_postos" /></h3>
+                    <GraficoEvolutivoPostosLazy dados={dadosEvolutivoPostos} postos={postosNomes} />
+                  </div>
+                )}
+                {!paineisOcultosSet.has("dashboard.ranking_top5") && (
+                  <div className="card p-4">
+                    <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">5. Top 5 postos — maior volume no período <AjudaIcon chave="dashboard.ranking_top5" /></h3>
+                    <GraficoTopPostosLazy dados={dadosTopPostos} />
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div className="card p-4">
-              <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">8. Eficiência real por veículo <AjudaIcon chave="dashboard.eficiencia_veiculos" /></h3>
-              <p className="mb-3 text-xs text-slate-500">
-                KM rodado e km/L calculados a partir de hodômetros consecutivos reais dos abastecimentos, de qualquer
-                meio de pagamento integrado (GF). Não inclui comparação com rota planejada — sem dado real de GPS/trajetória,
-                essa parte não é confiável para exibir aqui.
-              </p>
-              <GraficoEficienciaVeiculosLazy dados={itensEficienciaVeiculos} />
-            </div>
+            {!paineisOcultosSet.has("dashboard.ranking_veiculos") && (
+              <div className="card p-4">
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">6. Ranking de veículos — maior gasto no período <AjudaIcon chave="dashboard.ranking_veiculos" /></h3>
+                <p className="mb-3 text-xs text-slate-500">Top 10 no gráfico; frota completa não cabe num único painel.</p>
+                <RankingGasto itens={itensRankingVeiculos} colunaExtra="Placa" />
+              </div>
+            )}
 
-            <div className="card p-4">
-              <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">9. Desempenho por marca/modelo/motor <AjudaIcon chave="dashboard.desempenho_por_ativo" /></h3>
-              <p className="mb-3 text-xs text-slate-500">
-                Km/L, R$/L pago, custo por km (TCO) e score de manutenção agrupados pelas características do veículo —
-                use pra comparar se vale continuar comprando essa marca/modelo/motor ou trocar de fornecedor.
-              </p>
-              <TabelaDesempenhoPorAtivo dados={itensDesempenhoPorAtivo} />
-            </div>
+            {!paineisOcultosSet.has("dashboard.ranking_motoristas") && (
+              <div className="card p-4">
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">7. Ranking de motoristas — maior gasto no período <AjudaIcon chave="dashboard.ranking_motoristas" /></h3>
+                <RankingGasto itens={itensRankingMotoristas} colunaExtra="Motorista" />
+              </div>
+            )}
+
+            {!paineisOcultosSet.has("dashboard.eficiencia_veiculos") && (
+              <div className="card p-4">
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">8. Eficiência real por veículo <AjudaIcon chave="dashboard.eficiencia_veiculos" /></h3>
+                <p className="mb-3 text-xs text-slate-500">
+                  KM rodado e km/L calculados a partir de hodômetros consecutivos reais dos abastecimentos, de qualquer
+                  meio de pagamento integrado (GF). Não inclui comparação com rota planejada — sem dado real de GPS/trajetória,
+                  essa parte não é confiável para exibir aqui.
+                </p>
+                <GraficoEficienciaVeiculosLazy dados={itensEficienciaVeiculos} />
+              </div>
+            )}
+
+            {!paineisOcultosSet.has("dashboard.desempenho_por_ativo") && (
+              <div className="card p-4">
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">9. Desempenho por marca/modelo/motor <AjudaIcon chave="dashboard.desempenho_por_ativo" /></h3>
+                <p className="mb-3 text-xs text-slate-500">
+                  Km/L, R$/L pago, custo por km (TCO) e score de manutenção agrupados pelas características do veículo —
+                  use pra comparar se vale continuar comprando essa marca/modelo/motor ou trocar de fornecedor.
+                </p>
+                <TabelaDesempenhoPorAtivo dados={itensDesempenhoPorAtivo} />
+              </div>
+            )}
           </div>
         )}
       </div>
