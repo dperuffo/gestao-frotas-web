@@ -152,6 +152,10 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/pneus": "aba_pneus",
   "/bolsa-fretes": "aba_bolsa_fretes",
   "/log-auditoria": "aba_log_auditoria",
+  // Fase IA-e-Automacao (27/08/2026) — "Insights Proativos de IA"
+  // (/insights-ia), 5º e último pilar do roadmap. Mesmo padrão de seed em
+  // permissoes_perfil das linhas acima (migration permissoes_insights_ia).
+  "/insights-ia": "aba_insights_ia",
 };
 
 // Rotas que NUNCA são bloqueadas por permissão, mesmo que a matriz diga

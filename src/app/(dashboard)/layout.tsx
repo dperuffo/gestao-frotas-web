@@ -66,6 +66,7 @@ import {
   Percent,
   CheckCircle2,
   CircleDot,
+  Brain,
 } from "lucide-react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -163,6 +164,12 @@ const menuVisaoGeral: ItemMenuLateral[] = [
   // um projeto muito maior, arriscado de mais pra entrar junto com as
   // demais entregas desta fase).
   { href: "/central-regras", label: "Central de Regras & Alertas", icon: ShieldAlert },
+  // Fase IA-e-Automacao (27/08/2026, pedido do Daniel: "quinto e último item
+  // das ações de melhorias mapeadas - IA e Automação... abranger, ao
+  // máximo, insights com dados e informações das milhares de operações já
+  // realizadas") — "Assistente FNI proativo" do roadmap. Gerado 1x/dia por
+  // cron (ver src/lib/insightsIA.ts) — esta tela só exibe.
+  { href: "/insights-ia", label: "Insights de IA", icon: Brain },
 ];
 
 const menuCadastros: ItemMenuLateral[] = [

@@ -3815,6 +3815,74 @@ export interface Database {
           },
         ];
       };
+      // Fase IA-e-Automacao — "Assistente FNI proativo": insights gerados por
+      // job diário (cron), SQL puro colhendo o sinal + Claude priorizando e
+      // redigindo — ver coletar_sinais_insights_ia e src/lib/insightsIA.ts.
+      insights_proativos_ia: {
+        Row: {
+          categoria: string;
+          chave: string;
+          criado_em: string;
+          dados: Json | null;
+          descricao: string;
+          dispensado_em: string | null;
+          dispensado_por: string | null;
+          empresa_id: string;
+          gerado_em: string;
+          id: string;
+          lido_em: string | null;
+          recomendacao: string | null;
+          severidade: string;
+          status: string;
+          titulo: string;
+          valor_impacto_estimado: number | null;
+        };
+        Insert: {
+          categoria: string;
+          chave: string;
+          criado_em?: string;
+          dados?: Json | null;
+          descricao: string;
+          dispensado_em?: string | null;
+          dispensado_por?: string | null;
+          empresa_id: string;
+          gerado_em?: string;
+          id?: string;
+          lido_em?: string | null;
+          recomendacao?: string | null;
+          severidade?: string;
+          status?: string;
+          titulo: string;
+          valor_impacto_estimado?: number | null;
+        };
+        Update: {
+          categoria?: string;
+          chave?: string;
+          criado_em?: string;
+          dados?: Json | null;
+          descricao?: string;
+          dispensado_em?: string | null;
+          dispensado_por?: string | null;
+          empresa_id?: string;
+          gerado_em?: string;
+          id?: string;
+          lido_em?: string | null;
+          recomendacao?: string | null;
+          severidade?: string;
+          status?: string;
+          titulo?: string;
+          valor_impacto_estimado?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "insights_proativos_ia_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Fase Pedágios — base pública nacional de praças de pedágio (federais
       // + estaduais), sem empresa_id, mesmo padrão de anp_postos acima.
       // Fonte: OpenStreetMap (barrier=toll_booth) + ANTT (metadados oficiais
@@ -5329,6 +5397,40 @@ export interface Database {
       };
       cancelar_solicitacao_aprovacao: {
         Args: { p_solicitacao_id: string };
+        Returns: undefined;
+      };
+      coletar_sinais_insights_ia: {
+        Args: { p_empresa_id: string };
+        Returns: {
+          categoria: string;
+          chave: string;
+          titulo_sugerido: string;
+          resumo: string;
+          valor_impacto: number | null;
+          severidade: string;
+          dados: Json | null;
+        }[];
+      };
+      marcar_insight_lido: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
+      dispensar_insight: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
+      upsert_insight_ia: {
+        Args: {
+          p_empresa_id: string;
+          p_categoria: string;
+          p_chave: string;
+          p_titulo: string;
+          p_descricao: string;
+          p_recomendacao: string | null;
+          p_severidade: string;
+          p_valor_impacto: number | null;
+          p_dados: Json | null;
+        };
         Returns: undefined;
       };
       dados_boleto_fatura: {

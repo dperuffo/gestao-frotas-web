@@ -2,7 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { listarAvisosAcao } from "../administracao/central-avisos/actions";
-import { Sparkles, ShieldAlert, Bell, SlidersHorizontal } from "lucide-react";
+import { contarInsightsNovosAcao } from "../insights-ia/actions";
+import { Sparkles, ShieldAlert, Bell, SlidersHorizontal, Brain } from "lucide-react";
 
 // Fase Gestao-Controles (27/08/2026, pedido do Daniel: "gestao e controles
 // mais diretos" / item do roadmap "Central de Regras & Alertas unificada")
@@ -42,6 +43,7 @@ export default async function CentralRegrasPage({
   let regrasAntifraudeAtivas = 0;
   let falhasAntifraudeNaoLidas = 0;
   let avisosAtivos = 0;
+  let insightsNovos = 0;
 
   if (!semClienteEscolhido) {
     let queryAcoes = supabase.from("acoes_sugeridas").select("severidade").eq("status", "pendente");
@@ -56,11 +58,12 @@ export default async function CentralRegrasPage({
       .is("lida_em", null);
     if (empresaSelecionada) queryFalhas = queryFalhas.eq("empresa_id", empresaSelecionada);
 
-    const [{ data: acoesRaw }, { count: totalRegras }, { count: totalFalhas }, avisos] = await Promise.all([
+    const [{ data: acoesRaw }, { count: totalRegras }, { count: totalFalhas }, avisos, totalInsights] = await Promise.all([
       queryAcoes,
       queryRegras,
       queryFalhas,
       listarAvisosAcao({ incluirExpirados: false }),
+      contarInsightsNovosAcao(empresaSelecionada),
     ]);
 
     const acoes = acoesRaw ?? [];
@@ -69,6 +72,7 @@ export default async function CentralRegrasPage({
     regrasAntifraudeAtivas = totalRegras ?? 0;
     falhasAntifraudeNaoLidas = totalFalhas ?? 0;
     avisosAtivos = avisos.length;
+    insightsNovos = totalInsights;
   }
 
   return (
@@ -76,7 +80,7 @@ export default async function CentralRegrasPage({
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Central de Regras & Alertas</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Resumo dos 3 lugares onde a plataforma detecta e avisa sobre algo que precisa da sua atenção
+          Resumo dos 4 lugares onde a plataforma detecta e avisa sobre algo que precisa da sua atenção
           {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Cada card leva pra tela de detalhe
           correspondente.
         </p>
@@ -106,7 +110,7 @@ export default async function CentralRegrasPage({
           Selecione um cliente acima pra ver o resumo de regras e alertas dele.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link href="/acoes-sugeridas" className="card block p-5 transition hover:border-frota-200 hover:shadow-md">
             <div className="mb-3 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-frota-500" />
@@ -161,6 +165,21 @@ export default async function CentralRegrasPage({
             <div>
               <p className="text-2xl font-semibold text-slate-900">{avisosAtivos}</p>
               <p className="text-xs text-slate-500">Ativos agora</p>
+            </div>
+          </Link>
+
+          <Link href="/insights-ia" className="card block p-5 transition hover:border-frota-200 hover:shadow-md">
+            <div className="mb-3 flex items-center gap-2">
+              <Brain className="h-5 w-5 text-violet-600" />
+              <h2 className="text-sm font-semibold text-slate-900">Insights de IA</h2>
+            </div>
+            <p className="mb-3 text-xs text-slate-500">
+              Sinais cruzados entre combustível, manutenção, pneus, sinistros, multas, aprovações, seguro e
+              motoristas — gerados 1x/dia, sem precisar perguntar.
+            </p>
+            <div>
+              <p className="text-2xl font-semibold text-slate-900">{insightsNovos}</p>
+              <p className="text-xs text-slate-500">Novos</p>
             </div>
           </Link>
         </div>
