@@ -41,11 +41,15 @@ const CORES_PROVEDOR: Record<string, string> = {
   // Fase Abastecimento-Interno (21/08/2026) — abastecido na garagem própria
   // do cliente (matriz/filial), não num posto revendedor externo.
   interno: "bg-emerald-100 text-emerald-700",
+  // Fase OCR-Abastecimento-Externo (27/08/2026) — lançamento manual do
+  // motorista via foto do cupom, ainda pendente de aprovação do gestor.
+  manual: "bg-amber-100 text-amber-800",
 };
 
 function nomeProvedor(provedor: string) {
   if (provedor === "profrotas") return "PróFrotas";
   if (provedor === "interno") return "Abastecimento Interno";
+  if (provedor === "manual") return "Lançamento manual";
   return provedor;
 }
 
@@ -281,8 +285,41 @@ export default async function AbastecimentosPage({
 
   // Fase OCR-Abastecimento-Externo (27/08/2026) — lançamento manual do
   // motorista (cupom fiscal fotografado + OCR) fica pendente até o gestor
-  // aprovar aqui; o link só aparece com contagem > 0 pra não poluir a tela
-  // de quem não usa o recurso.
+  // aprovar aqui.
+  //
+  // Correção (achado real, Daniel: "não está aparecendo na tela de
+  // Abastecimentos este registro lançado pelo app PWA") — antes só existia
+  // um link discreto no cabeçalho pra uma tela separada; com uma lista de
+  // 1000+ registros "Confirmado" embaixo, o pendente ficava fácil de nunca
+  // notar. Agora as linhas pendentes aparecem DENTRO desta mesma tabela,
+  // destacadas em âmbar no topo — impossível de não ver ao abrir a tela —
+  // e continuam de fora da view abastecimentos_unificado (não contam nos
+  // indicadores acima) até serem aprovadas.
+  type PendenteManual = {
+    id: number;
+    empresa_id: string;
+    codigo_abastecimento: string | null;
+    data_abastecimento: string;
+    placa: string;
+    motorista_nome: string | null;
+    combustivel: string | null;
+    quantidade: number;
+    valor_total: number;
+    posto_nome: string | null;
+  };
+  let pendentesManuais: PendenteManual[] = [];
+  if (!semClienteEscolhido) {
+    let queryPendentesManuais = supabase
+      .from("abastecimentos_externos")
+      .select("id, empresa_id, codigo_abastecimento, data_abastecimento, placa, motorista_nome, combustivel, quantidade, valor_total, posto_nome")
+      .eq("provedor", "manual")
+      .eq("status", "pendente")
+      .order("criado_em", { ascending: false })
+      .limit(20);
+    if (empresaSelecionada) queryPendentesManuais = queryPendentesManuais.eq("empresa_id", empresaSelecionada);
+    const { data: pendentesData } = await queryPendentesManuais;
+    pendentesManuais = pendentesData ?? [];
+  }
   const pendentesManuaisCount = semClienteEscolhido ? 0 : await contarAbastecimentosManuaisPendentesAcao(empresaSelecionada ?? null);
 
   return (
@@ -450,6 +487,36 @@ export default async function AbastecimentosPage({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
+            {pendentesManuais.map((p) => (
+              <tr key={`manual-${p.id}`} className="bg-amber-50/70 transition-colors hover:bg-amber-100/70">
+                <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{p.codigo_abastecimento ?? "—"}</td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/abastecimentos/pendentes-aprovacao${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`}
+                    className="inline-flex items-center gap-1.5 font-medium text-amber-800 hover:underline"
+                  >
+                    {formatDate(p.data_abastecimento)}
+                  </Link>
+                </td>
+                <td className="px-4 py-3 text-slate-600">{p.placa}</td>
+                <td className="px-4 py-3 text-slate-600">{p.motorista_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600">{p.combustivel ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600">{p.quantidade ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600">{formatarMoeda(p.valor_total)}</td>
+                <td className="px-4 py-3 text-slate-600">{p.posto_nome ?? "—"}</td>
+                <td className="px-4 py-3">
+                  <BadgeProvedor provedor="manual" />
+                </td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/abastecimentos/pendentes-aprovacao${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`}
+                    className="rounded-full bg-amber-200 px-2.5 py-1 text-xs font-medium text-amber-900 hover:bg-amber-300"
+                  >
+                    🟡 Pendente aprovação
+                  </Link>
+                </td>
+              </tr>
+            ))}
             {linhas.map((r) => {
               const ehProfrotas = r.provedor === "profrotas";
               const temAjustePendente = ehProfrotas
@@ -504,7 +571,7 @@ export default async function AbastecimentosPage({
                 </tr>
               );
             })}
-            {linhas.length === 0 && (
+            {linhas.length === 0 && pendentesManuais.length === 0 && (
               <tr>
                 <td colSpan={10} className="px-4 py-8 text-center text-slate-400">
                   Nenhum abastecimento encontrado.
