@@ -138,6 +138,20 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   // em permissoes/page.tsx). Ver README/handoff pro SQL de inserção.
   "/antifraude": "aba_antifraude",
   "/apuracao-tributaria": "aba_apuracao_tributaria",
+  // Fase Permissoes-Novas-Features (27/08/2026, pedido do Daniel: "atualizar
+  // a aba permissões com as novas features implementadas") — as 6 telas da
+  // fase "Gestão e Controles" + "Novas Features de Produto" (27/08/2026)
+  // nunca tinham "aba_" própria; ficavam permanentemente liberadas. Ver
+  // migration permissoes_novas_features pro seed das linhas em
+  // permissoes_perfil (padrão: liberado pra admin/gestor_frota/analista/
+  // colaborador, bloqueado pra posto — exceto Log de Auditoria, exclusiva
+  // do time interno).
+  "/aprovacoes": "aba_aprovacoes",
+  "/central-regras": "aba_central_regras",
+  "/apolices-seguro": "aba_apolices_seguro",
+  "/pneus": "aba_pneus",
+  "/bolsa-fretes": "aba_bolsa_fretes",
+  "/log-auditoria": "aba_log_auditoria",
 };
 
 // Rotas que NUNCA são bloqueadas por permissão, mesmo que a matriz diga
