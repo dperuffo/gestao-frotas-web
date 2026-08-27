@@ -19,14 +19,16 @@ export type ChaveRegraConfiguravel =
   | "minimo_ocorrencias_geo_distancia"
   | "minimo_ocorrencias_preco_regiao"
   | "exame_toxicologico_dias_antecedencia"
-  | "aso_dias_antecedencia";
+  | "aso_dias_antecedencia"
+  | "aprovacao_manutencao_valor_minimo";
 
 export type DefinicaoRegraConfiguravel = {
   chave: ChaveRegraConfiguravel;
   grupo:
     | "Anomalias de abastecimento"
     | "Ações sugeridas — mínimo de ocorrências"
-    | "Exame toxicológico e ASO — alerta antecipado";
+    | "Exame toxicológico e ASO — alerta antecipado"
+    | "Aprovações — valor que exige aprovação antes do lançamento";
   label: string;
   ajuda: string;
   padrao: number;
@@ -142,5 +144,15 @@ export const CATALOGO_REGRAS_CONFIGURAVEIS: DefinicaoRegraConfiguravel[] = [
     padrao: 30,
     passo: 1,
     min: 1,
+  },
+  {
+    chave: "aprovacao_manutencao_valor_minimo",
+    grupo: "Aprovações — valor que exige aprovação antes do lançamento",
+    label: "Manutenção — valor mínimo",
+    ajuda:
+      "Manutenções com custo a partir deste valor só podem ser lançadas em /manutencao-preditiva com uma solicitação aprovada vinculada (ver Aprovações). Bloqueio é feito no banco, vale pra qualquer forma de lançamento.",
+    padrao: 2000,
+    passo: 100,
+    min: 0,
   },
 ];

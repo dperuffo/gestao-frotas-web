@@ -3419,6 +3419,11 @@ export interface Database {
           // Fase Indicadores-da-Frota (30/07/2026) — "Preventiva" | "Corretiva",
           // null em registros anteriores (não classificados).
           tipo: string | null;
+          // Fase Aprovacao-Enforcement (27/08/2026) — preenchido quando o
+          // custo_total exigiu aprovação prévia (ver trigger
+          // verificar_aprovacao_manutencao); null pra manutenções abaixo do
+          // limite configurado.
+          solicitacao_aprovacao_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["manutencoes_realizadas"]["Row"]> & {
           cnpj_frota: string;
@@ -5319,6 +5324,10 @@ export interface Database {
         Returns: undefined;
       };
       marcar_solicitacao_executada: {
+        Args: { p_solicitacao_id: string };
+        Returns: undefined;
+      };
+      cancelar_solicitacao_aprovacao: {
         Args: { p_solicitacao_id: string };
         Returns: undefined;
       };

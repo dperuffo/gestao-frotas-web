@@ -34,15 +34,23 @@ const STATUS_LABEL: Record<string, string> = {
 // Fase Gestao-Controles (27/08/2026, pedido do Daniel: "gestao e controles
 // mais diretos" / item do roadmap "Fluxo de aprovação em múltiplos níveis")
 // — ver o comentário grande na migração solicitacoes_aprovacao pro escopo
-// completo (módulo autônomo de solicitação -> aprovação -> execução, com
-// histórico; 2 níveis quando o valor passa de R$ 2.000; NÃO integrado ainda
-// ao write-path de manutenção/fretes/estoque de peças).
+// completo (módulo de solicitação -> aprovação -> execução, com histórico;
+// 2 níveis quando o valor passa de R$ 2.000).
+//
+// Fase Aprovacao-Enforcement (27/08/2026, achado do Daniel: nada impedia
+// lançar a manutenção direto, pulando a aprovação) — categoria "manutencao"
+// agora É de fato enforced: o trigger verificar_aprovacao_manutencao
+// bloqueia, a nível de banco, o lançamento em /manutencao-preditiva quando
+// o custo bate o limite configurado (motor de regras único) sem uma
+// solicitação aprovada vinculada — ver essa migration pro detalhe. Frete e
+// compra de peça continuam como só tracker solto por enquanto.
 export default async function AprovacoesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ empresa?: string; page?: string }>;
+  searchParams: Promise<{ empresa?: string; page?: string; categoria?: string; valor?: string; titulo?: string }>;
 }) {
-  const { empresa: empresaParam, page: pageParam } = await searchParams;
+  const { empresa: empresaParam, page: pageParam, categoria: categoriaParam, valor: valorParam, titulo: tituloParam } =
+    await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
   const semClienteEscolhido = empresas.length > 1 && !empresaSelecionada;
@@ -133,7 +141,14 @@ export default async function AprovacoesPage({
             </div>
           </div>
 
-          {empresaSelecionada && <NovaSolicitacaoForm empresaId={empresaSelecionada} />}
+          {empresaSelecionada && (
+            <NovaSolicitacaoForm
+              empresaId={empresaSelecionada}
+              categoriaInicial={categoriaParam}
+              valorInicial={valorParam}
+              tituloInicial={tituloParam}
+            />
+          )}
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">

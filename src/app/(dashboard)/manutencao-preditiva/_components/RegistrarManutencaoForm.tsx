@@ -1,28 +1,57 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useMemo, useState, useTransition, type FormEvent } from "react";
+import Link from "next/link";
 import { registrarManutencaoAcao } from "../actions";
 import { ITENS_MANUTENCAO } from "@/lib/manutencaoPreditiva";
 
+function formatarMoedaSimples(v: number) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+// Fase Aprovacao-Enforcement (27/08/2026, achado do Daniel: valores altos
+// não passavam por aprovação nenhuma) — quando o custo digitado bate o
+// limite configurado, o formulário passa a EXIGIR escolher uma solicitação
+// já aprovada (categoria Manutenção) antes de deixar submeter. Quem decide
+// de verdade é o trigger no banco (verificar_aprovacao_manutencao) — isto
+// aqui é só pra avisar o usuário ANTES de ele preencher tudo e levar erro
+// no fim.
 export function RegistrarManutencaoForm({
   empresaId,
   placa,
   kmAtual,
+  limiteAprovacao,
+  solicitacoesAprovadas,
 }: {
   empresaId: string;
   placa: string;
   kmAtual: number;
+  limiteAprovacao: number;
+  solicitacoesAprovadas: { id: string; titulo: string; valor: number }[];
 }) {
   const [erro, setErro] = useState<string | undefined>();
   const [sucesso, setSucesso] = useState(false);
   const [avisoFotos, setAvisoFotos] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
+  const [custoTexto, setCustoTexto] = useState("");
+  const [solicitacaoEscolhidaId, setSolicitacaoEscolhidaId] = useState("");
+
+  const custoTotal = Number(custoTexto.replace(",", "."));
+  const precisaAprovacao = Number.isFinite(custoTotal) && custoTotal >= limiteAprovacao;
+  const solicitacoesCompativeis = useMemo(
+    () => solicitacoesAprovadas.filter((s) => s.valor >= (Number.isFinite(custoTotal) ? custoTotal : 0)),
+    [solicitacoesAprovadas, custoTotal]
+  );
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErro(undefined);
     setSucesso(false);
     setAvisoFotos(undefined);
+    if (precisaAprovacao && !solicitacaoEscolhidaId) {
+      setErro("Esse valor exige uma solicitação de aprovação já aprovada vinculada — escolha uma acima.");
+      return;
+    }
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       const resultado = await registrarManutencaoAcao(empresaId, undefined, formData);
@@ -31,6 +60,8 @@ export function RegistrarManutencaoForm({
         setSucesso(true);
         setAvisoFotos(resultado?.avisoFotos);
         (e.target as HTMLFormElement).reset();
+        setCustoTexto("");
+        setSolicitacaoEscolhidaId("");
       }
     });
   }
@@ -65,7 +96,15 @@ export function RegistrarManutencaoForm({
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Custo total (R$)</label>
-          <input type="number" name="custo_total" min={0} step="0.01" className="input" />
+          <input
+            type="number"
+            name="custo_total"
+            min={0}
+            step="0.01"
+            value={custoTexto}
+            onChange={(e) => setCustoTexto(e.target.value)}
+            className="input"
+          />
         </div>
         {/* Fase Indicadores-da-Frota (30/07/2026) — classificação usada no KPI
             de proporção corretiva/preventiva. Sem valor padrão de propósito:
@@ -103,6 +142,46 @@ export function RegistrarManutencaoForm({
           <input type="number" name="dias_parado" min={0} step="1" className="input" />
         </div>
       </div>
+
+      {precisaAprovacao && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <input type="hidden" name="solicitacao_aprovacao_id" value={solicitacaoEscolhidaId} />
+          <p className="mb-2 text-sm font-medium text-amber-800">
+            Custo a partir de {formatarMoedaSimples(limiteAprovacao)} exige aprovação antes do lançamento.
+          </p>
+          {solicitacoesCompativeis.length > 0 ? (
+            <>
+              <label className="mb-1 block text-xs font-medium text-amber-700">
+                Solicitação aprovada vinculada <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={solicitacaoEscolhidaId}
+                onChange={(e) => setSolicitacaoEscolhidaId(e.target.value)}
+                className="input text-sm"
+              >
+                <option value="">Selecione...</option>
+                {solicitacoesCompativeis.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.titulo} — {formatarMoedaSimples(s.valor)}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : (
+            <p className="text-sm text-amber-700">
+              Nenhuma solicitação aprovada disponível pra esse valor ainda.{" "}
+              <Link
+                href={`/aprovacoes?empresa=${empresaId}&categoria=manutencao&valor=${custoTexto}&titulo=${encodeURIComponent(`Manutenção — ${placa}`)}`}
+                className="font-medium underline"
+                target="_blank"
+              >
+                Criar solicitação de aprovação
+              </Link>{" "}
+              e volte aqui depois de aprovada.
+            </p>
+          )}
+        </div>
+      )}
 
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">

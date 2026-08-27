@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { decidirSolicitacaoAcao, marcarExecutadaAcao } from "../actions";
+import { cancelarSolicitacaoAcao, decidirSolicitacaoAcao, marcarExecutadaAcao } from "../actions";
 
 // Fase Gestao-Controles (27/08/2026) — botões de decisão por linha. A
 // permissão de verdade (quem pode decidir o nível 2, por exemplo) é
@@ -27,6 +27,19 @@ export function AcoesSolicitacao({ id, status }: { id: string; status: string })
     setErro(undefined);
     iniciar(async () => {
       const resultado = await marcarExecutadaAcao(id);
+      if (resultado?.erro) setErro(resultado.erro);
+    });
+  }
+
+  // Pedido do Daniel (27/08/2026, mid-turn): tirar da fila uma solicitação
+  // que não vai ser executada, sem perder o histórico (vira "cancelada",
+  // não é deletada). Só aparece pra pendente/aprovada — depois de
+  // executada/reprovada não faz sentido mais.
+  function cancelar() {
+    if (!confirm("Cancelar esta solicitação? Ela sai da fila de pendências, mas continua no histórico.")) return;
+    setErro(undefined);
+    iniciar(async () => {
+      const resultado = await cancelarSolicitacaoAcao(id);
       if (resultado?.erro) setErro(resultado.erro);
     });
   }
@@ -57,6 +70,16 @@ export function AcoesSolicitacao({ id, status }: { id: string; status: string })
         {status === "aprovada" && (
           <button type="button" disabled={pendente} onClick={executar} className="btn-secondary text-xs">
             Marcar como executada
+          </button>
+        )}
+        {(status === "pendente" || status === "aprovada") && (
+          <button
+            type="button"
+            disabled={pendente}
+            onClick={cancelar}
+            className="text-xs font-medium text-slate-500 hover:underline"
+          >
+            Cancelar
           </button>
         )}
       </div>

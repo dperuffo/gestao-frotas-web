@@ -47,6 +47,13 @@ export async function registrarManutencaoAcao(
   // corretiva/preventiva (kpis_frota_resumo). Registro antigo fica com
   // tipo=null (não classificado); daqui pra frente é sempre obrigatório.
   const tipo = String(formData.get("tipo") ?? "").trim() || null;
+  // Fase Aprovacao-Enforcement (27/08/2026, achado do Daniel: valores altos
+  // não passavam por aprovação nenhuma) — a validação de verdade é o
+  // trigger verificar_aprovacao_manutencao no banco (compara custo_total
+  // com o limite configurado pra empresa); aqui só repassamos o id se o
+  // formulário mandou um (ver RegistrarManutencaoForm, que só exige/mostra
+  // esse campo quando o valor já bate o limite).
+  const solicitacaoAprovacaoId = String(formData.get("solicitacao_aprovacao_id") ?? "").trim() || null;
 
   if (!placa) return { erro: "Placa é obrigatória." };
   if (!dataManutencao) return { erro: "Data da manutenção é obrigatória." };
@@ -93,11 +100,17 @@ export async function registrarManutencaoAcao(
       itens_realizados: itens,
       obs_gerais: obsGerais,
       criado_por: user?.email ?? null,
+      solicitacao_aprovacao_id: solicitacaoAprovacaoId,
     })
     .select("id")
     .single();
 
-  if (error) return { erro: `Não foi possível registrar: ${error.message}` };
+  // O trigger verificar_aprovacao_manutencao levanta RAISE EXCEPTION puro
+  // (sem SQLSTATE específico → código P0001) com mensagem já pronta em
+  // português quando bloqueia por falta/valor de aprovação — repassamos
+  // direto, sem o prefixo genérico, mesmo padrão usado nas outras RPCs do
+  // app pra erros de negócio.
+  if (error) return { erro: error.code === "P0001" ? error.message : `Não foi possível registrar: ${error.message}` };
 
   // Fase Checklist-Digital-Manutenção — pedido do Daniel após o benchmark
   // com a TicketLog: evidência fotográfica do serviço, pra compliance. Sobe

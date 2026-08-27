@@ -73,12 +73,37 @@ export default async function DetalheManutencaoPreditivaPage({
 
   const recomendacoes = gerarRecomendacoes(componentes, primeiro.degradacao, primeiro.idade_anos);
 
-  const { data: historicoRaw } = await supabase
-    .from("manutencoes_realizadas")
-    .select("id, data_manutencao, hodometro, itens_realizados, oficina, custo_total, dias_parado, tipo, criado_por, fotos")
-    .eq("placa", placa)
-    .order("data_manutencao", { ascending: false })
-    .limit(100);
+  // Fase Aprovacao-Enforcement (27/08/2026, achado do Daniel: valores altos
+  // não passavam por aprovação nenhuma) — busca o limite configurado (motor
+  // de regras único) e as solicitações já aprovadas de categoria
+  // "manutencao" que ainda não foram usadas, pro formulário oferecer o
+  // vínculo quando o custo bater o limite. Usa empresaSelecionada (não a
+  // empresa dona do veículo, que só é resolvida dentro do server action) —
+  // mesma simplificação que o formulário já tinha antes desta fase.
+  const [{ data: historicoRaw }, { data: configLimite }, { data: solicitacoesAprovadasRaw }] = await Promise.all([
+    supabase
+      .from("manutencoes_realizadas")
+      .select("id, data_manutencao, hodometro, itens_realizados, oficina, custo_total, dias_parado, tipo, criado_por, fotos")
+      .eq("placa", placa)
+      .order("data_manutencao", { ascending: false })
+      .limit(100),
+    supabase
+      .from("configuracoes_regras")
+      .select("valor")
+      .eq("empresa_id", empresaSelecionada)
+      .eq("chave", "aprovacao_manutencao_valor_minimo")
+      .maybeSingle(),
+    supabase
+      .from("solicitacoes_aprovacao")
+      .select("id, titulo, valor")
+      .eq("empresa_id", empresaSelecionada)
+      .eq("categoria", "manutencao")
+      .eq("status", "aprovada")
+      .order("criado_em", { ascending: false }),
+  ]);
+
+  const limiteAprovacao = configLimite?.valor ?? 2000;
+  const solicitacoesAprovadas = solicitacoesAprovadasRaw ?? [];
 
   // Fase Checklist-Digital-Manutenção — o bucket é privado (evidência de
   // manutenção não é dado público), então resolvemos uma signed URL de
@@ -172,7 +197,13 @@ export default async function DetalheManutencaoPreditivaPage({
         <p className="mb-4 text-xs text-slate-500">
           Registre manutenções realizadas para melhorar a precisão da análise preditiva.
         </p>
-        <RegistrarManutencaoForm empresaId={empresaSelecionada} placa={placa} kmAtual={primeiro.km_atual} />
+        <RegistrarManutencaoForm
+          empresaId={empresaSelecionada}
+          placa={placa}
+          kmAtual={primeiro.km_atual}
+          limiteAprovacao={limiteAprovacao}
+          solicitacoesAprovadas={solicitacoesAprovadas}
+        />
       </div>
 
       <div className="card p-4">

@@ -68,3 +68,16 @@ export async function marcarExecutadaAcao(solicitacaoId: string): Promise<{ erro
   revalidatePath("/aprovacoes");
   return {};
 }
+
+// Pedido do Daniel (27/08/2026, mid-turn): dar um jeito de tirar da fila uma
+// solicitação que não vai ser executada — pendente que a pessoa desistiu,
+// ou aprovada que não vai ser usada. Não deleta a linha (mantém histórico
+// de quem pediu/aprovou), só muda o status pra "cancelada".
+export async function cancelarSolicitacaoAcao(solicitacaoId: string): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancelar_solicitacao_aprovacao", { p_solicitacao_id: solicitacaoId });
+  if (error) return { erro: error.message };
+
+  revalidatePath("/aprovacoes");
+  return {};
+}

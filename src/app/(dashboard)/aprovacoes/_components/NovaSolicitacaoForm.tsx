@@ -10,7 +10,17 @@ const CATEGORIAS = [
   { valor: "outro", label: "Outro" },
 ];
 
-export function NovaSolicitacaoForm({ empresaId }: { empresaId: string }) {
+export function NovaSolicitacaoForm({
+  empresaId,
+  categoriaInicial,
+  valorInicial,
+  tituloInicial,
+}: {
+  empresaId: string;
+  categoriaInicial?: string;
+  valorInicial?: string;
+  tituloInicial?: string;
+}) {
   const [estado, formAction, isPending] = useActionState<CriarSolicitacaoState, FormData>(
     criarSolicitacaoAprovacaoAcao,
     undefined
@@ -31,7 +41,7 @@ export function NovaSolicitacaoForm({ empresaId }: { empresaId: string }) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Categoria</label>
-          <select name="categoria" defaultValue="manutencao" className="input text-sm">
+          <select name="categoria" defaultValue={categoriaInicial ?? "manutencao"} className="input text-sm">
             {CATEGORIAS.map((c) => (
               <option key={c.valor} value={c.valor}>
                 {c.label}
@@ -41,11 +51,26 @@ export function NovaSolicitacaoForm({ empresaId }: { empresaId: string }) {
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-500">Valor (R$)</label>
-          <input name="valor" type="text" inputMode="decimal" required placeholder="0,00" className="input text-sm" />
+          <input
+            name="valor"
+            type="text"
+            inputMode="decimal"
+            required
+            placeholder="0,00"
+            defaultValue={valorInicial}
+            className="input text-sm"
+          />
         </div>
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-slate-500">Título</label>
-          <input name="titulo" type="text" required placeholder="ex.: Troca de pneus do caminhão XYZ-1234" className="input text-sm" />
+          <input
+            name="titulo"
+            type="text"
+            required
+            placeholder="ex.: Troca de pneus do caminhão XYZ-1234"
+            defaultValue={tituloInicial}
+            className="input text-sm"
+          />
         </div>
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-slate-500">Descrição (opcional)</label>
