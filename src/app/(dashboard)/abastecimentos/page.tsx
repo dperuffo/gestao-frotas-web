@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/utils";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
 import { AbastecimentosPosto } from "./_components/AbastecimentosPosto";
 import { LogoProvedor } from "@/components/LogoProvedor";
+import { contarAbastecimentosManuaisPendentesAcao } from "./actions-pendentes-manual";
 // Fase Redesign-Telas-Densas (12/08/2026) — pedido do Daniel: mesmo toque
 // visual do Dashboard/Veículos/Financeiro (cor + ícone por indicador).
 import { IndicadorColorido } from "@/components/IndicadorColorido";
@@ -278,6 +279,12 @@ export default async function AbastecimentosPage({
     return qs ? `/abastecimentos?${qs}` : "/abastecimentos";
   }
 
+  // Fase OCR-Abastecimento-Externo (27/08/2026) — lançamento manual do
+  // motorista (cupom fiscal fotografado + OCR) fica pendente até o gestor
+  // aprovar aqui; o link só aparece com contagem > 0 pra não poluir a tela
+  // de quem não usa o recurso.
+  const pendentesManuaisCount = empresaSelecionada ? await contarAbastecimentosManuaisPendentesAcao(empresaSelecionada) : 0;
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -290,7 +297,15 @@ export default async function AbastecimentosPage({
             {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {pendentesManuaisCount > 0 && (
+            <Link
+              href={`/abastecimentos/pendentes-aprovacao${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`}
+              className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200"
+            >
+              🟡 {pendentesManuaisCount} pendente{pendentesManuaisCount === 1 ? "" : "s"} de aprovação
+            </Link>
+          )}
           <Link href="/abastecimentos/importar" className="btn-secondary">
             Importar planilha
           </Link>

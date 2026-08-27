@@ -10,6 +10,23 @@ import { formatarMoeda, formatarDataSemFuso, type SugestaoConciliacao, type Cont
 // valor exato + data próxima), ou escolhe manualmente entre as demais
 // contas em aberto do mesmo tipo, ou ignora (transferência entre contas
 // próprias, saque, etc.).
+//
+// Fase Conciliacao-IA (27/08/2026) — cada sugestão agora mostra um selo de
+// confiança (alta/média/baixa), calculado também a partir do nome do
+// fornecedor batendo (ou não) na descrição do extrato — mesmo sinal que
+// decide o que entra no lote de "Conciliar automaticamente" no topo da
+// tela.
+const COR_CONFIANCA: Record<string, string> = {
+  alta: "bg-green-100 text-green-800",
+  media: "bg-amber-100 text-amber-800",
+  baixa: "bg-slate-200 text-slate-600",
+};
+
+const LABEL_CONFIANCA: Record<string, string> = {
+  alta: "Alta confiança",
+  media: "Média confiança",
+  baixa: "Baixa confiança",
+};
 export function AcoesLancamentoExtrato({
   lancamentoId,
   tipo,
@@ -69,6 +86,9 @@ export function AcoesLancamentoExtrato({
           {sugestoes.map((s) => (
             <div key={s.id} className="flex items-center justify-between gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs">
               <div>
+                <span className={`mr-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${COR_CONFIANCA[s.confianca]}`}>
+                  {LABEL_CONFIANCA[s.confianca]}
+                </span>
                 <span className="font-medium text-slate-700">{s.nome}</span>{" "}
                 <span className="text-slate-400">
                   · venc. {formatarDataSemFuso(s.vencimento)} · {formatarMoeda(s.saldoEmAberto)}

@@ -3098,6 +3098,17 @@ export interface Database {
           // pagamento (ver faturas_recebidas) em vez de acumulado pelo robô
           // de negociação direta (fatura_posto_id).
           fatura_recebida_id: string | null;
+          // Fase OCR-Abastecimento-Externo (27/08/2026) — lançamento manual
+          // do motorista (provedor='manual') entra como 'pendente' e só
+          // conta em indicadores/financeiro (via abastecimentos_unificado)
+          // depois que o gestor aprova. Linhas de integração (robôs) sempre
+          // vêm/ficam 'aprovado'.
+          status: string;
+          foto_path: string | null;
+          ocr_texto_bruto: string | null;
+          aprovado_por: string | null;
+          aprovado_em: string | null;
+          rejeitado_motivo: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["abastecimentos_externos"]["Row"]> & {
           empresa_id: string;
@@ -5129,6 +5140,36 @@ export interface Database {
           p_arla_quantidade?: number | null;
           p_hodometro?: number | null;
         };
+        Returns: Json;
+      };
+      // Fase OCR-Abastecimento-Externo (27/08/2026) — chamada pelo PWA
+      // Motorista pra lançar abastecimento externo manual (cupom fiscal
+      // fotografado + OCR). Sempre entra como status='pendente'.
+      registrar_abastecimento_manual: {
+        Args: {
+          p_empresa_id: string;
+          p_placa: string;
+          p_combustivel: string;
+          p_quantidade: number;
+          p_valor_total: number;
+          p_posto_nome: string;
+          p_hodometro?: number | null;
+          p_data_abastecimento?: string;
+          p_foto_path?: string | null;
+          p_ocr_texto_bruto?: string | null;
+        };
+        Returns: Json;
+      };
+      aprovar_rejeitar_abastecimento_manual: {
+        Args: {
+          p_id: number;
+          p_aprovar: boolean;
+          p_motivo_rejeicao?: string | null;
+        };
+        Returns: Json;
+      };
+      abastecimento_manual_formulario_motorista: {
+        Args: Record<PropertyKey, never>;
         Returns: Json;
       };
       // Fase Replicação-Grupo — mecanismo genérico "Replicar para o grupo"

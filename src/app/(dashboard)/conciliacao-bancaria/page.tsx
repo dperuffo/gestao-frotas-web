@@ -3,6 +3,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda, formatarDataSemFuso, sugerirContas, STATUS_EXTRATO_LABEL, STATUS_EXTRATO_COR, type ContaEmAberto } from "@/lib/conciliacaoBancaria";
 import { FormImportarExtrato } from "./_components/FormImportarExtrato";
 import { AcoesLancamentoExtrato } from "./_components/AcoesLancamentoExtrato";
+import { AcaoConciliarAutomatico } from "./_components/AcaoConciliarAutomatico";
 // Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
 // em Dashboard/Veículos/Financeiro/Abastecimentos/Manutenção/Notas
 // Fiscais/Centros de Custo.
@@ -93,6 +94,17 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
 
   const pendentes = lancamentos.filter((l) => l.status === "pendente");
   const conciliados = lancamentos.filter((l) => l.status === "conciliado");
+
+  // Fase Conciliacao-IA (27/08/2026) — quantos pendentes têm exatamente 1
+  // candidato de alta confiança (valor + data próxima + nome batendo na
+  // descrição): esse é o número que o botão "Conciliar automaticamente"
+  // mostra e processa. Mais de 1 candidato de alta confiança = ambíguo,
+  // fica de fora do lote (exceção pra revisão manual).
+  const quantidadeAltaConfianca = pendentes.filter((l) => {
+    const contasCandidatas = l.tipo === "debito" ? contasPagarAbertas : contasReceberAbertas;
+    const sugestoes = sugerirContas({ data: l.data, valor: Math.abs(l.valor), descricao: l.descricao }, contasCandidatas);
+    return sugestoes.filter((s) => s.confianca === "alta").length === 1;
+  }).length;
   const hojeIso = new Date().toISOString().slice(0, 10);
   const inicioMesIso = hojeIso.slice(0, 7) + "-01";
   const conciliadosNoMes = conciliados.filter((l) => (l.conciliado_em ?? "") >= inicioMesIso);
@@ -145,8 +157,9 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
           </div>
 
           <div className="card mb-6 overflow-x-auto">
-            <div className="border-b border-slate-100 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
               <h2 className="text-sm font-semibold text-slate-900">Lançamentos pendentes</h2>
+              <AcaoConciliarAutomatico empresaId={empresaSelecionada} quantidade={quantidadeAltaConfianca} />
             </div>
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase text-slate-500">
@@ -160,7 +173,7 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
               <tbody className="divide-y divide-slate-100">
                 {pendentes.map((l) => {
                   const contasCandidatas = l.tipo === "debito" ? contasPagarAbertas : contasReceberAbertas;
-                  const sugestoes = sugerirContas({ data: l.data, valor: Math.abs(l.valor) }, contasCandidatas);
+                  const sugestoes = sugerirContas({ data: l.data, valor: Math.abs(l.valor), descricao: l.descricao }, contasCandidatas);
                   return (
                     <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
                       <td className="px-4 py-3 text-slate-600 align-top">{formatarDataSemFuso(l.data)}</td>

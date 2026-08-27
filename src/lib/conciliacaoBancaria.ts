@@ -170,7 +170,23 @@ export type ContaEmAberto = {
   vencimento: string; // YYYY-MM-DD
 };
 
-export type SugestaoConciliacao = ContaEmAberto & { diferencaDias: number };
+// Fase Conciliacao-IA (27/08/2026, pedido do Daniel: "treinar um matching
+// automático (valor + data + fornecedor aproximado) com revisão humana só
+// nas exceções") — achado real: o matching de hoje usava só valor+data, sem
+// olhar pra descrição do extrato nem pro nome do credor/devedor (o
+// "fornecedor aproximado" do pedido). Adiciona esse terceiro sinal (sem IA
+// externa — comparação de tokens do nome normalizado contra a descrição do
+// lançamento, mesma filosofia de heurística determinística já usada aqui em
+// vez de chamada paga a LLM) e um nível de confiança por sugestão, que a UI
+// usa tanto pra ordenar/destacar quanto pra decidir o que pode ser
+// conciliado em lote sem revisão manual.
+export type NivelConfianca = "alta" | "media" | "baixa";
+
+export type SugestaoConciliacao = ContaEmAberto & {
+  diferencaDias: number;
+  similaridadeNome: number; // 0..1 — fração dos tokens do nome da conta encontrados na descrição do extrato
+  confianca: NivelConfianca;
+};
 
 const JANELA_DIAS_SUGESTAO = 15;
 
@@ -180,12 +196,60 @@ function diferencaEmDias(a: string, b: string): number {
   return Math.round(Math.abs(ta - tb) / (1000 * 60 * 60 * 24));
 }
 
-export function sugerirContas(lancamento: { data: string; valor: number }, contas: ContaEmAberto[], limite = 3): SugestaoConciliacao[] {
+// Sufixos societários (LTDA, ME, S/A...) não ajudam a diferenciar um
+// fornecedor de outro e raramente aparecem por extenso na descrição do
+// extrato — remove antes de comparar.
+const SUFIXOS_SOCIETARIOS = /\b(ltda|me|eireli|s\s?\/?\s?a|epp|mei)\b\.?/g;
+
+function normalizarNome(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(COMBINACOES_DIACRITICAS, "")
+    .toLowerCase()
+    .replace(SUFIXOS_SOCIETARIOS, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Fração dos tokens "significativos" (3+ letras, pra não deixar "de"/"do"
+// inflar o score) do nome da conta que aparecem na descrição do extrato.
+// Ex.: descrição "TED FORNECEDOR POSTO BRASIL LTDA" x nome "Posto Brasil" →
+// os 2 tokens de "posto brasil" aparecem inteiros na descrição → 1.0.
+function similaridadeNomes(descricaoExtrato: string, nomeConta: string): number {
+  const descricaoNorm = normalizarNome(descricaoExtrato);
+  const nomeNorm = normalizarNome(nomeConta);
+  if (!descricaoNorm || !nomeNorm) return 0;
+
+  const tokensNome = nomeNorm.split(" ").filter((t) => t.length >= 3);
+  if (tokensNome.length === 0) return 0;
+
+  const tokensEncontrados = tokensNome.filter((t) => descricaoNorm.includes(t));
+  return tokensEncontrados.length / tokensNome.length;
+}
+
+function calcularConfianca(diferencaDias: number, similaridadeNome: number): NivelConfianca {
+  if (diferencaDias <= 3 && similaridadeNome >= 0.5) return "alta";
+  if (diferencaDias <= 7 || similaridadeNome >= 0.3) return "media";
+  return "baixa";
+}
+
+export function sugerirContas(
+  lancamento: { data: string; valor: number; descricao?: string },
+  contas: ContaEmAberto[],
+  limite = 3
+): SugestaoConciliacao[] {
+  const ordemConfianca: Record<NivelConfianca, number> = { alta: 0, media: 1, baixa: 2 };
+
   return contas
     .filter((c) => Math.abs(c.saldoEmAberto - lancamento.valor) < 0.01)
-    .map((c) => ({ ...c, diferencaDias: diferencaEmDias(c.vencimento, lancamento.data) }))
+    .map((c) => {
+      const diferencaDias = diferencaEmDias(c.vencimento, lancamento.data);
+      const similaridadeNome = lancamento.descricao ? similaridadeNomes(lancamento.descricao, c.nome) : 0;
+      return { ...c, diferencaDias, similaridadeNome, confianca: calcularConfianca(diferencaDias, similaridadeNome) };
+    })
     .filter((c) => c.diferencaDias <= JANELA_DIAS_SUGESTAO)
-    .sort((a, b) => a.diferencaDias - b.diferencaDias)
+    .sort((a, b) => ordemConfianca[a.confianca] - ordemConfianca[b.confianca] || a.diferencaDias - b.diferencaDias)
     .slice(0, limite);
 }
 

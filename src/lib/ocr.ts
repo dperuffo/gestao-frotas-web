@@ -81,3 +81,116 @@ export async function extrairTextoDocumento(imagem: Buffer): Promise<ResultadoOc
     await worker.terminate();
   }
 }
+
+// Fase OCR-Abastecimento-Externo (27/08/2026, pedido do Daniel: "estender a
+// mesma capacidade pro cupom fiscal de abastecimento externo — o motorista
+// tira foto, o sistema preenche litros/valor/posto sozinho"). Mesma
+// filosofia best-effort do OCR de CT-e acima: cupom de posto tem formato
+// MUITO menos padronizado que DANFE (cada rede imprime diferente, sem
+// campo fixo), então cada extração aqui é sugestão pra pré-preencher o
+// formulário — o motorista sempre revisa/corrige antes de enviar pra
+// aprovação do gestor.
+export type ResultadoOcrCupomAbastecimento = {
+  texto: string;
+  postoNome: string | null;
+  combustivel: string | null;
+  litros: number | null;
+  valorUnitario: number | null;
+  valorTotal: number | null;
+};
+
+// Ordem importa: variantes mais específicas ("Diesel S10") antes da genérica
+// ("Diesel"), senão a genérica sempre casa primeiro.
+const PALAVRAS_COMBUSTIVEL: Array<[string, RegExp]> = [
+  ["Diesel S10", /diesel\s*s\W?\s*10/i],
+  ["Diesel S500", /diesel\s*s\W?\s*500/i],
+  ["Diesel", /\bdiesel\b/i],
+  ["Gasolina Aditivada", /gasolina\s*aditivada/i],
+  ["Gasolina Comum", /gasolina(\s*comum)?\b/i],
+  ["Etanol", /\betanol\b|\bálcool\b|\balcool\b/i],
+  ["GNV", /\bgnv\b/i],
+  ["Arla32", /\barla\s*-?\s*32\b/i],
+];
+
+function extrairCombustivel(texto: string): string | null {
+  for (const [nome, re] of PALAVRAS_COMBUSTIVEL) {
+    if (re.test(texto)) return nome;
+  }
+  return null;
+}
+
+// Mesma lógica de "vírgula é decimal, ponto é milhar" já usada em
+// extrairValor, isolada aqui porque também serve pra litros (não só R$).
+function parseNumeroBr(bruto: string): number | null {
+  const limpo = bruto.trim().replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".");
+  const n = Number(limpo);
+  return Number.isFinite(n) ? n : null;
+}
+
+function extrairLitros(texto: string): number | null {
+  const padroes = [/(?:qtde|quantidade|litros?|volume)[^\d]{0,10}([\d.,]+)\s*l?\b/i, /([\d.,]+)\s*l(?:itros?)?\b/i];
+  for (const re of padroes) {
+    const m = texto.match(re);
+    if (!m) continue;
+    const n = parseNumeroBr(m[1]);
+    // tanque de caminhão/veículo não passa de ~2000L — filtra falso-positivo
+    // (ex.: OCR lendo um CNPJ ou valor em R$ como se fosse litragem).
+    if (n && n > 0 && n < 2000) return n;
+  }
+  return null;
+}
+
+function extrairValorUnitario(texto: string): number | null {
+  const m = texto.match(/(?:pre[çc]o\s*unit|p\.?\s*unit|r\$\s*\/\s*l|valor\s*unit)[^\d]{0,10}([\d.,]+)/i);
+  if (!m) return null;
+  const n = parseNumeroBr(m[1]);
+  return n && n > 0 && n < 20 ? n : null; // preço/L de combustível não passa de ~R$20
+}
+
+function extrairValorTotal(texto: string): number | null {
+  const linhaTotal = texto.match(/total[^\n\d]{0,15}r?\$?\s*([\d.,]+)/i);
+  if (linhaTotal) {
+    const n = parseNumeroBr(linhaTotal[1]);
+    if (n && n > 0) return n;
+  }
+  return extrairValor(texto); // fallback: primeiro "R$ x,xx" que aparecer
+}
+
+// Nome do posto: melhor esforço = primeira linha "de aparência de nome de
+// empresa" logo no topo do cupom (cabeçalho impresso), pulando linhas que
+// são claramente endereço/CNPJ/telefone ou puro número.
+function extrairPostoNome(texto: string): string | null {
+  const linhas = texto
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  for (const linha of linhas.slice(0, 6)) {
+    if (linha.length < 4) continue;
+    if (/^\d+$/.test(linha)) continue;
+    if (/cnpj|cpf|rua\b|av\.|avenida|cep|fone|tel\.?:|endere[çc]o/i.test(linha)) continue;
+    const letras = linha.replace(/[^a-zA-ZÀ-ÿ]/g, "");
+    if (letras.length < 4) continue;
+    return linha;
+  }
+  return null;
+}
+
+export async function extrairDadosCupomAbastecimento(imagem: Buffer): Promise<ResultadoOcrCupomAbastecimento> {
+  const worker = await createWorker("por");
+  try {
+    const {
+      data: { text },
+    } = await worker.recognize(imagem);
+    return {
+      texto: text,
+      postoNome: extrairPostoNome(text),
+      combustivel: extrairCombustivel(text),
+      litros: extrairLitros(text),
+      valorUnitario: extrairValorUnitario(text),
+      valorTotal: extrairValorTotal(text),
+    };
+  } finally {
+    await worker.terminate();
+  }
+}
