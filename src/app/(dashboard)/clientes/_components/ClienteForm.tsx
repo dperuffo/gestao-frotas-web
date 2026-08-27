@@ -159,6 +159,27 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
             </label>
           )}
 
+          {/* Fase IA-e-Automacao (27/08/2026, pedido do Daniel: "esta
+              funcionalidade só pode ser apresentada para os clientes com
+              plano enterprise") — Insights de IA é gateado por plano; esta
+              flag libera a tela mesmo fora do enterprise (uso
+              interno/teste), mesmo padrão de bypass_limite_frota acima.
+              Checagem server-side em atualizarCliente. */}
+          {souAdmin && (
+            <label className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <input
+                type="checkbox"
+                name="acesso_insights_ia_liberado"
+                defaultChecked={cliente.acesso_insights_ia_liberado}
+                className="mt-0.5"
+              />
+              <span>
+                <strong>Liberar Insights de IA fora do plano enterprise</strong> — uso interno/teste. Sem
+                isso, só empresas no plano enterprise enxergam a tela /insights-ia.
+              </span>
+            </label>
+          )}
+
           {/* Fase TCO 2 (29/07/2026) — taxa de custo de capital (% ao ano),
               usada no cálculo de TCO como custo de oportunidade do capital
               imobilizado nos veículos. Só admin edita — mesma checagem

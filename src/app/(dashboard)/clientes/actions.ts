@@ -79,6 +79,10 @@ export async function atualizarCliente(
   if (perfilAtual === "admin") {
     payload.bypass_limite_frota = formData.get("bypass_limite_frota") === "on";
 
+    // Fase IA-e-Automacao (27/08/2026) — mesma checagem de admin acima:
+    // libera Insights de IA fora do plano enterprise (uso interno/teste).
+    payload.acesso_insights_ia_liberado = formData.get("acesso_insights_ia_liberado") === "on";
+
     // Fase TCO 2 (29/07/2026) — taxa de custo de capital (% ao ano), mesma
     // checagem server-side de admin acima (não confia só na UI escondendo o
     // campo em ClienteForm).

@@ -133,6 +133,71 @@ function validarSelecionados(bruto: unknown, candidatos: CandidatoSinal[]): Insi
   return selecionados.slice(0, MAX_INSIGHTS_POR_EMPRESA);
 }
 
+// Achado ao rodar em produção pela 1ª vez (27/08/2026): numa empresa com 16
+// candidatos (2 categorias cheias), o Claude respondeu sem nenhum array
+// JSON — "Resposta do modelo não continha um array JSON" — provavelmente
+// preâmbulo de texto explicando o raciocínio antes de recusar o formato,
+// mais provável de acontecer justamente quando há mais candidato pra
+// analisar (o caso que mais importa pra esse recurso funcionar bem em
+// produção). Corrigido com 1 retentativa corretiva na mesma conversa,
+// reforçando o formato — e logando os primeiros 500 caracteres da resposta
+// crua se a 2ª tentativa também falhar, pra dar visibilidade real do que o
+// modelo respondeu (antes só o erro de parse ficava no log, sem contexto).
+const MAX_TENTATIVAS_CLAUDE = 2;
+
+async function priorizarComClaude(candidatos: CandidatoSinal[], empresaId: string): Promise<InsightSelecionado[]> {
+  const anthropic = clienteAnthropic();
+  const mensagens: Anthropic.MessageParam[] = [
+    {
+      role: "user",
+      content: `Candidatos a insight desta empresa (${candidatos.length} no total):\n\n${JSON.stringify(
+        candidatos.map((c) => ({
+          categoria: c.categoria,
+          chave: c.chave,
+          titulo_sugerido: c.titulo_sugerido,
+          resumo: c.resumo,
+          valor_impacto: c.valor_impacto,
+          severidade: c.severidade,
+        }))
+      )}`,
+    },
+  ];
+
+  let ultimoTexto = "";
+  for (let tentativa = 0; tentativa < MAX_TENTATIVAS_CLAUDE; tentativa++) {
+    const resposta = await anthropic.messages.create({
+      model: MODELO,
+      max_tokens: 6000,
+      system: SYSTEM_PROMPT,
+      messages: mensagens,
+    });
+
+    const blocoTexto = resposta.content.find((b): b is Anthropic.TextBlock => b.type === "text");
+    ultimoTexto = blocoTexto?.text ?? "";
+
+    try {
+      const bruto = extrairJsonArray(ultimoTexto);
+      return validarSelecionados(bruto, candidatos);
+    } catch {
+      if (tentativa === MAX_TENTATIVAS_CLAUDE - 1) break;
+      mensagens.push({ role: "assistant", content: ultimoTexto });
+      mensagens.push({
+        role: "user",
+        content:
+          "Sua resposta anterior não veio em JSON válido. Responda de novo, agora SOMENTE com o array JSON (comece a resposta direto com '[' e termine com ']', sem nenhum texto antes, depois, ou markdown ao redor).",
+      });
+    }
+  }
+
+  await logger.error(
+    "insightsIA",
+    "Claude não devolveu JSON válido após retentativa (insights não atualizados hoje pra essa empresa)",
+    new Error("Resposta sem array JSON"),
+    { empresaId, textoRecebido: ultimoTexto.slice(0, 500) }
+  );
+  return [];
+}
+
 export type ResultadoGeracaoInsights = { empresaId: string; candidatos: number; gerados: number; erro?: string };
 
 // Gera os insights de UMA empresa — chamado em loop pelo cron
@@ -158,31 +223,7 @@ export async function gerarInsightsEmpresa(
 
   let selecionados: InsightSelecionado[];
   try {
-    const anthropic = clienteAnthropic();
-    const resposta = await anthropic.messages.create({
-      model: MODELO,
-      max_tokens: 4000,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: `Candidatos a insight desta empresa (${candidatos.length} no total):\n\n${JSON.stringify(
-            candidatos.map((c) => ({
-              categoria: c.categoria,
-              chave: c.chave,
-              titulo_sugerido: c.titulo_sugerido,
-              resumo: c.resumo,
-              valor_impacto: c.valor_impacto,
-              severidade: c.severidade,
-            }))
-          )}`,
-        },
-      ],
-    });
-
-    const blocoTexto = resposta.content.find((b): b is Anthropic.TextBlock => b.type === "text");
-    const bruto = extrairJsonArray(blocoTexto?.text ?? "[]");
-    selecionados = validarSelecionados(bruto, candidatos);
+    selecionados = await priorizarComClaude(candidatos, empresaId);
   } catch (erro) {
     await logger.error("insightsIA", "Falha ao priorizar/redigir com Claude (ignorado, insights não atualizados hoje)", erro, {
       empresaId,

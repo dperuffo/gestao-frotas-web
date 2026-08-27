@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { listarAvisosAcao } from "../administracao/central-avisos/actions";
 import { contarInsightsNovosAcao } from "../insights-ia/actions";
+import { empresaTemAcessoInsightsIA } from "@/lib/acessoInsightsIA";
 import { Sparkles, ShieldAlert, Bell, SlidersHorizontal, Brain } from "lucide-react";
 
 // Fase Gestao-Controles (27/08/2026, pedido do Daniel: "gestao e controles
@@ -44,6 +45,7 @@ export default async function CentralRegrasPage({
   let falhasAntifraudeNaoLidas = 0;
   let avisosAtivos = 0;
   let insightsNovos = 0;
+  let mostrarCardInsightsIA = false;
 
   if (!semClienteEscolhido) {
     let queryAcoes = supabase.from("acoes_sugeridas").select("severidade").eq("status", "pendente");
@@ -58,13 +60,26 @@ export default async function CentralRegrasPage({
       .is("lida_em", null);
     if (empresaSelecionada) queryFalhas = queryFalhas.eq("empresa_id", empresaSelecionada);
 
-    const [{ data: acoesRaw }, { count: totalRegras }, { count: totalFalhas }, avisos, totalInsights] = await Promise.all([
-      queryAcoes,
-      queryRegras,
-      queryFalhas,
-      listarAvisosAcao({ incluirExpirados: false }),
-      contarInsightsNovosAcao(empresaSelecionada),
-    ]);
+    // Fase IA-e-Automacao (27/08/2026, pedido do Daniel: "esta
+    // funcionalidade só pode ser apresentada para os clientes com plano
+    // enterprise") — card só aparece se a empresa selecionada for elegível
+    // (mesma checagem usada pro menu/rota em layout.tsx — ver
+    // src/lib/acessoInsightsIA.ts). Sem empresa selecionada (admin vendo
+    // "todas"), assume elegível: o /insights-ia continua bloqueando por
+    // trás pra quem não tiver acesso de verdade.
+    const queryPlanoEmpresa = empresaSelecionada
+      ? supabase.from("empresas").select("plano, acesso_insights_ia_liberado").eq("id", empresaSelecionada).single()
+      : Promise.resolve({ data: null });
+
+    const [{ data: acoesRaw }, { count: totalRegras }, { count: totalFalhas }, avisos, totalInsights, { data: empresaPlano }] =
+      await Promise.all([
+        queryAcoes,
+        queryRegras,
+        queryFalhas,
+        listarAvisosAcao({ incluirExpirados: false }),
+        contarInsightsNovosAcao(empresaSelecionada),
+        queryPlanoEmpresa,
+      ]);
 
     const acoes = acoesRaw ?? [];
     acoesPendentes = acoes.length;
@@ -73,6 +88,7 @@ export default async function CentralRegrasPage({
     falhasAntifraudeNaoLidas = totalFalhas ?? 0;
     avisosAtivos = avisos.length;
     insightsNovos = totalInsights;
+    mostrarCardInsightsIA = !empresaSelecionada || (empresaPlano ? empresaTemAcessoInsightsIA(empresaPlano) : false);
   }
 
   return (
@@ -168,20 +184,22 @@ export default async function CentralRegrasPage({
             </div>
           </Link>
 
-          <Link href="/insights-ia" className="card block p-5 transition hover:border-frota-200 hover:shadow-md">
-            <div className="mb-3 flex items-center gap-2">
-              <Brain className="h-5 w-5 text-violet-600" />
-              <h2 className="text-sm font-semibold text-slate-900">Insights de IA</h2>
-            </div>
-            <p className="mb-3 text-xs text-slate-500">
-              Sinais cruzados entre combustível, manutenção, pneus, sinistros, multas, aprovações, seguro e
-              motoristas — gerados 1x/dia, sem precisar perguntar.
-            </p>
-            <div>
-              <p className="text-2xl font-semibold text-slate-900">{insightsNovos}</p>
-              <p className="text-xs text-slate-500">Novos</p>
-            </div>
-          </Link>
+          {mostrarCardInsightsIA && (
+            <Link href="/insights-ia" className="card block p-5 transition hover:border-frota-200 hover:shadow-md">
+              <div className="mb-3 flex items-center gap-2">
+                <Brain className="h-5 w-5 text-violet-600" />
+                <h2 className="text-sm font-semibold text-slate-900">Insights de IA</h2>
+              </div>
+              <p className="mb-3 text-xs text-slate-500">
+                Sinais cruzados entre combustível, manutenção, pneus, sinistros, multas, aprovações, seguro e
+                motoristas — gerados 1x/dia, sem precisar perguntar.
+              </p>
+              <div>
+                <p className="text-2xl font-semibold text-slate-900">{insightsNovos}</p>
+                <p className="text-xs text-slate-500">Novos</p>
+              </div>
+            </Link>
+          )}
         </div>
       )}
 

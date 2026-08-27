@@ -78,6 +78,7 @@ import {
   resolverFuncionalidadeDaRota,
   temAcesso,
 } from "@/lib/permissoes";
+import { usuarioTemAcessoInsightsIA } from "@/lib/acessoInsightsIA";
 import { BotaoSair } from "./_components/BotaoSair";
 import { GrupoMenuLateral, type ItemMenuLateral } from "./_components/GrupoMenuLateral";
 import { contarChamadosNaoVistosAcao } from "./chamados/actions";
@@ -802,7 +803,22 @@ export default async function DashboardLayout({
     !bypassPermissao && perfilUsuario?.perfil
       ? await carregarMapaPermissoes(supabase, perfilUsuario.perfil)
       : new Map<string, boolean>();
-  const podeAcessar = (funcionalidade: string | null) => bypassPermissao || temAcesso(mapaPermissoes, funcionalidade);
+
+  // Fase IA-e-Automacao (27/08/2026, pedido do Daniel: "esta funcionalidade
+  // só pode ser apresentada para os clientes com plano enterprise") —
+  // Insights de IA é a única tela gateada por PLANO da empresa (não por
+  // perfil do usuário) — checagem à parte da matriz de permissões acima,
+  // mas dobrada no mesmo `podeAcessar` pra reaproveitar o mesmo funil de
+  // filtro de menu + bloqueio de rota direta. Ver src/lib/acessoInsightsIA.ts.
+  const acessoInsightsIA = await usuarioTemAcessoInsightsIA(
+    supabase,
+    user.email ?? "",
+    perfilUsuario?.perfil === "admin"
+  );
+  const podeAcessar = (funcionalidade: string | null) => {
+    if (funcionalidade === "aba_insights_ia" && !acessoInsightsIA) return false;
+    return bypassPermissao || temAcesso(mapaPermissoes, funcionalidade);
+  };
   // Mesma checagem acima, mas a partir do href de um item de menu — usada
   // pra filtrar cada uma das listas de menu abaixo (item some quando o
   // perfil atual não tem permissão pra funcionalidade correspondente).

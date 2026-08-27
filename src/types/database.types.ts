@@ -62,6 +62,13 @@ export interface Database {
           // (verificarLimiteFrota) pra esta empresa. Uso interno/teste,
           // editável só por admin em /clientes/[id].
           bypass_limite_frota: boolean;
+          // Fase IA-e-Automacao (27/08/2026) — libera a tela de Insights
+          // Proativos de IA mesmo fora do plano enterprise. Uso
+          // interno/teste, editável só por admin em /clientes/[id] — mesmo
+          // padrão de bypass_limite_frota acima. As 7 empresas já
+          // cadastradas na fase de lançamento foram marcadas true
+          // (grandfather); novas empresas nascem false.
+          acesso_insights_ia_liberado: boolean;
           // Fase TCO 2 (29/07/2026) — taxa de custo de capital (% ao ano),
           // usada no TCO como custo de oportunidade do capital imobilizado
           // na frota. Editável só por admin em /clientes/[id]; null = não
