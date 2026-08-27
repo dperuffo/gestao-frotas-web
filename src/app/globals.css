@@ -3,22 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --frota-950: #0f172a;
-  --frota-900: #132038;
-  --frota-600: #1e40af;
-  --frota-500: #3b82f6;
+  --frota-950: #111111;
+  --frota-900: #1a1a1a;
+  --frota-600: #0d0d0d;
+  --frota-500: #171717;
   --status-ativo: #16a34a;
   --status-atencao: #f59e0b;
   --status-inativo: #dc2626;
 }
 
-/* Fase Design-System-Corporate-Blue (26/08/2026, pedido do Daniel: "o tema
-   Liquid Glass não foi bem aceito pelos usuários" — substituir por um
-   design "SaaS Enterprise Analytics": corporativo, limpo, data-driven,
-   fundo claro, sem preto puro, sem blur/glassmorphism pesado). Fundo liso
-   (accent do design.md), sem os radial-gradients/blur da fase anterior —
-   telas densas em tabela precisam de contraste alto e neutro, não de
-   textura de fundo competindo com o conteúdo. */
+/* Fase Design-System-Swiss-Minimalism (27/08/2026, pedido do Daniel: "não
+   gostei" da fase Corporate Blue de ontem — novo design.md: "Minimalism &
+   Swiss Style", preto (off-black)/branco/cinza/bege/taupe, cantos quase
+   retos, herança da escola suíça dos anos 50 (Basel/Zurich, Helvetica).
+   Fundo liso, sem blur/glassmorphism, sem "anel de luz" — mesma direção
+   "flat" da fase anterior, agora monocromática em vez de azul. */
 body {
   @apply bg-frota-50 text-slate-900 antialiased;
 }
@@ -26,19 +25,18 @@ body {
 /* .card é a classe central usada em ~150 telas (ver README, fases de
    Redesign-Telas-Densas) — trocar aqui cascateia pro app inteiro sem
    precisar editar cada página. Receita do design.md: superfície branca,
-   1px de borda, sombra suave (0 2px 12px rgba(0,0,0,0.06)), raio 12px —
-   sem blur/backdrop-filter (esse era o "vidro" que não pegou bem). */
+   1px de borda, sombra suave (0 2px 12px rgba(0,0,0,0.06)), cantos quase
+   retos (2px, "Sharp edges" do tema) — sem blur/backdrop-filter. */
 .card {
   @apply rounded-xl border border-slate-200 bg-white shadow-sm;
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 12px rgba(17, 17, 17, 0.06);
 }
 
 /* Menu lateral (aside, layout.tsx) — design.md: "Navigation: Primary
    surface background. Active item: accent color indicator." Fundo sólido
-   em Dark Navy (uma das cores oficiais da paleta, "Dark surface, primary
-   background") — flat, sem blur/anel de luz (era exatamente esse efeito
-   que não agradou). O item ativo ganha destaque via `.glass-nav-ativo`
-   (ver GrupoMenuLateral.tsx), não mais aqui. */
+   off-black (não mais Dark Navy azulado) — flat, sem blur/anel de luz. O
+   item ativo ganha destaque via `.glass-nav-ativo` (ver GrupoMenuLateral.tsx
+   e ItemMenuAtivo.tsx), não mais aqui. */
 .glass-nav {
   @apply border-r border-white/10 bg-frota-950;
 }
@@ -72,16 +70,21 @@ body {
 }
 /* Indicador de item ativo no menu — accent color (design.md: "Active item:
    accent color indicator. Font weight 500 when active."), usado por
-   GrupoMenuLateral.tsx via usePathname(). */
+   ItemMenuAtivo.tsx via usePathname(). Fase Swiss-Minimalism: `frota-500`
+   agora é quase preto (mesma família do fundo `frota-950` do menu) — um
+   destaque `bg-frota-500/15` ficaria invisível sobre o fundo escuro. Troca
+   pro único acento decorativo do tema (`accento`, taupe do design.md) numa
+   borda lateral + leve clareamento de fundo, sem depender de matiz azul. */
 .glass-nav-ativo {
-  @apply bg-frota-500/15 font-medium text-white;
+  @apply border-l-2 border-accento bg-white/5 font-medium text-white;
 }
 .glass-nav-acento {
-  @apply text-frota-500;
+  @apply text-accento;
 }
 
-/* Fase Design-System-Corporate-Blue — botão primário (design.md): raio
-   12px, cor de destaque sólida, hover = escurece ~8%, active = leve
+/* Fase Design-System-Swiss-Minimalism — botão primário (design.md): cantos
+   quase retos (2px), preenchimento sólido em off-black ("Accent color
+   fill" = colors.primary = preto), hover = escurece, active = leve
    translo -1px (tátil), peso 600, sem glow. */
 .btn-primary {
   @apply inline-flex items-center justify-center rounded-xl bg-frota-500 px-4 py-2
@@ -120,10 +123,14 @@ body {
    autenticação (login, MFA, cadastro) — o .input padrão pressupõe fundo
    branco, e essas telas usam o cartão escuro (AuthCard) sobre o fundo
    Dark Navy da landing/auth. */
+/* Fase Swiss-Minimalism: o anel de foco não pode mais usar `frota-500`
+   aqui — ele agora é quase preto, igual ao fundo do card escuro
+   (frota-950/60), e ficaria invisível. Usa o acento taupe do tema
+   (mesmo tratamento do item ativo do menu, ver .glass-nav-ativo). */
 .input-dark {
   @apply w-full rounded-xl border border-white/10 bg-frota-950/60 px-3 py-2 text-sm text-white
     placeholder:text-slate-500
-    focus:border-frota-500 focus:outline-none focus:ring-2 focus:ring-frota-500/30;
+    focus:border-accento focus:outline-none focus:ring-2 focus:ring-accento/30;
 }
 
 .label-dark {

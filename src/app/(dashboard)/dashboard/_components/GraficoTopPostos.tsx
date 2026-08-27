@@ -18,7 +18,7 @@ export function GraficoTopPostos({ dados }: { dados: PontoTopPosto[] }) {
         <XAxis type="number" tick={{ fontSize: 12 }} />
         <YAxis type="category" dataKey="posto" width={180} tick={{ fontSize: 12 }} />
         <Tooltip formatter={(v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`} />
-        <Bar dataKey="litros" name="Litros" fill="#3B82F6" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="litros" name="Litros" fill="#262626" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

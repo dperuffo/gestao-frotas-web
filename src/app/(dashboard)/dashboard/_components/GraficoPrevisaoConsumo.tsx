@@ -30,13 +30,13 @@ export function GraficoPrevisaoConsumo({ dados }: { dados: PontoPrevisaoConsumo[
         />
         <Legend
           payload={[
-            { value: "Realizado", type: "square", color: "#3B82F6" },
-            { value: "Projetado", type: "square", color: "#BAE6FD" },
+            { value: "Realizado", type: "square", color: "#262626" },
+            { value: "Projetado", type: "square", color: "#D9D9D9" },
           ]}
         />
         <Bar dataKey="litros" radius={[4, 4, 0, 0]}>
           {dados.map((d, i) => (
-            <Cell key={i} fill={d.tipo === "projetado" ? "#BAE6FD" : "#3B82F6"} />
+            <Cell key={i} fill={d.tipo === "projetado" ? "#D9D9D9" : "#262626"} />
           ))}
         </Bar>
       </BarChart>

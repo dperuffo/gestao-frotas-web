@@ -24,8 +24,8 @@ export function GraficoEvolucaoFinanceira({ dados }: { dados: PontoFinanceiro[] 
           formatter={(valor: number) => valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
         />
         <Legend />
-        <Bar dataKey="combustivel" name="Combustível" stackId="custo" fill="#3B82F6" />
-        <Bar dataKey="manutencao" name="Manutenção" stackId="custo" fill="#1E40AF" />
+        <Bar dataKey="combustivel" name="Combustível" stackId="custo" fill="#262626" />
+        <Bar dataKey="manutencao" name="Manutenção" stackId="custo" fill="#8C8C8C" />
         <Bar dataKey="custosFixos" name="Custos fixos" stackId="custo" fill="#F59E0B" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>

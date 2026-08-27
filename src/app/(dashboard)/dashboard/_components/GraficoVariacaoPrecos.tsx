@@ -51,7 +51,7 @@ export function GraficoVariacaoPrecos({ dados }: { dados: ItemVariacaoPreco[] })
           <YAxis type="category" dataKey="nome" width={140} tick={{ fontSize: 12 }} />
           <Tooltip formatter={(valor: number) => formatarMoeda(valor)} />
           <Legend />
-          <Bar dataKey="Preço médio (cliente)" fill="#3B82F6" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="Preço médio (cliente)" fill="#262626" radius={[0, 4, 4, 0]} />
           <Bar dataKey="Preço médio (ANP)" fill="#94a3b8" radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>

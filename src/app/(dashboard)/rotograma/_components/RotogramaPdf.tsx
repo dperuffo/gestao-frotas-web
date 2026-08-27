@@ -20,7 +20,7 @@ const CORES_RISCO_PDF: Record<RotogramaRisco["categoria"], { bg: string; borda: 
   crime: { bg: "#FFE4E6", borda: "#FDA4AF", texto: "#9F1239" },
   radar: { bg: "#FFFBEB", borda: "#FDE68A", texto: "#B45309" },
 };
-const COR_PARADA_PDF = { bg: "#DBEAFE", borda: "#93C5FD", texto: "#1E40AF" };
+const COR_PARADA_PDF = { bg: "#F0F0F0", borda: "#CCCCCC", texto: "#404040" };
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica", color: "#1e293b" },

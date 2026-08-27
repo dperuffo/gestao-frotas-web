@@ -2,7 +2,7 @@
 
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const CORES = ["#3B82F6", "#F97316", "#16A34A", "#DB2777", "#7C3AED"];
+const CORES = ["#262626", "#F97316", "#16A34A", "#DB2777", "#7C3AED"];
 
 export type PontoEvolutivoPostos = { diaLabel: string; [posto: string]: string | number };
 

@@ -10,7 +10,7 @@ import { LogoProvedor } from "@/components/LogoProvedor";
 // com a logo de cada provedor (já usada em outras telas via LogoProvedor).
 export type FatiaPagamento = { provedor: string; valor: number };
 
-const CORES = ["#3B82F6", "#1E40AF", "#16A34A", "#F59E0B", "#7C3AED", "#DC2626"];
+const CORES = ["#262626", "#8C8C8C", "#16A34A", "#F59E0B", "#7C3AED", "#DC2626"];
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

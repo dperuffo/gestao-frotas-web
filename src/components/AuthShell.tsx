@@ -1,11 +1,18 @@
 import type { ReactNode } from "react";
 import { AuthLogoHeader } from "./AuthLogoHeader";
 
-// Fundo cheio de tela para as páginas públicas de autenticação — replica a
-// textura de grade sutil em ciano da landing page (fxgestaodefrotasonline.com)
-// sobre o mesmo fundo azul-marinho escuro (bg-frota-950) já usado no resto
-// do app, então não é uma cor nova: é o mesmo padrão, só com o "cenário"
-// completo em vez de um cartão branco isolado.
+// Fundo cheio de tela para as páginas públicas de autenticação, sobre o
+// mesmo fundo off-black (bg-frota-950) já usado no resto do app — não é uma
+// cor nova, é o mesmo padrão, só com o "cenário" completo em vez de um
+// cartão branco isolado.
+//
+// Fase Swiss-Minimalism (27/08/2026): a grade e o glow ambiente antes
+// usavam um tom de azul (rgba(59,130,246,...), frota-500) — agora que
+// frota-500 é quase preto (mesma família do fundo), essa textura ficaria
+// invisível. Grade recolorida em branco neutro (sem matiz); glow ambiente
+// removido de propósito — minimalismo suíço não usa esse tipo de "brilho"
+// decorativo (ver Elevation do design.md: "sharp shadows if any, fast
+// loading, clear type hierarchy", nada de blur/glow colorido).
 export function AuthShell({
   children,
   maxWidthClassName = "max-w-sm",
@@ -21,13 +28,9 @@ export function AuthShell({
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.06) 1px, transparent 1px)",
+            "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
           backgroundSize: "42px 42px",
         }}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute left-1/2 top-0 -z-0 h-96 w-[36rem] -translate-x-1/2 rounded-full bg-frota-500/10 blur-3xl"
         aria-hidden
       />
       <div className={`relative w-full ${maxWidthClassName}`}>
