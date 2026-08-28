@@ -5255,6 +5255,16 @@ export interface Database {
         Args: { p_cnpj: string };
         Returns: string | null;
       };
+      // Fase Atribuicao-Automatica-Fidelidade (28/08/2026) — job diário
+      // (ver /api/cron/auto-confirmar-fidelidade) que substitui o toque
+      // manual do motorista na extinta tela "Confirmar abastecimentos":
+      // credita os pontos de fidelidade sozinho, mesma lógica de match de
+      // motorista_abastecimentos_pendentes (veículo vinculado -> CPF ->
+      // nome). Idempotente. Retorna { confirmados, pontos_creditados }.
+      auto_confirmar_abastecimentos_fidelidade: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
       // Fase 27.139 — cria uma Rede de Postos self-service: grupo +
       // primeiro vínculo (posto fundador) na mesma transação, como dono da
       // função — evita o problema de RETURNING sobre uma Rede recém-criada
