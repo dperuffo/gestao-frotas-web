@@ -4244,6 +4244,11 @@ export interface Database {
           frota_razao_social: string | null;
           motorista_id: number | null;
           motorista_nome: string | null;
+          // Fase fidelidade-por-CPF (23/07/2026) — coluna já existia no
+          // banco desde essa fase, mas nunca tinha sido adicionada aqui
+          // (gap achado no build da fase CPF-obrigatorio-fonte, 28/08/2026,
+          // quando AbastecimentoForm.tsx passou a ler o campo direto).
+          motorista_cpf: string | null;
           veiculo_id: number | null;
           veiculo_placa: string | null;
           pv_cnpj: string | null;
