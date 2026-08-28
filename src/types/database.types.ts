@@ -4457,6 +4457,10 @@ export interface Database {
           placa: string;
           motorista_id: string | null;
           motorista_nome: string | null;
+          // Fase CPF-obrigatorio-fonte (28/08/2026) — no fluxo PWA Motorista
+          // vem do cadastro do próprio motorista autenticado; no lançamento
+          // manual web, do campo do formulário ou do fallback por nome.
+          motorista_cpf: string | null;
           hodometro: number | null;
           data_abastecimento: string;
           combustivel: string;
@@ -5095,6 +5099,11 @@ export interface Database {
           // abastecimentos_externos.codigo_abastecimento).
           id: string | null;
           codigo_abastecimento: string | null;
+          fatura_posto_id: string | null;
+          // Fase CPF-obrigatorio-fonte (28/08/2026) — presente nas 3 fontes
+          // agora (profrotas, externos, internos); antes só existia nas
+          // duas primeiras e a view mandava NULL::text pra "interno".
+          motorista_cpf: string | null;
         };
         Relationships: [];
       };

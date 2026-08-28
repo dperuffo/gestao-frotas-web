@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { normalizarCPF } from "@/lib/utils";
+import { garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
 import { ARLA32 } from "@/lib/constants";
 
 // Fase Abastecimento-Interno (21/08/2026, pedido do Daniel) — lançamento
@@ -35,6 +37,7 @@ export async function criarAbastecimentoInternoAcao(
   const empresaId = String(formData.get("empresa_id") ?? "").trim();
   const placa = String(formData.get("placa") ?? "").trim().toUpperCase();
   const motoristaNome = String(formData.get("motorista_nome") ?? "").trim() || null;
+  const motoristaCpf = normalizarCPF(String(formData.get("motorista_cpf") ?? ""));
   const combustivel = String(formData.get("combustivel") ?? "").trim();
   const quantidade = numeroOuNull(formData.get("quantidade"));
   const arlaQuantidade = numeroOuNull(formData.get("arla_quantidade"));
@@ -92,6 +95,23 @@ export async function criarAbastecimentoInternoAcao(
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Fase CPF-obrigatorio-fonte (28/08/2026) — quem lança aqui é um gestor
+  // digitando em nome do motorista (ao contrário do PWA, onde o próprio
+  // motorista autenticado lança e o CPF vem garantido do cadastro dele).
+  // Sem CPF no formulário, cai no mesmo fallback por nome+empresa contra o
+  // cadastro de motoristas usado nos outros caminhos de importação.
+  let motoristaCpfFinal = motoristaCpf;
+  if (!motoristaCpfFinal && motoristaNome) {
+    const { data: motoristaCadastro } = await supabase
+      .from("motoristas")
+      .select("cpf")
+      .eq("empresa_id", empresaId)
+      .ilike("nome_completo", motoristaNome)
+      .not("cpf", "is", null)
+      .maybeSingle();
+    motoristaCpfFinal = motoristaCadastro?.cpf ?? null;
+  }
+
   const { data: inserido, error } = await supabase
     .from("abastecimentos_internos")
     .insert({
@@ -99,6 +119,7 @@ export async function criarAbastecimentoInternoAcao(
       posto_interno_id: posto.id,
       placa,
       motorista_nome: motoristaNome,
+      motorista_cpf: motoristaCpfFinal,
       hodometro,
       data_abastecimento: dataAbastecimento ? new Date(dataAbastecimento).toISOString() : new Date().toISOString(),
       combustivel,
@@ -115,6 +136,10 @@ export async function criarAbastecimentoInternoAcao(
     .single();
 
   if (error) return { erro: `Não foi possível lançar o abastecimento: ${error.message}` };
+
+  if (motoristaNome) {
+    await garantirMotoristaCadastrado(supabase, empresaId, { nomeCompleto: motoristaNome, cpf: motoristaCpf });
+  }
 
   revalidatePath("/abastecimentos");
   return {

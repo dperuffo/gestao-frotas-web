@@ -69,6 +69,9 @@ export function FormAbastecimentoInterno({ empresas }: { empresas: EmpresaOpcao[
           <Campo label="Motorista">
             <input name="motorista_nome" className="input" />
           </Campo>
+          <Campo label="CPF do motorista">
+            <input name="motorista_cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" className="input" />
+          </Campo>
           <Campo label="Hodômetro (km)">
             <input type="number" name="hodometro" className="input" />
           </Campo>

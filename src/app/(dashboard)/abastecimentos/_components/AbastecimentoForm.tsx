@@ -70,6 +70,16 @@ export function AbastecimentoForm({
           <Campo label="Motorista">
             <input name="motorista_nome" defaultValue={abastecimento?.motorista_nome ?? ""} className="input" />
           </Campo>
+          <Campo label="CPF do motorista">
+            <input
+              name="motorista_cpf"
+              inputMode="numeric"
+              maxLength={14}
+              placeholder="000.000.000-00"
+              defaultValue={abastecimento?.motorista_cpf ?? ""}
+              className="input"
+            />
+          </Campo>
           <Campo label="Hodômetro (km)">
             <input type="number" name="hodometro" defaultValue={abastecimento?.hodometro ?? ""} className="input" />
           </Campo>

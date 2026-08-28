@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
-import { normalizarCNPJ } from "@/lib/utils";
+import { normalizarCNPJ, normalizarCPF } from "@/lib/utils";
 import { garantirVeiculosCadastrados, garantirMotoristasCadastrados } from "@/lib/cadastrosAutomaticos";
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -44,7 +44,7 @@ type ProfrotasRegistro = {
   hodometro?: number | string | null;
   horimetro?: number | string | null;
   frota?: { cnpj?: string | null; razaoSocial?: string | null } | null;
-  motorista?: { identificador?: string | number | null; nome?: string | null } | null;
+  motorista?: { identificador?: string | number | null; nome?: string | null; cpf?: string | number | null } | null;
   veiculo?: { identificador?: string | number | null; placa?: string | null } | null;
   pontoVenda?: {
     cnpj?: string | null;
@@ -103,6 +103,7 @@ function paraTextoOuNull(v: unknown): string | null {
   const s = v === null || v === undefined ? "" : String(v);
   return s.trim() === "" ? null : s;
 }
+
 
 function calcularSyncKey(cnpjFrota: string, identificador: string, itemId: string): string {
   return createHash("md5").update(`${cnpjFrota}|${identificador || "sem_id"}|${itemId}`).digest("hex");
@@ -196,6 +197,15 @@ function registroParaLinhas(cnpjFrota: string, registro: ProfrotasRegistro): Lin
     frota_razao_social: paraTextoOuNull(frota.razaoSocial),
     motorista_id: paraInteiro(motorista.identificador),
     motorista_nome: paraTextoOuNull(motorista.nome),
+    // Fase CPF-obrigatorio-fonte (28/08/2026, pedido do Daniel: "a API do
+    // Pró-Frotas manda o CPF do motorista — precisa capturar na
+    // integração"). A API às vezes traz o campo, às vezes não (achado real:
+    // ~28% dos registros); quando vem numérico, o parser de JSON pode
+    // derrubar zeros à esquerda, daí o padStart. O restante dos casos é
+    // completado depois via fallback por nome contra o cadastro de
+    // motoristas (ver sincronizarProfrotas) — só some de vez quando nem a
+    // API nem o cadastro do cliente têm o CPF.
+    motorista_cpf: normalizarCPF(motorista.cpf),
     veiculo_id: paraInteiro(veiculo.identificador),
     veiculo_placa: paraTextoOuNull(veiculo.placa),
     pv_cnpj: normalizarCNPJ(pontoVenda.cnpj).padStart(14, "0") || null,
@@ -314,6 +324,31 @@ export async function sincronizarProfrotas(
     }
 
     const linhas = registros.flatMap((r) => registroParaLinhas(cnpjFrota, r));
+
+    // Fase CPF-obrigatorio-fonte — fallback quando a API não manda o CPF
+    // neste registro específico (achado real: só ~28% dos registros trazem
+    // o campo direto). Busca no cadastro de motoristas do próprio cliente
+    // (mesma empresa, nome normalizado) — achado real: cobre 97% do que
+    // sobra, porque é o cadastro que a gestão do cliente mantém atualizado
+    // (decisão do Daniel: "a gestão do cliente é quem deve gerir" o CPF).
+    // Nunca sobrescreve um CPF que já veio direto da API.
+    if (empresaId && linhas.some((l) => !l.motorista_cpf && l.motorista_nome)) {
+      const { data: motoristasCadastro } = await supabase
+        .from("motoristas")
+        .select("nome_completo, cpf")
+        .eq("empresa_id", empresaId)
+        .not("cpf", "is", null);
+      const cpfPorNome = new Map<string, string>();
+      for (const m of motoristasCadastro ?? []) {
+        if (m.cpf) cpfPorNome.set(m.nome_completo.trim().toUpperCase(), m.cpf);
+      }
+      for (const linha of linhas) {
+        if (!linha.motorista_cpf && linha.motorista_nome) {
+          const cpfCadastro = cpfPorNome.get(linha.motorista_nome.trim().toUpperCase());
+          if (cpfCadastro) linha.motorista_cpf = cpfCadastro;
+        }
+      }
+    }
 
     for (let i = 0; i < linhas.length; i += TAMANHO_LOTE_UPSERT) {
       const lote = linhas.slice(i, i + TAMANHO_LOTE_UPSERT);

@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { normalizarCPF } from "@/lib/utils";
 import { empresaDonaDoVeiculoAcao } from "@/lib/empresasGrupo";
+import { garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
 import {
   criarSolicitacaoAjuste,
   adicionarContrapropostaAjuste,
@@ -36,6 +38,7 @@ function montarPayloadBase(formData: FormData) {
     hodometro: numeroOuNull(formData.get("hodometro")),
     veiculo_placa: String(formData.get("veiculo_placa") ?? "").trim().toUpperCase() || null,
     motorista_nome: String(formData.get("motorista_nome") ?? "").trim() || null,
+    motorista_cpf: normalizarCPF(String(formData.get("motorista_cpf") ?? "")),
     pv_razao_social: String(formData.get("pv_razao_social") ?? "").trim() || null,
     pv_municipio: String(formData.get("pv_municipio") ?? "").trim() || null,
     pv_uf: String(formData.get("pv_uf") ?? "").trim() || null,
@@ -105,6 +108,16 @@ export async function criarAbastecimento(
     .single();
 
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+
+  // Fase CPF-obrigatorio-fonte (28/08/2026) — mesmo caminho da importação
+  // por planilha e da sincronização PróFrotas: garante que o motorista
+  // lançado aqui também exista no cadastro, já com CPF quando informado.
+  if (payload.motorista_nome) {
+    await garantirMotoristaCadastrado(supabase, empresaIdAbastecimento, {
+      nomeCompleto: payload.motorista_nome,
+      cpf: payload.motorista_cpf,
+    });
+  }
 
   revalidatePath("/abastecimentos");
   redirect(`/abastecimentos/${data.id}`);

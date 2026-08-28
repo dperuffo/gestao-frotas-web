@@ -65,6 +65,20 @@ export function normalizarCNPJ(value: string | null | undefined): string {
   return (value ?? "").replace(/[^0-9A-Za-z]/g, "").toUpperCase();
 }
 
+// Fase CPF-obrigatorio-fonte (28/08/2026) — normaliza CPF pros 11 dígitos
+// puros (aceita com ou sem pontuação, e recompõe zero à esquerda perdido
+// quando o valor de origem veio como número). Sequências degeneradas (todo
+// dígito igual) ou de tamanho errado viram null: não vale gravar um CPF que
+// claramente não é um CPF real. Usado por toda entrada de abastecimento
+// (PróFrotas, planilha, lançamento manual web) pra manter o mesmo critério.
+export function normalizarCPF(value: string | number | null | undefined): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  const digitos = String(value).replace(/\D/g, "").padStart(11, "0");
+  if (digitos.length !== 11) return null;
+  if (/^(\d)\1{10}$/.test(digitos)) return null;
+  return digitos;
+}
+
 // Normaliza nomes de município/estado para comparação entre fontes
 // diferentes (a planilha oficial da ANP vem em maiúsculas sem acento; os
 // cadastros dos postos vêm com a grafia original) — maiúsculas, sem acento,

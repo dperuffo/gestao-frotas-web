@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerPlanilhaComoTexto } from "@/lib/xlsx";
-import { normalizarCNPJ } from "@/lib/utils";
+import { normalizarCNPJ, normalizarCPF } from "@/lib/utils";
 import { garantirVeiculoCadastrado, garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
 import { empresaDonaDoVeiculoAcao } from "@/lib/empresasGrupo";
 
@@ -58,6 +58,7 @@ export async function importarAbastecimentos(
     data_abastecimento: indice("data_abastecimento"),
     veiculo_placa: indice("veiculo_placa"),
     motorista_nome: indice("motorista_nome"),
+    motorista_cpf: indice("motorista_cpf"),
     hodometro: indice("hodometro"),
     produto: indice("produto"),
     litros: indice("litros"),
@@ -128,6 +129,7 @@ export async function importarAbastecimentos(
         data_abastecimento: dataOuNull(pegar(colunas, "data_abastecimento")),
         veiculo_placa: placa || null,
         motorista_nome: pegar(colunas, "motorista_nome") || null,
+        motorista_cpf: normalizarCPF(pegar(colunas, "motorista_cpf")),
         hodometro: numeroOuNull(pegar(colunas, "hodometro")),
         item_nome: pegar(colunas, "produto") || null,
         item_quantidade: numeroOuNull(pegar(colunas, "litros")),
@@ -141,11 +143,16 @@ export async function importarAbastecimentos(
 
       // Fase auto-cadastro-abastecimento (27/07/2026) — pedido do Daniel:
       // vale pra QUALQUER importação, não só a PróFrotas — inclusive esta
-      // carga manual via planilha. Sem CPF nesta coluna, cai no match por
-      // nome (mesmo caminho da sincronização PróFrotas).
+      // carga manual via planilha. Fase CPF-obrigatorio-fonte (28/08/2026)
+      // — agora a planilha tem coluna motorista_cpf; quando vier, usa o
+      // caminho com dedupe por CPF (mais preciso); sem CPF, cai no match
+      // por nome (mesmo caminho da sincronização PróFrotas).
       const nomeMotorista = pegar(colunas, "motorista_nome");
+      const cpfMotorista = normalizarCPF(pegar(colunas, "motorista_cpf"));
       if (placa) await garantirVeiculoCadastrado(supabase, empresa.cnpj, placa);
-      if (nomeMotorista) await garantirMotoristaCadastrado(supabase, empresa.id, { nomeCompleto: nomeMotorista });
+      if (nomeMotorista) {
+        await garantirMotoristaCadastrado(supabase, empresa.id, { nomeCompleto: nomeMotorista, cpf: cpfMotorista });
+      }
 
       resultado.push({
         linha: numeroLinha,
