@@ -56,6 +56,26 @@ export function formatCNPJ(value: string | null | undefined): string {
   return value && value.trim().length > 0 ? value : "—";
 }
 
+// Fase Fuso-Horario-Abastecimento (29/08/2026, pedido do Daniel: confusão de
+// horário entre abastecimentos lançados na web e no PWA). Todo campo
+// "data/hora do abastecimento" digitado por um humano (input datetime-local
+// no formulário web, ou texto de planilha) é sempre horário de Brasília
+// puro, SEM fuso — passar isso direto pra `new Date(texto)` é ambíguo,
+// porque o parser usa o fuso do PROCESSO Node que roda o parse, não o do
+// usuário: no notebook do dev (America/Sao_Paulo) dava certo, no container
+// do servidor (que pode rodar em UTC) o mesmo texto virava um instante 3h
+// adiantado. Fixamos a leitura em -03:00 (Brasil não tem mais horário de
+// verão desde 2019 — é um offset fixo o ano inteiro), nunca dependendo do
+// fuso de quem roda o código. Aceita "AAAA-MM-DDTHH:mm"/"AAAA-MM-DD HH:mm"
+// (com ou sem segundos) ou só "AAAA-MM-DD" (assume 00:00).
+export function dataHoraBrParaIso(value: string | null | undefined): string | null {
+  const texto = (value ?? "").trim().replace(" ", "T");
+  if (!texto) return null;
+  const comHora = texto.includes("T") ? texto : `${texto}T00:00`;
+  const data = new Date(`${comHora}-03:00`);
+  return Number.isNaN(data.getTime()) ? null : data.toISOString();
+}
+
 // Normaliza um CNPJ para comparação: remove pontuação (ponto, barra, traço,
 // espaço) e deixa tudo maiúsculo. Importante: a partir de 2026 a Receita
 // Federal passou a emitir CNPJs alfanuméricos (com letras, não só números),

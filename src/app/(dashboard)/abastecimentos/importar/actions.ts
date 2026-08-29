@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerPlanilhaComoTexto } from "@/lib/xlsx";
-import { normalizarCNPJ, normalizarCPF } from "@/lib/utils";
+import { normalizarCNPJ, normalizarCPF, dataHoraBrParaIso } from "@/lib/utils";
 import { garantirVeiculoCadastrado, garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
 import { empresaDonaDoVeiculoAcao } from "@/lib/empresasGrupo";
 
@@ -28,12 +28,11 @@ function numeroOuNull(valor: string) {
 }
 
 // Aceita "AAAA-MM-DD HH:MM" ou só "AAAA-MM-DD" e devolve um ISO string, ou
-// null se estiver vazio/ inválido.
+// null se estiver vazio/inválido. A planilha é sempre preenchida em horário
+// de Brasília — dataHoraBrParaIso (utils.ts) fixa a leitura em -03:00 em vez
+// de depender do fuso do processo que roda a importação.
 function dataOuNull(valor: string) {
-  const texto = valor.trim();
-  if (!texto) return null;
-  const data = new Date(texto.replace(" ", "T"));
-  return Number.isNaN(data.getTime()) ? null : data.toISOString();
+  return dataHoraBrParaIso(valor);
 }
 
 export async function importarAbastecimentos(

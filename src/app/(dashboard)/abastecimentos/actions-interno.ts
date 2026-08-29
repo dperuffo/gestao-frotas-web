@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { normalizarCPF } from "@/lib/utils";
+import { normalizarCPF, dataHoraBrParaIso } from "@/lib/utils";
 import { garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
 import { ARLA32 } from "@/lib/constants";
 
@@ -121,7 +121,7 @@ export async function criarAbastecimentoInternoAcao(
       motorista_nome: motoristaNome,
       motorista_cpf: motoristaCpfFinal,
       hodometro,
-      data_abastecimento: dataAbastecimento ? new Date(dataAbastecimento).toISOString() : new Date().toISOString(),
+      data_abastecimento: dataHoraBrParaIso(dataAbastecimento) ?? new Date().toISOString(),
       combustivel,
       quantidade,
       valor_unitario: valorUnitario,

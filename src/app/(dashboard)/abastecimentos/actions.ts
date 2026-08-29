@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { normalizarCPF } from "@/lib/utils";
+import { normalizarCPF, dataHoraBrParaIso } from "@/lib/utils";
 import { empresaDonaDoVeiculoAcao } from "@/lib/empresasGrupo";
 import { garantirMotoristaCadastrado } from "@/lib/cadastrosAutomaticos";
 import {
@@ -34,7 +34,7 @@ function montarPayloadBase(formData: FormData) {
   const dataHora = String(formData.get("data_abastecimento") ?? "");
 
   return {
-    data_abastecimento: dataHora ? new Date(dataHora).toISOString() : null,
+    data_abastecimento: dataHoraBrParaIso(dataHora),
     hodometro: numeroOuNull(formData.get("hodometro")),
     veiculo_placa: String(formData.get("veiculo_placa") ?? "").trim().toUpperCase() || null,
     motorista_nome: String(formData.get("motorista_nome") ?? "").trim() || null,
@@ -163,7 +163,7 @@ function lerCamposAjuste(formData: FormData): CamposAjuste {
   const valorTotal = String(formData.get("item_valor_total") ?? "").trim();
 
   return {
-    data_abastecimento: dataHora ? new Date(dataHora).toISOString() : undefined,
+    data_abastecimento: dataHoraBrParaIso(dataHora) ?? undefined,
     hodometro: hodometro ? Number(hodometro) : undefined,
     item_nome: itemNome || undefined,
     item_quantidade: quantidade ? Number(quantidade) : undefined,
