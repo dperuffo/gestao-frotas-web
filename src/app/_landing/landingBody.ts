@@ -63,6 +63,21 @@
 //   .pricing#precos — mesmas features documentadas em FEATURES_PLANO
 //   (src/lib/constants.ts) e nas novas linhas de permissoes_perfil (migração
 //   inserir_permissoes_rodopar_grupo1_grupo2).
+// - Atualização (29/08/2026, pedido do Daniel: "atualizar a landing page com
+//   as novas funcionalidades criadas" — curadoria de destaques, não lista
+//   exaustiva, por decisão dele). 8 cards novos em #func (Insights de IA,
+//   OCR de Abastecimento, Crédito Tributário sobre Combustível, Painel
+//   Executivo de Grupo Econômico, Aprovação em Múltiplos Níveis, Compliance
+//   da Frota — resume ASO/toxicológico/seguro num card só —, Gestão de
+//   Pneus, Abastecimento Interno) + reescrita do card "Conciliação Bancária"
+//   existente pra refletir o matching por IA (valor+data+fornecedor) que
+//   ele ganhou. 1 card novo em #fretes (Rastreamento Público de Carga).
+//   Ainda NÃO estão na landing (avaliado e deixado de fora por decisão
+//   editorial, não esquecimento): Central de Regras & Alertas, Log de
+//   auditoria centralizado, Busca Global (Cmd+K), Dashboard configurável e
+//   Bolsa de Fretes restrita a Grupo Econômico — todas mais "internas"/
+//   nicho pra puxar a landing de clientes novos; podem entrar depois se o
+//   Daniel quiser.
 export const LANDING_BODY_HTML = `
 <style>
 /* Fase Design-System-Soft-UI-Evolution (27/08/2026, pedido do Daniel: "a
@@ -716,7 +731,15 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
     <div class="card"><div class="icon">🤝</div><div class="ct">CRM Comercial</div><div class="cd">Funil de oportunidades, do primeiro contato ao contrato fechado, com histórico de interações por cliente.</div></div>
     <div class="card"><div class="icon">📦</div><div class="ct">Estoque de Peças</div><div class="cd">Saldo e custo médio de peças calculados automaticamente, com saída vinculada direto à ordem de serviço.</div></div>
     <div class="card"><div class="icon">🏛️</div><div class="ct">Patrimônio</div><div class="cd">Depreciação contábil linha reta por veículo, com registro formal de reavaliação, melhoria e baixa do ativo.</div></div>
-    <div class="card"><div class="icon">🔄</div><div class="ct">Conciliação Bancária</div><div class="cd">Importe o extrato (OFX/CSV) e concilie com um clique contra contas a pagar e a receber já lançadas.</div></div>
+    <div class="card"><div class="icon">🔄</div><div class="ct">Conciliação Bancária com IA</div><div class="cd">Importe o extrato (OFX/CSV) e deixe a IA sugerir o match certo contra contas a pagar e a receber por valor, data e fornecedor — concilie em lote com um clique.</div></div>
+    <div class="card"><div class="icon">🤖</div><div class="ct">Insights de IA</div><div class="cd">Um assistente que analisa a frota sozinho e aponta o que está fora do padrão — consumo, atraso, risco — antes de virar problema, sem precisar caçar em relatório.</div></div>
+    <div class="card"><div class="icon">📸</div><div class="ct">OCR de Abastecimento</div><div class="cd">O motorista fotografa o cupom fiscal e o app preenche litros, valor e posto sozinho — sem digitação manual, com aprovação do gestor antes de virar oficial.</div></div>
+    <div class="card"><div class="icon">💸</div><div class="ct">Crédito Tributário sobre Combustível</div><div class="cd">Apuração automática do crédito de ICMS a que sua transportadora tem direito sobre o diesel, direto a partir das notas fiscais já lançadas.</div></div>
+    <div class="card"><div class="icon">🏢</div><div class="ct">Painel Executivo de Grupo Econômico</div><div class="cd">Visão consolidada de todas as empresas do grupo num painel só, pra quem administra mais de uma frota ou CNPJ.</div></div>
+    <div class="card"><div class="icon">✅</div><div class="ct">Aprovação em Múltiplos Níveis</div><div class="cd">Defina alçadas de aprovação por valor pra manutenção e outras despesas, com histórico completo de quem aprovou o quê.</div></div>
+    <div class="card"><div class="icon">🩺</div><div class="ct">Compliance da Frota</div><div class="cd">Validade de exame toxicológico, ASO e apólice de seguro controlada por veículo e motorista, com alerta automático antes do vencimento.</div></div>
+    <div class="card"><div class="icon">🛞</div><div class="ct">Gestão de Pneus</div><div class="cd">Vida útil, rodízio e troca por pneu vinculados ao veículo — decisão de substituição baseada em dado, não em achismo.</div></div>
+    <div class="card"><div class="icon">⛽</div><div class="ct">Abastecimento Interno</div><div class="cd">Registre e concilie o abastecimento feito no tanque ou garagem própria da empresa, com o mesmo controle de preço e vínculo ao motorista dos postos externos.</div></div>
   </div>
 </section>
 
@@ -733,6 +756,7 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
     <div class="card"><div class="icon">🏷️</div><div class="ct" data-i18n="frcard5_t">Destaques automáticos</div><div class="cd" data-i18n="frcard5_d">Motoristas com elogios recorrentes — pontual, cuidado com a carga, comunicativo — ganham selos automáticos no perfil.</div></div>
     <div class="card"><div class="icon">📐</div><div class="ct">Piso Mínimo ANTT</div><div class="cd">Validação automática do piso de frete mínimo antes de fechar negócio, alinhado à tabela oficial da ANTT.</div></div>
     <div class="card"><div class="icon">🧾</div><div class="ct">Cotações, Tabelas e Faturamento</div><div class="cd">Monte tabelas de frete próprias, receba cotações de transportadoras parceiras e feche o faturamento — tudo integrado, com emissão de CT-e/MDF-e.</div></div>
+    <div class="card"><div class="icon">📡</div><div class="ct">Rastreamento Público de Carga</div><div class="cd">Compartilhe um link público de rastreamento com o cliente final — ele acompanha o frete em tempo real sem precisar de login ou baixar nada.</div></div>
   </div>
   <div style="text-align:center;margin-top:40px">
     <a href="/cadastro" class="btn-s" data-i18n="fretes_cta">🚚 Publicar meu primeiro frete →</a>
