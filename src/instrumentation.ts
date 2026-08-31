@@ -28,10 +28,29 @@
 // segurança (roda uma vez, na inicialização do servidor Next): garante que
 // `File` exista como global MESMO que, por qualquer motivo, o ambiente
 // ainda suba com uma versão mais antiga do Node.
+import * as Sentry from "@sentry/nextjs";
+
 export async function register() {
   if (typeof globalThis.File === "undefined") {
     const { File } = await import("node:buffer");
     // @ts-expect-error -- polyfill defensivo, ver comentário acima
     globalThis.File = File;
   }
+
+  // Fase Comercial (31/08/2026) — inicializa o Sentry pro runtime certo.
+  // Next.js chama register() uma vez na subida do servidor, tanto pro
+  // runtime Node quanto pro Edge (ex.: middleware.ts, se algum dia
+  // existir); NEXT_RUNTIME diz qual dos dois é este processo.
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("../sentry.server.config");
+  }
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("../sentry.edge.config");
+  }
 }
+
+// Captura erros que estouram dentro de Server Components/Server Actions —
+// sem isso, o Sentry só vê o que acontece no navegador (sentry.client.
+// config.ts) e erros que passam por um try/catch explícito nosso (poucos,
+// de propósito — ver comentário em src/lib/alertas.ts).
+export const onRequestError = Sentry.captureRequestError;

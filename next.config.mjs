@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+import { withSentryConfig } from "@sentry/nextjs";
 
 // M1 (backlog de segurança, README.md) — headers HTTP de segurança ausentes.
 // A CSP abaixo foi montada listando de verdade todo domínio externo que o
@@ -36,8 +37,11 @@ const cspDiretivas = [
   "font-src 'self' https://fonts.gstatic.com",
   // API/Auth/Storage e Realtime (WebSocket, chat de fretes) do Supabase;
   // Nominatim (busca de endereço no formulário client-side de fretes);
-  // Google (troca de token do login); Hotjar (telemetria).
-  "connect-src 'self' https://nedthbeekvwzcjrhsghp.supabase.co wss://nedthbeekvwzcjrhsghp.supabase.co https://nominatim.openstreetmap.org https://accounts.google.com https://*.hotjar.com https://*.hotjar.io wss://*.hotjar.com",
+  // Google (troca de token do login); Hotjar (telemetria); Sentry (Fase
+  // Comercial, 31/08/2026 — envio de erros do navegador pro monitoramento;
+  // domínio com wildcard porque o subdomínio de ingest é específico da
+  // organização Sentry e varia por região US/EU).
+  "connect-src 'self' https://nedthbeekvwzcjrhsghp.supabase.co wss://nedthbeekvwzcjrhsghp.supabase.co https://nominatim.openstreetmap.org https://accounts.google.com https://*.hotjar.com https://*.hotjar.io wss://*.hotjar.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io",
   // O próprio Google Identity Services abre um iframe pra renderizar o botão/
   // One Tap. Stripe é redirect de página inteira (não embed) — não entra aqui.
   "frame-src https://accounts.google.com",
@@ -93,4 +97,27 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Fase Comercial (31/08/2026) — wrap do Sentry: faz upload de source maps
+// pro Sentry no build (stack traces legíveis em produção, não código
+// minificado) e injeta o tunnel de instrumentação. Sem SENTRY_AUTH_TOKEN
+// configurado (só necessário pra upload de source maps, não pra captura de
+// erro em si), o wrap roda em modo silencioso — não quebra o build.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  disableLogger: true,
+  // Some sozinho quando não há projeto/org configurados — evita falha de
+  // build em ambientes (ex.: PR de preview) sem essas envs.
+  widenClientFileUpload: false,
+  // Sem SENTRY_AUTH_TOKEN não tem como fazer upload de source map mesmo —
+  // desliga a geração/instrumentação de source map inteira nesse caso pra
+  // não pagar o custo de memória/tempo de build à toa (achado real: builds
+  // desta aplicação, que já é grande, ficaram sem memória num ambiente de
+  // build mais restrito depois de adicionar o Sentry com sourcemaps
+  // habilitados por padrão).
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+});
