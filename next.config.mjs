@@ -42,6 +42,14 @@ const cspDiretivas = [
   // domínio com wildcard porque o subdomínio de ingest é específico da
   // organização Sentry e varia por região US/EU).
   "connect-src 'self' https://nedthbeekvwzcjrhsghp.supabase.co wss://nedthbeekvwzcjrhsghp.supabase.co https://nominatim.openstreetmap.org https://accounts.google.com https://*.hotjar.com https://*.hotjar.io wss://*.hotjar.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io",
+  // Achado real (teste em produção, 01/09/2026): sem "worker-src" explícito,
+  // o navegador usa "script-src" como fallback pra decidir se libera a
+  // criação de Web Workers — e o Session Replay do Sentry cria um worker a
+  // partir de um blob: (usado pra comprimir a gravação da tela antes de
+  // enviar), que "script-src" não libera. Sem esta linha, o worker era
+  // bloqueado silenciosamente e o evento de erro nunca chegava a ser
+  // enviado pro Sentry.
+  "worker-src 'self' blob:",
   // O próprio Google Identity Services abre um iframe pra renderizar o botão/
   // One Tap. Stripe é redirect de página inteira (não embed) — não entra aqui.
   "frame-src https://accounts.google.com",
