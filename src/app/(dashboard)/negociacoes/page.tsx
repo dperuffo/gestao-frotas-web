@@ -9,6 +9,7 @@ import { formatarDataBr, formatarDataHoraBr } from "@/lib/utils";
 // uma vez só.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Handshake, Clock, CheckCircle2, Calendar } from "lucide-react";
+import { GraficoNegociacoes } from "./_components/GraficoNegociacoes";
 
 type SearchParams = { empresa?: string; status?: string; q?: string };
 
@@ -135,6 +136,24 @@ export default async function NegociacoesPage({
     (n) => n.status === (souPosto ? "pendente_posto" : "pendente_cliente")
   ).length;
 
+  // Fase Plano-Graficos (04/09/2026, pedido do Daniel) — distribuição por
+  // status + ranking das contrapartes com mais negociações, a partir de
+  // `negociacoes` já carregado acima (sem query nova, não é afetado pelo
+  // filtro de busca ?q= — visão geral do total).
+  const porStatus = STATUS_NEGOCIACAO.map((s) => ({
+    label: STATUS_NEGOCIACAO_LABEL[s],
+    total: negociacoes.filter((n) => n.status === s).length,
+  }));
+  const contagemPorContraparte = new Map<string, number>();
+  for (const n of negociacoes) {
+    const nome = (souPosto ? n.cliente_nome : (n.posto_nome ?? n.posto_cnpj)) ?? "—";
+    contagemPorContraparte.set(nome, (contagemPorContraparte.get(nome) ?? 0) + 1);
+  }
+  const topContrapartes = Array.from(contagemPorContraparte.entries())
+    .map(([nome, total]) => ({ nome, total }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 8);
+
   // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
   // em telas com muitos registros) — filtra em memória pelo nome da
   // contraparte (cliente ou posto, dependendo de quem está olhando) ou pelo
@@ -210,6 +229,12 @@ export default async function NegociacoesPage({
             />
             <IndicadorColorido cor="violet" icon={Calendar} label="Vigentes agora" valor={String(totalVigentes)} />
           </div>
+
+          <GraficoNegociacoes
+            porStatus={porStatus}
+            topContrapartes={topContrapartes}
+            tituloRanking={souPosto ? "Clientes com mais negociações (top 8)" : "Postos com mais negociações (top 8)"}
+          />
 
           <div className="mb-4 flex flex-wrap gap-2">
             <Link
