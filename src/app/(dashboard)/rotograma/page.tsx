@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
+import { GraficoRotograma } from "./_components/GraficoRotograma";
 
 type SearchParams = { empresa?: string; q?: string };
 
@@ -59,6 +60,37 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
       )
     : (rotogramasRaw ?? []);
 
+  // Fase Plano-Graficos Onda 5 (04/09/2026, pedido do Daniel) — volume
+  // mensal (últimos 6 meses) e top 5 rotas mais frequentes, a partir de
+  // todos os rotogramas já carregados acima (rotogramasRaw, não afetado
+  // pelo filtro de busca ?q=, pra manter uma visão geral do total).
+  const MESES_ABREV = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const agora = new Date();
+  const baldesMes: { chave: string; mes: string }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+    baldesMes.push({ chave: `${d.getFullYear()}-${d.getMonth()}`, mes: `${MESES_ABREV[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` });
+  }
+  const contagemPorMes = new Map(baldesMes.map((b) => [b.chave, 0]));
+  for (const r of rotogramasRaw) {
+    if (!r.criado_em) continue;
+    const d = new Date(r.criado_em);
+    const chave = `${d.getFullYear()}-${d.getMonth()}`;
+    if (contagemPorMes.has(chave)) contagemPorMes.set(chave, (contagemPorMes.get(chave) ?? 0) + 1);
+  }
+  const volumePorMes = baldesMes.map((b) => ({ mes: b.mes, total: contagemPorMes.get(b.chave) ?? 0 }));
+
+  const contagemPorRota = new Map<string, number>();
+  for (const r of rotogramasRaw) {
+    if (!r.origem || !r.destino) continue;
+    const rota = `${r.origem} → ${r.destino}`;
+    contagemPorRota.set(rota, (contagemPorRota.get(rota) ?? 0) + 1);
+  }
+  const topRotas = Array.from(contagemPorRota.entries())
+    .map(([rota, total]) => ({ rota, total }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -102,6 +134,8 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
           className="input max-w-sm"
         />
       </form>
+
+      <GraficoRotograma volumePorMes={volumePorMes} topRotas={topRotas} />
 
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar Rotogramas: {error.message}</p>}

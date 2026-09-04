@@ -4,6 +4,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda, formatarDataSemFuso } from "@/lib/financeiro";
 import { STATUS_PLANO_VIAGEM, STATUS_PLANO_VIAGEM_LABEL } from "@/lib/constants";
 import { BotaoExcluirPlano } from "./_components/BotaoExcluirPlano";
+import { GraficoPlanosViagem } from "./_components/GraficoPlanosViagem";
 // Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
 // nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
@@ -79,6 +80,19 @@ export default async function PlanosViagemPage({
   }
   const veiculosOrdenados = Array.from(porVeiculo.entries()).sort((a, b) => b[1].custo - a[1].custo);
 
+  // Fase Plano-Graficos Onda 5 (04/09/2026, pedido do Daniel) — distribuição
+  // por status + custo estimado por veículo (top 5), reaproveitando os
+  // dados já calculados acima (sem query nova).
+  const contagemPorStatus = new Map<string, number>();
+  for (const p of linhas) {
+    contagemPorStatus.set(p.status, (contagemPorStatus.get(p.status) ?? 0) + 1);
+  }
+  const porStatus = Array.from(contagemPorStatus.entries()).map(([status, total]) => ({
+    label: STATUS_PLANO_VIAGEM_LABEL[status as (typeof STATUS_PLANO_VIAGEM)[number]] ?? status,
+    total,
+  }));
+  const custoPorVeiculo = veiculosOrdenados.slice(0, 5).map(([placa, dados]) => ({ placa, custo: dados.custo }));
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -153,6 +167,8 @@ export default async function PlanosViagemPage({
               Filtrar
             </button>
           </form>
+
+          <GraficoPlanosViagem porStatus={porStatus} custoPorVeiculo={custoPorVeiculo} />
 
           <div className="card mb-6 overflow-x-auto">
             {error && <p className="p-4 text-sm text-red-600">Erro ao carregar planos: {error.message}</p>}
