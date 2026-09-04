@@ -1116,7 +1116,14 @@ export default async function DashboardLayout({
           </>
         }
       >
-      <main className="flex-1 p-4 sm:p-8">
+      {/* Fase Fix-Overflow-Inteligencia-Rede (04/09/2026, pedido do Daniel:
+          "gráfico se estende para o menu, sobrepondo o menu") — flex item
+          sem min-w-0 não encolhe abaixo da largura intrínseca do conteúdo
+          (armadilha clássica de flexbox: default é min-width:auto). Um
+          gráfico/tabela largos dentro de <main> empurravam a linha flex
+          inteira (incluindo o <aside> sticky) além do viewport, fazendo o
+          conteúdo vazar por cima do menu em vez de ganhar scroll próprio. */}
+      <main className="min-w-0 flex-1 p-4 sm:p-8">
         {/* Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel) —
             barra de atalhos pras telas mais usadas (frecência) ou fixadas
             manualmente, primeira coisa visível no conteúdo. */}

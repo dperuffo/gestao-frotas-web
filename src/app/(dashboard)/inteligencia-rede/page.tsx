@@ -631,48 +631,56 @@ export default async function InteligenciaRedePage({
                       <div className="mb-5">
                         <GraficoCustoAnpLazy dados={precoPorCombustivel} />
                       </div>
-                      <table className="w-full text-left text-sm">
-                        <thead className="text-xs uppercase text-slate-500">
-                          <tr>
-                            <th className="py-2">Combustível</th>
-                            <th className="py-2">Preço médio da rede</th>
-                            <th className="py-2">Referência</th>
-                            <th className="py-2">Diferença</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {precoPorCombustivel.map((p) => (
-                            <tr key={p.combustivel}>
-                              <td className="py-2 text-slate-700">{p.combustivel}</td>
-                              <td className="py-2 text-slate-700">{formatarMoeda(p.precoMedio)}</td>
-                              <td className="py-2 text-slate-600">
-                                {p.referencia ? (
-                                  <>
-                                    {formatarMoeda(p.referencia)}{" "}
-                                    {p.ehOficial ? (
-                                      <span className="text-xs text-status-ativo">(oficial ANP)</span>
-                                    ) : (
-                                      <span className="text-xs text-slate-400">(estimativa)</span>
-                                    )}
-                                  </>
-                                ) : (
-                                  "sem referência"
-                                )}
-                              </td>
-                              <td className="py-2">
-                                {p.deltaPct != null ? (
-                                  <span className={p.deltaPct < 0 ? "badge-ativo" : "badge-atencao"}>
-                                    {p.deltaPct > 0 ? "+" : ""}
-                                    {p.deltaPct.toFixed(1)}%
-                                  </span>
-                                ) : (
-                                  "—"
-                                )}
-                              </td>
+                      {/* Fase Fix-Overflow-Inteligencia-Rede (04/09/2026) —
+                          faltava o wrapper overflow-x-auto que as outras
+                          tabelas desta mesma página já usam (alertas,
+                          top-alertas, oportunidades, cobertura); sem ele,
+                          a tabela empurrava a largura intrínseca de <main>
+                          e o conteúdo vazava por cima do menu lateral. */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead className="text-xs uppercase text-slate-500">
+                            <tr>
+                              <th className="py-2">Combustível</th>
+                              <th className="py-2">Preço médio da rede</th>
+                              <th className="py-2">Referência</th>
+                              <th className="py-2">Diferença</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {precoPorCombustivel.map((p) => (
+                              <tr key={p.combustivel}>
+                                <td className="py-2 text-slate-700">{p.combustivel}</td>
+                                <td className="py-2 text-slate-700">{formatarMoeda(p.precoMedio)}</td>
+                                <td className="py-2 text-slate-600">
+                                  {p.referencia ? (
+                                    <>
+                                      {formatarMoeda(p.referencia)}{" "}
+                                      {p.ehOficial ? (
+                                        <span className="text-xs text-status-ativo">(oficial ANP)</span>
+                                      ) : (
+                                        <span className="text-xs text-slate-400">(estimativa)</span>
+                                      )}
+                                    </>
+                                  ) : (
+                                    "sem referência"
+                                  )}
+                                </td>
+                                <td className="py-2">
+                                  {p.deltaPct != null ? (
+                                    <span className={p.deltaPct < 0 ? "badge-ativo" : "badge-atencao"}>
+                                      {p.deltaPct > 0 ? "+" : ""}
+                                      {p.deltaPct.toFixed(1)}%
+                                    </span>
+                                  ) : (
+                                    "—"
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </>
                   ) : (
                     <p className="text-sm text-slate-400">

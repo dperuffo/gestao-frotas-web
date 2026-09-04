@@ -9165,4 +9165,50 @@ R$899/R$2.490 — são só um rascunho baseado na mesma proporção de desconto 
 que está no Supabase — banco, Stripe, Edge Functions — já está live em produção; o que falta subir é só
 o código do repositório).
 
+## Backlog de prontidão comercial — auditoria de 02/09/2026
+
+Pedido do Daniel: auditoria de "pontas soltas" antes de começar a comercializar o SaaS (segurança/LGPD,
+infra/confiabilidade, faturamento, atendimento). Relatório completo entregue em chat; monitoramento de
+erros (Sentry) e e-mail de dunning já foram implementados e validados nesta mesma fase — ver histórico.
+Os itens abaixo continuam pendentes.
+
+**Ambiente de staging (EM ANDAMENTO).** Achado da auditoria: só existe UM projeto Supabase
+(`nedthbeekvwzcjrhsghp`), produção e teste misturados no mesmo banco. Decisão do Daniel: montar staging
+gratuito numa organização Supabase separada (não a org Pro `uwntfdiikhchavzfkwqu` que já paga o app de
+produção), pra não gerar custo mensal extra.
+
+Já feito: organização nova criada pelo Daniel no site do Supabase — **"FNI Staging"**
+(`organization_id: qjgtxprxcrdgdahhxtld`, plano Free). Projeto de staging já criado dentro dela —
+**`gestao-frotas-staging`** (`project_id: veuqvlnmikaufavuksxd`, região `sa-east-1`, `ACTIVE_HEALTHY`,
+custo confirmado R$0/mês).
+
+Bloqueado em: replicar o schema (~450 migrações) da produção pro projeto novo. Não existem arquivos de
+migração salvos no repositório (pasta `supabase/migrations/` não existe) — só o histórico dentro do
+próprio banco (`list_migrations` mostra nome+versão de cada uma, mas não o SQL). Reconstruir o schema
+na mão via introspecção de `pg_catalog` foi descartado por risco (base grande demais, fácil esquecer
+uma RLS policy ou função no meio do caminho — um staging incorreto é pior do que não ter staging).
+Caminho certo: `pg_dump`/`psql` direto entre os dois bancos, que eu (Claude) consigo rodar, mas preciso
+das duas connection strings (URI de conexão direta, não pooler) — produção
+(`nedthbeekvwzcjrhsghp` → Project Settings → Database → Connection string → aba URI → "Direct
+connection") e staging (mesma tela, projeto `gestao-frotas-staging`). Daniel não achou esse caminho no
+painel na tentativa anterior — retomar dando a navegação certa (ou o atalho pelo botão "Connect" no
+topo da página do projeto) antes de continuar.
+
+Depois de copiar o schema, falta: criar um Railway Environment de staging (dentro do projeto
+`reasonable-creation` / serviço `gestao-frotas-web`, sem custo fixo — cobra só pelo uso) apontando pro
+banco novo, e configurar lá as chaves de teste do Stripe (Stripe Dashboard → toggle "Test mode" →
+copiar as chaves — não tem custo, já existe de graça em qualquer conta Stripe).
+
+**Teste de backup/restore (NÃO INICIADO).** A Política de Privacidade promete "Backups PITR diários"
+via Supabase — nunca foi confirmado se PITR está de fato ativo no plano contratado, nem testada uma
+restauração de verdade. Verificar em Project Settings → Database → Backups do projeto de produção.
+
+**Revisão jurídica dos Termos de Uso / Política de Privacidade (NÃO INICIADO).** Os documentos existem
+e são substantivos (`src/app/_landing/legal/termos.ts` e `privacidade.ts`), mas nunca passaram por
+validação de um advogado antes do lançamento comercial.
+
+**Pentest externo (NÃO INICIADO).** Existe auditoria interna de segurança (OWASP/NIST, ver seção acima
+neste README) já com os críticos corrigidos, mas nunca houve um pentest formal por terceiros. Recomendado
+antes de vender pra clientes maiores.
+
 Validado: `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterados/criados desta fase.
