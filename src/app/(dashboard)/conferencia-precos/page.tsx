@@ -9,6 +9,7 @@ import { caminhoAbastecimento, type IdentificadorAbastecimento } from "@/lib/aju
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { ClipboardList, Droplet, Wallet, AlertTriangle, TrendingDown } from "lucide-react";
 import { logger } from "@/lib/logger";
+import { GraficoDivergencias, GraficoExtratoDiario } from "./_components/GraficoConferenciaPrecos";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -177,6 +178,43 @@ export default async function ConferenciaPrecosPage({
   const totalDivergenciasPeriodo = extrato.reduce((s, e) => s + e.qtd_divergencias, 0);
   const totalValorDivergenciaPeriodo = extrato.reduce((s, e) => s + e.valor_divergencia, 0);
 
+  // Fase Plano-Graficos (04/09/2026, pedido do Daniel) — gráficos das duas
+  // abas, a partir de `divergencias` e `extrato` já calculados acima (sem
+  // query nova).
+  const divergenciasPorProvedorMap = new Map<string, number>();
+  for (const d of divergencias) {
+    divergenciasPorProvedorMap.set(d.provedor, (divergenciasPorProvedorMap.get(d.provedor) ?? 0) + 1);
+  }
+  const divergenciasPorProvedor = Array.from(divergenciasPorProvedorMap.entries())
+    .map(([provedor, total]) => ({ provedor, total }))
+    .sort((a, b) => b.total - a.total);
+
+  const impactoPorContraparteMap = new Map<string, number>();
+  for (const d of divergencias) {
+    const impacto = Math.abs(d.diferenca_rs ?? 0) * (d.litros ?? 0);
+    impactoPorContraparteMap.set(d.contraparteNome, (impactoPorContraparteMap.get(d.contraparteNome) ?? 0) + impacto);
+  }
+  const topImpactoContraparte = Array.from(impactoPorContraparteMap.entries())
+    .map(([nome, impacto]) => ({ nome, impacto }))
+    .sort((a, b) => b.impacto - a.impacto)
+    .slice(0, 6);
+
+  const valorPorDiaMap = new Map<string, number>();
+  for (const e of extrato) {
+    valorPorDiaMap.set(e.dia, (valorPorDiaMap.get(e.dia) ?? 0) + e.valor_total);
+  }
+  const valorPorDia = Array.from(valorPorDiaMap.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([dia, valor]) => ({ dia: formatarDataBr(dia), valor }));
+
+  const valorPorProvedorExtratoMap = new Map<string, number>();
+  for (const e of extrato) {
+    valorPorProvedorExtratoMap.set(e.provedor, (valorPorProvedorExtratoMap.get(e.provedor) ?? 0) + e.valor_total);
+  }
+  const valorPorProvedorExtrato = Array.from(valorPorProvedorExtratoMap.entries())
+    .map(([provedor, total]) => ({ provedor, total }))
+    .sort((a, b) => b.total - a.total);
+
   function linkFiltro(extra: Record<string, string | undefined>) {
     const sp = new URLSearchParams();
     const base = { empresa: empresaSelecionada ?? undefined, tab, de, ate, ...extra };
@@ -304,7 +342,13 @@ export default async function ConferenciaPrecosPage({
           </div>
 
           {tab === "divergencias" ? (
-            <div className="card overflow-x-auto">
+            <>
+              <GraficoDivergencias
+                porProvedor={divergenciasPorProvedor}
+                topImpacto={topImpactoContraparte}
+                tituloRanking={`Maior impacto por ${rotuloContraparte.toLowerCase()} (top 6)`}
+              />
+              <div className="card overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                   <tr>
@@ -366,9 +410,12 @@ export default async function ConferenciaPrecosPage({
                   )}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           ) : (
-            <div className="card overflow-x-auto">
+            <>
+              <GraficoExtratoDiario valorPorDia={valorPorDia} porProvedor={valorPorProvedorExtrato} />
+              <div className="card overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                   <tr>
@@ -412,7 +459,8 @@ export default async function ConferenciaPrecosPage({
                   )}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </>
       )}
