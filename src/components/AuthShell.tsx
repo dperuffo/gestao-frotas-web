@@ -1,18 +1,18 @@
 import type { ReactNode } from "react";
 import { AuthLogoHeader } from "./AuthLogoHeader";
 
-// Fundo cheio de tela para as páginas públicas de autenticação, sobre o
-// mesmo fundo off-black (bg-frota-950) já usado no resto do app — não é uma
-// cor nova, é o mesmo padrão, só com o "cenário" completo em vez de um
-// cartão branco isolado.
+// Fase Paleta-Clara (04/09/2026, pedido do Daniel: "quero que estas telas
+// também entrem no padrão de design.md atual com cores claras") — as 3
+// telas públicas de autenticação eram a última parte do app ainda com o
+// fundo off-black (bg-frota-950) que o resto do sistema já abandonou.
+// Passa a usar o mesmo fundo claro (frota-50) do painel interno, mantendo
+// só o "cenário" de tela cheia (em vez de cartão isolado sobre branco
+// puro) como diferencial da landing/auth.
 //
-// Fase Swiss-Minimalism (27/08/2026): a grade e o glow ambiente antes
-// usavam um tom de azul (rgba(59,130,246,...), frota-500) — agora que
-// frota-500 é quase preto (mesma família do fundo), essa textura ficaria
-// invisível. Grade recolorida em branco neutro (sem matiz); glow ambiente
-// removido de propósito — minimalismo suíço não usa esse tipo de "brilho"
-// decorativo (ver Elevation do design.md: "sharp shadows if any, fast
-// loading, clear type hierarchy", nada de blur/glow colorido).
+// A grade decorativa, que antes usava linhas brancas translúcidas sobre
+// fundo escuro, agora usa linhas escuras translúcidas sobre fundo claro
+// (mesmo efeito, invertido). Sem blur/glow — minimalismo suíço não usa
+// esse tipo de "brilho" decorativo.
 export function AuthShell({
   children,
   maxWidthClassName = "max-w-sm",
@@ -23,12 +23,12 @@ export function AuthShell({
   variant?: "full" | "compact";
 }) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-frota-950 px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-frota-50 px-4 py-12">
       <div
-        className="pointer-events-none absolute inset-0 opacity-40"
+        className="pointer-events-none absolute inset-0 opacity-60"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
+            "linear-gradient(rgba(17,17,17,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(17,17,17,0.04) 1px, transparent 1px)",
           backgroundSize: "42px 42px",
         }}
         aria-hidden
@@ -41,12 +41,12 @@ export function AuthShell({
   );
 }
 
-// Cartão escuro "vidro fosco" usado dentro do AuthShell — substitui o antigo
-// `.card` branco (que é o padrão certo pro dashboard interno, mas destoava
-// do visual dark da landing nessas 3 telas públicas).
+// Fase Paleta-Clara — o cartão escuro "vidro fosco" vira o mesmo `.card`
+// branco sólido usado no resto do app (borda slate-200, sombra suave,
+// sem blur), só com mais padding (p-8) por ser o único conteúdo da tela.
 export function AuthCard({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-frota-900/70 p-8 shadow-2xl shadow-frota-950/60 backdrop-blur-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
       {children}
     </div>
   );

@@ -33,15 +33,15 @@ export default function CadastroPage() {
   return (
     <AuthShell variant="compact" maxWidthClassName="max-w-lg">
       <AuthCard>
-        <h2 className="text-center text-lg font-semibold text-white">
+        <h2 className="text-center text-lg font-semibold text-frota-900">
           Comece grátis no FNI Pro-Frotas
         </h2>
-        <p className="mb-6 text-center text-sm text-slate-400">
+        <p className="mb-6 text-center text-sm text-slate-600">
           Crie sua conta e experimente por {DIAS_TRIAL} dias, sem cartão de crédito.
         </p>
 
         {erro && (
-          <div className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{erro}</div>
+          <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -86,7 +86,7 @@ export default function CadastroPage() {
             </Campo>
           </div>
 
-          <label className="flex items-start gap-2 text-xs text-slate-400">
+          <label className="flex items-start gap-2 text-xs text-slate-600">
             <input
               type="checkbox"
               name="aceite_termos"

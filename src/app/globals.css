@@ -124,20 +124,17 @@ body {
   @apply rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700;
 }
 
-/* Variante escura dos inputs/labels, usada só nas 3 telas públicas de
-   autenticação (login, MFA, cadastro) — o .input padrão pressupõe fundo
-   branco, e essas telas usam o cartão escuro (AuthCard) sobre o fundo
-   Dark Navy da landing/auth. */
-/* Fase Swiss-Minimalism: o anel de foco não pode mais usar `frota-500`
-   aqui — ele agora é quase preto, igual ao fundo do card escuro
-   (frota-950/60), e ficaria invisível. Usa o acento taupe do tema
-   (mesmo tratamento do item ativo do menu, ver .glass-nav-ativo). */
+/* Fase Paleta-Clara (04/09/2026) — `.input-dark`/`.label-dark` eram a
+   variante escura usada só nas telas públicas de autenticação (login,
+   MFA, cadastro), quando o AuthCard tinha fundo escuro. Agora que o
+   AuthCard é branco (igual ao `.card` do resto do app), essas classes
+   viram alias do padrão claro — nomes mantidos por estabilidade (usados
+   nessas telas), só o VALOR muda. */
 .input-dark {
-  @apply w-full rounded-xl border border-white/10 bg-frota-950/60 px-3 py-2 text-sm text-white
-    placeholder:text-slate-500
+  @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
     focus:border-accento focus:outline-none focus:ring-2 focus:ring-accento/30;
 }
 
 .label-dark {
-  @apply mb-1 block text-sm font-medium text-slate-300;
+  @apply mb-1 block text-sm font-medium text-slate-700;
 }

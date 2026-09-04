@@ -22,11 +22,11 @@ export default function RedefinirSenhaPage() {
   return (
     <AuthShell variant="full">
       <AuthCard>
-        <h2 className="text-center text-lg font-semibold text-white">Definir nova senha</h2>
-        <p className="mb-6 text-center text-sm text-slate-400">Escolha uma nova senha para sua conta.</p>
+        <h2 className="text-center text-lg font-semibold text-frota-900">Definir nova senha</h2>
+        <p className="mb-6 text-center text-sm text-slate-600">Escolha uma nova senha para sua conta.</p>
 
         {erro && (
-          <div className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-left text-sm text-red-300">{erro}</div>
+          <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-left text-sm text-red-700">{erro}</div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3">

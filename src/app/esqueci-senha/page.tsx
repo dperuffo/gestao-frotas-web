@@ -24,17 +24,17 @@ export default function EsqueciSenhaPage() {
   return (
     <AuthShell variant="full">
       <AuthCard>
-        <h2 className="text-center text-lg font-semibold text-white">Esqueci minha senha</h2>
-        <p className="mb-6 text-center text-sm text-slate-400">
+        <h2 className="text-center text-lg font-semibold text-frota-900">Esqueci minha senha</h2>
+        <p className="mb-6 text-center text-sm text-slate-600">
           Informe seu e-mail e enviaremos um link para você redefinir a senha.
         </p>
 
         {erro && (
-          <div className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-left text-sm text-red-300">{erro}</div>
+          <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-left text-sm text-red-700">{erro}</div>
         )}
 
         {enviado ? (
-          <div className="rounded-lg bg-emerald-500/10 px-3 py-3 text-sm text-emerald-300">
+          <div className="rounded-lg bg-green-50 px-3 py-3 text-sm text-green-700">
             Se houver uma conta com esse e-mail, enviamos um link de redefinição de senha. Confira sua caixa de
             entrada (e o spam).
           </div>

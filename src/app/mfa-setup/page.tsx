@@ -85,8 +85,8 @@ export default function MfaSetupPage() {
 
   if (carregando) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-frota-950">
-        <p className="text-sm text-slate-300">Carregando...</p>
+      <div className="flex min-h-screen items-center justify-center bg-frota-50">
+        <p className="text-sm text-slate-500">Carregando...</p>
       </div>
     );
   }
@@ -94,19 +94,19 @@ export default function MfaSetupPage() {
   return (
     <AuthShell variant="compact">
       <AuthCard>
-        <h2 className="text-center text-lg font-semibold text-white">Verificação em duas etapas</h2>
-        <p className="mb-6 text-center text-sm text-slate-400">
+        <h2 className="text-center text-lg font-semibold text-frota-900">Verificação em duas etapas</h2>
+        <p className="mb-6 text-center text-sm text-slate-600">
           {modo === "cadastrar"
             ? "Escaneie o QR Code com um aplicativo autenticador (Google Authenticator, Authy, etc.) e digite o código gerado."
             : "Digite o código do seu aplicativo autenticador para continuar."}
         </p>
 
         {erro && (
-          <div className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{erro}</div>
+          <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>
         )}
 
         {modo === "cadastrar" && qrCode && (
-          <div className="mb-4 flex justify-center rounded-lg border border-white/10 bg-white p-3">
+          <div className="mb-4 flex justify-center rounded-lg border border-slate-200 bg-white p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={qrCode} alt="QR Code para configurar o autenticador" width={180} height={180} />
           </div>

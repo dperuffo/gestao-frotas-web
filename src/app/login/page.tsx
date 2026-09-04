@@ -198,19 +198,19 @@ function LoginCard() {
       )}
 
       <AuthCard>
-        <h2 className="text-center text-lg font-semibold text-white">Entrar na plataforma</h2>
-        <p className="mb-6 text-center text-sm text-slate-400">
+        <h2 className="text-center text-lg font-semibold text-frota-900">Entrar na plataforma</h2>
+        <p className="mb-6 text-center text-sm text-slate-600">
           Entre com sua conta Google ou com e-mail e senha.
         </p>
 
         {aviso && !erro && (
-          <div className="mb-4 rounded-lg bg-amber-500/10 px-3 py-2 text-left text-sm text-amber-300">
+          <div className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-left text-sm text-amber-700">
             {aviso}
           </div>
         )}
 
         {erro && (
-          <div className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-left text-sm text-red-300">
+          <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-left text-sm text-red-700">
             {erro}
           </div>
         )}
@@ -219,7 +219,7 @@ function LoginCard() {
           <div className="flex justify-center">
             <div ref={botaoGoogleRef} />
             {!googlePronto && (
-              <div className="h-10 w-full animate-pulse rounded-lg bg-white/10" aria-hidden="true" />
+              <div className="h-10 w-full animate-pulse rounded-lg bg-slate-100" aria-hidden="true" />
             )}
           </div>
         ) : (
@@ -240,9 +240,9 @@ function LoginCard() {
         )}
 
         <div className="my-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-white/10" />
+          <div className="h-px flex-1 bg-slate-200" />
           <span className="text-xs uppercase tracking-wide text-slate-500">ou</span>
-          <div className="h-px flex-1 bg-white/10" />
+          <div className="h-px flex-1 bg-slate-200" />
         </div>
 
         {/* Fase melhora-fluxo-convite (27/07/2026) — achado real com uma

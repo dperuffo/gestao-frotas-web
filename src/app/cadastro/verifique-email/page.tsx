@@ -9,8 +9,8 @@ export default function VerifiqueEmailPage() {
     <AuthShell variant="compact" maxWidthClassName="max-w-md">
       <AuthCard>
         <div className="text-center">
-          <h2 className="text-lg font-semibold text-white">Quase lá!</h2>
-          <p className="mt-2 text-sm text-slate-400">
+          <h2 className="text-lg font-semibold text-frota-900">Quase lá!</h2>
+          <p className="mt-2 text-sm text-slate-600">
             Enviamos um link de confirmação para o seu e-mail. Clique nele para ativar sua conta e
             começar a usar o FNI Pro-Frotas.
           </p>
