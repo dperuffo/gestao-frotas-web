@@ -9,6 +9,7 @@ import { CardAcaoSugerida, type AcaoSugerida } from "./_components/CardAcaoSuger
 // compartilhada cliente/admin.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Clock, AlertTriangle, ClipboardList } from "lucide-react";
+import { GraficoAcoesSugeridas, type ItemDistribuicao } from "./_components/GraficoAcoesSugeridas";
 
 const POR_PAGINA = 20;
 
@@ -82,8 +83,10 @@ export default async function AcoesSugeridasPage({
   // KPIs (pendentes por severidade) — sempre da empresa selecionada (ou de
   // todas, se admin sem cliente escolhido), independente do filtro de
   // status/tipo da lista abaixo.
+  // Fase Plano-Graficos Onda 2 (04/09/2026) — adicionado "tipo" ao select
+  // pra alimentar o gráfico de distribuição, sem precisar de query extra.
   const queryKpis = (() => {
-    let q = supabase.from("acoes_sugeridas").select("severidade").eq("status", "pendente");
+    let q = supabase.from("acoes_sugeridas").select("severidade, tipo").eq("status", "pendente");
     if (empresaSelecionada) q = q.eq("empresa_id", empresaSelecionada);
     return q;
   })();
@@ -99,6 +102,26 @@ export default async function AcoesSugeridasPage({
   const kpis = kpisRaw ?? [];
   const totalPendentes = kpis.length;
   const totalCriticas = kpis.filter((k) => k.severidade === "critica").length;
+
+  // Fase Plano-Graficos Onda 2 (04/09/2026) — agregações do gráfico, a
+  // partir do kpis já carregado (sem query nova).
+  const SEVERIDADE_LABEL: Record<string, string> = { critica: "Crítica", alta: "Alta", media: "Média", baixa: "Baixa" };
+  const porTipoMap = new Map<string, number>();
+  const porSeveridadeMap = new Map<string, number>();
+  for (const k of kpis) {
+    const tipoL = TIPO_LABEL[k.tipo] ?? k.tipo;
+    const sevL = SEVERIDADE_LABEL[k.severidade] ?? k.severidade;
+    porTipoMap.set(tipoL, (porTipoMap.get(tipoL) ?? 0) + 1);
+    porSeveridadeMap.set(sevL, (porSeveridadeMap.get(sevL) ?? 0) + 1);
+  }
+  const porTipo: ItemDistribuicao[] = [...porTipoMap.entries()]
+    .map(([label, total]) => ({ label, total }))
+    .sort((a, b) => b.total - a.total);
+  const ORDEM_SEVERIDADE = ["Crítica", "Alta", "Média", "Baixa"];
+  const porSeveridade: ItemDistribuicao[] = ORDEM_SEVERIDADE.map((label) => ({
+    label,
+    total: porSeveridadeMap.get(label) ?? 0,
+  })).filter((d) => d.total > 0);
 
   return (
     <div>
@@ -160,6 +183,8 @@ export default async function AcoesSugeridasPage({
             />
             <IndicadorColorido cor="sky" icon={ClipboardList} label="Nesta página" valor={String(linhas.length)} />
           </div>
+
+          <GraficoAcoesSugeridas porTipo={porTipo} porSeveridade={porSeveridade} />
 
           <form className="mb-4 flex flex-wrap gap-3">
             <input type="hidden" name="empresa" value={empresaParam ?? ""} />

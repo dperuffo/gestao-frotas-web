@@ -7,6 +7,7 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 // toque visual já aplicado nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { ClipboardList, Clock } from "lucide-react";
+import { GraficoAvaliacoes, type ItemDistribuicaoEstrelas, type ItemNotaMediaCliente } from "./_components/GraficoAvaliacoes";
 
 // Painel interno de Avaliações — exclusivo do time FNI (perfil admin), pra
 // acompanhar o feedback dos clientes e responder. Mesmo padrão de guarda de
@@ -44,6 +45,29 @@ export default async function AvaliacoesAdminPage({
   const notaMedia = total > 0 ? listaCompleta.reduce((soma, a) => soma + a.estrelas, 0) / total : 0;
   const pendentes = listaCompleta.filter((a) => !a.resposta_admin).length;
 
+  // Fase Plano-Graficos Onda 2 (04/09/2026) — agregações do gráfico, a
+  // partir do listaCompleta já carregado (sem query nova).
+  const distribuicaoMap = new Map<number, number>();
+  for (const a of listaCompleta) distribuicaoMap.set(a.estrelas, (distribuicaoMap.get(a.estrelas) ?? 0) + 1);
+  const distribuicaoEstrelas: ItemDistribuicaoEstrelas[] = [5, 4, 3, 2, 1].map((estrelas) => ({
+    estrelas,
+    total: distribuicaoMap.get(estrelas) ?? 0,
+  }));
+
+  const porClienteMap = new Map<string, { soma: number; qtd: number }>();
+  for (const a of listaCompleta) {
+    const nome = a.empresas?.nome ?? "Sem cliente vinculado";
+    const atual = porClienteMap.get(nome) ?? { soma: 0, qtd: 0 };
+    atual.soma += a.estrelas;
+    atual.qtd += 1;
+    porClienteMap.set(nome, atual);
+  }
+  const rankingNotaMediaClientes: ItemNotaMediaCliente[] = [...porClienteMap.entries()]
+    .filter(([, v]) => v.qtd >= 2)
+    .map(([cliente, v]) => ({ cliente, media: v.soma / v.qtd }))
+    .sort((a, b) => a.media - b.media)
+    .slice(0, 8);
+
   // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
   // em telas que crescem com o tempo — avaliações se acumulam a cada
   // feedback enviado por qualquer cliente da rede) — os indicadores acima
@@ -80,6 +104,10 @@ export default async function AvaliacoesAdminPage({
           valor={String(pendentes)}
         />
       </div>
+
+      {listaCompleta.length > 0 && (
+        <GraficoAvaliacoes distribuicao={distribuicaoEstrelas} rankingClientes={rankingNotaMediaClientes} />
+      )}
 
       {listaCompleta.length > 0 && (
         <form className="mb-4">

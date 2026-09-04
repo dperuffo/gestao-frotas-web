@@ -5,6 +5,7 @@ import { listarAvisosAcao } from "../administracao/central-avisos/actions";
 import { contarInsightsNovosAcao } from "../insights-ia/actions";
 import { empresaTemAcessoInsightsIA } from "@/lib/acessoInsightsIA";
 import { Sparkles, ShieldAlert, Bell, SlidersHorizontal, Brain } from "lucide-react";
+import { GraficoCentralRegras, type ItemPendencia } from "./_components/GraficoCentralRegras";
 
 // Fase Gestao-Controles (27/08/2026, pedido do Daniel: "gestao e controles
 // mais diretos" / item do roadmap "Central de Regras & Alertas unificada")
@@ -91,6 +92,15 @@ export default async function CentralRegrasPage({
     mostrarCardInsightsIA = !empresaSelecionada || (empresaPlano ? empresaTemAcessoInsightsIA(empresaPlano) : false);
   }
 
+  // Fase Plano-Graficos Onda 2 (04/09/2026) — agregação do gráfico-resumo,
+  // a partir dos contadores já calculados acima (sem query nova).
+  const pendenciasPorSistema: ItemPendencia[] = [
+    { label: "Ações Sugeridas", total: acoesPendentes },
+    { label: "Antifraude (falhas)", total: falhasAntifraudeNaoLidas },
+    { label: "Central de Avisos", total: avisosAtivos },
+    ...(mostrarCardInsightsIA ? [{ label: "Insights de IA", total: insightsNovos }] : []),
+  ];
+
   return (
     <div>
       <div className="mb-6">
@@ -126,6 +136,8 @@ export default async function CentralRegrasPage({
           Selecione um cliente acima pra ver o resumo de regras e alertas dele.
         </p>
       ) : (
+        <>
+        <GraficoCentralRegras dados={pendenciasPorSistema} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link href="/acoes-sugeridas" className="card block p-5 transition hover:border-frota-200 hover:shadow-md">
             <div className="mb-3 flex items-center gap-2">
@@ -201,6 +213,7 @@ export default async function CentralRegrasPage({
             </Link>
           )}
         </div>
+        </>
       )}
 
       <div className="mt-6 card p-4">

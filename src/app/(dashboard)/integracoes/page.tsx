@@ -12,6 +12,7 @@ import { LogoProvedor } from "@/components/LogoProvedor";
 // toque visual já aplicado nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Building2, CheckCircle2, RefreshCw } from "lucide-react";
+import { GraficoProfrotas, type ItemRankingSync } from "./_components/GraficoProfrotas";
 
 type ChaveCustosFixosRow = {
   id: string;
@@ -63,6 +64,16 @@ export default async function IntegracoesPage() {
   const total = chaves?.length ?? 0;
   const totalAtivas = chaves?.filter((c) => c.ativo).length ?? 0;
   const totalRegistros = (chaves ?? []).reduce((soma, c) => soma + (c.registros_sync ?? 0), 0);
+
+  // Fase Plano-Graficos Onda 2 (04/09/2026) — agregações do gráfico, a
+  // partir do chaves já carregado (sem query nova).
+  const totalInativasProfrotas = total - totalAtivas;
+  const rankingSyncProfrotas: ItemRankingSync[] = (chaves ?? [])
+    .map((c) => ({ nome: c.nome_empresa, registros: c.registros_sync ?? 0 }))
+    .filter((r) => r.registros > 0)
+    .sort((a, b) => b.registros - a.registros)
+    .slice(0, 8)
+    .reverse();
 
   // Chaves do Hub de Integrações (Fase 22, generalizado na Fase 25) — lista
   // todo mundo que o usuário enxerga via RLS (própria empresa, ou todas se
@@ -143,6 +154,7 @@ export default async function IntegracoesPage() {
             <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos" valor={String(totalAtivas)} />
             <IndicadorColorido cor="violet" icon={RefreshCw} label="Registros sincronizados" valor={totalRegistros.toLocaleString("pt-BR")} />
           </div>
+          <GraficoProfrotas totalAtivas={totalAtivas} totalInativas={totalInativasProfrotas} ranking={rankingSyncProfrotas} />
           <div className="mb-6">
             <NovaChaveForm />
           </div>

@@ -3,6 +3,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { listarInsightsAcao } from "./actions";
 import { CardInsightIA } from "./_components/CardInsightIA";
 import { formatarMoeda } from "@/lib/financeiro";
+import { GraficoInsightsIA, type ItemDistribuicao, type ItemImpactoCategoria } from "./_components/GraficoInsightsIA";
 
 const ORDEM_SEVERIDADE: Record<string, number> = { critica: 0, alta: 1, media: 2, baixa: 3 };
 
@@ -40,6 +41,25 @@ export default async function InsightsIAPage({
 
   const novos = insights.filter((i) => i.status === "novo");
   const valorTotalNovos = novos.reduce((soma, i) => soma + (i.valor_impacto_estimado ?? 0), 0);
+
+  // Fase Plano-Graficos Onda 2 (04/09/2026) — agregações do gráfico, a
+  // partir do insights já carregado (sem query nova).
+  const SEVERIDADE_LABEL: Record<string, string> = { critica: "Crítica", alta: "Alta", media: "Média", baixa: "Baixa" };
+  const severidadeMap = new Map<string, number>();
+  const impactoCategoriaMap = new Map<string, number>();
+  for (const i of novos) {
+    const sevL = SEVERIDADE_LABEL[i.severidade] ?? i.severidade;
+    severidadeMap.set(sevL, (severidadeMap.get(sevL) ?? 0) + 1);
+    if (i.valor_impacto_estimado) {
+      impactoCategoriaMap.set(i.categoria, (impactoCategoriaMap.get(i.categoria) ?? 0) + i.valor_impacto_estimado);
+    }
+  }
+  const porSeveridade: ItemDistribuicao[] = ["Crítica", "Alta", "Média", "Baixa"]
+    .map((label) => ({ label, total: severidadeMap.get(label) ?? 0 }))
+    .filter((d) => d.total > 0);
+  const impactoPorCategoria: ItemImpactoCategoria[] = [...impactoCategoriaMap.entries()]
+    .map(([label, valor]) => ({ label, valor }))
+    .sort((a, b) => b.valor - a.valor);
 
   return (
     <div>
@@ -87,6 +107,8 @@ export default async function InsightsIAPage({
               <p className="mt-1 text-2xl font-semibold text-slate-900">{formatarMoeda(valorTotalNovos)}</p>
             </div>
           </div>
+
+          <GraficoInsightsIA porSeveridade={porSeveridade} impactoPorCategoria={impactoPorCategoria} />
 
           <div className="space-y-3">
             {ordenados.map((insight) => (
