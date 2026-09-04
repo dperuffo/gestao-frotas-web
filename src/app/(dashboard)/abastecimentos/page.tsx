@@ -6,6 +6,8 @@ import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Pagin
 import { AbastecimentosPosto } from "./_components/AbastecimentosPosto";
 import { LogoProvedor } from "@/components/LogoProvedor";
 import { contarAbastecimentosManuaisPendentesAcao } from "./actions-pendentes-manual";
+import { formatarMesAnoSemFuso } from "@/lib/financeiro";
+import { GraficoAbastecimentos } from "./_components/GraficoAbastecimentos";
 // Fase Redesign-Telas-Densas (12/08/2026) — pedido do Daniel: mesmo toque
 // visual do Dashboard/Veículos/Financeiro (cor + ícone por indicador).
 import { IndicadorColorido } from "@/components/IndicadorColorido";
@@ -258,6 +260,21 @@ export default async function AbastecimentosPage({
     .map((r) => [r.provedor, Number(r.custo_combustivel)] as [string, number])
     .sort((a, b) => b[1] - a[1]);
 
+  // Fase Plano-Graficos Onda 6 (04/09/2026, pedido do Daniel) — evolução
+  // mensal do gasto com combustível, últimos 6 meses (mesma RPC e mesmo
+  // período já usados acima e em /financeiro).
+  const { data: evolucaoRaw } = empresaSelecionada
+    ? await supabase.rpc("indicadores_financeiros_evolucao", {
+        p_empresa_id: empresaSelecionada,
+        p_data_inicio: seisMesesAtrasIso,
+        p_data_fim: hojeIso,
+      })
+    : { data: [] };
+  const evolucaoMensal = ((evolucaoRaw ?? []) as { mes: string; custo_combustivel: number }[]).map((p) => ({
+    mes: formatarMesAnoSemFuso(p.mes),
+    valor: Number(p.custo_combustivel),
+  }));
+
   // Fase 27.147 — pedido do Daniel: filtro por meio de pagamento na lista de
   // abastecimentos, igual ao filtro de combustível. Opções vêm de todo o
   // histórico do cliente (mesma RPC agregada, sem limite de data), não só
@@ -384,20 +401,10 @@ export default async function AbastecimentosPage({
         <IndicadorColorido cor="violet" icon={Gauge} label="Custo médio por litro" valor={formatarMoeda(custoMedioLitro)} />
       </div>
 
-      {listaResumoProvedores.length > 0 && (
-        <div className="mb-6 card p-4">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-            Meios de pagamento — últimos 6 meses
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {listaResumoProvedores.map(([provedor, valor]) => (
-              <span key={provedor} className="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                <LogoProvedor provedor={provedor} className="h-4 w-auto" /> {formatarMoeda(valor)}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      <GraficoAbastecimentos
+        porProvedor={listaResumoProvedores.map(([provedor, valor]) => ({ provedor, valor }))}
+        evolucaoMensal={evolucaoMensal}
+      />
 
       <form className="mb-4 flex flex-wrap gap-3">
         {/* Fase 27.31 — achado real: este form é SEPARADO do form do seletor
