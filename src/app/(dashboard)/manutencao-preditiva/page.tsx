@@ -8,6 +8,7 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 // visual do Dashboard/Veículos/Financeiro/Abastecimentos.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Truck, AlertTriangle, Bell, CheckCircle2, Gauge } from "lucide-react";
+import { GraficoManutencao } from "./_components/GraficoManutencao";
 
 const TAMANHO_PAGINA = 50;
 
@@ -197,6 +198,14 @@ export default async function ManutencaoPreditivaPage({
               ajudaChave="manutencao.proxima_prevista"
             />
           </div>
+
+          <GraficoManutencao
+            scoreMedio={scoreMedio}
+            totalCriticos={totalCriticos}
+            totalAlertas={totalAlertas}
+            totalOk={totalOk}
+            ranking={veiculos.map((v) => ({ placa: v.placa, score: v.score_geral }))}
+          />
 
           {totalCriticos > 0 && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">

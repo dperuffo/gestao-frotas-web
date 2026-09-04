@@ -11,6 +11,13 @@ import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 // Veículos (mesmo padrão de ícones: total/ativos/inativos).
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Users, CheckCircle2, XCircle } from "lucide-react";
+import { GraficoMotoristas } from "./_components/GraficoMotoristas";
+
+function isoEmDias(dias: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
 
 const POR_PAGINA = 30;
 
@@ -80,13 +87,25 @@ export default async function MotoristasPage({
   let motoristasExportacao: Omit<Motorista, "id">[] = [];
   let error: { message: string } | null = null;
   let totalFiltrado = 0;
+  let vencendo30 = 0;
+  let vencendo60 = 0;
+  let vencendo90 = 0;
 
   if (!semClienteEscolhido) {
     let queryAtivos = supabase.from("motoristas").select("id", { count: "exact", head: true }).eq("status", "Ativo");
     let queryGeral = supabase.from("motoristas").select("id", { count: "exact", head: true });
+    // Fase Plano-Graficos Onda 1 (04/09/2026) — 3 gauges de CNH vencendo no
+    // topo da tela (30/60/90 dias). Mesmo padrão de count "head: true" já
+    // usado em totalAtivos/totalGeral, sem trazer as linhas inteiras.
+    let queryCnh30 = supabase.from("motoristas").select("id", { count: "exact", head: true }).lte("cnh_vencimento", isoEmDias(30));
+    let queryCnh60 = supabase.from("motoristas").select("id", { count: "exact", head: true }).lte("cnh_vencimento", isoEmDias(60));
+    let queryCnh90 = supabase.from("motoristas").select("id", { count: "exact", head: true }).lte("cnh_vencimento", isoEmDias(90));
     if (empresaSelecionada) {
       queryAtivos = queryAtivos.eq("empresa_id", empresaSelecionada);
       queryGeral = queryGeral.eq("empresa_id", empresaSelecionada);
+      queryCnh30 = queryCnh30.eq("empresa_id", empresaSelecionada);
+      queryCnh60 = queryCnh60.eq("empresa_id", empresaSelecionada);
+      queryCnh90 = queryCnh90.eq("empresa_id", empresaSelecionada);
     }
     const [
       { count: ativos },
@@ -94,13 +113,28 @@ export default async function MotoristasPage({
       { count: filtrado },
       { data, error: queryError },
       { data: dadosExportacao },
-    ] = await Promise.all([queryAtivos, queryGeral, queryContagemFiltrada, queryPagina, queryExportacao]);
+      { count: c30 },
+      { count: c60 },
+      { count: c90 },
+    ] = await Promise.all([
+      queryAtivos,
+      queryGeral,
+      queryContagemFiltrada,
+      queryPagina,
+      queryExportacao,
+      queryCnh30,
+      queryCnh60,
+      queryCnh90,
+    ]);
     totalAtivos = ativos ?? 0;
     totalGeral = geral ?? 0;
     totalFiltrado = filtrado ?? 0;
     motoristas = (data ?? []) as unknown as Motorista[];
     motoristasExportacao = (dadosExportacao ?? []) as unknown as Omit<Motorista, "id">[];
     error = queryError;
+    vencendo30 = c30 ?? 0;
+    vencendo60 = c60 ?? 0;
+    vencendo90 = c90 ?? 0;
   }
 
   const { paginaAtual, totalPaginas } = calcularPaginacao(totalFiltrado, POR_PAGINA, pageParam);
@@ -155,6 +189,14 @@ export default async function MotoristasPage({
             <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos" valor={String(totalAtivos)} />
             <IndicadorColorido cor="red" icon={XCircle} label="Inativos" valor={String(totalGeral - totalAtivos)} />
           </div>
+
+          <GraficoMotoristas
+            totalGeral={totalGeral}
+            totalAtivos={totalAtivos}
+            vencendo30={vencendo30}
+            vencendo60={vencendo60}
+            vencendo90={vencendo90}
+          />
 
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <form>

@@ -11,6 +11,19 @@ import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 // aqui como exemplo de tela densa (pedido do Daniel).
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Truck, CheckCircle2, XCircle } from "lucide-react";
+import { GraficoDistribuicaoVeiculos, type ItemDistribuicao } from "./_components/GraficoDistribuicaoVeiculos";
+
+// Fase Plano-Graficos Onda 1 — agrupa um array já carregado (sem query nova)
+// por uma chave qualquer (tipo, status, centro de custo), maior contagem
+// primeiro. Usado pelos 3 blocos do GraficoDistribuicaoVeiculos.
+function agruparPorContagem<T>(itens: T[], chave: (item: T) => string | null): ItemDistribuicao[] {
+  const contagem = new Map<string, number>();
+  for (const item of itens) {
+    const label = chave(item) ?? "Não informado";
+    contagem.set(label, (contagem.get(label) ?? 0) + 1);
+  }
+  return Array.from(contagem, ([label, total]) => ({ label, total })).sort((a, b) => b.total - a.total);
+}
 
 const POR_PAGINA = 30;
 
@@ -145,6 +158,14 @@ export default async function VeiculosPage({
             <IndicadorColorido cor="green" icon={CheckCircle2} label="Ativos" valor={String(totalAtivos)} />
             <IndicadorColorido cor="red" icon={XCircle} label="Inativos" valor={String(totalGeral - totalAtivos)} />
           </div>
+
+          {veiculosFiltrados.length > 0 && (
+            <GraficoDistribuicaoVeiculos
+              porTipo={agruparPorContagem(veiculosFiltrados, (v) => v.tipo_veiculo)}
+              porStatus={agruparPorContagem(veiculosFiltrados, (v) => (v.ativo ? "Ativo" : "Inativo"))}
+              porCentroCusto={agruparPorContagem(veiculosFiltrados, (v) => v.centro_custo_nome)}
+            />
+          )}
 
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <form>

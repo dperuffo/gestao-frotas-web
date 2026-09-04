@@ -8,6 +8,7 @@ import { formatarMoeda } from "@/lib/financeiro";
 // ajudaChave por conta própria.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Truck, Coins, Gauge, AlertTriangle } from "lucide-react";
+import { GraficoTco } from "./_components/GraficoTco";
 
 const TAMANHO_PAGINA = 50;
 
@@ -195,6 +196,8 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
               ajudaChave="tco.completo"
             />
           </div>
+
+          <GraficoTco veiculos={veiculos} />
 
           {veiculosSemAquisicao > 0 && (
             <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

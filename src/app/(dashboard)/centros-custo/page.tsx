@@ -9,6 +9,7 @@ import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGru
 // abaixo — IndicadorColorido já expõe ajudaChave por conta própria.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Receipt, CheckCircle2, Truck } from "lucide-react";
+import { GraficoCentrosCusto } from "./_components/GraficoCentrosCusto";
 
 type SearchParams = { empresa?: string };
 
@@ -30,15 +31,40 @@ export default async function CentrosCustoPage({
     cadastro_veiculos: { count: number }[];
   }[] = [];
   let error: { message: string } | null = null;
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — gasto por centro de custo
+  // (combustível + manutenção) via RPC nova centros_custo_gasto_resumo,
+  // mesma janela de 90 dias já usada como default em /tco.
+  let gastoPorCentro: {
+    centro_custo_id: string;
+    nome: string;
+    veiculos_alocados: number;
+    gasto_combustivel: number;
+    gasto_manutencao: number;
+    gasto_total: number;
+  }[] = [];
 
   if (empresaSelecionada) {
-    const resultado = await supabase
-      .from("centros_custo")
-      .select("id, nome, codigo, responsavel, ativo, cadastro_veiculos(count)")
-      .eq("empresa_id", empresaSelecionada)
-      .order("nome");
+    const agora = new Date();
+    const inicio90 = new Date(agora);
+    inicio90.setDate(inicio90.getDate() - 90);
+    const dataInicio = inicio90.toISOString().slice(0, 10);
+    const dataFim = agora.toISOString().slice(0, 10);
+
+    const [resultado, resultadoGasto] = await Promise.all([
+      supabase
+        .from("centros_custo")
+        .select("id, nome, codigo, responsavel, ativo, cadastro_veiculos(count)")
+        .eq("empresa_id", empresaSelecionada)
+        .order("nome"),
+      supabase.rpc("centros_custo_gasto_resumo", {
+        p_empresa_id: empresaSelecionada,
+        p_data_inicio: dataInicio,
+        p_data_fim: dataFim,
+      }),
+    ]);
     centros = resultado.data ?? [];
     error = resultado.error;
+    gastoPorCentro = resultadoGasto.data ?? [];
   }
 
   const totalCentros = centros.length;
@@ -104,6 +130,22 @@ export default async function CentrosCustoPage({
               ajudaChave="centros_custo.veiculos_alocados"
             />
           </div>
+
+          {centros.length > 0 && (
+            <GraficoCentrosCusto
+              centros={centros.map((c) => ({
+                nome: c.nome,
+                veiculos: c.cadastro_veiculos?.[0]?.count ?? 0,
+                ativo: c.ativo ?? false,
+              }))}
+              gastoPorCentro={gastoPorCentro.map((g) => ({
+                nome: g.nome,
+                gasto_combustivel: g.gasto_combustivel,
+                gasto_manutencao: g.gasto_manutencao,
+                gasto_total: g.gasto_total,
+              }))}
+            />
+          )}
 
           <div className="mb-4 flex justify-end gap-3">
             <ReplicarParaGrupoButton
