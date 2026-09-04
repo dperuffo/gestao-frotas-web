@@ -28,6 +28,7 @@ import { SecaoDrePosto, type DrePostoDados } from "./_components/SecaoDrePosto";
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Wallet, AlertTriangle, TrendingUp, TrendingDown, Receipt, CheckCircle2 } from "lucide-react";
 import { marcarDespesaPagaAcao, excluirDespesaAcao } from "./actions";
+import { GraficoResumoFinanceiroPosto } from "./_components/GraficoResumoFinanceiroPosto";
 
 type SearchParams = { empresa?: string; periodo?: string; inicio?: string; fim?: string };
 
@@ -383,6 +384,11 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
               valor={formatarMoeda(saldoPrevistoPeriodo)}
             />
           </div>
+
+          <GraficoResumoFinanceiroPosto
+            porProvedor={indicadoresPorProvedor.map((p) => ({ provedor: p.provedor, valor: p.valorTotal }))}
+            aging={agingFaturas.map((a) => ({ label: a.label, valor: a.valor }))}
+          />
 
           {indicadoresPorProvedor.length > 0 && (
             <div className="card mb-6 overflow-x-auto p-6">

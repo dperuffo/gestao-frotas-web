@@ -27,6 +27,7 @@ import { LogoProvedor } from "@/components/LogoProvedor";
 // telas mais usadas do dia a dia. Ver @/components/IndicadorColorido.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { DollarSign, Gauge, ClipboardList, TrendingUp, TrendingDown, Fuel, Wrench, Receipt } from "lucide-react";
+import { GraficoResumoFinanceiro } from "./_components/GraficoResumoFinanceiro";
 
 type SearchParams = { empresa?: string };
 
@@ -479,6 +480,15 @@ export default async function FinanceiroPage({
               </>
             );
           })()}
+
+          <GraficoResumoFinanceiro
+            categorias={[
+              { label: "Combustível", total: indicadores.custo_combustivel },
+              { label: "Manutenção", total: indicadores.custo_manutencao },
+              { label: "Custos fixos", total: indicadores.custo_fixos },
+            ]}
+            porProvedor={indicadoresPorProvedor.map((p) => ({ provedor: p.provedor, custo: p.custo_combustivel }))}
+          />
 
           {indicadoresPorProvedor.length > 0 && (
             <div className="card mb-6 overflow-x-auto p-6">

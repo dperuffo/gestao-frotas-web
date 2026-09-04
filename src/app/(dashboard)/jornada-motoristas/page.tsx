@@ -6,6 +6,7 @@ import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 import { Truck, Coffee, BedDouble, AlertTriangle, Timer } from "lucide-react";
 import GraficoHorasDirigidasLazy, { type PontoJornada } from "./_components/GraficoHorasDirigidasLazy";
+import { GraficoResumoJornada, type ItemEstado, type ItemRankingHoras } from "./_components/GraficoResumoJornada";
 
 const POR_PAGINA_REGISTRO = 20;
 
@@ -233,6 +234,21 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
     .map(([motoristaId, v]) => ({ motoristaId, ...v }))
     .sort((a, b) => b.alertasConducao + b.alertasDescanso - (a.alertasConducao + a.alertasDescanso) || b.horasDirigidas - a.horasDirigidas);
 
+  // Fase Plano-Graficos Onda 3 (04/09/2026) — agregações do gráfico, a
+  // partir do statusAtual/porMotoristaMap já carregados (sem query nova).
+  const porEstado: ItemEstado[] = [
+    { label: "Dirigindo", total: dirigindoAgora },
+    { label: "Em pausa", total: emPausaAgora },
+    { label: "Descansando", total: descansandoAgora },
+    { label: "Nunca iniciou", total: statusAtual.filter((s) => s.estado === "nunca_iniciado").length },
+  ];
+  const rankingHoras: ItemRankingHoras[] = [...porMotoristaMap.entries()]
+    .map(([, v]) => ({ nome: v.nome, horas: v.horasDirigidas }))
+    .filter((r) => r.horas > 0)
+    .sort((a, b) => b.horas - a.horas)
+    .slice(0, 8)
+    .reverse();
+
   return (
     <div>
       <div className="mb-6">
@@ -352,6 +368,8 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
             </div>
             <GraficoHorasDirigidasLazy dados={dadosGrafico} />
           </div>
+
+          <GraficoResumoJornada porEstado={porEstado} rankingHoras={rankingHoras} />
 
           <div className="card overflow-x-auto">
             <div className="border-b border-slate-100 px-4 py-3">

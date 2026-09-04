@@ -8,6 +8,7 @@ import { AbasRoteirizacao } from "./_components/AbasRoteirizacao";
 import { ScoreBadge } from "./_components/ScoreBadge";
 import { PrecosChips } from "./_components/PrecosChips";
 import MapaRotaLazy from "./_components/MapaRotaLazy";
+import { GraficoRoteirizacao } from "./_components/GraficoRoteirizacao";
 import { SalvarConsultaForm } from "./_components/SalvarConsultaForm";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 // Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
@@ -47,6 +48,28 @@ export default async function RoteirizacaoUfPage({
       })
       .slice(0, 5),
   }));
+
+  // Fase Plano-Graficos Onda 3 (04/09/2026) — distribuição por bandeira e
+  // preço médio por combustível, a partir dos postos já carregados acima
+  // (sem query nova).
+  const porBandeiraMap = new Map<string, number>();
+  for (const posto of postos) {
+    const chave = posto.bandeira ?? "Sem bandeira";
+    porBandeiraMap.set(chave, (porBandeiraMap.get(chave) ?? 0) + 1);
+  }
+  const porBandeira = Array.from(porBandeiraMap.entries())
+    .map(([label, total]) => ({ label, total }))
+    .sort((a, b) => b.total - a.total);
+
+  const precoMedioPorCombustivel = Array.from(topPorCombustivel.entries())
+    .map(([combustivel, lista]) => {
+      const precos = lista
+        .map((p) => p.precos.find((x) => x.combustivel === combustivel)?.preco)
+        .filter((p): p is number => typeof p === "number");
+      const media = precos.length > 0 ? precos.reduce((s, v) => s + v, 0) / precos.length : 0;
+      return { combustivel, preco: media };
+    })
+    .sort((a, b) => a.preco - b.preco);
 
   return (
     <div>
@@ -144,6 +167,8 @@ export default async function RoteirizacaoUfPage({
               }))}
             />
           </div>
+
+          <GraficoRoteirizacao porBandeira={porBandeira} precoMedioPorCombustivel={precoMedioPorCombustivel} />
 
           {ranking.length > 0 && (
             <div className="mb-6 card p-4">
