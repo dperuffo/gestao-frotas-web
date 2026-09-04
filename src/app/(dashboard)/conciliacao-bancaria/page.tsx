@@ -9,6 +9,7 @@ import { AcaoConciliarAutomatico } from "./_components/AcaoConciliarAutomatico";
 // Fiscais/Centros de Custo.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { ListChecks, Wallet, CheckCircle2 } from "lucide-react";
+import { GraficoConciliacao, type ItemFluxoMes } from "./_components/GraficoConciliacao";
 
 type SearchParams = { empresa?: string };
 
@@ -110,6 +111,26 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
   const conciliadosNoMes = conciliados.filter((l) => (l.conciliado_em ?? "") >= inicioMesIso);
   const valorPendente = pendentes.reduce((s, l) => s + Math.abs(l.valor), 0);
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — % conciliado (gauge) e fluxo
+  // mensal de crédito/débito, a partir do lancamentos já carregado.
+  const percentualConciliado = lancamentos.length > 0 ? Math.round((conciliados.length / lancamentos.length) * 100) : 0;
+
+  const fluxoPorMesMap = new Map<string, { credito: number; debito: number }>();
+  for (const l of lancamentos) {
+    const mesRef = l.data.slice(0, 7);
+    const atual = fluxoPorMesMap.get(mesRef) ?? { credito: 0, debito: 0 };
+    if (l.tipo === "credito") atual.credito += Math.abs(l.valor);
+    else atual.debito += Math.abs(l.valor);
+    fluxoPorMesMap.set(mesRef, atual);
+  }
+  const fluxoPorMes: ItemFluxoMes[] = [...fluxoPorMesMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-12)
+    .map(([mesRef, v]) => {
+      const [ano, mes] = mesRef.split("-");
+      return { mes: `${mes}/${ano.slice(2)}`, credito: v.credito, debito: v.debito };
+    });
+
   return (
     <div>
       <div className="mb-6">
@@ -150,6 +171,8 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
             <IndicadorColorido cor="sky" icon={Wallet} label="Valor pendente" valor={formatarMoeda(valorPendente)} />
             <IndicadorColorido cor="green" icon={CheckCircle2} label="Conciliados no mês" valor={String(conciliadosNoMes.length)} />
           </div>
+
+          <GraficoConciliacao percentualConciliado={percentualConciliado} fluxoPorMes={fluxoPorMes} />
 
           <div className="card mb-6 p-6">
             <h2 className="mb-3 text-sm font-semibold text-slate-900">Importar extrato</h2>

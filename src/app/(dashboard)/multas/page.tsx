@@ -6,6 +6,7 @@ import { STATUS_MULTA_LABEL, STATUS_MULTA_COR, GRAVIDADE_MULTA_LABEL } from "@/l
 // nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { ClipboardList, AlertTriangle, Wallet } from "lucide-react";
+import { GraficoMultas, type ItemStatus, type ItemRankingMotorista, type ItemValorMes } from "./_components/GraficoMultas";
 
 type SearchParams = { empresa?: string; q?: string; status?: string };
 
@@ -85,6 +86,39 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
     .filter((m) => m.status !== "paga" && m.status !== "cancelada")
     .reduce((s, m) => s + (m.valor_desconto ?? m.valor_original ?? 0), 0);
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — agregações do gráfico, todas
+  // a partir do multasRaw já carregado (sem query nova).
+  const statusMap = new Map<string, number>();
+  for (const m of multasRaw) statusMap.set(m.status, (statusMap.get(m.status) ?? 0) + 1);
+  const porStatus: ItemStatus[] = [...statusMap.entries()].map(([status, total]) => ({ status, total }));
+
+  const motoristaMap = new Map<string, number>();
+  for (const m of multasRaw) {
+    const nome = m.motoristas?.nome_completo ?? "Sem indicação";
+    const valor = m.valor_desconto ?? m.valor_original ?? 0;
+    motoristaMap.set(nome, (motoristaMap.get(nome) ?? 0) + valor);
+  }
+  const rankingMotorista: ItemRankingMotorista[] = [...motoristaMap.entries()]
+    .map(([motorista, valor]) => ({ motorista, valor }))
+    .filter((r) => r.valor > 0)
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 8)
+    .reverse();
+
+  const valorPorMesMap = new Map<string, number>();
+  for (const m of multasRaw) {
+    const mesRef = m.data_infracao.slice(0, 7);
+    const valor = m.valor_desconto ?? m.valor_original ?? 0;
+    valorPorMesMap.set(mesRef, (valorPorMesMap.get(mesRef) ?? 0) + valor);
+  }
+  const valorPorMes: ItemValorMes[] = [...valorPorMesMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-12)
+    .map(([mesRef, valor]) => {
+      const [ano, mes] = mesRef.split("-");
+      return { mes: `${mes}/${ano.slice(2)}`, valor };
+    });
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -162,6 +196,8 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
               valor={valorEmAberto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
             />
           </div>
+
+          <GraficoMultas porStatus={porStatus} rankingMotorista={rankingMotorista} valorPorMes={valorPorMes} />
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">

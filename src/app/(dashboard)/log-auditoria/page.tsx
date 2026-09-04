@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatarDataHoraBr } from "@/lib/utils";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
+import {
+  GraficoAuditoria,
+  type ItemEventosDia,
+  type ItemRankingUsuario,
+  type ItemPorAcao,
+} from "./_components/GraficoAuditoria";
 
 const PORPAGINA = 30;
 
@@ -46,6 +52,49 @@ export default async function LogAuditoriaPage({
   const totalRegistros = count ?? 0;
   const { paginaAtual, totalPaginas } = calcularPaginacao(totalRegistros, PORPAGINA, sp.page);
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — a tabela é paginada (30/pág),
+  // então o gráfico usa uma amostra separada dos 500 eventos mais recentes
+  // (respeitando os mesmos filtros ativos) em vez da página atual só.
+  let queryAmostra = supabase
+    .from("log_auditoria")
+    .select("criado_em, usuario_email, acao")
+    .order("criado_em", { ascending: false })
+    .limit(500);
+  if (sp.acao) queryAmostra = queryAmostra.ilike("acao", `%${sp.acao}%`);
+  if (sp.entidade) queryAmostra = queryAmostra.ilike("entidade", `%${sp.entidade}%`);
+  if (sp.usuario) queryAmostra = queryAmostra.ilike("usuario_email", `%${sp.usuario}%`);
+  if (sp.desde) queryAmostra = queryAmostra.gte("criado_em", sp.desde);
+  if (sp.ate) queryAmostra = queryAmostra.lte("criado_em", `${sp.ate}T23:59:59`);
+  const { data: amostra } = await queryAmostra;
+  const eventosAmostra = amostra ?? [];
+
+  const porDiaMap = new Map<string, number>();
+  for (const e of eventosAmostra) {
+    const dia = e.criado_em.slice(0, 10);
+    porDiaMap.set(dia, (porDiaMap.get(dia) ?? 0) + 1);
+  }
+  const eventosPorDia: ItemEventosDia[] = [...porDiaMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-14)
+    .map(([dia, total]) => {
+      const [, mes, d] = dia.split("-");
+      return { dia: `${d}/${mes}`, total };
+    });
+
+  const porUsuarioMap = new Map<string, number>();
+  for (const e of eventosAmostra) porUsuarioMap.set(e.usuario_email, (porUsuarioMap.get(e.usuario_email) ?? 0) + 1);
+  const rankingUsuario: ItemRankingUsuario[] = [...porUsuarioMap.entries()]
+    .map(([usuario, total]) => ({ usuario, total }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 8)
+    .reverse();
+
+  const porAcaoMap = new Map<string, number>();
+  for (const e of eventosAmostra) porAcaoMap.set(e.acao, (porAcaoMap.get(e.acao) ?? 0) + 1);
+  const porAcao: ItemPorAcao[] = [...porAcaoMap.entries()]
+    .map(([label, total]) => ({ label, total }))
+    .sort((a, b) => b.total - a.total);
+
   return (
     <div>
       <div className="mb-6">
@@ -87,6 +136,8 @@ export default async function LogAuditoriaPage({
           Filtrar
         </button>
       </form>
+
+      <GraficoAuditoria eventosPorDia={eventosPorDia} rankingUsuario={rankingUsuario} porAcao={porAcao} />
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">

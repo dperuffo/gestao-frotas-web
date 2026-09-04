@@ -8,6 +8,7 @@ import { BotaoReprocessarNotas } from "./_components/BotaoReprocessarNotas";
 // visual do Dashboard/Veículos/Financeiro/Abastecimentos/Manutenção.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Coins, FileCheck2, FileWarning } from "lucide-react";
+import { GraficoApuracao, type ItemRanking, type ItemCreditoMes } from "./_components/GraficoApuracao";
 
 // Fase Apuracao-ICMS-Combustivel (12/08/2026) — pedido do Daniel: "Criar aba
 // de Apuração de crédito tributário sobre combustível. Extensão natural do
@@ -129,6 +130,44 @@ export default async function ApuracaoTributariaPage({
   const podeCreditar = regime === "normal" && elegivel === true;
   const cadastroIncompleto = regime === null || elegivel === null;
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — ranking por UF/posto (a partir
+  // das notas do período já carregadas) + série temporal de crédito nos
+  // últimos 12 meses (query leve adicional, só 2 colunas, sem RPC nova).
+  const rankingUf: ItemRanking[] = [...porUf.entries()]
+    .map(([label, valor]) => ({ label, valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  const porPosto = new Map<string, number>();
+  for (const n of notasComCredito) {
+    porPosto.set(n.nome_emitente, (porPosto.get(n.nome_emitente) ?? 0) + Number(n.v_icms_mono_ret ?? 0));
+  }
+  const rankingPosto: ItemRanking[] = [...porPosto.entries()]
+    .map(([label, valor]) => ({ label, valor }))
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 8)
+    .reverse();
+
+  const inicio12Meses = new Date(Date.UTC(ano, mes - 1 - 11, 1));
+  const { data: notasHistorico } = await supabase
+    .from("notas_fiscais_abastecimento")
+    .select("data_emissao, v_icms_mono_ret")
+    .eq("empresa_cliente_id", empresaSelecionada)
+    .gte("data_emissao", inicio12Meses.toISOString())
+    .lt("data_emissao", fimPeriodo.toISOString())
+    .not("v_icms_mono_ret", "is", null);
+
+  const creditoPorMesMap = new Map<string, number>();
+  for (const n of notasHistorico ?? []) {
+    const mesRef = n.data_emissao.slice(0, 7);
+    creditoPorMesMap.set(mesRef, (creditoPorMesMap.get(mesRef) ?? 0) + Number(n.v_icms_mono_ret ?? 0));
+  }
+  const creditoPorMes: ItemCreditoMes[] = [...creditoPorMesMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([mesRef, valor]) => {
+      const [anoRef, mesRefN] = mesRef.split("-");
+      return { mes: `${mesRefN}/${anoRef.slice(2)}`, valor };
+    });
+
   return (
     <div>
       <div className="mb-6">
@@ -205,25 +244,14 @@ export default async function ApuracaoTributariaPage({
         </div>
       </div>
 
+      <GraficoApuracao rankingUf={rankingUf} rankingPosto={rankingPosto} creditoPorMes={creditoPorMes} />
+
       {porUf.size > 1 && (
-        <div className="card mb-6 p-4">
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">Por UF do posto emitente</h2>
-          <p className="mb-3 text-xs text-slate-500">
-            Atenção: agrupado pela UF do posto que vendeu o combustível, não pela UF onde a prestação de transporte começou
-            (o critério fiscalmente correto — Convênio ICMS 26/2023). Trate como aproximação; a atribuição exata precisa
-            cruzar com o CT-e/frete de cada viagem, fora do escopo desta 1ª entrega.
-          </p>
-          <table className="w-full text-left text-sm">
-            <tbody className="divide-y divide-slate-100">
-              {[...porUf.entries()].sort((a, b) => b[1] - a[1]).map(([uf, valor]) => (
-                <tr key={uf} className="transition-colors hover:bg-frota-50/60">
-                  <td className="py-1.5 text-slate-600">{uf}</td>
-                  <td className="py-1.5 text-right text-slate-900">{formatarMoeda(valor)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <p className="mb-6 -mt-4 text-xs text-slate-400">
+          Atenção: agrupado pela UF do posto que vendeu o combustível, não pela UF onde a prestação de transporte começou
+          (o critério fiscalmente correto — Convênio ICMS 26/2023). Trate como aproximação; a atribuição exata precisa
+          cruzar com o CT-e/frete de cada viagem, fora do escopo desta 1ª entrega.
+        </p>
       )}
 
       <div className="card overflow-x-auto">

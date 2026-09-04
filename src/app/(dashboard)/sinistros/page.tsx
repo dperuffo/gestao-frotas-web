@@ -5,6 +5,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 // nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { ClipboardList, AlertTriangle, Wallet } from "lucide-react";
+import { GraficoSinistros, type ItemDistribuicao, type ItemCustoMes } from "./_components/GraficoSinistros";
 
 type SearchParams = { empresa?: string; q?: string };
 
@@ -71,6 +72,34 @@ export default async function SinistrosPage({ searchParams }: { searchParams: Pr
   const comVitima = sinistrosRaw.filter((s) => s.houve_vitima).length;
   const custoTotal = sinistrosRaw.reduce((sum, s) => sum + (s.custo_estimado ?? 0), 0);
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — agregações do gráfico, todas
+  // a partir do sinistrosRaw já carregado (sem query nova).
+  const agruparPorContagem = (chave: (s: Sinistro) => string | null): ItemDistribuicao[] => {
+    const contagem = new Map<string, number>();
+    for (const s of sinistrosRaw) {
+      const valor = chave(s) ?? "Não informado";
+      contagem.set(valor, (contagem.get(valor) ?? 0) + 1);
+    }
+    return [...contagem.entries()]
+      .map(([label, total]) => ({ label, total }))
+      .sort((a, b) => b.total - a.total);
+  };
+  const porTipo = agruparPorContagem((s) => s.tipo);
+  const porGravidade = agruparPorContagem((s) => s.gravidade);
+
+  const custoPorMesMap = new Map<string, number>();
+  for (const s of sinistrosRaw) {
+    const mesRef = s.data_sinistro.slice(0, 7); // YYYY-MM
+    custoPorMesMap.set(mesRef, (custoPorMesMap.get(mesRef) ?? 0) + (s.custo_estimado ?? 0));
+  }
+  const custoPorMes: ItemCustoMes[] = [...custoPorMesMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-12)
+    .map(([mesRef, custo]) => {
+      const [ano, mes] = mesRef.split("-");
+      return { mes: `${mes}/${ano.slice(2)}`, custo };
+    });
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -135,6 +164,8 @@ export default async function SinistrosPage({ searchParams }: { searchParams: Pr
               valor={custoTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
             />
           </div>
+
+          <GraficoSinistros porTipo={porTipo} porGravidade={porGravidade} custoPorMes={custoPorMes} />
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
