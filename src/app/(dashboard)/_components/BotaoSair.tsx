@@ -21,7 +21,7 @@ export function BotaoSair() {
   return (
     <button
       onClick={handleClick}
-      className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition hover:bg-white/10"
+      className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-600 transition hover:bg-slate-900/5"
     >
       Sair
     </button>

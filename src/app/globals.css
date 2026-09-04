@@ -32,13 +32,16 @@ body {
   box-shadow: 0 2px 12px rgba(17, 17, 17, 0.06);
 }
 
-/* Menu lateral (aside, layout.tsx) — design.md: "Navigation: Primary
-   surface background. Active item: accent color indicator." Fundo sólido
-   off-black (não mais Dark Navy azulado) — flat, sem blur/anel de luz. O
-   item ativo ganha destaque via `.glass-nav-ativo` (ver GrupoMenuLateral.tsx
-   e ItemMenuAtivo.tsx), não mais aqui. */
+/* Fase Paleta-Clara (04/09/2026, pedido do Daniel: "tons escuros no menu,
+   botões e cores de gráficos ficaram muito pesados para a visão do
+   usuário") — o design.md do Swiss Minimalism não obriga painel sólido em
+   off-black; a referência suíça/Basel tradicionalmente usa preto só em
+   texto/linhas finas sobre fundo claro. Menu passa de `frota-950` sólido
+   pra `frota-50` (o mesmo cinza-claro já usado no body), mantendo cantos
+   retos e sem blur. O item ativo continua marcado por
+   `.glass-nav-ativo` (borda esquerda + acento taupe). */
 .glass-nav {
-  @apply border-r border-white/10 bg-frota-950;
+  @apply border-r border-slate-200 bg-frota-50;
 }
 
 /* Barra de abas (AbasPainel.tsx) — vira um segmented control claro, comum
@@ -56,40 +59,42 @@ body {
   @apply bg-white text-frota-600 shadow-sm;
 }
 
-/* Texto/ícone do menu lateral sobre o fundo Dark Navy — branco/quase
-   branco pra contraste, sem sombra de texto (não precisa mais "brilhar"
-   sobre um fundo com textura, o fundo agora é liso). */
+/* Fase Paleta-Clara (04/09/2026) — texto/ícone do menu agora sobre fundo
+   claro (`frota-50`): trocado de branco/slate-claro pra slate escuro,
+   mantendo a mesma hierarquia (texto principal > texto secundário/muted >
+   ícone). */
 .glass-nav-texto {
-  @apply text-slate-100;
+  @apply text-slate-800;
 }
 .glass-nav-texto-muted {
-  @apply text-slate-400;
+  @apply text-slate-500;
 }
 .glass-nav-icone {
-  @apply text-slate-300;
+  @apply text-slate-500;
 }
 /* Indicador de item ativo no menu — accent color (design.md: "Active item:
    accent color indicator. Font weight 500 when active."), usado por
-   ItemMenuAtivo.tsx via usePathname(). Fase Swiss-Minimalism: `frota-500`
-   agora é quase preto (mesma família do fundo `frota-950` do menu) — um
-   destaque `bg-frota-500/15` ficaria invisível sobre o fundo escuro. Troca
-   pro único acento decorativo do tema (`accento`, taupe do design.md) numa
-   borda lateral + leve clareamento de fundo, sem depender de matiz azul. */
+   ItemMenuAtivo.tsx via usePathname(). Fase Paleta-Clara: fundo do menu
+   agora é claro, então o destaque do item ativo troca de `bg-white/5` +
+   texto branco pra um leve tingimento do próprio acento (`accento/10`) +
+   texto escuro — mesmo acento taupe, adaptado pro fundo claro. */
 .glass-nav-ativo {
-  @apply border-l-2 border-accento bg-white/5 font-medium text-white;
+  @apply border-l-2 border-accento bg-accento/10 font-medium text-frota-900;
 }
 .glass-nav-acento {
   @apply text-accento;
 }
 
-/* Fase Design-System-Swiss-Minimalism — botão primário (design.md): cantos
-   quase retos (2px), preenchimento sólido em off-black ("Accent color
-   fill" = colors.primary = preto), hover = escurece, active = leve
-   translo -1px (tátil), peso 600, sem glow. */
+/* Fase Paleta-Clara (04/09/2026) — botão primário deixa de usar o
+   off-black `frota-500` (achado "pesado") e passa a usar o acento taupe
+   do tema (`accento`, design.md: "único acento decorativo"), que até
+   então só aparecia em detalhes (borda de item ativo, links). Cantos
+   retos e demais mecânicas (hover escurece via brightness, active
+   translada 1px) continuam iguais. */
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-xl bg-frota-500 px-4 py-2
+  @apply inline-flex items-center justify-center rounded-xl bg-accento px-4 py-2
     text-sm font-semibold text-white shadow-sm transition
-    hover:bg-frota-600 hover:shadow-md active:translate-y-px
+    hover:brightness-90 hover:shadow-md active:translate-y-px
     disabled:cursor-not-allowed disabled:opacity-50;
 }
 

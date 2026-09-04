@@ -32,7 +32,7 @@ export function BotaoFavoritoMenu({ href, favoritadoInicial }: { href: string; f
       onClick={alternar}
       disabled={isPending}
       title={favoritado ? "Remover do acesso rápido" : "Fixar no acesso rápido"}
-      className="shrink-0 rounded-lg p-1.5 text-slate-400 opacity-0 transition hover:bg-white/10 hover:text-amber-400 group-hover:opacity-100 focus-visible:opacity-100"
+      className="shrink-0 rounded-lg p-1.5 text-slate-400 opacity-0 transition hover:bg-slate-900/5 hover:text-amber-500 group-hover:opacity-100 focus-visible:opacity-100"
     >
       <Star className={`h-3.5 w-3.5 ${favoritado ? "fill-amber-400 text-amber-400" : ""}`} />
     </button>

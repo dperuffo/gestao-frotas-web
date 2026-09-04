@@ -1,6 +1,7 @@
 "use client";
 
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CORES_GRAFICO } from "@/lib/coresGrafico";
 
 export type PontoPrecoMedio = {
   diaLabel: string;
@@ -17,11 +18,11 @@ export function GraficoEvolucaoPrecoMedio({ dados }: { dados: PontoPrecoMedio[] 
   return (
     <ResponsiveContainer width="100%" height={260}>
       <LineChart data={dados} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
         <XAxis dataKey="diaLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
         <YAxis tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={(v: number) => `R$ ${v.toFixed(2)}`} />
         <Tooltip formatter={(v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} />
-        <Line type="monotone" dataKey="precoMedio" name="Preço médio (R$/L)" stroke="#8C8C8C" strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="precoMedio" name="Preço médio (R$/L)" stroke={CORES_GRAFICO.primaria} strokeWidth={2} dot={false} />
       </LineChart>
     </ResponsiveContainer>
   );

@@ -26,9 +26,9 @@ export function AvisosSino({ avisosIniciais }: { avisosIniciais: AvisoParaUsuari
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-900/5"
       >
-        <Bell className="h-4 w-4 shrink-0 text-slate-300" />
+        <Bell className="h-4 w-4 shrink-0 text-slate-500" />
         Avisos
         {naoLidos > 0 && (
           <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">

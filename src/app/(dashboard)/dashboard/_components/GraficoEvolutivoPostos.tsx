@@ -1,8 +1,9 @@
 "use client";
 
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CORES_GRAFICO } from "@/lib/coresGrafico";
 
-const CORES = ["#262626", "#F97316", "#16A34A", "#DB2777", "#7C3AED"];
+const CORES = CORES_GRAFICO.serie;
 
 export type PontoEvolutivoPostos = { diaLabel: string; [posto: string]: string | number };
 
@@ -17,7 +18,7 @@ export function GraficoEvolutivoPostos({ dados, postos }: { dados: PontoEvolutiv
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={dados} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
         <XAxis dataKey="diaLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
         <YAxis tick={{ fontSize: 12 }} />
         <Tooltip formatter={(v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`} />

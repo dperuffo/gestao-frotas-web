@@ -1,6 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CORES_GRAFICO } from "@/lib/coresGrafico";
 
 export type PontoConsumo = {
   mes: string;
@@ -16,7 +17,7 @@ export function GraficoConsumo({ dados }: { dados: PontoConsumo[] }) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={dados} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
         <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
         <YAxis yAxisId="litros" tick={{ fontSize: 12 }} />
         <YAxis yAxisId="valor" orientation="right" tick={{ fontSize: 12 }} />
@@ -26,8 +27,8 @@ export function GraficoConsumo({ dados }: { dados: PontoConsumo[] }) {
           }
         />
         <Legend />
-        <Bar yAxisId="litros" dataKey="litros" name="Litros" fill="#262626" radius={[4, 4, 0, 0]} />
-        <Bar yAxisId="valor" dataKey="valor" name="Valor (R$)" fill="#8C8C8C" radius={[4, 4, 0, 0]} />
+        <Bar yAxisId="litros" dataKey="litros" name="Litros" fill={CORES_GRAFICO.primaria} radius={[4, 4, 0, 0]} />
+        <Bar yAxisId="valor" dataKey="valor" name="Valor (R$)" fill={CORES_GRAFICO.neutro} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

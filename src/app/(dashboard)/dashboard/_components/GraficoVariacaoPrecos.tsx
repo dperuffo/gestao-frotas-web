@@ -1,6 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CORES_GRAFICO } from "@/lib/coresGrafico";
 
 export type ItemVariacaoPreco = {
   item_nome: string;
@@ -46,13 +47,13 @@ export function GraficoVariacaoPrecos({ dados }: { dados: ItemVariacaoPreco[] })
     <div>
       <ResponsiveContainer width="100%" height={Math.max(200, dados.length * 50)}>
         <BarChart data={dadosGrafico} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
           <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v: number) => `R$ ${v.toFixed(2)}`} />
           <YAxis type="category" dataKey="nome" width={140} tick={{ fontSize: 12 }} />
           <Tooltip formatter={(valor: number) => formatarMoeda(valor)} />
           <Legend />
-          <Bar dataKey="Preço médio (cliente)" fill="#262626" radius={[0, 4, 4, 0]} />
-          <Bar dataKey="Preço médio (ANP)" fill="#94a3b8" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="Preço médio (cliente)" fill={CORES_GRAFICO.primaria} radius={[0, 4, 4, 0]} />
+          <Bar dataKey="Preço médio (ANP)" fill={CORES_GRAFICO.neutro} radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
 

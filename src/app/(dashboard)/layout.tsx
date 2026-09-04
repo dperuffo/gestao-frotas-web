@@ -1019,8 +1019,8 @@ export default async function DashboardLayout({
       <PainelMobile
         menu={
           <>
-        <div data-tour="logo" className="border-b border-white/10 px-5 py-6">
-          <div className="rounded-xl border border-white/10 bg-white/95 p-3 shadow-lg shadow-frota-950/30">
+        <div data-tour="logo" className="border-b border-slate-200 px-5 py-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
             <Image
               src="/logo-fni.png"
               alt="Fleet Network Intelligence"
@@ -1108,7 +1108,7 @@ export default async function DashboardLayout({
           </>
           )}
         </nav>
-        <div className="border-t border-white/10 px-3 py-3 space-y-1">
+        <div className="border-t border-slate-200 px-3 py-3 space-y-1">
           <AvisosSino avisosIniciais={avisos} />
           <CentralAjuda />
           <BotaoSair />

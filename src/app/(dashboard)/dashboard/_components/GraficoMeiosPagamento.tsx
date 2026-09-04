@@ -2,6 +2,7 @@
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { LogoProvedor } from "@/components/LogoProvedor";
+import { CORES_GRAFICO } from "@/lib/coresGrafico";
 
 // Fase Dashboard-Redesign (12/08/2026) — pedido do Daniel: mais
 // interatividade/visual no dashboard, inspirado em apps de banco (ver
@@ -10,7 +11,7 @@ import { LogoProvedor } from "@/components/LogoProvedor";
 // com a logo de cada provedor (já usada em outras telas via LogoProvedor).
 export type FatiaPagamento = { provedor: string; valor: number };
 
-const CORES = ["#262626", "#8C8C8C", "#16A34A", "#F59E0B", "#7C3AED", "#DC2626"];
+const CORES = CORES_GRAFICO.serie;
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

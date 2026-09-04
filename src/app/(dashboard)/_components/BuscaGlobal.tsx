@@ -133,12 +133,12 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="glass-nav-texto-muted flex w-full items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-left text-sm transition hover:bg-white/10"
+        className="glass-nav-texto-muted flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-left text-sm transition hover:bg-slate-200"
         aria-label="Buscar telas (Cmd+K)"
       >
         <Search className="h-4 w-4 shrink-0" />
         <span className="flex-1 truncate">Buscar...</span>
-        <kbd className="rounded border border-white/15 px-1.5 py-0.5 text-[10px] font-semibold">
+        <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] font-semibold">
           ⌘K
         </kbd>
       </button>

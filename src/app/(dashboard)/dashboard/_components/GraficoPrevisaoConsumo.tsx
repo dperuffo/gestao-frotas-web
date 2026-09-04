@@ -1,6 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CORES_GRAFICO } from "@/lib/coresGrafico";
 
 export type PontoPrevisaoConsumo = {
   diaLabel: string;
@@ -19,7 +20,7 @@ export function GraficoPrevisaoConsumo({ dados }: { dados: PontoPrevisaoConsumo[
   return (
     <ResponsiveContainer width="100%" height={280}>
       <BarChart data={dados} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
         <XAxis dataKey="diaLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
         <YAxis tick={{ fontSize: 12 }} />
         <Tooltip
@@ -30,13 +31,13 @@ export function GraficoPrevisaoConsumo({ dados }: { dados: PontoPrevisaoConsumo[
         />
         <Legend
           payload={[
-            { value: "Realizado", type: "square", color: "#262626" },
+            { value: "Realizado", type: "square", color: CORES_GRAFICO.primaria },
             { value: "Projetado", type: "square", color: "#D9D9D9" },
           ]}
         />
         <Bar dataKey="litros" radius={[4, 4, 0, 0]}>
           {dados.map((d, i) => (
-            <Cell key={i} fill={d.tipo === "projetado" ? "#D9D9D9" : "#262626"} />
+            <Cell key={i} fill={d.tipo === "projetado" ? "#D9D9D9" : CORES_GRAFICO.primaria} />
           ))}
         </Bar>
       </BarChart>

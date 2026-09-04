@@ -83,7 +83,7 @@ export function GrupoMenuLateral({
               <ItemMenuAtivo
                 href={item.href}
                 dataTour={tourPorHref?.[item.href]}
-                className="glass-nav-texto flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-white/10"
+                className="glass-nav-texto flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-slate-900/5"
                 classNameAtivo="glass-nav-ativo"
               >
                 <span className="flex items-center gap-2">
