@@ -3,6 +3,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ListaVeiculosCombustivelIdeal } from "./_components/ListaVeiculosCombustivelIdeal";
 import { ListaVeiculosDieselIdeal } from "./_components/ListaVeiculosDieselIdeal";
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
+import { GraficoCombustivelIdeal } from "./_components/GraficoCombustivelIdeal";
 // Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
 // nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
@@ -48,6 +49,32 @@ export default async function CombustivelIdealPage({
   const linhasDiesel = linhasDieselRaw ?? [];
   const totalAditivadoCompensa = linhasDiesel.filter((l) => l.recomendacao === "aditivado").length;
   const totalComumCompensa = linhasDiesel.filter((l) => l.recomendacao === "comum").length;
+
+  // Fase Plano-Graficos (04/09/2026, pedido do Daniel) — distribuição de
+  // recomendação + ranking dos veículos com maior economia (%), a partir
+  // dos itens já carregados acima (sem query nova).
+  const distribuicaoFlex = [
+    { label: "Etanol", total: totalEtanol },
+    { label: "Gasolina", total: totalGasolina },
+    { label: "Sem dados", total: semDados },
+  ];
+  const rankingFlex = linhas
+    .filter((l) => l.recomendacao && l.economia_pct != null)
+    .map((l) => ({ placa: l.placa, economiaPct: Number(l.economia_pct) }))
+    .sort((a, b) => b.economiaPct - a.economiaPct)
+    .slice(0, 8);
+
+  const totalDieselSemDados = linhasDiesel.filter((l) => !l.recomendacao).length;
+  const distribuicaoDiesel = [
+    { label: "Aditivado", total: totalAditivadoCompensa },
+    { label: "Comum", total: totalComumCompensa },
+    { label: "Sem dados", total: totalDieselSemDados },
+  ];
+  const rankingDiesel = linhasDiesel
+    .filter((l) => l.recomendacao === "comum" && l.premio_aditivado_pct != null)
+    .map((l) => ({ placa: l.placa, economiaPct: Number(l.premio_aditivado_pct) }))
+    .sort((a, b) => b.economiaPct - a.economiaPct)
+    .slice(0, 8);
 
   return (
     <div>
@@ -105,6 +132,14 @@ export default async function CombustivelIdealPage({
                     <IndicadorColorido cor="amber" icon={Fuel} label="Gasolina compensa" valor={String(totalGasolina)} />
                   </div>
 
+                  <GraficoCombustivelIdeal
+                    distribuicao={distribuicaoFlex}
+                    coresDistribuicao={{ Etanol: "#16a34a", Gasolina: "#d97706", "Sem dados": "#94A3B8" }}
+                    ranking={rankingFlex}
+                    tituloDistribuicao="Recomendação por veículo"
+                    tituloRanking="Maior economia (top 8)"
+                  />
+
                   <div className="card mb-6 p-4 text-xs leading-relaxed text-slate-500">
                     <p className="mb-1 font-medium text-slate-700">Como funciona a conta:</p>
                     <p>
@@ -153,6 +188,14 @@ export default async function CombustivelIdealPage({
                       <IndicadorColorido cor="amber" icon={Fuel} label="Comum compensa" valor={String(totalComumCompensa)} />
                     </div>
                   )}
+
+                  <GraficoCombustivelIdeal
+                    distribuicao={distribuicaoDiesel}
+                    coresDistribuicao={{ Aditivado: "#0ea5e9", Comum: "#d97706", "Sem dados": "#94A3B8" }}
+                    ranking={rankingDiesel}
+                    tituloDistribuicao="Recomendação por veículo × família"
+                    tituloRanking="Maior prêmio do aditivado (top 8, onde comum compensa)"
+                  />
 
                   {erroDiesel && (
                     <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
