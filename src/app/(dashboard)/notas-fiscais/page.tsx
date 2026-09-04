@@ -6,6 +6,7 @@ import { formatarDataBr } from "@/lib/utils";
 import { mensagemMotivoPendencia } from "@/lib/nfe";
 import { RecolhaPorCiclo, type CicloNfe } from "./_components/RecolhaPorCiclo";
 import { UploadNotaFiscal } from "./_components/UploadNotaFiscal";
+import { GraficoNotasFiscais } from "./_components/GraficoNotasFiscais";
 
 const POR_PAGINA = 20;
 
@@ -149,6 +150,21 @@ export default async function NotasFiscaisPage({
       }
     : { total: 0, comNota: 0, rejeitadas: 0, pendentes: 0 };
 
+  // Fase Plano-Graficos (04/09/2026, pedido do Daniel) — evolução do % de
+  // recolha ao longo dos ciclos (ordem cronológica, mais antigo primeiro) +
+  // distribuição de status do ciclo selecionado, a partir de `ciclos` e
+  // `contagem` já calculados acima (sem query nova).
+  const evolucaoPercentual = ciclos
+    .filter((c) => c.total > 0)
+    .slice()
+    .sort((a, b) => a.periodoFim.localeCompare(b.periodoFim))
+    .map((c) => ({ label: formatarDataBr(c.periodoFim), percentual: c.percentual ?? 0 }));
+  const statusCicloAtivo = [
+    { label: "Emitida", total: contagem.comNota },
+    { label: "Rejeitada", total: contagem.rejeitadas },
+    { label: "Pendente", total: contagem.pendentes },
+  ];
+
   // Fase 27.99 — pedido do Daniel: evidenciar rejeições de upload de NF-e
   // com mais detalhe, não só "Pendente" genérico. Pendências sem
   // abastecimento identificado (ex.: CNPJ do cliente não cadastrado) não
@@ -205,6 +221,8 @@ export default async function NotasFiscaisPage({
         cicloSelecionado={cicloAtivo ? { negociacaoId: cicloAtivo.negociacaoId, periodoInicio: cicloAtivo.periodoInicio, periodoFim: cicloAtivo.periodoFim } : null}
         linkParaCiclo={linkParaCiclo}
       />
+
+      <GraficoNotasFiscais evolucaoPercentual={evolucaoPercentual} statusCicloAtivo={statusCicloAtivo} />
 
       {ehPosto && <UploadNotaFiscal />}
 
