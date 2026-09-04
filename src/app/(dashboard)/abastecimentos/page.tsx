@@ -173,9 +173,15 @@ export default async function AbastecimentosPage({
     let query = builder;
     // Fase 27.104 — pedido do Daniel: buscar pelo ID abastecimento (código
     // de 10 dígitos, só existe pro lado PróFrotas) também no filtro livre.
+    // Fase Plano-Graficos Onda 6 — pedido do Daniel: a busca genérica
+    // também casa pelo produto (ex.: "diesel", "gasolina"), não só
+    // placa/motorista/posto/código. RPC abastecimentos_totais_filtrados
+    // (usada pros indicadores abaixo) recebeu o mesmo ajuste no p_q, pra
+    // "Litros"/"Valor total"/"Custo médio" ficarem coerentes com o que
+    // aparece na tabela ao buscar por produto.
     if (q)
       query = query.or(
-        `placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,posto_nome.ilike.%${q}%,codigo_abastecimento.ilike.%${q}%`
+        `placa.ilike.%${q}%,motorista_nome.ilike.%${q}%,posto_nome.ilike.%${q}%,codigo_abastecimento.ilike.%${q}%,produto.ilike.%${q}%`
       );
     if (de) query = query.gte("data_abastecimento", de);
     if (ate) query = query.lte("data_abastecimento", `${ate}T23:59:59`);
@@ -421,7 +427,7 @@ export default async function AbastecimentosPage({
           type="search"
           name="q"
           defaultValue={q ?? ""}
-          placeholder="Buscar por ID, placa, motorista ou posto..."
+          placeholder="Buscar por ID, placa, motorista, posto ou produto..."
           className="input max-w-sm"
         />
         <input type="date" name="de" defaultValue={de ?? ""} className="input" title="Data inicial" />
