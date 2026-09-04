@@ -6831,6 +6831,24 @@ export interface Database {
           total_count: number;
         }[];
       };
+      // Fase Plano-Graficos Onda 1 (04/09/2026) — gasto de combustível +
+      // manutenção por centro de custo no período, pra completar o ranking
+      // de /centros-custo (antes só contagem de veículos alocados).
+      centros_custo_gasto_resumo: {
+        Args: {
+          p_empresa_id: string;
+          p_data_inicio: string;
+          p_data_fim: string;
+        };
+        Returns: {
+          centro_custo_id: string;
+          nome: string;
+          veiculos_alocados: number;
+          gasto_combustivel: number;
+          gasto_manutencao: number;
+          gasto_total: number;
+        }[];
+      };
       // Fase Grupo 2 (Rodopar, item 6, 03/08/2026) — depreciação contábil
       // linha reta (não a econômica/FIPE do TCO) de um único veículo, já
       // considerando correções do ativo (patrimonio_ajustes).
