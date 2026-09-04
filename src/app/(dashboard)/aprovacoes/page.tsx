@@ -5,6 +5,7 @@ import { formatarDataHoraBr } from "@/lib/utils";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
 import { NovaSolicitacaoForm } from "./_components/NovaSolicitacaoForm";
 import { AcoesSolicitacao } from "./_components/AcoesSolicitacao";
+import { GraficoAprovacoes, type ItemDistribuicao, type ItemValorCategoria } from "./_components/GraficoAprovacoes";
 
 const POR_PAGINA = 20;
 
@@ -94,6 +95,39 @@ export default async function AprovacoesPage({
 
   const { paginaAtual, totalPaginas } = calcularPaginacao(totalRegistros, POR_PAGINA, pageParam);
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — a tabela é paginada (20/pág),
+  // então o gráfico usa uma amostra separada das 500 solicitações mais
+  // recentes em vez da página atual só.
+  let porStatus: ItemDistribuicao[] = [];
+  let porCategoria: ItemDistribuicao[] = [];
+  let valorPorCategoria: ItemValorCategoria[] = [];
+  if (!semClienteEscolhido && empresaSelecionada) {
+    const { data: amostraRaw } = await supabase
+      .from("solicitacoes_aprovacao")
+      .select("categoria, status, valor")
+      .eq("empresa_id", empresaSelecionada)
+      .order("criado_em", { ascending: false })
+      .limit(500);
+    const amostra = amostraRaw ?? [];
+
+    const statusMap = new Map<string, number>();
+    const categoriaMap = new Map<string, number>();
+    const valorCategoriaMap = new Map<string, number>();
+    for (const s of amostra) {
+      const statusL = STATUS_LABEL[s.status] ?? s.status;
+      const categoriaL = CATEGORIA_LABEL[s.categoria] ?? s.categoria;
+      statusMap.set(statusL, (statusMap.get(statusL) ?? 0) + 1);
+      categoriaMap.set(categoriaL, (categoriaMap.get(categoriaL) ?? 0) + 1);
+      valorCategoriaMap.set(categoriaL, (valorCategoriaMap.get(categoriaL) ?? 0) + (s.valor ?? 0));
+    }
+    porStatus = [...statusMap.entries()].map(([label, total]) => ({ label, total })).sort((a, b) => b.total - a.total);
+    porCategoria = [...categoriaMap.entries()].map(([label, total]) => ({ label, total })).sort((a, b) => b.total - a.total);
+    valorPorCategoria = [...valorCategoriaMap.entries()]
+      .map(([label, valor]) => ({ label, valor }))
+      .filter((v) => v.valor > 0)
+      .sort((a, b) => b.valor - a.valor);
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -140,6 +174,8 @@ export default async function AprovacoesPage({
               <p className="mt-1 text-2xl font-semibold text-slate-900">{formatarMoeda(valorPendente)}</p>
             </div>
           </div>
+
+          <GraficoAprovacoes porStatus={porStatus} porCategoria={porCategoria} valorPorCategoria={valorPorCategoria} />
 
           {empresaSelecionada && (
             <NovaSolicitacaoForm

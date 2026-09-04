@@ -6,6 +6,7 @@ import { formatarMoeda } from "@/lib/estoquePecas";
 // nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Boxes, AlertTriangle, Wallet } from "lucide-react";
+import { GraficoEstoquePecas, type ItemRankingValor } from "./_components/GraficoEstoquePecas";
 
 type SearchParams = { empresa?: string; q?: string };
 
@@ -63,6 +64,18 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
   const abaixoDoMinimo = ativas.filter((p) => p.quantidade_atual <= p.quantidade_minima);
   const valorEmEstoque = ativas.reduce((s, p) => s + p.quantidade_atual * (p.custo_unitario_medio ?? 0), 0);
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — agregações do gráfico, todas
+  // a partir do pecasRaw já carregado (sem query nova).
+  const percentualAbaixoMinimo = ativas.length > 0 ? Math.round((abaixoDoMinimo.length / ativas.length) * 100) : 0;
+  const totalOk = ativas.length - abaixoDoMinimo.length;
+  const totalRepor = abaixoDoMinimo.length;
+  const rankingValor: ItemRankingValor[] = [...ativas]
+    .map((p) => ({ nome: p.nome, valor: p.quantidade_atual * (p.custo_unitario_medio ?? 0) }))
+    .filter((r) => r.valor > 0)
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 8)
+    .reverse();
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -118,6 +131,13 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
             />
             <IndicadorColorido cor="violet" icon={Wallet} label="Valor em estoque" valor={formatarMoeda(valorEmEstoque)} />
           </div>
+
+          <GraficoEstoquePecas
+            percentualAbaixoMinimo={percentualAbaixoMinimo}
+            totalOk={totalOk}
+            totalRepor={totalRepor}
+            rankingValor={rankingValor}
+          />
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">

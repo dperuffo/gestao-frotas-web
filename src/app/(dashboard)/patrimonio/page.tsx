@@ -6,6 +6,7 @@ import { formatarMoeda } from "@/lib/financeiro";
 // nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Truck, Wallet, TrendingDown, Coins, AlertTriangle } from "lucide-react";
+import { GraficoPatrimonio, type ItemDistribuicao, type ItemRankingDepreciacao } from "./_components/GraficoPatrimonio";
 
 // Fase Grupo 2 (Rodopar/Datapar, item 6, 03/08/2026) — Patrimônio formal:
 // depreciação contábil (linha reta pela vida útil) e correções do ativo,
@@ -59,6 +60,27 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
   const valorContabilTotal = comAquisicao.reduce((s, v) => s + (v.valor_contabil_liquido ?? 0), 0);
   const vidaUtilEsgotada = comAquisicao.filter((v) => !v.baixado && (v.percentual_depreciado ?? 0) >= 100).length;
   const baixados = veiculos.filter((v) => v.baixado).length;
+
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — agregações do gráfico, todas
+  // a partir do veiculos já carregado (sem query nova).
+  const situacaoDe = (v: LinhaPatrimonio) =>
+    v.baixado
+      ? "Baixado"
+      : !v.patrimonio_completo
+        ? "Sem aquisição"
+        : (v.percentual_depreciado ?? 0) >= 100
+          ? "Vida útil esgotada"
+          : "Em depreciação";
+  const situacaoMap = new Map<string, number>();
+  for (const v of veiculos) situacaoMap.set(situacaoDe(v), (situacaoMap.get(situacaoDe(v)) ?? 0) + 1);
+  const porSituacao: ItemDistribuicao[] = [...situacaoMap.entries()].map(([label, total]) => ({ label, total }));
+
+  const rankingDepreciacao: ItemRankingDepreciacao[] = comAquisicao
+    .filter((v) => (v.depreciacao_acumulada ?? 0) > 0)
+    .sort((a, b) => (b.depreciacao_acumulada ?? 0) - (a.depreciacao_acumulada ?? 0))
+    .slice(0, 8)
+    .map((v) => ({ placa: v.placa, depreciacao: v.depreciacao_acumulada ?? 0 }))
+    .reverse();
 
   return (
     <div>
@@ -143,6 +165,8 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
               .
             </div>
           )}
+
+          <GraficoPatrimonio porSituacao={porSituacao} rankingDepreciacao={rankingDepreciacao} />
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">

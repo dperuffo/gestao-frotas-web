@@ -23,6 +23,7 @@ import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
 // abaixo — IndicadorColorido já importa o próprio AjudaIcon internamente.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Inbox, Search, CheckCircle2, Bell } from "lucide-react";
+import { GraficoChamados, type ItemDistribuicao } from "./_components/GraficoChamados";
 
 const POR_PAGINA = 30;
 
@@ -122,6 +123,20 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
   const totalResolvidos = chamados.filter((c) => c.status === "resolvido" || c.status === "fechado").length;
   const totalNaoVistos = chamados.filter((c) => temAtualizacaoNaoVista(c, papel)).length;
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — agregações do gráfico, todas
+  // a partir do chamados já carregado (sem query nova).
+  const agrupar = (chave: (c: LinhaChamado) => string): ItemDistribuicao[] => {
+    const mapa = new Map<string, number>();
+    for (const c of chamados) {
+      const valor = chave(c);
+      mapa.set(valor, (mapa.get(valor) ?? 0) + 1);
+    }
+    return [...mapa.entries()].map(([label, total]) => ({ label, total })).sort((a, b) => b.total - a.total);
+  };
+  const porStatus = agrupar((c) => statusLabel(c.status as TicketStatus));
+  const porTipo = agrupar((c) => tipoLabel(c.tipo as TicketTipo));
+  const porPrioridade = agrupar((c) => prioridadeLabel((c.prioridade as TicketPrioridade) ?? "media"));
+
   // Fase 27.12 — os indicadores acima continuam olhando pra TODOS os
   // chamados do filtro atual (não só a página visível); só a tabela abaixo é
   // paginada (30 por página), em memória — igual ao padrão de /veiculos,
@@ -213,6 +228,8 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
         <IndicadorColorido cor="green" icon={CheckCircle2} label="Resolvidos" valor={String(totalResolvidos)} ajudaChave="chamados.status" />
         <IndicadorColorido cor="red" icon={Bell} label="Com atualização não vista" valor={String(totalNaoVistos)} />
       </div>
+
+      <GraficoChamados porStatus={porStatus} porTipo={porTipo} porPrioridade={porPrioridade} />
 
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar chamados: {error.message}</p>}

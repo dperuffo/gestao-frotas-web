@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
+import { GraficoPegadaCarbono, type ItemCo2 } from "./_components/GraficoPegadaCarbono";
 
 // Fase Onda-3 (benchmark TicketLog, item #10 — "Sustentabilidade / pegada de
 // carbono") — pedido do Daniel. Estima emissões de CO2 a partir dos litros
@@ -65,6 +66,13 @@ export default async function PegadaCarbonoPage({
   const arvoresEquivalentes = Math.round(totalKg / KG_CO2_ABSORVIDO_POR_ARVORE_AO_ANO);
   const semFator = linhas.filter((l) => l.fator_kg_co2_por_litro == null);
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — pizza por categoria, a partir
+  // das linhas já carregadas (sem query nova).
+  const co2PorCategoria: ItemCo2[] = linhas
+    .filter((l) => l.co2_estimado_kg != null && l.co2_estimado_kg > 0)
+    .map((l) => ({ label: LABEL_CATEGORIA[l.categoria] ?? l.categoria, toneladas: (l.co2_estimado_kg ?? 0) / 1000 }))
+    .sort((a, b) => b.toneladas - a.toneladas);
+
   return (
     <div>
       <div className="mb-6">
@@ -117,6 +125,8 @@ export default async function PegadaCarbonoPage({
               valor={arvoresEquivalentes > 0 ? `🌳 ${arvoresEquivalentes.toLocaleString("pt-BR")} árvores/ano` : "—"}
             />
           </div>
+
+          <GraficoPegadaCarbono dados={co2PorCategoria} />
 
           <div className="card mb-6 p-4 text-xs leading-relaxed text-slate-500">
             <p>

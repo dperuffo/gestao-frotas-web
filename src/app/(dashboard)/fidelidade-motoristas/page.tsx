@@ -6,6 +6,7 @@ import { listarMissoes } from "./missoesActions";
 // toque visual já aplicado nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Users, Droplet, Award, Gift } from "lucide-react";
+import { GraficoFidelidade, type ItemDistribuicao, type ItemRankingPontos } from "./_components/GraficoFidelidade";
 
 // Painel de indicadores do programa "Estrada que Cuida" (app do motorista)
 // por motorista — pedido do Daniel em 17/07: visão do cliente (só os
@@ -71,6 +72,28 @@ export default async function FidelidadeMotoristasPage({
 
   const aderidos = indicadores.filter((i) => i.aderido);
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — agregações do gráfico, todas
+  // a partir do indicadores já carregado (sem query nova).
+  const porNivelMap = new Map<string, number>();
+  for (const i of aderidos) {
+    const nivel = nivelDoSaldo(i.saldo_pontos);
+    porNivelMap.set(nivel, (porNivelMap.get(nivel) ?? 0) + 1);
+  }
+  const porNivel: ItemDistribuicao[] = NIVEIS.map((n) => ({ label: n.nome, total: porNivelMap.get(n.nome) ?? 0 })).filter(
+    (d) => d.total > 0
+  );
+
+  const porAdesao: ItemDistribuicao[] = [
+    { label: "Aderiu", total: aderidos.length },
+    { label: "Não aderiu", total: indicadores.length - aderidos.length },
+  ].filter((d) => d.total > 0);
+
+  const rankingPontos: ItemRankingPontos[] = [...aderidos]
+    .sort((a, b) => b.saldo_pontos - a.saldo_pontos)
+    .slice(0, 8)
+    .map((i) => ({ nome: i.nome_completo, pontos: i.saldo_pontos }))
+    .reverse();
+
   return (
     <div>
       <div className="mb-6">
@@ -135,6 +158,8 @@ export default async function FidelidadeMotoristasPage({
               valor={`${indicadores.reduce((soma, i) => soma + i.resgates_concluidos, 0)} / ${indicadores.reduce((soma, i) => soma + i.resgates_total, 0)}`}
             />
           </div>
+
+          <GraficoFidelidade porNivel={porNivel} porAdesao={porAdesao} rankingPontos={rankingPontos} />
 
           <div className="card overflow-x-auto">
             {erroConsulta && <p className="p-4 text-sm text-red-600">Erro ao carregar indicadores: {erroConsulta}</p>}

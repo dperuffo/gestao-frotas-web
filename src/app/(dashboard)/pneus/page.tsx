@@ -5,6 +5,7 @@ import { formatarMoeda } from "@/lib/financeiro";
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { AcoesPneu } from "./_components/AcoesPneu";
 import { CircleDot, Wrench, DollarSign } from "lucide-react";
+import { GraficoPneus, type ItemDistribuicao, type ItemRankingCustoKm } from "./_components/GraficoPneus";
 
 // Fase Gestao-Pneus (27/08/2026, pedido do Daniel: "novas features de
 // produto" — item do roadmap "Módulo dedicado de Gestão de Pneus"). Km
@@ -68,6 +69,21 @@ export default async function PneusPage({ searchParams }: { searchParams: Promis
     return custoTotal > 0 ? custoTotal / km : null;
   }
 
+  // Fase Plano-Graficos Onda 1 (04/09/2026) — agregações do gráfico, todas
+  // a partir do pneus já carregado (sem query nova).
+  const porStatusMap = new Map<string, number>();
+  for (const p of pneus) porStatusMap.set(p.status, (porStatusMap.get(p.status) ?? 0) + 1);
+  const porStatus: ItemDistribuicao[] = [...porStatusMap.entries()]
+    .map(([label, total]) => ({ label, total }))
+    .sort((a, b) => b.total - a.total);
+
+  const rankingCustoKm: ItemRankingCustoKm[] = pneus
+    .map((p) => ({ placa: p.placa, custoKm: custoPorKm(p) }))
+    .filter((r): r is { placa: string; custoKm: number } => r.custoKm !== null)
+    .sort((a, b) => b.custoKm - a.custoKm)
+    .slice(0, 8)
+    .reverse();
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
@@ -119,6 +135,8 @@ export default async function PneusPage({ searchParams }: { searchParams: Promis
             />
             <IndicadorColorido cor="sky" icon={DollarSign} label="Investido (compra + recapagens)" valor={formatarMoeda(custoTotalInvestido)} />
           </div>
+
+          <GraficoPneus porStatus={porStatus} rankingCustoKm={rankingCustoKm} />
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
