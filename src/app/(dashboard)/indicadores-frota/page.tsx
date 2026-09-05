@@ -354,17 +354,16 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                   .
                 </div>
               ) : (
+                // Fase Plano-Graficos (05/09/2026, pedido do Daniel: "os
+                // antigos precisam ser removidos" quando o gráfico novo já
+                // reflete a mesma informação) — OTIF, Km rodado vazio e ROI
+                // da frota tiveram os gauges removidos daqui: viraram
+                // GraficoComposicaoOtif e GraficoKmVazioRoi logo abaixo
+                // (com o selo Crítico/Atenção/Bom preservado dentro deles).
+                // OCT, avarias, reclamações e reentregas continuam como
+                // gauge — só ganharam uma série de tendência mensal
+                // (GraficoEvolucaoOperacional), não uma substituição.
                 <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <GaugeIndicador
-                    label="OTIF (no prazo e sem ocorrência)"
-                    valor={operacionais.otif_pct}
-                    min={0}
-                    max={100}
-                    zonaVermelha={70}
-                    zonaVerde={90}
-                    unidade="percentual"
-                    semValorTexto="Sem fretes com prazo definido"
-                  />
                   <GaugeIndicador
                     label="OCT (tempo de ciclo do pedido)"
                     valor={operacionais.oct_horas_medio}
@@ -405,26 +404,6 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                     zonaVerde={0}
                     unidade="numero"
                   />
-                  <GaugeIndicador
-                    label="Km rodado vazio (estimado)"
-                    valor={operacionais.km_vazio_estimado_pct}
-                    min={0}
-                    max={100}
-                    invertido
-                    zonaVermelha={40}
-                    zonaVerde={20}
-                    unidade="percentual"
-                  />
-                  <GaugeIndicador
-                    label="ROI da frota"
-                    valor={operacionais.roi_frota_pct}
-                    min={-100}
-                    max={100}
-                    zonaVermelha={0}
-                    zonaVerde={15}
-                    unidade="percentual"
-                    semValorTexto="Sem valor de aquisição cadastrado"
-                  />
                 </div>
               )}
 
@@ -438,6 +417,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
 
               <div className="grid gap-6 lg:grid-cols-2">
                 <GraficoComposicaoOtif
+                  otifPct={operacionais.otif_pct}
                   noPrazo={operacionais.otif_no_prazo}
                   atrasado={operacionais.otif_atrasado}
                   comOcorrencia={operacionais.otif_com_ocorrencia}
@@ -452,9 +432,11 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                     ? (operacionais.km_vazio_estimado_pct / 100) * operacionais.km_total_frota
                     : 0
                 }
+                kmVazioPct={operacionais.km_vazio_estimado_pct}
                 receita={operacionais.receita_bruta_fretes}
                 custo={operacionais.custo_operacional_total}
                 investimento={operacionais.valor_investido_frota}
+                roiPct={operacionais.roi_frota_pct}
               />
             </>
           )}

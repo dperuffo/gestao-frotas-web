@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { statusDoValor } from "./GaugeIndicador";
 
 // Fase Plano-Graficos (05/09/2026, pedido do Daniel: "quero melhorar estes
 // gráficos de indicadores" — bloco "Indicadores operacionais (Fretes/TMS)")
@@ -21,18 +22,28 @@ import { CORES_GRAFICO } from "@/lib/coresGrafico";
 // é atraso vs quanto é ocorrência) e evolução mensal dos 4 indicadores
 // (OTIF/OCT/avarias/reclamações), usando a nova RPC
 // kpis_operacionais_frota_evolucao.
+//
+// O gauge de OTIF foi removido de page.tsx (pedido do Daniel: "os antigos
+// precisam ser removidos" quando o gráfico novo já reflete a mesma
+// informação) — o selo Crítico/Atenção/Bom que ele mostrava foi migrado pra
+// cá, ao lado do título, usando os mesmos limiares (zonaVermelha=70,
+// zonaVerde=90) do gauge original.
 
 export function GraficoComposicaoOtif({
+  otifPct,
   noPrazo,
   atrasado,
   comOcorrencia,
 }: {
+  otifPct: number | null;
   noPrazo: number;
   atrasado: number;
   comOcorrencia: number;
 }) {
   const total = noPrazo + atrasado + comOcorrencia;
   if (total === 0) return null;
+
+  const status = otifPct !== null ? statusDoValor(otifPct, 70, 90, false) : null;
 
   const dados = [
     { label: "No prazo, sem ocorrência", valor: noPrazo, cor: "#16A34A" },
@@ -42,7 +53,22 @@ export function GraficoComposicaoOtif({
 
   return (
     <div className="card mb-6 p-5">
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">Composição do OTIF</p>
+      <div className="mb-2 flex items-center gap-2">
+        <p className="text-xs font-medium uppercase text-slate-500">Composição do OTIF</p>
+        {otifPct !== null && (
+          <span className="text-xs font-semibold text-slate-700">
+            {otifPct}%
+            {status && (
+              <span
+                className="ml-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                style={{ backgroundColor: status.corFundo, color: status.corTexto }}
+              >
+                {status.texto}
+              </span>
+            )}
+          </span>
+        )}
+      </div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div style={{ width: 130, height: 130 }} className="mx-auto shrink-0 sm:mx-0">
           <ResponsiveContainer width="100%" height="100%">

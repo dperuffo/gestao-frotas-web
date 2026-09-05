@@ -108,7 +108,16 @@ function corDoValor(valor: number, zonaVermelha: number, zonaVerde: number, inve
 // Selo de status embaixo do anel — mesma lógica de zona de `corDoValor`,
 // mas devolvendo texto + par de cores fundo/texto claras (padrão "badge"
 // já usado em outras telas do app, ex.: STATUS_AGENDAMENTO_COR).
-function statusDoValor(
+//
+// Exportado (Fase Plano-Graficos, 05/09/2026, pedido do Daniel: "os antigos
+// [velocímetros] precisam ser removidos se os gráficos novos já refletem a
+// mesma informação") — OTIF, Km rodado vazio e ROI da frota tiveram seus
+// gauges removidos de /indicadores-frota (substituídos pelos gráficos de
+// composição/financeiro), mas o "selo" Crítico/Atenção/Bom que eles
+// mostravam continua útil como resumo rápido — os gráficos novos importam
+// esta função pra desenhar o mesmo selo, em vez de duplicar a lógica de
+// zona em cada Grafico*.tsx.
+export function statusDoValor(
   valor: number,
   zonaVermelha: number,
   zonaVerde: number,
