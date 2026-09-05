@@ -3,7 +3,7 @@
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
 import { formatarMoeda } from "@/lib/financeiro";
-import { statusDoValor } from "./GaugeIndicador";
+import { statusDoValor } from "@/lib/statusIndicador";
 
 // Fase Plano-Graficos (05/09/2026, pedido do Daniel) — km com carga vs vazio
 // (estimado) + Receita/Custo/Investimento lado a lado, a partir do mesmo

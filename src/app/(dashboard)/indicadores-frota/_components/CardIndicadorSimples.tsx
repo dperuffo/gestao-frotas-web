@@ -1,5 +1,5 @@
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
-import { formatarValor, statusDoValor, type UnidadeGauge } from "./GaugeIndicador";
+import { formatarValor, statusDoValor, type UnidadeGauge } from "@/lib/statusIndicador";
 
 // Fase Reformulacao-Indicadores-Frota (05/09/2026, pedido do Daniel: "não
 // gostei da mistura de gráficos e dados abertos... reformulação pra

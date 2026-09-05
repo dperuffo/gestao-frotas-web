@@ -14,7 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
-import { statusDoValor } from "./GaugeIndicador";
+import { statusDoValor } from "@/lib/statusIndicador";
 
 // Fase Plano-Graficos (05/09/2026, pedido do Daniel: "quero melhorar estes
 // gráficos de indicadores" — bloco "Indicadores operacionais (Fretes/TMS)")

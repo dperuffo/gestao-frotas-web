@@ -2,7 +2,17 @@
 
 import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer } from "recharts";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
-import { formatarMoeda } from "@/lib/financeiro";
+import { corDoValor, formatarValor, statusDoValor, type UnidadeGauge } from "@/lib/statusIndicador";
+
+// HOTFIX (05/09/2026) — formatarValor/statusDoValor/corDoValor viviam
+// aqui, mas este arquivo tem "use client" (por causa do RadialBarChart), e
+// page.tsx (Server Component) passou a chamá-las diretamente pro bloco
+// "Pontos de atenção" — quebrou em produção ("Attempted to call
+// statusDoValor() from the server but statusDoValor is on the client").
+// A lógica pura foi movida pra src/lib/statusIndicador.ts (sem "use
+// client", importável tanto do server quanto do client) — os outros
+// consumidores (CardIndicadorSimples, GraficoOperacionalFrota,
+// GraficoKmVazioRoi, page.tsx) importam de lá diretamente agora.
 
 // Fase Velocímetro (05/08/2026, pedido do Daniel: "Utilizar grafico de
 // velocimetro nos indicadores de frota") — substitui os cards de número
@@ -49,8 +59,6 @@ import { formatarMoeda } from "@/lib/financeiro";
 // metade de baixo — não precisa mais recortar nada. Rótulos de min/max
 // saíram (não faziam parte do visual aprovado); o selo de status substitui
 // essa referência.
-export type UnidadeGauge = "percentual" | "moeda_por_km" | "km_por_litro" | "horas" | "numero";
-
 export type GaugeIndicadorProps = {
   label: string;
   valor: number | null;
@@ -68,70 +76,9 @@ export type GaugeIndicadorProps = {
   ajudaChave?: string;
 };
 
-const COR_VERMELHA = "#dc2626"; // red-600
-const COR_AMBAR = "#d97706"; // amber-600
-const COR_VERDE = "#16a34a"; // green-600
 const COR_TRILHA = "#e2e8f0"; // slate-200
 const COR_NEUTRA_BG = "#f1f5f9"; // slate-100
 const COR_NEUTRA_TEXTO = "#64748b"; // slate-500
-
-// Exportado (Fase Reformulacao-Indicadores-Frota, 05/09/2026) — reusado pelo
-// CardIndicadorSimples, o card numérico simples que substitui o gauge nesta
-// mesma tela (pedido do Daniel: "não gostei da mistura de gráficos e dados
-// abertos... reformulação pra facilitar leitura e tomada de decisão").
-export function formatarValor(valor: number, unidade: UnidadeGauge | undefined): string {
-  switch (unidade) {
-    case "percentual":
-      return `${valor}%`;
-    case "moeda_por_km":
-      return `${formatarMoeda(valor)}/km`;
-    case "km_por_litro":
-      return `${valor} km/l`;
-    case "horas":
-      return `${valor}h`;
-    case "numero":
-      return `${Math.round(valor)}`;
-    default:
-      return `${valor}`;
-  }
-}
-
-function corDoValor(valor: number, zonaVermelha: number, zonaVerde: number, invertido: boolean): string {
-  // Sem `invertido`: valor sobe = melhora (verde fica pro lado de cima).
-  // Com `invertido`: valor sobe = piora (verde fica pro lado de baixo).
-  if (invertido) {
-    if (valor <= zonaVerde) return COR_VERDE;
-    if (valor <= zonaVermelha) return COR_AMBAR;
-    return COR_VERMELHA;
-  }
-  if (valor >= zonaVerde) return COR_VERDE;
-  if (valor >= zonaVermelha) return COR_AMBAR;
-  return COR_VERMELHA;
-}
-
-// Selo de status embaixo do anel — mesma lógica de zona de `corDoValor`,
-// mas devolvendo texto + par de cores fundo/texto claras (padrão "badge"
-// já usado em outras telas do app, ex.: STATUS_AGENDAMENTO_COR).
-//
-// Exportado (Fase Plano-Graficos, 05/09/2026, pedido do Daniel: "os antigos
-// [velocímetros] precisam ser removidos se os gráficos novos já refletem a
-// mesma informação") — OTIF, Km rodado vazio e ROI da frota tiveram seus
-// gauges removidos de /indicadores-frota (substituídos pelos gráficos de
-// composição/financeiro), mas o "selo" Crítico/Atenção/Bom que eles
-// mostravam continua útil como resumo rápido — os gráficos novos importam
-// esta função pra desenhar o mesmo selo, em vez de duplicar a lógica de
-// zona em cada Grafico*.tsx.
-export function statusDoValor(
-  valor: number,
-  zonaVermelha: number,
-  zonaVerde: number,
-  invertido: boolean
-): { texto: string; corFundo: string; corTexto: string } {
-  const cor = corDoValor(valor, zonaVermelha, zonaVerde, invertido);
-  if (cor === COR_VERDE) return { texto: "Bom", corFundo: "#dcfce7", corTexto: "#15803d" };
-  if (cor === COR_AMBAR) return { texto: "Atenção", corFundo: "#fef3c7", corTexto: "#b45309" };
-  return { texto: "Crítico", corFundo: "#fee2e2", corTexto: "#b91c1c" };
-}
 
 export function GaugeIndicador({
   label,

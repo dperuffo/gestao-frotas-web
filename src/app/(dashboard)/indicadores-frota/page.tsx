@@ -12,7 +12,7 @@ import { agregarVeiculos, veiculoParaExibicao, type VeiculoKpi, type KpisExibica
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Truck, AlertTriangle } from "lucide-react";
 import { TabelaComparacaoVeiculos } from "./_components/TabelaComparacaoVeiculos";
-import { statusDoValor, formatarValor } from "./_components/GaugeIndicador";
+import { statusDoValor, formatarValor } from "@/lib/statusIndicador";
 import { CardIndicadorSimples } from "./_components/CardIndicadorSimples";
 import { GraficoComposicaoOtif, GraficoEvolucaoOperacional, type PontoEvolucaoOperacional } from "./_components/GraficoOperacionalFrota";
 import { GraficoKmVazioRoi } from "./_components/GraficoKmVazioRoi";
