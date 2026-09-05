@@ -5,6 +5,7 @@ import { verificarAcessoFretes, mensagemAcessoFretesBloqueado, type AcessoFretes
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
 import { CancelarFreteButton } from "./_components/CancelarFreteButton";
 import { ReabrirFreteButton } from "./_components/ReabrirFreteButton";
+import { GraficoFretes } from "./_components/GraficoFretes";
 
 // Fretes (Fase Fretes) — contratação de frete entre cliente e motorista.
 // Modo direto (motorista já definido, próprio ou parceiro) fica
@@ -108,6 +109,26 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
   // pra dar visibilidade a quando houve pagamento não recuperado.
   const cancelados = fretesFiltrados.filter((f) => f.status === "cancelado" || f.status === "recusado");
 
+  // Fase Plano-Graficos (05/09/2026, pedido do Daniel) — distribuição por
+  // status + ranking de motoristas com mais valor em fretes concluídos, a
+  // partir de `fretes` (todo o histórico, não afetado pelo filtro de busca
+  // ?q= — visão geral do total), sem query nova.
+  const porStatus = [
+    { label: "Em negociação", total: fretes.filter((f) => f.status === "disponivel" || f.status === "aguardando_confirmacao").length },
+    { label: "Aceitos/Em andamento", total: fretes.filter((f) => f.status === "aceito" || f.status === "em_andamento").length },
+    { label: "Concluídos", total: fretes.filter((f) => f.status === "concluido").length },
+    { label: "Cancelados/Recusados", total: fretes.filter((f) => f.status === "cancelado" || f.status === "recusado").length },
+  ];
+  const valorPorMotoristaMap = new Map<string, number>();
+  for (const f of fretes) {
+    if (f.status !== "concluido" || !f.nome_motorista) continue;
+    valorPorMotoristaMap.set(f.nome_motorista, (valorPorMotoristaMap.get(f.nome_motorista) ?? 0) + f.valor_oferecido);
+  }
+  const topMotoristas = Array.from(valorPorMotoristaMap.entries())
+    .map(([nome, valor]) => ({ nome, valor }))
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 8);
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -177,7 +198,9 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
       ) : fretesFiltrados.length === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">Nenhum frete encontrado para &quot;{q}&quot;.</div>
       ) : (
-        <AbasPainel
+        <>
+          <GraficoFretes porStatus={porStatus} topMotoristas={topMotoristas} />
+          <AbasPainel
           abas={[
             {
               id: "negociacao",
@@ -210,7 +233,8 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
               conteudo: renderGrid(cancelados, empresaSelecionada, formatoMoeda, "Nenhum frete cancelado ou recusado."),
             },
           ]}
-        />
+          />
+        </>
       )}
     </div>
   );
