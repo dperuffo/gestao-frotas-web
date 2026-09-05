@@ -7062,6 +7062,22 @@ export interface Database {
           custo_operacional_total: number;
           valor_investido_frota: number;
           roi_frota_pct: number;
+          // Fase Plano-Graficos (05/09/2026) — composição do OTIF, pra gráfico
+          otif_no_prazo: number;
+          otif_atrasado: number;
+          otif_com_ocorrencia: number;
+        }[];
+      };
+      // Fase Plano-Graficos (05/09/2026) — série mensal de OTIF/OCT/avarias/
+      // reclamações pra o gráfico de evolução de /indicadores-frota.
+      kpis_operacionais_frota_evolucao: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          mes: string;
+          otif_pct: number | null;
+          oct_horas_medio: number | null;
+          indice_avarias_pct: number | null;
+          indice_reclamacoes_pct: number | null;
         }[];
       };
       // Fase Torre-de-Controle-Leve (02/08/2026, benchmark FNI vs KMM,

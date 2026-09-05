@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
-import { formatarMoeda } from "@/lib/financeiro";
+import { formatarMoeda, formatarMesAnoSemFuso } from "@/lib/financeiro";
 import { agregarVeiculos, veiculoParaExibicao, type VeiculoKpi, type KpisExibicao } from "@/lib/indicadoresFrota";
 // Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
 // toque visual já aplicado nas demais telas densas do app. Os gauges
@@ -13,6 +13,9 @@ import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Truck, AlertTriangle } from "lucide-react";
 import { TabelaComparacaoVeiculos } from "./_components/TabelaComparacaoVeiculos";
 import { GaugeIndicador } from "./_components/GaugeIndicador";
+import { GraficoComposicaoOtif, GraficoEvolucaoOperacional, type PontoEvolucaoOperacional } from "./_components/GraficoOperacionalFrota";
+import { GraficoKmVazioRoi } from "./_components/GraficoKmVazioRoi";
+import { GraficoIndicadoresVeiculos, type ItemRankingVeiculo } from "./_components/GraficoIndicadoresVeiculos";
 
 type SearchParams = {
   empresa?: string;
@@ -64,6 +67,19 @@ type KpisOperacionais = {
   receita_bruta_fretes: number;
   custo_operacional_total: number;
   roi_frota_pct: number | null;
+  otif_no_prazo: number;
+  otif_atrasado: number;
+  otif_com_ocorrencia: number;
+};
+
+// Fase Plano-Graficos (05/09/2026) — série mensal pro gráfico de evolução do
+// bloco operacional (RPC kpis_operacionais_frota_evolucao).
+type KpisOperacionaisEvolucaoLinha = {
+  mes: string;
+  otif_pct: number | null;
+  oct_horas_medio: number | null;
+  indice_avarias_pct: number | null;
+  indice_reclamacoes_pct: number | null;
 };
 
 function resumoParaExibicao(k: KpisFrotaResumo): KpisExibicao {
@@ -115,18 +131,21 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
     { data: resumoRaw, error: erroResumo },
     { data: porVeiculoRaw, error: erroPorVeiculo },
     { data: operacionaisRaw, error: erroOperacionais },
+    { data: evolucaoOperacionalRaw, error: erroEvolucaoOperacional },
   ] = empresaSelecionada
     ? await Promise.all([
         supabase.rpc("kpis_frota_resumo", { p_empresa_id: empresaSelecionada, p_data_inicio: dataInicio, p_data_fim: dataFim }),
         supabase.rpc("kpis_frota_por_veiculo", { p_empresa_id: empresaSelecionada, p_data_inicio: dataInicio, p_data_fim: dataFim }),
         supabase.rpc("kpis_operacionais_frota", { p_empresa_id: empresaSelecionada, p_data_inicio: dataInicio, p_data_fim: dataFim }),
+        supabase.rpc("kpis_operacionais_frota_evolucao", { p_empresa_id: empresaSelecionada, p_data_inicio: dataInicio, p_data_fim: dataFim }),
       ])
-    : [{ data: null, error: null }, { data: null, error: null }, { data: null, error: null }];
+    : [{ data: null, error: null }, { data: null, error: null }, { data: null, error: null }, { data: null, error: null }];
 
   const resumo = (Array.isArray(resumoRaw) ? resumoRaw[0] : resumoRaw) as KpisFrotaResumo | null | undefined;
   const veiculos = (porVeiculoRaw ?? []) as VeiculoKpi[];
   const operacionais = (Array.isArray(operacionaisRaw) ? operacionaisRaw[0] : operacionaisRaw) as KpisOperacionais | null | undefined;
-  const error = erroResumo ?? erroPorVeiculo ?? erroOperacionais;
+  const evolucaoOperacional = (evolucaoOperacionalRaw ?? []) as KpisOperacionaisEvolucaoLinha[];
+  const error = erroResumo ?? erroPorVeiculo ?? erroOperacionais ?? erroEvolucaoOperacional;
 
   const tiposDisponiveis = Array.from(new Set(veiculos.map((v) => v.tipo_veiculo).filter((v): v is string => Boolean(v)))).sort();
   const modelosDisponiveis = Array.from(new Set(veiculos.map((v) => v.modelo).filter((v): v is string => Boolean(v)))).sort();
@@ -137,6 +156,84 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
 
   const veiculoSelecionado = veiculoParam ? veiculos.find((v) => v.placa === veiculoParam) : undefined;
   const filtroAtivo = Boolean(tipoVeiculoParam || modeloParam);
+
+  // Fase Plano-Graficos (05/09/2026) — série mensal já formatada pro gráfico
+  // de evolução operacional (rótulo "mmm/aa", sem fuso).
+  const evolucaoOperacionalGrafico: PontoEvolucaoOperacional[] = evolucaoOperacional.map((p) => ({
+    mes: formatarMesAnoSemFuso(p.mes),
+    otifPct: p.otif_pct,
+    octHoras: p.oct_horas_medio,
+    avariasPct: p.indice_avarias_pct,
+    reclamacoesPct: p.indice_reclamacoes_pct,
+  }));
+
+  // Fase Plano-Graficos (05/09/2026) — rankings dos veículos que mais
+  // precisam de atenção em cada indicador + composição do custo de
+  // manutenção, a partir de veiculosFiltrados (mesma lista já usada na
+  // tabela de comparação). Só faz sentido comparar com 2+ veículos.
+  const rankingsVeiculos = (() => {
+    const topPiores = (
+      valores: { placa: string; valor: number | null }[],
+      ordem: "asc" | "desc"
+    ): ItemRankingVeiculo[] =>
+      valores
+        .filter((v): v is { placa: string; valor: number } => v.valor !== null)
+        .sort((a, b) => (ordem === "asc" ? a.valor - b.valor : b.valor - a.valor))
+        .slice(0, 6);
+
+    if (veiculoSelecionado || veiculosFiltrados.length < 2) {
+      return {
+        rankingDisponibilidade: [] as ItemRankingVeiculo[],
+        rankingCpk: [] as ItemRankingVeiculo[],
+        rankingConsumo: [] as ItemRankingVeiculo[],
+        rankingUtilizacao: [] as ItemRankingVeiculo[],
+        rankingConformidade: [] as ItemRankingVeiculo[],
+        rankingTmrnc: [] as ItemRankingVeiculo[],
+        rankingSinistros: [] as ItemRankingVeiculo[],
+        composicaoManutencao: { preventiva: 0, corretiva: 0, naoClassificada: 0 },
+      };
+    }
+
+    return {
+      rankingDisponibilidade: topPiores(
+        veiculosFiltrados.map((v) => ({ placa: v.placa, valor: v.disponibilidade_pct })),
+        "asc"
+      ),
+      rankingCpk: topPiores(
+        veiculosFiltrados.map((v) => ({ placa: v.placa, valor: v.cpk_operacional })),
+        "desc"
+      ),
+      rankingConsumo: topPiores(
+        veiculosFiltrados.map((v) => ({ placa: v.placa, valor: v.media_km_l })),
+        "asc"
+      ),
+      rankingUtilizacao: topPiores(
+        veiculosFiltrados.map((v) => ({ placa: v.placa, valor: v.utilizacao_pct })),
+        "asc"
+      ),
+      rankingConformidade: topPiores(
+        veiculosFiltrados
+          .filter((v) => v.itens_inspecionados > 0)
+          .map((v) => ({ placa: v.placa, valor: v.conformidade_pct })),
+        "asc"
+      ),
+      rankingTmrnc: topPiores(
+        veiculosFiltrados.map((v) => ({ placa: v.placa, valor: v.tmrnc_horas })),
+        "desc"
+      ),
+      rankingSinistros: topPiores(
+        veiculosFiltrados
+          .filter((v) => v.total_sinistros > 0)
+          .map((v) => ({ placa: v.placa, valor: v.total_sinistros })),
+        "desc"
+      ),
+      composicaoManutencao: {
+        preventiva: veiculosFiltrados.reduce((s, v) => s + v.manutencao_preventiva_custo, 0),
+        corretiva: veiculosFiltrados.reduce((s, v) => s + v.manutencao_corretiva_custo, 0),
+        naoClassificada: veiculosFiltrados.reduce((s, v) => s + v.manutencao_nao_classificada_custo, 0),
+      },
+    };
+  })();
 
   let kpis: KpisExibicao | null = null;
   let contexto = "Frota inteira";
@@ -338,6 +435,27 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                   contínuo (telemetria) hoje.
                 </p>
               )}
+
+              <div className="grid gap-6 lg:grid-cols-2">
+                <GraficoComposicaoOtif
+                  noPrazo={operacionais.otif_no_prazo}
+                  atrasado={operacionais.otif_atrasado}
+                  comOcorrencia={operacionais.otif_com_ocorrencia}
+                />
+                <GraficoEvolucaoOperacional dados={evolucaoOperacionalGrafico} />
+              </div>
+
+              <GraficoKmVazioRoi
+                kmComCarga={Math.max(0, operacionais.km_total_frota - (operacionais.km_estimado_fretes ?? 0))}
+                kmVazio={
+                  operacionais.km_vazio_estimado_pct !== null
+                    ? (operacionais.km_vazio_estimado_pct / 100) * operacionais.km_total_frota
+                    : 0
+                }
+                receita={operacionais.receita_bruta_fretes}
+                custo={operacionais.custo_operacional_total}
+                investimento={operacionais.valor_investido_frota}
+              />
             </>
           )}
 
@@ -474,6 +592,17 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               .
             </div>
           )}
+
+          <GraficoIndicadoresVeiculos
+            rankingDisponibilidade={rankingsVeiculos.rankingDisponibilidade}
+            rankingCpk={rankingsVeiculos.rankingCpk}
+            rankingConsumo={rankingsVeiculos.rankingConsumo}
+            rankingUtilizacao={rankingsVeiculos.rankingUtilizacao}
+            rankingConformidade={rankingsVeiculos.rankingConformidade}
+            rankingTmrnc={rankingsVeiculos.rankingTmrnc}
+            rankingSinistros={rankingsVeiculos.rankingSinistros}
+            composicaoManutencao={rankingsVeiculos.composicaoManutencao}
+          />
 
           <div className="mb-3 mt-2">
             <h2 className="text-sm font-semibold text-slate-900">Comparação entre veículos</h2>
