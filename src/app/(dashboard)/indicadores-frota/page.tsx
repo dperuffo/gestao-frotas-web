@@ -12,10 +12,15 @@ import { agregarVeiculos, veiculoParaExibicao, type VeiculoKpi, type KpisExibica
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Truck, AlertTriangle } from "lucide-react";
 import { TabelaComparacaoVeiculos } from "./_components/TabelaComparacaoVeiculos";
-import { GaugeIndicador } from "./_components/GaugeIndicador";
+import { statusDoValor, formatarValor } from "./_components/GaugeIndicador";
+import { CardIndicadorSimples } from "./_components/CardIndicadorSimples";
 import { GraficoComposicaoOtif, GraficoEvolucaoOperacional, type PontoEvolucaoOperacional } from "./_components/GraficoOperacionalFrota";
 import { GraficoKmVazioRoi } from "./_components/GraficoKmVazioRoi";
-import { GraficoIndicadoresVeiculos, type ItemRankingVeiculo } from "./_components/GraficoIndicadoresVeiculos";
+import {
+  GraficoIndicadoresVeiculos,
+  type ItemRankingVeiculo,
+  type CategoriaRankingVeiculo,
+} from "./_components/GraficoIndicadoresVeiculos";
 
 type SearchParams = {
   empresa?: string;
@@ -235,6 +240,51 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
     };
   })();
 
+  // Fase Reformulacao-Indicadores-Frota (05/09/2026, pedido do Daniel: "só
+  // os piores 3") — escolhe, dentre as 7 categorias de ranking, as 3 com a
+  // situação mais crítica no período (mesma lógica de zona/severidade do
+  // GaugeIndicador), pra não poluir a tela com todos os 7 de uma vez.
+  const destaquesVeiculos: CategoriaRankingVeiculo[] = (() => {
+    const limiares: Record<CategoriaRankingVeiculo, { invertido: boolean; zonaVermelha: number; zonaVerde: number }> = {
+      disponibilidade: { invertido: false, zonaVermelha: 70, zonaVerde: 90 },
+      cpk: { invertido: true, zonaVermelha: 3, zonaVerde: 1.5 },
+      consumo: { invertido: false, zonaVermelha: 3, zonaVerde: 6 },
+      utilizacao: { invertido: false, zonaVermelha: 50, zonaVerde: 70 },
+      conformidade: { invertido: false, zonaVermelha: 70, zonaVerde: 90 },
+      tmrnc: { invertido: true, zonaVermelha: 48, zonaVerde: 24 },
+      sinistros: { invertido: true, zonaVermelha: 1, zonaVerde: 0 },
+    };
+    const dadosPorCategoria: Record<CategoriaRankingVeiculo, ItemRankingVeiculo[]> = {
+      disponibilidade: rankingsVeiculos.rankingDisponibilidade,
+      cpk: rankingsVeiculos.rankingCpk,
+      consumo: rankingsVeiculos.rankingConsumo,
+      utilizacao: rankingsVeiculos.rankingUtilizacao,
+      conformidade: rankingsVeiculos.rankingConformidade,
+      tmrnc: rankingsVeiculos.rankingTmrnc,
+      sinistros: rankingsVeiculos.rankingSinistros,
+    };
+    const severidade = (texto: string) => (texto === "Crítico" ? 2 : texto === "Atenção" ? 1 : 0);
+    const categorias: CategoriaRankingVeiculo[] = [
+      "disponibilidade",
+      "cpk",
+      "consumo",
+      "utilizacao",
+      "conformidade",
+      "tmrnc",
+      "sinistros",
+    ];
+    return categorias
+      .filter((c) => dadosPorCategoria[c].length > 0)
+      .map((c) => {
+        const pior = dadosPorCategoria[c][0].valor; // já ordenado do pior pro melhor
+        const l = limiares[c];
+        return { categoria: c, severidade: severidade(statusDoValor(pior, l.zonaVermelha, l.zonaVerde, l.invertido).texto) };
+      })
+      .sort((a, b) => b.severidade - a.severidade)
+      .slice(0, 3)
+      .map((x) => x.categoria);
+  })();
+
   let kpis: KpisExibicao | null = null;
   let contexto = "Frota inteira";
   if (veiculoSelecionado) {
@@ -246,6 +296,58 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
   } else if (resumo) {
     kpis = resumoParaExibicao(resumo);
     contexto = "Frota inteira";
+  }
+
+  // Fase Reformulacao-Indicadores-Frota (05/09/2026, pedido do Daniel:
+  // "reformulação pra trazer mais facilidade de leitura... tomada de
+  // decisões importantes") — resumo no topo com só os indicadores em
+  // status Crítico, juntando os dois blocos (operacional + frota) — o
+  // usuário não precisa mais escanear os ~15 cards pra achar o que precisa
+  // de ação agora.
+  type PontoDeAtencao = { label: string; valorTexto: string; ancora: string };
+  const pontosDeAtencao: PontoDeAtencao[] = [];
+  const registrarSeCritico = (
+    label: string,
+    valor: number | null,
+    invertido: boolean,
+    zonaVermelha: number,
+    zonaVerde: number,
+    unidade: Parameters<typeof formatarValor>[1],
+    ancora: string
+  ) => {
+    if (valor === null || Number.isNaN(valor)) return;
+    if (statusDoValor(valor, zonaVermelha, zonaVerde, invertido).texto !== "Crítico") return;
+    pontosDeAtencao.push({ label, valorTexto: formatarValor(valor, unidade), ancora });
+  };
+
+  if (operacionais && operacionais.fretes_concluidos_total > 0) {
+    registrarSeCritico("OTIF baixo", operacionais.otif_pct, false, 70, 90, "percentual", "#operacional");
+    registrarSeCritico("OCT alto", operacionais.oct_horas_medio, true, 48, 24, "horas", "#operacional");
+    registrarSeCritico("Índice de avarias alto", operacionais.indice_avarias_pct, true, 10, 0, "percentual", "#operacional");
+    registrarSeCritico(
+      "Índice de reclamações alto",
+      operacionais.indice_reclamacoes_pct,
+      true,
+      15,
+      5,
+      "percentual",
+      "#operacional"
+    );
+    registrarSeCritico("Reentregas/devoluções", operacionais.qtd_reentregas_devolucoes, true, 3, 0, "numero", "#operacional");
+    registrarSeCritico("Km rodado vazio alto", operacionais.km_vazio_estimado_pct, true, 40, 20, "percentual", "#operacional");
+    registrarSeCritico("ROI da frota baixo", operacionais.roi_frota_pct, false, 0, 15, "percentual", "#operacional");
+  }
+  if (kpis) {
+    registrarSeCritico("Disponibilidade baixa", kpis.disponibilidadePct, false, 70, 90, "percentual", "#frota");
+    registrarSeCritico("Custo por km alto", kpis.cpkOperacional, true, 3, 1.5, "moeda_por_km", "#frota");
+    registrarSeCritico("Consumo baixo", kpis.mediaKmL, false, 3, 6, "km_por_litro", "#frota");
+    registrarSeCritico("Taxa de utilização baixa", kpis.utilizacaoPct, false, 50, 70, "percentual", "#frota");
+    registrarSeCritico("Manutenção corretiva alta", kpis.pctCorretiva, true, 40, 20, "percentual", "#frota");
+    registrarSeCritico("Conformidade baixa", kpis.conformidadePct, false, 70, 90, "percentual", "#frota");
+    registrarSeCritico("TMRNC alto", kpis.tmrncHoras, true, 48, 24, "horas", "#frota");
+    if (kpis.indiceSinistralidade !== null) {
+      registrarSeCritico("Sinistralidade alta", kpis.indiceSinistralidade, true, 25, 10, "percentual", "#frota");
+    }
   }
 
   return (
@@ -330,14 +432,39 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
 
       {empresaSelecionada && !error && kpis && (
         <>
+          {/* Fase Reformulacao-Indicadores-Frota (05/09/2026) — resumo dos
+              indicadores críticos no topo, antes de qualquer seção. */}
+          {pontosDeAtencao.length > 0 ? (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-red-700">
+                Pontos de atenção agora ({pontosDeAtencao.length})
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {pontosDeAtencao.map((p) => (
+                  <a
+                    key={p.label}
+                    href={p.ancora}
+                    className="rounded-full border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                  >
+                    {p.label}: {p.valorTexto}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              Nenhum indicador em situação crítica neste período.
+            </div>
+          )}
+
           {/* Fase KPIs-Operacionais (02/08/2026, pedido do Daniel: "Indicadores
               operacionais vem antes de indicadores da frota") — bloco de
               Fretes/TMS movido pra cima do bloco de veículos (era o
               contrário antes). */}
           {operacionais && (
             <>
-              <div className="mb-3 mt-2">
-                <h2 className="text-sm font-semibold text-slate-900">Indicadores operacionais (Fretes/TMS)</h2>
+              <div id="operacional" className="mb-3 mt-2 scroll-mt-4">
+                <h2 className="text-base font-semibold text-slate-900">Indicadores operacionais (Fretes/TMS)</h2>
                 <p className="text-xs text-slate-500">
                   Calculados pra empresa inteira (não filtram por veículo/tipo/modelo, já que o frete não é
                   vinculado a uma placa específica no sistema).
@@ -357,48 +484,46 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                 // Fase Plano-Graficos (05/09/2026, pedido do Daniel: "os
                 // antigos precisam ser removidos" quando o gráfico novo já
                 // reflete a mesma informação) — OTIF, Km rodado vazio e ROI
-                // da frota tiveram os gauges removidos daqui: viraram
-                // GraficoComposicaoOtif e GraficoKmVazioRoi logo abaixo
-                // (com o selo Crítico/Atenção/Bom preservado dentro deles).
-                // OCT, avarias, reclamações e reentregas continuam como
-                // gauge — só ganharam uma série de tendência mensal
-                // (GraficoEvolucaoOperacional), não uma substituição.
-                <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <GaugeIndicador
-                    label="OCT (tempo de ciclo do pedido)"
+                // viraram GraficoComposicaoOtif e GraficoKmVazioRoi na
+                // subseção "Detalhamento" abaixo (com o selo Crítico/
+                // Atenção/Bom preservado dentro deles). OCT, avarias,
+                // reclamações e reentregas continuam como card numérico
+                // aqui no resumo — só ganharam uma série de tendência
+                // mensal (GraficoEvolucaoOperacional) no detalhamento, não
+                // uma substituição.
+                //
+                // Reformulação (05/09/2026, mesmo dia — pedido do Daniel:
+                // "reformulação pra facilitar leitura") — velocímetro
+                // trocado por CardIndicadorSimples (número + selo, sem
+                // anel gráfico) nesta tela especificamente.
+                <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <CardIndicadorSimples
+                    label="OCT (tempo de ciclo)"
                     valor={operacionais.oct_horas_medio}
-                    min={0}
-                    max={72}
                     invertido
                     zonaVermelha={48}
                     zonaVerde={24}
                     unidade="horas"
                   />
-                  <GaugeIndicador
+                  <CardIndicadorSimples
                     label="Índice de avarias"
                     valor={operacionais.indice_avarias_pct}
-                    min={0}
-                    max={20}
                     invertido
                     zonaVermelha={10}
                     zonaVerde={0}
                     unidade="percentual"
                   />
-                  <GaugeIndicador
+                  <CardIndicadorSimples
                     label="Índice de reclamações"
                     valor={operacionais.indice_reclamacoes_pct}
-                    min={0}
-                    max={30}
                     invertido
                     zonaVermelha={15}
                     zonaVerde={5}
                     unidade="percentual"
                   />
-                  <GaugeIndicador
+                  <CardIndicadorSimples
                     label="Reentregas e devoluções"
                     valor={operacionais.qtd_reentregas_devolucoes}
-                    min={0}
-                    max={10}
                     invertido
                     zonaVermelha={3}
                     zonaVerde={0}
@@ -408,12 +533,16 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               )}
 
               {operacionais.km_vazio_estimado_pct !== null && (
-                <p className="mb-6 text-xs text-slate-400">
+                <p className="mb-3 text-xs text-slate-400">
                   Km rodado vazio é uma ESTIMATIVA (km total da frota via hodômetro menos o km estimado dos fretes
                   concluídos) — não é medição real de trecho com/sem carga, já que o sistema não tem rastreamento
                   contínuo (telemetria) hoje.
                 </p>
               )}
+
+              <p className="mb-3 mt-5 border-t border-slate-100 pt-5 text-xs font-medium uppercase tracking-wide text-slate-400">
+                Detalhamento
+              </p>
 
               <div className="grid gap-6 lg:grid-cols-2">
                 <GraficoComposicaoOtif
@@ -441,58 +570,48 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
             </>
           )}
 
-          <div className="mb-3 mt-2">
-            <h2 className="text-sm font-semibold text-slate-900">Indicadores da frota (veículos)</h2>
+          <div id="frota" className="mb-3 mt-8 scroll-mt-4 border-t border-slate-100 pt-6">
+            <h2 className="text-base font-semibold text-slate-900">Indicadores da frota (veículos)</h2>
           </div>
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">{contexto}</p>
 
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <GaugeIndicador
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <CardIndicadorSimples
               label="Índice de disponibilidade"
               valor={kpis.disponibilidadePct}
-              min={0}
-              max={100}
               zonaVermelha={70}
               zonaVerde={90}
               unidade="percentual"
               ajudaChave="indicadores_frota.disponibilidade"
             />
-            <GaugeIndicador
-              label="Custo por km (CPK operacional)"
+            <CardIndicadorSimples
+              label="Custo por km (CPK)"
               valor={kpis.cpkOperacional}
-              min={0}
-              max={5}
               invertido
               zonaVermelha={3}
               zonaVerde={1.5}
               unidade="moeda_por_km"
               ajudaChave="indicadores_frota.cpk"
             />
-            <GaugeIndicador
+            <CardIndicadorSimples
               label="Consumo médio"
               valor={kpis.mediaKmL}
-              min={0}
-              max={12}
               zonaVermelha={3}
               zonaVerde={6}
               unidade="km_por_litro"
               ajudaChave="indicadores_frota.consumo"
             />
-            <GaugeIndicador
+            <CardIndicadorSimples
               label="Taxa de utilização"
               valor={kpis.utilizacaoPct}
-              min={0}
-              max={100}
               zonaVermelha={50}
               zonaVerde={70}
               unidade="percentual"
               ajudaChave="indicadores_frota.utilizacao"
             />
-            <GaugeIndicador
-              label="Manutenção corretiva (% do custo)"
+            <CardIndicadorSimples
+              label="Manutenção corretiva (% custo)"
               valor={kpis.pctCorretiva}
-              min={0}
-              max={100}
               invertido
               zonaVermelha={40}
               zonaVerde={20}
@@ -506,22 +625,18 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               label={veiculoSelecionado ? "Veículo" : "Veículos no filtro"}
               valor={veiculoSelecionado ? veiculoSelecionado.placa : String(kpis.totalVeiculos)}
             />
-            <GaugeIndicador
-              label="Taxa de conformidade (checklist)"
+            <CardIndicadorSimples
+              label="Taxa de conformidade"
               valor={kpis.conformidadePct}
-              min={0}
-              max={100}
               zonaVermelha={70}
               zonaVerde={90}
               unidade="percentual"
               semValorTexto="Sem inspeções no período"
               ajudaChave="indicadores_frota.conformidade"
             />
-            <GaugeIndicador
-              label="Tempo médio de resolução (TMRNC)"
+            <CardIndicadorSimples
+              label="Tempo de resolução (TMRNC)"
               valor={kpis.tmrncHoras}
-              min={-24}
-              max={72}
               invertido
               zonaVermelha={48}
               zonaVerde={24}
@@ -530,11 +645,9 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
               ajudaChave="indicadores_frota.tmrnc"
             />
             {kpis.indiceSinistralidade !== null ? (
-              <GaugeIndicador
+              <CardIndicadorSimples
                 label="Índice de sinistralidade"
                 valor={kpis.indiceSinistralidade}
-                min={0}
-                max={50}
                 invertido
                 zonaVermelha={25}
                 zonaVerde={10}
@@ -575,7 +688,12 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
             </div>
           )}
 
+          <p className="mb-3 mt-5 border-t border-slate-100 pt-5 text-xs font-medium uppercase tracking-wide text-slate-400">
+            Detalhamento
+          </p>
+
           <GraficoIndicadoresVeiculos
+            destaques={destaquesVeiculos}
             rankingDisponibilidade={rankingsVeiculos.rankingDisponibilidade}
             rankingCpk={rankingsVeiculos.rankingCpk}
             rankingConsumo={rankingsVeiculos.rankingConsumo}
@@ -586,8 +704,8 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
             composicaoManutencao={rankingsVeiculos.composicaoManutencao}
           />
 
-          <div className="mb-3 mt-2">
-            <h2 className="text-sm font-semibold text-slate-900">Comparação entre veículos</h2>
+          <div className="mb-3 mt-8 border-t border-slate-100 pt-6">
+            <h2 className="text-base font-semibold text-slate-900">Comparação entre veículos</h2>
             <p className="text-xs text-slate-500">
               Clique numa placa pra ver os indicadores só dela acima, ou num cabeçalho de coluna pra ordenar.
             </p>

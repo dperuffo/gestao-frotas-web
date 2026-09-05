@@ -75,7 +75,11 @@ const COR_TRILHA = "#e2e8f0"; // slate-200
 const COR_NEUTRA_BG = "#f1f5f9"; // slate-100
 const COR_NEUTRA_TEXTO = "#64748b"; // slate-500
 
-function formatarValor(valor: number, unidade: UnidadeGauge | undefined): string {
+// Exportado (Fase Reformulacao-Indicadores-Frota, 05/09/2026) — reusado pelo
+// CardIndicadorSimples, o card numérico simples que substitui o gauge nesta
+// mesma tela (pedido do Daniel: "não gostei da mistura de gráficos e dados
+// abertos... reformulação pra facilitar leitura e tomada de decisão").
+export function formatarValor(valor: number, unidade: UnidadeGauge | undefined): string {
   switch (unidade) {
     case "percentual":
       return `${valor}%`;
