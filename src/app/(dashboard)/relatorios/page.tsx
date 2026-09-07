@@ -94,6 +94,14 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     { data: acoesSugeridasRaw },
     { data: chamadosRaw },
     { data: avaliacoesRaw },
+    { data: multasRaw },
+    { data: sinistrosRaw },
+    { data: apolicesSeguroRaw },
+    { data: pneusRaw },
+    { data: estoquePecasRaw },
+    { data: faturasFretesRaw },
+    { data: solicitacoesAprovacaoRaw },
+    { data: patrimonioRaw },
   ] = await Promise.all([
     supabase.rpc("historico_precos_detalhado", rpcArgs),
     supabase.rpc("postos_gf_desvio_anp", rpcArgs),
@@ -110,6 +118,18 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     supabase.rpc("relatorio_acoes_sugeridas_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
     supabase.rpc("relatorio_chamados_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
     supabase.rpc("relatorio_avaliacoes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    // Fase relatorios-mais-dimensoes-2 (07/09/2026) — 8 novas fontes pro
+    // construtor de Relatórios Personalizados, cobrindo features lançadas
+    // desde a leva anterior (multas, sinistros, seguro, pneus, estoque de
+    // peças, faturas de frete, aprovações, patrimônio). Mesma janela padrão.
+    supabase.rpc("relatorio_multas_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_sinistros_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_apolices_seguro_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_pneus_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_estoque_pecas_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_faturas_fretes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_solicitacoes_aprovacao_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    supabase.rpc("relatorio_patrimonio_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
   ]);
 
   const historico = (historicoRaw ?? []).map((r) => ({
@@ -246,6 +266,108 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     data: r.data,
   }));
 
+  // Fase relatorios-mais-dimensoes-2 — mapeamento das 8 fontes novas, mesmo
+  // padrão snake_case (banco) -> camelCase (front) das demais.
+  const multas = (multasRaw ?? []).map((r) => ({
+    placa: r.placa,
+    motorista: r.motorista,
+    orgaoAutuador: r.orgao_autuador,
+    gravidade: r.gravidade,
+    pontos: r.pontos,
+    valorOriginal: r.valor_original,
+    valorDesconto: r.valor_desconto,
+    status: r.status,
+    tipoVeiculo: r.tipo_veiculo,
+    centroCusto: r.centro_custo,
+    data: r.data,
+  }));
+
+  const sinistros = (sinistrosRaw ?? []).map((r) => ({
+    placa: r.placa,
+    motorista: r.motorista,
+    tipo: r.tipo,
+    gravidade: r.gravidade,
+    houveVitima: r.houve_vitima,
+    custoEstimado: r.custo_estimado,
+    localOcorrencia: r.local_ocorrencia,
+    tipoVeiculo: r.tipo_veiculo,
+    centroCusto: r.centro_custo,
+    data: r.data,
+  }));
+
+  const apolicesSeguro = (apolicesSeguroRaw ?? []).map((r) => ({
+    placa: r.placa,
+    seguradora: r.seguradora,
+    cobertura: r.cobertura,
+    valorPremio: r.valor_premio,
+    valorFranquia: r.valor_franquia,
+    vigenciaInicio: r.vigencia_inicio,
+    vigenciaFim: r.vigencia_fim,
+    tipoVeiculo: r.tipo_veiculo,
+    centroCusto: r.centro_custo,
+    data: r.data,
+  }));
+
+  const pneus = (pneusRaw ?? []).map((r) => ({
+    placa: r.placa,
+    posicao: r.posicao,
+    marca: r.marca,
+    modelo: r.modelo,
+    medida: r.medida,
+    status: r.status,
+    valorAquisicao: r.valor_aquisicao,
+    numeroRecapagens: r.numero_recapagens,
+    custoRecapagensTotal: r.custo_recapagens_total,
+    tipoVeiculo: r.tipo_veiculo,
+    centroCusto: r.centro_custo,
+    data: r.data,
+  }));
+
+  const estoquePecas = (estoquePecasRaw ?? []).map((r) => ({
+    pecaNome: r.peca_nome,
+    pecaCodigo: r.peca_codigo,
+    tipoMovimento: r.tipo_movimento,
+    quantidade: r.quantidade,
+    custoUnitario: r.custo_unitario,
+    valorTotal: r.valor_total,
+    placa: r.placa,
+    motivo: r.motivo,
+    data: r.data,
+  }));
+
+  const faturasFretes = (faturasFretesRaw ?? []).map((r) => ({
+    tomadorNome: r.tomador_nome,
+    numeroFatura: r.numero_fatura,
+    valorTotal: r.valor_total,
+    quantidadeCtes: r.quantidade_ctes,
+    status: r.status,
+    periodoInicio: r.periodo_inicio,
+    periodoFim: r.periodo_fim,
+    vencimento: r.vencimento,
+    data: r.data,
+  }));
+
+  const solicitacoesAprovacao = (solicitacoesAprovacaoRaw ?? []).map((r) => ({
+    categoria: r.categoria,
+    titulo: r.titulo,
+    valor: r.valor,
+    status: r.status,
+    nivelAtual: r.nivel_atual,
+    niveisNecessarios: r.niveis_necessarios,
+    solicitanteEmail: r.solicitante_email,
+    data: r.data,
+  }));
+
+  const patrimonio = (patrimonioRaw ?? []).map((r) => ({
+    placa: r.placa,
+    tipo: r.tipo,
+    valor: r.valor,
+    motivo: r.motivo,
+    tipoVeiculo: r.tipo_veiculo,
+    centroCusto: r.centro_custo,
+    data: r.data,
+  }));
+
   return (
     <div>
       <div className="mb-6">
@@ -315,6 +437,14 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
                 acoesSugeridas={acoesSugeridas}
                 chamados={chamados}
                 avaliacoes={avaliacoes}
+                multas={multas}
+                sinistros={sinistros}
+                apolicesSeguro={apolicesSeguro}
+                pneus={pneus}
+                estoquePecas={estoquePecas}
+                faturasFretes={faturasFretes}
+                solicitacoesAprovacao={solicitacoesAprovacao}
+                patrimonio={patrimonio}
                 nomeEmpresa={nomeEmpresaSelecionada}
                 nomeUsuario={nomeUsuarioAtual}
                 cargoUsuario={cargoUsuarioAtual}

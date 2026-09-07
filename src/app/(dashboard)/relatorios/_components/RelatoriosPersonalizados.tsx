@@ -109,6 +109,113 @@ export type AvaliacaoBruto = {
   data: string | null;
 };
 
+// Fase relatorios-mais-dimensoes-2 (07/09/2026, pedido do Daniel: "entraram
+// muitas features novas na aplicação... traga mais dimensões, mais
+// variáveis e mais possibilidades de análise") — 8 fontes novas, cobrindo
+// features lançadas desde a leva anterior (multas, sinistros, seguro,
+// pneus, estoque de peças, faturas de frete, aprovações e patrimônio).
+// Mesmo padrão: RPC "bruto" filtrada por empresa/período, mapeada em
+// relatorios/page.tsx.
+export type MultaBruto = {
+  placa: string | null;
+  motorista: string | null;
+  orgaoAutuador: string | null;
+  gravidade: string | null;
+  pontos: number | null;
+  valorOriginal: number | null;
+  valorDesconto: number | null;
+  status: string | null;
+  tipoVeiculo: string | null;
+  centroCusto: string | null;
+  data: string | null;
+};
+
+export type SinistroBruto = {
+  placa: string | null;
+  motorista: string | null;
+  tipo: string | null;
+  gravidade: string | null;
+  houveVitima: boolean | null;
+  custoEstimado: number | null;
+  localOcorrencia: string | null;
+  tipoVeiculo: string | null;
+  centroCusto: string | null;
+  data: string | null;
+};
+
+export type ApoliceSeguroBruto = {
+  placa: string | null;
+  seguradora: string | null;
+  cobertura: string | null;
+  valorPremio: number | null;
+  valorFranquia: number | null;
+  vigenciaInicio: string | null;
+  vigenciaFim: string | null;
+  tipoVeiculo: string | null;
+  centroCusto: string | null;
+  data: string | null;
+};
+
+export type PneuBruto = {
+  placa: string | null;
+  posicao: string | null;
+  marca: string | null;
+  modelo: string | null;
+  medida: string | null;
+  status: string | null;
+  valorAquisicao: number | null;
+  numeroRecapagens: number | null;
+  custoRecapagensTotal: number | null;
+  tipoVeiculo: string | null;
+  centroCusto: string | null;
+  data: string | null;
+};
+
+export type EstoquePecaBruto = {
+  pecaNome: string | null;
+  pecaCodigo: string | null;
+  tipoMovimento: string | null;
+  quantidade: number | null;
+  custoUnitario: number | null;
+  valorTotal: number | null;
+  placa: string | null;
+  motivo: string | null;
+  data: string | null;
+};
+
+export type FaturaFreteBruto = {
+  tomadorNome: string | null;
+  numeroFatura: number | null;
+  valorTotal: number | null;
+  quantidadeCtes: number | null;
+  status: string | null;
+  periodoInicio: string | null;
+  periodoFim: string | null;
+  vencimento: string | null;
+  data: string | null;
+};
+
+export type SolicitacaoAprovacaoBruto = {
+  categoria: string | null;
+  titulo: string | null;
+  valor: number | null;
+  status: string | null;
+  nivelAtual: number | null;
+  niveisNecessarios: number | null;
+  solicitanteEmail: string | null;
+  data: string | null;
+};
+
+export type PatrimonioBruto = {
+  placa: string | null;
+  tipo: string | null;
+  valor: number | null;
+  motivo: string | null;
+  tipoVeiculo: string | null;
+  centroCusto: string | null;
+  data: string | null;
+};
+
 type Fonte =
   | "abastecimentos"
   | "manutencao"
@@ -118,7 +225,15 @@ type Fonte =
   | "financeiro"
   | "acoes_sugeridas"
   | "chamados"
-  | "avaliacoes";
+  | "avaliacoes"
+  | "multas"
+  | "sinistros"
+  | "apolices_seguro"
+  | "pneus"
+  | "estoque_pecas"
+  | "faturas_fretes"
+  | "solicitacoes_aprovacao"
+  | "patrimonio";
 type LinhaBase =
   | AbastecimentoBruto
   | ManutencaoBruto
@@ -128,7 +243,15 @@ type LinhaBase =
   | FinanceiroBruto
   | AcaoSugeridaBruto
   | ChamadoBruto
-  | AvaliacaoBruto;
+  | AvaliacaoBruto
+  | MultaBruto
+  | SinistroBruto
+  | ApoliceSeguroBruto
+  | PneuBruto
+  | EstoquePecaBruto
+  | FaturaFreteBruto
+  | SolicitacaoAprovacaoBruto
+  | PatrimonioBruto;
 type Formato = "int" | "dec" | "money" | "money3";
 type Metrica = { id: string; label: string; formato: Formato; calcular: (linhas: LinhaBase[]) => number };
 
@@ -144,6 +267,14 @@ const FONTE_LABEL: Record<Fonte, string> = {
   acoes_sugeridas: "Ações Sugeridas",
   chamados: "Chamados",
   avaliacoes: "Avaliações",
+  multas: "Multas",
+  sinistros: "Sinistros",
+  apolices_seguro: "Apólices de Seguro",
+  pneus: "Pneus",
+  estoque_pecas: "Estoque de Peças",
+  faturas_fretes: "Faturas de Frete",
+  solicitacoes_aprovacao: "Solicitações de Aprovação",
+  patrimonio: "Patrimônio",
 };
 
 function mesRef(data: string | null) {
@@ -295,6 +426,68 @@ const DIMENSOES: Record<Fonte, { id: string; label: string; extrator: (r: LinhaB
     { id: "estrelas", label: "Estrelas", extrator: (r) => String((r as AvaliacaoBruto).estrelas ?? "—") },
     { id: "tem_comentario", label: "Com comentário?", extrator: (r) => ((r as AvaliacaoBruto).temComentario ? "Sim" : "Não") },
   ],
+  multas: [
+    { id: "periodo_mes", label: "Período (infração)", extrator: (r) => mesRef((r as MultaBruto).data) },
+    { id: "placa", label: "Veículo (Placa)", extrator: (r) => (r as MultaBruto).placa || "—" },
+    { id: "motorista", label: "Motorista", extrator: (r) => (r as MultaBruto).motorista || "—" },
+    { id: "gravidade", label: "Gravidade", extrator: (r) => (r as MultaBruto).gravidade || "—" },
+    { id: "status", label: "Status", extrator: (r) => (r as MultaBruto).status || "—" },
+    { id: "orgao_autuador", label: "Órgão Autuador", extrator: (r) => (r as MultaBruto).orgaoAutuador || "—" },
+    { id: "tipo_veiculo", label: "Tipo de Veículo", extrator: (r) => (r as MultaBruto).tipoVeiculo || "—" },
+    { id: "centro_custo", label: "Centro de Custo", extrator: (r) => (r as MultaBruto).centroCusto || "—" },
+  ],
+  sinistros: [
+    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as SinistroBruto).data) },
+    { id: "placa", label: "Veículo (Placa)", extrator: (r) => (r as SinistroBruto).placa || "—" },
+    { id: "motorista", label: "Motorista", extrator: (r) => (r as SinistroBruto).motorista || "—" },
+    { id: "tipo", label: "Tipo", extrator: (r) => (r as SinistroBruto).tipo || "—" },
+    { id: "gravidade", label: "Gravidade", extrator: (r) => (r as SinistroBruto).gravidade || "—" },
+    { id: "houve_vitima", label: "Houve vítima?", extrator: (r) => ((r as SinistroBruto).houveVitima ? "Sim" : "Não") },
+    { id: "tipo_veiculo", label: "Tipo de Veículo", extrator: (r) => (r as SinistroBruto).tipoVeiculo || "—" },
+    { id: "centro_custo", label: "Centro de Custo", extrator: (r) => (r as SinistroBruto).centroCusto || "—" },
+  ],
+  apolices_seguro: [
+    { id: "periodo_mes", label: "Período (início vigência)", extrator: (r) => mesRef((r as ApoliceSeguroBruto).data) },
+    { id: "placa", label: "Veículo (Placa)", extrator: (r) => (r as ApoliceSeguroBruto).placa || "—" },
+    { id: "seguradora", label: "Seguradora", extrator: (r) => (r as ApoliceSeguroBruto).seguradora || "—" },
+    { id: "cobertura", label: "Cobertura", extrator: (r) => (r as ApoliceSeguroBruto).cobertura || "—" },
+    { id: "tipo_veiculo", label: "Tipo de Veículo", extrator: (r) => (r as ApoliceSeguroBruto).tipoVeiculo || "—" },
+    { id: "centro_custo", label: "Centro de Custo", extrator: (r) => (r as ApoliceSeguroBruto).centroCusto || "—" },
+  ],
+  pneus: [
+    { id: "periodo_mes", label: "Período (instalação)", extrator: (r) => mesRef((r as PneuBruto).data) },
+    { id: "placa", label: "Veículo (Placa)", extrator: (r) => (r as PneuBruto).placa || "—" },
+    { id: "posicao", label: "Posição", extrator: (r) => (r as PneuBruto).posicao || "—" },
+    { id: "marca", label: "Marca", extrator: (r) => (r as PneuBruto).marca || "—" },
+    { id: "status", label: "Status", extrator: (r) => (r as PneuBruto).status || "—" },
+    { id: "tipo_veiculo", label: "Tipo de Veículo", extrator: (r) => (r as PneuBruto).tipoVeiculo || "—" },
+    { id: "centro_custo", label: "Centro de Custo", extrator: (r) => (r as PneuBruto).centroCusto || "—" },
+  ],
+  estoque_pecas: [
+    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as EstoquePecaBruto).data) },
+    { id: "peca_nome", label: "Peça", extrator: (r) => (r as EstoquePecaBruto).pecaNome || "—" },
+    { id: "tipo_movimento", label: "Tipo de Movimento", extrator: (r) => (r as EstoquePecaBruto).tipoMovimento || "—" },
+    { id: "placa", label: "Veículo (Placa)", extrator: (r) => (r as EstoquePecaBruto).placa || "—" },
+    { id: "motivo", label: "Motivo", extrator: (r) => (r as EstoquePecaBruto).motivo || "—" },
+  ],
+  faturas_fretes: [
+    { id: "periodo_mes", label: "Período (vencimento)", extrator: (r) => mesRef((r as FaturaFreteBruto).data) },
+    { id: "tomador_nome", label: "Tomador", extrator: (r) => (r as FaturaFreteBruto).tomadorNome || "—" },
+    { id: "status", label: "Status", extrator: (r) => (r as FaturaFreteBruto).status || "—" },
+  ],
+  solicitacoes_aprovacao: [
+    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as SolicitacaoAprovacaoBruto).data) },
+    { id: "categoria", label: "Categoria", extrator: (r) => (r as SolicitacaoAprovacaoBruto).categoria || "—" },
+    { id: "status", label: "Status", extrator: (r) => (r as SolicitacaoAprovacaoBruto).status || "—" },
+    { id: "solicitante", label: "Solicitante", extrator: (r) => (r as SolicitacaoAprovacaoBruto).solicitanteEmail || "—" },
+  ],
+  patrimonio: [
+    { id: "periodo_mes", label: "Período", extrator: (r) => mesRef((r as PatrimonioBruto).data) },
+    { id: "placa", label: "Veículo (Placa)", extrator: (r) => (r as PatrimonioBruto).placa || "—" },
+    { id: "tipo", label: "Tipo de Ajuste", extrator: (r) => (r as PatrimonioBruto).tipo || "—" },
+    { id: "tipo_veiculo", label: "Tipo de Veículo", extrator: (r) => (r as PatrimonioBruto).tipoVeiculo || "—" },
+    { id: "centro_custo", label: "Centro de Custo", extrator: (r) => (r as PatrimonioBruto).centroCusto || "—" },
+  ],
 };
 
 // Métricas disponíveis por fonte — cada uma recebe o grupo de linhas já
@@ -388,6 +581,64 @@ const METRICAS: Record<Fonte, Metrica[]> = {
       formato: "dec",
       calcular: (l) => (l.length ? l.reduce((s, r) => s + ((r as AvaliacaoBruto).estrelas || 0), 0) / l.length : 0),
     },
+  ],
+  multas: [
+    { id: "mu_qtd", label: "Nº de Multas", formato: "int", calcular: (l) => l.length },
+    { id: "mu_valor", label: "Valor Original Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as MultaBruto).valorOriginal || 0), 0) },
+    { id: "mu_desconto", label: "Desconto Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as MultaBruto).valorDesconto || 0), 0) },
+    { id: "mu_pontos", label: "Pontos na CNH (soma)", formato: "int", calcular: (l) => l.reduce((s, r) => s + ((r as MultaBruto).pontos || 0), 0) },
+    {
+      id: "mu_valor_med",
+      label: "Valor Médio (R$)",
+      formato: "money",
+      calcular: (l) => (l.length ? l.reduce((s, r) => s + ((r as MultaBruto).valorOriginal || 0), 0) / l.length : 0),
+    },
+  ],
+  sinistros: [
+    { id: "si_qtd", label: "Nº de Sinistros", formato: "int", calcular: (l) => l.length },
+    { id: "si_custo", label: "Custo Estimado Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as SinistroBruto).custoEstimado || 0), 0) },
+    {
+      id: "si_custo_med",
+      label: "Custo Médio (R$)",
+      formato: "money",
+      calcular: (l) => (l.length ? l.reduce((s, r) => s + ((r as SinistroBruto).custoEstimado || 0), 0) / l.length : 0),
+    },
+    { id: "si_com_vitima", label: "Nº com Vítima", formato: "int", calcular: (l) => l.filter((r) => (r as SinistroBruto).houveVitima).length },
+  ],
+  apolices_seguro: [
+    { id: "ap_qtd", label: "Nº de Apólices", formato: "int", calcular: (l) => l.length },
+    { id: "ap_premio", label: "Prêmio Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as ApoliceSeguroBruto).valorPremio || 0), 0) },
+    { id: "ap_franquia_med", label: "Franquia Média (R$)", formato: "money", calcular: (l) => (l.length ? l.reduce((s, r) => s + ((r as ApoliceSeguroBruto).valorFranquia || 0), 0) / l.length : 0) },
+  ],
+  pneus: [
+    { id: "pn_qtd", label: "Nº de Pneus", formato: "int", calcular: (l) => l.length },
+    { id: "pn_valor_aquisicao", label: "Valor de Aquisição Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as PneuBruto).valorAquisicao || 0), 0) },
+    { id: "pn_custo_recapagem", label: "Custo de Recapagem Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as PneuBruto).custoRecapagensTotal || 0), 0) },
+    { id: "pn_recapagens", label: "Nº de Recapagens (soma)", formato: "int", calcular: (l) => l.reduce((s, r) => s + ((r as PneuBruto).numeroRecapagens || 0), 0) },
+  ],
+  estoque_pecas: [
+    { id: "ep_qtd", label: "Nº de Movimentações", formato: "int", calcular: (l) => l.length },
+    { id: "ep_quantidade", label: "Quantidade Total", formato: "dec", calcular: (l) => l.reduce((s, r) => s + ((r as EstoquePecaBruto).quantidade || 0), 0) },
+    { id: "ep_valor", label: "Valor Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as EstoquePecaBruto).valorTotal || 0), 0) },
+  ],
+  faturas_fretes: [
+    { id: "ff_qtd", label: "Nº de Faturas", formato: "int", calcular: (l) => l.length },
+    { id: "ff_valor", label: "Valor Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as FaturaFreteBruto).valorTotal || 0), 0) },
+    { id: "ff_ctes", label: "Nº de CT-es (soma)", formato: "int", calcular: (l) => l.reduce((s, r) => s + ((r as FaturaFreteBruto).quantidadeCtes || 0), 0) },
+    {
+      id: "ff_valor_med",
+      label: "Valor Médio (R$)",
+      formato: "money",
+      calcular: (l) => (l.length ? l.reduce((s, r) => s + ((r as FaturaFreteBruto).valorTotal || 0), 0) / l.length : 0),
+    },
+  ],
+  solicitacoes_aprovacao: [
+    { id: "sa_qtd", label: "Nº de Solicitações", formato: "int", calcular: (l) => l.length },
+    { id: "sa_valor", label: "Valor Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as SolicitacaoAprovacaoBruto).valor || 0), 0) },
+  ],
+  patrimonio: [
+    { id: "pa_qtd", label: "Nº de Ajustes", formato: "int", calcular: (l) => l.length },
+    { id: "pa_valor", label: "Valor Total (R$)", formato: "money", calcular: (l) => l.reduce((s, r) => s + ((r as PatrimonioBruto).valor || 0), 0) },
   ],
 };
 
@@ -493,6 +744,14 @@ export function RelatoriosPersonalizados({
   acoesSugeridas,
   chamados,
   avaliacoes,
+  multas,
+  sinistros,
+  apolicesSeguro,
+  pneus,
+  estoquePecas,
+  faturasFretes,
+  solicitacoesAprovacao,
+  patrimonio,
   nomeEmpresa,
   nomeUsuario,
   cargoUsuario,
@@ -506,6 +765,14 @@ export function RelatoriosPersonalizados({
   acoesSugeridas: AcaoSugeridaBruto[];
   chamados: ChamadoBruto[];
   avaliacoes: AvaliacaoBruto[];
+  multas: MultaBruto[];
+  sinistros: SinistroBruto[];
+  apolicesSeguro: ApoliceSeguroBruto[];
+  pneus: PneuBruto[];
+  estoquePecas: EstoquePecaBruto[];
+  faturasFretes: FaturaFreteBruto[];
+  solicitacoesAprovacao: SolicitacaoAprovacaoBruto[];
+  patrimonio: PatrimonioBruto[];
   nomeEmpresa: string;
   nomeUsuario: string;
   cargoUsuario: string | null;
@@ -544,8 +811,34 @@ export function RelatoriosPersonalizados({
       acoes_sugeridas: acoesSugeridas,
       chamados,
       avaliacoes,
+      multas,
+      sinistros,
+      apolices_seguro: apolicesSeguro,
+      pneus,
+      estoque_pecas: estoquePecas,
+      faturas_fretes: faturasFretes,
+      solicitacoes_aprovacao: solicitacoesAprovacao,
+      patrimonio,
     }),
-    [abastecimentos, manutencoes, custosFixos, notasFiscais, fretes, financeiro, acoesSugeridas, chamados, avaliacoes]
+    [
+      abastecimentos,
+      manutencoes,
+      custosFixos,
+      notasFiscais,
+      fretes,
+      financeiro,
+      acoesSugeridas,
+      chamados,
+      avaliacoes,
+      multas,
+      sinistros,
+      apolicesSeguro,
+      pneus,
+      estoquePecas,
+      faturasFretes,
+      solicitacoesAprovacao,
+      patrimonio,
+    ]
   );
   const dadosBase: LinhaBase[] = dadosPorFonte[fonte];
 
@@ -740,6 +1033,14 @@ export function RelatoriosPersonalizados({
             <option value="acoes_sugeridas">💡 Ações Sugeridas</option>
             <option value="chamados">🎫 Chamados</option>
             <option value="avaliacoes">⭐ Avaliações</option>
+            <option value="multas">🚨 Multas</option>
+            <option value="sinistros">💥 Sinistros</option>
+            <option value="apolices_seguro">🛡️ Apólices de Seguro</option>
+            <option value="pneus">🛞 Pneus</option>
+            <option value="estoque_pecas">📦 Estoque de Peças</option>
+            <option value="faturas_fretes">📄 Faturas de Frete</option>
+            <option value="solicitacoes_aprovacao">✅ Solicitações de Aprovação</option>
+            <option value="patrimonio">🏷️ Patrimônio</option>
           </select>
         </div>
         <div>

@@ -6163,6 +6163,130 @@ export interface Database {
           empresa_id: string | null;
         }[];
       };
+      relatorio_multas_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          placa: string | null;
+          motorista: string | null;
+          orgao_autuador: string | null;
+          gravidade: string | null;
+          pontos: number | null;
+          valor_original: number | null;
+          valor_desconto: number | null;
+          status: string | null;
+          tipo_veiculo: string | null;
+          centro_custo: string | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_sinistros_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          placa: string | null;
+          motorista: string | null;
+          tipo: string | null;
+          gravidade: string | null;
+          houve_vitima: boolean | null;
+          custo_estimado: number | null;
+          local_ocorrencia: string | null;
+          tipo_veiculo: string | null;
+          centro_custo: string | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_apolices_seguro_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          placa: string | null;
+          seguradora: string | null;
+          cobertura: string | null;
+          valor_premio: number | null;
+          valor_franquia: number | null;
+          vigencia_inicio: string | null;
+          vigencia_fim: string | null;
+          tipo_veiculo: string | null;
+          centro_custo: string | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_pneus_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          placa: string | null;
+          posicao: string | null;
+          marca: string | null;
+          modelo: string | null;
+          medida: string | null;
+          status: string | null;
+          valor_aquisicao: number | null;
+          numero_recapagens: number | null;
+          custo_recapagens_total: number | null;
+          tipo_veiculo: string | null;
+          centro_custo: string | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_estoque_pecas_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          peca_nome: string | null;
+          peca_codigo: string | null;
+          tipo_movimento: string | null;
+          quantidade: number | null;
+          custo_unitario: number | null;
+          valor_total: number | null;
+          placa: string | null;
+          motivo: string | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_faturas_fretes_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          tomador_nome: string | null;
+          numero_fatura: number | null;
+          valor_total: number | null;
+          quantidade_ctes: number | null;
+          status: string | null;
+          periodo_inicio: string | null;
+          periodo_fim: string | null;
+          vencimento: string | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_solicitacoes_aprovacao_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          categoria: string | null;
+          titulo: string | null;
+          valor: number | null;
+          status: string | null;
+          nivel_atual: number | null;
+          niveis_necessarios: number | null;
+          solicitante_email: string | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
+      relatorio_patrimonio_bruto: {
+        Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          placa: string | null;
+          tipo: string | null;
+          valor: number | null;
+          motivo: string | null;
+          tipo_veiculo: string | null;
+          centro_custo: string | null;
+          data: string | null;
+          empresa_id: string | null;
+        }[];
+      };
       abastecimentos_preco_periodo: {
         Args: Record<PropertyKey, never>;
         Returns: { uf: string; semana: string; mes: string; preco_medio: number; qtd: number }[];
