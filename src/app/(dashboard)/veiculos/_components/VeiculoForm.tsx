@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useRef, useState, useTransition, type FormEvent } from "react";
+import { Check } from "lucide-react";
 import { criarVeiculo, atualizarVeiculo } from "../actions";
 import { CLASSIFICACAO, TIPOS_VEICULO, TIPO_PORTE_VEICULO, CICLOS_COMBUSTIVEL } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
@@ -8,6 +9,26 @@ import type { Database } from "@/types/database.types";
 type Veiculo = Database["public"]["Tables"]["cadastro_veiculos"]["Row"];
 type EmpresaOpcao = { id: string; nome: string };
 type CentroCustoOpcao = { id: string; nome: string };
+
+// Fase Auditoria-UX (08/09/2026, pedido do Daniel: ajustes recomendados numa
+// auditoria de UX — "cadastro de veículo tem 21 campos numa tela só, sem
+// dividir em etapas") — as 4 seções que já existiam (Identificação,
+// Especificações técnicas, TCO/Aquisição/Patrimônio, Localização e centro de
+// custo) viram 4 "passos" de um wizard, sem mudar NADA da submissão em si:
+// continua um <form> único, um POST só, no fim — só a APRESENTAÇÃO virou
+// progressiva (mostra 1 seção por vez + Avançar/Voltar), com um indicador de
+// progresso no topo. Escolhido de propósito em vez de dividir em várias
+// telas/rotas: menos risco de regressão (a Server Action e toda a validação
+// de VeiculoForm.tsx continuam exatamente iguais), e o usuário não perde
+// nada se voltar uma etapa (os valores continuam no DOM, só ficam ocultos).
+//
+// Único cuidado: campos `required` (Placa sempre; Cliente só ao criar) ficam
+// todos no passo 1 — um input dentro de uma seção com `hidden` (display:none)
+// é isento da validação nativa do HTML5 ("barred from constraint
+// validation" quando não está sendo renderizado), então o navegador não
+// bloquearia sozinho um "Avançar" com a Placa vazia. Por isso `avancarPasso`
+// valida esses campos manualmente antes de deixar sair do passo 1.
+const ETAPAS = ["Identificação", "Especificações técnicas", "TCO / Aquisição / Patrimônio", "Localização e centro de custo"];
 
 export function VeiculoForm({
   veiculo,
@@ -22,6 +43,10 @@ export function VeiculoForm({
 }) {
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
+  const [passo, setPasso] = useState(0);
+  const [passoMaisAlto, setPassoMaisAlto] = useState(0);
+  const placaRef = useRef<HTMLInputElement>(null);
+  const empresaRef = useRef<HTMLSelectElement>(null);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -35,15 +60,65 @@ export function VeiculoForm({
     });
   }
 
+  function irParaPasso(destino: number) {
+    setPasso(destino);
+    setPassoMaisAlto((atual) => Math.max(atual, destino));
+  }
+
+  function avancarPasso() {
+    // Únicos campos `required` do form inteiro — os dois moram no passo 1
+    // (Identificação). `reportValidity()` mostra o balão de erro nativo do
+    // navegador embaixo do campo, igual a um submit normal barrado.
+    if (passo === 0) {
+      if (placaRef.current && !placaRef.current.reportValidity()) return;
+      if (empresaRef.current && !empresaRef.current.reportValidity()) return;
+    }
+    irParaPasso(Math.min(passo + 1, ETAPAS.length - 1));
+  }
+
+  function voltarPasso() {
+    irParaPasso(Math.max(passo - 1, 0));
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
-      <section className="card p-6">
+      {/* Indicador de progresso — clicável só pra passos já visitados (não
+          deixa "pular" pra frente sem passar pela validação do Avançar). */}
+      <ol className="flex flex-wrap items-center gap-2 text-xs">
+        {ETAPAS.map((titulo, i) => {
+          const ativo = i === passo;
+          const concluido = i < passoMaisAlto;
+          const alcancavel = i <= passoMaisAlto;
+          return (
+            <li key={titulo} className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!alcancavel}
+                onClick={() => alcancavel && irParaPasso(i)}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition ${
+                  ativo
+                    ? "bg-frota-500 text-white"
+                    : alcancavel
+                      ? "bg-frota-50 text-frota-600 hover:bg-frota-100"
+                      : "cursor-not-allowed bg-slate-100 text-slate-400"
+                }`}
+              >
+                {concluido && !ativo ? <Check className="h-3.5 w-3.5" /> : <span>{i + 1}.</span>}
+                {titulo}
+              </button>
+              {i < ETAPAS.length - 1 && <span className="text-slate-300">→</span>}
+            </li>
+          );
+        })}
+      </ol>
+
+      <section className={`card p-6 ${passo === 0 ? "" : "hidden"}`}>
         <h2 className="mb-4 text-sm font-semibold text-slate-900">Identificação</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Placa" required>
-            <input name="placa" required defaultValue={veiculo?.placa ?? ""} className="input" />
+            <input ref={placaRef} name="placa" required defaultValue={veiculo?.placa ?? ""} className="input" />
           </Campo>
           <Campo label="Marca">
             <input name="marca" defaultValue={veiculo?.marca ?? ""} className="input" />
@@ -93,7 +168,7 @@ export function VeiculoForm({
           </Campo>
           {!veiculo && (
             <Campo label="Cliente" required>
-              <select name="empresa_id" required defaultValue="" className="input">
+              <select ref={empresaRef} name="empresa_id" required defaultValue="" className="input">
                 <option value="" disabled>
                   Selecione o cliente...
                 </option>
@@ -108,7 +183,7 @@ export function VeiculoForm({
         </div>
       </section>
 
-      <section className="card p-6">
+      <section className={`card p-6 ${passo === 1 ? "" : "hidden"}`}>
         <h2 className="mb-4 text-sm font-semibold text-slate-900">Especificações técnicas</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Motor">
@@ -173,7 +248,7 @@ export function VeiculoForm({
         </div>
       </section>
 
-      <section className="card p-6">
+      <section className={`card p-6 ${passo === 2 ? "" : "hidden"}`}>
         <h2 className="mb-4 text-sm font-semibold text-slate-900">TCO / Aquisição / Patrimônio</h2>
         <p className="mb-4 text-xs text-slate-500">
           Opcional — usado pra calcular o TCO (custo total de propriedade) em{" "}
@@ -225,7 +300,7 @@ export function VeiculoForm({
         </div>
       </section>
 
-      <section className="card p-6">
+      <section className={`card p-6 ${passo === 3 ? "" : "hidden"}`}>
         <h2 className="mb-4 text-sm font-semibold text-slate-900">Localização e centro de custo</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Município">
@@ -263,10 +338,25 @@ export function VeiculoForm({
         )}
       </section>
 
-      <div className="flex justify-end">
-        <button type="submit" disabled={isPending} className="btn-primary">
-          {isPending ? "Salvando..." : veiculo ? "Salvar alterações" : "Cadastrar Veículo"}
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={voltarPasso}
+          disabled={passo === 0}
+          className={`btn-secondary ${passo === 0 ? "invisible" : ""}`}
+        >
+          ← Voltar
         </button>
+
+        {passo < ETAPAS.length - 1 ? (
+          <button type="button" onClick={avancarPasso} className="btn-primary">
+            Avançar →
+          </button>
+        ) : (
+          <button type="submit" disabled={isPending} className="btn-primary">
+            {isPending ? "Salvando..." : veiculo ? "Salvar alterações" : "Cadastrar Veículo"}
+          </button>
+        )}
       </div>
     </form>
   );

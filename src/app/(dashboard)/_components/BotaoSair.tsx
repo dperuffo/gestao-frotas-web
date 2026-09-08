@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { limparAvisosDispensados } from "@/lib/avisosDispensados";
+import { limparLembrarMe } from "@/lib/lembrarMe";
 
 export function BotaoSair() {
   const router = useRouter();
@@ -15,6 +16,9 @@ export function BotaoSair() {
     // fixados dispensados voltem a aparecer no próximo login, mesmo se a
     // aba não for fechada entre o logout e o login seguinte.
     limparAvisosDispensados();
+    // Fase Auditoria-UX (08/09/2026) — "lembrar-me" vale só "por essa
+    // sessão": sair explicitamente também encerra essa preferência.
+    limparLembrarMe();
     router.push("/login");
     router.refresh();
   }

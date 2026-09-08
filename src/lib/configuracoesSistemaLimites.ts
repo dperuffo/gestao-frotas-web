@@ -13,7 +13,13 @@
 // cadeia. `configuracoesSistema.ts` (que tem o resto: busca/grava no banco,
 // com cache) importa DESTE arquivo, não o contrário — assim o Client
 // Component pode importar só o que é seguro pra ele, sem arrastar o resto.
-export const LOGOUT_INATIVIDADE_MINUTOS_PADRAO = 30;
+// Fase Auditoria-UX (08/09/2026) — este valor só é usado como fallback se a
+// linha de configuracoes_sistema não puder ser lida (erro de rede/banco); o
+// valor de fato em produção já tinha sido ajustado pro admin pra 120 min
+// (Fase 27.118, depois do achado real do posto sendo deslogado cedo demais
+// com o antigo padrão de 30). Alinhado aqui só pra esse fallback de
+// segurança não regredir pro valor agressivo antigo se a linha sumir.
+export const LOGOUT_INATIVIDADE_MINUTOS_PADRAO = 120;
 export const LOGOUT_INATIVIDADE_MINUTOS_MIN = 5;
 export const LOGOUT_INATIVIDADE_MINUTOS_MAX = 480;
 

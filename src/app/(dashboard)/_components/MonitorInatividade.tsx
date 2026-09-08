@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { limparAvisosDispensados } from "@/lib/avisosDispensados";
+import { lembrarMeAtivo, limparLembrarMe } from "@/lib/lembrarMe";
+import { LOGOUT_INATIVIDADE_MINUTOS_MAX } from "@/lib/configuracoesSistemaLimites";
 
 const CHAVE_ULTIMA_ATIVIDADE = "fni_ultima_atividade";
 const INTERVALO_VERIFICACAO_MS = 15_000;
@@ -76,7 +78,12 @@ export function MonitorInatividade({ minutos }: { minutos: number }) {
 
     async function verificarInatividade() {
       if (cancelado) return;
-      const limiteAtual = minutosAtuaisRef.current;
+      // Fase Auditoria-UX (08/09/2026) — quem marcou "Manter-me conectado por
+      // mais tempo" no login usa o máximo permitido pra ESTA sessão, em vez
+      // do padrão configurado globalmente pelo admin (ver lembrarMe.ts).
+      const limiteAtual = lembrarMeAtivo()
+        ? Math.max(minutosAtuaisRef.current, LOGOUT_INATIVIDADE_MINUTOS_MAX)
+        : minutosAtuaisRef.current;
       if (!limiteAtual || limiteAtual <= 0) return;
 
       const limiteMs = limiteAtual * 60_000;
@@ -90,6 +97,10 @@ export function MonitorInatividade({ minutos }: { minutos: number }) {
       // BotaoSair.tsx: logout automático também precisa liberar os avisos
       // dispensados pro próximo login.
       limparAvisosDispensados();
+      // Fase Auditoria-UX — "lembrar-me" vale só "por essa sessão": some no
+      // próximo login, mesmo automático (não deveria sobreviver a NENHUM
+      // logout, nem por inatividade).
+      limparLembrarMe();
       router.push("/login?motivo=inatividade");
       router.refresh();
     }

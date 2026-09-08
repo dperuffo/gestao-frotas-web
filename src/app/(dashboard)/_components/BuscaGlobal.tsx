@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, CornerDownLeft, X } from "lucide-react";
+import { Search, CornerDownLeft, X, Truck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 // Fase UX-Navegacao — HOTFIX (27/08/2026): ItemBusca.icon é um
 // componente (LucideIcon, ou seja, uma função). Passar esse tipo direto
@@ -24,11 +25,30 @@ export type ItemBusca = { href: string; label: string; iconNode?: ReactNode };
 // de `podeAcessarItem` aqui) e abre com Cmd/Ctrl+K de qualquer tela do
 // painel.
 //
-// Escopo desta 1ª versão: busca só sobre as telas do menu (estático, sem
-// round-trip ao banco — abre instantâneo). Busca por veículo/motorista/posto
-// (dinâmica, via banco) ficou de fora de propósito, pra não atrasar essa
-// entrega com uma RPC nova; é a extensão natural mais óbvia se o Daniel
-// quiser depois.
+// Fase Auditoria-UX (08/09/2026, pedido do Daniel: ajustes recomendados numa
+// auditoria de UX) — a lacuna documentada na 1ª versão ("busca só telas, não
+// dados") foi fechada: a partir de 2 caracteres, dispara (debounced) uma
+// busca em paralelo por VEÍCULO (placa/marca/modelo) e MOTORISTA (nome/CPF)
+// direto no Supabase, client-side. Sem RPC nova — os dois `.from(...)` já
+// passam pela RLS de sempre (`cadastro_veiculos_membro`/`motoristas_membro`),
+// então cada usuário só vê o que já teria acesso navegando manualmente; não
+// precisa de p_empresa_id explícito. Os 2 tipos de resultado dinâmico
+// entram na MESMA lista dos resultados estáticos (telas), com uma "seção"
+// (rótulo pequeno) e ícone diferentes pra não confundir.
+type ResultadoBusca = {
+  id: string;
+  href: string;
+  label: string;
+  sublabel?: string;
+  secao: "Telas" | "Veículos" | "Motoristas";
+  iconNode: ReactNode;
+};
+
+const ICONE_VEICULO = <Truck className="h-4 w-4 shrink-0 text-slate-400" />;
+const ICONE_MOTORISTA = <UserRound className="h-4 w-4 shrink-0 text-slate-400" />;
+const DEBOUNCE_MS = 300;
+const TERMO_MIN_CHARS = 2;
+
 function normalizar(texto: string): string {
   return texto
     .normalize("NFD")
@@ -41,6 +61,8 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
   const [aberto, setAberto] = useState(false);
   const [consulta, setConsulta] = useState("");
   const [indiceSelecionado, setIndiceSelecionado] = useState(0);
+  const [resultadosDinamicos, setResultadosDinamicos] = useState<ResultadoBusca[]>([]);
+  const [buscandoDinamico, setBuscandoDinamico] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Fase UX-Navegacao — algumas telas se repetem entre grupos (ex.: um item
@@ -55,10 +77,17 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
     });
   }, [itens]);
 
-  const resultados = useMemo(() => {
+  const resultadosTelas = useMemo(() => {
+    const base: ResultadoBusca[] = itensUnicos.map((item) => ({
+      id: `tela-${item.href}`,
+      href: item.href,
+      label: item.label,
+      secao: "Telas" as const,
+      iconNode: item.iconNode,
+    }));
     const alvo = normalizar(consulta.trim());
-    if (!alvo) return itensUnicos.slice(0, 8);
-    const comPontuacao = itensUnicos
+    if (!alvo) return base.slice(0, 8);
+    const comPontuacao = base
       .map((item) => {
         const label = normalizar(item.label);
         if (!label.includes(alvo)) return null;
@@ -66,15 +95,87 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
         const pontuacao = label.startsWith(alvo) ? 0 : 1;
         return { item, pontuacao };
       })
-      .filter((v): v is { item: ItemBusca; pontuacao: number } => v !== null)
+      .filter((v): v is { item: ResultadoBusca; pontuacao: number } => v !== null)
       .sort((a, b) => a.pontuacao - b.pontuacao || a.item.label.localeCompare(b.item.label));
     return comPontuacao.slice(0, 8).map((v) => v.item);
   }, [consulta, itensUnicos]);
+
+  // Fase Auditoria-UX (08/09/2026) — busca dinâmica (veículo/motorista),
+  // debounced pra não disparar uma query a cada tecla. Sem RPC nova: os 2
+  // `.from(...)` abaixo já passam pela RLS de sempre (ver comentário no topo
+  // do arquivo), então cada usuário só vê o que já teria acesso. Cancela a
+  // busca anterior (flag `cancelado`) se o usuário continuar digitando antes
+  // dela voltar — evita um resultado antigo "vencer" um mais recente
+  // (race condition clássica de busca-conforme-digita).
+  useEffect(() => {
+    const termo = consulta.trim();
+    if (termo.length < TERMO_MIN_CHARS) {
+      setResultadosDinamicos([]);
+      setBuscandoDinamico(false);
+      return;
+    }
+    // PostgREST usa vírgula/parênteses como separador do próprio filtro
+    // `.or(...)` — removidos do termo pra não quebrar a sintaxe da consulta
+    // (não é uma questão de segurança, a RLS protege os dados de qualquer
+    // forma; é só pra busca não dar erro com esses caracteres).
+    const termoEscapado = termo.replace(/[%,()]/g, "");
+    if (!termoEscapado) {
+      setResultadosDinamicos([]);
+      setBuscandoDinamico(false);
+      return;
+    }
+    let cancelado = false;
+    setBuscandoDinamico(true);
+    const idTimeout = window.setTimeout(async () => {
+      const supabase = createClient();
+      const [veiculosRes, motoristasRes] = await Promise.all([
+        supabase
+          .from("cadastro_veiculos")
+          .select("id, placa, marca, modelo")
+          .or(`placa.ilike.%${termoEscapado}%,marca.ilike.%${termoEscapado}%,modelo.ilike.%${termoEscapado}%`)
+          .limit(5),
+        supabase
+          .from("motoristas")
+          .select("id, nome_completo, cpf")
+          .or(`nome_completo.ilike.%${termoEscapado}%,cpf.ilike.%${termoEscapado}%`)
+          .limit(5),
+      ]);
+      if (cancelado) return;
+      const veiculos: ResultadoBusca[] = (veiculosRes.data ?? []).map((v) => ({
+        id: `veiculo-${v.id}`,
+        href: `/veiculos/${v.id}`,
+        label: v.placa ?? "—",
+        sublabel: [v.marca, v.modelo].filter(Boolean).join(" ") || undefined,
+        secao: "Veículos" as const,
+        iconNode: ICONE_VEICULO,
+      }));
+      const motoristas: ResultadoBusca[] = (motoristasRes.data ?? []).map((m) => ({
+        id: `motorista-${m.id}`,
+        href: `/motoristas/${m.id}`,
+        label: m.nome_completo ?? "—",
+        sublabel: m.cpf ?? undefined,
+        secao: "Motoristas" as const,
+        iconNode: ICONE_MOTORISTA,
+      }));
+      setResultadosDinamicos([...veiculos, ...motoristas]);
+      setBuscandoDinamico(false);
+    }, DEBOUNCE_MS);
+    return () => {
+      cancelado = true;
+      window.clearTimeout(idTimeout);
+    };
+  }, [consulta]);
+
+  const resultados = useMemo(() => {
+    if (!consulta.trim()) return resultadosTelas;
+    return [...resultadosTelas.slice(0, 5), ...resultadosDinamicos];
+  }, [consulta, resultadosTelas, resultadosDinamicos]);
 
   const fechar = useCallback(() => {
     setAberto(false);
     setConsulta("");
     setIndiceSelecionado(0);
+    setResultadosDinamicos([]);
   }, []);
 
   const navegarPara = useCallback(
@@ -134,7 +235,7 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
         type="button"
         onClick={() => setAberto(true)}
         className="glass-nav-texto-muted flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-left text-sm transition hover:bg-slate-200"
-        aria-label="Buscar telas (Cmd+K)"
+        aria-label="Buscar telas, veículos e motoristas (Cmd+K)"
       >
         <Search className="h-4 w-4 shrink-0" />
         <span className="flex-1 truncate">Buscar...</span>
@@ -159,7 +260,7 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
                 value={consulta}
                 onChange={(e) => setConsulta(e.target.value)}
                 onKeyDown={aoTeclarNaLista}
-                placeholder="Buscar uma tela (dashboard, veículos, financeiro...)"
+                placeholder="Buscar uma tela, veículo (placa) ou motorista..."
                 className="w-full border-none bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
               />
               <button
@@ -172,27 +273,49 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
               </button>
             </div>
             <ul className="max-h-80 overflow-y-auto p-2">
-              {resultados.length === 0 && (
+              {resultados.length === 0 && !buscandoDinamico && (
                 <li className="px-3 py-6 text-center text-sm text-slate-400">
-                  Nenhuma tela encontrada.
+                  {consulta.trim().length >= TERMO_MIN_CHARS
+                    ? "Nada encontrado — nem tela, nem veículo, nem motorista."
+                    : "Nenhuma tela encontrada."}
                 </li>
               )}
-              {resultados.map((item, i) => (
-                <li key={item.href}>
-                  <button
-                    type="button"
-                    onClick={() => navegarPara(item.href)}
-                    onMouseEnter={() => setIndiceSelecionado(i)}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${
-                      i === indiceSelecionado ? "bg-frota-50 text-frota-500" : "text-slate-700 hover:bg-slate-50"
-                    }`}
-                  >
-                    {item.iconNode}
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {i === indiceSelecionado && <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
-                  </button>
-                </li>
-              ))}
+              {resultados.map((item, i) => {
+                // Seção nova? mostra um rótulo pequeno antes do item (só
+                // quando há mais de um tipo de resultado na lista — busca
+                // vazia só tem "Telas", não precisa do rótulo repetido).
+                const secaoAnterior = i > 0 ? resultados[i - 1].secao : null;
+                const mostrarRotuloSecao = consulta.trim().length >= TERMO_MIN_CHARS && item.secao !== secaoAnterior;
+                return (
+                  <li key={item.id}>
+                    {mostrarRotuloSecao && (
+                      <p className="mb-1 mt-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400 first:mt-0">
+                        {item.secao}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => navegarPara(item.href)}
+                      onMouseEnter={() => setIndiceSelecionado(i)}
+                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${
+                        i === indiceSelecionado ? "bg-frota-50 text-frota-500" : "text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {item.iconNode}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{item.label}</span>
+                        {item.sublabel && (
+                          <span className="block truncate text-xs text-slate-400">{item.sublabel}</span>
+                        )}
+                      </span>
+                      {i === indiceSelecionado && <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
+                    </button>
+                  </li>
+                );
+              })}
+              {buscandoDinamico && (
+                <li className="px-3 py-2 text-center text-xs text-slate-400">Buscando veículos e motoristas...</li>
+              )}
             </ul>
           </div>
         </div>

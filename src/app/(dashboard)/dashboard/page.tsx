@@ -618,6 +618,24 @@ export default async function DashboardPage({
   // preferenciasActions.ts), então na pior hipótese mostra todos os painéis.
   const paineisOcultos = await paineisOcultosPromise;
   const paineisOcultosSet = new Set(paineisOcultos);
+  // Fase Auditoria-UX (08/09/2026, pedido do Daniel: ajustes recomendados
+  // numa auditoria de UX — "página muito longa/densa, só os 9 painéis
+  // avançados são ocultáveis") — mesmo mecanismo do ConfigPaineis acima
+  // (chave livre em paineis_ocultos, sem whitelist no banco), agora também
+  // cobrindo as seções "fixas" do resumo (entre os 6 indicadores do topo —
+  // que continuam SEMPRE visíveis, são o essencial — e os indicadores
+  // avançados). Cada usuário decide o que quer ver toda vez que abre o
+  // dashboard, sem precisar rolar por seções que não usa.
+  const opcoesResumo: OpcaoPainel[] = [
+    { chave: "dashboard.destaque_mes", titulo: "Destaque do mês (melhor km/L)" },
+    { chave: "dashboard.meios_pagamento", titulo: "Meios de pagamento no mês" },
+    { chave: "dashboard.ajustes_abastecimento", titulo: "Ajustes de abastecimento" },
+    { chave: "dashboard.consumo_grafico", titulo: "Consumo e gasto — últimos 6 meses" },
+    { chave: "dashboard.cnh_vencendo", titulo: "CNH vencendo em 30 dias" },
+    { chave: "dashboard.top_clientes", titulo: "Top 5 clientes por gasto" },
+    { chave: "dashboard.centro_custo", titulo: "Desempenho por centro de custo" },
+    { chave: "dashboard.manutencao_preditiva", titulo: "Manutenção preditiva" },
+  ];
   const opcoesPaineis: OpcaoPainel[] = [
     { chave: "dashboard.variacao_precos", titulo: "1. Variação de preços por combustível" },
     { chave: "dashboard.consumo_diario", titulo: "2. Previsão de consumo" },
@@ -692,6 +710,10 @@ export default async function DashboardPage({
         />
       )}
 
+      <div className="mb-2 flex justify-end">
+        <ConfigPaineis opcoes={opcoesResumo} ocultosIniciais={paineisOcultos} />
+      </div>
+
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <IndicadorColorido cor="violet" icon={Building2} label="Clientes ativos" valor={String(clientesAtivos ?? 0)} sub={`de ${totalClientes ?? 0}`} ajudaChave="dashboard.clientes_ativos" />
         <IndicadorColorido cor="sky" icon={Users} label="Motoristas ativos" valor={String(motoristasAtivos ?? 0)} sub={`de ${totalMotoristas ?? 0}`} ajudaChave="dashboard.motoristas_veiculos_ativos" />
@@ -701,7 +723,7 @@ export default async function DashboardPage({
         <IndicadorColorido cor="red" icon={AlertTriangle} label="Custo médio/litro" valor={formatarMoeda(custoMedioLitroMes)} delta={deltaCustoMedio} ajudaChave="dashboard.custo_medio_litro" />
       </div>
 
-      {empresaSelecionada && veiculoDestaque && veiculoDestaque.mediaKmL != null && (
+      {!paineisOcultosSet.has("dashboard.destaque_mes") && empresaSelecionada && veiculoDestaque && veiculoDestaque.mediaKmL != null && (
         <div className="mb-6 card flex items-center gap-3 p-4">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-frota-500">
             <Trophy className="h-5 w-5 text-white" aria-hidden="true" />
@@ -714,7 +736,7 @@ export default async function DashboardPage({
         </div>
       )}
 
-      {empresaSelecionada && listaProvedoresMes.length > 0 && (
+      {!paineisOcultosSet.has("dashboard.meios_pagamento") && empresaSelecionada && listaProvedoresMes.length > 0 && (
         <div className="mb-6 card p-4">
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">
             Meios de pagamento no mês
@@ -723,7 +745,7 @@ export default async function DashboardPage({
         </div>
       )}
 
-      {resumoAjustes && (
+      {!paineisOcultosSet.has("dashboard.ajustes_abastecimento") && resumoAjustes && (
         <SecaoAjustesAbastecimentos
           pendentes={resumoAjustes.pendentes}
           aceitosNoPeriodo={resumoAjustes.aceitosNoPeriodo}
@@ -733,14 +755,18 @@ export default async function DashboardPage({
         />
       )}
 
+      {(!paineisOcultosSet.has("dashboard.consumo_grafico") || !paineisOcultosSet.has("dashboard.cnh_vencendo")) && (
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {!paineisOcultosSet.has("dashboard.consumo_grafico") && (
         <div className="card p-4 lg:col-span-2">
           <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
             Consumo e gasto — últimos 6 meses <AjudaIcon chave="dashboard.consumo_grafico" />
           </h2>
           <GraficoConsumoLazy dados={dadosGrafico} />
         </div>
+        )}
 
+        {!paineisOcultosSet.has("dashboard.cnh_vencendo") && (
         <div className="card p-4">
           <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
             CNH vencendo em 30 dias <AjudaIcon chave="dashboard.cnh_vencendo" />
@@ -779,8 +805,11 @@ export default async function DashboardPage({
             <p className="text-sm text-slate-400">Nenhuma CNH vencendo nos próximos 30 dias.</p>
           )}
         </div>
+        )}
       </div>
+      )}
 
+      {!paineisOcultosSet.has("dashboard.top_clientes") && (
       <div className="mb-6 card p-4">
         <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
           Top 5 clientes por gasto (últimos 6 meses) <AjudaIcon chave="dashboard.top_clientes" />
@@ -808,7 +837,9 @@ export default async function DashboardPage({
           <p className="text-sm text-slate-400">Ainda não há abastecimentos vinculados a um cliente.</p>
         )}
       </div>
+      )}
 
+      {!paineisOcultosSet.has("dashboard.centro_custo") && (
       <div className="card p-4">
         <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
           Desempenho por centro de custo <AjudaIcon chave="dashboard.centro_custo" />
@@ -883,8 +914,9 @@ export default async function DashboardPage({
           </>
         )}
       </div>
+      )}
 
-      {empresaSelecionada && manutencaoKpis && (
+      {!paineisOcultosSet.has("dashboard.manutencao_preditiva") && empresaSelecionada && manutencaoKpis && (
         <div className="mt-6 card p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">

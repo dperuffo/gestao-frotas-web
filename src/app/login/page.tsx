@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell, AuthCard } from "@/components/AuthShell";
 import { InputSenha } from "@/components/InputSenha";
+import { marcarLembrarMe } from "@/lib/lembrarMe";
 import { entrarComSenha, entrarComGoogle } from "./actions";
 
 // Login via Supabase Auth nativo. Duas formas de entrar:
@@ -101,6 +102,11 @@ function LoginCard() {
   // redireciona pra cá com ?motivo=inatividade. Aviso informativo (não é
   // erro do usuário), estilo separado do bloco vermelho de `erro` acima.
   const [aviso] = useState<string | null>(mensagemDeAviso(searchParams.get("motivo")));
+  // Fase Auditoria-UX (08/09/2026) — "lembrar-me": estende só o timeout de
+  // inatividade dessa sessão (ver src/lib/lembrarMe.ts pro porquê de não
+  // mexer em autenticação/token). Vale pros dois métodos de login (Google e
+  // e-mail/senha) — por isso fica antes da bifurcação dos dois formulários.
+  const [lembrarMe, setLembrarMe] = useState(false);
 
   // Estado do botão "novo" (GIS). Enquanto não estiver pronto (ou se falhar),
   // mostramos o botão antigo (redirect via Supabase) — nunca os dois juntos.
@@ -129,6 +135,9 @@ function LoginCard() {
 
   function handleCredencialGoogle(resposta: CredencialGoogle) {
     setErro(null);
+    // Marcado ANTES da Server Action — ela termina em redirect() no sucesso,
+    // que nunca devolve o controle pro código daqui (ver lembrarMe.ts).
+    marcarLembrarMe(lembrarMe);
     startTransition(async () => {
       const resultado = await entrarComGoogle(resposta.credential, nonceCruRef.current);
       if (resultado?.erro) setErro(resultado.erro);
@@ -164,6 +173,7 @@ function LoginCard() {
   async function handleGoogleLoginFallback() {
     setErro(null);
     setCarregandoGoogle(true);
+    marcarLembrarMe(lembrarMe);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -179,6 +189,7 @@ function LoginCard() {
   function handleSenhaSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErro(null);
+    marcarLembrarMe(lembrarMe);
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       const resultado = await entrarComSenha(undefined, formData);
@@ -238,6 +249,20 @@ function LoginCard() {
             {carregandoGoogle ? "Redirecionando..." : "Entrar com Google"}
           </button>
         )}
+
+        {/* Fase Auditoria-UX (08/09/2026) — "lembrar-me" estende só o timeout
+            de inatividade dessa sessão pro máximo permitido (8h), em vez do
+            padrão global do admin. Fica antes do "ou" pra deixar claro que
+            vale pros dois métodos de login (Google e e-mail/senha). */}
+        <label className="mb-1 flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            checked={lembrarMe}
+            onChange={(e) => setLembrarMe(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-300 text-frota-600 focus:ring-frota-500"
+          />
+          Manter-me conectado por mais tempo
+        </label>
 
         <div className="my-5 flex items-center gap-3">
           <div className="h-px flex-1 bg-slate-200" />
