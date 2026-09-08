@@ -1030,14 +1030,14 @@ export default async function DashboardLayout({
               className="h-auto w-full"
             />
           </div>
-          <p className="glass-nav-texto mt-3 truncate text-sm font-semibold">{nomeExibido}</p>
+          <p className="menu-logo-texto glass-nav-texto mt-3 truncate text-sm font-semibold">{nomeExibido}</p>
           {cargoExibido && (
-            <p className="glass-nav-acento mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em]">
+            <p className="menu-logo-texto glass-nav-acento mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em]">
               {cargoExibido}
             </p>
           )}
         </div>
-        <div className="px-3 pt-3">
+        <div className="menu-busca px-3 pt-3">
           <BuscaGlobal itens={itensBuscaGlobal} />
         </div>
         <nav className="flex-1 px-3 py-4">

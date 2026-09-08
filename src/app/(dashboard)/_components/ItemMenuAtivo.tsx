@@ -23,18 +23,23 @@ export function ItemMenuAtivo({
   dataTour,
   className,
   classNameAtivo,
+  title,
   children,
 }: {
   href: string;
   dataTour?: string;
   className: string;
   classNameAtivo: string;
+  // Fase Menu-Retratil (08/09/2026) — tooltip nativo (title="") com o label
+  // completo do item, útil quando o menu está colapsado (só ícone visível).
+  // Inofensivo com o menu expandido (label já visível ao lado do ícone).
+  title?: string;
   children: ReactNode;
 }) {
   const pathname = usePathname();
   const ativo = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
   return (
-    <Link href={href} data-tour={dataTour} className={`${className} ${ativo ? classNameAtivo : ""}`}>
+    <Link href={href} data-tour={dataTour} title={title} className={`${className} ${ativo ? classNameAtivo : ""}`}>
       {children}
     </Link>
   );

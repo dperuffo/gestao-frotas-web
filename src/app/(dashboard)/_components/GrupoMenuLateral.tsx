@@ -71,7 +71,7 @@ export function GrupoMenuLateral({
     <>
       <p
         data-tour={dataTourTitulo}
-        className={`glass-nav-texto-muted mb-2 px-2 pb-2 text-xs font-semibold uppercase tracking-wider ${primeiro ? "" : "mt-6"}`}
+        className={`menu-grupo-titulo glass-nav-texto-muted mb-2 px-2 pb-2 text-xs font-semibold uppercase tracking-wider ${primeiro ? "" : "mt-6"}`}
       >
         {titulo}
       </p>
@@ -83,20 +83,25 @@ export function GrupoMenuLateral({
               <ItemMenuAtivo
                 href={item.href}
                 dataTour={tourPorHref?.[item.href]}
-                className="glass-nav-texto flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-slate-900/5"
+                title={item.label}
+                className="menu-item-link glass-nav-texto flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-slate-900/5"
                 classNameAtivo="glass-nav-ativo"
               >
                 <span className="flex items-center gap-2">
                   {item.icon && <item.icon className="glass-nav-icone h-4 w-4 shrink-0" />}
-                  {item.label}
+                  <span className="menu-item-label">{item.label}</span>
                 </span>
                 {badge > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                  <span className="menu-item-extra flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
                     {badge}
                   </span>
                 )}
               </ItemMenuAtivo>
-              {favoritos && <BotaoFavoritoMenu href={item.href} favoritadoInicial={favoritos.has(item.href)} />}
+              {favoritos && (
+                <span className="menu-item-extra">
+                  <BotaoFavoritoMenu href={item.href} favoritadoInicial={favoritos.has(item.href)} />
+                </span>
+              )}
             </li>
           );
         })}

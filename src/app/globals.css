@@ -85,6 +85,49 @@ body {
   @apply text-accento;
 }
 
+/* Fase Menu-Retratil (08/09/2026, pedido do Daniel: "o menu da aplicacao
+   fosse retratil, o usuario escolhe recolher ou expandir") — PainelMobile.tsx
+   adiciona a classe `.menu-colapsado` no próprio <aside> (só em telas `lg`+,
+   nunca na gaveta mobile) quando o usuário recolhe o menu. Em vez de reescrever
+   cada componente-folha do menu (GrupoMenuLateral, AvisosSino, CentralAjuda,
+   BuscaGlobal) pra aceitar uma prop de estado, cada um só precisou ganhar uma
+   classe utilitária nova (`menu-item-label`, `menu-grupo-titulo`,
+   `menu-logo-texto`, `menu-busca`, `menu-item-extra`) nos textos/elementos que
+   devem sumir quando colapsado — a regra abaixo esconde tudo isso de uma vez
+   via seletor descendente, sem tocar na lógica de cada componente. Os itens
+   (ícones) continuam clicáveis e ganham `title` (tooltip nativo) pra ainda dar
+   pra saber o que é cada um só de ícone. */
+/* Tudo dentro de `@media (min-width: 1024px)` (breakpoint `lg` do
+   Tailwind) de propósito: o estado `colapsado` (PainelMobile.tsx) não é
+   resetado ao encolher a janela, então sem essa media query, se o usuário
+   colapsasse o menu no desktop e depois abrisse a gaveta mobile (ou
+   redimensionasse a janela), essas regras esconderiam os labels ali também
+   — a gaveta mobile deve continuar sempre completa, como já era antes. */
+@media (min-width: 1024px) {
+  .menu-colapsado .menu-item-label,
+  .menu-colapsado .menu-grupo-titulo,
+  .menu-colapsado .menu-logo-texto,
+  .menu-colapsado .menu-busca,
+  .menu-colapsado .menu-item-extra {
+    display: none;
+  }
+  .menu-colapsado .menu-item-link {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  /* O bloco da logo (`[data-tour="logo"]`) some o nome/cargo via
+     `.menu-logo-texto`, mas o padding horizontal do container em volta da
+     imagem continua o mesmo de quando expandido (px-5) — sobrava
+     pouquíssimo espaço pra imagem dentro de 80px (lg:w-20) de aside.
+     Reduzido só o padding, sem esconder a imagem (ela é o único jeito de
+     saber, colapsado, que aquele bloco no topo é a logo). */
+  .menu-colapsado [data-tour="logo"] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
 /* Fase Paleta-Clara (04/09/2026) — botão primário deixa de usar o
    off-black `frota-500` (achado "pesado") e passa a usar o acento taupe
    do tema (`accento`, design.md: "único acento decorativo"), que até

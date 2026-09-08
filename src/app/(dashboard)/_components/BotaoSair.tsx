@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { limparAvisosDispensados } from "@/lib/avisosDispensados";
 
@@ -21,9 +22,14 @@ export function BotaoSair() {
   return (
     <button
       onClick={handleClick}
-      className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-600 transition hover:bg-slate-900/5"
+      title="Sair"
+      // Fase Menu-Retratil (08/09/2026) — ganhou um ícone (antes só tinha
+      // texto) pra continuar clicável/identificável com o menu colapsado,
+      // igual aos outros botões do rodapé (Avisos, Central de Ajuda).
+      className="menu-item-link flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-600 transition hover:bg-slate-900/5"
     >
-      Sair
+      <LogOut className="h-4 w-4 shrink-0 text-slate-500" />
+      <span className="menu-item-label">Sair</span>
     </button>
   );
 }
