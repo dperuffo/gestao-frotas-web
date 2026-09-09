@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { STATUS_NEGOCIACAO, STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
@@ -168,23 +169,21 @@ export default async function NegociacoesPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">
-            {souPosto ? "Negociação com Clientes" : "Negociação com Postos Revendedores"}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {souPosto
-              ? "Propostas de fornecimento de combustível trocadas com seus clientes: vigência, volume mínimo e preço por litro."
-              : "Vigência, combustível, volume mínimo e preço por litro negociados com os postos parceiros."}
-          </p>
-        </div>
-        {empresaSelecionada && (
-          <Link href={`/negociacoes/novo?empresa=${empresaSelecionada}`} className="btn-primary">
-            + Nova negociação
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo={souPosto ? "Negociação com Clientes" : "Negociação com Postos Revendedores"}
+        descricao={
+          souPosto
+            ? "Propostas de fornecimento de combustível trocadas com seus clientes: vigência, volume mínimo e preço por litro."
+            : "Vigência, combustível, volume mínimo e preço por litro negociados com os postos parceiros."
+        }
+        acoes={
+          empresaSelecionada && (
+            <Link href={`/negociacoes/novo?empresa=${empresaSelecionada}`} className="btn-primary">
+              + Nova negociação
+            </Link>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { ToggleAtivoUsuario } from "./_components/ToggleAtivoUsuario";
@@ -66,24 +67,24 @@ export default async function UsuariosPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
+      <CabecalhoPagina
+        titulo={
+          <>
             Usuários <AjudaIcon chave="usuarios.pagina" />
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Usuários com acesso à plataforma, seus perfis e vínculos com clientes.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/usuarios/importar" className="btn-secondary">
-            Importar planilha
-          </Link>
-          <Link href="/usuarios/novo" className="btn-primary">
-            + Novo Usuário
-          </Link>
-        </div>
-      </div>
+          </>
+        }
+        descricao="Usuários com acesso à plataforma, seus perfis e vínculos com clientes."
+        acoes={
+          <>
+            <Link href="/usuarios/importar" className="btn-secondary">
+              Importar planilha
+            </Link>
+            <Link href="/usuarios/novo" className="btn-primary">
+              + Novo Usuário
+            </Link>
+          </>
+        }
+      />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <IndicadorColorido cor="sky" icon={Users} label="Total de usuários" valor={String(totalUsuarios)} />

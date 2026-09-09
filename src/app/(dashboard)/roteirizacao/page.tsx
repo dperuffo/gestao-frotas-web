@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { UFS } from "@/lib/constants";
@@ -73,12 +74,10 @@ export default async function RoteirizacaoUfPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Roteirização</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Consulte a rede de postos, planeje rotas e paradas de abastecimento.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Roteirização"
+        descricao="Consulte a rede de postos, planeje rotas e paradas de abastecimento."
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

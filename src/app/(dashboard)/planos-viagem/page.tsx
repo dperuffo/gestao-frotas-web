@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda, formatarDataSemFuso } from "@/lib/financeiro";
@@ -95,20 +96,18 @@ export default async function PlanosViagemPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Planos de Viagem</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Orçamento estimado de custos e receita por viagem e veículo
-            {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-        {!semClienteEscolhido && (empresaSelecionada || !ehAdmin) && (
-          <Link href={`/planos-viagem/novo${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`} className="btn-primary">
-            + Novo Plano
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo="Planos de Viagem"
+        descricao={`Orçamento estimado de custos e receita por viagem e veículo${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+        acoes={
+          !semClienteEscolhido &&
+          (empresaSelecionada || !ehAdmin) && (
+            <Link href={`/planos-viagem/novo${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`} className="btn-primary">
+              + Novo Plano
+            </Link>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

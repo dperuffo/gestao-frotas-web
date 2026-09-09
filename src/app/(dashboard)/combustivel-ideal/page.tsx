@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ListaVeiculosCombustivelIdeal } from "./_components/ListaVeiculosCombustivelIdeal";
@@ -78,15 +79,21 @@ export default async function CombustivelIdealPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">⛽🌱 Combustível Ideal</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Pra cada veículo flex, qual combustível compensa mais agora — não é só olhar o preço por litro (a
-          famosa &quot;regra dos 70%&quot;), é comparar o <strong>custo por km rodado</strong>: preço do litro
-          dividido pelo rendimento real do veículo naquele combustível, no preço vigente da região dele
-          {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">⛽🌱</span>Combustível Ideal
+          </>
+        }
+        descricao={
+          <>
+            Pra cada veículo flex, qual combustível compensa mais agora — não é só olhar o preço por litro (a
+            famosa &quot;regra dos 70%&quot;), é comparar o <strong>custo por km rodado</strong>: preço do litro
+            dividido pelo rendimento real do veículo naquele combustível, no preço vigente da região dele
+            {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
+          </>
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
