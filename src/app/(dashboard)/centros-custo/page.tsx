@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
@@ -73,24 +74,22 @@ export default async function CentrosCustoPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Centros de Custo</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Organize a frota do cliente em centros de custo e acompanhe a alocação dos veículos.
-          </p>
-        </div>
-        {empresaSelecionada && (
-          <div className="flex gap-2">
-            <Link href="/centros-custo/importar" className="btn-secondary">
-              Importar planilha
-            </Link>
-            <Link href={`/centros-custo/novo?empresa=${empresaSelecionada}`} className="btn-primary">
-              + Novo Centro de Custo
-            </Link>
-          </div>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo="Centros de Custo"
+        descricao="Organize a frota do cliente em centros de custo e acompanhe a alocação dos veículos."
+        acoes={
+          empresaSelecionada && (
+            <>
+              <Link href="/centros-custo/importar" className="btn-secondary">
+                Importar planilha
+              </Link>
+              <Link href={`/centros-custo/novo?empresa=${empresaSelecionada}`} className="btn-primary">
+                + Novo Centro de Custo
+              </Link>
+            </>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

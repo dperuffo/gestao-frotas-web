@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -94,13 +95,10 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">TCO — Custo Total de Propriedade</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Custo completo por veículo no período (combustível, manutenção, multas, oficinas, custos fixos e
-          depreciação), pra identificar quais veículos estão pesando mais no bolso e quando vale trocar.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="TCO — Custo Total de Propriedade"
+        descricao="Custo completo por veículo no período (combustível, manutenção, multas, oficinas, custos fixos e depreciação), pra identificar quais veículos estão pesando mais no bolso e quando vale trocar."
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

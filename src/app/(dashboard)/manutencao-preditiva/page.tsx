@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { StatusBadge } from "./_components/StatusBadge";
@@ -100,13 +101,10 @@ export default async function ManutencaoPreditivaPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Manutenção Preditiva</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Score de desgaste por veículo (óleo, pneus, filtros e outros 5 componentes), com base em km rodado,
-          consumo e histórico real de manutenções.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Manutenção Preditiva"
+        descricao="Score de desgaste por veículo (óleo, pneus, filtros e outros 5 componentes), com base em km rodado, consumo e histórico real de manutenções."
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

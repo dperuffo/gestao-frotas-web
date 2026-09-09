@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda, formatarDataSemFuso, sugerirContas, STATUS_EXTRATO_LABEL, STATUS_EXTRATO_COR, type ContaEmAberto } from "@/lib/conciliacaoBancaria";
@@ -133,13 +134,10 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Conciliação Bancária</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Importe o extrato do banco (OFX ou CSV) e concilie cada lançamento com uma conta a pagar ou a receber já
-          lançada — a baixa é confirmada automaticamente ao vincular.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Conciliação Bancária"
+        descricao="Importe o extrato do banco (OFX ou CSV) e concilie cada lançamento com uma conta a pagar ou a receber já lançada — a baixa é confirmada automaticamente ao vincular."
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -54,9 +55,7 @@ export default async function NotasFiscaisPage({
   if (!empresaSelecionada) {
     return (
       <div>
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-slate-900">Notas Fiscais</h1>
-        </div>
+        <CabecalhoPagina titulo="Notas Fiscais" />
         {empresas.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhuma empresa disponível.</p>
         ) : (
@@ -192,10 +191,7 @@ export default async function NotasFiscaisPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Notas Fiscais</h1>
-        {nomeEmpresaSelecionada && <p className="mt-1 text-sm text-slate-500">{nomeEmpresaSelecionada}</p>}
-      </div>
+      <CabecalhoPagina titulo="Notas Fiscais" descricao={nomeEmpresaSelecionada || undefined} />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
