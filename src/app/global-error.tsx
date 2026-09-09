@@ -29,7 +29,7 @@ export default function GlobalError({
             </p>
             <button
               onClick={() => window.location.reload()}
-              style={{ padding: "8px 16px", borderRadius: 4, background: "#171717", color: "#fff", border: "none", cursor: "pointer" }}
+              style={{ padding: "8px 16px", borderRadius: 14, background: "#de6024", color: "#fff", border: "none", cursor: "pointer" }}
             >
               Recarregar
             </button>

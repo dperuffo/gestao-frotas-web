@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
@@ -347,33 +348,35 @@ export default async function AbastecimentosPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Abastecimentos</h1>
-          <p className="mt-1 text-sm text-slate-500">
+      <CabecalhoPagina
+        titulo="Abastecimentos"
+        descricao={
+          <>
             Alimentado automaticamente pelas integrações com meios de pagamento (PróFrotas e outros
             provedores conectados via Hub de Integrações). Lançamento manual e importação em lote
             também disponíveis para clientes sem integração
             {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {pendentesManuaisCount > 0 && (
-            <Link
-              href={`/abastecimentos/pendentes-aprovacao${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`}
-              className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200"
-            >
-              🟡 {pendentesManuaisCount} pendente{pendentesManuaisCount === 1 ? "" : "s"} de aprovação
+          </>
+        }
+        acoes={
+          <>
+            {pendentesManuaisCount > 0 && (
+              <Link
+                href={`/abastecimentos/pendentes-aprovacao${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`}
+                className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200"
+              >
+                🟡 {pendentesManuaisCount} pendente{pendentesManuaisCount === 1 ? "" : "s"} de aprovação
+              </Link>
+            )}
+            <Link href="/abastecimentos/importar" className="btn-secondary">
+              Importar planilha
             </Link>
-          )}
-          <Link href="/abastecimentos/importar" className="btn-secondary">
-            Importar planilha
-          </Link>
-          <Link href="/abastecimentos/novo" className="btn-primary">
-            + Lançar Manualmente
-          </Link>
-        </div>
-      </div>
+            <Link href="/abastecimentos/novo" className="btn-primary">
+              + Lançar Manualmente
+            </Link>
+          </>
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

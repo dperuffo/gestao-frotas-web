@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import {
@@ -379,14 +380,14 @@ export default async function FinanceiroPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Painel Financeiro</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {mostrarFni
+      <CabecalhoPagina
+        titulo="Painel Financeiro"
+        descricao={
+          mostrarFni
             ? "Indicadores financeiros da FNI — planos, cobrança e MRR. Selecione um cliente abaixo para ver o painel de custo dele."
-            : `Custo de combustível, manutenção, custos fixos e orçamento — ${NOMES_MES[agora.getMonth()]}/${agora.getFullYear()}.`}
-        </p>
-      </div>
+            : `Custo de combustível, manutenção, custos fixos e orçamento — ${NOMES_MES[agora.getMonth()]}/${agora.getFullYear()}.`
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

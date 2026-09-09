@@ -4,6 +4,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
 import { ToggleAtivoMotorista } from "./_components/ToggleAtivoMotorista";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 // Fase Redesign-Telas-Densas (12/08/2026) — pedido do Daniel: "tem
@@ -141,25 +142,29 @@ export default async function MotoristasPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
+      <CabecalhoPagina
+        titulo={
+          <>
             Motoristas <AjudaIcon chave="motoristas.pagina" />
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          </>
+        }
+        descricao={
+          <>
             Cadastro de motoristas, CNH e vencimento, classificação e centro de custo
             {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/motoristas/importar" className="btn-secondary">
-            Importar planilha
-          </Link>
-          <Link href="/motoristas/novo" className="btn-primary">
-            + Novo Motorista
-          </Link>
-        </div>
-      </div>
+          </>
+        }
+        acoes={
+          <>
+            <Link href="/motoristas/importar" className="btn-secondary">
+              Importar planilha
+            </Link>
+            <Link href="/motoristas/novo" className="btn-primary">
+              + Novo Motorista
+            </Link>
+          </>
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

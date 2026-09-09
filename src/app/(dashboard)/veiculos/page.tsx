@@ -4,6 +4,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { ToggleAtivoVeiculo } from "./_components/ToggleAtivoVeiculo";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 // Fase Dashboard-Redesign (12/08/2026) — mesmo toque visual do Dashboard
@@ -110,25 +111,29 @@ export default async function VeiculosPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
+      <CabecalhoPagina
+        titulo={
+          <>
             Veículos <AjudaIcon chave="veiculos.pagina" />
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          </>
+        }
+        descricao={
+          <>
             Cadastro da frota, especificações técnicas e centro de custo
             {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/veiculos/importar" className="btn-secondary">
-            Importar planilha
-          </Link>
-          <Link href="/veiculos/novo" className="btn-primary">
-            + Novo Veículo
-          </Link>
-        </div>
-      </div>
+          </>
+        }
+        acoes={
+          <>
+            <Link href="/veiculos/importar" className="btn-secondary">
+              Importar planilha
+            </Link>
+            <Link href="/veiculos/novo" className="btn-primary">
+              + Novo Veículo
+            </Link>
+          </>
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
