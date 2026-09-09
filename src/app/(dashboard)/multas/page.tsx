@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { STATUS_MULTA_LABEL, STATUS_MULTA_COR, GRAVIDADE_MULTA_LABEL } from "@/lib/multas";
@@ -121,19 +122,17 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Gestão de Multas</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Captura, indicação de condutor e histórico de multas por veículo/motorista.
-          </p>
-        </div>
-        {empresaSelecionada && (
-          <Link href={`/multas/nova?empresa=${empresaSelecionada}`} className="btn-primary text-sm">
-            + Nova Multa
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo="Gestão de Multas"
+        descricao="Captura, indicação de condutor e histórico de multas por veículo/motorista."
+        acoes={
+          empresaSelecionada && (
+            <Link href={`/multas/nova?empresa=${empresaSelecionada}`} className="btn-primary text-sm">
+              + Nova Multa
+            </Link>
+          )
+        }
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

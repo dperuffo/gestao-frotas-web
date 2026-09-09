@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { AbasPainel, type Aba } from "../inteligencia-rede/_components/AbasPainel";
@@ -191,9 +192,13 @@ export default async function CotacoesPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">🧮 Cotações</h1>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">🧮</span>Cotações
+          </>
+        }
+      />
       <AbasPainel abas={abas} />
     </div>
   );

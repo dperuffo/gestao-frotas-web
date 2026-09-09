@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda, formatarData, formatarCnpjCpf, STATUS_PROPOSTA_LABEL } from "@/lib/crm";
@@ -198,10 +199,9 @@ export default async function CrmComercialPage({ searchParams }: { searchParams:
 
   return (
     <div>
+      <CabecalhoPagina titulo="CRM Comercial" />
+
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">CRM Comercial</h1>
-        </div>
         {empresas.length > 1 && (
           <form className="flex items-end gap-2">
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">

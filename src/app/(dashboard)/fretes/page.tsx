@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { verificarAcessoFretes, mensagemAcessoFretesBloqueado, type AcessoFretesResultado } from "@/lib/limitePlano";
@@ -131,21 +132,22 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">🚚 Fretes</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Publique fretes pra rede de motoristas negociar (estilo Uber) ou atribua direto a um motorista próprio ou
-            parceiro.
-            {nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
-          </p>
-        </div>
-        {empresaSelecionada && acessoLiberado && (
-          <Link href={`/fretes/novo?empresa=${empresaSelecionada}`} className="btn-primary">
-            + Publicar frete
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">🚚</span>Fretes
+          </>
+        }
+        descricao={`Publique fretes pra rede de motoristas negociar (estilo Uber) ou atribua direto a um motorista próprio ou parceiro.${nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}`}
+        acoes={
+          empresaSelecionada &&
+          acessoLiberado && (
+            <Link href={`/fretes/novo?empresa=${empresaSelecionada}`} className="btn-primary">
+              + Publicar frete
+            </Link>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

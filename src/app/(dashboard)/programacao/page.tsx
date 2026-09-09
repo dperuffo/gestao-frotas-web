@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 // Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
@@ -78,15 +79,10 @@ export default async function ProgramacaoFrotaPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Programação de Frota</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Quadro de alocação: qual veículo está em viagem (e até quando fica ocupado), qual está livre e qual ainda
-          não tem motorista vinculado. Baseado no vínculo motorista-veículo e nos fretes aceitos/em andamento — não é
-          rastreamento por GPS.
-          {nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Programação de Frota"
+        descricao={`Quadro de alocação: qual veículo está em viagem (e até quando fica ocupado), qual está livre e qual ainda não tem motorista vinculado. Baseado no vínculo motorista-veículo e nos fretes aceitos/em andamento — não é rastreamento por GPS.${nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

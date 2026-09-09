@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
 import { Anomalias } from "./_components/Anomalias";
@@ -370,13 +371,10 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900">Relatórios</h1>
-        <p className="text-sm text-slate-500">
-          Relatório executivo, performance por posto, score × utilização, anomalias e relatórios
-          personalizados — {nomeEmpresaSelecionada}.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Relatórios"
+        descricao={`Relatório executivo, performance por posto, score × utilização, anomalias e relatórios personalizados — ${nomeEmpresaSelecionada}.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

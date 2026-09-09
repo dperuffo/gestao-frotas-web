@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
@@ -47,30 +48,36 @@ export default async function TabelasFretePage({ searchParams }: { searchParams:
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">📋 Tabelas de Frete</h1>
-          <p className="mt-1 text-sm text-slate-500">
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">📋</span>Tabelas de Frete
+          </>
+        }
+        descricao={
+          <>
             Cadastre por cliente-tomador ou geral — alimenta o simulador de{" "}
-            <Link href="/cotacoes" className="text-frota-600 hover:underline">
+            <Link href="/cotacoes" className="underline">
               Cotações
             </Link>
             .{nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
-          </p>
-        </div>
-        {empresaSelecionada && (
-          <div className="flex items-center gap-3">
-            <ReplicarParaGrupoButton
-              chaveTabela="tabelas_frete"
-              empresaId={empresaSelecionada}
-              rotuloRegistro="as tabelas de frete gerais (não específicas de um cliente-tomador)"
-            />
-            <Link href={`/tabelas-frete/novo?empresa=${empresaSelecionada}`} className="btn-primary">
-              + Nova tabela
-            </Link>
-          </div>
-        )}
-      </div>
+          </>
+        }
+        acoes={
+          empresaSelecionada && (
+            <div className="flex items-center gap-3">
+              <ReplicarParaGrupoButton
+                chaveTabela="tabelas_frete"
+                empresaId={empresaSelecionada}
+                rotuloRegistro="as tabelas de frete gerais (não específicas de um cliente-tomador)"
+              />
+              <Link href={`/tabelas-frete/novo?empresa=${empresaSelecionada}`} className="btn-primary">
+                + Nova tabela
+              </Link>
+            </div>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

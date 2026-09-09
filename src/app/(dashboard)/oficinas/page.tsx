@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
@@ -98,10 +99,10 @@ export default async function OficinasPage({ searchParams }: { searchParams: Pro
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Rede de Oficinas Credenciadas</h1>
-        <p className="mt-1 text-sm text-slate-500">Catálogo de oficinas parceiras e solicitação simples de orçamento.</p>
-      </div>
+      <CabecalhoPagina
+        titulo="Rede de Oficinas Credenciadas"
+        descricao="Catálogo de oficinas parceiras e solicitação simples de orçamento."
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
