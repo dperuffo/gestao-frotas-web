@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { normalizarCNPJ } from "@/lib/utils";
 import { UFS, ANP_PRECO_REFERENCIA_FALLBACK, PRODUTO_PARA_CATEGORIA_ANP } from "@/lib/constants";
@@ -72,29 +73,29 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Postos Revendedores</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {visao === "rede"
-              ? `Rede de postos negociada${nomeEmpresaSelecionada ? ` de ${nomeEmpresaSelecionada}` : ""} — clique num posto para ver detalhes, combustíveis e preços.`
-              : "Universo nacional de postos ANP — use para localizar e ativar postos novos na rede do cliente."}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/postos/importar-precos" className="btn-secondary">
-            Importar preços
-          </Link>
-          {perfil === "admin" && (
-            <Link href="/postos/importar-anp" className="btn-secondary">
-              Atualizar universo ANP
+      <CabecalhoPagina
+        titulo="Postos Revendedores"
+        descricao={
+          visao === "rede"
+            ? `Rede de postos negociada${nomeEmpresaSelecionada ? ` de ${nomeEmpresaSelecionada}` : ""} — clique num posto para ver detalhes, combustíveis e preços.`
+            : "Universo nacional de postos ANP — use para localizar e ativar postos novos na rede do cliente."
+        }
+        acoes={
+          <>
+            <Link href="/postos/importar-precos" className="btn-secondary">
+              Importar preços
             </Link>
-          )}
-          <Link href="/postos/importar" className="btn-primary">
-            Importar planilha de postos
-          </Link>
-        </div>
-      </div>
+            {perfil === "admin" && (
+              <Link href="/postos/importar-anp" className="btn-secondary">
+                Atualizar universo ANP
+              </Link>
+            )}
+            <Link href="/postos/importar" className="btn-primary">
+              Importar planilha de postos
+            </Link>
+          </>
+        }
+      />
 
       {/* Fase 27.35 — achado real: cliente novo, ao ver "Rede do cliente"
           vazia (nenhum posto próprio cadastrado ainda), podia achar que

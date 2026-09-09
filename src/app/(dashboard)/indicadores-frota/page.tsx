@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda, formatarMesAnoSemFuso } from "@/lib/financeiro";
@@ -352,13 +353,10 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Indicadores da Frota</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Os principais KPIs de gestão de frota, calculados a partir dos dados já cadastrados — abastecimentos,
-          manutenções e hodômetro. Filtre por veículo, tipo ou modelo, ou compare a frota inteira na tabela abaixo.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Indicadores da Frota"
+        descricao="Os principais KPIs de gestão de frota, calculados a partir dos dados já cadastrados — abastecimentos, manutenções e hodômetro. Filtre por veículo, tipo ou modelo, ou compare a frota inteira na tabela abaixo."
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import { resolverPapelAtual } from "./actions";
@@ -146,19 +147,23 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">🎫 Gestão de Chamados</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {papel === "admin"
-              ? "Acompanhe e responda os chamados abertos por todos os clientes."
-              : "Abra chamados e acompanhe as respostas da equipe FNI."}
-          </p>
-        </div>
-        <Link href="/chamados/novo" className="btn-primary">
-          + Novo Chamado
-        </Link>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">🎫</span>Gestão de Chamados
+          </>
+        }
+        descricao={
+          papel === "admin"
+            ? "Acompanhe e responda os chamados abertos por todos os clientes."
+            : "Abra chamados e acompanhe as respostas da equipe FNI."
+        }
+        acoes={
+          <Link href="/chamados/novo" className="btn-primary">
+            + Novo Chamado
+          </Link>
+        }
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { verificarLimiteFrota, mensagemLimiteExcedido } from "@/lib/limitePlano";
@@ -105,13 +106,10 @@ export default async function IntegracoesPage() {
   if (ehPosto) {
     return (
       <div>
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-slate-900">Integrações</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Gere uma chave de API pra enviar propostas de negociação aos seus clientes e acompanhar/responder
-            o andamento, direto do sistema do seu posto.
-          </p>
-        </div>
+        <CabecalhoPagina
+          titulo="Integrações"
+          descricao="Gere uma chave de API pra enviar propostas de negociação aos seus clientes e acompanhar/responder o andamento, direto do sistema do seu posto."
+        />
         <SecaoHub
           ehPosto
           empresas={empresas}
@@ -200,13 +198,10 @@ export default async function IntegracoesPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Integrações</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Cada meio de pagamento tem a própria aba abaixo — Pró-Frotas já sincroniza automático; os demais
-          (e qualquer parceiro novo) entram pelo Hub genérico até ganharem integração nativa própria.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Integrações"
+        descricao="Cada meio de pagamento tem a própria aba abaixo — Pró-Frotas já sincroniza automático; os demais (e qualquer parceiro novo) entram pelo Hub genérico até ganharem integração nativa própria."
+      />
       <AbasPainel abas={abas} />
     </div>
   );

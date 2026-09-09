@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import {
@@ -261,10 +262,7 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Minha Assinatura</h1>
-        <p className="mt-1 text-sm text-slate-500">Plano atual, uso e histórico de cobrança.</p>
-      </div>
+      <CabecalhoPagina titulo="Minha Assinatura" descricao="Plano atual, uso e histórico de cobrança." />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
