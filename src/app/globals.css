@@ -3,33 +3,31 @@
 @tailwind utilities;
 
 :root {
-  --frota-950: #111111;
-  --frota-900: #1a1a1a;
-  --frota-600: #0d0d0d;
-  --frota-500: #171717;
-  --status-ativo: #16a34a;
-  --status-atencao: #f59e0b;
-  --status-inativo: #dc2626;
+  --frota-950: #2b3444;
+  --frota-900: #333c4d;
+  --frota-600: #66748d;
+  --frota-500: #4e5d77;
+  --status-ativo: #4db956;
+  --status-atencao: #e0a020;
+  --status-inativo: #d94f4f;
 }
 
-/* Fase Design-System-Swiss-Minimalism (27/08/2026, pedido do Daniel: "não
-   gostei" da fase Corporate Blue de ontem — novo design.md: "Minimalism &
-   Swiss Style", preto (off-black)/branco/cinza/bege/taupe, cantos quase
-   retos, herança da escola suíça dos anos 50 (Basel/Zurich, Helvetica).
-   Fundo liso, sem blur/glassmorphism, sem "anel de luz" — mesma direção
-   "flat" da fase anterior, agora monocromática em vez de azul. */
+/* Fase Design-ProFrotas-Divergencias (09/09/2026, pedido do Daniel: gostou
+   do HTML de relatório de divergências de pagamento ProFrotas — laranja
+   (--orange #de6024) + slate (--slate #4e5d77), cards arredondados (14px)
+   com sombra difusa suave, header em gradiente. Substitui o Swiss
+   Minimalism monocromático/reto da fase anterior (28/08). */
 body {
   @apply bg-frota-50 text-slate-900 antialiased;
 }
 
 /* .card é a classe central usada em ~150 telas (ver README, fases de
    Redesign-Telas-Densas) — trocar aqui cascateia pro app inteiro sem
-   precisar editar cada página. Receita do design.md: superfície branca,
-   1px de borda, sombra suave (0 2px 12px rgba(0,0,0,0.06)), cantos quase
-   retos (2px, "Sharp edges" do tema) — sem blur/backdrop-filter. */
+   precisar editar cada página. Receita do HTML de referência: superfície
+   branca, 1px de borda, sombra difusa tingida de slate (--shadow do
+   arquivo), cantos arredondados (14px, token `xl` do tailwind.config). */
 .card {
-  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
-  box-shadow: 0 2px 12px rgba(17, 17, 17, 0.06);
+  @apply rounded-xl border border-slate-200 bg-white shadow-card;
 }
 
 /* Fase Paleta-Clara (04/09/2026, pedido do Daniel: "tons escuros no menu,
@@ -157,14 +155,19 @@ body {
     focus:border-frota-500 focus:outline-none focus:ring-2 focus:ring-frota-500 focus:ring-offset-2;
 }
 
+/* Fase Design-ProFrotas-Divergencias — badge do HTML de referência é pill
+   sólida com texto branco (não o tingido pastel/texto colorido de antes):
+   `background: var(--green); color:#fff`. Texto sempre branco sobre fundo
+   colorido — pedido explícito do Daniel (não gostou de texto escuro sobre
+   fundo colorido/escuro). */
 .badge-ativo {
-  @apply rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700;
+  @apply rounded-full bg-status-ativo px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white;
 }
 .badge-inativo {
-  @apply rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700;
+  @apply rounded-full bg-status-inativo px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white;
 }
 .badge-atencao {
-  @apply rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700;
+  @apply rounded-full bg-status-atencao px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white;
 }
 
 /* Fase Paleta-Clara (04/09/2026) — `.input-dark`/`.label-dark` eram a

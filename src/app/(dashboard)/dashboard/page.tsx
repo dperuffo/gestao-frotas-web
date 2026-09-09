@@ -24,6 +24,7 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { PRODUTOS_POSTO } from "@/lib/constants";
 import { Users, Truck, Droplet, Wallet, AlertTriangle, Building2, Trophy } from "lucide-react";
 import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -650,13 +651,10 @@ export default async function DashboardPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">
-          {saudacao}
-          {primeiroNome ? `, ${primeiroNome}` : ""}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">Aqui está o resumo da sua frota hoje.</p>
-      </div>
+      <CabecalhoPagina
+        titulo={`${saudacao}${primeiroNome ? `, ${primeiroNome}` : ""}`}
+        descricao="Aqui está o resumo da sua frota hoje."
+      />
 
       <div className="mb-6 card p-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
