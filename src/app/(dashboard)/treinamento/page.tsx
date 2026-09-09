@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { TreinamentoExplorer } from "./_components/TreinamentoExplorer";
 import type { Perfil } from "@/lib/constants";
@@ -38,17 +39,19 @@ export default async function TreinamentoPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Central de Treinamento</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Um guia por módulo pra você (ou seu time) aprender a usar a plataforma sem depender de
-          treinamento humano. Dúvida que não está aqui? Pergunte no{" "}
-          <a href="/assistente" className="text-frota-600 hover:underline">
-            Assistente FNI
-          </a>
-          .
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Central de Treinamento"
+        descricao={
+          <>
+            Um guia por módulo pra você (ou seu time) aprender a usar a plataforma sem depender de treinamento
+            humano. Dúvida que não está aqui? Pergunte no{" "}
+            <a href="/assistente" className="underline">
+              Assistente FNI
+            </a>
+            .
+          </>
+        }
+      />
       <TreinamentoExplorer modulos={modulos} />
     </div>
   );

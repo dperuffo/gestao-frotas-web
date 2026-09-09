@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { IndicadoresFinanceirosFni } from "../_components/IndicadoresFinanceirosFni";
 
@@ -31,13 +32,10 @@ export default async function AssinaturasAdminPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Assinaturas</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Indicadores financeiros da FNI — planos, cobrança e MRR (não é o painel de custo do cliente, que
-          fica em Painel Financeiro).
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Assinaturas"
+        descricao="Indicadores financeiros da FNI — planos, cobrança e MRR (não é o painel de custo do cliente, que fica em Painel Financeiro)."
+      />
       <IndicadoresFinanceirosFni />
     </div>
   );

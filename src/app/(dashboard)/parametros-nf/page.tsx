@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
@@ -23,15 +24,14 @@ export default async function ParametrosNFPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
-          Parâmetros de NF <AjudaIcon chave="parametros-nf.pagina" />
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Preferências de emissão de nota fiscal por CNPJ da frota — consultadas por ERPs e sistemas de automação de
-          posto integrados via API{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            Parâmetros de NF <AjudaIcon chave="parametros-nf.pagina" />
+          </>
+        }
+        descricao={`Preferências de emissão de nota fiscal por CNPJ da frota — consultadas por ERPs e sistemas de automação de posto integrados via API${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ConvidarParceiroForm } from "./_components/ConvidarParceiroForm";
@@ -52,14 +53,14 @@ export default async function MotoristasParceirosPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">🤝 Motoristas Parceiros</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Motoristas agregados/terceiros com quem você já tem relação — convide pra poder atribuir frete direto a eles,
-          sem abrir pro mercado aberto.
-          {nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">🤝</span>Motoristas Parceiros
+          </>
+        }
+        descricao={`Motoristas agregados/terceiros com quem você já tem relação — convide pra poder atribuir frete direto a eles, sem abrir pro mercado aberto.${nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

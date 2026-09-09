@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatCNPJ } from "@/lib/utils";
@@ -58,15 +59,10 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Clientes</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Transportadoras que já negociaram com este posto (qualquer status)
-            {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-      </div>
+      <CabecalhoPagina
+        titulo="Clientes"
+        descricao={`Transportadoras que já negociaram com este posto (qualquer status)${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+      />
 
       {/* Este seletor troca qual POSTO (empresa própria) está ativo — não é
           um filtro de "cliente" (as transportadoras listadas abaixo são o

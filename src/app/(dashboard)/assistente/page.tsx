@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ChatAssistente } from "./_components/ChatAssistente";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
@@ -11,15 +12,15 @@ export default async function AssistenteFniPage() {
 
   return (
     <div>
-      <h1 className="mb-1 flex items-center gap-2 text-xl font-semibold text-slate-900">
-        <Image src="/logo-fni.png" alt="FNI" width={102} height={40} className="h-7 w-auto" priority />
-        Assistente FNI <AjudaIcon chave="assistente.pergunta" />
-      </h1>
-      <p className="mb-6 text-sm text-slate-500">
-        Converse em linguagem natural sobre a sua operação de frota, ou tire dúvidas de como usar a plataforma. O
-        assistente consulta os dados em tempo real (só enxerga as empresas às quais você tem acesso) e o conteúdo
-        oficial de treinamento — sem inventar respostas.
-      </p>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <Image src="/logo-fni.png" alt="FNI" width={102} height={40} className="mr-1 h-7 w-auto" priority />
+            Assistente FNI <AjudaIcon chave="assistente.pergunta" />
+          </>
+        }
+        descricao="Converse em linguagem natural sobre a sua operação de frota, ou tire dúvidas de como usar a plataforma. O assistente consulta os dados em tempo real (só enxerga as empresas às quais você tem acesso) e o conteúdo oficial de treinamento — sem inventar respostas."
+      />
       <ChatAssistente usuarioEmail={user?.email} />
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
@@ -110,22 +111,22 @@ export default async function ParametrosUsoPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
+      <CabecalhoPagina
+        titulo={
+          <>
             Parâmetros de Uso <AjudaIcon chave="parametros-uso.pagina" />
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Regras que balizam abastecimentos feitos em postos ou soluções de automação/meios de pagamento integrados
-            {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-        {empresaSelecionada && tipo === "vinculo" && (
-          <Link href={`/parametros-uso/novo?empresa=${empresaSelecionada}`} className="btn-primary">
-            + Novo Vínculo
-          </Link>
-        )}
-      </div>
+          </>
+        }
+        descricao={`Regras que balizam abastecimentos feitos em postos ou soluções de automação/meios de pagamento integrados${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+        acoes={
+          empresaSelecionada &&
+          tipo === "vinculo" && (
+            <Link href={`/parametros-uso/novo?empresa=${empresaSelecionada}`} className="btn-primary">
+              + Novo Vínculo
+            </Link>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

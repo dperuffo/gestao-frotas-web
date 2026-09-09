@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
@@ -54,13 +55,10 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Consulta de Pré-Pedido</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Confira o número do Pré-Pedido informado pelo motorista antes de liberar o abastecimento
-          {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Consulta de Pré-Pedido"
+        descricao={`Confira o número do Pré-Pedido informado pelo motorista antes de liberar o abastecimento${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

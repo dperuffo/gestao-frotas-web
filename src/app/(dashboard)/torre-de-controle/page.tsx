@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
@@ -159,20 +160,22 @@ export default async function TorreDeControlePage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Torre de Controle</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Visão única dos fretes em andamento agora, com o último checkpoint registrado pelo motorista e alerta de
-          prazo. Por padrão não é rastreamento por GPS — é baseado nos eventos que o motorista confirma no app (saiu
-          da origem, chegou no posto, chegou no destino etc.), então a posição pode estar desatualizada entre um
-          checkpoint e outro. Se você conectar um sistema de rastreamento em{" "}
-          <Link href="/integracoes" className="text-frota-600 hover:underline">
-            Integrações
-          </Link>{" "}
-          (escopo <code>gps:write</code>, qualquer provedor), um mapa ao vivo aparece aqui também.
-          {nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Torre de Controle"
+        descricao={
+          <>
+            Visão única dos fretes em andamento agora, com o último checkpoint registrado pelo motorista e alerta de
+            prazo. Por padrão não é rastreamento por GPS — é baseado nos eventos que o motorista confirma no app (saiu
+            da origem, chegou no posto, chegou no destino etc.), então a posição pode estar desatualizada entre um
+            checkpoint e outro. Se você conectar um sistema de rastreamento em{" "}
+            <Link href="/integracoes" className="underline">
+              Integrações
+            </Link>{" "}
+            (escopo <code>gps:write</code>, qualquer provedor), um mapa ao vivo aparece aqui também.
+            {nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
+          </>
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

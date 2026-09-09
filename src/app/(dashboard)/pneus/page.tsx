@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -86,19 +87,17 @@ export default async function PneusPage({ searchParams }: { searchParams: Promis
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Gestão de Pneus</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Posição no veículo, km rodado, recapagens e custo por km{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-        {empresaSelecionada && (
-          <Link href={`/pneus/novo?empresa=${empresaSelecionada}`} className="btn-primary">
-            + Novo Pneu
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo="Gestão de Pneus"
+        descricao={`Posição no veículo, km rodado, recapagens e custo por km${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+        acoes={
+          empresaSelecionada && (
+            <Link href={`/pneus/novo?empresa=${empresaSelecionada}`} className="btn-primary">
+              + Novo Pneu
+            </Link>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { rotuloNota } from "@/lib/avaliacoes";
 import { RespostaAvaliacao } from "./_components/RespostaAvaliacao";
@@ -85,12 +86,10 @@ export default async function AvaliacoesAdminPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Avaliações dos clientes</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Feedback enviado pelos clientes sobre a plataforma, com espaço pra responder direto.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Avaliações dos clientes"
+        descricao="Feedback enviado pelos clientes sobre a plataforma, com espaço pra responder direto."
+      />
 
       {error && <p className="mb-4 text-sm text-red-600">Erro ao carregar avaliações: {error.message}</p>}
 

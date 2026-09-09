@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { MeuPostoForm } from "./_components/MeuPostoForm";
@@ -33,14 +34,10 @@ export default async function MeuPostoPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="max-w-3xl">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Meu Posto</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Confirme os dados do seu estabelecimento — CNPJ, endereço e localização são comparados com a base
-          nacional da ANP pra evitar cadastro duplicado, e alimentam os preços exibidos pros clientes nas
-          consultas de postos e roteirização.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Meu Posto"
+        descricao="Confirme os dados do seu estabelecimento — CNPJ, endereço e localização são comparados com a base nacional da ANP pra evitar cadastro duplicado, e alimentam os preços exibidos pros clientes nas consultas de postos e roteirização."
+      />
 
       {opcoes.length > 1 && (
         <form className="mb-4 flex items-end gap-2 text-sm">

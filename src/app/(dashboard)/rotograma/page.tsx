@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
@@ -93,17 +94,15 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Rotograma de Segurança</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Mapa de pontos de risco, paradas e contatos de emergência para o motorista levar na viagem.
-          </p>
-        </div>
-        <Link href="/rotograma/novo" className="btn-primary">
-          + Novo Rotograma
-        </Link>
-      </div>
+      <CabecalhoPagina
+        titulo="Rotograma de Segurança"
+        descricao="Mapa de pontos de risco, paradas e contatos de emergência para o motorista levar na viagem."
+        acoes={
+          <Link href="/rotograma/novo" className="btn-primary">
+            + Novo Rotograma
+          </Link>
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { listarInsightsAcao } from "./actions";
@@ -63,14 +64,10 @@ export default async function InsightsIAPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Insights Proativos de IA</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Sinais reais encontrados nas milhares de operações já registradas — combustível, manutenção, pneus,
-          sinistros, multas, aprovações, seguro e motoristas cruzados de uma vez, sem você precisar perguntar{" "}
-          {nomeEmpresaSelecionada ? `— ${nomeEmpresaSelecionada}` : ""}. Atualizado 1x por dia.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Insights Proativos de IA"
+        descricao={`Sinais reais encontrados nas milhares de operações já registradas — combustível, manutenção, pneus, sinistros, multas, aprovações, seguro e motoristas cruzados de uma vez, sem você precisar perguntar ${nomeEmpresaSelecionada ? `— ${nomeEmpresaSelecionada}` : ""}. Atualizado 1x por dia.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

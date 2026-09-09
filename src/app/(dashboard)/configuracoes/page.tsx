@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { buscarLogoutInatividadeMinutos } from "@/lib/configuracoesSistema";
 import { FormularioLogoutInatividade } from "./_components/FormularioLogoutInatividade";
@@ -32,12 +33,10 @@ export default async function ConfiguracoesPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Configurações do Sistema</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Parâmetros globais da plataforma — valem para todos os clientes, postos e usuários.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Configurações do Sistema"
+        descricao="Parâmetros globais da plataforma — valem para todos os clientes, postos e usuários."
+      />
 
       <FormularioLogoutInatividade minutosAtuais={logoutInatividadeMinutos} />
     </div>

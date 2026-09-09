@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 // Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
@@ -82,19 +83,21 @@ export default async function FaturasFretesPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">🧾 Faturas de Frete</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            CT-es autorizados agrupados por tomador e período.{nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
-          </p>
-        </div>
-        {empresaSelecionada && (
-          <Link href={`/faturas-fretes/gerar?empresa=${empresaSelecionada}`} className="btn-primary">
-            + Gerar fatura
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">🧾</span>Faturas de Frete
+          </>
+        }
+        descricao={`CT-es autorizados agrupados por tomador e período.${nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}`}
+        acoes={
+          empresaSelecionada && (
+            <Link href={`/faturas-fretes/gerar?empresa=${empresaSelecionada}`} className="btn-primary">
+              + Gerar fatura
+            </Link>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

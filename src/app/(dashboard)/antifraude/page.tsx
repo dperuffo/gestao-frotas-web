@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
@@ -98,21 +99,21 @@ export default async function AntifraudePage({
     <div>
       <AvisoFalhasVerificacao falhas={falhasRaw ?? []} />
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">🛡️ Antifraude</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Regras que sistemas externos (bandeira de cartão, posto, gateway de pagamento) consultam antes de
-            autorizar um abastecimento
-            {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-        {empresaSelecionada && (
-          <Link href={`/antifraude/novo?empresa=${empresaSelecionada}`} className="btn-primary">
-            + Nova Regra
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">🛡️</span>Antifraude
+          </>
+        }
+        descricao={`Regras que sistemas externos (bandeira de cartão, posto, gateway de pagamento) consultam antes de autorizar um abastecimento${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+        acoes={
+          empresaSelecionada && (
+            <Link href={`/antifraude/novo?empresa=${empresaSelecionada}`} className="btn-primary">
+              + Nova Regra
+            </Link>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { LABEL_CATEGORIA_FIDELIDADE } from "@/lib/fidelidadeCategorias";
@@ -103,22 +104,21 @@ export default async function ParceriasLocaisPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">🎟️ Parcerias Locais</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Crie benefícios próprios pro catálogo de fidelidade &quot;Estrada que Cuida&quot; — vale-refeição,
-            lavagem, treinamentos, telemedicina, o que fizer sentido pro seu negócio. Motoristas de toda a rede
-            enxergam e resgatam com os pontos que acumulam.
-            {nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
-          </p>
-        </div>
-        {empresaSelecionada && (
-          <Link href={`/parcerias-locais/novo?empresa=${empresaSelecionada}`} className="btn-primary">
-            + Novo Benefício
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">🎟️</span>Parcerias Locais
+          </>
+        }
+        descricao={`Crie benefícios próprios pro catálogo de fidelidade "Estrada que Cuida" — vale-refeição, lavagem, treinamentos, telemedicina, o que fizer sentido pro seu negócio. Motoristas de toda a rede enxergam e resgatam com os pontos que acumulam.${nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}`}
+        acoes={
+          empresaSelecionada && (
+            <Link href={`/parcerias-locais/novo?empresa=${empresaSelecionada}`} className="btn-primary">
+              + Novo Benefício
+            </Link>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

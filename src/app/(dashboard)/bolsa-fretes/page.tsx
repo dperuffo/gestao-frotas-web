@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { NovaCapacidadeForm } from "./_components/NovaCapacidadeForm";
@@ -63,15 +64,10 @@ export default async function BolsaFretesPage({ searchParams }: { searchParams: 
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Bolsa de Fretes do Grupo</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Cruze sua capacidade ociosa com fretes disponíveis de outras empresas do seu Grupo Econômico
-            {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-      </div>
+      <CabecalhoPagina
+        titulo="Bolsa de Fretes do Grupo"
+        descricao={`Cruze sua capacidade ociosa com fretes disponíveis de outras empresas do seu Grupo Econômico${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

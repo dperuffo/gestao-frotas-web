@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 // Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
@@ -31,20 +32,19 @@ export default async function RedePostosPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
+      <CabecalhoPagina
+        titulo={
+          <>
             Rede de Postos <AjudaIcon chave="rede_postos.pagina" />
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Agrupamento de postos revendedores sob a mesma Rede — usuários vinculados a um posto da Rede
-            passam a ver os postos irmãos nas telas do sistema.
-          </p>
-        </div>
-        <Link href="/rede-postos/novo" className="btn-primary">
-          + Nova Rede
-        </Link>
-      </div>
+          </>
+        }
+        descricao="Agrupamento de postos revendedores sob a mesma Rede — usuários vinculados a um posto da Rede passam a ver os postos irmãos nas telas do sistema."
+        acoes={
+          <Link href="/rede-postos/novo" className="btn-primary">
+            + Nova Rede
+          </Link>
+        }
+      />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <IndicadorColorido cor="sky" icon={Network} label="Total de redes" valor={String(totalRedes)} />

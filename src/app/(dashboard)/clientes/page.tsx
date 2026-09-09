@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_EMPRESA_LABEL, type StatusEmpresa } from "@/lib/constants";
 import { formatCNPJ } from "@/lib/utils";
@@ -73,19 +74,19 @@ export default async function ClientesPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
+      <CabecalhoPagina
+        titulo={
+          <>
             Clientes <AjudaIcon chave="clientes.pagina" />
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Cadastro das empresas (transportadoras) atendidas pela plataforma.
-          </p>
-        </div>
-        <Link href="/clientes/novo" className="btn-primary">
-          + Novo Cliente
-        </Link>
-      </div>
+          </>
+        }
+        descricao="Cadastro das empresas (transportadoras) atendidas pela plataforma."
+        acoes={
+          <Link href="/clientes/novo" className="btn-primary">
+            + Novo Cliente
+          </Link>
+        }
+      />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <IndicadorColorido cor="sky" icon={Building2} label="Total de clientes" valor={String(totalGeral ?? 0)} />

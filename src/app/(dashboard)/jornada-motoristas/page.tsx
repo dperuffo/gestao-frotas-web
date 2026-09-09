@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarDataHoraBr } from "@/lib/utils";
@@ -251,14 +252,10 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Jornada dos Motoristas</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Indicadores a partir dos horários de trabalho, pausa e descanso que os próprios motoristas registram no
-          app — inclui alertas de aderência à Lei do Motorista (13.103/2015): condução contínua acima de 5h30 sem
-          pausa, e descanso entre jornadas abaixo de 11h.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Jornada dos Motoristas"
+        descricao="Indicadores a partir dos horários de trabalho, pausa e descanso que os próprios motoristas registram no app — inclui alertas de aderência à Lei do Motorista (13.103/2015): condução contínua acima de 5h30 sem pausa, e descanso entre jornadas abaixo de 11h."
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

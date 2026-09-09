@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { PERFIS, PERFIL_LABEL, EMPRESA_ID_GLOBAL, type Perfil } from "@/lib/constants";
@@ -138,12 +139,11 @@ export default async function PermissoesPage({
 
   return (
     <div>
+      <CabecalhoPagina
+        titulo="Permissões por Perfil"
+        descricao="Controla o que cada perfil de usuário pode ver e fazer no sistema. Clique no interruptor para permitir ou negar o acesso de um perfil a uma funcionalidade."
+      />
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Permissões por Perfil</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Controla o que cada perfil de usuário pode ver e fazer no sistema. Clique no
-          interruptor para permitir ou negar o acesso de um perfil a uma funcionalidade.
-        </p>
         {!souAdmin && (
           <p className="mt-2 text-sm text-frota-700">
             Você está vendo apenas os perfis do seu nível de gestão ou abaixo, para{" "}

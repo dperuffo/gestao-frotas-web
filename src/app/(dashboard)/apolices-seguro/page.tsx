@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
@@ -53,20 +54,17 @@ export default async function ApolicesSeguroPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Apólices de Seguro</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Número da apólice, seguradora, vigência, cobertura e franquia — num lugar só, com alerta de
-            vencimento{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-        {empresaSelecionada && (
-          <Link href={`/apolices-seguro/nova?empresa=${empresaSelecionada}`} className="btn-primary">
-            + Nova Apólice
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo="Apólices de Seguro"
+        descricao={`Número da apólice, seguradora, vigência, cobertura e franquia — num lugar só, com alerta de vencimento${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+        acoes={
+          empresaSelecionada && (
+            <Link href={`/apolices-seguro/nova?empresa=${empresaSelecionada}`} className="btn-primary">
+              + Nova Apólice
+            </Link>
+          )
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

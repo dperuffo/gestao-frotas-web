@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import {
@@ -40,9 +41,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
   if (!empresaSelecionada) {
     return (
       <div>
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-slate-900">Documentos</h1>
-        </div>
+        <CabecalhoPagina titulo="Documentos" />
         {semEmpresaEscolhida ? (
           <form className="mb-4 flex items-end gap-2">
             <div>
@@ -86,19 +85,15 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
 
   return (
     <div className="max-w-3xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Documentos</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Documentação societária e cadastral{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-            Aprovada pelo admin, libera criar/aderir a Redes de Postos ou Grupos Econômicos e aceitar/criar
-            negociações.
-          </p>
-        </div>
-        <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${COR_STATUS[situacao.status]}`}>
-          {LABEL_STATUS_DOCUMENTACAO[situacao.status]}
-        </span>
-      </div>
+      <CabecalhoPagina
+        titulo="Documentos"
+        descricao={`Documentação societária e cadastral${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Aprovada pelo admin, libera criar/aderir a Redes de Postos ou Grupos Econômicos e aceitar/criar negociações.`}
+        acoes={
+          <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${COR_STATUS[situacao.status]}`}>
+            {LABEL_STATUS_DOCUMENTACAO[situacao.status]}
+          </span>
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

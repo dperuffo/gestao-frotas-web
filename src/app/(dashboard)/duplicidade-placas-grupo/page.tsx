@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { listarDuplicidadesPlacaGrupoAcao, type VeiculoDuplicado } from "./actions";
@@ -35,15 +36,10 @@ export default async function DuplicidadePlacasGrupoPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Placas Duplicadas no Grupo Econômico</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Veículos com a mesma placa cadastrados em mais de uma empresa do mesmo grupo econômico ou rede de postos —
-          geralmente porque as empresas já tinham cadastros próprios antes de entrarem pro grupo. Corrija a placa
-          errada ou inative o cadastro duplicado.
-          {nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Placas Duplicadas no Grupo Econômico"
+        descricao={`Veículos com a mesma placa cadastrados em mais de uma empresa do mesmo grupo econômico ou rede de postos — geralmente porque as empresas já tinham cadastros próprios antes de entrarem pro grupo. Corrija a placa errada ou inative o cadastro duplicado.${nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}`}
+      />
 
       <form className="mb-6 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

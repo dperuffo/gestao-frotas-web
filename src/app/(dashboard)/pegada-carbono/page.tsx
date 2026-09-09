@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { GraficoPegadaCarbono, type ItemCo2 } from "./_components/GraficoPegadaCarbono";
@@ -75,14 +76,14 @@ export default async function PegadaCarbonoPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">🌍 Pegada de Carbono</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Estimativa de CO2 emitido pela frota, calculada a partir dos litros já registrados nos abastecimentos
-          {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Indicador indicativo para
-          acompanhamento interno/ESG — não substitui um inventário de emissões certificado.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">🌍</span>Pegada de Carbono
+          </>
+        }
+        descricao={`Estimativa de CO2 emitido pela frota, calculada a partir dos litros já registrados nos abastecimentos${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Indicador indicativo para acompanhamento interno/ESG — não substitui um inventário de emissões certificado.`}
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

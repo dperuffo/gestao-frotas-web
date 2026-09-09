@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -130,14 +131,10 @@ export default async function AprovacoesPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Aprovações</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Solicitação → aprovação → execução, com histórico — pra despesas de manutenção, frete ou peças que
-          precisam de sign-off antes de gastar{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Acima
-          de R$ 2.000 exige 2 níveis de aprovação.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Aprovações"
+        descricao={`Solicitação → aprovação → execução, com histórico — pra despesas de manutenção, frete ou peças que precisam de sign-off antes de gastar${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Acima de R$ 2.000 exige 2 níveis de aprovação.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { BotoesDuplicata } from "./_components/BotoesDuplicata";
 
@@ -48,14 +49,10 @@ export default async function PostosDuplicadosPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Possíveis duplicados de postos</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Postos que se auto-cadastraram em &quot;Meu Posto&quot; com endereço/coordenadas muito próximos de
-          outro posto já existente, mas com CNPJ diferente. O cadastro já foi salvo normalmente — decida aqui
-          se é mesmo o mesmo estabelecimento (duplicata) ou dois postos legitimamente vizinhos.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Possíveis duplicados de postos"
+        descricao='Postos que se auto-cadastraram em "Meu Posto" com endereço/coordenadas muito próximos de outro posto já existente, mas com CNPJ diferente. O cadastro já foi salvo normalmente — decida aqui se é mesmo o mesmo estabelecimento (duplicata) ou dois postos legitimamente vizinhos.'
+      />
 
       {error && <p className="mb-4 text-sm text-red-600">Erro ao carregar: {error.message}</p>}
 

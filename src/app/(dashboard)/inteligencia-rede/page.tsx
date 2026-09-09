@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ANP_PRECO_REFERENCIA_FALLBACK, ESTADO_PARA_UF, PRODUTO_PARA_CATEGORIA_ANP } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
@@ -112,10 +113,7 @@ export default async function InteligenciaRedePage({
   if (!ehAdmin && !empresaSelecionada) {
     return (
       <div>
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-slate-900">Inteligência de Rede</h1>
-          <p className="mt-1 text-sm text-slate-500">Selecione a empresa pra ver a rede de postos dela.</p>
-        </div>
+        <CabecalhoPagina titulo="Inteligência de Rede" descricao="Selecione a empresa pra ver a rede de postos dela." />
         <form className="mb-4 flex items-end gap-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
@@ -536,10 +534,10 @@ export default async function InteligenciaRedePage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Inteligência de Rede</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {ehAdmin ? (
+      <CabecalhoPagina
+        titulo="Inteligência de Rede"
+        descricao={
+          ehAdmin ? (
             <>
               Visão consolidada de todos os clientes — restrita ao time interno. Cobertura da rede
               de postos revendedores e comparação de preço médio contra referência nacional.
@@ -549,9 +547,9 @@ export default async function InteligenciaRedePage({
               Cobertura da rede de postos revendedores {nomeEmpresaSelecionada ? `de ${nomeEmpresaSelecionada}` : "da sua empresa"} e
               comparação de preço médio contra referência nacional (ANP).
             </>
-          )}
-        </p>
-      </div>
+          )
+        }
+      />
 
       {!ehAdmin && empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

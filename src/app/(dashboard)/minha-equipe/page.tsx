@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaPropria } from "@/lib/empresaAtual";
 import { verificarLimiteUsuarios } from "@/lib/limitePlano";
@@ -46,17 +47,18 @@ export default async function MinhaEquipePage({ searchParams }: { searchParams: 
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Minha Equipe</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Convide colegas para acessar o sistema junto com você. O que cada um pode ver e fazer é definido
-          em{" "}
-          <Link href="/permissoes" className="text-frota-600 hover:underline">
-            Permissões
-          </Link>
-          .
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Minha Equipe"
+        descricao={
+          <>
+            Convide colegas para acessar o sistema junto com você. O que cada um pode ver e fazer é definido em{" "}
+            <Link href="/permissoes" className="underline">
+              Permissões
+            </Link>
+            .
+          </>
+        }
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

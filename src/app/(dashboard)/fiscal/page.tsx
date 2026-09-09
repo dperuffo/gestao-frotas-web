@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { FormularioFiscal } from "./_components/FormularioFiscal";
@@ -28,14 +29,10 @@ export default async function FiscalPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Fiscal (CT-e / MDF-e)</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Configuração do emitente de documentos fiscais de transporte
-          {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Em ambiente de homologação os
-          documentos emitidos são de teste, sem valor fiscal.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Fiscal (CT-e / MDF-e)"
+        descricao={`Configuração do emitente de documentos fiscais de transporte${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Em ambiente de homologação os documentos emitidos são de teste, sem valor fiscal.`}
+      />
 
       {empresas.length > 1 && (
         <div className="card mb-6 p-4">

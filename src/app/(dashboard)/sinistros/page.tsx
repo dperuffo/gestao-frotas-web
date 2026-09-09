@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 // Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
@@ -102,17 +103,17 @@ export default async function SinistrosPage({ searchParams }: { searchParams: Pr
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Sinistros e Acidentes</h1>
-          <p className="mt-1 text-sm text-slate-500">Registro de sinistros por veículo, usado no índice de sinistralidade.</p>
-        </div>
-        {empresaSelecionada && (
-          <Link href={`/sinistros/nova?empresa=${empresaSelecionada}`} className="btn-primary text-sm">
-            + Novo Sinistro
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo="Sinistros e Acidentes"
+        descricao="Registro de sinistros por veículo, usado no índice de sinistralidade."
+        acoes={
+          empresaSelecionada && (
+            <Link href={`/sinistros/nova?empresa=${empresaSelecionada}`} className="btn-primary text-sm">
+              + Novo Sinistro
+            </Link>
+          )
+        }
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

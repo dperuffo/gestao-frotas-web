@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
@@ -125,23 +126,22 @@ export default async function AcoesSugeridasPage({
 
   return (
     <div>
+      <CabecalhoPagina
+        titulo="Ações Sugeridas"
+        descricao={`Oportunidades detectadas automaticamente — CNH vencida, posto acima da média regional, hodômetro fora do padrão, volume acima do tanque, postos distantes no mesmo dia e preço fora da média regional. Aprovar executa a ação de verdade no sistema (bloquear motorista, remover posto da rede, cadastrar regra)${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+        acoes={
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href={`/acoes-sugeridas/restricoes${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`}
+              className="btn-secondary text-sm"
+            >
+              ⚙️ Restrições automáticas
+            </Link>
+          </div>
+        }
+      />
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Ações Sugeridas</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Oportunidades detectadas automaticamente — CNH vencida, posto acima da média regional, hodômetro fora do
-            padrão, volume acima do tanque, postos distantes no mesmo dia e preço fora da média regional. Aprovar
-            executa a ação de verdade no sistema (bloquear motorista, remover posto da rede, cadastrar
-            regra){nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Link
-            href={`/acoes-sugeridas/restricoes${empresaSelecionada ? `?empresa=${empresaSelecionada}` : ""}`}
-            className="btn-secondary text-sm"
-          >
-            ⚙️ Restrições automáticas
-          </Link>
           {!semClienteEscolhido && (
             <BotaoDetectarAcoes empresaId={empresaSelecionada} todasEmpresas={ehAdmin && !empresaSelecionada} />
           )}

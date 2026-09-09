@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -84,14 +85,10 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Patrimônio</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Registro formal de ativo imobilizado: valor de aquisição, depreciação contábil (linha reta pela vida
-          útil) e correções (reavaliação, melhoria, baixa) — complementa o TCO, que usa depreciação econômica
-          (curva FIPE) só pra custo/km.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Patrimônio"
+        descricao="Registro formal de ativo imobilizado: valor de aquisição, depreciação contábil (linha reta pela vida útil) e correções (reavaliação, melhoria, baixa) — complementa o TCO, que usa depreciação econômica (curva FIPE) só pra custo/km."
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

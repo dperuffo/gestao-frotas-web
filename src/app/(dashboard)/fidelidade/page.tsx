@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ToggleAtivoItemCatalogo } from "./_components/ToggleAtivoItemCatalogo";
 import { ExcluirItemCatalogo } from "./_components/ExcluirItemCatalogo";
@@ -60,23 +61,24 @@ export default async function FidelidadePage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">🎁 Catálogo de Fidelidade</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Itens que o motorista resgata no app &quot;Estrada que Cuida&quot; gastando pontos — catálogo simulado
-            (v1), sem parceiros reais nem pagamento/entrega integrados.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/fidelidade/resgates" className="btn-secondary">
-            Ver resgates
-          </Link>
-          <Link href="/fidelidade/novo" className="btn-primary">
-            + Novo Item
-          </Link>
-        </div>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">🎁</span>Catálogo de Fidelidade
+          </>
+        }
+        descricao='Itens que o motorista resgata no app "Estrada que Cuida" gastando pontos — catálogo simulado (v1), sem parceiros reais nem pagamento/entrega integrados.'
+        acoes={
+          <div className="flex items-center gap-3">
+            <Link href="/fidelidade/resgates" className="btn-secondary">
+              Ver resgates
+            </Link>
+            <Link href="/fidelidade/novo" className="btn-primary">
+              + Novo Item
+            </Link>
+          </div>
+        }
+      />
 
       <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 pb-3">
         <Link

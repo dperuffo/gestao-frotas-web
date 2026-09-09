@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -298,15 +299,10 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Financeiro</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Contas a receber (faturas dos clientes) e contas a pagar (despesas do posto)
-            {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-          </p>
-        </div>
-      </div>
+      <CabecalhoPagina
+        titulo="Financeiro"
+        descricao={`Contas a receber (faturas dos clientes) e contas a pagar (despesas do posto)${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+      />
 
       {/* Este seletor troca qual POSTO (empresa própria) está ativo — não é
           um filtro de "cliente" de terceiros. Mantém "Empresa"/"Trocar" em

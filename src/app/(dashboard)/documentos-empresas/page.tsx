@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { LABEL_STATUS_DOCUMENTACAO, STATUS_DOCUMENTACAO, type StatusDocumentacao } from "@/lib/empresasDocumentos";
 
@@ -59,13 +60,10 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Aprovação de Documentos</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Documentação societária/cadastral enviada por postos e clientes — aprovada, libera criar/aderir a
-          Redes de Postos ou Grupos Econômicos e aceitar/criar negociações.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Aprovação de Documentos"
+        descricao="Documentação societária/cadastral enviada por postos e clientes — aprovada, libera criar/aderir a Redes de Postos ou Grupos Econômicos e aceitar/criar negociações."
+      />
 
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
         {STATUS_DOCUMENTACAO.map((s) => (

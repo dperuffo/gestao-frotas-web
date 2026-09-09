@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -48,9 +49,7 @@ export default async function ApuracaoTributariaPage({
   if (!empresaSelecionada) {
     return (
       <div>
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-slate-900">Apuração de Crédito Tributário</h1>
-        </div>
+        <CabecalhoPagina titulo="Apuração de Crédito Tributário" />
         {empresas.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhuma empresa disponível.</p>
         ) : (
@@ -86,9 +85,7 @@ export default async function ApuracaoTributariaPage({
   if (empresaInfo?.segmento === "Revenda") {
     return (
       <div>
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-slate-900">Apuração de Crédito Tributário</h1>
-        </div>
+        <CabecalhoPagina titulo="Apuração de Crédito Tributário" />
         <p className="text-sm text-slate-500">
           Esta apuração é do lado do cliente (transportadora) — quem toma o crédito de ICMS pelo combustível consumido, não
           o posto que vende.
@@ -170,10 +167,10 @@ export default async function ApuracaoTributariaPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Apuração de Crédito Tributário sobre Combustível</h1>
-        {nomeEmpresaSelecionada && <p className="mt-1 text-sm text-slate-500">{nomeEmpresaSelecionada}</p>}
-      </div>
+      <CabecalhoPagina
+        titulo="Apuração de Crédito Tributário sobre Combustível"
+        descricao={nomeEmpresaSelecionada || undefined}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

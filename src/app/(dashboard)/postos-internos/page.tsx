@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { obterOuCriarPostoInternoAcao } from "./actions";
 import { FormPostoInterno } from "./_components/FormPostoInterno";
@@ -39,18 +40,15 @@ export default async function PostosInternosPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-semibold text-slate-900">
+      <CabecalhoPagina
+        titulo={
+          <>
             Postos Internos
             <AjudaIcon chave="postos-internos.visao_geral" />
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Abastecimento feito na garagem própria (matriz ou filial), antes do veículo sair pra rota — entra no
-            custo total da Roteirização junto com os postos externos.
-          </p>
-        </div>
-      </div>
+          </>
+        }
+        descricao="Abastecimento feito na garagem própria (matriz ou filial), antes do veículo sair pra rota — entra no custo total da Roteirização junto com os postos externos."
+      />
 
       {empresas.length > 1 && (
         <form className="mb-6 flex items-end gap-2">

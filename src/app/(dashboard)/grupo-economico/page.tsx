@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
@@ -24,19 +25,19 @@ export default async function GrupoEconomicoPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
+      <CabecalhoPagina
+        titulo={
+          <>
             Grupo Econômico <AjudaIcon chave="grupo_economico.pagina" />
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Agrupamento de clientes sob um mesmo grupo econômico.
-          </p>
-        </div>
-        <Link href="/grupo-economico/novo" className="btn-primary">
-          + Novo Grupo
-        </Link>
-      </div>
+          </>
+        }
+        descricao="Agrupamento de clientes sob um mesmo grupo econômico."
+        acoes={
+          <Link href="/grupo-economico/novo" className="btn-primary">
+            + Novo Grupo
+          </Link>
+        }
+      />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <IndicadorColorido cor="sky" icon={GitBranch} label="Total de grupos" valor={String(totalGrupos)} />

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
@@ -76,13 +77,10 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Checklist de Inspeção Veicular</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Registro de inspeções periódicas (pneus, freios, luzes, documentação e outros itens de segurança), com
-          histórico de não conformidades e tempo de resolução.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Checklist de Inspeção Veicular"
+        descricao="Registro de inspeções periódicas (pneus, freios, luzes, documentação e outros itens de segurança), com histórico de não conformidades e tempo de resolução."
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

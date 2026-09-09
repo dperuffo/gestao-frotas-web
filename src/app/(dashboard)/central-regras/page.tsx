@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { listarAvisosAcao } from "../administracao/central-avisos/actions";
@@ -103,14 +104,10 @@ export default async function CentralRegrasPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Central de Regras & Alertas</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Resumo dos 4 lugares onde a plataforma detecta e avisa sobre algo que precisa da sua atenção
-          {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Cada card leva pra tela de detalhe
-          correspondente.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Central de Regras & Alertas"
+        descricao={`Resumo dos 4 lugares onde a plataforma detecta e avisa sobre algo que precisa da sua atenção${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Cada card leva pra tela de detalhe correspondente.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { MissoesGestao } from "./MissoesGestao";
@@ -96,13 +97,14 @@ export default async function FidelidadeMotoristasPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">🎁 Fidelidade dos Motoristas</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Engajamento dos motoristas no programa &quot;Estrada que Cuida&quot; (app próprio do motorista)
-          {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            <span className="mr-1.5">🎁</span>Fidelidade dos Motoristas
+          </>
+        }
+        descricao={`Engajamento dos motoristas no programa "Estrada que Cuida" (app próprio do motorista)${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

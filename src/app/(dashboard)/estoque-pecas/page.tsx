@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/estoquePecas";
@@ -78,19 +79,17 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Estoque de Peças</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Catálogo de peças da Manutenção, com saldo e custo médio calculados a partir das entradas e saídas registradas.
-          </p>
-        </div>
-        {empresaSelecionada && (
-          <Link href={`/estoque-pecas/nova?empresa=${empresaSelecionada}`} className="btn-primary text-sm">
-            + Nova Peça
-          </Link>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo="Estoque de Peças"
+        descricao="Catálogo de peças da Manutenção, com saldo e custo médio calculados a partir das entradas e saídas registradas."
+        acoes={
+          empresaSelecionada && (
+            <Link href={`/estoque-pecas/nova?empresa=${empresaSelecionada}`} className="btn-primary text-sm">
+              + Nova Peça
+            </Link>
+          )
+        }
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

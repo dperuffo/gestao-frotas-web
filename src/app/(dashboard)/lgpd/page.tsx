@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
@@ -86,15 +87,14 @@ export default async function LgpdPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
-          🔒 Privacidade e Proteção de Dados (LGPD) <AjudaIcon chave="lgpd.pagina" />
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Seus dados, seu histórico de consentimento e os mecanismos de revogação e exclusão previstos na
-          Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            🔒 Privacidade e Proteção de Dados (LGPD) <AjudaIcon chave="lgpd.pagina" />
+          </>
+        }
+        descricao="Seus dados, seu histórico de consentimento e os mecanismos de revogação e exclusão previstos na Lei Geral de Proteção de Dados (Lei nº 13.709/2018)."
+      />
 
       {!ehAdmin && (
         <>

@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatarDataHoraBr } from "@/lib/utils";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
@@ -97,13 +98,10 @@ export default async function LogAuditoriaPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Log de Auditoria</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Quem mudou o quê, quando — restrito por enquanto a mudança de permissão, edição de preço de posto e
-          inativação de veículo.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Log de Auditoria"
+        descricao="Quem mudou o quê, quando — restrito por enquanto a mudança de permissão, edição de preço de posto e inativação de veículo."
+      />
 
       <form className="card mb-4 flex flex-wrap items-end gap-2 p-4">
         <div>

@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { renderMarkdownSimples } from "@/lib/markdownSimples";
 import { urlImagemAviso } from "@/lib/avisos/imagemAviso";
 import { formatarDataHoraBr } from "@/lib/utils";
@@ -26,10 +27,10 @@ export default async function CentralAvisosHistoricoPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Central de Avisos</h1>
-        <p className="mt-1 text-sm text-slate-500">Histórico completo de novidades, correções e avisos da plataforma.</p>
-      </div>
+      <CabecalhoPagina
+        titulo="Central de Avisos"
+        descricao="Histórico completo de novidades, correções e avisos da plataforma."
+      />
 
       <div className="space-y-4">
         {avisos.length === 0 && <p className="p-4 text-sm text-slate-400">Nenhum aviso publicado ainda.</p>}

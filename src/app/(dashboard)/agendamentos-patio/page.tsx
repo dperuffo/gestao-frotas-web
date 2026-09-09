@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { STATUS_AGENDAMENTO_LABEL, STATUS_AGENDAMENTO_COR, TIPO_AGENDAMENTO_LABEL } from "@/lib/agendamentosPatio";
@@ -65,14 +66,10 @@ export default async function AgendamentosPatioPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Agendamento de Pátio</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Janelas de carga (coleta) e descarga (entrega) marcadas pros fretes do dia. Status &quot;em andamento&quot; e
-          &quot;concluído&quot; são preenchidos sozinhos quando o motorista bate o checkpoint no app dele.
-          {nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Agendamento de Pátio"
+        descricao={`Janelas de carga (coleta) e descarga (entrega) marcadas pros fretes do dia. Status "em andamento" e "concluído" são preenchidos sozinhos quando o motorista bate o checkpoint no app dele.${nomeEmpresaSelecionada ? ` Mostrando: ${nomeEmpresaSelecionada}.` : ""}`}
+      />
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (

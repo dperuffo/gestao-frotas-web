@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
@@ -47,16 +48,14 @@ export default async function CadastrosPendentesPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">
-          Cadastros Pendentes <AjudaIcon chave="cadastros-pendentes.pagina" />
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Veículos e motoristas criados automaticamente a partir de abastecimentos importados — complete o cadastro
-          para sair da lista
-          {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            Cadastros Pendentes <AjudaIcon chave="cadastros-pendentes.pagina" />
+          </>
+        }
+        descricao={`Veículos e motoristas criados automaticamente a partir de abastecimentos importados — complete o cadastro para sair da lista${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
