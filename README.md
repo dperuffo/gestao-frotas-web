@@ -9212,3 +9212,45 @@ neste README) já com os críticos corrigidos, mas nunca houve um pentest formal
 antes de vender pra clientes maiores.
 
 Validado: `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterados/criados desta fase.
+
+## Fase Inteligência-Comercial-Posto (09/09/2026) — devolutiva pro posto: clientes em risco de churn
+
+Pedido do Daniel a partir de uma discussão sobre o programa de fidelidade: hoje ele gera dado só pro
+lado da frota (Ações Sugeridas, Insights de IA), mas o posto revendedor não recebe nenhuma inteligência
+de volta sobre a própria carteira de clientes. Decisão confirmada pelo Daniel: primeira devolutiva
+concreta é "quais clientes pararam de abastecer aqui", calculada em cima do próprio histórico de
+abastecimento do posto — sem depender de nenhum dado externo ou de outro posto.
+
+**RPC `clientes_em_risco_churn(p_empresa_posto_id uuid)`** — SECURITY DEFINER com guarda manual (mesmo
+padrão de `clientes_do_posto`: checa `empresas_do_usuario` ou admin). Cruza `negociacoes_postos` (quem é
+cliente do posto) com o histórico real em `abastecimentos_unificado`, usa `LAG()` particionado por
+`empresa_id` pra calcular o intervalo médio histórico entre compras de cada cliente, e classifica quem
+está atrasado em relação ao PRÓPRIO padrão (não uma média genérica de mercado): `atencao` a partir de
+1,5x o intervalo médio do cliente, `critico` a partir de 2,5x — limiares confirmados pelo Daniel.
+Retorna também `sem_historico` (só 1 compra, sem intervalo calculável) e `nunca_abasteceu` (cliente
+negociado mas nenhum abastecimento registrado ainda).
+
+Achado de segurança durante a validação: a função criada ficava executável pelo `anon` mesmo depois de
+`REVOKE ALL ... FROM PUBLIC` — Supabase/Postgres concede EXECUTE ao `anon` diretamente na criação,
+independente de `public`. Corrigido com um segundo `REVOKE ALL ... FROM anon` explícito; confirmado via
+`information_schema.routine_privileges` que só `postgres`, `authenticated` e `service_role` têm EXECUTE.
+
+**Nova tela `/inteligencia-comercial-posto`** (visão posto, guardada por `segmento === "Revenda"`) —
+segue o padrão de `/clientes-posto`: seletor de empresa, `CabecalhoPagina`, 4 KPIs coloridos
+(`IndicadorColorido`: em dia / em risco / críticos / nunca abasteceram) e tabela com última compra,
+intervalo médio, razão de atraso e status (badge colorido), com link pra o detalhe do cliente.
+
+Menu: novo item "Inteligência Comercial" (ícone `Target`) logo depois de "Clientes" em
+`menuPostoCadastros`, com entrada correspondente em `TOUR_POR_HREF_POSTO`. Permissão:
+`"/inteligencia-comercial-posto": "aba_inteligencia_comercial_posto"` em `HREF_FUNCIONALIDADE`
+(`src/lib/permissoes.ts`) — sem linha em `permissoes_perfil` ainda, então libera por padrão pra todo
+perfil até o admin configurar restrição explícita (mesma convenção "sem linha cadastrada = liberado"
+das telas mais recentes).
+
+`database.types.ts` atualizado com o tipo da nova RPC (`Args`/`Returns`).
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterados/criados desta fase.
+
+Backlog não solicitado, só registrado como observação: falta índice em `abastecimentos_externos.posto_cnpj`
+(usado tanto por esta RPC quanto por `/financeiro-posto`) — considerar numa leva futura de performance.
+

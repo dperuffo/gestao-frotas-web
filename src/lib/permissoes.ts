@@ -119,6 +119,7 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/rede-postos": "aba_rede_postos",
   "/minha-empresa": "aba_meus_dados_pix",
   "/clientes-posto": "aba_clientes_posto",
+  "/inteligencia-comercial-posto": "aba_inteligencia_comercial_posto",
   "/pre-pedidos": "aba_pre_pedidos",
   "/permissoes": "aba_permissoes",
   "/assinaturas": "aba_assinaturas_clientes",

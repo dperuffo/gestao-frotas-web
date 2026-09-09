@@ -67,6 +67,7 @@ import {
   CheckCircle2,
   CircleDot,
   Brain,
+  Target,
 } from "lucide-react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -435,6 +436,10 @@ const menuPostoCadastros: ItemMenuLateral[] = [
   // Fase 27.72 — cadastro dos clientes que já negociaram com o posto
   // (qualquer status), com ciclo de abastecimento/pagamento por cliente.
   { href: "/clientes-posto", label: "Clientes", icon: Building2 },
+  // Fase Inteligência-Comercial-Posto (09/09/2026) — devolutiva pro posto
+  // dos sinais do próprio histórico de abastecimento (clientes em risco de
+  // churn), a partir da RPC clientes_em_risco_churn.
+  { href: "/inteligencia-comercial-posto", label: "Inteligência Comercial", icon: Target },
 ];
 
 // Fase 27.130 — o dia a dia operacional do posto: negociar com clientes
@@ -603,6 +608,7 @@ const TOUR_POR_HREF_POSTO: Record<string, string> = {
   "/precos-postos": "menu-precos-posto",
   "/financeiro-posto": "menu-financeiro-posto",
   "/integracoes": "menu-integracoes-posto",
+  "/inteligencia-comercial-posto": "menu-inteligencia-comercial-posto",
 };
 
 export default async function DashboardLayout({

@@ -5373,6 +5373,27 @@ export interface Database {
           ultima_atualizacao: string | null;
         }[];
       };
+      // Fase Inteligência-Comercial-Posto (09/09/2026) — sinal de churn dos
+      // clientes do posto, calculado a partir do próprio histórico de
+      // abastecimento em abastecimentos_unificado (intervalo médio entre
+      // compras vs. dias desde a última). SECURITY DEFINER com guarda
+      // manual, EXECUTE revogado de anon e public (só authenticated).
+      clientes_em_risco_churn: {
+        Args: { p_empresa_posto_id: string };
+        Returns: {
+          empresa_cliente_id: string;
+          nome: string;
+          cnpj: string | null;
+          municipio: string | null;
+          uf: string | null;
+          total_abastecimentos: number;
+          ultima_compra: string | null;
+          dias_desde_ultima_compra: number | null;
+          intervalo_medio_dias: number | null;
+          razao_atraso: number | null;
+          status: string;
+        }[];
+      };
       // Fase 27.84 — ciclo de faturamento EM ANDAMENTO (ainda não fechado
       // pelo robô gerar_faturas_postos_robo()) de cada negociação aceita
       // visível ao chamador, com os abastecimentos acumulados até hoje.
