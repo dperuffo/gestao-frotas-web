@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { ApoliceForm } from "../_components/ApoliceForm";
 
 export default async function NovaApolicePage({ searchParams }: { searchParams: Promise<{ empresa?: string }> }) {
@@ -7,9 +8,7 @@ export default async function NovaApolicePage({ searchParams }: { searchParams: 
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Nova Apólice de Seguro</h1>
-      </div>
+      <CabecalhoPagina titulo="Nova Apólice de Seguro" />
       <ApoliceForm empresaId={empresaId} />
     </div>
   );

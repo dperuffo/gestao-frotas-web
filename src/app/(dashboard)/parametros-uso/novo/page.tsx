@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
@@ -17,14 +18,18 @@ export default async function NovoVinculoPage({
   if (!empresaSelecionada) {
     return (
       <div>
-        <h1 className="mb-4 text-xl font-semibold text-slate-900">Novo Vínculo</h1>
-        <p className="text-sm text-slate-500">
-          Selecione um cliente na tela de{" "}
-          <Link href="/parametros-uso" className="text-frota-600 hover:underline">
-            Parâmetros de Uso
-          </Link>{" "}
-          antes de criar um vínculo.
-        </p>
+        <CabecalhoPagina
+          titulo="Novo Vínculo"
+          descricao={
+            <>
+              Selecione um cliente na tela de{" "}
+              <Link href="/parametros-uso" className="underline">
+                Parâmetros de Uso
+              </Link>{" "}
+              antes de criar um vínculo.
+            </>
+          }
+        />
       </div>
     );
   }
@@ -56,8 +61,10 @@ export default async function NovoVinculoPage({
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-semibold text-slate-900">Novo Vínculo</h1>
-      <p className="mb-6 text-sm text-slate-500">Motorista ↔ Veículo{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.</p>
+      <CabecalhoPagina
+        titulo="Novo Vínculo"
+        descricao={`Motorista ↔ Veículo${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+      />
       <VinculoForm
         empresaId={empresaSelecionada}
         veiculos={[

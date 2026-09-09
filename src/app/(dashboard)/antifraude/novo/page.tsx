@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
@@ -16,14 +17,18 @@ export default async function NovaRegraAntifraudePage({
   if (!empresaSelecionada) {
     return (
       <div>
-        <h1 className="mb-4 text-xl font-semibold text-slate-900">Nova Regra Antifraude</h1>
-        <p className="text-sm text-slate-500">
-          Selecione um cliente na tela de{" "}
-          <Link href="/antifraude" className="text-frota-600 hover:underline">
-            Antifraude
-          </Link>{" "}
-          antes de criar uma regra.
-        </p>
+        <CabecalhoPagina
+          titulo="Nova Regra Antifraude"
+          descricao={
+            <>
+              Selecione um cliente na tela de{" "}
+              <Link href="/antifraude" className="underline">
+                Antifraude
+              </Link>{" "}
+              antes de criar uma regra.
+            </>
+          }
+        />
       </div>
     );
   }
@@ -40,11 +45,10 @@ export default async function NovaRegraAntifraudePage({
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-semibold text-slate-900">Nova Regra Antifraude</h1>
-      <p className="mb-6 text-sm text-slate-500">
-        {nomeEmpresaSelecionada ? `Cliente: ${nomeEmpresaSelecionada}.` : ""} Sistemas externos consultam essa regra
-        antes de autorizar um abastecimento.
-      </p>
+      <CabecalhoPagina
+        titulo="Nova Regra Antifraude"
+        descricao={`${nomeEmpresaSelecionada ? `Cliente: ${nomeEmpresaSelecionada}.` : ""} Sistemas externos consultam essa regra antes de autorizar um abastecimento.`}
+      />
       <RegraAntifraudeForm
         empresaId={empresaSelecionada}
         veiculos={(veiculos ?? []).map((v) => ({ placa: v.placa, marca: v.marca, modelo: v.modelo }))}

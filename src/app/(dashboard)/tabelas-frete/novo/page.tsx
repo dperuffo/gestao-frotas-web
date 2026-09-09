@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { TabelaFreteForm } from "../_components/TabelaFreteForm";
@@ -31,10 +32,7 @@ export default async function NovaTabelaFretePage({ searchParams }: { searchPara
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">📋 Nova tabela de frete</h1>
-        <p className="mt-1 text-sm text-slate-500">{nomeEmpresaSelecionada}</p>
-      </div>
+      <CabecalhoPagina titulo="📋 Nova tabela de frete" descricao={nomeEmpresaSelecionada} />
       <TabelaFreteForm
         empresaId={empresaSelecionada}
         parceiros={(parceiros ?? []).map((p) => ({ id: p.id, razaoSocial: p.razao_social, cnpjCpf: p.cnpj_cpf }))}

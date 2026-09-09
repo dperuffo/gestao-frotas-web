@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { buscarCiclosAbertos } from "@/lib/ciclosAbertos";
 import { ClienteForm } from "../_components/ClienteForm";
@@ -68,7 +69,7 @@ export default async function EditarClientePage({
   return (
     <div>
       <BotaoVoltar href="/clientes" />
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Cliente — {cliente.nome}</h1>
+      <CabecalhoPagina titulo={`Editar Cliente — ${cliente.nome}`} />
       <ClienteForm cliente={cliente} souAdmin={souAdmin} />
       <CicloAbastecimentoPagamento
         empresaClienteId={id}

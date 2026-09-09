@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { AbasRoteirizacao } from "../_components/AbasRoteirizacao";
@@ -14,10 +15,7 @@ export default async function RoteirizacaoPostoPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Roteirização</h1>
-        <p className="mt-1 text-sm text-slate-500">Busca livre por CNPJ ou nome do posto.</p>
-      </div>
+      <CabecalhoPagina titulo="Roteirização" descricao="Busca livre por CNPJ ou nome do posto." />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

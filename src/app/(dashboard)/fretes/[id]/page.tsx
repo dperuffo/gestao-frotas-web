@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { PainelPropostas, type Proposta } from "../_components/PainelPropostas";
 import { FormPostoRecomendado } from "../_components/FormPostoRecomendado";
@@ -393,17 +394,17 @@ export default async function FreteDetalhePage({
       <BotaoVoltar href={`/fretes?empresa=${empresaId}`} label="Voltar pra Fretes" />
 
       <div className="card mb-6 p-6">
-        <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-          <h1 className="text-xl font-semibold text-slate-900">{freteTipado.titulo}</h1>
-          <span className="text-xs font-medium text-slate-500">
-            {LABEL_STATUS[freteTipado.status] ?? freteTipado.status}
-            {freteTipado.status === "disponivel" &&
-              (freteTipado.publico_alvo === "base" ? " — minha base" : " — fora da base")}
-          </span>
-        </div>
-        <p className="mb-4 text-sm text-slate-600">
-          {freteTipado.origem_label} → {freteTipado.destino_label}
-        </p>
+        <CabecalhoPagina
+          titulo={freteTipado.titulo}
+          descricao={`${freteTipado.origem_label} → ${freteTipado.destino_label}`}
+          acoes={
+            <span className="text-xs font-medium text-slate-500">
+              {LABEL_STATUS[freteTipado.status] ?? freteTipado.status}
+              {freteTipado.status === "disponivel" &&
+                (freteTipado.publico_alvo === "base" ? " — minha base" : " — fora da base")}
+            </span>
+          }
+        />
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <div>
             <p className="text-xs uppercase text-slate-500">Valor</p>

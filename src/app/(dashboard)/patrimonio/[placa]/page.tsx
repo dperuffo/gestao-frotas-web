@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -84,30 +85,30 @@ export default async function PatrimonioVeiculoPage({
   return (
     <div>
       <BotaoVoltar href={`/patrimonio?empresa=${empresaSelecionada}`} label="Voltar para Patrimônio" />
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="mt-1 text-xl font-semibold text-slate-900">
+      <CabecalhoPagina
+        titulo={
+          <>
             {v.placa}{" "}
-            <span className="font-normal text-slate-500">
+            <span className="font-normal text-white/70">
               — {[v.marca, v.modelo].filter(Boolean).join(" ") || "veículo sem marca/modelo"}
             </span>
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {v.centro_custo_nome ?? "Sem centro de custo"} · {v.ano_fabricacao ?? "—"}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Valor contábil líquido</p>
-          <p className="text-3xl font-bold text-slate-900">
-            {v.valor_contabil_liquido !== null ? formatarMoeda(v.valor_contabil_liquido) : "—"}
-          </p>
-          {v.baixado ? (
-            <p className="text-sm font-medium text-slate-500">Baixado em {formatarData(v.data_baixa)}</p>
-          ) : (
-            v.percentual_depreciado !== null && <p className="text-sm text-slate-500">{v.percentual_depreciado}% depreciado</p>
-          )}
-        </div>
-      </div>
+          </>
+        }
+        descricao={`${v.centro_custo_nome ?? "Sem centro de custo"} · ${v.ano_fabricacao ?? "—"}`}
+        acoes={
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wide text-white/60">Valor contábil líquido</p>
+            <p className="text-3xl font-bold text-white">
+              {v.valor_contabil_liquido !== null ? formatarMoeda(v.valor_contabil_liquido) : "—"}
+            </p>
+            {v.baixado ? (
+              <p className="text-sm font-medium text-white/70">Baixado em {formatarData(v.data_baixa)}</p>
+            ) : (
+              v.percentual_depreciado !== null && <p className="text-sm text-white/70">{v.percentual_depreciado}% depreciado</p>
+            )}
+          </div>
+        }
+      />
 
       {!v.patrimonio_completo && (
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

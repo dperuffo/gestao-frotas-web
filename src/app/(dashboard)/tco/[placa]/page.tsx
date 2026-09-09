@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -73,23 +74,26 @@ export default async function TcoVeiculoPage({
   return (
     <div>
       <BotaoVoltar href="/tco" label="Voltar para TCO" />
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="mt-1 text-xl font-semibold text-slate-900">
-            {v.placa} <span className="font-normal text-slate-500">— {[v.marca, v.modelo].filter(Boolean).join(" ") || "veículo sem marca/modelo"}</span>
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {v.centro_custo_nome ?? "Sem centro de custo"} · {v.ano_fabricacao ?? "—"}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs uppercase tracking-wide text-slate-400">TCO total no período</p>
-          <p className="text-3xl font-bold text-slate-900">{formatarMoeda(v.tco_total)}</p>
-          <p className="text-sm text-slate-500">
-            {v.custo_por_km !== null ? `${formatarMoeda(v.custo_por_km)}/km` : "custo/km indisponível (sem km no período)"}
-          </p>
-        </div>
-      </div>
+      <CabecalhoPagina
+        titulo={
+          <>
+            {v.placa}{" "}
+            <span className="font-normal text-white/70">
+              — {[v.marca, v.modelo].filter(Boolean).join(" ") || "veículo sem marca/modelo"}
+            </span>
+          </>
+        }
+        descricao={`${v.centro_custo_nome ?? "Sem centro de custo"} · ${v.ano_fabricacao ?? "—"}`}
+        acoes={
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wide text-white/60">TCO total no período</p>
+            <p className="text-3xl font-bold text-white">{formatarMoeda(v.tco_total)}</p>
+            <p className="text-sm text-white/70">
+              {v.custo_por_km !== null ? `${formatarMoeda(v.custo_por_km)}/km` : "custo/km indisponível (sem km no período)"}
+            </p>
+          </div>
+        }
+      />
 
       <form className="mb-6 flex flex-wrap items-end gap-2">
         <input type="hidden" name="empresa" value={empresaSelecionada} />

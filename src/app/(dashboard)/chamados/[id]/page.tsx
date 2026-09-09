@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import { resolverPapelAtual } from "../actions";
@@ -82,25 +83,20 @@ export default async function ChamadoDetalhePage({
       <div>
         <BotaoVoltar href="/chamados" label="Voltar para Chamados" />
 
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">
-              #{ticket.numero} — {ticket.titulo}
-            </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              {ticket.empresas?.nome ? `${ticket.empresas.nome} · ` : ""}
-              {tipoLabel(ticket.tipo as TicketTipo)} · aberto por {ticket.user_email} em {formatDate(ticket.criado_em)}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`rounded-full border px-3 py-1 text-sm ${corStatus.bg} ${corStatus.text} ${corStatus.border}`}>
-              {statusLabel(ticket.status as TicketStatus)}
-            </span>
-            <span className={`rounded-full border px-3 py-1 text-sm ${corPrioridade.bg} ${corPrioridade.text} ${corPrioridade.border}`}>
-              {prioridadeLabel((ticket.prioridade as TicketPrioridade) ?? "media")}
-            </span>
-          </div>
-        </div>
+        <CabecalhoPagina
+          titulo={`#${ticket.numero} — ${ticket.titulo}`}
+          descricao={`${ticket.empresas?.nome ? `${ticket.empresas.nome} · ` : ""}${tipoLabel(ticket.tipo as TicketTipo)} · aberto por ${ticket.user_email} em ${formatDate(ticket.criado_em)}`}
+          acoes={
+            <div className="flex items-center gap-2">
+              <span className={`rounded-full border px-3 py-1 text-sm ${corStatus.bg} ${corStatus.text} ${corStatus.border}`}>
+                {statusLabel(ticket.status as TicketStatus)}
+              </span>
+              <span className={`rounded-full border px-3 py-1 text-sm ${corPrioridade.bg} ${corPrioridade.text} ${corPrioridade.border}`}>
+                {prioridadeLabel((ticket.prioridade as TicketPrioridade) ?? "media")}
+              </span>
+            </div>
+          }
+        />
 
         {papel === "admin" ? (
           <ControlesAdminChamado ticketId={ticket.id} statusAtual={ticket.status as TicketStatus} prioridadeAtual={(ticket.prioridade as TicketPrioridade) ?? "media"} />
@@ -142,7 +138,7 @@ export default async function ChamadoDetalhePage({
     return (
       <div>
         <BotaoVoltar href="/chamados" label="Voltar para Chamados" />
-        <h1 className="mb-6 mt-2 text-xl font-semibold text-slate-900">Chamado</h1>
+        <CabecalhoPagina titulo="Chamado" />
         <div className="max-w-2xl rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
           <p className="font-semibold">Não foi possível carregar esta tela.</p>
           <p className="mt-1">Motivo: {mensagem}</p>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import { VisualizacaoRotograma } from "../_components/VisualizacaoRotograma";
@@ -54,37 +55,37 @@ export default async function RotogramaDetalhePage({ params }: { params: Promise
   return (
     <div>
       <BotaoVoltar href="/rotograma" label="Voltar para Rotogramas" />
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">
-            Rotograma #{rotograma.numero} — {rotograma.origem} → {rotograma.destino}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
+      <CabecalhoPagina
+        titulo={`Rotograma #${rotograma.numero} — ${rotograma.origem} → ${rotograma.destino}`}
+        descricao={
+          <>
             {rotograma.empresas?.nome ? `${rotograma.empresas.nome} · ` : ""}
             Criado em {formatDate(rotograma.criado_em)}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href={`/rotograma/${rotograma.id}/editar`} className="btn-secondary">
-            Editar
-          </Link>
-          <Link href={hrefPlanoViagem} className="btn-secondary">
-            🧾 Criar Plano de Viagem
-          </Link>
-          <BotaoBaixarPdfRotogramaLazy
-            nomeArquivo={`rotograma-${rotograma.numero}.pdf`}
-            origem={rotograma.origem ?? ""}
-            destino={rotograma.destino ?? ""}
-            motorista={rotograma.motorista ?? undefined}
-            placa={rotograma.placa ?? undefined}
-            dataViagem={rotograma.data_viagem ? formatDate(rotograma.data_viagem) : undefined}
-            numero={rotograma.numero}
-            riscos={riscos}
-            paradas={paradas}
-          />
-          <BotaoExcluirRotograma id={rotograma.id} />
-        </div>
-      </div>
+          </>
+        }
+        acoes={
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/rotograma/${rotograma.id}/editar`} className="btn-secondary">
+              Editar
+            </Link>
+            <Link href={hrefPlanoViagem} className="btn-secondary">
+              🧾 Criar Plano de Viagem
+            </Link>
+            <BotaoBaixarPdfRotogramaLazy
+              nomeArquivo={`rotograma-${rotograma.numero}.pdf`}
+              origem={rotograma.origem ?? ""}
+              destino={rotograma.destino ?? ""}
+              motorista={rotograma.motorista ?? undefined}
+              placa={rotograma.placa ?? undefined}
+              dataViagem={rotograma.data_viagem ? formatDate(rotograma.data_viagem) : undefined}
+              numero={rotograma.numero}
+              riscos={riscos}
+              paradas={paradas}
+            />
+            <BotaoExcluirRotograma id={rotograma.id} />
+          </div>
+        }
+      />
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Indicador label="Motorista" valor={rotograma.motorista ?? "—"} />

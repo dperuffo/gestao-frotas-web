@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { UsuarioForm } from "../_components/UsuarioForm";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
@@ -45,7 +46,7 @@ export default async function EditarUsuarioPage({
   return (
     <div>
       <BotaoVoltar href="/usuarios" />
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Usuário — {usuario.nome}</h1>
+      <CabecalhoPagina titulo={`Editar Usuário — ${usuario.nome}`} />
       <UsuarioForm usuario={usuario} empresas={[]} empresaAtualId={vinculo?.empresa_id} />
     </div>
   );

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { RegraAntifraudeForm } from "../../_components/RegraAntifraudeForm";
@@ -28,7 +29,7 @@ export default async function EditarRegraAntifraudePage({ params }: { params: Pr
   return (
     <div>
       <BotaoVoltar href="/antifraude" />
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Regra Antifraude</h1>
+      <CabecalhoPagina titulo="Editar Regra Antifraude" />
       <RegraAntifraudeForm
         regra={regra as any}
         empresaId={regra.empresa_id}

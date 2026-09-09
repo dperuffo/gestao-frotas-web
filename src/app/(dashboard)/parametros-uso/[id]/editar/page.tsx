@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
@@ -42,7 +43,7 @@ export default async function EditarVinculoPage({ params }: { params: Promise<{ 
   return (
     <div>
       <BotaoVoltar href="/parametros-uso" />
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Vínculo</h1>
+      <CabecalhoPagina titulo="Editar Vínculo" />
       <VinculoForm
         vinculo={vinculo}
         empresaId={vinculo.empresa_id}

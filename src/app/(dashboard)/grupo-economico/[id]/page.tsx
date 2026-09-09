@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { GrupoForm } from "../_components/GrupoForm";
 import { VincularEmpresaForm } from "../_components/VincularEmpresaForm";
@@ -82,7 +83,7 @@ export default async function EditarGrupoPage({
   return (
     <div className="space-y-6">
       <BotaoVoltar href="/grupo-economico" />
-      <h1 className="text-xl font-semibold text-slate-900">Editar Grupo Econômico — {grupo.nome}</h1>
+      <CabecalhoPagina titulo={`Editar Grupo Econômico — ${grupo.nome}`} />
 
       {painel && (
         <div className="card p-4">

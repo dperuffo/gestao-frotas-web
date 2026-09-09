@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { OficinaForm } from "../_components/OficinaForm";
 import { BotaoVoltar } from "../../../_components/BotaoVoltar";
@@ -26,9 +27,7 @@ export default async function EditarOficinaPage({ params }: { params: Promise<{ 
   return (
     <div>
       <BotaoVoltar href="/administracao/oficinas-credenciadas" />
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Editar: {oficina.nome}</h1>
-      </div>
+      <CabecalhoPagina titulo={`Editar: ${oficina.nome}`} />
       <OficinaForm oficina={oficina} />
     </div>
   );

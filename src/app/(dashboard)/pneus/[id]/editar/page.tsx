@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { PneuForm } from "../../_components/PneuForm";
 
@@ -14,9 +15,7 @@ export default async function EditarPneuPage({ params }: { params: Promise<{ id:
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Editar Pneu</h1>
-      </div>
+      <CabecalhoPagina titulo="Editar Pneu" />
       <PneuForm empresaId={pneu.empresa_id} pneu={pneu} placas={placas} />
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
@@ -98,7 +99,7 @@ export default async function NovoPlanoViagemPage({
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Plano de Viagem</h1>
+      <CabecalhoPagina titulo="Novo Plano de Viagem" />
       <PlanoViagemForm
         empresaId={empresaSelecionada}
         veiculos={veiculos}

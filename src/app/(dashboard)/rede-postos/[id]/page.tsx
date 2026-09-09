@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { RedeForm } from "../_components/RedeForm";
 import { VincularPostoForm } from "../_components/VincularPostoForm";
@@ -69,7 +70,7 @@ export default async function EditarRedePage({
   return (
     <div className="space-y-6">
       <BotaoVoltar href="/rede-postos" />
-      <h1 className="text-xl font-semibold text-slate-900">Editar Rede de Postos — {rede.nome}</h1>
+      <CabecalhoPagina titulo={`Editar Rede de Postos — ${rede.nome}`} />
       <RedeForm rede={rede} />
       <VincularPostoForm redeId={id} postosDisponiveis={postosDisponiveis} vinculos={vinculos} />
     </div>

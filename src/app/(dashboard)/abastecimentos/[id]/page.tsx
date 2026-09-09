@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatarDataHoraBr } from "@/lib/utils";
 import type { AutorAjuste } from "@/lib/ajustesAbastecimentos";
@@ -55,15 +56,11 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
     return (
       <div>
         <BotaoVoltar href="/abastecimentos" />
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">Editar Abastecimento</h1>
-            {/* Fase 27.104 — pedido do Daniel: ID de 10 dígitos por
-                abastecimento, pra facilitar localizar/referenciar o registro. */}
-            <p className="mt-1 text-xs text-slate-400">ID {abastecimento.codigo_abastecimento}</p>
-          </div>
-          <ExcluirAbastecimento id={abastecimento.id} />
-        </div>
+        <CabecalhoPagina
+          titulo="Editar Abastecimento"
+          descricao={`ID ${abastecimento.codigo_abastecimento}`}
+          acoes={<ExcluirAbastecimento id={abastecimento.id} />}
+        />
         <AbastecimentoForm abastecimento={abastecimento} empresas={[]} nomeEmpresaAtual={nomeCliente} />
       </div>
     );
@@ -100,16 +97,15 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
   return (
     <div>
       <BotaoVoltar href="/abastecimentos" />
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Abastecimento</h1>
-        {/* Fase 27.104 — pedido do Daniel: ID de 10 dígitos por
-            abastecimento, pra facilitar localizar/referenciar o registro. */}
-        <p className="mt-1 text-xs text-slate-400">ID {abastecimento.codigo_abastecimento}</p>
-        <p className="mt-1 text-sm text-slate-500">
-          Este registro tem cliente e posto identificados na plataforma — qualquer correção precisa
-          ser aprovada pela outra parte antes de valer.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Abastecimento"
+        descricao={
+          <>
+            ID {abastecimento.codigo_abastecimento} — Este registro tem cliente e posto identificados na
+            plataforma — qualquer correção precisa ser aprovada pela outra parte antes de valer.
+          </>
+        }
+      />
 
       <div className="mb-6 card p-6">
         <h2 className="mb-4 text-sm font-semibold text-slate-900">Valores atuais</h2>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { NovaRedeForm } from "../_components/NovaRedeForm";
 
@@ -38,7 +39,7 @@ export default async function NovaRedePage() {
   if (!ehAdmin && postosOpcoes.length === 0) {
     return (
       <div>
-        <h1 className="mb-6 text-xl font-semibold text-slate-900">Nova Rede de Postos</h1>
+        <CabecalhoPagina titulo="Nova Rede de Postos" />
         <div className="card p-6 text-sm text-slate-600">
           Você precisa ter um posto cadastrado antes de criar uma Rede de Postos.{" "}
           <Link href="/meu-posto" className="font-medium text-frota-600 hover:underline">
@@ -52,7 +53,7 @@ export default async function NovaRedePage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Nova Rede de Postos</h1>
+      <CabecalhoPagina titulo="Nova Rede de Postos" />
       <NovaRedeForm postosOpcoes={postosOpcoes} />
     </div>
   );

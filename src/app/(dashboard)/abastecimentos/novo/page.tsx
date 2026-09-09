@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { AbastecimentoForm } from "../_components/AbastecimentoForm";
 import { FormAbastecimentoInterno } from "../_components/FormAbastecimentoInterno";
@@ -21,7 +22,7 @@ export default async function NovoAbastecimentoPage({
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Lançar Abastecimento Manual</h1>
+      <CabecalhoPagina titulo="Lançar Abastecimento Manual" />
 
       <div className="mb-6 flex gap-2 border-b border-slate-200">
         <AbaLink fonte="externo" ativo={fonteAtual === "externo"}>

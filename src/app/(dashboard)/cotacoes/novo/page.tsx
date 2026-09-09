@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { CotacaoForm, type TipoCargaOpcao } from "../_components/CotacaoForm";
@@ -41,10 +42,7 @@ export default async function NovaCotacaoPage({ searchParams }: { searchParams: 
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">🧮 Nova cotação</h1>
-        <p className="mt-1 text-sm text-slate-500">{nomeEmpresaSelecionada}</p>
-      </div>
+      <CabecalhoPagina titulo="🧮 Nova cotação" descricao={nomeEmpresaSelecionada} />
       <CotacaoForm
         empresaId={empresaSelecionada}
         tabelas={(tabelas ?? []).map((t) => ({ id: t.id, nome: t.nome, clienteTomadorId: t.cliente_tomador_id }))}

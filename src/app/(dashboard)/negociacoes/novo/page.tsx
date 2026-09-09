@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { FormularioNovaNegociacao } from "../_components/FormularioNovaNegociacao";
 
@@ -14,14 +15,14 @@ export default async function NovaNegociacaoPage({ searchParams }: { searchParam
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Nova negociação</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {souPosto
+      <CabecalhoPagina
+        titulo="Nova negociação"
+        descricao={
+          souPosto
             ? "Envie uma proposta de fornecimento para um cliente."
-            : "Envie uma proposta de fornecimento para um posto parceiro."}
-        </p>
-      </div>
+            : "Envie uma proposta de fornecimento para um posto parceiro."
+        }
+      />
       <FormularioNovaNegociacao empresaAtualId={empresaId} souPosto={souPosto} />
     </div>
   );

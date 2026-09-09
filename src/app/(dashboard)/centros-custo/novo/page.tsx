@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { NovoCentroCustoForm } from "../_components/NovoCentroCustoForm";
@@ -15,7 +16,7 @@ export default async function NovoCentroCustoPage({
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Centro de Custo</h1>
+      <CabecalhoPagina titulo="Novo Centro de Custo" />
 
       {!empresaSelecionada ? (
         <div className="card max-w-lg space-y-4 p-6">

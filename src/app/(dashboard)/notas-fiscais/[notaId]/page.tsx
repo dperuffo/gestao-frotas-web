@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
@@ -57,10 +58,10 @@ export default async function NotaFiscalPage({ params }: { params: Promise<{ not
     <div>
       <BotaoVoltar href="/notas-fiscais" />
 
-      <div className="mt-3 mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">NF-e Nº {String(nota.numero_nf).padStart(6, "0")}</h1>
-        <p className="mt-1 text-sm text-slate-500">Série {nota.serie_nf} · Emitida em {formatarDataBr(nota.data_emissao)}</p>
-      </div>
+      <CabecalhoPagina
+        titulo={`NF-e Nº ${String(nota.numero_nf).padStart(6, "0")}`}
+        descricao={`Série ${nota.serie_nf} · Emitida em ${formatarDataBr(nota.data_emissao)}`}
+      />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="card p-4">

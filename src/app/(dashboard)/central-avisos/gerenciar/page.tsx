@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { carregarMapaPermissoes, temAcesso } from "@/lib/permissoes";
 import { listarAvisosDaMinhaEmpresaAcao } from "../actions";
@@ -46,13 +47,10 @@ export default async function GerenciarAvisosEmpresaPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Meus Avisos</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Avisos publicados aqui aparecem só para os colegas da sua própria empresa (sino/drawer/banner) — diferente
-          da Central de Avisos oficial da plataforma.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Meus Avisos"
+        descricao="Avisos publicados aqui aparecem só para os colegas da sua própria empresa (sino/drawer/banner) — diferente da Central de Avisos oficial da plataforma."
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <AvisoEmpresaForm />

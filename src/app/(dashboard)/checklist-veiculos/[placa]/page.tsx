@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { RegistrarInspecaoForm } from "../_components/RegistrarInspecaoForm";
@@ -89,14 +90,10 @@ export default async function DetalheChecklistVeiculoPage({
     <div>
       <BotaoVoltar href="/checklist-veiculos" />
 
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">{placa}</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {[veiculo?.marca, veiculo?.modelo].filter(Boolean).join(" ") || "Sem marca/modelo cadastrado"}
-          {veiculo?.tipo_veiculo ? ` · ${veiculo.tipo_veiculo}` : ""}
-          {centroCusto ? ` · ${centroCusto}` : ""}
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo={placa}
+        descricao={`${[veiculo?.marca, veiculo?.modelo].filter(Boolean).join(" ") || "Sem marca/modelo cadastrado"}${veiculo?.tipo_veiculo ? ` · ${veiculo.tipo_veiculo}` : ""}${centroCusto ? ` · ${centroCusto}` : ""}`}
+      />
 
       <div className="mb-6 card p-4">
         <h2 className="mb-3 text-sm font-semibold text-slate-900">✅ Registrar Nova Inspeção</h2>

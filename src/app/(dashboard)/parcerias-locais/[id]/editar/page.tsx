@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ItemParceriaForm } from "../../_components/ItemParceriaForm";
@@ -40,8 +41,7 @@ export default async function EditarItemParceriaPage({
   return (
     <div>
       <BotaoVoltar href={`/parcerias-locais?empresa=${empresaSelecionada}`} />
-      <h1 className="mb-1 text-xl font-semibold text-slate-900">Editar Benefício</h1>
-      <p className="mb-6 text-sm text-slate-500">{item.titulo}</p>
+      <CabecalhoPagina titulo="Editar Benefício" descricao={item.titulo} />
       <ItemParceriaForm empresaId={empresaSelecionada} item={item} />
     </div>
   );

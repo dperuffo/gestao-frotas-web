@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { PostoForm } from "../_components/PostoForm";
 
@@ -7,7 +8,7 @@ export default async function NovoPostoPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Posto Revendedor</h1>
+      <CabecalhoPagina titulo="Novo Posto Revendedor" />
       <PostoForm empresas={empresas ?? []} />
     </div>
   );

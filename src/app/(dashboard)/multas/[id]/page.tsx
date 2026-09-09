@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_MULTA_LABEL, STATUS_MULTA_COR, GRAVIDADE_MULTA_LABEL } from "@/lib/multas";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
@@ -69,19 +70,17 @@ export default async function MultaDetalhePage({ params }: { params: Promise<{ i
 
   return (
     <div>
-      <div className="mb-6">
-        <Link href={`/multas?empresa=${multa.empresa_id}`} className="text-sm text-frota-600 hover:underline">
-          ← Voltar
-        </Link>
-        <div className="mt-2 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-slate-900">
-            Multa — {multa.placa} {multa.numero_ait ? `· AIT ${multa.numero_ait}` : ""}
-          </h1>
+      <Link href={`/multas?empresa=${multa.empresa_id}`} className="mb-2 inline-block text-sm text-frota-600 hover:underline">
+        ← Voltar
+      </Link>
+      <CabecalhoPagina
+        titulo={`Multa — ${multa.placa} ${multa.numero_ait ? `· AIT ${multa.numero_ait}` : ""}`}
+        acoes={
           <span className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_MULTA_COR[multa.status] ?? "bg-slate-100 text-slate-600"}`}>
             {STATUS_MULTA_LABEL[multa.status] ?? multa.status}
           </span>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="card space-y-3 p-6 lg:col-span-2">

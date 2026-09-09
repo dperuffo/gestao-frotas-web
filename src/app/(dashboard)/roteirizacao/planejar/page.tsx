@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
@@ -60,12 +61,10 @@ export default async function RoteirizacaoPlanejarPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Roteirizador Inteligente</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Planeje onde abastecer numa viagem, com base no tanque e na autonomia do veículo.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Roteirizador Inteligente"
+        descricao="Planeje onde abastecer numa viagem, com base no tanque e na autonomia do veículo."
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

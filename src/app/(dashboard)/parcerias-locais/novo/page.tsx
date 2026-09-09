@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ItemParceriaForm } from "../_components/ItemParceriaForm";
@@ -24,11 +25,10 @@ export default async function NovoItemParceriaPage({
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-semibold text-slate-900">Novo Benefício</h1>
-      <p className="mb-6 text-sm text-slate-500">
-        Fica disponível pro motorista resgatar no app &quot;Estrada que Cuida&quot; assim que salvo — sem
-        aprovação prévia.
-      </p>
+      <CabecalhoPagina
+        titulo="Novo Benefício"
+        descricao={'Fica disponível pro motorista resgatar no app "Estrada que Cuida" assim que salvo — sem aprovação prévia.'}
+      />
       <ItemParceriaForm empresaId={empresaSelecionada} />
     </div>
   );

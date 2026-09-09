@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
 import { formatarDataBr, formatarDataHoraBr } from "@/lib/utils";
@@ -68,33 +69,28 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
   return (
     <div>
       <BotaoVoltar href="/negociacoes" />
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="mt-1 text-xl font-semibold text-slate-900">
-            Negociação com {souPosto ? (negociacao.cliente_nome ?? "cliente") : (negociacao.posto_nome ?? negociacao.posto_cnpj)}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
+      <CabecalhoPagina
+        titulo={`Negociação com ${souPosto ? (negociacao.cliente_nome ?? "cliente") : (negociacao.posto_nome ?? negociacao.posto_cnpj)}`}
+        descricao={
+          <>
             Status:{" "}
-            <span className="font-medium text-slate-700">
-              {STATUS_NEGOCIACAO_LABEL[statusAtual] ?? statusAtual}
-            </span>{" "}
+            <span className="font-medium text-white">{STATUS_NEGOCIACAO_LABEL[statusAtual] ?? statusAtual}</span>{" "}
             · Rodada #{negociacao.rodada_atual}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
+            <br />
             Atualizado em {formatarDataHoraBr(negociacao.atualizado_em)}
             {nomeAtualizadoPor && (
               <>
                 {" "}
-                por <span className="font-medium text-slate-500">{nomeAtualizadoPor}</span>
+                por <span className="font-medium text-white/80">{nomeAtualizadoPor}</span>
                 {negociacao.atualizado_por && negociacao.atualizado_por !== nomeAtualizadoPor && (
                   <> ({negociacao.atualizado_por})</>
                 )}
               </>
             )}
-          </p>
-        </div>
-        {emAndamento && <BotaoCancelarNegociacao id={negociacao.id} />}
-      </div>
+          </>
+        }
+        acoes={emAndamento && <BotaoCancelarNegociacao id={negociacao.id} />}
+      />
 
       {minhaVezDeResponder && ultimaRodada && (
         <div className="mb-6">

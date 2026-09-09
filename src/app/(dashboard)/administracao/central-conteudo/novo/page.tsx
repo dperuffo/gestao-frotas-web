@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ConteudoForm } from "../_components/ConteudoForm";
 
@@ -16,10 +17,10 @@ export default async function NovoConteudoPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Nova entrada de conteúdo</h1>
-        <p className="mt-1 text-sm text-slate-500">Ajuda contextual ou lição da Central de Treinamento.</p>
-      </div>
+      <CabecalhoPagina
+        titulo="Nova entrada de conteúdo"
+        descricao="Ajuda contextual ou lição da Central de Treinamento."
+      />
       <ConteudoForm />
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import { AtualizarStatusResgate } from "./_components/AtualizarStatusResgate";
@@ -97,18 +98,15 @@ export default async function ResgatesFidelidadePage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-slate-900">🎁 Resgates</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Pedidos de resgate feitos pelos motoristas no catálogo — atualize o status conforme for cumprindo
-            (manualmente) cada benefício.
-          </p>
-        </div>
-        <Link href="/fidelidade" className="btn-secondary">
-          Ver catálogo
-        </Link>
-      </div>
+      <CabecalhoPagina
+        titulo="🎁 Resgates"
+        descricao="Pedidos de resgate feitos pelos motoristas no catálogo — atualize o status conforme for cumprindo (manualmente) cada benefício."
+        acoes={
+          <Link href="/fidelidade" className="btn-secondary">
+            Ver catálogo
+          </Link>
+        }
+      />
 
       <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 pb-3">
         <Link

@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { RotogramaForm } from "../_components/RotogramaForm";
@@ -46,7 +47,7 @@ export default async function NovoRotogramaPage({
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Rotograma</h1>
+      <CabecalhoPagina titulo="Novo Rotograma" />
       {prefill && (
         <p className="mb-4 rounded-lg bg-frota-50 px-3 py-2 text-sm text-frota-700">
           Origem, destino{prefill.placa ? ", placa" : ""} e paradas sugeridas preenchidos a partir da rota

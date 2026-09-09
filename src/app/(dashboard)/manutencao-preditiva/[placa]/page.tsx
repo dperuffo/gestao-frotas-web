@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { StatusBadge } from "../_components/StatusBadge";
@@ -127,28 +128,31 @@ export default async function DetalheManutencaoPreditivaPage({
     <div>
       <BotaoVoltar href="/manutencao-preditiva" />
 
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">{placa}</h1>
-          <p className="mt-1 text-sm text-slate-500">
+      <CabecalhoPagina
+        titulo={placa}
+        descricao={
+          <>
             {[primeiro.marca, primeiro.modelo].filter(Boolean).join(" ") || "Sem marca/modelo cadastrado"}
             {primeiro.tipo_veiculo ? ` · ${primeiro.tipo_veiculo}` : ""}
             {primeiro.idade_anos > 0 ? ` · ${primeiro.idade_anos} anos` : ""}
-          </p>
-          {primeiro.empresa_dona_nome && (
-            <p className="mt-1 text-xs text-amber-600">
-              Veículo de {primeiro.empresa_dona_nome} (empresa do mesmo grupo econômico) — custo desta manutenção fica com ela.
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <StatusBadge status={status} />
-          <div className="text-right">
-            <p className="text-2xl font-bold text-slate-900">{scoreGeral}/100</p>
-            <p className="text-xs text-slate-400">score geral</p>
+            {primeiro.empresa_dona_nome && (
+              <span className="mt-1 block text-xs text-amber-300">
+                Veículo de {primeiro.empresa_dona_nome} (empresa do mesmo grupo econômico) — custo desta manutenção
+                fica com ela.
+              </span>
+            )}
+          </>
+        }
+        acoes={
+          <div className="flex items-center gap-3">
+            <StatusBadge status={status} />
+            <div className="text-right">
+              <p className="text-2xl font-bold text-white">{scoreGeral}/100</p>
+              <p className="text-xs text-white/70">score geral</p>
+            </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <IndicadorColorido

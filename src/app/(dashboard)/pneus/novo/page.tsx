@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { PneuForm } from "../_components/PneuForm";
 
@@ -12,9 +13,7 @@ export default async function NovoPneuPage({ searchParams }: { searchParams: Pro
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Novo Pneu</h1>
-      </div>
+      <CabecalhoPagina titulo="Novo Pneu" />
       <PneuForm empresaId={empresaId} placas={placas} />
     </div>
   );

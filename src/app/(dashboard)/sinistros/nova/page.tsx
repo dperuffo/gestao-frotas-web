@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { NovoSinistroForm } from "../_components/NovoSinistroForm";
@@ -32,12 +33,10 @@ export default async function NovoSinistroPage({ searchParams }: { searchParams:
 
   return (
     <div>
-      <div className="mb-6">
-        <Link href={`/sinistros?empresa=${empresaSelecionada}`} className="text-sm text-frota-600 hover:underline">
-          ← Voltar
-        </Link>
-        <h1 className="mt-2 text-xl font-semibold text-slate-900">Novo Sinistro</h1>
-      </div>
+      <Link href={`/sinistros?empresa=${empresaSelecionada}`} className="mb-2 inline-block text-sm text-frota-600 hover:underline">
+        ← Voltar
+      </Link>
+      <CabecalhoPagina titulo="Novo Sinistro" />
       <NovoSinistroForm empresaId={empresaSelecionada} placas={placas} apolices={apolices} />
     </div>
   );

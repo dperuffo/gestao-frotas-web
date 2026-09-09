@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { RotogramaForm } from "../../_components/RotogramaForm";
 
@@ -17,7 +18,7 @@ export default async function EditarRotogramaPage({ params }: { params: Promise<
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Rotograma #{rotograma.numero}</h1>
+      <CabecalhoPagina titulo={`Editar Rotograma #${rotograma.numero}`} />
       <RotogramaForm rotograma={rotograma} empresas={[]} rotasSalvas={[]} nomeEmpresaAtual={empresa?.nome} />
     </div>
   );

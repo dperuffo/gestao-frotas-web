@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { carregarMapaPermissoes, temAcesso } from "@/lib/permissoes";
 import { listarAvisosDaMinhaEmpresaAcao } from "../../actions";
@@ -47,9 +48,7 @@ export default async function EditarAvisoEmpresaPage({ params }: { params: Promi
   return (
     <div>
       <BotaoVoltar href="/central-avisos/gerenciar" />
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Editar: {aviso.titulo}</h1>
-      </div>
+      <CabecalhoPagina titulo={`Editar: ${aviso.titulo}`} />
       <AvisoEmpresaForm aviso={aviso} />
     </div>
   );

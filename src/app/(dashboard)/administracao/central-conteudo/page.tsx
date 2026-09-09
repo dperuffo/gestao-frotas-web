@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ToggleAtivoConteudo } from "./_components/ToggleAtivoConteudo";
 import { BotaoExcluirConteudo } from "./_components/BotaoExcluirConteudo";
@@ -36,18 +37,15 @@ export default async function CentralConteudoPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Central de Conteúdo</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Textos do ícone de ajuda (?) e das lições da Central de Treinamento — editável aqui, sem
-            precisar de deploy.
-          </p>
-        </div>
-        <Link href="/administracao/central-conteudo/novo" className="btn-primary text-sm">
-          + Nova entrada
-        </Link>
-      </div>
+      <CabecalhoPagina
+        titulo="Central de Conteúdo"
+        descricao="Textos do ícone de ajuda (?) e das lições da Central de Treinamento — editável aqui, sem precisar de deploy."
+        acoes={
+          <Link href="/administracao/central-conteudo/novo" className="btn-primary text-sm">
+            + Nova entrada
+          </Link>
+        }
+      />
 
       <Secao titulo={`Lições da Central de Treinamento (${licoes.length})`} itens={licoes} />
       <Secao titulo={`Ajuda contextual — ícone "?" (${contextuais.length})`} itens={contextuais} />

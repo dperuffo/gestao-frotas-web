@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatarDataHoraBr } from "@/lib/utils";
 import { BotaoVoltar } from "../../../_components/BotaoVoltar";
@@ -28,16 +29,17 @@ export default async function EditarAbastecimentoInternoPage({ params }: { param
   return (
     <div>
       <BotaoVoltar href="/abastecimentos" />
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Abastecimento Interno</h1>
-        <p className="mt-1 text-xs text-slate-400">
-          ID {abastecimento.codigo_abastecimento} · {abastecimento.origem === "pwa_motorista" ? "Confirmado pelo motorista (app)" : "Lançamento manual"}
-        </p>
-        <p className="mt-1 text-sm text-slate-500">
-          Abastecimento feito na garagem/tanque interno do cliente, sem posto revendedor externo
-          envolvido — por isso não há fluxo de ajuste com contraparte aqui.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Abastecimento Interno"
+        descricao={
+          <>
+            ID {abastecimento.codigo_abastecimento} ·{" "}
+            {abastecimento.origem === "pwa_motorista" ? "Confirmado pelo motorista (app)" : "Lançamento manual"} —
+            Abastecimento feito na garagem/tanque interno do cliente, sem posto revendedor externo
+            envolvido — por isso não há fluxo de ajuste com contraparte aqui.
+          </>
+        }
+      />
 
       <div className="card p-6">
         <h2 className="mb-4 text-sm font-semibold text-slate-900">Valores</h2>

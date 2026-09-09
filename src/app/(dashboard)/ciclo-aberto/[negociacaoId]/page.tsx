@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
@@ -97,12 +98,10 @@ export default async function CicloAbertoPage({
     <div>
       <BotaoVoltar href="/financeiro-posto" />
 
-      <div className="mt-3 mb-2">
-        <h1 className="text-xl font-semibold text-slate-900">
-          Ciclo em andamento — {ciclo.posto_nome ?? "Posto"}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">Cliente: {ciclo.cliente_nome ?? "—"}</p>
-      </div>
+      <CabecalhoPagina
+        titulo={`Ciclo em andamento — ${ciclo.posto_nome ?? "Posto"}`}
+        descricao={`Cliente: ${ciclo.cliente_nome ?? "—"}`}
+      />
 
       <div className="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
         Período, vencimento e valor são PREVISTOS e podem mudar até o fechamento — o robô fecha

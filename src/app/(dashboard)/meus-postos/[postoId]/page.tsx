@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { buscarCiclosAbertos } from "@/lib/ciclosAbertos";
@@ -104,7 +105,7 @@ export default async function MeuPostoDetalhePage({
     <div>
       <BotaoVoltar href="/financeiro" label="Voltar para o Painel Financeiro" />
 
-      <h1 className="mt-3 mb-6 text-xl font-semibold text-slate-900">{postoNome}</h1>
+      <CabecalhoPagina titulo={postoNome} />
 
       <CicloAbastecimentoPagamento
         empresaClienteId={empresaSelecionada}

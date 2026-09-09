@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatarDataHoraBr } from "@/lib/utils";
@@ -84,14 +85,10 @@ export default async function AbastecimentosPendentesAprovacaoPage({
   return (
     <div>
       <BotaoVoltar href="/abastecimentos" />
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Abastecimentos manuais pendentes de aprovação</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Lançamentos feitos pelo motorista no aplicativo a partir da foto do cupom fiscal — só entram nos
-          indicadores e no financeiro depois de aprovados aqui
-          {nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Abastecimentos manuais pendentes de aprovação"
+        descricao={`Lançamentos feitos pelo motorista no aplicativo a partir da foto do cupom fiscal — só entram nos indicadores e no financeiro depois de aprovados aqui${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

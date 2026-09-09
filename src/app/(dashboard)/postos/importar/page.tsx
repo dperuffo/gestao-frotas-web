@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ImportForm } from "./_components/ImportForm";
 
@@ -8,14 +9,10 @@ export default async function ImportarPostosPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Importar Rede de Postos (postos_gf.xlsx)</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Principal forma de cadastro dos postos revendedores: envie a planilha recorrente com a
-          rede de postos credenciados/negociados de UM cliente por vez (o arquivo não traz o
-          CNPJ do cliente — selecione abaixo).
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Importar Rede de Postos (postos_gf.xlsx)"
+        descricao="Principal forma de cadastro dos postos revendedores: envie a planilha recorrente com a rede de postos credenciados/negociados de UM cliente por vez (o arquivo não traz o CNPJ do cliente — selecione abaixo)."
+      />
 
       <div className="mb-6 card p-4 text-sm text-slate-600">
         <p className="font-medium text-slate-700">Sobre esta importação:</p>

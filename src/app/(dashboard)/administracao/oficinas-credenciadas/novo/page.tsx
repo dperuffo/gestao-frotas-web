@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { OficinaForm } from "../_components/OficinaForm";
 
@@ -16,10 +17,10 @@ export default async function NovaOficinaPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Nova oficina credenciada</h1>
-        <p className="mt-1 text-sm text-slate-500">Cadastro básico exibido no catálogo de /oficinas.</p>
-      </div>
+      <CabecalhoPagina
+        titulo="Nova oficina credenciada"
+        descricao="Cadastro básico exibido no catálogo de /oficinas."
+      />
       <OficinaForm />
     </div>
   );

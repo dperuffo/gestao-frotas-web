@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
@@ -104,15 +105,10 @@ export default async function RestricoesAbastecimentoPage({
         ← Voltar para Ações Sugeridas
       </Link>
 
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Restrições Automáticas de Abastecimento</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Escolha quais tipos de anomalia, ao serem aprovados em Ações Sugeridas, também bloqueiam a placa/motorista
-          de abastecer — o bloqueio é consultado automaticamente pela API de Antifraude (POST
-          /api/integracoes/antifraude/verificar), o mesmo endpoint que sistemas de ERP já chamam antes de autorizar
-          um abastecimento{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Restrições Automáticas de Abastecimento"
+        descricao={`Escolha quais tipos de anomalia, ao serem aprovados em Ações Sugeridas, também bloqueiam a placa/motorista de abastecer — o bloqueio é consultado automaticamente pela API de Antifraude (POST /api/integracoes/antifraude/verificar), o mesmo endpoint que sistemas de ERP já chamam antes de autorizar um abastecimento${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

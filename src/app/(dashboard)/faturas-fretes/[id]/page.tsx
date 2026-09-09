@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { gerarQrCodePixDataUrl } from "@/lib/pix";
 import { GerarCobrancaButton, MarcarFaturaFretePagaButton, CancelarFaturaFreteButton } from "../_components/AcoesFaturaFrete";
@@ -66,18 +67,11 @@ export default async function FaturaFreteDetalhePage({
   return (
     <div>
       <BotaoVoltar href={`/faturas-fretes?empresa=${empresaId}`} label="Voltar para Faturas de Frete" />
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">
-            🧾 Fatura nº {String(fatura.numero_fatura).padStart(6, "0")}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {fatura.tomador_nome ?? fatura.tomador_cnpj} · {new Date(`${fatura.periodo_inicio}T00:00:00`).toLocaleDateString("pt-BR")} –{" "}
-            {new Date(`${fatura.periodo_fim}T00:00:00`).toLocaleDateString("pt-BR")}
-          </p>
-        </div>
-        <span className={fatura.status === "aberta" ? "badge-ativo" : "badge-inativo"}>{LABEL_STATUS[fatura.status] ?? fatura.status}</span>
-      </div>
+      <CabecalhoPagina
+        titulo={`🧾 Fatura nº ${String(fatura.numero_fatura).padStart(6, "0")}`}
+        descricao={`${fatura.tomador_nome ?? fatura.tomador_cnpj} · ${new Date(`${fatura.periodo_inicio}T00:00:00`).toLocaleDateString("pt-BR")} – ${new Date(`${fatura.periodo_fim}T00:00:00`).toLocaleDateString("pt-BR")}`}
+        acoes={<span className={fatura.status === "aberta" ? "badge-ativo" : "badge-inativo"}>{LABEL_STATUS[fatura.status] ?? fatura.status}</span>}
+      />
 
       <div className="card mb-6 grid grid-cols-2 gap-4 p-6 sm:grid-cols-4">
         <div>

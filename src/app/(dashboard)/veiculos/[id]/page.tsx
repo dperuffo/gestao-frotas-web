@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { normalizarCNPJ } from "@/lib/utils";
 import { VeiculoForm } from "../_components/VeiculoForm";
@@ -22,7 +23,7 @@ export default async function EditarVeiculoPage({ params }: { params: Promise<{ 
   return (
     <div>
       <BotaoVoltar href="/veiculos" />
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Veículo</h1>
+      <CabecalhoPagina titulo="Editar Veículo" />
       <VeiculoForm
         veiculo={veiculo}
         empresas={[]}

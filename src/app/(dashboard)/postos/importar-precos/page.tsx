@@ -1,16 +1,14 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { ImportForm } from "./_components/ImportForm";
 
 export default function ImportarPrecosPage() {
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Importar Preços (preco_posto.xlsx)</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Atualiza o histórico de preços por posto e combustível a partir da planilha recorrente
-          da integração Pró-Frotas (aba &quot;Preços&quot;) — pensado para reenvio periódico.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Importar Preços (preco_posto.xlsx)"
+        descricao='Atualiza o histórico de preços por posto e combustível a partir da planilha recorrente da integração Pró-Frotas (aba "Preços") — pensado para reenvio periódico.'
+      />
 
       <div className="mb-6 card p-4 text-sm text-slate-600">
         <p className="font-medium text-slate-700">Sobre esta importação:</p>

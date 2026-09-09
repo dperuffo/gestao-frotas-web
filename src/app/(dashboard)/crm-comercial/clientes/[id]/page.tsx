@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import {
   formatarMoeda,
@@ -86,12 +87,7 @@ export default async function ClienteCrmDetalhePage({
   return (
     <div>
       <BotaoVoltar href={`/crm-comercial?empresa=${empresaId}`} />
-      <div className="mb-6">
-        <div className="mt-2">
-          <h1 className="text-xl font-semibold text-slate-900">{cliente.razao_social}</h1>
-          <p className="text-sm text-slate-500">{formatarCnpjCpf(cliente.cnpj_cpf)}</p>
-        </div>
-      </div>
+      <CabecalhoPagina titulo={cliente.razao_social} descricao={formatarCnpjCpf(cliente.cnpj_cpf)} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

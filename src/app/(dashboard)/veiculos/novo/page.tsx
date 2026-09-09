@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { VeiculoForm } from "../_components/VeiculoForm";
 
@@ -8,7 +9,7 @@ export default async function NovoVeiculoPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Veículo</h1>
+      <CabecalhoPagina titulo="Novo Veículo" />
       <VeiculoForm empresas={empresas ?? []} centrosCusto={centrosCusto ?? []} />
     </div>
   );

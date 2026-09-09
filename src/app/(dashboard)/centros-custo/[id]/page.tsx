@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
 import { CentroCustoForm } from "../_components/CentroCustoForm";
@@ -66,7 +67,7 @@ export default async function EditarCentroCustoPage({
   return (
     <div className="space-y-6">
       <BotaoVoltar href="/centros-custo" />
-      <h1 className="text-xl font-semibold text-slate-900">Editar Centro de Custo — {centro.nome}</h1>
+      <CabecalhoPagina titulo={`Editar Centro de Custo — ${centro.nome}`} />
       <CentroCustoForm centroCusto={centro} />
       <AlocarVeiculoForm
         centroCustoId={id}

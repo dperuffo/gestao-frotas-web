@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ApoliceForm } from "../../_components/ApoliceForm";
 
@@ -11,9 +12,7 @@ export default async function EditarApolicePage({ params }: { params: Promise<{ 
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Editar Apólice</h1>
-      </div>
+      <CabecalhoPagina titulo="Editar Apólice" />
       <ApoliceForm empresaId={apolice.empresa_id} apolice={apolice} />
     </div>
   );

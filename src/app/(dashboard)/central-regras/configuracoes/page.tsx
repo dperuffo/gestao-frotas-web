@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { CATALOGO_REGRAS_CONFIGURAVEIS } from "@/lib/regrasConfiguraveis";
@@ -41,14 +42,10 @@ export default async function ConfiguracoesRegrasPage({
       <Link href="/central-regras" className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700">
         <ArrowLeft className="h-3.5 w-3.5" /> Central de Regras & Alertas
       </Link>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Configurar limites</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Os limites que a detecção de anomalias e ações sugeridas usa — mude aqui em vez de depender de valor fixo
-          no código{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Quem não mexer em nada continua
-          com o comportamento padrão.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Configurar limites"
+        descricao={`Os limites que a detecção de anomalias e ações sugeridas usa — mude aqui em vez de depender de valor fixo no código${nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}. Quem não mexer em nada continua com o comportamento padrão.`}
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

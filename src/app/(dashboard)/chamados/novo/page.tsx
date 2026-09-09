@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ChamadoForm } from "../_components/ChamadoForm";
@@ -22,7 +23,7 @@ export default async function NovoChamadoPage() {
 
     return (
       <div>
-        <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Chamado</h1>
+        <CabecalhoPagina titulo="Novo Chamado" />
         <ChamadoForm empresas={empresas} empresaSelecionadaInicial={empresaSelecionada} />
       </div>
     );
@@ -32,7 +33,7 @@ export default async function NovoChamadoPage() {
     void logger.error("chamados/novo", "Falha ao carregar a tela", e);
     return (
       <div>
-        <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Chamado</h1>
+        <CabecalhoPagina titulo="Novo Chamado" />
         <div className="max-w-2xl rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
           <p className="font-semibold">Não foi possível carregar esta tela.</p>
           <p className="mt-1">Motivo: {mensagem}</p>

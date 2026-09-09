@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ImportForm } from "./_components/ImportForm";
 
@@ -20,15 +21,16 @@ export default async function ImportarPostosAnpPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Atualizar Universo ANP</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Envie a planilha <code>postos_anp.xlsx</code> (aba &quot;Postos ANP&quot;) com o
-          cadastro nacional completo (cerca de 35 mil postos). A coluna &quot;Gestão de
-          Frotas&quot; indica quais desses postos já fazem parte da rede negociada — é usada
-          na tela de Postos para mostrar o que está ativo na solução.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Atualizar Universo ANP"
+        descricao={
+          <>
+            Envie a planilha <code>postos_anp.xlsx</code> (aba &quot;Postos ANP&quot;) com o cadastro nacional
+            completo (cerca de 35 mil postos). A coluna &quot;Gestão de Frotas&quot; indica quais desses postos já
+            fazem parte da rede negociada — é usada na tela de Postos para mostrar o que está ativo na solução.
+          </>
+        }
+      />
 
       <div className="mb-6 card p-4 text-sm text-slate-600">
         <p className="font-medium text-slate-700">Colunas esperadas (cabeçalho da planilha):</p>

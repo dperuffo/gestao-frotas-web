@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { AvisoForm } from "../_components/AvisoForm";
 
@@ -16,10 +17,10 @@ export default async function NovoAvisoPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Novo aviso</h1>
-        <p className="mt-1 text-sm text-slate-500">Novidade, correção, manutenção/indisponibilidade ou aviso geral.</p>
-      </div>
+      <CabecalhoPagina
+        titulo="Novo aviso"
+        descricao="Novidade, correção, manutenção/indisponibilidade ou aviso geral."
+      />
       <AvisoForm />
     </div>
   );

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import { resolverPrecosVigentes } from "@/lib/precoVigente";
@@ -60,20 +61,20 @@ export default async function EditarPostoPage({ params }: { params: Promise<{ cn
   return (
     <div>
       <BotaoVoltar href="/postos" />
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Editar Posto Revendedor</h1>
-          {!posto.ativo && (
-            <p className="mt-1 text-sm font-medium text-amber-700">
-              Bloqueado pelo gestor de frota — não deve ser usado para abastecimento.
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <ToggleAtivoPosto cnpj={posto.cnpj} ativo={posto.ativo} />
-          <ExcluirPosto cnpj={posto.cnpj} />
-        </div>
-      </div>
+      <CabecalhoPagina
+        titulo="Editar Posto Revendedor"
+        descricao={
+          !posto.ativo ? (
+            <span className="font-medium text-amber-300">Bloqueado pelo gestor de frota — não deve ser usado para abastecimento.</span>
+          ) : undefined
+        }
+        acoes={
+          <div className="flex items-center gap-3">
+            <ToggleAtivoPosto cnpj={posto.cnpj} ativo={posto.ativo} />
+            <ExcluirPosto cnpj={posto.cnpj} />
+          </div>
+        }
+      />
 
       <div className="mb-6">
         <PostoForm posto={posto} empresas={[]} nomeEmpresaAtual={empresa?.nome} />

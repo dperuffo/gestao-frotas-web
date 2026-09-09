@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ImportForm } from "./_components/ImportForm";
 import { BotaoExcluirPiso } from "./_components/BotaoExcluirPiso";
@@ -32,18 +33,15 @@ export default async function PisosAnttPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Piso Mínimo ANTT</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Res. ANTT 5.867/2020 — piso = distância (km) × coeficiente de deslocamento + coeficiente de
-            carga/descarga, por tipo de carga e nº de eixos.
-          </p>
-        </div>
-        <a href="/administracao/pisos-antt/modelo" className="btn-secondary text-sm">
-          Baixar modelo .xlsx
-        </a>
-      </div>
+      <CabecalhoPagina
+        titulo="Piso Mínimo ANTT"
+        descricao="Res. ANTT 5.867/2020 — piso = distância (km) × coeficiente de deslocamento + coeficiente de carga/descarga, por tipo de carga e nº de eixos."
+        acoes={
+          <a href="/administracao/pisos-antt/modelo" className="btn-secondary text-sm">
+            Baixar modelo .xlsx
+          </a>
+        }
+      />
 
       <div className="mb-6">
         <ImportForm />

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
@@ -47,12 +48,10 @@ export default async function NovaMultaPage({ searchParams }: { searchParams: Pr
 
   return (
     <div>
-      <div className="mb-6">
-        <Link href={`/multas?empresa=${empresaSelecionada}`} className="text-sm text-frota-600 hover:underline">
-          ← Voltar
-        </Link>
-        <h1 className="mt-2 text-xl font-semibold text-slate-900">Nova Multa</h1>
-      </div>
+      <Link href={`/multas?empresa=${empresaSelecionada}`} className="mb-2 inline-block text-sm text-frota-600 hover:underline">
+        ← Voltar
+      </Link>
+      <CabecalhoPagina titulo="Nova Multa" />
       <NovaMultaForm empresaId={empresaSelecionada} placas={placas} />
     </div>
   );

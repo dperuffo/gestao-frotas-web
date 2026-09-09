@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatarDataHoraBr } from "@/lib/utils";
 import { ToggleAtivoAviso } from "./_components/ToggleAtivoAviso";
@@ -42,18 +43,15 @@ export default async function CentralAvisosPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Central de Avisos</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Novidades, correções, manutenções/indisponibilidade e avisos gerais — publicados aqui, sem precisar de
-            deploy, chegam ao sino/drawer de clientes, motoristas e postos.
-          </p>
-        </div>
-        <Link href="/administracao/central-avisos/novo" className="btn-primary text-sm">
-          + Novo aviso
-        </Link>
-      </div>
+      <CabecalhoPagina
+        titulo="Central de Avisos"
+        descricao="Novidades, correções, manutenções/indisponibilidade e avisos gerais — publicados aqui, sem precisar de deploy, chegam ao sino/drawer de clientes, motoristas e postos."
+        acoes={
+          <Link href="/administracao/central-avisos/novo" className="btn-primary text-sm">
+            + Novo aviso
+          </Link>
+        }
+      />
 
       <div className="card overflow-x-auto p-6">
         <table className="w-full text-left text-sm">

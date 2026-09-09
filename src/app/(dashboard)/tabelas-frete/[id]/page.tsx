@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { TabelaFreteForm } from "../_components/TabelaFreteForm";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
@@ -31,10 +32,7 @@ export default async function EditarTabelaFretePage({
   return (
     <div>
       <BotaoVoltar href={`/tabelas-frete?empresa=${empresaId}`} label="Voltar para a lista" />
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">📋 Editar tabela de frete</h1>
-        <p className="mt-1 text-sm text-slate-500">{tabela.nome}</p>
-      </div>
+      <CabecalhoPagina titulo="📋 Editar tabela de frete" descricao={tabela.nome} />
       <TabelaFreteForm
         empresaId={empresaId}
         tabela={tabela}

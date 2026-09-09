@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { NovoGrupoForm } from "../_components/NovoGrupoForm";
 
@@ -39,7 +40,7 @@ export default async function NovoGrupoPage() {
   if (!ehAdmin && empresasOpcoes.length === 0) {
     return (
       <div>
-        <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Grupo Econômico</h1>
+        <CabecalhoPagina titulo="Novo Grupo Econômico" />
         <div className="card p-6 text-sm text-slate-600">
           Você precisa ter uma empresa cadastrada antes de criar um Grupo Econômico.{" "}
           <Link href="/minha-empresa" className="font-medium text-frota-600 hover:underline">
@@ -53,7 +54,7 @@ export default async function NovoGrupoPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Novo Grupo Econômico</h1>
+      <CabecalhoPagina titulo="Novo Grupo Econômico" />
       <NovoGrupoForm empresasOpcoes={empresasOpcoes} />
     </div>
   );

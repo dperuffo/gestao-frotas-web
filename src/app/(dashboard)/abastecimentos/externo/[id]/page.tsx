@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatarDataHoraBr } from "@/lib/utils";
 import type { AutorAjuste } from "@/lib/ajustesAbastecimentos";
@@ -52,12 +53,10 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
     return (
       <div>
         <BotaoVoltar href="/abastecimentos" />
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-slate-900">Abastecimento</h1>
-          {/* Fase 27.152/27.153 — mesmo ID de 10 dígitos de /abastecimentos/[id]
-              (Fase 27.104), agora também pro lado externo (API/planilha). */}
-          <p className="mt-1 text-xs text-slate-400">ID {abastecimento.codigo_abastecimento} · {abastecimento.provedor}</p>
-        </div>
+        <CabecalhoPagina
+          titulo="Abastecimento"
+          descricao={`ID ${abastecimento.codigo_abastecimento} · ${abastecimento.provedor}`}
+        />
         <ValoresCard abastecimento={abastecimento} nomeCliente={nomeCliente ?? null} />
         <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
           Este posto ainda não está cadastrado na plataforma, então não há como abrir um pedido de
@@ -97,16 +96,15 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
   return (
     <div>
       <BotaoVoltar href="/abastecimentos" />
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Abastecimento</h1>
-        {/* Fase 27.152/27.153 — mesmo ID de 10 dígitos de /abastecimentos/[id]
-            (Fase 27.104), agora também pro lado externo (API/planilha). */}
-        <p className="mt-1 text-xs text-slate-400">ID {abastecimento.codigo_abastecimento} · {abastecimento.provedor}</p>
-        <p className="mt-1 text-sm text-slate-500">
-          Este registro tem cliente e posto identificados na plataforma — qualquer correção precisa
-          ser aprovada pela outra parte antes de valer.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Abastecimento"
+        descricao={
+          <>
+            ID {abastecimento.codigo_abastecimento} · {abastecimento.provedor} — Este registro tem cliente e posto
+            identificados na plataforma — qualquer correção precisa ser aprovada pela outra parte antes de valer.
+          </>
+        }
+      />
 
       <ValoresCard abastecimento={abastecimento} nomeCliente={nomeCliente ?? null} />
 

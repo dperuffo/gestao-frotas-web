@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/financeiro";
 import { formatarDataBr } from "@/lib/utils";
@@ -160,35 +161,37 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
     <div>
       <BotaoVoltar href="/financeiro-posto" />
 
-      <div className="mt-3 mb-2 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Boleto — {postoNome}</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Nº da fatura: <strong className="text-slate-700">{numeroFaturaFormatado}</strong> · Cliente: {clienteNome}
-          </p>
-        </div>
-        {boletoJaGerado ? (
-          <BotaoBaixarPdfFaturaLazy
-            nomeArquivo={`boleto-${numeroFaturaFormatado}-${postoNome.replace(/\s+/g, "-").toLowerCase()}.pdf`}
-            numeroFatura={fatura.numero_fatura}
-            cedente={cedente}
-            sacado={sacado}
-            periodoInicio={formatarDataBr(fatura.periodo_inicio)}
-            periodoFim={formatarDataBr(fatura.periodo_fim)}
-            vencimento={formatarDataBr(fatura.vencimento)}
-            status={STATUS_CICLO_FATURA_LABEL[statusExib]}
-            valorTotal={fatura.valor_total}
-            volumeTotal={fatura.volume_total}
-            quantidadeAbastecimentos={fatura.quantidade_abastecimentos}
-            itens={itensPdf}
-            qrCodePixDataUrl={qrCodePixDataUrl}
-          />
-        ) : (
-          <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800">
-            Boleto ainda não gerado — previsto para {formatarDataBr(fatura.data_geracao_boleto)}
-          </span>
-        )}
-      </div>
+      <CabecalhoPagina
+        titulo={`Boleto — ${postoNome}`}
+        descricao={
+          <>
+            Nº da fatura: <strong className="text-white">{numeroFaturaFormatado}</strong> · Cliente: {clienteNome}
+          </>
+        }
+        acoes={
+          boletoJaGerado ? (
+            <BotaoBaixarPdfFaturaLazy
+              nomeArquivo={`boleto-${numeroFaturaFormatado}-${postoNome.replace(/\s+/g, "-").toLowerCase()}.pdf`}
+              numeroFatura={fatura.numero_fatura}
+              cedente={cedente}
+              sacado={sacado}
+              periodoInicio={formatarDataBr(fatura.periodo_inicio)}
+              periodoFim={formatarDataBr(fatura.periodo_fim)}
+              vencimento={formatarDataBr(fatura.vencimento)}
+              status={STATUS_CICLO_FATURA_LABEL[statusExib]}
+              valorTotal={fatura.valor_total}
+              volumeTotal={fatura.volume_total}
+              quantidadeAbastecimentos={fatura.quantidade_abastecimentos}
+              itens={itensPdf}
+              qrCodePixDataUrl={qrCodePixDataUrl}
+            />
+          ) : (
+            <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800">
+              Boleto ainda não gerado — previsto para {formatarDataBr(fatura.data_geracao_boleto)}
+            </span>
+          )
+        }
+      />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="card p-4">

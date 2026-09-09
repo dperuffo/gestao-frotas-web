@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ClienteForm } from "../_components/ClienteForm";
@@ -24,10 +25,7 @@ export default async function NovoClienteCrmPage({ searchParams }: { searchParam
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">🤝 Novo cliente</h1>
-        <p className="mt-1 text-sm text-slate-500">{nomeEmpresaSelecionada}</p>
-      </div>
+      <CabecalhoPagina titulo="🤝 Novo cliente" descricao={nomeEmpresaSelecionada} />
       <ClienteForm empresaId={empresaSelecionada} modo="criar" />
     </div>
   );

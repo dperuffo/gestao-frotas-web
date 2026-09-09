@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ItemCatalogoForm } from "../../_components/ItemCatalogoForm";
 import { BotaoVoltar } from "../../../_components/BotaoVoltar";
@@ -27,8 +28,7 @@ export default async function EditarItemCatalogoPage({ params }: { params: Promi
   return (
     <div>
       <BotaoVoltar href="/fidelidade" />
-      <h1 className="mb-1 text-xl font-semibold text-slate-900">Editar Item do Catálogo</h1>
-      <p className="mb-6 text-sm text-slate-500">{item.titulo}</p>
+      <CabecalhoPagina titulo="Editar Item do Catálogo" descricao={item.titulo} />
       <ItemCatalogoForm item={item} />
     </div>
   );

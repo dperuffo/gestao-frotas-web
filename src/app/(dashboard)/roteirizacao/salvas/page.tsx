@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { AbasRoteirizacao } from "../_components/AbasRoteirizacao";
 import { ExcluirRotaButton } from "../_components/ExcluirRotaButton";
@@ -50,10 +51,7 @@ export default async function RoteirizacaoSalvasPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Roteirização</h1>
-        <p className="mt-1 text-sm text-slate-500">Consultas e rotas que você salvou.</p>
-      </div>
+      <CabecalhoPagina titulo="Roteirização" descricao="Consultas e rotas que você salvou." />
 
       <AbasRoteirizacao ativo="salvas" />
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { NovaPecaForm } from "../_components/NovaPecaForm";
@@ -20,12 +21,10 @@ export default async function NovaPecaPage({ searchParams }: { searchParams: Pro
 
   return (
     <div>
-      <div className="mb-6">
-        <Link href={`/estoque-pecas?empresa=${empresaSelecionada}`} className="text-sm text-frota-600 hover:underline">
-          ← Voltar
-        </Link>
-        <h1 className="mt-2 text-xl font-semibold text-slate-900">Nova Peça</h1>
-      </div>
+      <Link href={`/estoque-pecas?empresa=${empresaSelecionada}`} className="mb-2 inline-block text-sm text-frota-600 hover:underline">
+        ← Voltar
+      </Link>
+      <CabecalhoPagina titulo="Nova Peça" />
       <NovaPecaForm empresaId={empresaSelecionada} />
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ListaTomadoresPendentes, type TomadorPendente } from "../_components/GerarFaturaFreteForm";
@@ -60,12 +61,10 @@ export default async function GerarFaturaFretePage({ searchParams }: { searchPar
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">🧾 Gerar fatura de frete</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {nomeEmpresaSelecionada} — CT-es autorizados agrupados por tomador, ainda não faturados.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="🧾 Gerar fatura de frete"
+        descricao={`${nomeEmpresaSelecionada} — CT-es autorizados agrupados por tomador, ainda não faturados.`}
+      />
       <ListaTomadoresPendentes empresaId={empresaSelecionada} tomadores={tomadores} />
       <div className="mt-6">
         <Link href={`/faturas-fretes?empresa=${empresaSelecionada}`} className="text-sm text-frota-600 hover:underline">

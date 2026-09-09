@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
@@ -53,12 +54,10 @@ export default async function RoteirizacaoRotaPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Escolher Postos Manualmente</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Trace a rota, informe o veículo e escolha você mesmo em quais postos o motorista vai abastecer.
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo="Escolher Postos Manualmente"
+        descricao="Trace a rota, informe o veículo e escolha você mesmo em quais postos o motorista vai abastecer."
+      />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

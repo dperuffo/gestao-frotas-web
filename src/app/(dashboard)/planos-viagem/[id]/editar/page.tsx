@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
 import { PlanoViagemForm } from "../../_components/PlanoViagemForm";
@@ -78,7 +79,7 @@ export default async function EditarPlanoViagemPage({
   return (
     <div>
       <BotaoVoltar href="/planos-viagem" />
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Editar Plano de Viagem — {plano.nome}</h1>
+      <CabecalhoPagina titulo={`Editar Plano de Viagem — ${plano.nome}`} />
 
       {prePedido && (
         <div className="mb-6 rounded-lg border border-frota-200 bg-frota-50 p-4">

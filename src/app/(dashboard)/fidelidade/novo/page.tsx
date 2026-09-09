@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ItemCatalogoForm } from "../_components/ItemCatalogoForm";
 
@@ -15,10 +16,10 @@ export default async function NovoItemCatalogoPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-semibold text-slate-900">Novo Item do Catálogo</h1>
-      <p className="mb-6 text-sm text-slate-500">
-        Item ficará disponível pro motorista resgatar no app &quot;Estrada que Cuida&quot; assim que salvo.
-      </p>
+      <CabecalhoPagina
+        titulo="Novo Item do Catálogo"
+        descricao={'Item ficará disponível pro motorista resgatar no app "Estrada que Cuida" assim que salvo.'}
+      />
       <ItemCatalogoForm />
     </div>
   );

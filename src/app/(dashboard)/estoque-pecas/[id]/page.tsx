@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { TIPO_MOVIMENTO_LABEL, TIPO_MOVIMENTO_COR, formatarMoeda } from "@/lib/estoquePecas";
 import { RegistrarMovimentoForm, DesativarPecaButton } from "../_components/EstoquePecasAcoes";
@@ -60,14 +61,14 @@ export default async function PecaDetalhePage({
   return (
     <div>
       <BotaoVoltar href={`/estoque-pecas?empresa=${empresaId}`} />
-      <div className="mb-6">
-        <div className="mt-2 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-slate-900">
+      <CabecalhoPagina
+        titulo={
+          <>
             {peca.nome} {peca.codigo ? <span className="text-slate-400">· {peca.codigo}</span> : null}
-          </h1>
-          {!peca.ativa && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Inativa</span>}
-        </div>
-      </div>
+          </>
+        }
+        acoes={!peca.ativa ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Inativa</span> : undefined}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

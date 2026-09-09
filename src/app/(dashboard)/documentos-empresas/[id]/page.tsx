@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import {
   listarDocumentacao,
@@ -55,13 +56,10 @@ export default async function DocumentosEmpresaDetalhePage({ params }: { params:
   return (
     <div className="max-w-3xl">
       <BotaoVoltar href="/documentos-empresas" />
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">{empresa.nome}</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          CNPJ {empresa.cnpj ?? "—"} · {empresa.segmento === "Revenda" ? "Posto" : "Cliente"} · Status:{" "}
-          {LABEL_STATUS_DOCUMENTACAO[situacao.status]}
-        </p>
-      </div>
+      <CabecalhoPagina
+        titulo={empresa.nome}
+        descricao={`CNPJ ${empresa.cnpj ?? "—"} · ${empresa.segmento === "Revenda" ? "Posto" : "Cliente"} · Status: ${LABEL_STATUS_DOCUMENTACAO[situacao.status]}`}
+      />
 
       <div className="card p-6">
         <h2 className="text-sm font-semibold text-slate-900">Documentos da empresa</h2>

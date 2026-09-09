@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ToggleAtivoOficina } from "./_components/ToggleAtivoOficina";
 import { BotaoExcluirOficina } from "./_components/BotaoExcluirOficina";
@@ -26,15 +27,15 @@ export default async function OficinasCredenciadasPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Oficinas Credenciadas</h1>
-          <p className="mt-1 text-sm text-slate-500">Catálogo nacional de oficinas parceiras, exibido aos clientes em /oficinas.</p>
-        </div>
-        <Link href="/administracao/oficinas-credenciadas/novo" className="btn-primary text-sm">
-          + Nova oficina
-        </Link>
-      </div>
+      <CabecalhoPagina
+        titulo="Oficinas Credenciadas"
+        descricao="Catálogo nacional de oficinas parceiras, exibido aos clientes em /oficinas."
+        acoes={
+          <Link href="/administracao/oficinas-credenciadas/novo" className="btn-primary text-sm">
+            + Nova oficina
+          </Link>
+        }
+      />
 
       <div className="card overflow-x-auto p-6">
         <table className="w-full text-left text-sm">

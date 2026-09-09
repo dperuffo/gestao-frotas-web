@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ConverterCotacaoButton } from "../_components/ConverterCotacaoButton";
 import { DescartarCotacaoButton } from "../_components/DescartarCotacaoButton";
@@ -43,18 +44,11 @@ export default async function CotacaoDetalhePage({
   return (
     <div>
       <BotaoVoltar href={`/cotacoes?empresa=${empresaId}`} label="Voltar para Cotações" />
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">
-            🧮 {cotacao.origem_label} → {cotacao.destino_label}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {cotacao.peso_kg.toLocaleString("pt-BR")} kg
-            {cotacao.km_estimado ? ` · ${cotacao.km_estimado.toLocaleString("pt-BR")} km` : ""}
-          </p>
-        </div>
-        <span className={cotacao.status === "simulada" ? "badge-ativo" : "badge-inativo"}>{LABEL_STATUS[cotacao.status] ?? cotacao.status}</span>
-      </div>
+      <CabecalhoPagina
+        titulo={`🧮 ${cotacao.origem_label} → ${cotacao.destino_label}`}
+        descricao={`${cotacao.peso_kg.toLocaleString("pt-BR")} kg${cotacao.km_estimado ? ` · ${cotacao.km_estimado.toLocaleString("pt-BR")} km` : ""}`}
+        acoes={<span className={cotacao.status === "simulada" ? "badge-ativo" : "badge-inativo"}>{LABEL_STATUS[cotacao.status] ?? cotacao.status}</span>}
+      />
 
       {cotacao.piso_antt_alerta && (
         <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">

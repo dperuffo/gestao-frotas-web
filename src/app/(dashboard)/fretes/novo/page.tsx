@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { verificarAcessoFretes, mensagemAcessoFretesBloqueado } from "@/lib/limitePlano";
@@ -77,10 +78,7 @@ export default async function NovoFretePage({ searchParams }: { searchParams: Pr
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">🚚 Publicar frete</h1>
-        <p className="mt-1 text-sm text-slate-500">{nomeEmpresaSelecionada}</p>
-      </div>
+      <CabecalhoPagina titulo="🚚 Publicar frete" descricao={nomeEmpresaSelecionada} />
       <FreteForm empresaId={empresaSelecionada} motoristas={motoristas} />
     </div>
   );
