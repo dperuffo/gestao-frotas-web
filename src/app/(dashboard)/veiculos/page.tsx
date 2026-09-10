@@ -183,11 +183,14 @@ export default async function VeiculosPage({
                 { header: "Localização", chave: "localizacao" },
                 { header: "Status", chave: "status" },
               ]}
-              carregarLinhas={
-                empresaSelecionada
-                  ? () => exportarVeiculosAcao(empresaSelecionada, termoBusca)
-                  : async () => []
-              }
+              // Fase Pente-Fino-Performance — precisa ser a própria Server
+              // Action "vinculada" via .bind() (não uma arrow function nova
+              // fechando sobre ela). Um Server Component só pode passar pra
+              // um Client Component uma referência de Server Action de
+              // verdade; embrulhar numa closure comum quebra a serialização
+              // e derruba a página inteira com "Server Components render
+              // error" (era exatamente esse o bug reportado).
+              carregarLinhas={exportarVeiculosAcao.bind(null, empresaSelecionada ?? null, termoBusca)}
             />
           </div>
 

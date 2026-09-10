@@ -249,7 +249,8 @@ export async function alternarAtivoVeiculo(id: string, ativo: boolean) {
 // XLSX em /veiculos, em vez de em todo carregamento de página (ver
 // BotaoExportarTabela.carregarLinhas e o novo veiculos_da_empresa_pagina
 // usado pra tabela em si).
-export async function exportarVeiculosAcao(empresaId: string, busca: string): Promise<LinhaExportacao[]> {
+export async function exportarVeiculosAcao(empresaId: string | null, busca: string): Promise<LinhaExportacao[]> {
+  if (!empresaId) return [];
   const supabase = await createClient();
   const { data } = await buscarTodosVeiculosDaEmpresa(supabase, empresaId);
 
