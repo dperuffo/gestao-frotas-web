@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { renderMarkdownSimples } from "@/lib/markdownSimples";
@@ -45,9 +46,21 @@ export function AvisosDrawer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto]);
 
-  if (!aberto) return null;
+  // Fase Pente-Fino-Performance (10/09/2026) — achado real do Daniel: o
+  // painel de Avisos aparecia encolhido dentro do menu lateral (largura de
+  // ~280px) em vez de cobrir a tela inteira. Causa: o <aside> do menu
+  // (PainelMobile.tsx) tem `transition-[transform]` pra animar a gaveta
+  // mobile — qualquer ancestral com `transform` vira a referência de
+  // posicionamento pros filhos `fixed`, então o `fixed inset-0` deste
+  // painel passava a valer só dentro do <aside>, não da tela toda. Portal
+  // pro <body> resolve renderizando fora dessa hierarquia, sem mudar nada
+  // do visual/comportamento pretendido (overlay escuro + painel à direita).
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
 
-  return (
+  if (!aberto || !montado) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onFechar} />
       <div className="relative flex h-full w-full max-w-md flex-col bg-white shadow-xl">
@@ -72,16 +85,15 @@ export function AvisosDrawer({
                 <p className="mt-2 text-sm text-slate-600">{a.resumo}</p>
                 <div className="mt-2 space-y-2 text-sm text-slate-700">{renderMarkdownSimples(a.corpo)}</div>
                 {urlImagem && (
-                  // eslint-disable-next-line @next/next/no-img-element -- imagem de storage dinâmica, sem domínio fixo pra next/image
                   <Image
-                  src={urlImagem}
-                  alt=""
-                  width={0}
-                  height={0}
-                  sizes="400px"
-                  className="mt-2 max-h-48 w-auto rounded-lg border border-slate-200"
-                  style={{ width: "auto", height: "auto" }}
-                />
+                    src={urlImagem}
+                    alt=""
+                    width={0}
+                    height={0}
+                    sizes="400px"
+                    className="mt-2 max-h-48 w-auto rounded-lg border border-slate-200"
+                    style={{ width: "auto", height: "auto" }}
+                  />
                 )}
               </details>
             );
@@ -93,6 +105,7 @@ export function AvisosDrawer({
           </Link>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
