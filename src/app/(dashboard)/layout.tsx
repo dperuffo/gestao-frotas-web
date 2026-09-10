@@ -425,6 +425,18 @@ const menuPostoVisaoGeral: ItemMenuLateral[] = [
   // e gerencie sua própria Rede (ver gruposEconomicos.ts). Continua também
   // em Administração, pra visão global do admin sobre todas as redes.
   { href: "/rede-postos", label: "Rede de Postos", icon: Network }, // PWA: Icons.hub
+  // Fase Inteligência-Comercial-Posto (09/09/2026) — devolutiva pro posto
+  // dos sinais do próprio histórico de abastecimento (clientes em risco de
+  // churn), a partir da RPC clientes_em_risco_churn. Movido pra "Visão
+  // Geral" (pedido do Daniel, 09/09/2026: "creio que Inteligencia Comercial
+  // e Relatorios Personalizados tem que estar dentro da aba Visão Geral no
+  // menu") — mesmo espírito de Dashboard/Meu Posto/Rede de Postos: visão
+  // consolidada, não um cadastro do dia a dia.
+  { href: "/inteligencia-comercial-posto", label: "Inteligência Comercial", icon: Target },
+  // Fase Relatorios-Personalizados-Posto (09/09/2026) — mesmo motivo do item
+  // acima: visão consolidada, fica em "Visão Geral" junto com Inteligência
+  // Comercial.
+  { href: "/relatorios-posto", label: "Relatórios Personalizados", icon: BarChart3 },
 ];
 
 // Fase reorganizacao-menu — quem acessa o posto e quem já negociou com ele.
@@ -436,17 +448,6 @@ const menuPostoCadastros: ItemMenuLateral[] = [
   // Fase 27.72 — cadastro dos clientes que já negociaram com o posto
   // (qualquer status), com ciclo de abastecimento/pagamento por cliente.
   { href: "/clientes-posto", label: "Clientes", icon: Building2 },
-  // Fase Inteligência-Comercial-Posto (09/09/2026) — devolutiva pro posto
-  // dos sinais do próprio histórico de abastecimento (clientes em risco de
-  // churn), a partir da RPC clientes_em_risco_churn.
-  { href: "/inteligencia-comercial-posto", label: "Inteligência Comercial", icon: Target },
-  // Fase Relatorios-Personalizados-Posto (09/09/2026, pedido do Daniel: "a
-  // visao de posto na aplicacao nao possui uma aba de Relatorios
-  // Personalizados... precisamos trazer relatorios para esta visão") — mesmo
-  // conceito de /relatorios (lado cliente): monta relatório combinando
-  // fonte/dimensão/métrica, com fontes próprias do posto (vendas, financeiro,
-  // notas fiscais).
-  { href: "/relatorios-posto", label: "Relatórios Personalizados", icon: BarChart3 },
 ];
 
 // Fase 27.130 — o dia a dia operacional do posto: negociar com clientes
@@ -527,6 +528,14 @@ const menuAdministracao = [
   // menu do cliente sem nenhuma ação que ele pudesse de fato realizar ali —
   // movido pra Administração, junto de Grupo Econômico/Assinaturas/etc.
   { href: "/rede-postos", label: "Rede de Postos", icon: Network },
+  // Fase Admin-Inteligencia-Comercial-Posto (09/09/2026, pedido do Daniel:
+  // "implementar tela de Inteligencia Comercial na visao do admin") — a tela
+  // já suportava admin no backend (RPCs com bypass "perfil_usuario_atual() =
+  // 'admin'" e resolverEmpresaAtual já lista todas as empresas, inclusive
+  // postos, pro admin escolher) — só faltava um link no menu, já que o admin
+  // nunca vê o menu do posto (menuPostoVisaoGeral). Ao entrar, o admin escolhe
+  // qual posto quer inspecionar no seletor de empresa da própria tela.
+  { href: "/inteligencia-comercial-posto", label: "Inteligência Comercial (Postos)", icon: Target },
   // Fase 27.137 — fila de revisão dos possíveis duplicados sinalizados pela
   // checagem de "Meu Posto" contra a base ANP (endereço/coordenadas muito
   // próximos de outro posto, CNPJ diferente) — nunca bloqueia o posto, só
@@ -602,6 +611,10 @@ const TOUR_POR_HREF: Record<string, string> = {
   "/assistente": "menu-assistente",
   "/financeiro": "menu-financeiro",
 };
+
+// Fase Admin-Inteligencia-Comercial-Posto (09/09/2026) — mapa reverso pro
+// mesmo href (usado só pra achatar TODOS_ITENS_MENU/favoritos), não precisa
+// de data-tour próprio (não faz parte do tour de boas-vindas do admin).
 
 // Fase 27.82 — mesma ideia, só que pros alvos do tour do POSTO (ver
 // PASSOS_TOUR_POSTO em tourPassos.ts) — menuPosto é uma lista só, sem
@@ -1052,7 +1065,7 @@ export default async function DashboardLayout({
           )}
         </div>
         <div className="menu-busca px-3 pt-3">
-          <BuscaGlobal itens={itensBuscaGlobal} />
+          <BuscaGlobal itens={itensBuscaGlobal} ehPosto={ehPosto} />
         </div>
         <nav className="flex-1 px-3 py-4">
           {ehPosto ? (

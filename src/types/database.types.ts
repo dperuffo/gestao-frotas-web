@@ -6239,6 +6239,19 @@ export interface Database {
       // guarda manual (RLS de abastecimentos_unificado não escopa por
       // posto_cnpj do usuário logado) — mesmo padrão das RPCs de
       // Inteligência-Comercial-Posto.
+      // Fase Busca-Global-Posto (09/09/2026) — usadas pela Busca Global
+      // (Cmd+K) quando o perfil é posto, em vez de cadastro_veiculos/
+      // motoristas (que não existem no tenant posto). Auto-escopadas via
+      // empresas_do_usuario(jwt email) internamente — não recebem
+      // p_empresa_posto_id, então não têm o parâmetro pra validar/forjar.
+      busca_global_clientes_posto: {
+        Args: { p_termo: string };
+        Returns: { id: string | null; nome: string | null; cnpj: string | null; municipio: string | null; uf: string | null }[];
+      };
+      busca_global_placas_clientes_posto: {
+        Args: { p_termo: string };
+        Returns: { placa: string | null; cliente_id: string | null; cliente_nome: string | null }[];
+      };
       relatorio_vendas_posto_bruto: {
         Args: { p_empresa_posto_id: string; p_data_inicio?: string | null; p_data_fim?: string | null };
         Returns: {

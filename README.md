@@ -9456,3 +9456,48 @@ posto (logo abaixo de "Inteligência Comercial"), `aba_relatorios_posto` em
 explicitamente em `/permissoes`).
 
 Validado com `tsc --noEmit` e `eslint` (ambos limpos).
+
+## Fase Ajustes-Inteligencia-Comercial-e-Busca-Posto (09/09/2026)
+
+Três pedidos do Daniel na sequência da Fase Relatorios-Personalizados-Posto:
+
+**1. "Ajustar os filtros de busca para a visão do posto"** — a Busca Global (Cmd+K)
+buscava só `cadastro_veiculos`/`motoristas` (conceitos do tenant FROTA), que não
+existem no tenant POSTO — digitar a placa de um cliente na busca do posto sempre
+dava "Nada encontrado". Duas RPCs novas, auto-escopadas via
+`empresas_do_usuario(jwt email)` (sem receber `p_empresa_posto_id` — não há
+parâmetro externo pra validar/forjar, o e-mail vem sempre do JWT da própria sessão):
+
+- `busca_global_clientes_posto(p_termo)` — clientes que negociaram com QUALQUER
+  posto do usuário logado (`negociacoes_postos` join `empresas`), por nome/CNPJ.
+- `busca_global_placas_clientes_posto(p_termo)` — placas de clientes que já
+  abasteceram em qualquer posto do usuário (`abastecimentos_unificado` filtrado
+  pelos CNPJs das empresas-posto do usuário), com o nome do cliente dono como
+  sublabel.
+
+Ambas SECURITY DEFINER, `REVOKE ALL ... FROM public, anon` + `GRANT EXECUTE ...
+TO authenticated` — testadas com o e-mail real do usuário posto de teste (não só
+com o bypass de admin). `BuscaGlobal.tsx` ganhou uma prop `ehPosto` — quando
+`true`, a busca dinâmica (a partir de 2 caracteres) chama essas 2 RPCs em vez de
+`.from("cadastro_veiculos")`/`.from("motoristas")`, com seções "Clientes"/"Placas"
+em vez de "Veículos"/"Motoristas", e placeholder/mensagens de vazio ajustados.
+`layout.tsx` passa `ehPosto` (já calculado ali) pro componente.
+
+**2. "Creio que Inteligencia Comercial e Relatorios Personalizados tem que estar
+dentro da aba Visão Geral no menu"** — as 2 telas (adicionadas nas fases
+anteriores) tinham entrado no grupo "Cadastros" do menu posto; movidas pra
+"Visão Geral" (junto de Dashboard/Meu Posto/Rede de Postos) — mesmo espírito de
+visão consolidada, não cadastro do dia a dia.
+
+**3. "Implementar tela de Inteligencia Comercial na visao do admin"** — o backend
+já suportava admin (as RPCs de Inteligência-Comercial-Posto sempre tiveram o
+bypass `perfil_usuario_atual() = 'admin'`, e `resolverEmpresaAtual()` já lista
+TODAS as empresas — inclusive postos — pro admin escolher), mas faltava um link
+no menu: o admin nunca vê `menuPostoVisaoGeral` (só quem tem perfil "posto" vê
+esse array). Adicionado "Inteligência Comercial (Postos)" em `menuAdministracao`,
+mesmo grupo onde já mora "Rede de Postos" (outra ferramenta operacional do posto
+exposta pro admin inspecionar/dar suporte). Ao entrar, o admin escolhe qual posto
+quer ver no seletor de empresa que a própria tela já tinha.
+
+Validado com `tsc --noEmit` e `eslint` (ambos limpos); as 2 RPCs de busca também
+testadas via simulação de RLS/JWT com o e-mail do posto de teste real.

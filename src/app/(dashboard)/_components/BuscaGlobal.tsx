@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, CornerDownLeft, X, Truck, UserRound } from "lucide-react";
+import { Search, CornerDownLeft, X, Truck, UserRound, Building2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -40,12 +40,17 @@ type ResultadoBusca = {
   href: string;
   label: string;
   sublabel?: string;
-  secao: "Telas" | "Veículos" | "Motoristas";
+  secao: "Telas" | "Veículos" | "Motoristas" | "Clientes" | "Placas";
   iconNode: ReactNode;
 };
 
 const ICONE_VEICULO = <Truck className="h-4 w-4 shrink-0 text-slate-400" />;
 const ICONE_MOTORISTA = <UserRound className="h-4 w-4 shrink-0 text-slate-400" />;
+// Fase Busca-Global-Posto (09/09/2026) — mesmos ícones de sempre, só que
+// pro que existe no tenant posto: Cliente (empresa que negociou com o
+// posto) e Placa (veículo de um cliente que já abasteceu aqui — reaproveita
+// o ícone de caminhão, o conceito visual é o mesmo).
+const ICONE_CLIENTE = <Building2 className="h-4 w-4 shrink-0 text-slate-400" />;
 const DEBOUNCE_MS = 300;
 const TERMO_MIN_CHARS = 2;
 
@@ -56,7 +61,7 @@ function normalizar(texto: string): string {
     .toLowerCase();
 }
 
-export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
+export function BuscaGlobal({ itens, ehPosto = false }: { itens: ItemBusca[]; ehPosto?: boolean }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [consulta, setConsulta] = useState("");
@@ -128,6 +133,43 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
     setBuscandoDinamico(true);
     const idTimeout = window.setTimeout(async () => {
       const supabase = createClient();
+
+      // Fase Busca-Global-Posto (09/09/2026, pedido do Daniel: "ajustar os
+      // filtros de busca para a visão do posto") — cadastro_veiculos/
+      // motoristas são conceitos do tenant FROTA; o tenant POSTO (vendedor)
+      // não tem veículo/motorista próprio, então essa busca sempre dava
+      // "nada encontrado" pro posto (achado real: buscar uma placa de
+      // cliente não retornava nada). Pro posto, busca Clientes (que
+      // negociaram com ele) e Placas (de clientes que já abasteceram nele)
+      // via as 2 RPCs dedicadas (SECURITY DEFINER, auto-escopadas pelo
+      // próprio e-mail do JWT — ver busca_global_posto.sql).
+      if (ehPosto) {
+        const [clientesRes, placasRes] = await Promise.all([
+          supabase.rpc("busca_global_clientes_posto", { p_termo: termoEscapado }),
+          supabase.rpc("busca_global_placas_clientes_posto", { p_termo: termoEscapado }),
+        ]);
+        if (cancelado) return;
+        const clientes: ResultadoBusca[] = (clientesRes.data ?? []).map((cl) => ({
+          id: `cliente-${cl.id}`,
+          href: `/clientes-posto/${cl.id}`,
+          label: cl.nome ?? "—",
+          sublabel: [cl.municipio, cl.uf].filter(Boolean).join("/") || undefined,
+          secao: "Clientes" as const,
+          iconNode: ICONE_CLIENTE,
+        }));
+        const placas: ResultadoBusca[] = (placasRes.data ?? []).map((p, i) => ({
+          id: `placa-${p.placa}-${p.cliente_id}-${i}`,
+          href: p.cliente_id ? `/clientes-posto/${p.cliente_id}` : "/clientes-posto",
+          label: p.placa ?? "—",
+          sublabel: p.cliente_nome ?? undefined,
+          secao: "Placas" as const,
+          iconNode: ICONE_VEICULO,
+        }));
+        setResultadosDinamicos([...clientes, ...placas]);
+        setBuscandoDinamico(false);
+        return;
+      }
+
       const [veiculosRes, motoristasRes] = await Promise.all([
         supabase
           .from("cadastro_veiculos")
@@ -164,7 +206,7 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
       cancelado = true;
       window.clearTimeout(idTimeout);
     };
-  }, [consulta]);
+  }, [consulta, ehPosto]);
 
   const resultados = useMemo(() => {
     if (!consulta.trim()) return resultadosTelas;
@@ -235,7 +277,7 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
         type="button"
         onClick={() => setAberto(true)}
         className="glass-nav-texto-muted flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-left text-sm transition hover:bg-slate-200"
-        aria-label="Buscar telas, veículos e motoristas (Cmd+K)"
+        aria-label={ehPosto ? "Buscar telas, clientes e placas (Cmd+K)" : "Buscar telas, veículos e motoristas (Cmd+K)"}
       >
         <Search className="h-4 w-4 shrink-0" />
         <span className="flex-1 truncate">Buscar...</span>
@@ -260,7 +302,7 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
                 value={consulta}
                 onChange={(e) => setConsulta(e.target.value)}
                 onKeyDown={aoTeclarNaLista}
-                placeholder="Buscar uma tela, veículo (placa) ou motorista..."
+                placeholder={ehPosto ? "Buscar uma tela, cliente ou placa..." : "Buscar uma tela, veículo (placa) ou motorista..."}
                 className="w-full border-none bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
               />
               <button
@@ -276,7 +318,9 @@ export function BuscaGlobal({ itens }: { itens: ItemBusca[] }) {
               {resultados.length === 0 && !buscandoDinamico && (
                 <li className="px-3 py-6 text-center text-sm text-slate-400">
                   {consulta.trim().length >= TERMO_MIN_CHARS
-                    ? "Nada encontrado — nem tela, nem veículo, nem motorista."
+                    ? ehPosto
+                      ? "Nada encontrado — nem tela, nem cliente, nem placa."
+                      : "Nada encontrado — nem tela, nem veículo, nem motorista."
                     : "Nenhuma tela encontrada."}
                 </li>
               )}
