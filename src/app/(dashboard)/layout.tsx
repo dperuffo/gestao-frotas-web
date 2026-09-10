@@ -440,6 +440,13 @@ const menuPostoCadastros: ItemMenuLateral[] = [
   // dos sinais do próprio histórico de abastecimento (clientes em risco de
   // churn), a partir da RPC clientes_em_risco_churn.
   { href: "/inteligencia-comercial-posto", label: "Inteligência Comercial", icon: Target },
+  // Fase Relatorios-Personalizados-Posto (09/09/2026, pedido do Daniel: "a
+  // visao de posto na aplicacao nao possui uma aba de Relatorios
+  // Personalizados... precisamos trazer relatorios para esta visão") — mesmo
+  // conceito de /relatorios (lado cliente): monta relatório combinando
+  // fonte/dimensão/métrica, com fontes próprias do posto (vendas, financeiro,
+  // notas fiscais).
+  { href: "/relatorios-posto", label: "Relatórios Personalizados", icon: BarChart3 },
 ];
 
 // Fase 27.130 — o dia a dia operacional do posto: negociar com clientes
@@ -609,6 +616,7 @@ const TOUR_POR_HREF_POSTO: Record<string, string> = {
   "/financeiro-posto": "menu-financeiro-posto",
   "/integracoes": "menu-integracoes-posto",
   "/inteligencia-comercial-posto": "menu-inteligencia-comercial-posto",
+  "/relatorios-posto": "menu-relatorios-posto",
 };
 
 export default async function DashboardLayout({

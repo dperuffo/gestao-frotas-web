@@ -6233,6 +6233,29 @@ export interface Database {
           mes: string;
         }[];
       };
+      // Fase Relatorios-Personalizados-Posto (09/09/2026) — vendas do posto
+      // (abastecimentos vendidos aos clientes), equivalente do lado posto de
+      // relatorio_abastecimentos_bruto (lado cliente). SECURITY DEFINER com
+      // guarda manual (RLS de abastecimentos_unificado não escopa por
+      // posto_cnpj do usuário logado) — mesmo padrão das RPCs de
+      // Inteligência-Comercial-Posto.
+      relatorio_vendas_posto_bruto: {
+        Args: { p_empresa_posto_id: string; p_data_inicio?: string | null; p_data_fim?: string | null };
+        Returns: {
+          empresa_cliente_id: string | null;
+          cliente_nome: string | null;
+          cliente_municipio: string | null;
+          cliente_uf: string | null;
+          produto: string | null;
+          litros: number | null;
+          valor: number | null;
+          preco_litro: number | null;
+          provedor: string | null;
+          placa: string | null;
+          motorista: string | null;
+          data: string | null;
+        }[];
+      };
       relatorio_abastecimentos_bruto: {
         Args: { p_empresa_id?: string | null; p_data_inicio?: string | null; p_data_fim?: string | null };
         Returns: {

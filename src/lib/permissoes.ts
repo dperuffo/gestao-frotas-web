@@ -120,6 +120,9 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/minha-empresa": "aba_meus_dados_pix",
   "/clientes-posto": "aba_clientes_posto",
   "/inteligencia-comercial-posto": "aba_inteligencia_comercial_posto",
+  // Fase Relatorios-Personalizados-Posto (09/09/2026) — mesma funcionalidade
+  // conceitual de "/relatorios" (lado cliente), mas própria pro tenant posto.
+  "/relatorios-posto": "aba_relatorios_posto",
   "/pre-pedidos": "aba_pre_pedidos",
   "/permissoes": "aba_permissoes",
   "/assinaturas": "aba_assinaturas_clientes",

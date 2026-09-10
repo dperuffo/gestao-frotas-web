@@ -9395,3 +9395,64 @@ precisou de nada):
   vermelho acima da referência ANP / verde abaixo (mesmo padrão de cor de Inteligência de Rede).
 
 Validado com `tsc --noEmit` e `eslint` (ambos limpos) nos 16 arquivos novos + `page.tsx`.
+
+## Fase Relatorios-Personalizados-Posto (09/09/2026)
+
+Pedido do Daniel: "a visao de posto na aplicacao nao possui uma aba de Relatorios
+Personalizados... precisamos trazer relatorios para esta visão, com fontes de dados,
+dimensoes e variaveis diversas, assim como temos na visao do cliente".
+
+Nova tela `/relatorios-posto`, mesmo espírito de `/relatorios` (lado cliente/frota) —
+builder "monte o seu relatório" com fonte → dimensão → uma ou mais métricas → tipo de
+gráfico → CSV/PDF — mas com as fontes que existem de fato pro tenant **posto**
+(vendedor), que são completamente diferentes das ~17 fontes do lado cliente (quase
+todas sobre veículos/motoristas — abastecimento-como-comprador, manutenção, pneus,
+sinistros, multas etc. — nenhuma delas existe no tenant posto).
+
+**3 fontes novas:**
+
+- **Vendas** — o que o posto vendeu pra cada cliente. RPC nova `relatorio_vendas_posto_bruto`
+  (`abastecimentos_unificado` filtrado por `posto_cnpj`, join com `empresas` pro nome/
+  UF/município do cliente comprador). Dimensões: Período, Combustível, Cliente, Estado/
+  Município do Cliente, Meio/Provedor, Placa, Motorista. Métricas: Nº de Vendas, Volume
+  (L), Valor Total, Ticket Médio, Preço Médio.
+- **Financeiro (Receber/Pagar)** — união de `faturas_postos` (Receber, cliente_nome como
+  contraparte) + `despesas_postos` (Pagar, tipo/descrição como contraparte), feita em JS
+  em `relatorios-posto/page.tsx` (não existe RPC "bruto" unificada pro lado posto — as 2
+  tabelas já têm RLS própria escopando por `empresa_posto_id`, buscadas direto via
+  `.from()`, mesmo padrão já usado em `/financeiro-posto`). Dimensões: Período
+  (vencimento), Movimento, Status, Cliente/Fornecedor, Tipo. Métricas: Valor Original,
+  Valor Pago, Nº de Lançamentos, Valor Médio.
+- **Notas Fiscais** — NF-e emitidas pelo posto (`notas_fiscais_abastecimento`, lado
+  emitente — `empresa_posto_id`), quem comprou é o `nome_destinatario`. Dimensões:
+  Período (emissão), Produto (ANP), Cliente (Destinatário). Métricas: Valor Total, Nº de
+  Notas, Quantidade Total (L), Valor Unitário Médio.
+
+**Segurança**: `relatorio_vendas_posto_bruto` precisou ser SECURITY DEFINER com guarda
+manual (`p_empresa_posto_id::text = any(empresas_do_usuario(jwt email))` OU admin) —
+diferente de `relatorio_abastecimentos_bruto` (lado cliente), que é uma função SQL comum
+porque a RLS de `abastecimentos_unificado` já escopa por `empresa_id` do cliente. Do lado
+posto isso não vale (a RLS das tabelas de origem não expõe linhas pelo `posto_cnpj` do
+usuário logado) — mesmo motivo pelo qual as RPCs de Inteligência-Comercial-Posto
+(`clientes_em_risco_churn` e as demais) também precisaram de SECURITY DEFINER com guarda
+manual. `REVOKE ALL ... FROM public, anon` explícito + `GRANT EXECUTE ... TO authenticated`
+— confirmado via `information_schema.routine_privileges` que só `postgres`/`authenticated`/
+`service_role` têm EXECUTE (sem `anon`). Testado também com simulação de RLS/JWT
+(`set_config('request.jwt.claims', ...)` + `set local role authenticated`) contra um posto
+de teste real — retornou vendas corretas.
+
+**Componente** `RelatoriosPersonalizadosPosto.tsx`
+(`relatorios-posto/_components/`) é uma adaptação enxuta de
+`relatorios/_components/RelatoriosPersonalizados.tsx` — mesma arquitetura (dimensões/
+métricas por fonte, filtro de período com granularidade, 5 tipos de gráfico via
+Recharts, totalizadores, CSV) só que com 3 fontes em vez de 17. O botão de exportar PDF
+é o **mesmo componente** do lado cliente (`BotaoBaixarPdfPersonalizadoLazy`,
+já genérico — recebe rótulos/colunas/linhas prontos) — reaproveitado sem duplicação.
+
+**Menu + permissões**: item "Relatórios Personalizados" no grupo "Cadastros" do menu do
+posto (logo abaixo de "Inteligência Comercial"), `aba_relatorios_posto` em
+`HREF_FUNCIONALIDADE` (sem seed em `permissoes_perfil` — mesmo padrão de
+`aba_inteligencia_comercial_posto`, fica liberado por padrão até alguém desligar
+explicitamente em `/permissoes`).
+
+Validado com `tsc --noEmit` e `eslint` (ambos limpos).
