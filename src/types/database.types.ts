@@ -5394,6 +5394,64 @@ export interface Database {
           status: string;
         }[];
       };
+      // Fase Inteligência-Comercial-Posto-2 (09/09/2026) — quantas vezes cada
+      // cliente comprou com preço abaixo/acima da própria média paga neste
+      // posto (proxy de elasticidade sem depender de tabela de preço
+      // histórica nova). Mesma convenção de segurança das demais RPCs desta
+      // fase.
+      sensibilidade_preco_clientes_posto: {
+        Args: { p_empresa_posto_id: string };
+        Returns: {
+          empresa_cliente_id: string;
+          nome: string;
+          cnpj: string | null;
+          municipio: string | null;
+          uf: string | null;
+          total_abastecimentos: number;
+          preco_medio_pago: number | null;
+          qtd_preco_baixo: number;
+          qtd_preco_alto: number;
+          indice_sensibilidade: number | null;
+          status: string;
+        }[];
+      };
+      // Fase Inteligência-Comercial-Posto-2 (09/09/2026) — ticket médio e
+      // volume por dia da semana e faixa de horário, últimos 180 dias, pra
+      // ajudar o posto a planejar promoção/estoque/equipe.
+      padrao_horario_abastecimento_posto: {
+        Args: { p_empresa_posto_id: string };
+        Returns: {
+          dia_semana: number;
+          dia_semana_label: string;
+          faixa_horario: string;
+          qtd_abastecimentos: number;
+          litros_total: number | null;
+          ticket_medio: number | null;
+          litros_medio: number | null;
+        }[];
+      };
+      // Fase Inteligência-Comercial-Posto-2 (09/09/2026) — compara o volume
+      // do cliente NESTE posto com o volume total dele na rede inteira
+      // (cross-tenant por natureza, mesmo motivo de historico_precos), em
+      // duas janelas de 90 dias, sem nunca expor onde mais ele abastece.
+      fuga_de_rede_clientes_posto: {
+        Args: { p_empresa_posto_id: string };
+        Returns: {
+          empresa_cliente_id: string;
+          nome: string;
+          cnpj: string | null;
+          municipio: string | null;
+          uf: string | null;
+          litros_aqui_periodo_atual: number;
+          litros_aqui_periodo_anterior: number;
+          litros_rede_periodo_atual: number;
+          litros_rede_periodo_anterior: number;
+          participacao_atual: number | null;
+          participacao_anterior: number | null;
+          queda_participacao_pp: number | null;
+          status: string;
+        }[];
+      };
       // Fase 27.84 — ciclo de faturamento EM ANDAMENTO (ainda não fechado
       // pelo robô gerar_faturas_postos_robo()) de cada negociação aceita
       // visível ao chamador, com os abastecimentos acumulados até hoje.

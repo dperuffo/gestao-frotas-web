@@ -9254,3 +9254,49 @@ Validado: `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterado
 Backlog não solicitado, só registrado como observação: falta índice em `abastecimentos_externos.posto_cnpj`
 (usado tanto por esta RPC quanto por `/financeiro-posto`) — considerar numa leva futura de performance.
 
+## Fase Inteligência-Comercial-Posto-2 (09/09/2026) — 3 novas seções: preço, horário e fuga de rede
+
+Pedido do Daniel: "vamos continuar com as melhorias" — as demais perguntas de negócio da discussão
+original sobre o programa de fidelidade (praça sensível a preço, horário de ticket alto, cliente
+abastecendo fora da rede), além do churn já entregue na Fase anterior.
+
+**RPC `sensibilidade_preco_clientes_posto(p_empresa_posto_id)`** — pra cada cliente do posto, compara
+quantas vezes ele comprou com `preco_litro` abaixo da própria média histórica paga aqui contra quantas
+vezes comprou acima. Índice `(qtd_preco_baixo - qtd_preco_alto) / total`, de -1 a +1: quanto mais perto
+de +1, mais o cliente concentra as compras nos momentos de preço baixo (`sensivel` ≥0,35, `moderado`
+≥0,15, senão `estavel`; `dados_insuficientes` com menos de 6 abastecimentos). Não criou nenhuma tabela
+nova — usa só o `preco_litro` já registrado em cada linha de `abastecimentos_unificado`.
+
+**RPC `padrao_horario_abastecimento_posto(p_empresa_posto_id)`** — agrega os abastecimentos do posto
+(últimos 180 dias) por dia da semana × faixa de horário (Madrugada/Manhã/Tarde/Noite), trazendo
+quantidade, litros médio e ticket médio. Pensada pra responder "quando vale mais a pena reforçar equipe,
+estoque de conveniência ou lançar uma promoção".
+
+**RPC `fuga_de_rede_clientes_posto(p_empresa_posto_id)`** — a mais sensível das três: cross-tenant por
+natureza (mesmo motivo já documentado em `historico_precos`/importação de preços — só um SECURITY
+DEFINER enxergando abastecimentos em QUALQUER posto consegue medir a fatia real deste posto na frota do
+cliente). Compara o volume do cliente NESTE posto com o volume total dele na rede inteira (todos os
+postos + abastecimento interno via `abastecimentos_unificado`, sem filtro de `posto_cnpj` nessa metade
+da query) em duas janelas de 90 dias. Calcula participação atual/anterior e a queda em pontos
+percentuais; classifica `alerta_fuga` (queda ≥25 p.p. e volume caindo aqui), `atencao` (≥10 p.p.),
+`estavel` ou `sem_dados_suficientes`. Decisão de privacidade deliberada: a RPC NUNCA revela onde mais o
+cliente abastece — só o percentual de participação e a queda, pra não expor concorrência entre postos
+da rede.
+
+As 3 seguem exatamente a mesma convenção de segurança da RPC anterior (`clientes_em_risco_churn`):
+SECURITY DEFINER com guarda manual inline, e desta vez o `REVOKE ALL ... FROM anon` já foi incluído na
+mesma migração de criação (lição aprendida na fase anterior) — confirmado via
+`information_schema.routine_privileges` que só `postgres`, `authenticated` e `service_role` têm EXECUTE,
+e via `get_advisors` que só aparece o aviso informativo padrão (SECURITY DEFINER executável por
+`authenticated`), sem nenhuma menção a `anon`.
+
+**Tela `/inteligencia-comercial-posto`** virou uma navegação por abas (mesmo padrão `?tab=` já usado em
+`/conferencia-precos`): "Clientes em Risco" (a aba original, com os KPIs), "Sensibilidade a Preço",
+"Horário de Pico" e "Fuga de Rede" — cada aba só dispara a RPC correspondente (não busca as 4 de uma vez).
+
+`database.types.ts` atualizado com o tipo das 3 novas RPCs.
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterados/criados desta fase, e
+a lógica de negócio de cada RPC testada manualmente contra os postos de teste reais (Posto Teste Ltda)
+antes de aplicar o guard de autorização definitivo.
+
