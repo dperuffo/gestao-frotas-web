@@ -36,7 +36,7 @@ export function EntregaCard({
         <div>
           <p className="mb-1 text-[10px] font-semibold uppercase text-slate-400">Foto do canhoto</p>
           {entrega.fotoCanhotoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL do Storage (expira em 1h, ver fretes/[id]/page.tsx); next/image não ajudaria a cachear algo que muda a cada load.
             <img src={entrega.fotoCanhotoUrl} alt="Foto do canhoto" className="h-40 w-full rounded-lg border border-slate-200 object-cover" />
           ) : (
             <p className="text-xs text-slate-400">Sem foto.</p>
@@ -45,7 +45,7 @@ export function EntregaCard({
         <div>
           <p className="mb-1 text-[10px] font-semibold uppercase text-slate-400">Assinatura do recebedor</p>
           {entrega.assinaturaUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            // eslint-disable-next-line @next/next/no-img-element -- mesmo motivo: signed URL de curta duração.
             <img src={entrega.assinaturaUrl} alt="Assinatura do recebedor" className="h-40 w-full rounded-lg border border-slate-200 bg-white object-contain" />
           ) : (
             <p className="text-xs text-slate-400">Sem assinatura.</p>

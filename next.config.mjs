@@ -95,6 +95,21 @@ const nextConfig = {
   // diretamente, mas facilita "fingerprinting" da stack pra procurar CVEs
   // conhecidas de uma versão específica do framework).
   poweredByHeader: false,
+  // Fase Pente-Fino-Performance (10/09/2026, pedido do Daniel: "melhorar a
+  // performance da aplicacao como um todo") — libera o next/image pra
+  // otimizar as imagens que vêm de buckets PÚBLICOS do Storage do Supabase
+  // (avisos, treinamento, fidelidade). Imagens de buckets com signed URL
+  // (fretes-evidencias, etc.) continuam como <img> comum de propósito — a
+  // URL muda a cada carregamento e o cache do next/image não ajudaria.
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "nedthbeekvwzcjrhsghp.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
   async headers() {
     return [
       {

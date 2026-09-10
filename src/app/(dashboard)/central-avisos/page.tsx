@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { renderMarkdownSimples } from "@/lib/markdownSimples";
 import { urlImagemAviso } from "@/lib/avisos/imagemAviso";
@@ -46,7 +47,15 @@ export default async function CentralAvisosHistoricoPage() {
               <p className="mt-1 text-sm text-slate-600">{a.resumo}</p>
               {urlImagem && (
                 // eslint-disable-next-line @next/next/no-img-element -- imagem de storage dinâmica, sem domínio fixo pra next/image
-                <img src={urlImagem} alt="" className="mt-3 max-h-64 rounded-lg border border-slate-200" />
+                <Image
+                  src={urlImagem}
+                  alt=""
+                  width={0}
+                  height={0}
+                  sizes="600px"
+                  className="mt-3 max-h-64 w-auto rounded-lg border border-slate-200"
+                  style={{ width: "auto", height: "auto" }}
+                />
               )}
               <div className="mt-3 space-y-2 text-sm text-slate-700">{renderMarkdownSimples(a.corpo)}</div>
             </div>

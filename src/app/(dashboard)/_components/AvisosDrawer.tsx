@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { renderMarkdownSimples } from "@/lib/markdownSimples";
 import { urlImagemAviso } from "@/lib/avisos/imagemAviso";
@@ -72,7 +73,15 @@ export function AvisosDrawer({
                 <div className="mt-2 space-y-2 text-sm text-slate-700">{renderMarkdownSimples(a.corpo)}</div>
                 {urlImagem && (
                   // eslint-disable-next-line @next/next/no-img-element -- imagem de storage dinâmica, sem domínio fixo pra next/image
-                  <img src={urlImagem} alt="" className="mt-2 max-h-48 rounded-lg border border-slate-200" />
+                  <Image
+                  src={urlImagem}
+                  alt=""
+                  width={0}
+                  height={0}
+                  sizes="400px"
+                  className="mt-2 max-h-48 w-auto rounded-lg border border-slate-200"
+                  style={{ width: "auto", height: "auto" }}
+                />
                 )}
               </details>
             );

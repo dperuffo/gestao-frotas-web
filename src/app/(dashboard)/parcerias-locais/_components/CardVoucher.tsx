@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ESTILO_CATEGORIA_FIDELIDADE, ESTILO_CATEGORIA_PADRAO, LABEL_CATEGORIA_FIDELIDADE } from "@/lib/fidelidadeCategorias";
 
 // Card estilo "cupom de voucher" — pedido do Daniel (17/07): "em ambas as
@@ -37,8 +38,7 @@ export function CardVoucher({
     <div className={`overflow-hidden rounded-2xl border-2 border-dashed ${estilo.border} ${estilo.bg} shadow-sm`}>
       <div className="relative h-32 w-full bg-slate-200">
         {imagemUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imagemUrl} alt={titulo} className="h-full w-full object-cover" />
+          <Image src={imagemUrl} alt={titulo} fill sizes="200px" className="object-cover" />
         ) : (
           <div className={`flex h-full w-full items-center justify-center text-4xl ${estilo.text}`}>🎟️</div>
         )}

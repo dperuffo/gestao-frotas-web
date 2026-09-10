@@ -106,7 +106,7 @@ export function ItemParceriaForm({ empresaId, item }: { empresaId: string; item?
         {preview && (
           <div className="mt-4">
             <p className="mb-1 text-xs font-medium text-slate-500">Pré-visualização</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL local (preview do arquivo antes do upload), next/image não suporta */}
             <img src={preview} alt="Pré-visualização" className="h-32 w-48 rounded-lg border border-slate-200 object-cover" />
           </div>
         )}

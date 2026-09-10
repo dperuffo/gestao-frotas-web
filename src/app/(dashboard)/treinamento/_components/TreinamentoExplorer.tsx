@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { TextoFormatado } from "@/lib/ajuda/textoFormatado";
 import { urlImagemTreinamento, urlVideoTreinamento } from "@/lib/ajuda/imagemTreinamento";
 
@@ -95,7 +96,15 @@ export function TreinamentoExplorer({ modulos }: { modulos: Modulo[] }) {
             )}
             {urlImagem && (
               // eslint-disable-next-line @next/next/no-img-element -- imagem de storage dinâmica
-              <img src={urlImagem} alt={licao.titulo} className="mt-4 w-full rounded-lg border border-slate-200" />
+              <Image
+                src={urlImagem}
+                alt={licao.titulo}
+                width={0}
+                height={0}
+                sizes="100vw"
+                className="mt-4 w-full rounded-lg border border-slate-200"
+                style={{ width: "100%", height: "auto" }}
+              />
             )}
           </>
         ) : (

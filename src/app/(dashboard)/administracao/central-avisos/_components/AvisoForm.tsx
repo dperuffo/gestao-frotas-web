@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
+import Image from "next/image";
 import { criarAvisoAcao, atualizarAvisoAcao } from "../actions";
 import { SEGMENTO_USUARIO, PLANOS, PLANO_LABEL, PLANOS_POSTO, PLANO_POSTO_LABEL } from "@/lib/constants";
 import { urlImagemAviso } from "@/lib/avisos/imagemAviso";
@@ -117,7 +118,15 @@ export function AvisoForm({ aviso }: { aviso?: Comunicado }) {
         {urlAtual && (
           <div className="mb-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- imagem de storage dinâmica, sem domínio fixo pra next/image */}
-            <img src={urlAtual} alt="Imagem atual" className="max-h-48 rounded-lg border border-slate-200" />
+            <Image
+              src={urlAtual}
+              alt="Imagem atual"
+              width={0}
+              height={0}
+              sizes="400px"
+              className="max-h-48 w-auto rounded-lg border border-slate-200"
+              style={{ width: "auto", height: "auto" }}
+            />
             <label className="mt-2 flex items-center gap-2 text-xs text-slate-500">
               <input type="checkbox" name="remover_imagem" className="rounded border-slate-300" />
               Remover esta imagem
