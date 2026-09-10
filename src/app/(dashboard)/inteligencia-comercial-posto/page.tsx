@@ -7,6 +7,14 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { listarInsightsAcao } from "../insights-ia/actions";
 import { CardInsightIA } from "../insights-ia/_components/CardInsightIA";
 import { registrarContatoAction } from "./actions";
+import GraficoScorePrioridadeLazy from "./_components/GraficoScorePrioridadeLazy";
+import GraficoChurnLazy from "./_components/GraficoChurnLazy";
+import GraficoSensibilidadePrecoLazy from "./_components/GraficoSensibilidadePrecoLazy";
+import { GraficoHorarioPico } from "./_components/GraficoHorarioPico";
+import GraficoFugaRedeLazy from "./_components/GraficoFugaRedeLazy";
+import GraficoParetoLazy from "./_components/GraficoParetoLazy";
+import GraficoMixProdutoLazy from "./_components/GraficoMixProdutoLazy";
+import GraficoPrecoRegionalLazy from "./_components/GraficoPrecoRegionalLazy";
 
 type SearchParams = { empresa?: string; tab?: string };
 
@@ -83,6 +91,11 @@ const PRIORIDADE_CLASSE: Record<string, string> = {
 //    existe pro lado frota (mesma tabela insights_proativos_ia, mesmo
 //    componente CardInsightIA) — só o coletor de sinais é outro
 //    (coletar_sinais_insights_ia_posto).
+// Fase Plano-Graficos-Comercial-Posto (09/09/2026, pedido do Daniel: "é
+// possível planejarmos gráficos visuais?") acrescenta um gráfico por aba
+// (exceto "insights", que já reaproveita o gráfico próprio de /insights-ia) —
+// mesmo padrão Recharts + lazy-load do resto do app (Fase Prioridade-3,
+// tarefa #168).
 export default async function InteligenciaComercialPostoPage({
   searchParams,
 }: {
@@ -249,6 +262,8 @@ export default async function InteligenciaComercialPostoPage({
             <>
               {erroScore && <p className="mb-4 text-sm text-red-600">Erro ao carregar dados: {erroScore.message}</p>}
 
+              <GraficoScorePrioridadeLazy dados={clientesScore} />
+
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase text-slate-500">
@@ -343,6 +358,8 @@ export default async function InteligenciaComercialPostoPage({
                 <IndicadorColorido label="Nunca abasteceram aqui" valor={String(nuncaAbasteceram)} icon={Ban} cor="violet" />
               </div>
 
+              <GraficoChurnLazy dados={clientesChurn.map((c) => ({ status: c.status }))} />
+
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase text-slate-500">
@@ -415,6 +432,8 @@ export default async function InteligenciaComercialPostoPage({
             <>
               {erroPreco && <p className="mb-4 text-sm text-red-600">Erro ao carregar dados: {erroPreco.message}</p>}
 
+              <GraficoSensibilidadePrecoLazy dados={clientesPreco} />
+
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase text-slate-500">
@@ -475,6 +494,8 @@ export default async function InteligenciaComercialPostoPage({
             <>
               {erroHorario && <p className="mb-4 text-sm text-red-600">Erro ao carregar dados: {erroHorario.message}</p>}
 
+              <GraficoHorarioPico dados={horarios} />
+
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase text-slate-500">
@@ -526,6 +547,8 @@ export default async function InteligenciaComercialPostoPage({
           {tab === "fuga" && (
             <>
               {erroFuga && <p className="mb-4 text-sm text-red-600">Erro ao carregar dados: {erroFuga.message}</p>}
+
+              <GraficoFugaRedeLazy dados={clientesFuga} />
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -591,6 +614,8 @@ export default async function InteligenciaComercialPostoPage({
             <>
               {erroPareto && <p className="mb-4 text-sm text-red-600">Erro ao carregar dados: {erroPareto.message}</p>}
 
+              <GraficoParetoLazy dados={clientesPareto} />
+
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase text-slate-500">
@@ -638,6 +663,8 @@ export default async function InteligenciaComercialPostoPage({
           {tab === "mix" && (
             <>
               {erroMix && <p className="mb-4 text-sm text-red-600">Erro ao carregar dados: {erroMix.message}</p>}
+
+              <GraficoMixProdutoLazy dados={mix} totalClientes={mixPorCliente.size} />
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -693,6 +720,8 @@ export default async function InteligenciaComercialPostoPage({
               {erroPrecoRegional && (
                 <p className="mb-4 text-sm text-red-600">Erro ao carregar dados: {erroPrecoRegional.message}</p>
               )}
+
+              <GraficoPrecoRegionalLazy dados={precoRegional} />
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">

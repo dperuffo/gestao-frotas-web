@@ -9360,3 +9360,38 @@ informativo padrão (SECURITY DEFINER executável por `authenticated`), nenhuma 
 `coletar_sinais_insights_ia_posto` não aparece no relatório (não tem grant pra nenhuma role client-side);
 `contatos_clientes_posto` sem nenhum alerta de RLS.
 
+
+## Fase Plano-Graficos-Comercial-Posto (09/09/2026)
+
+Pedido do Daniel, logo após a Fase Inteligência-Comercial-Posto-3: "Nestas implementações
+realizadas é possível planejarmos gráficos visuais?" — resposta foi conversacional primeiro
+(mesmo padrão da fase anterior: propor antes de construir), listando um gráfico por aba; Daniel
+confirmou "Pode implementar" pra todas.
+
+Mesma convenção do resto do app: Recharts, com `Grafico*.tsx` + `Grafico*Lazy.tsx` (client
+component com `next/dynamic({ ssr: false })`, mesmo padrão da Fase Prioridade-3/tarefa #168) em
+`inteligencia-comercial-posto/_components/`. Cada gráfico recebe só o array já buscado pela RPC da
+própria aba — nenhuma query nova, nenhum RPC novo, é 100% reaproveitamento visual do que a Fase 2/3
+já tinham trazido.
+
+Um gráfico por aba (8 novos; a aba "insights" já tinha o gráfico próprio de `/insights-ia`, não
+precisou de nada):
+
+- **Prioridade (score)** — `GraficoScorePrioridade`: donut de clientes por prioridade
+  (crítico/atenção/saudável) + barra horizontal dos 8 maiores scores (quem contatar primeiro).
+- **Clientes em Risco (churn)** — `GraficoChurn`: donut por status (em dia/atenção/crítico/sem
+  histórico/nunca abasteceu).
+- **Sensibilidade a Preço** — `GraficoSensibilidadePreco`: barra horizontal do índice de
+  sensibilidade (top 10 por `|índice|`), cor pelo status.
+- **Horário de Pico** — `GraficoHorarioPico`: heatmap dia×faixa de horário colorido pelo ticket
+  médio. Não existe heatmap pronto no Recharts, então é uma grade de `<div>` pura (sem lib,
+  server-renderável, tooltip via `title` nativo) — não tem versão Lazy porque não usa Recharts.
+- **Fuga de Rede** — `GraficoFugaRede`: barra horizontal da queda de participação (p.p.), top 10.
+- **Concentração de Receita** — `GraficoPareto`: curva de Pareto clássica (`ComposedChart`: barras
+  de receita + linha de % acumulado em eixo secundário) — o gráfico que esse dado pede.
+- **Mix de Produto** — `GraficoMixProduto`: barra de % de clientes que já compraram cada produto
+  ("cobertura") — mostra de cara qual produto tem menor penetração, sem ler a matriz linha a linha.
+- **Preço vs. Região** — `GraficoPrecoRegional`: barra horizontal do `diff_pct` por combustível,
+  vermelho acima da referência ANP / verde abaixo (mesmo padrão de cor de Inteligência de Rede).
+
+Validado com `tsc --noEmit` e `eslint` (ambos limpos) nos 16 arquivos novos + `page.tsx`.
