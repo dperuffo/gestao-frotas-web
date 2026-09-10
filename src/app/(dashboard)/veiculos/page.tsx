@@ -1,30 +1,19 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
-import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
+import { buscarVeiculosPaginado, buscarContagensVeiculos, buscarDistribuicaoVeiculos } from "@/lib/veiculos";
+import { exportarVeiculosAcao } from "./actions";
 import { ToggleAtivoVeiculo } from "./_components/ToggleAtivoVeiculo";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
-import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
+import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
 import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 // Fase Dashboard-Redesign (12/08/2026) — mesmo toque visual do Dashboard
 // (cor + ícone por indicador, ver benchmark de UX apps bancários) aplicado
 // aqui como exemplo de tela densa (pedido do Daniel).
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Truck, CheckCircle2, XCircle } from "lucide-react";
-import { GraficoDistribuicaoVeiculos, type ItemDistribuicao } from "./_components/GraficoDistribuicaoVeiculos";
-
-// Fase Plano-Graficos Onda 1 — agrupa um array já carregado (sem query nova)
-// por uma chave qualquer (tipo, status, centro de custo), maior contagem
-// primeiro. Usado pelos 3 blocos do GraficoDistribuicaoVeiculos.
-function agruparPorContagem<T>(itens: T[], chave: (item: T) => string | null): ItemDistribuicao[] {
-  const contagem = new Map<string, number>();
-  for (const item of itens) {
-    const label = chave(item) ?? "Não informado";
-    contagem.set(label, (contagem.get(label) ?? 0) + 1);
-  }
-  return Array.from(contagem, ([label, total]) => ({ label, total })).sort((a, b) => b.total - a.total);
-}
+import { GraficoDistribuicaoVeiculos } from "./_components/GraficoDistribuicaoVeiculos";
 
 const POR_PAGINA = 30;
 
@@ -63,51 +52,46 @@ export default async function VeiculosPage({
   // de comparar cnpj_frota cru.
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
-  let veiculos: Veiculo[] = [];
+  let veiculosDaPagina: Veiculo[] = [];
   let error: { message: string } | null = null;
   let totalGeral = 0;
   let totalAtivos = 0;
+  let totalFiltrado = 0;
+  let distribuicao: Awaited<ReturnType<typeof buscarDistribuicaoVeiculos>> = [];
 
+  const termoBusca = (q ?? "").trim();
+  // Fase Pente-Fino-Performance (10/09/2026, pedido do Daniel: "melhorar a
+  // performance da aplicacao como um todo") — achado real (auditoria):
+  // esta página buscava a frota INTEIRA do cliente (em lotes de 1000) em
+  // todo carregamento, só pra mostrar 30 linhas por vez e somar uns totais.
+  // Pra um cliente de teste com 2385 veículos, isso é 3 requisições HTTP e
+  // um payload de ~2MB de JSON, sempre — mesmo abrindo a página 1 e nunca
+  // rolando pras próximas. Agora: a tabela busca só a página atual
+  // (veiculos_da_empresa_pagina, com LIMIT/OFFSET no banco) e os totais/
+  // gráficos vêm de agregação SQL (veiculos_da_empresa_contagens/
+  // _distribuicao) — o Node não recebe mais do que precisa mostrar. A
+  // frota inteira só é buscada mesmo quando o usuário clica em Exportar
+  // (ver exportarVeiculosAcao em actions.ts).
   if (empresaSelecionada) {
-    // Fase 27.38 — buscarTodosVeiculosDaEmpresa pagina a RPC em lotes de
-    // 1000 (limite padrão de resposta do Supabase/PostgREST) — sem isso,
-    // clientes com mais de 1000 veículos só viam parte da frota aqui.
-    const { data, error: rpcErro } = await buscarTodosVeiculosDaEmpresa(supabase, empresaSelecionada);
-    error = rpcErro ? { message: rpcErro } : null;
-    veiculos = data;
-    totalGeral = veiculos.length;
-    totalAtivos = veiculos.filter((v) => v.ativo).length;
-  } else {
-    // Fase Auditoria-Paginacao (17/08/2026) — achado real: este branch
-    // ("sem empresaSelecionada, mas com empresas.length !== 0") só é
-    // alcançável quando o usuário tem MAIS de uma empresa e ainda não
-    // escolheu (resolverEmpresaAtual já pré-seleciona sozinho quando há
-    // exatamente 1) — e nesse cenário exato a tela abaixo já esconde a
-    // tabela e pede pra selecionar um cliente primeiro. A query direta que
-    // existia aqui antes (sem `.range()`, sem paginação em lote como a RPC
-    // acima) nunca era realmente exibida — só rodava à toa, e ainda por
-    // cima arriscava o corte padrão de 1.000 linhas do PostgREST se algum
-    // dia passasse a ser usada. Removida; nada pra listar até escolher.
-    veiculos = [];
+    const [contagens, dist, pagina] = await Promise.all([
+      buscarContagensVeiculos(supabase, empresaSelecionada, termoBusca),
+      buscarDistribuicaoVeiculos(supabase, empresaSelecionada, termoBusca),
+      buscarVeiculosPaginado(supabase, empresaSelecionada, termoBusca, POR_PAGINA, offsetDaPagina(POR_PAGINA, pageParam)),
+    ]);
+    totalGeral = contagens.totalGeral;
+    totalAtivos = contagens.totalAtivos;
+    totalFiltrado = contagens.totalFiltrado;
+    distribuicao = dist;
+    error = pagina.error ? { message: pagina.error } : null;
+    veiculosDaPagina = pagina.data;
   }
 
-  const termoBusca = (q ?? "").trim().toLowerCase();
-  const veiculosFiltrados = termoBusca
-    ? veiculos.filter(
-        (v) =>
-          v.placa?.toLowerCase().includes(termoBusca) ||
-          v.marca?.toLowerCase().includes(termoBusca) ||
-          v.modelo?.toLowerCase().includes(termoBusca)
-      )
-    : veiculos;
-
-  // Fase 27.12 — a frota já é buscada inteira nesta página (RPC/queries acima
-  // não têm range/offset — ver comentário da Fase 27.5), então a paginação
-  // aqui é feita em memória, só na hora de renderizar a tabela: mostra 30 por
-  // vez em vez da frota inteira numa lista só. O total do paginador é sobre
-  // o resultado JÁ filtrado pela busca (veiculosFiltrados).
-  const { paginaAtual, totalPaginas } = calcularPaginacao(veiculosFiltrados.length, POR_PAGINA, pageParam);
-  const veiculosDaPagina = veiculosFiltrados.slice((paginaAtual - 1) * POR_PAGINA, paginaAtual * POR_PAGINA);
+  // Só agora que já sabemos o total (contagem SQL acima) dá pra clampar a
+  // página pedida (ex.: ?page=999 numa busca com só 2 resultados).
+  const { paginaAtual, totalPaginas } = calcularPaginacao(totalFiltrado, POR_PAGINA, pageParam);
+  const porTipo = distribuicao.filter((d) => d.agrupamento === "tipo");
+  const porStatus = distribuicao.filter((d) => d.agrupamento === "status");
+  const porCentroCusto = distribuicao.filter((d) => d.agrupamento === "centro_custo");
 
   return (
     <div>
@@ -164,12 +148,8 @@ export default async function VeiculosPage({
             <IndicadorColorido cor="red" icon={XCircle} label="Inativos" valor={String(totalGeral - totalAtivos)} />
           </div>
 
-          {veiculosFiltrados.length > 0 && (
-            <GraficoDistribuicaoVeiculos
-              porTipo={agruparPorContagem(veiculosFiltrados, (v) => v.tipo_veiculo)}
-              porStatus={agruparPorContagem(veiculosFiltrados, (v) => (v.ativo ? "Ativo" : "Inativo"))}
-              porCentroCusto={agruparPorContagem(veiculosFiltrados, (v) => v.centro_custo_nome)}
-            />
+          {totalFiltrado > 0 && (
+            <GraficoDistribuicaoVeiculos porTipo={porTipo} porStatus={porStatus} porCentroCusto={porCentroCusto} />
           )}
 
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
@@ -203,16 +183,11 @@ export default async function VeiculosPage({
                 { header: "Localização", chave: "localizacao" },
                 { header: "Status", chave: "status" },
               ]}
-              linhas={veiculosFiltrados.map((v) => ({
-                placa: v.placa,
-                marcaModelo: [v.marca, v.modelo].filter(Boolean).join(" ") || "—",
-                tipoVeiculo: v.tipo_veiculo ?? "—",
-                tipo: v.tipo ?? "—",
-                classificacao: v.classificacao ?? "—",
-                centroCusto: v.centro_custo_nome ?? "—",
-                localizacao: [v.municipio, v.uf_veiculo].filter(Boolean).join("/") || "—",
-                status: v.ativo ? "Ativo" : "Inativo",
-              }))}
+              carregarLinhas={
+                empresaSelecionada
+                  ? () => exportarVeiculosAcao(empresaSelecionada, termoBusca)
+                  : async () => []
+              }
             />
           </div>
 
@@ -269,7 +244,7 @@ export default async function VeiculosPage({
                     </td>
                   </tr>
                 ))}
-                {veiculosFiltrados.length === 0 && (
+                {totalFiltrado === 0 && (
                   <tr>
                     <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
                       Nenhum veículo encontrado.
@@ -282,7 +257,7 @@ export default async function VeiculosPage({
               <Paginacao
                 paginaAtual={paginaAtual}
                 totalPaginas={totalPaginas}
-                totalRegistros={veiculosFiltrados.length}
+                totalRegistros={totalFiltrado}
                 porPagina={POR_PAGINA}
                 basePath="/veiculos"
                 paramsAtuais={{ q, empresa: empresaParam }}

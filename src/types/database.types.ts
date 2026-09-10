@@ -6152,6 +6152,21 @@ export interface Database {
         Args: { p_empresa_id: string };
         Returns: Database["public"]["Tables"]["cadastro_veiculos"]["Row"][];
       };
+      // Fase Pente-Fino-Performance (10/09/2026) — paginação/agregação no
+      // banco pra /veiculos, ver migration
+      // pente_fino_performance_veiculos_paginacao.
+      veiculos_da_empresa_pagina: {
+        Args: { p_empresa_id: string; p_busca: string | null; p_limite: number; p_offset: number };
+        Returns: Database["public"]["Tables"]["cadastro_veiculos"]["Row"][];
+      };
+      veiculos_da_empresa_contagens: {
+        Args: { p_empresa_id: string; p_busca: string | null };
+        Returns: { total_geral: number; total_ativos: number; total_filtrado: number }[];
+      };
+      veiculos_da_empresa_distribuicao: {
+        Args: { p_empresa_id: string; p_busca: string | null };
+        Returns: { agrupamento: string; label: string; total: number }[];
+      };
       // Executa uma consulta SELECT/WITH somente leitura, com SECURITY INVOKER
       // (roda com o papel do usuário logado, respeitando RLS normalmente) e
       // várias camadas de validação (bloqueio de DML/DDL, 1 statement só,
@@ -6851,6 +6866,40 @@ export interface Database {
           fretes_cancelados_com_pagamento: number;
           valor_nao_recuperado_cancelamento: number;
         }[];
+      };
+      // Fase Pente-Fino-Performance (10/09/2026) — paginação/agregação no
+      // banco pra /fretes, ver migration
+      // pente_fino_performance_fretes_paginacao.
+      fretes_empresa_pagina: {
+        Args: { p_empresa_id: string; p_status_grupo: string; p_busca: string | null; p_limite: number };
+        Returns: {
+          id: string;
+          titulo: string;
+          status: string;
+          publico_alvo: string;
+          origem_label: string;
+          destino_label: string;
+          valor_oferecido: number;
+          km_estimado: number | null;
+          motorista_id: string | null;
+          nome_motorista: string | null;
+          telefone_motorista: string | null;
+          criado_em: string;
+          valor_pago_nao_recuperado: number;
+          qtd_parcelas_pagas: number;
+        }[];
+      };
+      fretes_empresa_contagens_grupo: {
+        Args: { p_empresa_id: string; p_busca: string | null };
+        Returns: { status_grupo: string; total: number }[];
+      };
+      fretes_empresa_indicadores: {
+        Args: { p_empresa_id: string };
+        Returns: { status_grupo: string; total: number }[];
+      };
+      fretes_empresa_top_motoristas: {
+        Args: { p_empresa_id: string; p_limite: number };
+        Returns: { nome: string; valor: number }[];
       };
       meus_fretes_empresa: {
         Args: { p_empresa_id: string };

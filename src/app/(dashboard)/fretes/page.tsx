@@ -56,79 +56,82 @@ const COR_STATUS: Record<string, string> = {
   recusado: "badge-inativo",
 };
 
+// Fase Pente-Fino-Performance (10/09/2026, pedido do Daniel: "melhorar a
+// performance da aplicacao como um todo") — achado real (auditoria): esta
+// página buscava TODO o histórico de fretes da empresa (em lotes de 1000)
+// em todo carregamento, só pra montar 4 abas de cards sem paginação
+// nenhuma. Daniel escolheu resolver limitando cada aba aos 50 fretes mais
+// recentes (RPC fretes_empresa_pagina, nova — ver migration
+// pente_fino_performance_fretes_paginacao), com contagem/gráfico vindo de
+// agregação SQL em vez de somar em memória depois de baixar tudo.
+const LIMITE_POR_ABA = 50;
+const GRUPOS_STATUS = ["negociacao", "andamento", "concluidos", "cancelados"] as const;
+type GrupoStatus = (typeof GRUPOS_STATUS)[number];
+const LABEL_GRUPO: Record<GrupoStatus, string> = {
+  negociacao: "Em negociação",
+  andamento: "Aceitos/Em andamento",
+  concluidos: "Concluídos",
+  cancelados: "Cancelados/Recusados",
+};
+
 export default async function FretesPage({ searchParams }: { searchParams: Promise<{ empresa?: string; q?: string }> }) {
   const { empresa: empresaParam, q } = await searchParams;
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
 
-  // Fase Auditoria-Paginacao (17/08/2026) — achado real: essa RPC devolve 1
-  // linha por frete (histórico completo, sem limite natural), sem
-  // `.range()` — sujeita ao corte padrão de 1.000 linhas do PostgREST (mesmo
-  // bug já corrigido em /veiculos, Fase 27.38). Busca em lotes de 1.000 até
-  // esgotar.
-  const LOTE_FRETES = 1000;
-  let fretes: FreteRow[] = [];
-  let acesso: AcessoFretesResultado = { ok: true };
-  if (empresaSelecionada) {
-    let offsetBusca = 0;
-    for (;;) {
-      const { data } = await supabase
-        .rpc("meus_fretes_empresa", { p_empresa_id: empresaSelecionada })
-        .range(offsetBusca, offsetBusca + LOTE_FRETES - 1);
-      const lote = (data ?? []) as unknown as FreteRow[];
-      if (lote.length === 0) break;
-      fretes.push(...lote);
-      if (lote.length < LOTE_FRETES) break;
-      offsetBusca += LOTE_FRETES;
-    }
+  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
+  // em telas com muitos registros) — filtra por título, origem/destino ou
+  // motorista, mesmo padrão de ?q= já usado em /veiculos, /motoristas etc.
+  // (agora aplicado na query, não em memória).
+  const termoBusca = (q ?? "").trim();
 
-    acesso = await verificarAcessoFretes(supabase, empresaSelecionada);
+  let porGrupo: Record<GrupoStatus, FreteRow[]> = { negociacao: [], andamento: [], concluidos: [], cancelados: [] };
+  let contagens: Record<GrupoStatus, number> = { negociacao: 0, andamento: 0, concluidos: 0, cancelados: 0 };
+  let porStatus: { label: string; total: number }[] = [];
+  let topMotoristas: { nome: string; valor: number }[] = [];
+  let acesso: AcessoFretesResultado = { ok: true };
+
+  if (empresaSelecionada) {
+    const [resultadosPorGrupo, contagensGrupo, indicadores, top, acessoResultado] = await Promise.all([
+      Promise.all(
+        GRUPOS_STATUS.map((grupo) =>
+          supabase.rpc("fretes_empresa_pagina", {
+            p_empresa_id: empresaSelecionada,
+            p_status_grupo: grupo,
+            p_busca: termoBusca || null,
+            p_limite: LIMITE_POR_ABA,
+          })
+        )
+      ),
+      supabase.rpc("fretes_empresa_contagens_grupo", { p_empresa_id: empresaSelecionada, p_busca: termoBusca || null }),
+      supabase.rpc("fretes_empresa_indicadores", { p_empresa_id: empresaSelecionada }),
+      supabase.rpc("fretes_empresa_top_motoristas", { p_empresa_id: empresaSelecionada, p_limite: 8 }),
+      verificarAcessoFretes(supabase, empresaSelecionada),
+    ]);
+
+    GRUPOS_STATUS.forEach((grupo, i) => {
+      porGrupo[grupo] = (resultadosPorGrupo[i].data ?? []) as unknown as FreteRow[];
+    });
+    for (const linha of (contagensGrupo.data ?? []) as { status_grupo: GrupoStatus; total: number }[]) {
+      contagens[linha.status_grupo] = linha.total;
+    }
+    porStatus = ((indicadores.data ?? []) as { status_grupo: GrupoStatus; total: number }[]).map((l) => ({
+      label: LABEL_GRUPO[l.status_grupo],
+      total: l.total,
+    }));
+    topMotoristas = (top.data ?? []) as { nome: string; valor: number }[];
+    acesso = acessoResultado;
   }
   const acessoLiberado = acesso.ok;
 
   const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-  // Fase busca-generica-listas (27/07/2026, pedido do Daniel: busca genérica
-  // em telas com muitos registros) — filtra por título, origem/destino ou
-  // motorista antes de dividir nas 3 abas, mesmo padrão de ?q= já usado em
-  // /veiculos, /motoristas etc.
-  const termoBusca = (q ?? "").trim().toLowerCase();
-  const fretesFiltrados = termoBusca
-    ? fretes.filter((f) =>
-        [f.titulo, f.origem_label, f.destino_label, f.nome_motorista]
-          .filter((v): v is string => !!v)
-          .some((v) => v.toLowerCase().includes(termoBusca))
-      )
-    : fretes;
-
-  const negociacao = fretesFiltrados.filter((f) => f.status === "disponivel" || f.status === "aguardando_confirmacao");
-  const andamento = fretesFiltrados.filter((f) => f.status === "aceito" || f.status === "em_andamento");
-  const concluidos = fretesFiltrados.filter((f) => f.status === "concluido");
-  // Fase Fretes-Cancelamento-Pagamento (11/08/2026, pedido do Daniel: "crie
-  // uma aba de fretes cancelados para acomodar estes registros") — antes
-  // ficavam misturados dentro de "Concluídos"; separados numa aba própria
-  // pra dar visibilidade a quando houve pagamento não recuperado.
-  const cancelados = fretesFiltrados.filter((f) => f.status === "cancelado" || f.status === "recusado");
-
-  // Fase Plano-Graficos (05/09/2026, pedido do Daniel) — distribuição por
-  // status + ranking de motoristas com mais valor em fretes concluídos, a
-  // partir de `fretes` (todo o histórico, não afetado pelo filtro de busca
-  // ?q= — visão geral do total), sem query nova.
-  const porStatus = [
-    { label: "Em negociação", total: fretes.filter((f) => f.status === "disponivel" || f.status === "aguardando_confirmacao").length },
-    { label: "Aceitos/Em andamento", total: fretes.filter((f) => f.status === "aceito" || f.status === "em_andamento").length },
-    { label: "Concluídos", total: fretes.filter((f) => f.status === "concluido").length },
-    { label: "Cancelados/Recusados", total: fretes.filter((f) => f.status === "cancelado" || f.status === "recusado").length },
-  ];
-  const valorPorMotoristaMap = new Map<string, number>();
-  for (const f of fretes) {
-    if (f.status !== "concluido" || !f.nome_motorista) continue;
-    valorPorMotoristaMap.set(f.nome_motorista, (valorPorMotoristaMap.get(f.nome_motorista) ?? 0) + f.valor_oferecido);
-  }
-  const topMotoristas = Array.from(valorPorMotoristaMap.entries())
-    .map(([nome, valor]) => ({ nome, valor }))
-    .sort((a, b) => b.valor - a.valor)
-    .slice(0, 8);
+  const negociacao = porGrupo.negociacao;
+  const andamento = porGrupo.andamento;
+  const concluidos = porGrupo.concluidos;
+  const cancelados = porGrupo.cancelados;
+  const totalGeral = porStatus.reduce((soma, s) => soma + s.total, 0);
+  const totalFiltrado = contagens.negociacao + contagens.andamento + contagens.concluidos + contagens.cancelados;
 
   return (
     <div>
@@ -178,7 +181,7 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
         </div>
       )}
 
-      {empresaSelecionada && fretes.length > 0 && (
+      {empresaSelecionada && totalGeral > 0 && (
         <form className="mb-4">
           <input type="hidden" name="empresa" value={empresaSelecionada} />
           <input
@@ -193,46 +196,63 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
 
       {!empresaSelecionada ? (
         <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e publicar fretes.</p>
-      ) : fretes.length === 0 ? (
+      ) : totalGeral === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">
           Nenhum frete publicado ainda. Clique em &quot;+ Publicar frete&quot; pra começar.
         </div>
-      ) : fretesFiltrados.length === 0 ? (
+      ) : totalFiltrado === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">Nenhum frete encontrado para &quot;{q}&quot;.</div>
       ) : (
         <>
           <GraficoFretes porStatus={porStatus} topMotoristas={topMotoristas} />
+          {/* Fase Pente-Fino-Performance — cada aba mostra só os 50 fretes
+              mais recentes daquele grupo (ver LIMITE_POR_ABA); a contagem no
+              nome da aba é o total real (pode ser maior que 50). */}
           <AbasPainel
           abas={[
             {
               id: "negociacao",
-              label: `Em Negociação${negociacao.length > 0 ? ` (${negociacao.length})` : ""}`,
+              label: `Em Negociação${contagens.negociacao > 0 ? ` (${contagens.negociacao})` : ""}`,
               conteudo: renderGrid(
                 negociacao,
                 empresaSelecionada,
                 formatoMoeda,
                 "Nenhum frete em negociação no momento.",
+                contagens.negociacao,
               ),
             },
             {
               id: "andamento",
-              label: `Aceitos/Em Andamento${andamento.length > 0 ? ` (${andamento.length})` : ""}`,
+              label: `Aceitos/Em Andamento${contagens.andamento > 0 ? ` (${contagens.andamento})` : ""}`,
               conteudo: renderGrid(
                 andamento,
                 empresaSelecionada,
                 formatoMoeda,
                 "Nenhum frete aceito ou em andamento agora.",
+                contagens.andamento,
               ),
             },
             {
               id: "concluidos",
-              label: `Concluídos${concluidos.length > 0 ? ` (${concluidos.length})` : ""}`,
-              conteudo: renderGrid(concluidos, empresaSelecionada, formatoMoeda, "Nenhum frete concluído ainda."),
+              label: `Concluídos${contagens.concluidos > 0 ? ` (${contagens.concluidos})` : ""}`,
+              conteudo: renderGrid(
+                concluidos,
+                empresaSelecionada,
+                formatoMoeda,
+                "Nenhum frete concluído ainda.",
+                contagens.concluidos,
+              ),
             },
             {
               id: "cancelados",
-              label: `Cancelados${cancelados.length > 0 ? ` (${cancelados.length})` : ""}`,
-              conteudo: renderGrid(cancelados, empresaSelecionada, formatoMoeda, "Nenhum frete cancelado ou recusado."),
+              label: `Cancelados${contagens.cancelados > 0 ? ` (${contagens.cancelados})` : ""}`,
+              conteudo: renderGrid(
+                cancelados,
+                empresaSelecionada,
+                formatoMoeda,
+                "Nenhum frete cancelado ou recusado.",
+                contagens.cancelados,
+              ),
             },
           ]}
           />
@@ -252,14 +272,25 @@ function renderGrid(
   empresaSelecionada: string,
   formatoMoeda: Intl.NumberFormat,
   mensagemVazio: string,
+  totalReal: number,
 ) {
   if (lista.length === 0) {
     return <div className="card p-8 text-center text-sm text-slate-400">{mensagemVazio}</div>;
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {lista.map((f) => (
+    <div>
+      {/* Fase Pente-Fino-Performance (10/09/2026) — cada aba busca só os
+          LIMITE_POR_ABA mais recentes; quando o total real passa disso,
+          avisa que a lista não é o histórico completo (use a busca por
+          texto pra achar um frete específico mais antigo). */}
+      {totalReal > lista.length && (
+        <p className="mb-3 text-xs text-slate-400">
+          Mostrando os {lista.length} mais recentes de {totalReal}. Use a busca acima pra achar um frete específico.
+        </p>
+      )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {lista.map((f) => (
         <div key={f.id} className="card flex flex-col gap-3 p-5 transition hover:border-frota-300">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-slate-900">{f.titulo}</h3>
@@ -322,7 +353,8 @@ function renderGrid(
             )}
           </div>
         </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { CLASSIFICACAO, type Classificacao, TIPO_PORTE_VEICULO, type TipoPorteVe
 import { alocarVeiculoCentroCusto } from "@/lib/centroCusto";
 import { normalizarCNPJ } from "@/lib/utils";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { buscarTodosVeiculosDaEmpresa } from "@/lib/veiculos";
+import type { LinhaExportacao } from "@/components/exportar/BotaoExportarTabela";
 
 export type VeiculoFormState = { erro?: string } | undefined;
 
@@ -240,4 +242,35 @@ export async function alternarAtivoVeiculo(id: string, ativo: boolean) {
   }
 
   revalidatePath("/veiculos");
+}
+
+// Fase Pente-Fino-Performance (10/09/2026) — busca a frota inteira (já
+// filtrada pela busca de texto) só quando o usuário clica em exportar PDF/
+// XLSX em /veiculos, em vez de em todo carregamento de página (ver
+// BotaoExportarTabela.carregarLinhas e o novo veiculos_da_empresa_pagina
+// usado pra tabela em si).
+export async function exportarVeiculosAcao(empresaId: string, busca: string): Promise<LinhaExportacao[]> {
+  const supabase = await createClient();
+  const { data } = await buscarTodosVeiculosDaEmpresa(supabase, empresaId);
+
+  const termo = busca.trim().toLowerCase();
+  const filtrados = termo
+    ? data.filter(
+        (v) =>
+          v.placa?.toLowerCase().includes(termo) ||
+          v.marca?.toLowerCase().includes(termo) ||
+          v.modelo?.toLowerCase().includes(termo)
+      )
+    : data;
+
+  return filtrados.map((v) => ({
+    placa: v.placa,
+    marcaModelo: [v.marca, v.modelo].filter(Boolean).join(" ") || "—",
+    tipoVeiculo: v.tipo_veiculo ?? "—",
+    tipo: v.tipo ?? "—",
+    classificacao: v.classificacao ?? "—",
+    centroCusto: v.centro_custo_nome ?? "—",
+    localizacao: [v.municipio, v.uf_veiculo].filter(Boolean).join("/") || "—",
+    status: v.ativo ? "Ativo" : "Inativo",
+  }));
 }

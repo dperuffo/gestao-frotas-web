@@ -23,6 +23,63 @@ export type VeiculoRow = Database["public"]["Tables"]["cadastro_veiculos"]["Row"
 // inteira sempre volte, não importa o tamanho.
 const TAMANHO_LOTE = 1000;
 
+// Fase Pente-Fino-Performance (10/09/2026, pedido do Daniel: "melhorar a
+// performance da aplicacao como um todo") — a tela /veiculos buscava a
+// frota inteira (função acima) em todo carregamento de página só pra
+// mostrar 30 linhas e somar totais/gráficos. Estas 3 funções usam as RPCs
+// novas (veiculos_da_empresa_pagina/_contagens/_distribuicao — ver
+// migration pente_fino_performance_veiculos_paginacao) que fazem a
+// paginação e a agregação no banco, trazendo só o necessário pro Node.
+// buscarTodosVeiculosDaEmpresa continua existindo pro Dashboard,
+// Roteirizador, Rotograma e a exportação (ver actions.ts), que precisam
+// mesmo da frota inteira.
+export type ContagensVeiculos = { totalGeral: number; totalAtivos: number; totalFiltrado: number };
+export type DistribuicaoVeiculos = { agrupamento: "tipo" | "status" | "centro_custo"; label: string; total: number };
+
+export async function buscarVeiculosPaginado(
+  supabase: Supabase,
+  empresaId: string,
+  busca: string,
+  limite: number,
+  offset: number
+): Promise<{ data: VeiculoRow[]; error: string | null }> {
+  const { data, error } = await supabase.rpc("veiculos_da_empresa_pagina", {
+    p_empresa_id: empresaId,
+    p_busca: busca || null,
+    p_limite: limite,
+    p_offset: offset,
+  });
+  return { data: (data ?? []) as VeiculoRow[], error: error?.message ?? null };
+}
+
+export async function buscarContagensVeiculos(
+  supabase: Supabase,
+  empresaId: string,
+  busca: string
+): Promise<ContagensVeiculos> {
+  const { data } = await supabase
+    .rpc("veiculos_da_empresa_contagens", { p_empresa_id: empresaId, p_busca: busca || null })
+    .single();
+  const linha = data as { total_geral: number; total_ativos: number; total_filtrado: number } | null;
+  return {
+    totalGeral: linha?.total_geral ?? 0,
+    totalAtivos: linha?.total_ativos ?? 0,
+    totalFiltrado: linha?.total_filtrado ?? 0,
+  };
+}
+
+export async function buscarDistribuicaoVeiculos(
+  supabase: Supabase,
+  empresaId: string,
+  busca: string
+): Promise<DistribuicaoVeiculos[]> {
+  const { data } = await supabase.rpc("veiculos_da_empresa_distribuicao", {
+    p_empresa_id: empresaId,
+    p_busca: busca || null,
+  });
+  return (data ?? []) as DistribuicaoVeiculos[];
+}
+
 export async function buscarTodosVeiculosDaEmpresa(
   supabase: Supabase,
   empresaId: string

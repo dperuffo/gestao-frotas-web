@@ -38,22 +38,35 @@ export function BotaoExportarTabela({
   subtitulo = "Fleet Network Intelligence",
   colunas,
   linhas,
+  carregarLinhas,
 }: {
   nomeArquivo: string;
   titulo: string;
   subtitulo?: string;
   colunas: ColunaExportacao[];
-  linhas: LinhaExportacao[];
+  // Fase Pente-Fino-Performance (10/09/2026) — telas com paginação real no
+  // banco (ex. /veiculos) não têm mais a lista completa já carregada na
+  // página pra passar aqui como prop. Pra essas, `carregarLinhas` busca a
+  // lista completa (Server Action) só quando o usuário clica em exportar,
+  // em vez de em todo carregamento de página. `linhas` continua funcionando
+  // como antes pras telas que já têm os dados prontos (mais simples).
+  linhas?: LinhaExportacao[];
+  carregarLinhas?: () => Promise<LinhaExportacao[]>;
 }) {
   const [gerandoPdf, setGerandoPdf] = useState(false);
   const [gerandoXlsx, setGerandoXlsx] = useState(false);
 
+  async function obterLinhas(): Promise<LinhaExportacao[]> {
+    return carregarLinhas ? await carregarLinhas() : (linhas ?? []);
+  }
+
   async function exportarPdf() {
     setGerandoPdf(true);
     try {
-      const [{ pdf }, { TabelaGenericaPdf }] = await Promise.all([
+      const [{ pdf }, { TabelaGenericaPdf }, dados] = await Promise.all([
         import("@react-pdf/renderer"),
         import("./TabelaGenericaPdf"),
+        obterLinhas(),
       ]);
       const geradoEm = new Date().toLocaleString("pt-BR");
       const blob = await pdf(
@@ -61,7 +74,7 @@ export function BotaoExportarTabela({
           titulo={titulo}
           subtitulo={subtitulo}
           colunas={colunas.map((c) => c.header)}
-          linhas={linhasParaTexto(colunas, linhas)}
+          linhas={linhasParaTexto(colunas, dados)}
           geradoEm={geradoEm}
         />
       ).toBlob();
@@ -76,10 +89,10 @@ export function BotaoExportarTabela({
   async function exportarXlsx() {
     setGerandoXlsx(true);
     try {
-      const { gerarXlsxModelo } = await import("@/lib/xlsx");
+      const [{ gerarXlsxModelo }, dados] = await Promise.all([import("@/lib/xlsx"), obterLinhas()]);
       const buffer = gerarXlsxModelo(
         colunas.map((c) => c.header),
-        linhasParaTexto(colunas, linhas),
+        linhasParaTexto(colunas, dados),
         titulo.slice(0, 31) || "Dados"
       );
       baixarBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${nomeArquivo}.xlsx`);
