@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { parseAnpPrecosXlsx } from "@/lib/anpPrecos";
 import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
+import { ANP_REFERENCIA_TAG } from "@/lib/anpReferenciaCache";
 
 export type ResultadoImportacaoPrecosAnp =
   | { erro: string }
@@ -66,6 +67,11 @@ export async function POST(request: Request) {
   }
 
   revalidatePath("/inteligencia-rede");
+  // Fase Pente-Fino-Performance (10/09/2026, item 1.3) — revalidatePath por
+  // si só não invalida o unstable_cache de buscarReferenciaAnpCacheada (é um
+  // cache separado, o Data Cache); sem isso, a tela continuaria mostrando
+  // preço antigo por até 1h após uma importação manual.
+  revalidateTag(ANP_REFERENCIA_TAG);
 
   return NextResponse.json<ResultadoImportacaoPrecosAnp>({
     total: totalAntesDedupe + erros,

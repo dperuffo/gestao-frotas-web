@@ -2,10 +2,10 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
 import { Anomalias } from "./_components/Anomalias";
-import { PerformancePorPosto } from "./_components/PerformancePorPosto";
-import { ScorePerformance } from "./_components/ScorePerformance";
-import { RelatorioExecutivo } from "./_components/RelatorioExecutivo";
-import { RelatoriosPersonalizados } from "./_components/RelatoriosPersonalizados";
+import PerformancePorPostoLazy from "./_components/PerformancePorPostoLazy";
+import ScorePerformanceLazy from "./_components/ScorePerformanceLazy";
+import RelatorioExecutivoLazy from "./_components/RelatorioExecutivoLazy";
+import RelatoriosPersonalizadosLazy from "./_components/RelatoriosPersonalizadosLazy";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 
 type SearchParams = { empresa?: string };
@@ -400,19 +400,19 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
           {
             id: "executivo",
             label: "📊 Relatório Executivo",
-            conteudo: <RelatorioExecutivo historico={historico} nomeEmpresa={nomeEmpresaSelecionada} />,
+            conteudo: <RelatorioExecutivoLazy historico={historico} nomeEmpresa={nomeEmpresaSelecionada} />,
             ajudaChave: "relatorios.executivo",
           },
           {
             id: "performance",
             label: "⭐ Performance por Posto",
-            conteudo: <PerformancePorPosto historico={historico} />,
+            conteudo: <PerformancePorPostoLazy historico={historico} />,
             ajudaChave: "relatorios.performance_posto",
           },
           {
             id: "score",
             label: "🎯 Score × Performance",
-            conteudo: <ScorePerformance historico={historico} desvios={desvios} servicos={servicos} />,
+            conteudo: <ScorePerformanceLazy historico={historico} desvios={desvios} servicos={servicos} />,
             ajudaChave: "relatorios.score_performance",
           },
           {
@@ -425,7 +425,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
             id: "personalizados",
             label: "🗂️ Relatórios Personalizados",
             conteudo: (
-              <RelatoriosPersonalizados
+              <RelatoriosPersonalizadosLazy
                 abastecimentos={abastecimentos}
                 manutencoes={manutencoes}
                 custosFixos={custosFixos}

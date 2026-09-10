@@ -2,7 +2,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
-import { RelatoriosPersonalizadosPosto } from "./_components/RelatoriosPersonalizadosPosto";
+import RelatoriosPersonalizadosPostoLazy from "./_components/RelatoriosPersonalizadosPostoLazy";
 
 type SearchParams = { empresa?: string };
 
@@ -162,7 +162,7 @@ export default async function RelatoriosPostoPage({ searchParams }: { searchPara
           {empresas.length > 1 ? "Selecione uma empresa acima." : "Nenhuma empresa vinculada ao seu usuário."}
         </p>
       ) : (
-        <RelatoriosPersonalizadosPosto
+        <RelatoriosPersonalizadosPostoLazy
           vendas={vendas}
           financeiro={financeiro}
           notasFiscais={notasFiscais}

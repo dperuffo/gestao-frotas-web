@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseAnpPrecosXlsx } from "@/lib/anpPrecos";
 import { buscarPlanilhaAnpMaisRecente } from "@/lib/anpFetch";
 import { segredoConfere } from "@/lib/segredoConstante";
 import { verificarLimite, ipDaRequisicao, respostaLimiteExcedido } from "@/lib/rateLimit";
 import { logger } from "@/lib/logger";
+import { ANP_REFERENCIA_TAG } from "@/lib/anpReferenciaCache";
 
 // Fase automatiza-anp-bigquery — atualização semanal automática da série de
 // preços de referência ANP (tabela anp_precos_referencia), sem depender de
@@ -128,6 +129,10 @@ async function executar(request: Request) {
     }
 
     revalidatePath("/inteligencia-rede");
+    // Fase Pente-Fino-Performance (10/09/2026, item 1.3) — ver mesmo
+    // comentário na rota de importação manual: invalida o Data Cache
+    // (unstable_cache), que revalidatePath sozinho não cobre.
+    revalidateTag(ANP_REFERENCIA_TAG);
 
     return NextResponse.json({
       urlEncontrada: busca.urlEncontrada,

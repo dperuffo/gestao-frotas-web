@@ -5,21 +5,22 @@ import { ANP_PRECO_REFERENCIA_FALLBACK, ESTADO_PARA_UF, PRODUTO_PARA_CATEGORIA_A
 import { formatDate } from "@/lib/utils";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { logger } from "@/lib/logger";
+import { buscarReferenciaAnpCacheada } from "@/lib/anpReferenciaCache";
 import GraficoCustoAnpLazy from "./_components/GraficoCustoAnpLazy";
 import GraficoTopMunicipiosLazy from "./_components/GraficoTopMunicipiosLazy";
 import GraficoSavingMensalLazy from "./_components/GraficoSavingMensalLazy";
 import GraficoAlertasPorEstadoLazy from "./_components/GraficoAlertasPorEstadoLazy";
 import GraficoCoberturaMacrorregiaoLazy from "./_components/GraficoCoberturaMacrorregiaoLazy";
 import GraficoOportunidadesExpansaoLazy from "./_components/GraficoOportunidadesExpansaoLazy";
-import { ModoComparativo } from "./_components/ModoComparativo";
+import ModoComparativoLazy from "./_components/ModoComparativoLazy";
 import MapaDensidadeLazy from "./_components/MapaDensidadeLazy";
 import { AbasPainel } from "./_components/AbasPainel";
-import { TendenciaSazonalidade } from "./_components/TendenciaSazonalidade";
-import { EvolucaoTemporal } from "./_components/EvolucaoTemporal";
-import { Operacional } from "./_components/Operacional";
-import { CruzamentosAvancados } from "./_components/CruzamentosAvancados";
-import { CoberturaDemanda } from "./_components/CoberturaDemanda";
-import { PrecosPorMeioPagamento } from "./_components/PrecosPorMeioPagamento";
+import TendenciaSazonalidadeLazy from "./_components/TendenciaSazonalidadeLazy";
+import EvolucaoTemporalLazy from "./_components/EvolucaoTemporalLazy";
+import OperacionalLazy from "./_components/OperacionalLazy";
+import CruzamentosAvancadosLazy from "./_components/CruzamentosAvancadosLazy";
+import CoberturaDemandaLazy from "./_components/CoberturaDemandaLazy";
+import PrecosPorMeioPagamentoLazy from "./_components/PrecosPorMeioPagamentoLazy";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 // Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
 // toque visual já aplicado nas demais telas densas do app.
@@ -205,31 +206,16 @@ export default async function InteligenciaRedePage({
   // só traz informações do Diesel"), como referência genérica por
   // combustível na aba Frota Real (antes vinha hardcoded pra Diesel S10,
   // mesmo pra frotas majoritariamente a gasolina).
-  const { data: anpPorEstadoRaw } = await supabase
-    .from("anp_precos_referencia")
-    .select("estado, produto, preco_medio")
-    .eq("nivel", "estado");
+  //
+  // Fase Pente-Fino-Performance (10/09/2026, item 1.3) — dado de referência
+  // público (igual pra todo tenant, sem RLS por empresa), então cacheado no
+  // servidor por 1h em vez de reconsultado em toda visita — ver
+  // src/lib/anpReferenciaCache.ts pro porquê do service role aqui.
+  const { anpPorEstadoRaw, semanaMaisRecente, referenciaSemana } = await buscarReferenciaAnpCacheada();
 
-  // Referência oficial ANP (nível Brasil, semana mais recente importada).
-  const { data: semanaMaisRecente } = await supabase
-    .from("anp_precos_referencia")
-    .select("data_inicial, data_final")
-    .eq("nivel", "brasil")
-    .order("data_final", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let referenciaOficialPorProduto = new Map<string, number>();
-  if (semanaMaisRecente) {
-    const { data: referenciaSemana } = await supabase
-      .from("anp_precos_referencia")
-      .select("produto, preco_medio")
-      .eq("nivel", "brasil")
-      .eq("data_final", semanaMaisRecente.data_final);
-    referenciaOficialPorProduto = new Map(
-      (referenciaSemana ?? []).filter((r) => r.preco_medio != null).map((r) => [r.produto, r.preco_medio as number])
-    );
-  }
+  const referenciaOficialPorProduto = new Map<string, number>(
+    referenciaSemana.filter((r) => r.preco_medio != null).map((r) => [r.produto, r.preco_medio as number])
+  );
 
   function resolverReferencia(combustivel: string): number | null {
     const categoriaAnp = PRODUTO_PARA_CATEGORIA_ANP[combustivel];
@@ -806,7 +792,7 @@ export default async function InteligenciaRedePage({
                 <p className="mb-4 text-xs text-slate-400">
                   Postos, cobertura, distribuidoras e preço médio por combustível, lado a lado.
                 </p>
-                <ModoComparativo
+                <ModoComparativoLazy
                   postosPorUf={postosPorUfObj}
                   municipiosPorUf={municipiosPorUfObj}
                   coordPorUf={coordPorUf}
@@ -881,7 +867,7 @@ export default async function InteligenciaRedePage({
                 <p className="mb-4 text-xs text-slate-400">
                   Cruza demanda real da frota (abastecimentos) com ausência de postos GF por UF.
                 </p>
-                <CoberturaDemanda postosPorUf={postosPorUfObj} demandaPorUf={demandaPorUf} />
+                <CoberturaDemandaLazy postosPorUf={postosPorUfObj} demandaPorUf={demandaPorUf} />
               </div>
             ),
           },
@@ -897,7 +883,7 @@ export default async function InteligenciaRedePage({
                   Regiões caras vs baratas, clusters de oportunidade por município, GF vs ANP por UF e onde a
                   frota realmente abastece.
                 </p>
-                <CruzamentosAvancados
+                <CruzamentosAvancadosLazy
                   precosPorUf={precosPorUf}
                   historico={historicoDetalhado}
                   desvios={desvioAnp}
@@ -917,7 +903,7 @@ export default async function InteligenciaRedePage({
                   Mapa de preços, postos com preço inconsistente vs ANP, score composto por região e
                   distribuição de graus A/B/C/D.
                 </p>
-                <Operacional precosMapa={precosMapaOperacional} desvios={desvioAnp} servicos={servicosPosto} />
+                <OperacionalLazy precosMapa={precosMapaOperacional} desvios={desvioAnp} servicos={servicosPosto} />
               </div>
             ),
           },
@@ -925,7 +911,7 @@ export default async function InteligenciaRedePage({
             id: "meios-pagamento",
             label: "💳 Meios de Pagamento",
             conteudo: (
-              <PrecosPorMeioPagamento dados={precosPorMeioPagamento} />
+              <PrecosPorMeioPagamentoLazy dados={precosPorMeioPagamento} />
             ),
           },
           {
@@ -939,7 +925,7 @@ export default async function InteligenciaRedePage({
                 <p className="mb-4 text-xs text-slate-400">
                   Tendência por região, volatilidade e ranking de estabilidade dos postos.
                 </p>
-                <EvolucaoTemporal registros={historicoDetalhado} precoReal={precoRealPeriodo} />
+                <EvolucaoTemporalLazy registros={historicoDetalhado} precoReal={precoRealPeriodo} />
               </div>
             ),
           },
@@ -955,7 +941,7 @@ export default async function InteligenciaRedePage({
                   Regressão linear por estado, calendário de sazonalidade (mês do ano) e
                   volatilidade mensal por combustível.
                 </p>
-                <TendenciaSazonalidade serie={serieTendencia} volatilidade={volatilidadeMensal} />
+                <TendenciaSazonalidadeLazy serie={serieTendencia} volatilidade={volatilidadeMensal} />
               </div>
             ),
           },
