@@ -200,17 +200,30 @@ async function priorizarComClaude(candidatos: CandidatoSinal[], empresaId: strin
 
 export type ResultadoGeracaoInsights = { empresaId: string; candidatos: number; gerados: number; erro?: string };
 
+// Fase Inteligência-Comercial-Posto-3 (09/09/2026, pedido do Daniel: "vamos
+// desenvolver todos" — a camada de insight em linguagem natural, no mesmo
+// molde do que já existe pro lado frota) — postos (empresas com
+// segmento='Revenda') têm seu próprio coletor de sinais
+// (coletar_sinais_insights_ia_posto), mas reaproveitam 100% do resto do
+// pipeline: mesma priorização/redação via Claude, mesma tabela
+// insights_proativos_ia (o "id" do posto já é uma linha de `empresas`, então
+// nenhuma coluna nova foi necessária), mesma tela /insights-ia e
+// action de marcar lido/dispensar.
+export type OrigemInsights = "frota" | "posto";
+
 // Gera os insights de UMA empresa — chamado em loop pelo cron
 // (/api/cron/gerar-insights-ia) usando o client admin (service_role, bypassa
 // RLS de propósito: o cron roda fora do contexto de qualquer usuário
 // logado, precisa varrer os dados de todas as empresas ativas).
 export async function gerarInsightsEmpresa(
   empresaId: string,
-  supabaseAdmin: SupabaseAdmin
+  supabaseAdmin: SupabaseAdmin,
+  origem: OrigemInsights = "frota"
 ): Promise<ResultadoGeracaoInsights> {
-  const { data: candidatosRaw, error: erroColeta } = await supabaseAdmin.rpc("coletar_sinais_insights_ia", {
-    p_empresa_id: empresaId,
-  });
+  const { data: candidatosRaw, error: erroColeta } =
+    origem === "posto"
+      ? await supabaseAdmin.rpc("coletar_sinais_insights_ia_posto", { p_empresa_posto_id: empresaId })
+      : await supabaseAdmin.rpc("coletar_sinais_insights_ia", { p_empresa_id: empresaId });
 
   if (erroColeta) {
     return { empresaId, candidatos: 0, gerados: 0, erro: `Falha ao coletar sinais: ${erroColeta.message}` };

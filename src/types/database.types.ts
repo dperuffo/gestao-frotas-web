@@ -2980,6 +2980,42 @@ export interface Database {
       // aprovada) e o registro dos bloqueios ativos consultados pela API de
       // Antifraude no ato do abastecimento (ver migration
       // bloqueio_abastecimento_por_anomalia).
+      // Fase Inteligência-Comercial-Posto-3 (09/09/2026) — histórico de
+      // contato/nota do posto com cada cliente (fecha o loop de ação da
+      // tela /inteligencia-comercial-posto). RLS tenant_all, mesmo padrão
+      // de acoes_sugeridas_config_restricao.
+      contatos_clientes_posto: {
+        Row: {
+          id: string;
+          empresa_posto_id: string;
+          empresa_cliente_id: string;
+          nota: string;
+          criado_por: string | null;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["contatos_clientes_posto"]["Row"]> & {
+          empresa_posto_id: string;
+          empresa_cliente_id: string;
+          nota: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["contatos_clientes_posto"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "contatos_clientes_posto_empresa_posto_id_fkey";
+            columns: ["empresa_posto_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contatos_clientes_posto_empresa_cliente_id_fkey";
+            columns: ["empresa_cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       acoes_sugeridas_config_restricao: {
         Row: {
           id: string;
@@ -5452,6 +5488,70 @@ export interface Database {
           status: string;
         }[];
       };
+      // Fase Inteligência-Comercial-Posto-3 (09/09/2026) — combina churn +
+      // sensibilidade a preço + fuga de rede num score único (0-100) por
+      // cliente, chamando internamente as 3 RPCs já existentes.
+      score_saude_comercial_clientes_posto: {
+        Args: { p_empresa_posto_id: string };
+        Returns: {
+          empresa_cliente_id: string;
+          nome: string;
+          cnpj: string | null;
+          municipio: string | null;
+          uf: string | null;
+          status_churn: string | null;
+          razao_atraso: number | null;
+          status_preco: string | null;
+          indice_sensibilidade: number | null;
+          status_fuga: string | null;
+          queda_participacao_pp: number | null;
+          score: number;
+          prioridade: string;
+        }[];
+      };
+      // Fase Inteligência-Comercial-Posto-3 (09/09/2026) — curva de Pareto:
+      // quanto da receita dos últimos 180 dias cada cliente representa,
+      // ordenado e com % acumulado.
+      concentracao_receita_clientes_posto: {
+        Args: { p_empresa_posto_id: string };
+        Returns: {
+          empresa_cliente_id: string;
+          nome: string;
+          receita: number;
+          posicao: number;
+          participacao_pct: number;
+          participacao_acumulada_pct: number;
+        }[];
+      };
+      // Fase Inteligência-Comercial-Posto-3 (09/09/2026) — cruzamento
+      // cliente x produto vendido pelo posto (oportunidade de cross-sell).
+      mix_produto_clientes_posto: {
+        Args: { p_empresa_posto_id: string };
+        Returns: {
+          empresa_cliente_id: string;
+          nome: string;
+          produto: string;
+          litros_total: number;
+          qtd_abastecimentos: number;
+          comprou: boolean;
+        }[];
+      };
+      // Fase Inteligência-Comercial-Posto-3 (09/09/2026) — preço que o
+      // próprio posto cadastrou (precos_postos) comparado à referência ANP
+      // mais específica disponível (município → estado → Brasil), mesma
+      // normalização/cascata de postos_gf_desvio_anp.
+      posicionamento_preco_posto: {
+        Args: { p_empresa_posto_id: string };
+        Returns: {
+          combustivel: string;
+          categoria_anp: string;
+          preco_posto: number;
+          preco_anp: number;
+          nivel_anp: string;
+          diff_pct: number;
+          diff_rs: number;
+        }[];
+      };
       // Fase 27.84 — ciclo de faturamento EM ANDAMENTO (ainda não fechado
       // pelo robô gerar_faturas_postos_robo()) de cada negociação aceita
       // visível ao chamador, com os abastecimentos acumulados até hoje.
@@ -5552,6 +5652,22 @@ export interface Database {
       };
       coletar_sinais_insights_ia: {
         Args: { p_empresa_id: string };
+        Returns: {
+          categoria: string;
+          chave: string;
+          titulo_sugerido: string;
+          resumo: string;
+          valor_impacto: number | null;
+          severidade: string;
+          dados: Json | null;
+        }[];
+      };
+      // Fase Inteligência-Comercial-Posto-3 (09/09/2026) — mesma forma de
+      // retorno do coletor de sinais da frota, só que pro lado posto
+      // (churn, sensibilidade a preço, fuga de rede, concentração de
+      // receita, cross-sell de produto). Só chamável por service_role.
+      coletar_sinais_insights_ia_posto: {
+        Args: { p_empresa_posto_id: string };
         Returns: {
           categoria: string;
           chave: string;

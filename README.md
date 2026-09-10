@@ -9300,3 +9300,63 @@ Validado: `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterado
 a lógica de negócio de cada RPC testada manualmente contra os postos de teste reais (Posto Teste Ltda)
 antes de aplicar o guard de autorização definitivo.
 
+## Fase Inteligência-Comercial-Posto-3 (09/09/2026) — score, Pareto, mix, preço regional, insights de IA e registrar contato
+
+Pedido do Daniel: "vamos desenvolver todos" — as 6 melhorias propostas em conversa pra completar o
+Painel de Inteligência Comercial do posto, depois das Fases 1 (churn) e 2 (preço/horário/fuga).
+
+**Achado de segurança corrigido antes de continuar** (não pedido, achado no caminho): as funções
+`coletar_sinais_insights_ia` e `upsert_insight_ia` — já existentes desde a Fase Insights de IA
+(27/08/2026) — estavam com `EXECUTE` liberado pro `anon` e **sem nenhuma guarda de autorização**. Um
+chamador anônimo podia ler dados operacionais agregados de qualquer empresa (custos de manutenção,
+preços pagos, pontos de CNH por nome de motorista) via `coletar_sinais_insights_ia`, e podia
+inserir/sobrescrever insights falsos no board de qualquer empresa via `upsert_insight_ia` (zero guarda
+de posse). Corrigido: as duas agora só são executáveis por `service_role` (só o cron via admin client as
+chama mesmo). `marcar_insight_lido` e `dispensar_insight` já tinham guarda de posse correta (checam
+`empresa_id` do insight contra `empresas_do_usuario` do JWT) — só revogado o `EXECUTE` supérfluo do
+`anon`.
+
+**RPC `score_saude_comercial_clientes_posto`** — combina os 3 sinais de risco por cliente (churn +
+sensibilidade a preço + fuga de rede) num score de 0 a 100, chamando internamente as 3 RPCs já
+existentes (cada uma com sua própria guarda de autorização). Classifica em `critico` (≥50),
+`atencao` (≥25) ou `saudavel`.
+
+**RPC `concentracao_receita_clientes_posto`** — curva de Pareto: receita de cada cliente nos últimos 180
+dias, ordenada, com participação % e % acumulado — responde "quanto da receita depende dos maiores
+clientes".
+
+**RPC `mix_produto_clientes_posto`** — cruzamento cliente × produto vendido pelo posto (a partir de
+`precos_postos`), sinalizando quais produtos cada cliente nunca comprou aqui (oportunidade de
+cross-sell).
+
+**RPC `posicionamento_preco_posto`** — compara o preço que o próprio posto cadastrou em `precos_postos`
+com a referência ANP mais específica disponível (município → estado → Brasil), reaproveitando a mesma
+normalização/cascata de `postos_gf_desvio_anp` (função já existente da Inteligência de Rede) — mas em
+cima do preço que O PRÓPRIO posto publicou, não da rede `postos_gf` maior (à qual um posto pequeno como
+os de teste não pertence).
+
+**RPC `coletar_sinais_insights_ia_posto`** — espelha `coletar_sinais_insights_ia` (frota) pro lado posto:
+mesma forma de retorno (categoria/chave/titulo_sugerido/resumo/valor_impacto/severidade/dados), consumida
+pelo mesmo `src/lib/insightsIA.ts` (Claude só prioriza/redige, nunca inventa número) e gravada na mesma
+tabela `insights_proativos_ia` — o "id" de um posto já é só mais uma linha de `empresas`, então nenhuma
+coluna nova foi necessária. 5 categorias de candidato: cliente em risco de churn, cliente sensível a
+preço, cliente com fuga de rede, receita concentrada e oportunidade de cross-sell. `gerarInsightsEmpresa`
+ganhou um parâmetro `origem: "frota" | "posto"`; o cron (`/api/cron/gerar-insights-ia`) agora lê
+`segmento` de cada empresa e roteia pro coletor certo.
+
+**Tabela `contatos_clientes_posto`** — histórico de contato/nota do posto com cada cliente, RLS
+`tenant_all` (mesmo padrão de `acoes_sugeridas_config_restricao`). Fecha o "loop de ação": a tela de
+Prioridade tinha virado só leitura, agora tem um botão "Registrar contato" por cliente (Server Action
+`registrarContatoAction`, sem RPC dedicada — o insert direto via `.from()` já é seguro sob a RLS).
+
+**Tela `/inteligencia-comercial-posto`** ganhou 5 abas novas: "Prioridade" (score, virou a 1ª aba, com o
+registro de contato inline por cliente), "Concentração de Receita", "Mix de Produto" (matriz
+cliente × produto), "Preço vs. Região" e "Insights de IA" (reaproveita 100% o componente
+`CardInsightIA` e as actions já existentes de marcar lido/dispensar).
+
+Validado: `npx tsc --noEmit` e `npx eslint` limpos em todos os arquivos alterados/criados desta fase.
+`get_advisors` (security) confirmado: as 4 RPCs novas expostas ao usuário só aparecem com o aviso
+informativo padrão (SECURITY DEFINER executável por `authenticated`), nenhuma menção a `anon`;
+`coletar_sinais_insights_ia_posto` não aparece no relatório (não tem grant pra nenhuma role client-side);
+`contatos_clientes_posto` sem nenhum alerta de RLS.
+

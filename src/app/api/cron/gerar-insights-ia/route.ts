@@ -31,15 +31,19 @@ async function executar(request: Request) {
   if (!limite.permitido) return respostaLimiteExcedido(limite);
 
   const supabase = createAdminClient();
-  const { data: empresas, error } = await supabase.from("empresas").select("id, nome").eq("ativo", true);
+  const { data: empresas, error } = await supabase.from("empresas").select("id, nome, segmento").eq("ativo", true);
 
   if (error) {
     return NextResponse.json({ erro: `Falha ao listar empresas: ${error.message}` }, { status: 500 });
   }
 
+  // Fase Inteligência-Comercial-Posto-3 (09/09/2026) — posto (segmento
+  // 'Revenda') usa o coletor de sinais dele (coletar_sinais_insights_ia_posto),
+  // o resto da frota usa o coletor original — ver src/lib/insightsIA.ts.
   const resultados = [];
   for (const empresa of empresas ?? []) {
-    const resultado = await gerarInsightsEmpresa(empresa.id, supabase);
+    const origem = empresa.segmento === "Revenda" ? ("posto" as const) : ("frota" as const);
+    const resultado = await gerarInsightsEmpresa(empresa.id, supabase, origem);
     resultados.push({ empresa_id: empresa.id, nome: empresa.nome, ...resultado });
   }
 

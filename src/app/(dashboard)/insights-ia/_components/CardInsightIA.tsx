@@ -22,6 +22,13 @@ const CATEGORIA_LABEL: Record<string, string> = {
   aprovacoes_paradas: "Aprovações",
   seguro_vencendo: "Seguro",
   documentos_motorista_vencendo: "Motoristas",
+  // Fase Inteligência-Comercial-Posto-3 (09/09/2026) — categorias do
+  // coletor de sinais do lado POSTO (coletar_sinais_insights_ia_posto).
+  posto_cliente_risco_churn: "Clientes",
+  posto_cliente_sensivel_preco: "Clientes",
+  posto_cliente_fuga_rede: "Clientes",
+  posto_receita_concentrada: "Financeiro",
+  posto_cross_sell_produto: "Clientes",
 };
 
 export function CardInsightIA({ insight }: { insight: InsightIA }) {
