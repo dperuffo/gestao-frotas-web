@@ -144,7 +144,20 @@ export function TendenciaSazonalidade({ serie, volatilidade }: { serie: PontoSer
         }
         return media;
       });
-      return { uf, valores };
+      // Variação percentual mês a mês, comparando sempre com o mês anterior QUE TEM DADO.
+      // O primeiro mês com dado na linha fica sem variação (não há mês anterior pra comparar).
+      let ultimoValorComDado: number | null = null;
+      const variacoes: (number | null)[] = valores.map((v) => {
+        if (v == null) return null;
+        if (ultimoValorComDado == null) {
+          ultimoValorComDado = v;
+          return null;
+        }
+        const variacao = ultimoValorComDado !== 0 ? ((v - ultimoValorComDado) / ultimoValorComDado) * 100 : null;
+        ultimoValorComDado = v;
+        return variacao;
+      });
+      return { uf, valores, variacoes };
     });
     return { linhas, min: min === Infinity ? 0 : min, max: max === -Infinity ? 0 : max };
   }, [topUfs, porMesUf]);
@@ -290,16 +303,42 @@ export function TendenciaSazonalidade({ serie, volatilidade }: { serie: PontoSer
               {heatmap.linhas.map((l) => (
                 <tr key={l.uf}>
                   <td className="p-1 font-medium text-slate-700">{l.uf}</td>
-                  {l.valores.map((v, i) => (
-                    <td
-                      key={i}
-                      className="p-1 text-center text-white"
-                      style={{ backgroundColor: corCelula(v, heatmap.min, heatmap.max) }}
-                      title={v != null ? formatarMoeda(v) : "sem dado"}
-                    >
-                      {v != null ? v.toFixed(2) : "—"}
-                    </td>
-                  ))}
+                  {l.valores.map((v, i) => {
+                    const variacao = l.variacoes[i];
+                    return (
+                      <td
+                        key={i}
+                        className="p-1 text-center text-white"
+                        style={{ backgroundColor: corCelula(v, heatmap.min, heatmap.max) }}
+                        title={v != null ? formatarMoeda(v) : "sem dado"}
+                      >
+                        {v != null ? (
+                          <div className="flex flex-col items-center leading-tight">
+                            <span>{v.toFixed(2)}</span>
+                            {variacao != null && (
+                              <span
+                                className="text-[10px] font-normal"
+                                style={{
+                                  color:
+                                    variacao > 0.05
+                                      ? "rgba(255,205,205,0.85)"
+                                      : variacao < -0.05
+                                        ? "rgba(205,255,215,0.85)"
+                                        : "rgba(255,255,255,0.65)",
+                                }}
+                              >
+                                {variacao > 0.05 ? "▲" : variacao < -0.05 ? "▼" : "→"}
+                                {variacao >= 0 ? "+" : ""}
+                                {variacao.toFixed(1)}%
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
