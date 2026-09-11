@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/utils";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { logger } from "@/lib/logger";
 import { buscarReferenciaAnpCacheada } from "@/lib/anpReferenciaCache";
+import { rpcComRetry } from "@/lib/supabaseRpcComRetry";
 import GraficoCustoAnpLazy from "./_components/GraficoCustoAnpLazy";
 import GraficoTopMunicipiosLazy from "./_components/GraficoTopMunicipiosLazy";
 import GraficoSavingMensalLazy from "./_components/GraficoSavingMensalLazy";
@@ -170,33 +171,66 @@ export default async function InteligenciaRedePage({
     { data: postosVisitadosRaw, error: postosVisitadosErro },
     { data: precosPorMeioPagamentoRaw },
   ] = await Promise.all([
-    supabase.rpc("postos_gf_por_uf"),
-    supabase.rpc("anp_postos_por_uf"),
-    supabase.rpc("postos_gf_municipios_unicos"),
-    supabase.rpc("preco_medio_por_combustivel", { p_empresa_id: empresaIdFiltro }),
+    rpcComRetry(() => supabase.rpc("postos_gf_por_uf"), "postos_gf_por_uf"),
+    rpcComRetry(() => supabase.rpc("anp_postos_por_uf"), "anp_postos_por_uf"),
+    rpcComRetry(() => supabase.rpc("postos_gf_municipios_unicos"), "postos_gf_municipios_unicos"),
+    rpcComRetry(
+      () => supabase.rpc("preco_medio_por_combustivel", { p_empresa_id: empresaIdFiltro }),
+      "preco_medio_por_combustivel"
+    ),
     empresaIdFiltro
       ? supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }).eq("empresa_id", empresaIdFiltro)
       : supabase.from("postos_gf").select("cnpj", { count: "exact", head: true }),
-    supabase.rpc("postos_gf_top_municipios", { p_limit: 10 }),
-    supabase.rpc("postos_gf_pontos_mapa", { p_empresa_id: empresaIdFiltro }),
-    supabase.rpc("historico_precos_evolucao_mensal"),
-    supabase.rpc("postos_gf_alertas_preco", { p_threshold: 0.05, p_empresa_id: empresaIdFiltro }),
+    rpcComRetry(() => supabase.rpc("postos_gf_top_municipios", { p_limit: 10 }), "postos_gf_top_municipios"),
+    rpcComRetry(
+      () => supabase.rpc("postos_gf_pontos_mapa", { p_empresa_id: empresaIdFiltro }),
+      "postos_gf_pontos_mapa"
+    ),
+    rpcComRetry(() => supabase.rpc("historico_precos_evolucao_mensal"), "historico_precos_evolucao_mensal"),
+    rpcComRetry(
+      () => supabase.rpc("postos_gf_alertas_preco", { p_threshold: 0.05, p_empresa_id: empresaIdFiltro }),
+      "postos_gf_alertas_preco"
+    ),
     // threshold bem negativo = praticamente "sem filtro" -> serve só pra
     // saber quantos postos+combustível TÊM referência ANP resolvida (o
     // denominador do "% em alerta"), reaproveitando a mesma função.
-    supabase.rpc("postos_gf_alertas_preco", { p_threshold: -100, p_empresa_id: empresaIdFiltro }),
-    supabase.rpc("postos_gf_municipios_por_uf"),
-    supabase.rpc("postos_gf_distribuidoras_por_uf"),
-    supabase.rpc("preco_medio_por_combustivel_uf"),
-    supabase.rpc("historico_precos_serie_uf_combustivel", { p_empresa_id: empresaIdFiltro }),
-    supabase.rpc("historico_precos_volatilidade_mensal", { p_empresa_id: empresaIdFiltro }),
-    supabase.rpc("historico_precos_detalhado", { p_empresa_id: empresaIdFiltro }),
-    supabase.rpc("abastecimentos_preco_periodo"),
-    supabase.rpc("postos_gf_precos_mapa"),
-    supabase.rpc("postos_gf_desvio_anp", { p_empresa_id: empresaIdFiltro }),
-    supabase.rpc("postos_gf_servicos", { p_empresa_id: empresaIdFiltro }),
-    supabase.rpc("abastecimentos_postos_visitados", { p_empresa_id: empresaIdFiltro }),
-    supabase.rpc("preco_medio_por_meio_pagamento", { p_empresa_id: empresaIdFiltro }),
+    rpcComRetry(
+      () => supabase.rpc("postos_gf_alertas_preco", { p_threshold: -100, p_empresa_id: empresaIdFiltro }),
+      "postos_gf_alertas_preco(universo)"
+    ),
+    rpcComRetry(() => supabase.rpc("postos_gf_municipios_por_uf"), "postos_gf_municipios_por_uf"),
+    rpcComRetry(() => supabase.rpc("postos_gf_distribuidoras_por_uf"), "postos_gf_distribuidoras_por_uf"),
+    rpcComRetry(() => supabase.rpc("preco_medio_por_combustivel_uf"), "preco_medio_por_combustivel_uf"),
+    rpcComRetry(
+      () => supabase.rpc("historico_precos_serie_uf_combustivel", { p_empresa_id: empresaIdFiltro }),
+      "historico_precos_serie_uf_combustivel"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("historico_precos_volatilidade_mensal", { p_empresa_id: empresaIdFiltro }),
+      "historico_precos_volatilidade_mensal"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("historico_precos_detalhado", { p_empresa_id: empresaIdFiltro }),
+      "historico_precos_detalhado"
+    ),
+    rpcComRetry(() => supabase.rpc("abastecimentos_preco_periodo"), "abastecimentos_preco_periodo"),
+    rpcComRetry(() => supabase.rpc("postos_gf_precos_mapa"), "postos_gf_precos_mapa"),
+    rpcComRetry(
+      () => supabase.rpc("postos_gf_desvio_anp", { p_empresa_id: empresaIdFiltro }),
+      "postos_gf_desvio_anp"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("postos_gf_servicos", { p_empresa_id: empresaIdFiltro }),
+      "postos_gf_servicos"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("abastecimentos_postos_visitados", { p_empresa_id: empresaIdFiltro }),
+      "abastecimentos_postos_visitados"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("preco_medio_por_meio_pagamento", { p_empresa_id: empresaIdFiltro }),
+      "preco_medio_por_meio_pagamento"
+    ),
   ]);
 
   // Preço por estado (ANP), todos os produtos — tabela pequena (~178 linhas
