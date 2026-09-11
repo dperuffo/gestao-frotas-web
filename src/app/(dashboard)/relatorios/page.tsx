@@ -1,5 +1,6 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { rpcComRetry } from "@/lib/supabaseRpcComRetry";
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
 import { Anomalias } from "./_components/Anomalias";
 import PerformancePorPostoLazy from "./_components/PerformancePorPostoLazy";
@@ -83,55 +84,145 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
   const rpcArgs = empresaSelecionada ? { p_empresa_id: empresaSelecionada } : {};
 
   const [
-    { data: historicoRaw },
-    { data: desvioAnpRaw },
-    { data: servicosRaw },
-    { data: abastecimentosRaw },
-    { data: manutencoesRaw },
-    { data: custosFixosRaw },
-    { data: notasFiscaisRaw },
-    { data: fretesRaw },
-    { data: financeiroRaw },
-    { data: acoesSugeridasRaw },
-    { data: chamadosRaw },
-    { data: avaliacoesRaw },
-    { data: multasRaw },
-    { data: sinistrosRaw },
-    { data: apolicesSeguroRaw },
-    { data: pneusRaw },
-    { data: estoquePecasRaw },
-    { data: faturasFretesRaw },
-    { data: solicitacoesAprovacaoRaw },
-    { data: patrimonioRaw },
+    { data: historicoRaw, error: historicoErr },
+    { data: desvioAnpRaw, error: desvioAnpErr },
+    { data: servicosRaw, error: servicosErr },
+    { data: abastecimentosRaw, error: abastecimentosErr },
+    { data: manutencoesRaw, error: manutencoesErr },
+    { data: custosFixosRaw, error: custosFixosErr },
+    { data: notasFiscaisRaw, error: notasFiscaisErr },
+    { data: fretesRaw, error: fretesErr },
+    { data: financeiroRaw, error: financeiroErr },
+    { data: acoesSugeridasRaw, error: acoesSugeridasErr },
+    { data: chamadosRaw, error: chamadosErr },
+    { data: avaliacoesRaw, error: avaliacoesErr },
+    { data: multasRaw, error: multasErr },
+    { data: sinistrosRaw, error: sinistrosErr },
+    { data: apolicesSeguroRaw, error: apolicesSeguroErr },
+    { data: pneusRaw, error: pneusErr },
+    { data: estoquePecasRaw, error: estoquePecasErr },
+    { data: faturasFretesRaw, error: faturasFretesErr },
+    { data: solicitacoesAprovacaoRaw, error: solicitacoesAprovacaoErr },
+    { data: patrimonioRaw, error: patrimonioErr },
   ] = await Promise.all([
-    supabase.rpc("historico_precos_detalhado", rpcArgs),
-    supabase.rpc("postos_gf_desvio_anp", rpcArgs),
-    supabase.rpc("postos_gf_servicos", rpcArgs),
-    supabase.rpc("relatorio_abastecimentos_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_manutencoes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_custos_fixos_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFimCustosFixos }),
+    rpcComRetry(() => supabase.rpc("historico_precos_detalhado", rpcArgs), "historico_precos_detalhado"),
+    rpcComRetry(() => supabase.rpc("postos_gf_desvio_anp", rpcArgs), "postos_gf_desvio_anp"),
+    rpcComRetry(() => supabase.rpc("postos_gf_servicos", rpcArgs), "postos_gf_servicos"),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_abastecimentos_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_abastecimentos_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_manutencoes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_manutencoes_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_custos_fixos_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFimCustosFixos }),
+      "relatorio_custos_fixos_bruto"
+    ),
     // Fase relatorios-mais-dimensoes (29/07/2026) — 6 novas fontes pro
     // construtor de Relatórios Personalizados, mesma janela padrão de 365
     // dias retroativos das demais (ver comentário acima sobre pDataInicio).
-    supabase.rpc("relatorio_notas_fiscais_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_fretes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_financeiro_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_acoes_sugeridas_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_chamados_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_avaliacoes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_notas_fiscais_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_notas_fiscais_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_fretes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_fretes_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_financeiro_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_financeiro_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_acoes_sugeridas_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_acoes_sugeridas_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_chamados_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_chamados_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_avaliacoes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_avaliacoes_bruto"
+    ),
     // Fase relatorios-mais-dimensoes-2 (07/09/2026) — 8 novas fontes pro
     // construtor de Relatórios Personalizados, cobrindo features lançadas
     // desde a leva anterior (multas, sinistros, seguro, pneus, estoque de
     // peças, faturas de frete, aprovações, patrimônio). Mesma janela padrão.
-    supabase.rpc("relatorio_multas_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_sinistros_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_apolices_seguro_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_pneus_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_estoque_pecas_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_faturas_fretes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_solicitacoes_aprovacao_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
-    supabase.rpc("relatorio_patrimonio_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_multas_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_multas_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_sinistros_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_sinistros_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_apolices_seguro_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_apolices_seguro_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_pneus_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_pneus_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_estoque_pecas_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_estoque_pecas_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_faturas_fretes_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_faturas_fretes_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_solicitacoes_aprovacao_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_solicitacoes_aprovacao_bruto"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("relatorio_patrimonio_bruto", { ...rpcArgs, p_data_inicio: pDataInicio, p_data_fim: pDataFim }),
+      "relatorio_patrimonio_bruto"
+    ),
   ]);
+
+  // Achado real (investigação do bug "Abastecimentos aparece vazio pra um
+  // cliente que tem dados"): o código acima sempre destructurou só `data`,
+  // descartando qualquer `error` que o Supabase retornasse pra cada RPC —
+  // uma falha pontual (timeout, RPC indisponível etc.) numa dessas 20
+  // chamadas paralelas cai silenciosamente em `[]` (ver os `?? []` abaixo) e
+  // a tela mostra "Nenhum dado encontrado" como se fosse falta de dado real,
+  // sem deixar rastro nenhum no log do servidor. Isso não estava causando o
+  // caso relatado agora (a RPC de abastecimentos foi confirmada retornando
+  // os registros certos pra essa empresa/janela via SQL direto), mas é a
+  // única lacuna real encontrada nessa investigação — logando aqui pra que,
+  // se acontecer de novo, dê pra confirmar/descartar isso pelos logs em vez
+  // de reabrir a investigação do zero.
+  for (const [rpcNome, erro] of [
+    ["historico_precos_detalhado", historicoErr],
+    ["postos_gf_desvio_anp", desvioAnpErr],
+    ["postos_gf_servicos", servicosErr],
+    ["relatorio_abastecimentos_bruto", abastecimentosErr],
+    ["relatorio_manutencoes_bruto", manutencoesErr],
+    ["relatorio_custos_fixos_bruto", custosFixosErr],
+    ["relatorio_notas_fiscais_bruto", notasFiscaisErr],
+    ["relatorio_fretes_bruto", fretesErr],
+    ["relatorio_financeiro_bruto", financeiroErr],
+    ["relatorio_acoes_sugeridas_bruto", acoesSugeridasErr],
+    ["relatorio_chamados_bruto", chamadosErr],
+    ["relatorio_avaliacoes_bruto", avaliacoesErr],
+    ["relatorio_multas_bruto", multasErr],
+    ["relatorio_sinistros_bruto", sinistrosErr],
+    ["relatorio_apolices_seguro_bruto", apolicesSeguroErr],
+    ["relatorio_pneus_bruto", pneusErr],
+    ["relatorio_estoque_pecas_bruto", estoquePecasErr],
+    ["relatorio_faturas_fretes_bruto", faturasFretesErr],
+    ["relatorio_solicitacoes_aprovacao_bruto", solicitacoesAprovacaoErr],
+    ["relatorio_patrimonio_bruto", patrimonioErr],
+  ] as const) {
+    if (erro) {
+      console.error(`[RelatoriosPage] RPC "${rpcNome}" falhou (empresa=${empresaSelecionada ?? "todas"}):`, erro);
+    }
+  }
 
   const historico = (historicoRaw ?? []).map((r) => ({
     cnpj: r.cnpj,
