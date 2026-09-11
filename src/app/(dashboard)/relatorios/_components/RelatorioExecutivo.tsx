@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTheme } from "next-themes";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { UFS } from "@/lib/constants";
 import { anoMesDeIso, formatarDataBr, formatarDataCurta } from "@/lib/utils";
@@ -38,6 +39,13 @@ function quantil(valoresOrdenados: number[], q: number) {
 // client-side em cima do historico_precos_detalhado já filtrado por empresa
 // no server (mesmo dataset das outras abas).
 export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: RegistroHistorico[]; nomeEmpresa: string }) {
+  // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
+  const { resolvedTheme } = useTheme();
+  const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";
+  const corGrade = resolvedTheme === "dark" ? "#334155" : "#e2e8f0";
+  const tooltipStyle =
+    resolvedTheme === "dark" ? { backgroundColor: "#1e293b", borderColor: "#334155", color: "#f1f5f9" } : undefined;
+
   const anoAtual = useMemo(() => new Date().getFullYear(), []);
   const mesAtual = useMemo(() => new Date().getMonth() + 1, []);
 
@@ -238,11 +246,11 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
           <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">📈 Evolução de preços</h3>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={evolucao} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="data" tick={{ fontSize: 11 }} tickFormatter={(v: string) => formatarDataCurta(v)} />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-              <Tooltip labelFormatter={(v: string) => formatarDataBr(v)} formatter={(v: number) => formatarMoeda(v)} />
-              <Legend />
+              <CartesianGrid strokeDasharray="3 3" stroke={corGrade} />
+              <XAxis dataKey="data" tick={{ fontSize: 11, fill: corEixo }} tickFormatter={(v: string) => formatarDataCurta(v)} />
+              <YAxis tick={{ fontSize: 12, fill: corEixo }} tickFormatter={(v: number) => `R$ ${v.toFixed(2)}`} />
+              <Tooltip labelFormatter={(v: string) => formatarDataBr(v)} formatter={(v: number) => formatarMoeda(v)} contentStyle={tooltipStyle} />
+              <Legend wrapperStyle={{ color: corEixo }} />
               {combustiveisDisponiveis
                 .filter((c) => !combustivel || c === combustivel)
                 .map((c, i) => (

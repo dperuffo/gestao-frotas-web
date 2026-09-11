@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import {
   Bar,
   CartesianGrid,
@@ -40,6 +41,11 @@ export function GraficoComposicaoOtif({
   atrasado: number;
   comOcorrencia: number;
 }) {
+  // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
+  const { resolvedTheme } = useTheme();
+  const tooltipStyle =
+    resolvedTheme === "dark" ? { backgroundColor: "#1e293b", borderColor: "#334155", color: "#f1f5f9" } : undefined;
+
   const total = noPrazo + atrasado + comOcorrencia;
   if (total === 0) return null;
 
@@ -78,7 +84,7 @@ export function GraficoComposicaoOtif({
                   <Cell key={d.label} fill={d.cor} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v: number) => `${v} frete${v === 1 ? "" : "s"}`} />
+              <Tooltip formatter={(v: number) => `${v} frete${v === 1 ? "" : "s"}`} contentStyle={tooltipStyle} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -107,6 +113,13 @@ export type PontoEvolucaoOperacional = {
 };
 
 export function GraficoEvolucaoOperacional({ dados }: { dados: PontoEvolucaoOperacional[] }) {
+  // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
+  const { resolvedTheme } = useTheme();
+  const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";
+  const corGrade = resolvedTheme === "dark" ? "#334155" : CORES_GRAFICO.grade;
+  const tooltipStyle =
+    resolvedTheme === "dark" ? { backgroundColor: "#1e293b", borderColor: "#334155", color: "#f1f5f9" } : undefined;
+
   const comDado = dados.some((d) => d.otifPct !== null || d.octHoras !== null);
   if (!comDado) return null;
 
@@ -117,15 +130,16 @@ export function GraficoEvolucaoOperacional({ dados }: { dados: PontoEvolucaoOper
       </p>
       <ResponsiveContainer width="100%" height={260}>
         <ComposedChart data={dados} margin={{ top: 4, right: 8, left: -12, bottom: 4 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} vertical={false} />
-          <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-          <YAxis yAxisId="pct" tick={{ fontSize: 11 }} unit="%" />
-          <YAxis yAxisId="horas" orientation="right" tick={{ fontSize: 11 }} unit="h" />
+          <CartesianGrid strokeDasharray="3 3" stroke={corGrade} vertical={false} />
+          <XAxis dataKey="mes" tick={{ fontSize: 11, fill: corEixo }} />
+          <YAxis yAxisId="pct" tick={{ fontSize: 11, fill: corEixo }} unit="%" />
+          <YAxis yAxisId="horas" orientation="right" tick={{ fontSize: 11, fill: corEixo }} unit="h" />
           <Tooltip
             formatter={(v: number, nome: string) => [
               nome === "OCT (h)" ? `${v}h` : `${v}%`,
               nome,
             ]}
+            contentStyle={tooltipStyle}
           />
           <Bar yAxisId="horas" dataKey="octHoras" name="OCT (h)" fill={CORES_GRAFICO.neutro} radius={[4, 4, 0, 0]} barSize={18} />
           <Line yAxisId="pct" type="monotone" dataKey="otifPct" name="OTIF" stroke="#16A34A" strokeWidth={2} dot={{ r: 2 }} connectNulls />

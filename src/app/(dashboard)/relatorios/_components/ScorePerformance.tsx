@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTheme } from "next-themes";
 import { CartesianGrid, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from "recharts";
 import { calcularScorePosto, CORES_GRADE } from "@/lib/scorePosto";
 // Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
@@ -27,6 +28,11 @@ export function ScorePerformance({
   desvios: DesvioAnpFrota[];
   servicos: ServicoPostoFrota[];
 }) {
+  // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
+  const { resolvedTheme } = useTheme();
+  const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";
+  const corGrade = resolvedTheme === "dark" ? "#334155" : "#e2e8f0";
+
   const pontos = useMemo(() => {
     const desviosPorCnpj = new Map<string, DesvioAnpFrota[]>();
     for (const d of desvios) {
@@ -109,12 +115,12 @@ export function ScorePerformance({
 
       <ResponsiveContainer width="100%" height={420}>
         <ScatterChart margin={{ top: 20, right: 24, left: 8, bottom: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis type="number" dataKey="utilizacao" name="Utilização" tick={{ fontSize: 12 }} label={{ value: "Utilização (registros)", position: "insideBottom", offset: -4, fontSize: 11 }} />
-          <YAxis type="number" dataKey="score" name="Score" domain={[0, 100]} tick={{ fontSize: 12 }} label={{ value: "Score", angle: -90, position: "insideLeft", fontSize: 11 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke={corGrade} />
+          <XAxis type="number" dataKey="utilizacao" name="Utilização" tick={{ fontSize: 12, fill: corEixo }} label={{ value: "Utilização (registros)", position: "insideBottom", offset: -4, fontSize: 11, fill: corEixo }} />
+          <YAxis type="number" dataKey="score" name="Score" domain={[0, 100]} tick={{ fontSize: 12, fill: corEixo }} label={{ value: "Score", angle: -90, position: "insideLeft", fontSize: 11, fill: corEixo }} />
           <ZAxis range={[60, 60]} />
-          <ReferenceLine x={utilizacaoMedia} stroke="#64748b" strokeDasharray="4 4" />
-          <ReferenceLine y={scoreMedio} stroke="#64748b" strokeDasharray="4 4" />
+          <ReferenceLine x={utilizacaoMedia} stroke={corEixo} strokeDasharray="4 4" />
+          <ReferenceLine y={scoreMedio} stroke={corEixo} strokeDasharray="4 4" />
           <Tooltip
             cursor={{ strokeDasharray: "3 3" }}
             content={({ active, payload }) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTheme } from "next-themes";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { RegistroHistorico } from "./Anomalias";
 import { formatarDataBr, formatarDataCurta } from "@/lib/utils";
@@ -25,6 +26,13 @@ function scorePrecoSimplificado(preco: number, mediaHistoricaPosto: number) {
 // Operacional de Postos Revendedores, que é uma foto do momento, não um
 // histórico.
 export function PerformancePorPosto({ historico }: { historico: RegistroHistorico[] }) {
+  // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
+  const { resolvedTheme } = useTheme();
+  const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";
+  const corGrade = resolvedTheme === "dark" ? "#334155" : "#e2e8f0";
+  const tooltipStyle =
+    resolvedTheme === "dark" ? { backgroundColor: "#1e293b", borderColor: "#334155", color: "#f1f5f9" } : undefined;
+
   const postos = useMemo(() => {
     const porCnpj = new Map<string, { cnpj: string; razaoSocial: string | null; uf: string | null }>();
     for (const r of historico) {
@@ -114,10 +122,10 @@ export function PerformancePorPosto({ historico }: { historico: RegistroHistoric
         ) : (
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={serieScore} margin={{ top: 20, right: 16, left: 0, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="data" tick={{ fontSize: 11 }} tickFormatter={(v: string) => formatarDataCurta(v)} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-              <Tooltip labelFormatter={(v: string) => formatarDataBr(v)} />
+              <CartesianGrid strokeDasharray="3 3" stroke={corGrade} />
+              <XAxis dataKey="data" tick={{ fontSize: 11, fill: corEixo }} tickFormatter={(v: string) => formatarDataCurta(v)} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: corEixo }} />
+              <Tooltip labelFormatter={(v: string) => formatarDataBr(v)} contentStyle={tooltipStyle} />
               <ReferenceLine y={75} stroke="#27AE60" strokeDasharray="4 4" label={{ value: "Grau A", fontSize: 10, fill: "#27AE60" }} />
               <ReferenceLine y={55} stroke="#3498DB" strokeDasharray="4 4" label={{ value: "Grau B", fontSize: 10, fill: "#3498DB" }} />
               <ReferenceLine y={35} stroke="#F39C12" strokeDasharray="4 4" label={{ value: "Grau C", fontSize: 10, fill: "#F39C12" }} />
@@ -146,10 +154,10 @@ export function PerformancePorPosto({ historico }: { historico: RegistroHistoric
           <>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={comparativoCombustivel.serie} margin={{ top: 20, right: 16, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="data" tick={{ fontSize: 11 }} tickFormatter={(v: string) => formatarDataCurta(v)} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-                <Tooltip formatter={(v: number) => formatarMoeda(v)} labelFormatter={(v: string) => formatarDataBr(v)} />
+                <CartesianGrid strokeDasharray="3 3" stroke={corGrade} />
+                <XAxis dataKey="data" tick={{ fontSize: 11, fill: corEixo }} tickFormatter={(v: string) => formatarDataCurta(v)} />
+                <YAxis tick={{ fontSize: 12, fill: corEixo }} tickFormatter={(v: number) => `R$ ${v.toFixed(2)}`} />
+                <Tooltip formatter={(v: number) => formatarMoeda(v)} labelFormatter={(v: string) => formatarDataBr(v)} contentStyle={tooltipStyle} />
                 <ReferenceLine
                   y={comparativoCombustivel.mediaRede}
                   stroke="#E65100"

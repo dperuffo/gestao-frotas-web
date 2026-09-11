@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTheme } from "next-themes";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import BotaoBaixarPdfPersonalizadoLazy from "../../relatorios/_components/BotaoBaixarPdfPersonalizadoLazy";
 import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
@@ -300,6 +301,13 @@ export function RelatoriosPersonalizadosPosto({
   const [dataInicioPersonalizada, setDataInicioPersonalizada] = useState("");
   const [dataFimPersonalizada, setDataFimPersonalizada] = useState("");
   const chartWrapRef = useRef<HTMLDivElement>(null);
+
+  // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
+  const { resolvedTheme } = useTheme();
+  const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";
+  const corGrade = resolvedTheme === "dark" ? "#334155" : "#e2e8f0";
+  const tooltipStyle =
+    resolvedTheme === "dark" ? { backgroundColor: "#1e293b", borderColor: "#334155", color: "#f1f5f9" } : undefined;
 
   const dimensoesDisponiveis = DIMENSOES[fonte];
   const metricasDisponiveis = METRICAS[fonte];
@@ -609,16 +617,16 @@ export function RelatoriosPersonalizadosPosto({
                       <Cell key={d.chave} fill={d.cor} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => formatarValor(v, metricaOrdenacao.formato)} />
-                  <Legend />
+                  <Tooltip formatter={(v: number) => formatarValor(v, metricaOrdenacao.formato)} contentStyle={tooltipStyle} />
+                  <Legend wrapperStyle={{ color: corEixo }} />
                 </PieChart>
               ) : tipoGrafico === "line" ? (
                 <LineChart data={dadosGrafico} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="chave" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={formatterTooltip} />
-                  {metricasAtuais.length > 1 && <Legend />}
+                  <CartesianGrid strokeDasharray="3 3" stroke={corGrade} />
+                  <XAxis dataKey="chave" tick={{ fontSize: 11, fill: corEixo }} />
+                  <YAxis tick={{ fontSize: 12, fill: corEixo }} />
+                  <Tooltip formatter={formatterTooltip} contentStyle={tooltipStyle} />
+                  {metricasAtuais.length > 1 && <Legend wrapperStyle={{ color: corEixo }} />}
                   {metricasAtuais.map((m, i) => (
                     <Line key={m.id} type="monotone" dataKey={m.id} name={m.label} stroke={CORES[i % CORES.length]} strokeWidth={2} dot={{ r: 3 }} />
                   ))}
@@ -630,18 +638,18 @@ export function RelatoriosPersonalizadosPosto({
                   margin={{ top: 8, right: 24, left: 8, bottom: 8 }}
                   barCategoryGap="25%"
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis type="number" tick={{ fontSize: 11 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={corGrade} />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: corEixo }} />
                   <YAxis
                     type="category"
                     dataKey="chave"
                     width={190}
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 11, fill: corEixo }}
                     tickFormatter={(chave: string) => formatarNomeEixoGrafico(chave)}
                     interval={0}
                   />
-                  <Tooltip formatter={formatterTooltip} labelFormatter={(chave: string) => chave} />
-                  {metricasAtuais.length > 1 && <Legend />}
+                  <Tooltip formatter={formatterTooltip} labelFormatter={(chave: string) => chave} contentStyle={tooltipStyle} />
+                  {metricasAtuais.length > 1 && <Legend wrapperStyle={{ color: corEixo }} />}
                   {metricasAtuais.length === 1 ? (
                     <Bar dataKey={metricaOrdenacao.id} name={metricaOrdenacao.label} radius={[0, 4, 4, 0]}>
                       {dadosGrafico.map((d) => (
@@ -654,11 +662,11 @@ export function RelatoriosPersonalizadosPosto({
                 </BarChart>
               ) : (
                 <BarChart data={dadosGrafico} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="chave" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={formatterTooltip} />
-                  {metricasAtuais.length > 1 && <Legend />}
+                  <CartesianGrid strokeDasharray="3 3" stroke={corGrade} />
+                  <XAxis dataKey="chave" tick={{ fontSize: 11, fill: corEixo }} />
+                  <YAxis tick={{ fontSize: 12, fill: corEixo }} />
+                  <Tooltip formatter={formatterTooltip} contentStyle={tooltipStyle} />
+                  {metricasAtuais.length > 1 && <Legend wrapperStyle={{ color: corEixo }} />}
                   {metricasAtuais.length === 1 ? (
                     <Bar dataKey={metricaOrdenacao.id} name={metricaOrdenacao.label} radius={[4, 4, 0, 0]}>
                       {dadosGrafico.map((d) => (

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
 
@@ -20,6 +21,13 @@ export function GraficoResumoFinanceiroPosto({
   porProvedor: ItemProvedor[];
   aging: ItemAging[];
 }) {
+  // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
+  const { resolvedTheme } = useTheme();
+  const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";
+  const corGrade = resolvedTheme === "dark" ? "#334155" : CORES_GRAFICO.grade;
+  const tooltipStyle =
+    resolvedTheme === "dark" ? { backgroundColor: "#1e293b", borderColor: "#334155", color: "#f1f5f9" } : undefined;
+
   const comAging = aging.filter((a) => a.valor > 0);
   if (porProvedor.length === 0 && comAging.length === 0) return null;
 
@@ -39,7 +47,7 @@ export function GraficoResumoFinanceiroPosto({
                       <Cell key={p.provedor} fill={CORES_GRAFICO.serie[i % CORES_GRAFICO.serie.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => formatarMoeda(v)} />
+                  <Tooltip formatter={(v: number) => formatarMoeda(v)} contentStyle={tooltipStyle} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -69,10 +77,10 @@ export function GraficoResumoFinanceiroPosto({
         ) : (
           <ResponsiveContainer width="100%" height={Math.max(120, comAging.length * 32)}>
             <BarChart data={comAging} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
-              <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `R$ ${Math.round(v)}`} />
-              <YAxis type="category" dataKey="label" width={90} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: number) => formatarMoeda(v)} />
+              <CartesianGrid strokeDasharray="3 3" stroke={corGrade} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: corEixo }} tickFormatter={(v: number) => `R$ ${Math.round(v)}`} />
+              <YAxis type="category" dataKey="label" width={90} tick={{ fontSize: 11, fill: corEixo }} />
+              <Tooltip formatter={(v: number) => formatarMoeda(v)} contentStyle={tooltipStyle} />
               <Bar dataKey="valor" name="Vencido" fill="#dc2626" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>

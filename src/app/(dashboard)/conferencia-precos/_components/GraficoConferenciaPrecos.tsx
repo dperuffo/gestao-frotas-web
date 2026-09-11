@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
 import { LogoProvedor } from "@/components/LogoProvedor";
@@ -25,6 +26,13 @@ export function GraficoDivergencias({
   topImpacto: ItemContraparteImpacto[];
   tituloRanking: string;
 }) {
+  // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
+  const { resolvedTheme } = useTheme();
+  const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";
+  const corGrade = resolvedTheme === "dark" ? "#334155" : CORES_GRAFICO.grade;
+  const tooltipStyle =
+    resolvedTheme === "dark" ? { backgroundColor: "#1e293b", borderColor: "#334155", color: "#f1f5f9" } : undefined;
+
   if (porProvedor.length === 0 && topImpacto.length === 0) return null;
 
   return (
@@ -43,7 +51,7 @@ export function GraficoDivergencias({
                       <Cell key={p.provedor} fill={CORES_GRAFICO.serie[i % CORES_GRAFICO.serie.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => `${v} divergência${v === 1 ? "" : "s"}`} />
+                  <Tooltip formatter={(v: number) => `${v} divergência${v === 1 ? "" : "s"}`} contentStyle={tooltipStyle} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -71,17 +79,17 @@ export function GraficoDivergencias({
               margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
               barCategoryGap="25%"
             >
-              <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
-              <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `R$ ${Math.round(v)}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke={corGrade} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: corEixo }} tickFormatter={(v: number) => `R$ ${Math.round(v)}`} />
               <YAxis
                 type="category"
                 dataKey="nome"
                 width={160}
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 11, fill: corEixo }}
                 tickFormatter={(nome: string) => formatarNomeEixoGrafico(nome)}
                 interval={0}
               />
-              <Tooltip formatter={(v: number) => formatarMoeda(v)} labelFormatter={(nome: string) => nome} />
+              <Tooltip formatter={(v: number) => formatarMoeda(v)} labelFormatter={(nome: string) => nome} contentStyle={tooltipStyle} />
               <Bar dataKey="impacto" name="Impacto" fill="#dc2626" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -100,6 +108,13 @@ export function GraficoExtratoDiario({
   valorPorDia: ItemDia[];
   porProvedor: ItemProvedorContagem[];
 }) {
+  // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
+  const { resolvedTheme } = useTheme();
+  const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";
+  const corGrade = resolvedTheme === "dark" ? "#334155" : CORES_GRAFICO.grade;
+  const tooltipStyle =
+    resolvedTheme === "dark" ? { backgroundColor: "#1e293b", borderColor: "#334155", color: "#f1f5f9" } : undefined;
+
   const comValor = valorPorDia.some((d) => d.valor > 0);
   if (!comValor && porProvedor.length === 0) return null;
 
@@ -112,10 +127,10 @@ export function GraficoExtratoDiario({
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={valorPorDia} margin={{ top: 4, right: 8, left: -20, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} vertical={false} />
-              <XAxis dataKey="dia" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: number) => formatarMoeda(v)} />
+              <CartesianGrid strokeDasharray="3 3" stroke={corGrade} vertical={false} />
+              <XAxis dataKey="dia" tick={{ fontSize: 11, fill: corEixo }} />
+              <YAxis tick={{ fontSize: 11, fill: corEixo }} />
+              <Tooltip formatter={(v: number) => formatarMoeda(v)} contentStyle={tooltipStyle} />
               <Bar dataKey="valor" name="Valor" fill={CORES_GRAFICO.primaria} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -136,7 +151,7 @@ export function GraficoExtratoDiario({
                       <Cell key={p.provedor} fill={CORES_GRAFICO.serie[i % CORES_GRAFICO.serie.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => formatarMoeda(v)} />
+                  <Tooltip formatter={(v: number) => formatarMoeda(v)} contentStyle={tooltipStyle} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

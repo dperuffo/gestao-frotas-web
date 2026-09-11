@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
 import { GaugeIndicador } from "@/app/(dashboard)/indicadores-frota/_components/GaugeIndicador";
@@ -20,6 +21,13 @@ export function GraficoConciliacao({
   percentualConciliado: number;
   fluxoPorMes: ItemFluxoMes[];
 }) {
+  // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
+  const { resolvedTheme } = useTheme();
+  const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";
+  const corGrade = resolvedTheme === "dark" ? "#334155" : CORES_GRAFICO.grade;
+  const tooltipStyle =
+    resolvedTheme === "dark" ? { backgroundColor: "#1e293b", borderColor: "#334155", color: "#f1f5f9" } : undefined;
+
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-3">
       <div className="flex flex-col items-center justify-center">
@@ -42,11 +50,11 @@ export function GraficoConciliacao({
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={fluxoPorMes} margin={{ top: 4, right: 8, left: 4, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} vertical={false} />
-              <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `R$ ${Math.round(v / 1000)}k`} />
-              <Tooltip formatter={(v: number) => formatarMoeda(v)} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={corGrade} vertical={false} />
+              <XAxis dataKey="mes" tick={{ fontSize: 11, fill: corEixo }} />
+              <YAxis tick={{ fontSize: 11, fill: corEixo }} tickFormatter={(v: number) => `R$ ${Math.round(v / 1000)}k`} />
+              <Tooltip formatter={(v: number) => formatarMoeda(v)} contentStyle={tooltipStyle} />
+              <Legend wrapperStyle={{ fontSize: 11, color: corEixo }} />
               <Bar dataKey="credito" name="Crédito" fill="#16a34a" radius={[4, 4, 0, 0]} />
               <Bar dataKey="debito" name="Débito" fill="#dc2626" radius={[4, 4, 0, 0]} />
             </BarChart>
