@@ -95,7 +95,18 @@ export default async function DashboardPage({
   // topo (mesmo padrão de app de banco pesquisado no benchmark de UX).
   const inicioMesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
   const fimMesAnterior = new Date(agora.getFullYear(), agora.getMonth(), 0);
-  const hora = agora.getHours();
+  // Componente é Server Component (roda no servidor, provavelmente em UTC),
+  // então `agora.getHours()` pegava a hora do servidor, não a de Brasília —
+  // por isso a saudação aparecia ~3h adiantada. Calculamos explicitamente
+  // no fuso America/Sao_Paulo com Intl.DateTimeFormat (nativo, sem
+  // depender de libs de timezone que o projeto não tem instaladas).
+  const hora = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Sao_Paulo",
+      hour: "numeric",
+      hourCycle: "h23",
+    }).format(agora)
+  );
   const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
 
   // Cliente e período do seletor único do topo — resolvido antes das
