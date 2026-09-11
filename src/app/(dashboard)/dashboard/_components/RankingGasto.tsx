@@ -1,6 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 export type ItemRankingGasto = {
   chave: string;
@@ -30,12 +31,19 @@ export function RankingGasto({ itens, colunaExtra }: { itens: ItemRankingGasto[]
 
   return (
     <div>
-      <ResponsiveContainer width="100%" height={Math.max(180, dadosGrafico.length * 32)}>
-        <BarChart data={dadosGrafico} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
+      <ResponsiveContainer width="100%" height={Math.max(200, dadosGrafico.length * 36)}>
+        <BarChart data={dadosGrafico} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 8 }} barCategoryGap="25%">
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v: number) => `R$ ${Math.round(v)}`} />
-          <YAxis type="category" dataKey="nome" width={160} tick={{ fontSize: 11 }} />
-          <Tooltip formatter={(v: number) => formatarMoeda(v)} />
+          <YAxis
+            type="category"
+            dataKey="nome"
+            width={190}
+            tick={{ fontSize: 11 }}
+            tickFormatter={(nome: string) => formatarNomeEixoGrafico(nome)}
+            interval={0}
+          />
+          <Tooltip formatter={(v: number) => formatarMoeda(v)} labelFormatter={(nome: string) => nome} />
           <Bar dataKey="gasto" name="Gasto" fill="#8C8C8C" radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>

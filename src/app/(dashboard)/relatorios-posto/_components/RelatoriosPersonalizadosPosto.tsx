@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import BotaoBaixarPdfPersonalizadoLazy from "../../relatorios/_components/BotaoBaixarPdfPersonalizadoLazy";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Relatorios-Personalizados-Posto (09/09/2026, pedido do Daniel: "a
 // visao de posto na aplicacao nao possui uma aba de Relatorios
@@ -600,7 +601,7 @@ export function RelatoriosPersonalizadosPosto({
 
           {tipoGrafico === "table" ? null : (
             <div ref={chartWrapRef}>
-            <ResponsiveContainer width="100%" height={tipoGrafico === "bar_h" ? Math.max(220, dadosGrafico.length * 28) : 320}>
+            <ResponsiveContainer width="100%" height={tipoGrafico === "bar_h" ? Math.max(220, dadosGrafico.length * 36) : 320}>
               {tipoGrafico === "pie" ? (
                 <PieChart>
                   <Pie data={dadosGrafico} dataKey={metricaOrdenacao.id} nameKey="chave" outerRadius={110} label={(e) => e.chave}>
@@ -623,11 +624,23 @@ export function RelatoriosPersonalizadosPosto({
                   ))}
                 </LineChart>
               ) : tipoGrafico === "bar_h" ? (
-                <BarChart data={dadosGrafico} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
+                <BarChart
+                  data={dadosGrafico}
+                  layout="vertical"
+                  margin={{ top: 8, right: 24, left: 8, bottom: 8 }}
+                  barCategoryGap="25%"
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis type="number" tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="chave" width={140} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={formatterTooltip} />
+                  <YAxis
+                    type="category"
+                    dataKey="chave"
+                    width={190}
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(chave: string) => formatarNomeEixoGrafico(chave)}
+                    interval={0}
+                  />
+                  <Tooltip formatter={formatterTooltip} labelFormatter={(chave: string) => chave} />
                   {metricasAtuais.length > 1 && <Legend />}
                   {metricasAtuais.length === 1 ? (
                     <Bar dataKey={metricaOrdenacao.id} name={metricaOrdenacao.label} radius={[0, 4, 4, 0]}>

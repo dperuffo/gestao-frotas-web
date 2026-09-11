@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos Onda 3 (04/09/2026) — estado atual (pizza) + ranking
 // de horas dirigidas no período (top 8), a partir do statusAtual e
@@ -68,12 +69,24 @@ export function GraficoResumoJornada({
         {rankingHoras.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados no período.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(140, rankingHoras.length * 28)}>
-            <BarChart data={rankingHoras} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+          <ResponsiveContainer width="100%" height={Math.max(160, rankingHoras.length * 36)}>
+            <BarChart
+              data={rankingHoras}
+              layout="vertical"
+              margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
+              barCategoryGap="25%"
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
               <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v}h`} />
-              <YAxis type="category" dataKey="nome" width={110} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => `${v.toFixed(1)}h`} />
+              <YAxis
+                type="category"
+                dataKey="nome"
+                width={170}
+                tick={{ fontSize: 10 }}
+                tickFormatter={(nome: string) => formatarNomeEixoGrafico(nome)}
+                interval={0}
+              />
+              <Tooltip formatter={(v: number) => `${v.toFixed(1)}h`} labelFormatter={(nome: string) => nome} />
               <Bar dataKey="horas" name="Horas dirigidas" fill={CORES_GRAFICO.primaria} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>

@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos Onda 1 (04/09/2026) — ranking por posto/UF (a partir
 // das notas já carregadas do período) + série temporal de crédito nos
@@ -20,12 +21,19 @@ function RankingBarras({ dados, titulo, cor }: { dados: ItemRanking[]; titulo: s
       {dados.length === 0 ? (
         <p className="text-sm text-slate-400">Sem dados no período.</p>
       ) : (
-        <ResponsiveContainer width="100%" height={Math.max(140, dados.length * 28)}>
-          <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+        <ResponsiveContainer width="100%" height={Math.max(160, dados.length * 36)}>
+          <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }} barCategoryGap="25%">
             <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
             <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `R$ ${Math.round(v)}`} />
-            <YAxis type="category" dataKey="label" width={110} tick={{ fontSize: 11 }} />
-            <Tooltip formatter={(v: number) => formatarMoeda(v)} />
+            <YAxis
+              type="category"
+              dataKey="label"
+              width={140}
+              tick={{ fontSize: 11 }}
+              tickFormatter={(label: string) => formatarNomeEixoGrafico(label)}
+              interval={0}
+            />
+            <Tooltip formatter={(v: number) => formatarMoeda(v)} labelFormatter={(label: string) => label} />
             <Bar dataKey="valor" name="Crédito" fill={cor} radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>

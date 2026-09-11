@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 export type PontoTopPosto = { posto: string; litros: number };
 
@@ -14,11 +15,21 @@ export function GraficoTopPostos({ dados }: { dados: PontoTopPosto[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={Math.max(180, dados.length * 44)}>
-      <BarChart data={dados} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
+      <BarChart data={dados} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 8 }} barCategoryGap="25%">
         <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
         <XAxis type="number" tick={{ fontSize: 12 }} />
-        <YAxis type="category" dataKey="posto" width={180} tick={{ fontSize: 12 }} />
-        <Tooltip formatter={(v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`} />
+        <YAxis
+          type="category"
+          dataKey="posto"
+          width={190}
+          tick={{ fontSize: 12 }}
+          tickFormatter={(posto: string) => formatarNomeEixoGrafico(posto, 24)}
+          interval={0}
+        />
+        <Tooltip
+          formatter={(v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L`}
+          labelFormatter={(posto: string) => posto}
+        />
         <Bar dataKey="litros" name="Litros" fill={CORES_GRAFICO.primaria} radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>

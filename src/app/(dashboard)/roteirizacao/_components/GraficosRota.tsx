@@ -21,6 +21,7 @@ import {
 } from "recharts";
 import { CORES_GRADE } from "@/lib/scorePosto";
 import type { ParadaSugerida } from "@/lib/roteirizacaoAlgoritmo";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 function formatarMoeda(v: number, casas = 2) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: casas, maximumFractionDigits: casas });
@@ -145,16 +146,29 @@ export function GraficosRota({
 
       <div>
         <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900">🏢 Custo por Posto de Abastecimento <AjudaIcon chave="roteirizacao.custo_por_posto" /></p>
-        <ResponsiveContainer width="100%" height={Math.max(180, dadosPorPosto.length * 46 + 40)}>
-          <BarChart data={dadosPorPosto} layout="vertical" margin={{ top: 5, right: 60, left: 8, bottom: 5 }}>
+        <ResponsiveContainer width="100%" height={Math.max(180, dadosPorPosto.length * 40 + 40)}>
+          <BarChart
+            data={dadosPorPosto}
+            layout="vertical"
+            margin={{ top: 5, right: 60, left: 8, bottom: 5 }}
+            barCategoryGap="25%"
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#E8F5E9" horizontal={false} />
             <XAxis type="number" tickFormatter={(v) => formatarMoeda(v, 0)} fontSize={11} />
-            <YAxis type="category" dataKey="nome" width={150} fontSize={11} />
+            <YAxis
+              type="category"
+              dataKey="nome"
+              width={170}
+              fontSize={11}
+              tickFormatter={(nome: string) => formatarNomeEixoGrafico(nome)}
+              interval={0}
+            />
             <Tooltip
               formatter={(v: number, _n, item) => [
                 `${formatarMoeda(v)} (${item?.payload?.litros}L @ ${formatarMoeda(item?.payload?.preco, 3)}/L)`,
                 "Custo",
               ]}
+              labelFormatter={(nome: string) => nome}
             />
             <Bar dataKey="custo" radius={[0, 4, 4, 0]}>
               {dadosPorPosto.map((d, i) => (

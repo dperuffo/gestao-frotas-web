@@ -3,6 +3,7 @@
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
 import { LogoProvedor } from "@/components/LogoProvedor";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos (04/09/2026, pedido do Daniel) — gráficos das duas
 // abas de /conferencia-precos, a partir dos dados já carregados pela
@@ -63,12 +64,24 @@ export function GraficoDivergencias({
         {topImpacto.length === 0 ? (
           <p className="text-sm text-slate-400">Sem divergências no período.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(140, topImpacto.length * 30)}>
-            <BarChart data={topImpacto} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+          <ResponsiveContainer width="100%" height={Math.max(160, topImpacto.length * 36)}>
+            <BarChart
+              data={topImpacto}
+              layout="vertical"
+              margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
+              barCategoryGap="25%"
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
               <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `R$ ${Math.round(v)}`} />
-              <YAxis type="category" dataKey="nome" width={100} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: number) => formatarMoeda(v)} />
+              <YAxis
+                type="category"
+                dataKey="nome"
+                width={160}
+                tick={{ fontSize: 11 }}
+                tickFormatter={(nome: string) => formatarNomeEixoGrafico(nome)}
+                interval={0}
+              />
+              <Tooltip formatter={(v: number) => formatarMoeda(v)} labelFormatter={(nome: string) => nome} />
               <Bar dataKey="impacto" name="Impacto" fill="#dc2626" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>

@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos Onda 2 (04/09/2026) — status das conexões (pizza) +
 // ranking de registros sincronizados por cliente (top 8), a partir das
@@ -66,12 +67,19 @@ export function GraficoProfrotas({
         {ranking.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(140, ranking.length * 28)}>
-            <BarChart data={ranking} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+          <ResponsiveContainer width="100%" height={Math.max(160, ranking.length * 36)}>
+            <BarChart data={ranking} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }} barCategoryGap="25%">
               <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
               <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-              <YAxis type="category" dataKey="nome" width={110} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => v.toLocaleString("pt-BR")} />
+              <YAxis
+                type="category"
+                dataKey="nome"
+                width={170}
+                tick={{ fontSize: 10 }}
+                tickFormatter={(nome: string) => formatarNomeEixoGrafico(nome)}
+                interval={0}
+              />
+              <Tooltip formatter={(v: number) => v.toLocaleString("pt-BR")} labelFormatter={(nome: string) => nome} />
               <Bar dataKey="registros" name="Registros" fill={CORES_GRAFICO.primaria} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>

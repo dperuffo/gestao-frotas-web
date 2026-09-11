@@ -10,6 +10,14 @@ import { CORES_GRAFICO } from "@/lib/coresGrafico";
 export type ItemVolumeMes = { mes: string; total: number };
 export type ItemRota = { rota: string; total: number };
 
+// "rota" é "Origem → Destino" (nomes de cidade), não nome de pessoa — a
+// abreviação "primeiro + último nome" não faz sentido aqui, então só
+// cortamos por tamanho com reticências. O texto completo continua
+// disponível no tooltip via labelFormatter.
+function truncarRota(rota: string, max = 22) {
+  return rota.length > max ? `${rota.slice(0, max - 1)}…` : rota;
+}
+
 export function GraficoRotograma({
   volumePorMes,
   topRotas,
@@ -44,12 +52,19 @@ export function GraficoRotograma({
         {topRotas.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(140, topRotas.length * 32)}>
-            <BarChart data={topRotas} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+          <ResponsiveContainer width="100%" height={Math.max(160, topRotas.length * 36)}>
+            <BarChart data={topRotas} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }} barCategoryGap="25%">
               <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
               <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-              <YAxis type="category" dataKey="rota" width={130} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => `${v} viagem${v === 1 ? "" : "ns"}`} />
+              <YAxis
+                type="category"
+                dataKey="rota"
+                width={170}
+                tick={{ fontSize: 10 }}
+                tickFormatter={(rota: string) => truncarRota(rota)}
+                interval={0}
+              />
+              <Tooltip formatter={(v: number) => `${v} viagem${v === 1 ? "" : "ns"}`} labelFormatter={(rota: string) => rota} />
               <Bar dataKey="total" name="Viagens" fill={CORES_GRAFICO.acento} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>

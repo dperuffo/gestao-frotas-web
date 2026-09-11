@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos Onda 1 (04/09/2026) — timeline de eventos por dia +
 // ranking por usuário, calculados a partir de uma amostra recente (até 500
@@ -44,12 +45,24 @@ export function GraficoAuditoria({
         {rankingUsuario.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(140, rankingUsuario.length * 28)}>
-            <BarChart data={rankingUsuario} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+          <ResponsiveContainer width="100%" height={Math.max(160, rankingUsuario.length * 36)}>
+            <BarChart
+              data={rankingUsuario}
+              layout="vertical"
+              margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
+              barCategoryGap="25%"
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
               <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-              <YAxis type="category" dataKey="usuario" width={130} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => `${v} evento${v === 1 ? "" : "s"}`} />
+              <YAxis
+                type="category"
+                dataKey="usuario"
+                width={170}
+                tick={{ fontSize: 10 }}
+                tickFormatter={(usuario: string) => formatarNomeEixoGrafico(usuario, 24)}
+                interval={0}
+              />
+              <Tooltip formatter={(v: number) => `${v} evento${v === 1 ? "" : "s"}`} labelFormatter={(usuario: string) => usuario} />
               <Bar dataKey="total" name="Eventos" fill={CORES_GRAFICO.acento} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>

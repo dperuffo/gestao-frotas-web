@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { UF_PARA_ESTADO_ANP } from "@/lib/constants";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Total de municípios por UF (referência aproximada IBGE) — só usado pra
 // calcular % de cobertura no comparativo, mesma ideia (e mesma limitação de
@@ -349,12 +350,19 @@ function GraficoDistribuidoras({ dados, cor }: { dados: { distribuidora: string;
     return <p className="text-sm text-slate-400">Sem distribuidora cadastrada.</p>;
   }
   return (
-    <ResponsiveContainer width="100%" height={Math.max(160, dados.length * 28)}>
-      <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
+    <ResponsiveContainer width="100%" height={Math.max(180, dados.length * 36)}>
+      <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }} barCategoryGap="25%">
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-        <YAxis type="category" dataKey="distribuidora" width={110} tick={{ fontSize: 11 }} />
-        <Tooltip formatter={(v: number) => `${v} postos`} />
+        <YAxis
+          type="category"
+          dataKey="distribuidora"
+          width={170}
+          tick={{ fontSize: 11 }}
+          tickFormatter={(distribuidora: string) => formatarNomeEixoGrafico(distribuidora)}
+          interval={0}
+        />
+        <Tooltip formatter={(v: number) => `${v} postos`} labelFormatter={(distribuidora: string) => distribuidora} />
         <Bar dataKey="total" fill={cor} radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>

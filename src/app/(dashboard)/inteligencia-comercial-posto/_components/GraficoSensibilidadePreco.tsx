@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos-Comercial-Posto (09/09/2026) — barra horizontal do
 // índice de sensibilidade a preço por cliente (top clientes por |índice|),
@@ -29,12 +30,19 @@ export function GraficoSensibilidadePreco({ dados }: { dados: ItemSensibilidadeP
   return (
     <div className="card mb-6 p-5">
       <p className="mb-2 text-xs font-medium uppercase text-slate-500">Índice de sensibilidade a preço (top 10)</p>
-      <ResponsiveContainer width="100%" height={Math.max(200, top.length * 32)}>
-        <BarChart data={top} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+      <ResponsiveContainer width="100%" height={Math.max(220, top.length * 36)}>
+        <BarChart data={top} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }} barCategoryGap="25%">
           <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
           <XAxis type="number" domain={[-1, 1]} tick={{ fontSize: 11 }} />
-          <YAxis type="category" dataKey="nome" width={130} tick={{ fontSize: 11 }} />
-          <Tooltip formatter={(v: number) => v.toFixed(2)} />
+          <YAxis
+            type="category"
+            dataKey="nome"
+            width={170}
+            tick={{ fontSize: 11 }}
+            tickFormatter={(nome: string) => formatarNomeEixoGrafico(nome)}
+            interval={0}
+          />
+          <Tooltip formatter={(v: number) => v.toFixed(2)} labelFormatter={(nome: string) => nome} />
           <Bar dataKey="indice_sensibilidade" name="Índice" radius={[0, 4, 4, 0]}>
             {top.map((d) => (
               <Cell key={d.nome} fill={CORES_STATUS[d.status] ?? CORES_GRAFICO.primaria} />

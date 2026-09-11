@@ -6,6 +6,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 // toque visual já aplicado nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Droplet, Wallet, ClipboardList, Trophy } from "lucide-react";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Inteligência-Rede-Meios-Pagamento — pedido do Daniel: "Criar um
 // painel de preços médios com os preços praticados nos abastecimentos nos
@@ -204,11 +205,18 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
           Média ponderada por litro (todos os combustíveis), do mais em conta ao mais caro.
         </p>
         <ResponsiveContainer width="100%" height={Math.max(200, porProvedor.length * 45)}>
-          <BarChart data={porProvedor} layout="vertical" margin={{ top: 8, right: 40, left: 8, bottom: 8 }}>
+          <BarChart data={porProvedor} layout="vertical" margin={{ top: 8, right: 40, left: 8, bottom: 8 }} barCategoryGap="25%">
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-            <YAxis type="category" dataKey="provedor" width={100} tick={{ fontSize: 12 }} />
-            <Tooltip formatter={(v: number) => formatarMoeda3(v)} />
+            <YAxis
+              type="category"
+              dataKey="provedor"
+              width={140}
+              tick={{ fontSize: 12 }}
+              tickFormatter={(provedor: string) => formatarNomeEixoGrafico(provedor)}
+              interval={0}
+            />
+            <Tooltip formatter={(v: number) => formatarMoeda3(v)} labelFormatter={(provedor: string) => provedor} />
             <Bar dataKey="precoMedio" radius={[0, 4, 4, 0]}>
               {porProvedor.map((_, i) => (
                 <Cell key={i} fill={CORES[i % CORES.length]} />

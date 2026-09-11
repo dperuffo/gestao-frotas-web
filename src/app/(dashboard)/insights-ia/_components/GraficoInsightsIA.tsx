@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos Onda 2 (04/09/2026) — severidade (pizza) + impacto
 // estimado por categoria (barras), a partir dos insights já carregados
@@ -70,12 +71,24 @@ export function GraficoInsightsIA({
         {impactoPorCategoria.length === 0 ? (
           <p className="text-sm text-slate-400">Sem impacto estimado.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(140, impactoPorCategoria.length * 30)}>
-            <BarChart data={impactoPorCategoria} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+          <ResponsiveContainer width="100%" height={Math.max(160, impactoPorCategoria.length * 36)}>
+            <BarChart
+              data={impactoPorCategoria}
+              layout="vertical"
+              margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
+              barCategoryGap="25%"
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
               <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `R$ ${Math.round(v)}`} />
-              <YAxis type="category" dataKey="label" width={110} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: number) => formatarMoeda(v)} />
+              <YAxis
+                type="category"
+                dataKey="label"
+                width={170}
+                tick={{ fontSize: 11 }}
+                tickFormatter={(label: string) => formatarNomeEixoGrafico(label, 24)}
+                interval={0}
+              />
+              <Tooltip formatter={(v: number) => formatarMoeda(v)} labelFormatter={(label: string) => label} />
               <Bar dataKey="valor" name="Impacto" fill={CORES_GRAFICO.acento} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>

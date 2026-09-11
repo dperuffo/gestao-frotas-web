@@ -3,6 +3,7 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos Onda 1 (04/09/2026, pedido do Daniel: "aplicação mais
 // gráfica, com mais dashboards e menos listas de informações, em todas as
@@ -77,12 +78,27 @@ export function GraficoDistribuicaoVeiculos({
         {rankingCentroCusto.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(140, rankingCentroCusto.length * 28)}>
-            <BarChart data={rankingCentroCusto} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
+          <ResponsiveContainer width="100%" height={Math.max(160, rankingCentroCusto.length * 36)}>
+            <BarChart
+              data={rankingCentroCusto}
+              layout="vertical"
+              margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
+              barCategoryGap="25%"
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
               <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-              <YAxis type="category" dataKey="label" width={110} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: number) => `${v} veículo${v === 1 ? "" : "s"}`} />
+              <YAxis
+                type="category"
+                dataKey="label"
+                width={170}
+                tick={{ fontSize: 11 }}
+                tickFormatter={(label: string) => formatarNomeEixoGrafico(label)}
+                interval={0}
+              />
+              <Tooltip
+                formatter={(v: number) => `${v} veículo${v === 1 ? "" : "s"}`}
+                labelFormatter={(label: string) => label}
+              />
               <Bar dataKey="total" name="Veículos" fill={CORES_GRAFICO.primaria} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>

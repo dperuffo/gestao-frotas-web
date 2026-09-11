@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos-Comercial-Posto (09/09/2026, pedido do Daniel: "é
 // possível planejarmos gráficos visuais?" pras 9 abas de Inteligência
@@ -57,12 +58,19 @@ export function GraficoScorePrioridade({ dados }: { dados: ItemScoreCliente[] })
 
       <div>
         <p className="mb-2 text-xs font-medium uppercase text-slate-500">Maiores scores (contatar primeiro)</p>
-        <ResponsiveContainer width="100%" height={Math.max(160, top.length * 32)}>
-          <BarChart data={top} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+        <ResponsiveContainer width="100%" height={Math.max(180, top.length * 36)}>
+          <BarChart data={top} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }} barCategoryGap="25%">
             <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
             <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-            <YAxis type="category" dataKey="nome" width={110} tick={{ fontSize: 11 }} />
-            <Tooltip formatter={(v: number) => `Score ${v}`} />
+            <YAxis
+              type="category"
+              dataKey="nome"
+              width={170}
+              tick={{ fontSize: 11 }}
+              tickFormatter={(nome: string) => formatarNomeEixoGrafico(nome)}
+              interval={0}
+            />
+            <Tooltip formatter={(v: number) => `Score ${v}`} labelFormatter={(nome: string) => nome} />
             <Bar dataKey="score" name="Score" radius={[0, 4, 4, 0]}>
               {top.map((d) => (
                 <Cell key={d.nome} fill={CORES_PRIORIDADE[d.prioridade] ?? CORES_GRAFICO.primaria} />

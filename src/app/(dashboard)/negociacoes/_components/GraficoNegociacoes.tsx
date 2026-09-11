@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos (04/09/2026, pedido do Daniel) — distribuição por
 // status + ranking das contrapartes com mais negociações, a partir dos
@@ -63,12 +64,27 @@ export function GraficoNegociacoes({
         {topContrapartes.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(140, topContrapartes.length * 30)}>
-            <BarChart data={topContrapartes} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+          <ResponsiveContainer width="100%" height={Math.max(160, topContrapartes.length * 36)}>
+            <BarChart
+              data={topContrapartes}
+              layout="vertical"
+              margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
+              barCategoryGap="25%"
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
               <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-              <YAxis type="category" dataKey="nome" width={110} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => `${v} negociação${v === 1 ? "" : "ões"}`} />
+              <YAxis
+                type="category"
+                dataKey="nome"
+                width={170}
+                tick={{ fontSize: 10 }}
+                tickFormatter={(nome: string) => formatarNomeEixoGrafico(nome)}
+                interval={0}
+              />
+              <Tooltip
+                formatter={(v: number) => `${v} negociação${v === 1 ? "" : "ões"}`}
+                labelFormatter={(nome: string) => nome}
+              />
               <Bar dataKey="total" name="Negociações" fill={CORES_GRAFICO.acento} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>

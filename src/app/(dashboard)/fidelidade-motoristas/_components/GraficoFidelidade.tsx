@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CORES_GRAFICO } from "@/lib/coresGrafico";
+import { formatarNomeEixoGrafico } from "@/lib/formatarNomeEixoGrafico";
 
 // Fase Plano-Graficos Onda 1 (04/09/2026) — distribuição por nível + adesão
 // (pizzas) + ranking de pontos, tudo a partir do indicadores já carregado
@@ -64,12 +65,27 @@ export function GraficoFidelidade({
         {rankingPontos.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(140, rankingPontos.length * 28)}>
-            <BarChart data={rankingPontos} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
+          <ResponsiveContainer width="100%" height={Math.max(160, rankingPontos.length * 36)}>
+            <BarChart
+              data={rankingPontos}
+              layout="vertical"
+              margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
+              barCategoryGap="25%"
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
               <XAxis type="number" tick={{ fontSize: 11 }} />
-              <YAxis type="category" dataKey="nome" width={110} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => `${v.toLocaleString("pt-BR")} pts`} />
+              <YAxis
+                type="category"
+                dataKey="nome"
+                width={190}
+                tick={{ fontSize: 11 }}
+                tickFormatter={(nome: string) => formatarNomeEixoGrafico(nome)}
+                interval={0}
+              />
+              <Tooltip
+                formatter={(v: number) => `${v.toLocaleString("pt-BR")} pts`}
+                labelFormatter={(nome: string) => nome}
+              />
               <Bar dataKey="pontos" name="Pontos" fill={CORES_GRAFICO.acento} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
