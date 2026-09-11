@@ -180,7 +180,7 @@ export default async function RoteirizacaoUfPage({
                       {top5.map((p, i) => (
                         <li key={p.cnpj} className="flex items-center gap-2 text-sm">
                           <span className="w-4 shrink-0 text-xs font-semibold text-slate-400">{i + 1}</span>
-                          <span className="min-w-0 flex-1 truncate text-slate-700">
+                          <span className="min-w-0 flex-1 truncate text-slate-700" title={p.razaoSocial ?? formatCNPJ(p.cnpj)}>
                             {p.razaoSocial ?? formatCNPJ(p.cnpj)}
                           </span>
                           <span className="shrink-0 font-medium tabular-nums text-status-ativo">

@@ -61,7 +61,7 @@ export function SlotDocumento({
       <div className="min-w-0">
         <p className="text-sm font-medium text-slate-700">{label}</p>
         {documento ? (
-          <p className="truncate text-xs text-slate-500">
+          <p className="truncate text-xs text-slate-500" title={documento.nomeArquivo}>
             {documento.url ? (
               <a href={documento.url} target="_blank" rel="noreferrer" className="text-frota-600 hover:underline">
                 {documento.nomeArquivo}

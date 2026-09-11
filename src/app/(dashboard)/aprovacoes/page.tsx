@@ -202,7 +202,7 @@ export default async function AprovacoesPage({
                   <tr key={s.id}>
                     <td className="px-4 py-3 text-slate-700">
                       <p className="font-medium">{s.titulo}</p>
-                      {s.descricao && <p className="mt-0.5 max-w-xs truncate text-xs text-slate-400">{s.descricao}</p>}
+                      {s.descricao && <p className="mt-0.5 max-w-xs truncate text-xs text-slate-400" title={s.descricao}>{s.descricao}</p>}
                     </td>
                     <td className="px-4 py-3 text-slate-600">{CATEGORIA_LABEL[s.categoria] ?? s.categoria}</td>
                     <td className="px-4 py-3 text-slate-700">{formatarMoeda(s.valor)}</td>

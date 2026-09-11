@@ -1057,7 +1057,7 @@ export default async function DashboardLayout({
               className="h-auto w-full"
             />
           </div>
-          <p className="menu-logo-texto glass-nav-texto mt-3 truncate text-sm font-semibold">{nomeExibido}</p>
+          <p className="menu-logo-texto glass-nav-texto mt-3 truncate text-sm font-semibold" title={nomeExibido}>{nomeExibido}</p>
           {cargoExibido && (
             <p className="menu-logo-texto glass-nav-acento mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em]">
               {cargoExibido}

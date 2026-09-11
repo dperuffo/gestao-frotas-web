@@ -125,7 +125,7 @@ function Indicador({ label, valor }: { label: string; valor: string }) {
   return (
     <div className="card p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold text-slate-900">{valor}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-slate-900" title={valor}>{valor}</p>
     </div>
   );
 }

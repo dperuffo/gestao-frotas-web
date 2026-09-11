@@ -253,7 +253,7 @@ function SeletorMetricas({
         onClick={() => setAberto((v) => !v)}
         className="input flex items-center justify-between text-left text-sm"
       >
-        <span className="truncate">{rotulo}</span>
+        <span className="truncate" title={rotulo}>{rotulo}</span>
         <span className="ml-2 shrink-0 text-slate-400">▾</span>
       </button>
       {aberto && (

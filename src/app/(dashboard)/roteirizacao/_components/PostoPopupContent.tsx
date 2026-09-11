@@ -89,7 +89,7 @@ export function PostoPopupContent({ cnpj, lat, lon }: { cnpj: string; lat: numbe
               key={`${p.categoria}__${p.combustivelGf ?? ""}`}
               className="flex items-baseline justify-between gap-2 text-xs"
             >
-              <span className="truncate text-slate-600">{p.combustivelGf ?? p.categoria}</span>
+              <span className="truncate text-slate-600" title={p.combustivelGf ?? p.categoria}>{p.combustivelGf ?? p.categoria}</span>
               <span className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
                 <span className="font-medium text-slate-900">R$ {p.preco.toFixed(3)}</span>
                 <span className={`text-[10px] ${FONTE_COR[p.fonte] ?? "text-slate-400"}`}>

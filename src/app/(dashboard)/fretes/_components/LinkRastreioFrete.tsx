@@ -65,7 +65,7 @@ export function LinkRastreioFrete({
 
       {linkAtivo ? (
         <div className="flex flex-wrap items-center gap-2">
-          <code className="max-w-full truncate rounded bg-slate-50 px-2 py-1 text-xs text-slate-700">{url}</code>
+          <code className="max-w-full truncate rounded bg-slate-50 px-2 py-1 text-xs text-slate-700" title={url}>{url}</code>
           <button type="button" onClick={copiar} className="btn-secondary flex items-center gap-1 text-xs">
             <Copy className="h-3 w-3" /> {copiado ? "Copiado!" : "Copiar"}
           </button>

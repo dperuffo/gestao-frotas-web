@@ -276,7 +276,7 @@ export default function MapaRota({
                 className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-white shadow"
                 style={{ background: CORES_HEX[l.cor] }}
               />
-              <span className="truncate text-slate-700">{l.label}</span>
+              <span className="truncate text-slate-700" title={l.label}>{l.label}</span>
             </div>
           ))}
         </div>

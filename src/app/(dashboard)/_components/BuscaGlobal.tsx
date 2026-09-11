@@ -347,9 +347,9 @@ export function BuscaGlobal({ itens, ehPosto = false }: { itens: ItemBusca[]; eh
                     >
                       {item.iconNode}
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate">{item.label}</span>
+                        <span className="block truncate" title={item.label}>{item.label}</span>
                         {item.sublabel && (
-                          <span className="block truncate text-xs text-slate-400">{item.sublabel}</span>
+                          <span className="block truncate text-xs text-slate-400" title={item.sublabel}>{item.sublabel}</span>
                         )}
                       </span>
                       {i === indiceSelecionado && <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-slate-400" />}

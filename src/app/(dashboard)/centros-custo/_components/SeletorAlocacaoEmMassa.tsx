@@ -153,7 +153,7 @@ export function SeletorAlocacaoEmMassa({
                       onChange={() => toggle(selecionadosDisponiveis, setSelecionadosDisponiveis, item.chave)}
                       className="h-4 w-4 shrink-0 rounded border-slate-300 text-frota-600 focus:ring-frota-500"
                     />
-                    <span className="min-w-0 flex-1 truncate">
+                    <span className="min-w-0 flex-1 truncate" title={item.subLabel ? `${item.label} ${item.subLabel}` : item.label}>
                       <span className="font-medium text-slate-700">{item.label}</span>
                       {item.subLabel && <span className="ml-1 text-slate-400">{item.subLabel}</span>}
                     </span>
@@ -212,7 +212,7 @@ export function SeletorAlocacaoEmMassa({
                     onChange={() => toggle(selecionadosAlocados, setSelecionadosAlocados, item.chave)}
                     className="h-4 w-4 shrink-0 rounded border-slate-300 text-frota-600 focus:ring-frota-500"
                   />
-                  <span className="min-w-0 flex-1 truncate">
+                  <span className="min-w-0 flex-1 truncate" title={item.subLabel ? `${item.label} ${item.subLabel}` : item.label}>
                     <span className="font-medium text-slate-700">{item.label}</span>
                     {item.subLabel && <span className="ml-1 text-slate-400">{item.subLabel}</span>}
                   </span>
