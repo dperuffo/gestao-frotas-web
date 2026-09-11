@@ -491,9 +491,11 @@ export default async function DashboardPage({
   // dia da semana (só projeta se o mês selecionado for o atual e ainda
   // faltar dia pra terminar).
   const diasReaisMap = new Map<number, number>();
+  const diasReaisValorMap = new Map<number, number>(); // dia do mês -> valor (R$) efetivamente gasto
   for (const d of consumoDiario ?? []) {
     const dia = new Date(`${d.dia}T00:00:00`).getDate();
     diasReaisMap.set(dia, d.litros ?? 0);
+    diasReaisValorMap.set(dia, d.valor ?? 0);
   }
   const padraoDiaSemana: Record<number, number> = {};
   for (const p of padraoDiaSemanaRows ?? []) {
@@ -512,6 +514,27 @@ export default async function DashboardPage({
   const totalLitrosProjetado = dadosPrevisaoConsumo
     .filter((p) => p.tipo === "projetado")
     .reduce((s, p) => s + p.litros, 0);
+
+  // Custo (R$) — reaproveita o mesmo padrão de "preço médio" já usado no
+  // Indicador 3 logo abaixo (valor do dia / litros do dia, vindo da mesma
+  // RPC indicador_consumo_diario), em vez de inventar uma nova fonte de
+  // preço. Dias reais usam o valor efetivamente gasto (diasReaisValorMap);
+  // dias projetados aplicam o preço médio do período (total gasto / total
+  // litros já realizados no mês) sobre os litros projetados — mesma lógica
+  // de "taxa-base calibrada pelos dias já ocorridos" do cálculo de litros,
+  // só que para preço (sem sazonalidade de preço por dia da semana, que não
+  // existe nos dados).
+  const totalValorMes = Array.from(diasReaisValorMap.values()).reduce((s, v) => s + v, 0);
+  const precoMedioMes = totalLitrosMes > 0 ? totalValorMes / totalLitrosMes : 0;
+  const dadosPrevisaoConsumoComCusto = dadosPrevisaoConsumo.map((p) => {
+    const dia = Number(p.diaLabel);
+    const valor =
+      p.tipo === "real" ? diasReaisValorMap.get(dia) ?? 0 : Math.round(p.litros * precoMedioMes * 100) / 100;
+    return { ...p, valor };
+  });
+  const totalValorProjetado = dadosPrevisaoConsumoComCusto
+    .filter((p) => p.tipo === "projetado")
+    .reduce((s, p) => s + p.valor, 0);
 
   // Indicador 3 — Evolução do preço médio (R$/L) por dia, derivada da mesma
   // série de consumo diário (valor do dia / litros do dia).
@@ -1022,16 +1045,20 @@ export default async function DashboardPage({
               <div className="card p-4">
                 <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">2. Previsão de consumo — {opcoesMes.find((o) => o.ano === indAno && o.mes === indMes)?.label} <AjudaIcon chave="dashboard.consumo_diario" /></h3>
                 <p className="mb-3 text-xs text-slate-500">
-                  Litros por dia; dias restantes do mês projetados com base no padrão de consumo por dia da semana
-                  (últimos 90 dias).
+                  Litros e custo (R$) por dia; dias restantes do mês projetados com base no padrão de consumo por dia
+                  da semana (últimos 90 dias) e no preço médio do período.
                 </p>
-                <GraficoPrevisaoConsumoLazy dados={dadosPrevisaoConsumo} />
+                <GraficoPrevisaoConsumoLazy dados={dadosPrevisaoConsumoComCusto} />
                 {isMesAtual && diaAtual < diasNoMes && (
                   <p className="mt-2 text-xs text-slate-500">
-                    Realizado até o dia {diaAtual}: {totalLitrosMes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L
-                    · Projeção para os {diasNoMes - diaAtual} dias restantes:{" "}
-                    {totalLitrosProjetado.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L · Total estimado do mês:{" "}
-                    <strong>{(totalLitrosMes + totalLitrosProjetado).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L</strong>
+                    Realizado até o dia {diaAtual}: {totalLitrosMes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L (
+                    {formatarMoeda(totalValorMes)}) · Projeção para os {diasNoMes - diaAtual} dias restantes:{" "}
+                    {totalLitrosProjetado.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L (
+                    {formatarMoeda(totalValorProjetado)}) · Total estimado do mês:{" "}
+                    <strong>
+                      {(totalLitrosMes + totalLitrosProjetado).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L (
+                      {formatarMoeda(totalValorMes + totalValorProjetado)})
+                    </strong>
                   </p>
                 )}
               </div>
