@@ -33,10 +33,10 @@ export default function CadastroPage() {
   return (
     <AuthShell variant="compact" maxWidthClassName="max-w-lg">
       <AuthCard>
-        <h2 className="text-center text-lg font-semibold text-frota-900">
+        <h2 className="text-center text-lg font-semibold text-frota-900 dark:text-slate-100">
           Comece grátis no FNI Pro-Frotas
         </h2>
-        <p className="mb-6 text-center text-sm text-slate-600">
+        <p className="mb-6 text-center text-sm text-slate-600 dark:text-slate-300">
           Crie sua conta e experimente por {DIAS_TRIAL} dias, sem cartão de crédito.
         </p>
 
@@ -86,7 +86,7 @@ export default function CadastroPage() {
             </Campo>
           </div>
 
-          <label className="flex items-start gap-2 text-xs text-slate-600">
+          <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
             <input
               type="checkbox"
               name="aceite_termos"
@@ -102,7 +102,7 @@ export default function CadastroPage() {
         </form>
       </AuthCard>
 
-      <p className="mt-6 text-center text-xs text-slate-500">
+      <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
         Já tem uma conta?{" "}
         <Link href="/login" className="font-medium text-frota-500 hover:underline">
           Entrar

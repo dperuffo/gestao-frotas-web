@@ -85,8 +85,8 @@ export default function MfaSetupPage() {
 
   if (carregando) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-frota-50">
-        <p className="text-sm text-slate-500">Carregando...</p>
+      <div className="flex min-h-screen items-center justify-center bg-frota-50 dark:bg-slate-900">
+        <p className="text-sm text-slate-500 dark:text-slate-400">Carregando...</p>
       </div>
     );
   }
@@ -94,8 +94,8 @@ export default function MfaSetupPage() {
   return (
     <AuthShell variant="compact">
       <AuthCard>
-        <h2 className="text-center text-lg font-semibold text-frota-900">Verificação em duas etapas</h2>
-        <p className="mb-6 text-center text-sm text-slate-600">
+        <h2 className="text-center text-lg font-semibold text-frota-900 dark:text-slate-100">Verificação em duas etapas</h2>
+        <p className="mb-6 text-center text-sm text-slate-600 dark:text-slate-300">
           {modo === "cadastrar"
             ? "Escaneie o QR Code com um aplicativo autenticador (Google Authenticator, Authy, etc.) e digite o código gerado."
             : "Digite o código do seu aplicativo autenticador para continuar."}

@@ -23,9 +23,9 @@ export function AuthShell({
   variant?: "full" | "compact";
 }) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-frota-50 px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-frota-50 px-4 py-12 dark:bg-slate-900">
       <div
-        className="pointer-events-none absolute inset-0 opacity-60"
+        className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-30 dark:invert"
         style={{
           backgroundImage:
             "linear-gradient(rgba(17,17,17,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(17,17,17,0.04) 1px, transparent 1px)",
@@ -46,7 +46,7 @@ export function AuthShell({
 // sem blur), só com mais padding (p-8) por ser o único conteúdo da tela.
 export function AuthCard({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       {children}
     </div>
   );

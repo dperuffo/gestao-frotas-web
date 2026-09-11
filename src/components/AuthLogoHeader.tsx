@@ -37,15 +37,15 @@ export function AuthLogoHeader({ variant = "full" }: { variant?: "full" | "compa
         />
       </div>
 
-      <h1 className="mt-5 text-2xl font-bold text-frota-900 sm:text-3xl">Fleet Network Intelligence</h1>
+      <h1 className="mt-5 text-2xl font-bold text-frota-900 sm:text-3xl dark:text-slate-100">Fleet Network Intelligence</h1>
 
-      <span className="mt-3 inline-flex items-center rounded-full border border-accento/40 bg-accento/10 px-4 py-1.5 text-xs font-semibold text-frota-800 sm:text-sm">
+      <span className="mt-3 inline-flex items-center rounded-full border border-accento/40 bg-accento/10 px-4 py-1.5 text-xs font-semibold text-frota-800 sm:text-sm dark:text-slate-100">
         Plataforma estratégica de inteligência de rede
       </span>
 
       {variant === "full" && (
         <>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-600">
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-600 dark:text-slate-300">
             Transformando dados em decisões de rede. Análise de postos, roteirização e gestão de
             frota.
           </p>
@@ -53,10 +53,10 @@ export function AuthLogoHeader({ variant = "full" }: { variant?: "full" | "compa
           <div className="mt-6 grid grid-cols-4 gap-3">
             {FEATURES.map(({ icon: Icon, label }) => (
               <div key={label} className="flex flex-col items-center gap-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white">
-                  <Icon className="h-5 w-5 text-frota-700" strokeWidth={1.75} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+                  <Icon className="h-5 w-5 text-frota-700 dark:text-slate-300" strokeWidth={1.75} />
                 </div>
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   {label}
                 </span>
               </div>
@@ -66,11 +66,11 @@ export function AuthLogoHeader({ variant = "full" }: { variant?: "full" | "compa
       )}
 
       <div className="mt-6 flex w-full max-w-xs items-center gap-3">
-        <span className="h-px flex-1 bg-slate-200" />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
           Acesso seguro
         </span>
-        <span className="h-px flex-1 bg-slate-200" />
+        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
       </div>
     </div>
   );

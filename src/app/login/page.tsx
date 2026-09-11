@@ -209,13 +209,13 @@ function LoginCard() {
       )}
 
       <AuthCard>
-        <h2 className="text-center text-lg font-semibold text-frota-900">Entrar na plataforma</h2>
-        <p className="mb-6 text-center text-sm text-slate-600">
+        <h2 className="text-center text-lg font-semibold text-frota-900 dark:text-slate-100">Entrar na plataforma</h2>
+        <p className="mb-6 text-center text-sm text-slate-600 dark:text-slate-300">
           Entre com sua conta Google ou com e-mail e senha.
         </p>
 
         {aviso && !erro && (
-          <div className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-left text-sm text-amber-700">
+          <div className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-left text-sm text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
             {aviso}
           </div>
         )}
@@ -230,7 +230,7 @@ function LoginCard() {
           <div className="flex justify-center">
             <div ref={botaoGoogleRef} />
             {!googlePronto && (
-              <div className="h-10 w-full animate-pulse rounded-lg bg-slate-100" aria-hidden="true" />
+              <div className="h-10 w-full animate-pulse rounded-lg bg-slate-100 dark:bg-slate-700" aria-hidden="true" />
             )}
           </div>
         ) : (
@@ -254,20 +254,20 @@ function LoginCard() {
             de inatividade dessa sessão pro máximo permitido (8h), em vez do
             padrão global do admin. Fica antes do "ou" pra deixar claro que
             vale pros dois métodos de login (Google e e-mail/senha). */}
-        <label className="mb-1 flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+        <label className="mb-1 flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
           <input
             type="checkbox"
             checked={lembrarMe}
             onChange={(e) => setLembrarMe(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 text-frota-600 focus:ring-frota-500"
+            className="h-4 w-4 rounded border-slate-300 text-frota-600 focus:ring-frota-500 dark:border-slate-600 dark:bg-slate-800"
           />
           Manter-me conectado por mais tempo
         </label>
 
         <div className="my-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs uppercase tracking-wide text-slate-500">ou</span>
-          <div className="h-px flex-1 bg-slate-200" />
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+          <span className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">ou</span>
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
         </div>
 
         {/* Fase melhora-fluxo-convite (27/07/2026) — achado real com uma
@@ -277,7 +277,7 @@ function LoginCard() {
             contas criadas por convite são sempre e-mail+senha, mesmo que o
             endereço seja @gmail.com). Só aparece pra quem ainda não tentou
             entrar nada (evita ruído pra quem já sabe usar). */}
-        <p className="mb-3 text-center text-xs text-slate-500">
+        <p className="mb-3 text-center text-xs text-slate-500 dark:text-slate-400">
           Recebeu um convite por e-mail? Use o link do convite pra criar sua senha e entre abaixo
           com e-mail e senha — o botão &quot;Entrar com Google&quot; só funciona se sua conta foi
           criada com login do Google (ter um e-mail @gmail.com não é a mesma coisa).
@@ -302,12 +302,12 @@ function LoginCard() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-slate-500">
+        <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
           Após o login, será solicitada a verificação em duas etapas (MFA).
         </p>
       </AuthCard>
 
-      <p className="mt-6 text-center text-xs text-slate-500">
+      <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
         Ainda não tem conta?{" "}
         <a href="/cadastro" className="font-medium text-frota-500 hover:underline">
           Comece seu teste grátis de 14 dias
