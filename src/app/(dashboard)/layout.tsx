@@ -785,7 +785,7 @@ export default async function DashboardLayout({
       // isso a IIFE async em vez de encadear `.then().catch()` direto nele.
       (async (): Promise<{ href: string; fixado: boolean }[]> => {
         try {
-          const { data, error } = await supabase.rpc("favoritos_menu_do_usuario", { p_limite: 8 });
+          const { data, error } = await supabase.rpc("favoritos_menu_do_usuario", { p_limite: 12 });
           if (error) throw error;
           return data ?? [];
         } catch (e) {
