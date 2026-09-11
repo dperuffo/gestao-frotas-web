@@ -78,7 +78,7 @@ export function GraficoEficienciaVeiculos({ dados }: { dados: ItemEficienciaVeic
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
         <div>
-          <p className="mb-2 text-xs font-medium text-slate-600">🏎️ KM médio por abastecimento — top 15 veículos</p>
+          <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">🏎️ KM médio por abastecimento — top 15 veículos</p>
           {top15Km.length === 0 ? (
             <p className="p-4 text-sm text-slate-400">Sem hodômetro suficiente para calcular km percorrido.</p>
           ) : (
@@ -95,7 +95,7 @@ export function GraficoEficienciaVeiculos({ dados }: { dados: ItemEficienciaVeic
         </div>
 
         <div>
-          <p className="mb-2 text-xs font-medium text-slate-600">⛽ Consumo médio km/L — top 15 veículos</p>
+          <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">⛽ Consumo médio km/L — top 15 veículos</p>
           {top15Kml.length === 0 ? (
             <p className="p-4 text-sm text-slate-400">Sem dados suficientes para calcular km/L.</p>
           ) : (
@@ -116,10 +116,10 @@ export function GraficoEficienciaVeiculos({ dados }: { dados: ItemEficienciaVeic
         </div>
       </div>
 
-      <p className="mb-2 text-xs font-medium text-slate-600">📋 Tabela de eficiência por veículo</p>
+      <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">📋 Tabela de eficiência por veículo</p>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="py-2 pr-3">Placa</th>
               <th className="py-2 pr-3">Veículo</th>
@@ -131,17 +131,17 @@ export function GraficoEficienciaVeiculos({ dados }: { dados: ItemEficienciaVeic
               <th className="py-2">Custo total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {dados.map((d) => (
               <tr key={d.placa}>
-                <td className="py-2 pr-3 font-medium text-slate-700">{d.placa}</td>
-                <td className="py-2 pr-3 text-slate-600">{[d.marca, d.modelo].filter(Boolean).join(" ") || "—"}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-600">{d.abastecimentos}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-600">{d.kmTotal != null ? `${formatarInt(d.kmTotal)} km` : "—"}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-600">{d.mediaKmL != null ? `${d.mediaKmL.toFixed(1)} km/L` : "—"}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarInt(d.litrosTotal)}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-600">{d.precoMedio != null ? formatarMoeda(d.precoMedio, 3) : "—"}</td>
-                <td className="py-2 tabular-nums text-slate-700">{d.custoTotal != null ? formatarMoeda(d.custoTotal, 0) : "—"}</td>
+                <td className="py-2 pr-3 font-medium text-slate-700 dark:text-slate-300">{d.placa}</td>
+                <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{[d.marca, d.modelo].filter(Boolean).join(" ") || "—"}</td>
+                <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{d.abastecimentos}</td>
+                <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{d.kmTotal != null ? `${formatarInt(d.kmTotal)} km` : "—"}</td>
+                <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{d.mediaKmL != null ? `${d.mediaKmL.toFixed(1)} km/L` : "—"}</td>
+                <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarInt(d.litrosTotal)}</td>
+                <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{d.precoMedio != null ? formatarMoeda(d.precoMedio, 3) : "—"}</td>
+                <td className="py-2 tabular-nums text-slate-700 dark:text-slate-300">{d.custoTotal != null ? formatarMoeda(d.custoTotal, 0) : "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -155,7 +155,7 @@ function MiniKpi({ label, valor }: { label: string; valor: string }) {
   return (
     <div className="card p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{valor}</p>
     </div>
   );
 }

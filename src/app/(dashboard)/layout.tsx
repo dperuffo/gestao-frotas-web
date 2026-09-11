@@ -107,6 +107,7 @@ import { BarraAtalhosFavoritos, type ItemAtalho } from "./_components/BarraAtalh
 import { RastreadorAcessoMenu } from "./_components/RastreadorAcessoMenu";
 import { BuscaGlobal, type ItemBusca } from "./_components/BuscaGlobal";
 import { PainelMobile } from "./_components/PainelMobile";
+import { ThemeToggle } from "@/components/tema/ThemeToggle";
 
 // Fase 27.15 (histórico) — a "Assistente FNI" chegou a usar a logo da marca
 // como ícone no menu, tratamento especial só dela (`item.logo`). Substituído
@@ -1046,8 +1047,8 @@ export default async function DashboardLayout({
       <PainelMobile
         menu={
           <>
-        <div data-tour="logo" className="border-b border-slate-200 px-5 py-6">
-          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div data-tour="logo" className="border-b border-slate-200 px-5 py-6 dark:border-slate-700">
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-100">
             <Image
               src="/logo-fni.png"
               alt="Fleet Network Intelligence"
@@ -1135,9 +1136,13 @@ export default async function DashboardLayout({
           </>
           )}
         </nav>
-        <div className="border-t border-slate-200 px-3 py-3 space-y-1">
+        <div className="border-t border-slate-200 px-3 py-3 space-y-1 dark:border-slate-700">
           <AvisosSino avisosIniciais={avisos} />
           <CentralAjuda />
+          {/* Fase Dark-Mode (11/09/2026) — junto dos outros botões de
+              utilidade do rodapé do menu (Avisos, Ajuda, Sair), mesmo
+              padrão visual (ícone + label que some com o menu colapsado). */}
+          <ThemeToggle />
           <BotaoSair />
         </div>
           </>
@@ -1165,7 +1170,7 @@ export default async function DashboardLayout({
         {/* Fase enforcement-permissoes — aviso depois do redirect de
             bloqueio de rota (ver resolverFuncionalidadeDaRota acima). */}
         {acessoNegado && (
-          <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
             Seu perfil não tem permissão para acessar aquela tela. Fale com quem gerencia a
             equipe se você acha que deveria ter acesso.
           </div>

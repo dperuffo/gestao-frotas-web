@@ -46,7 +46,7 @@ export function FormAbastecimentoInterno({ empresas }: { empresas: EmpresaOpcao[
       </div>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Abastecimento Interno</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Abastecimento Interno</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Empresa (posto interno)" required>
             <select name="empresa_id" required defaultValue="" className="input">
@@ -124,7 +124,7 @@ function Campo({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

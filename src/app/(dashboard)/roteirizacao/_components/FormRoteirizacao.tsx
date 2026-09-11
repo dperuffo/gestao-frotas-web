@@ -322,7 +322,7 @@ export function FormRoteirizacao({
       <div className="card mb-6 space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Origem</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Origem</label>
             <BuscaLocalInput
               placeholder="Cidade de origem"
               valorInicial={origem}
@@ -333,7 +333,7 @@ export function FormRoteirizacao({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Destino</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Destino</label>
             <BuscaLocalInput
               placeholder="Cidade de destino"
               valorInicial={destino}
@@ -347,7 +347,7 @@ export function FormRoteirizacao({
 
         {paradas.map((_, i) => (
           <div key={i}>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Parada {i + 1}</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Parada {i + 1}</label>
             <div className="flex gap-2">
               <div className="flex-1">
                 <BuscaLocalInput
@@ -385,9 +385,9 @@ export function FormRoteirizacao({
             define qual será a melhor para ele". Busca opcional — quem não
             usar, o cálculo final cai no comportamento de sempre (rota mais
             rápida escolhida automaticamente). */}
-        <div className="border-t border-slate-100 pt-4">
+        <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-slate-900">Opções de rota</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Opções de rota</p>
             <button
               type="button"
               className="btn-secondary disabled:opacity-50"
@@ -408,13 +408,13 @@ export function FormRoteirizacao({
                     type="button"
                     onClick={() => setRotaEscolhidaId(op.id)}
                     className={`rounded-lg border p-3 text-left text-sm ${
-                      selecionada ? "border-frota-600 bg-frota-50" : "border-slate-200 hover:border-slate-300"
+                      selecionada ? "border-frota-600 bg-frota-50" : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
                     }`}
                   >
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">
                       {rotulos.length > 0 ? rotulos.join(" · ") : `Alternativa ${i + 1}`}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                       {op.distanciaKm.toLocaleString("pt-BR")} km · {Math.floor(op.duracaoMin / 60)}h{" "}
                       {String(Math.round(op.duracaoMin % 60)).padStart(2, "0")}min
                     </p>
@@ -423,7 +423,7 @@ export function FormRoteirizacao({
               })}
             </div>
           ) : alternativas && alternativas.length === 1 ? (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               Só existe um caminho viável entre esses pontos — nenhuma rota alternativa encontrada.
             </p>
           ) : (
@@ -442,9 +442,9 @@ export function FormRoteirizacao({
             clicáveis); depois de calcular, vira o mapa de resultado de
             sempre (postos/pedágios/paradas), sem duplicar o componente. */}
         {origem && destino && (resultado || (alternativas && alternativas.length > 0)) && (
-          <div className="border-t border-slate-100 pt-4">
-            <p className="mb-2 text-sm font-semibold text-slate-900">Mapa</p>
-            <p className="mb-2 text-xs text-slate-500">
+          <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+            <p className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">Mapa</p>
+            <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
               {resultado
                 ? "Clique num posto no mapa (ou na tabela da aba Abastecimento) pra marcar/desmarcar como parada. Postos em cinza ainda não foram selecionados."
                 : "Toque numa linha do mapa (ou nos cards acima) pra escolher a rota."}
@@ -506,11 +506,11 @@ export function FormRoteirizacao({
           </div>
         )}
 
-        <div className="border-t border-slate-100 pt-4">
-          <p className="mb-2 text-sm font-semibold text-slate-900">Veículo</p>
+        <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+          <p className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">Veículo</p>
           <div className="grid gap-3 sm:grid-cols-4">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Veículo cadastrado</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Veículo cadastrado</label>
               <select value={placa} onChange={(e) => selecionarVeiculo(e.target.value)} className="input">
                 <option value="">Manual (preencher abaixo)</option>
                 {veiculos.map((v) => (
@@ -521,7 +521,7 @@ export function FormRoteirizacao({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Tanque (L)</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tanque (L)</label>
               <input
                 type="number"
                 min={1}
@@ -531,7 +531,7 @@ export function FormRoteirizacao({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Autonomia (km/L)</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Autonomia (km/L)</label>
               <input
                 type="number"
                 min={0.1}
@@ -542,7 +542,7 @@ export function FormRoteirizacao({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Combustível</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Combustível</label>
               <select value={combustivel} onChange={(e) => setCombustivel(e.target.value)} className="input">
                 <option value="" disabled>
                   Selecione...
@@ -557,7 +557,7 @@ export function FormRoteirizacao({
           </div>
           {avisoCombustivel && <p className="text-xs text-amber-700">{avisoCombustivel}</p>}
           <div className="mt-3 w-48">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Combustível já no tanque (L)</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Combustível já no tanque (L)</label>
             <input
               type="number"
               min={0}
@@ -575,8 +575,8 @@ export function FormRoteirizacao({
           </div>
         </div>
 
-        <div className="border-t border-slate-100 pt-4">
-          <p className="mb-2 text-sm font-semibold text-slate-900">Perfil de otimização</p>
+        <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+          <p className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">Perfil de otimização</p>
           <div className="grid gap-2 sm:grid-cols-4">
             {PERFIS_PESO.map((p) => (
               <button
@@ -586,13 +586,13 @@ export function FormRoteirizacao({
                 className={`rounded-lg border p-3 text-left text-sm ${
                   perfilChave === p.chave
                     ? "border-frota-600 bg-frota-50"
-                    : "border-slate-200 hover:border-slate-300"
+                    : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
                 }`}
               >
-                <p className="font-medium text-slate-900">
+                <p className="font-medium text-slate-900 dark:text-slate-100">
                   {p.icone} {p.nome}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">{p.descricao}</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{p.descricao}</p>
               </button>
             ))}
           </div>
@@ -609,19 +609,19 @@ export function FormRoteirizacao({
           <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Distância</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{resultado.distanciaKm} km</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{resultado.distanciaKm} km</p>
             </div>
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Paradas selecionadas</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{paradasAtuais.paradas.length}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{paradasAtuais.paradas.length}</p>
             </div>
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Litros totais</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{litrosTotalAtual} L</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{litrosTotalAtual} L</p>
             </div>
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Custo combustível</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{formatarMoeda(custoTotalAtual)}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{formatarMoeda(custoTotalAtual)}</p>
             </div>
           </div>
 
@@ -637,12 +637,12 @@ export function FormRoteirizacao({
           {resultado.pracasPedagio.length > 0 && (
             <div className="mb-6 card p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-slate-900">
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   🎫 {resultado.pracasPedagio.length} praça{resultado.pracasPedagio.length > 1 ? "s" : ""} de pedágio no
                   trajeto
                 </p>
-                <p className="text-sm text-slate-600">
-                  Estimado (carro/utilitário): <strong className="text-slate-900">{formatarMoeda(resultado.custoPedagioEstimado)}</strong>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  Estimado (carro/utilitário): <strong className="text-slate-900 dark:text-slate-100">{formatarMoeda(resultado.custoPedagioEstimado)}</strong>
                 </p>
               </div>
               <p className="mt-1 text-xs text-slate-400">
@@ -682,7 +682,7 @@ export function FormRoteirizacao({
 
           {/* ── Abas de resultado (Abastecimento / Custo / Resumo) — o mapa
               agora é persistente, fora das abas (ver bloco "Mapa" acima) ── */}
-          <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200">
+          <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-700">
             {ABAS_RESULTADO.map((aba) => (
               <button
                 key={aba.chave}
@@ -692,7 +692,7 @@ export function FormRoteirizacao({
                   "border-b-2 px-3 py-2 text-sm font-medium " +
                   (abaAtiva === aba.chave
                     ? "border-frota-600 text-frota-600"
-                    : "border-transparent text-slate-500 hover:text-slate-700")
+                    : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700")
                 }
               >
                 {aba.label}
@@ -703,10 +703,10 @@ export function FormRoteirizacao({
           {abaAtiva === "abastecimento" && (
             <div className="card overflow-x-auto p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold text-slate-900">
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Postos no corredor — sugestão inicial: {perfilAtual.nome}
                 </h2>
-                <p className="text-xs text-slate-500">Clique numa linha pra marcar/desmarcar como parada.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Clique numa linha pra marcar/desmarcar como parada.</p>
               </div>
               {resultado.candidatos.length > 0 && (
                 <input
@@ -723,7 +723,7 @@ export function FormRoteirizacao({
                 <p className="text-sm text-slate-400">Nenhum posto encontrado para &quot;{buscaPosto}&quot;.</p>
               ) : (
                 <table className="w-full border-separate border-spacing-0 text-left text-sm">
-                  <thead className="text-xs uppercase text-slate-500">
+                  <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="whitespace-nowrap py-2 pr-4">Selecionado</th>
                       <th className="py-2 pr-4">Posto</th>
@@ -737,7 +737,7 @@ export function FormRoteirizacao({
                       <th className="whitespace-nowrap py-2">Saída</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {candidatosFiltrados.map((c) => {
                       const selecionado = selecionados.has(c.cnpj);
                       const parada = paradasAtuais.paradas.find((p) => p.cnpj === c.cnpj);
@@ -750,7 +750,7 @@ export function FormRoteirizacao({
                           <td className="py-2.5 pr-4 align-top">
                             <input type="checkbox" checked={selecionado} readOnly className="h-4 w-4" />
                           </td>
-                          <td className="py-2.5 pr-4 align-top text-slate-700">
+                          <td className="py-2.5 pr-4 align-top text-slate-700 dark:text-slate-300">
                             {c.label}
                             {/* Fase 27.140 — sinaliza quando o posto veio da
                                 base pública ANP (preço estimado, não
@@ -770,7 +770,7 @@ export function FormRoteirizacao({
                               </p>
                             )}
                           </td>
-                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">
                             {[c.municipio, c.uf].filter(Boolean).join(" / ") || "—"}
                           </td>
                           <td className="py-2.5 pr-4 align-top">
@@ -782,20 +782,20 @@ export function FormRoteirizacao({
                               </span>
                             )}
                           </td>
-                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">{c.km.toFixed(0)} km</td>
-                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">{c.km.toFixed(0)} km</td>
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">
                             R$ {c.preco.toFixed(3)}
                           </td>
-                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">
                             {parada ? `${parada.pctChegada.toFixed(0)}% tanque` : "—"}
                           </td>
-                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">
                             {parada ? `${parada.litrosSugeridos} L` : "—"}
                           </td>
-                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                          <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">
                             {parada ? formatarMoeda(parada.custoAbastecimento) : "—"}
                           </td>
-                          <td className="py-2.5 align-top whitespace-nowrap text-slate-600">
+                          <td className="py-2.5 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">
                             {parada ? `${parada.pctApos.toFixed(0)}% tanque` : "—"}
                           </td>
                         </tr>
@@ -831,7 +831,7 @@ export function FormRoteirizacao({
           {abaAtiva === "resumo" && (
             <div className="card space-y-6 p-4">
               <div>
-                <p className="mb-2 text-sm font-semibold text-slate-900">📋 Resumo da Roteirização</p>
+                <p className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">📋 Resumo da Roteirização</p>
                 <div className="space-y-1 text-sm">
                   <p className="border-l-2 border-emerald-600 pl-2">
                     <span className="font-medium text-emerald-700">🟢 Origem:</span> {origem.label}
@@ -848,53 +848,53 @@ export function FormRoteirizacao({
                   </p>
                 </div>
                 <div className="mt-4 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-                  <p className="text-slate-500">
-                    📏 Distância: <span className="font-medium text-slate-900">{resultado.distanciaKm} km</span>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    📏 Distância: <span className="font-medium text-slate-900 dark:text-slate-100">{resultado.distanciaKm} km</span>
                   </p>
-                  <p className="text-slate-500">
+                  <p className="text-slate-500 dark:text-slate-400">
                     ⏱️ Tempo:{" "}
-                    <span className="font-medium text-slate-900">
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
                       {Math.floor(resultado.duracaoMin / 60)}h {String(Math.round(resultado.duracaoMin % 60)).padStart(2, "0")}min
                     </span>
                   </p>
-                  <p className="text-slate-500">
-                    ⛽ Combustível: <span className="font-medium text-slate-900">{combustivel || "—"}</span>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    ⛽ Combustível: <span className="font-medium text-slate-900 dark:text-slate-100">{combustivel || "—"}</span>
                   </p>
-                  <p className="text-slate-500">
-                    🚛 Placa: <span className="font-medium text-slate-900">{placa || "—"}</span>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    🚛 Placa: <span className="font-medium text-slate-900 dark:text-slate-100">{placa || "—"}</span>
                   </p>
-                  <p className="text-slate-500">
+                  <p className="text-slate-500 dark:text-slate-400">
                     🛢 Consumo total:{" "}
-                    <span className="font-medium text-slate-900">
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
                       {autonomia ? (resultado.distanciaKm / autonomia).toFixed(0) : "—"} L
                     </span>
                   </p>
-                  <p className="text-slate-500">
-                    🛢 Total abastecido: <span className="font-medium text-slate-900">{litrosTotalAtual} L</span>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    🛢 Total abastecido: <span className="font-medium text-slate-900 dark:text-slate-100">{litrosTotalAtual} L</span>
                   </p>
-                  <p className="text-slate-500">
+                  <p className="text-slate-500 dark:text-slate-400">
                     💰 Custo abastecimento (postos no trajeto):{" "}
-                    <span className="font-medium text-slate-900">{formatarMoeda(custoTotalAtual)}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{formatarMoeda(custoTotalAtual)}</span>
                   </p>
-                  <p className="text-slate-500">
-                    ⛽ Paradas: <span className="font-medium text-slate-900">{paradasAtuais.paradas.length || "Nenhuma"}</span>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    ⛽ Paradas: <span className="font-medium text-slate-900 dark:text-slate-100">{paradasAtuais.paradas.length || "Nenhuma"}</span>
                   </p>
                   {abastecimentoInternoHoje && (
-                    <p className="text-slate-500">
+                    <p className="text-slate-500 dark:text-slate-400">
                       🏭 Abastecimento interno (garagem, hoje):{" "}
-                      <span className="font-medium text-slate-900">{formatarMoeda(abastecimentoInternoHoje.valorTotal)}</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{formatarMoeda(abastecimentoInternoHoje.valorTotal)}</span>
                     </p>
                   )}
                   {resultado.pracasPedagio.length > 0 && (
-                    <p className="text-slate-500">
+                    <p className="text-slate-500 dark:text-slate-400">
                       🎫 Pedágio estimado (carro):{" "}
-                      <span className="font-medium text-slate-900">{formatarMoeda(resultado.custoPedagioEstimado)}</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{formatarMoeda(resultado.custoPedagioEstimado)}</span>
                     </p>
                   )}
                   {(resultado.pracasPedagio.length > 0 || abastecimentoInternoHoje) && (
-                    <p className="text-slate-500">
+                    <p className="text-slate-500 dark:text-slate-400">
                       💰 Total (combustível + interno + pedágio):{" "}
-                      <span className="font-medium text-slate-900">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
                         {formatarMoeda(
                           custoTotalAtual +
                             resultado.custoPedagioEstimado +
@@ -907,10 +907,10 @@ export function FormRoteirizacao({
               </div>
 
               {resultado.pracasPedagio.length > 0 && (
-                <div className="border-t border-slate-100 pt-4">
-                  <p className="mb-2 text-sm font-semibold text-slate-900">🎫 Praças de pedágio no trajeto</p>
+                <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+                  <p className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">🎫 Praças de pedágio no trajeto</p>
                   <table className="w-full border-separate border-spacing-0 text-left text-sm">
-                    <thead className="text-xs uppercase text-slate-500">
+                    <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                       <tr>
                         <th className="py-1.5 pr-4">Praça</th>
                         <th className="whitespace-nowrap py-1.5 pr-4">Km</th>
@@ -918,18 +918,18 @@ export function FormRoteirizacao({
                         <th className="whitespace-nowrap py-1.5">Caminhão/eixo</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                       {resultado.pracasPedagio.map((praca) => (
                         <tr key={praca.id}>
-                          <td className="py-1.5 pr-4 text-slate-700">
+                          <td className="py-1.5 pr-4 text-slate-700 dark:text-slate-300">
                             {praca.nome}
                             {praca.concessionaria && <span className="text-slate-400"> — {praca.concessionaria}</span>}
                           </td>
-                          <td className="py-1.5 pr-4 whitespace-nowrap text-slate-600">{praca.kmNaRota.toFixed(0)} km</td>
-                          <td className="py-1.5 pr-4 whitespace-nowrap text-slate-600">
+                          <td className="py-1.5 pr-4 whitespace-nowrap text-slate-600 dark:text-slate-300">{praca.kmNaRota.toFixed(0)} km</td>
+                          <td className="py-1.5 pr-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
                             {praca.valorCarro != null ? formatarMoeda(praca.valorCarro) : "—"}
                           </td>
-                          <td className="py-1.5 whitespace-nowrap text-slate-600">
+                          <td className="py-1.5 whitespace-nowrap text-slate-600 dark:text-slate-300">
                             {praca.valorCaminhaoEixo != null ? formatarMoeda(praca.valorCaminhaoEixo) : "—"}
                           </td>
                         </tr>
@@ -939,9 +939,9 @@ export function FormRoteirizacao({
                 </div>
               )}
 
-              <div className="border-t border-slate-100 pt-4">
-                <p className="mb-2 text-sm font-semibold text-slate-900">Exportações</p>
-                <p className="mb-3 text-xs text-slate-500">
+              <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+                <p className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">Exportações</p>
+                <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                   📄 PDF para impressão · 🗺️ GPX para GPS/Waze · 📤 Card PNG para WhatsApp/e-mail · 🛡️
                   Rotograma de segurança para o motorista.
                 </p>
@@ -1066,8 +1066,8 @@ export function FormRoteirizacao({
                 </div>
               </div>
 
-              <div className="border-t border-slate-100 pt-4">
-                <p className="mb-2 text-sm font-semibold text-slate-900">Salvar esta rota</p>
+              <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+                <p className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">Salvar esta rota</p>
                 <SalvarConsultaForm
                   tipo="roteirizacao"
                   empresaId={empresaId}

@@ -10,9 +10,9 @@ export function PrecosChips({ precos }: { precos: { combustivel: string; preco: 
       {precos.map((p) => (
         <span
           key={p.combustivel}
-          className="whitespace-nowrap rounded-md bg-slate-50 px-1.5 py-0.5 text-xs text-slate-600"
+          className="whitespace-nowrap rounded-md bg-slate-50 dark:bg-slate-800/50 px-1.5 py-0.5 text-xs text-slate-600 dark:text-slate-300"
         >
-          {p.combustivel} <span className="font-medium text-slate-800">R$ {p.preco.toFixed(3)}</span>
+          {p.combustivel} <span className="font-medium text-slate-800 dark:text-slate-100">R$ {p.preco.toFixed(3)}</span>
         </span>
       ))}
     </div>

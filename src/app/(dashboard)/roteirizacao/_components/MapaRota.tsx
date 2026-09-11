@@ -174,7 +174,7 @@ export default function MapaRota({
   }, [marcadores]);
 
   return (
-    <div className={`relative overflow-hidden rounded-lg border border-slate-200 ${alturaClasse}`}>
+    <div className={`relative overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 ${alturaClasse}`}>
       <MapContainer center={centro} zoom={6} style={{ height: "100%", width: "100%" }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -255,7 +255,7 @@ export default function MapaRota({
                 }}
                 className={`mb-2 w-full rounded-md px-2 py-1.5 text-xs font-semibold ${
                   postoAberto.selecionado
-                    ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
                     : "bg-frota-600 text-white hover:bg-frota-700"
                 }`}
               >
@@ -276,7 +276,7 @@ export default function MapaRota({
                 className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-white shadow"
                 style={{ background: CORES_HEX[l.cor] }}
               />
-              <span className="truncate text-slate-700" title={l.label}>{l.label}</span>
+              <span className="truncate text-slate-700 dark:text-slate-300" title={l.label}>{l.label}</span>
             </div>
           ))}
         </div>
@@ -286,14 +286,14 @@ export default function MapaRota({
         <div className="absolute right-2 top-2 z-[1000] rounded-lg bg-white/95 p-2 text-xs shadow-md">
           <div className="flex items-center gap-1.5 py-0.5">
             <span className="inline-block h-0.5 w-5 shrink-0 bg-frota-600" />
-            <span className="text-slate-700">Rota selecionada</span>
+            <span className="text-slate-700 dark:text-slate-300">Rota selecionada</span>
           </div>
           <div className="flex items-center gap-1.5 py-0.5">
             <span
               className="inline-block h-0.5 w-5 shrink-0 bg-slate-400"
               style={{ backgroundImage: "repeating-linear-gradient(90deg, #94a3b8 0 4px, transparent 4px 7px)" }}
             />
-            <span className="text-slate-700">Alternativa — toque na linha</span>
+            <span className="text-slate-700 dark:text-slate-300">Alternativa — toque na linha</span>
           </div>
         </div>
       )}

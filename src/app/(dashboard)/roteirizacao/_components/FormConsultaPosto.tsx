@@ -49,7 +49,7 @@ export function FormConsultaPosto({
     <div>
       <div className="card mb-6 flex flex-wrap items-end gap-3 p-4">
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">CNPJ ou nome do posto</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">CNPJ ou nome do posto</label>
           <input
             type="text"
             value={termo}
@@ -66,7 +66,7 @@ export function FormConsultaPosto({
       </div>
 
       {resultado && resultado.length === 0 && (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">Nenhum posto encontrado.</p>
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Nenhum posto encontrado.</p>
       )}
 
       {resultado && resultado.length > 0 && (
@@ -88,7 +88,7 @@ export function FormConsultaPosto({
           </div>
           <div className="card overflow-x-auto p-4">
             <table className="w-full border-separate border-spacing-0 text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="whitespace-nowrap py-2 pr-4"><span className="inline-flex items-center gap-1">Score <AjudaIcon chave="roteirizacao.score_posto" /></span></th>
                   <th className="py-2 pr-4">Razão social</th>
@@ -99,15 +99,15 @@ export function FormConsultaPosto({
                   <th className="py-2"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {resultado.map((p) => (
                   <tr key={p.cnpj}>
                     <td className="py-2.5 pr-4 align-top">
                       <ScoreBadge score={p.score} />
                     </td>
-                    <td className="py-2.5 pr-4 align-top text-slate-700">{p.razaoSocial ?? "—"}</td>
-                    <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">{formatCNPJ(p.cnpj)}</td>
-                    <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                    <td className="py-2.5 pr-4 align-top text-slate-700 dark:text-slate-300">{p.razaoSocial ?? "—"}</td>
+                    <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">{formatCNPJ(p.cnpj)}</td>
+                    <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">
                       {p.municipio ?? "—"} - {p.uf ?? "—"}
                     </td>
                     <td className="py-2.5 pr-4 align-top">
@@ -123,7 +123,7 @@ export function FormConsultaPosto({
                           Base ANP
                         </span>
                       ) : (
-                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+                        <span className="rounded-md bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300">
                           Próprio
                         </span>
                       )}

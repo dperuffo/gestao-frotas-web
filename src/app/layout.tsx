@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/tema/ThemeProvider";
 
 // Fase Design-System-Corporate-Blue (26/08/2026) — design.md pede Inter em
 // tudo (display/body/labels) e JetBrains Mono só pra valores técnicos. Antes
@@ -33,9 +34,16 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    // suppressHydrationWarning: next-themes seta a classe `dark` (ou não)
+    // via script inline síncrono ANTES do React hidratar, pra evitar o
+    // flash de tema errado — isso faz o `class` do <html> no primeiro
+    // paint divergir do que o servidor renderizou, o que o React
+    // normalmente reportaria como mismatch de hidratação. É o único nó
+    // onde isso é esperado/inofensivo (recomendação oficial do
+    // next-themes), então suprimimos o aviso só aqui.
+    <html lang="pt-BR" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body>
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
         {process.env.NODE_ENV === "production" && HOTJAR_SITE_ID && (
           <Script
             id="hotjar"

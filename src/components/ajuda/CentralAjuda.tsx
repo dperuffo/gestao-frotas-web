@@ -28,9 +28,9 @@ export function CentralAjuda() {
         data-tour="central-ajuda"
         onClick={() => setAberto(true)}
         title="Central de Ajuda"
-        className="menu-item-link flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+        className="menu-item-link flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 dark:text-slate-300"
       >
-        <LifeBuoy className="h-4 w-4 shrink-0 text-slate-300" />
+        <LifeBuoy className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-400" />
         <span className="menu-item-label">Central de Ajuda</span>
       </button>
 

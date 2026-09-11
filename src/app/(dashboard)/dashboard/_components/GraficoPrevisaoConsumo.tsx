@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import {
   Bar,
   CartesianGrid,
@@ -36,8 +37,18 @@ function formatarMoeda(valor: number) {
 // pontilhado — o último dia real é duplicado nas duas séries pra linha não
 // "quebrar" visualmente na transição.
 export function GraficoPrevisaoConsumo({ dados }: { dados: PontoPrevisaoConsumo[] }) {
+  // Fase Dark-Mode — carregado via GraficoPrevisaoConsumoLazy com
+  // `ssr: false`, então este componente só roda no client (sem risco de
+  // mismatch de hidratação por causa do useTheme). Eixos usam `currentColor`
+  // por padrão no Recharts (herdaria a cor de texto do ambiente, que aqui é
+  // sempre escura) — por isso o tick/label do eixo precisa de uma cor
+  // explícita condicional ao tema pra não ficar ilegível (cinza escuro sobre
+  // fundo escuro) no modo Escuro.
+  const { resolvedTheme } = useTheme();
+  const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";
+
   if (dados.length === 0) {
-    return <p className="p-4 text-sm text-slate-400">Sem abastecimentos no período selecionado.</p>;
+    return <p className="p-4 text-sm text-slate-400 dark:text-slate-500">Sem abastecimentos no período selecionado.</p>;
   }
 
   const ultimoIndiceReal = dados.reduce((acc, d, i) => (d.tipo === "real" ? i : acc), -1);
@@ -58,14 +69,14 @@ export function GraficoPrevisaoConsumo({ dados }: { dados: PontoPrevisaoConsumo[
     <ResponsiveContainer width="100%" height={280}>
       <ComposedChart data={dadosLinha} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />
-        <XAxis dataKey="diaLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
-        <YAxis yAxisId="litros" tick={{ fontSize: 12 }} label={{ value: "Litros", angle: -90, position: "insideLeft", fontSize: 11, fill: "#94A3B8" }} />
+        <XAxis dataKey="diaLabel" tick={{ fontSize: 11, fill: corEixo }} interval="preserveStartEnd" />
+        <YAxis yAxisId="litros" tick={{ fontSize: 12, fill: corEixo }} label={{ value: "Litros", angle: -90, position: "insideLeft", fontSize: 11, fill: corEixo }} />
         <YAxis
           yAxisId="custo"
           orientation="right"
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 12, fill: corEixo }}
           tickFormatter={(v: number) => formatarMoeda(v)}
-          label={{ value: "R$", angle: 90, position: "insideRight", fontSize: 11, fill: "#94A3B8" }}
+          label={{ value: "R$", angle: 90, position: "insideRight", fontSize: 11, fill: corEixo }}
         />
         <Tooltip
           content={({ active, payload, label }) => {
@@ -74,12 +85,12 @@ export function GraficoPrevisaoConsumo({ dados }: { dados: PontoPrevisaoConsumo[
             if (!ponto) return null;
             const rotuloTipo = ponto.tipo === "projetado" ? "projetado" : "real";
             return (
-              <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs shadow-sm">
-                <p className="mb-1 font-semibold text-slate-700">Dia {label}</p>
-                <p className="text-slate-600">
+              <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs shadow-sm">
+                <p className="mb-1 font-semibold text-slate-700 dark:text-slate-300">Dia {label}</p>
+                <p className="text-slate-600 dark:text-slate-300">
                   Litros ({rotuloTipo}): {ponto.litros.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L
                 </p>
-                <p className="text-slate-600">
+                <p className="text-slate-600 dark:text-slate-300">
                   Custo ({rotuloTipo}): {formatarMoeda(ponto.valor ?? 0)}
                 </p>
               </div>
@@ -87,6 +98,7 @@ export function GraficoPrevisaoConsumo({ dados }: { dados: PontoPrevisaoConsumo[
           }}
         />
         <Legend
+          wrapperStyle={{ color: corEixo }}
           payload={[
             { value: "Litros Realizado", type: "square", color: CORES_GRAFICO.primaria },
             { value: "Litros Projetado", type: "square", color: "#D9D9D9" },

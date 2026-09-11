@@ -18,6 +18,16 @@ import type { Config } from "tailwindcss";
 // cor nova), usado em card top-border, badges de destaque, links, botão
 // primário.
 const config: Config = {
+  // Fase Dark-Mode (11/09/2026) — "class" (em vez do padrão "media") é
+  // obrigatório pro toggle manual: com "media" o Tailwind só segue
+  // `prefers-color-scheme` do SO/navegador e ignora qualquer override via
+  // JS. Com "class", o `dark:` é aplicado quando existe `.dark` num
+  // ancestral (normalmente `<html>`) — next-themes (ThemeProvider,
+  // `attribute="class"`) é quem gerencia essa classe: detecta o SO por
+  // padrão (`defaultTheme="system"` + `enableSystem`) e troca pra
+  // `.dark`/nada conforme o usuário escolhe no toggle, persistindo em
+  // localStorage.
+  darkMode: "class",
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {

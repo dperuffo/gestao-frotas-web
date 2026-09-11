@@ -29,7 +29,7 @@ export function GraficoAbastecimentos({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Gasto por meio de pagamento (6 meses)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Gasto por meio de pagamento (6 meses)</p>
         {porProvedor.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados no período.</p>
         ) : (
@@ -49,10 +49,10 @@ export function GraficoAbastecimentos({
             <ul className="flex-1 space-y-1.5 text-sm">
               {porProvedor.map((p) => (
                 <li key={p.provedor} className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-slate-600">
+                  <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                     <LogoProvedor provedor={p.provedor} className="h-4 w-auto" />
                   </span>
-                  <span className="whitespace-nowrap font-medium text-slate-900">{formatarMoeda(p.valor)}</span>
+                  <span className="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{formatarMoeda(p.valor)}</span>
                 </li>
               ))}
             </ul>
@@ -61,7 +61,7 @@ export function GraficoAbastecimentos({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Evolução do gasto com combustível</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Evolução do gasto com combustível</p>
         {!comEvolucao ? (
           <p className="text-sm text-slate-400">Sem dados no período.</p>
         ) : (

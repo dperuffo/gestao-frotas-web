@@ -152,18 +152,18 @@ export function ModoComparativo({
   return (
     <div>
       <div className="mb-4 flex items-center gap-2 text-sm">
-        <span className="font-medium text-slate-600">Comparar por:</span>
+        <span className="font-medium text-slate-600 dark:text-slate-300">Comparar por:</span>
         <button
           type="button"
           onClick={() => trocarModo("estados")}
-          className={`rounded-full px-3 py-1 ${modo === "estados" ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`rounded-full px-3 py-1 ${modo === "estados" ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
         >
           🗺️ Estados
         </button>
         <button
           type="button"
           onClick={() => trocarModo("regioes")}
-          className={`rounded-full px-3 py-1 ${modo === "regioes" ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`rounded-full px-3 py-1 ${modo === "regioes" ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
         >
           🌎 Regiões
         </button>
@@ -171,7 +171,7 @@ export function ModoComparativo({
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Lado A</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Lado A</label>
           <select value={ladoA} onChange={(e) => setLadoA(e.target.value)} className="input">
             {(modo === "estados" ? ufsDisponiveis : regioesDisp).map((v) => (
               <option key={v} value={v}>
@@ -181,7 +181,7 @@ export function ModoComparativo({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Lado B</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Lado B</label>
           <select value={ladoB} onChange={(e) => setLadoB(e.target.value)} className="input">
             {(modo === "estados" ? ufsDisponiveis : regioesDisp).map((v) => (
               <option key={v} value={v}>
@@ -199,7 +199,7 @@ export function ModoComparativo({
 
       <div className="mb-6 overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="py-2 pr-3">Métrica</th>
               <th className="py-2 pr-3" style={{ color: COR_A }}>
@@ -211,13 +211,13 @@ export function ModoComparativo({
               <th className="py-2">Comparação</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhasKpi.map((l) => {
               const vencedorA = l.a > l.b;
               const empate = l.a === l.b;
               return (
                 <tr key={l.label}>
-                  <td className="py-2 pr-3 text-slate-700">{l.label}</td>
+                  <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{l.label}</td>
                   <td className="py-2 pr-3 tabular-nums" style={{ color: COR_A }}>
                     {l.formato === "pct" ? `${l.a.toFixed(1)}%` : l.formato === "decimal" ? l.a.toFixed(1) : l.a}
                   </td>
@@ -226,7 +226,7 @@ export function ModoComparativo({
                   </td>
                   <td className="py-2">
                     {empate ? (
-                      <span className="text-slate-500">= empate</span>
+                      <span className="text-slate-500 dark:text-slate-400">= empate</span>
                     ) : vencedorA ? (
                       <span style={{ color: "#2E7D32" }}>▲ {labelA}</span>
                     ) : (
@@ -242,7 +242,7 @@ export function ModoComparativo({
 
       {combustiveisComuns.length > 0 && (
         <div className="mb-6">
-          <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Preço médio por combustível</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Preço médio por combustível</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dadosPrecoGrafico} margin={{ top: 8, right: 16, left: 0, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -257,7 +257,7 @@ export function ModoComparativo({
 
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">Combustível</th>
                   <th className="py-2 pr-3">{labelA}</th>
@@ -267,7 +267,7 @@ export function ModoComparativo({
                   <th className="py-2">Mais barato</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {combustiveisComuns
                   .filter((c) => metricasA.precos.has(c) && metricasB.precos.has(c))
                   .map((c) => {
@@ -277,18 +277,18 @@ export function ModoComparativo({
                     const diffPct = pb !== 0 ? (diff / pb) * 100 : 0;
                     return (
                       <tr key={c}>
-                        <td className="py-2 pr-3 text-slate-700">{c}</td>
-                        <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(pa)}</td>
-                        <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(pb)}</td>
-                        <td className="py-2 pr-3 tabular-nums text-slate-600">
+                        <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{c}</td>
+                        <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(pa)}</td>
+                        <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(pb)}</td>
+                        <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">
                           {diff >= 0 ? "+" : ""}
                           {formatarMoeda(diff)}
                         </td>
-                        <td className="py-2 pr-3 tabular-nums text-slate-600">
+                        <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">
                           {diffPct >= 0 ? "+" : ""}
                           {diffPct.toFixed(1)}%
                         </td>
-                        <td className="py-2 text-slate-600">{diff < 0 ? labelA : diff > 0 ? labelB : "Igual"}</td>
+                        <td className="py-2 text-slate-600 dark:text-slate-300">{diff < 0 ? labelA : diff > 0 ? labelB : "Igual"}</td>
                       </tr>
                     );
                   })}
@@ -300,11 +300,11 @@ export function ModoComparativo({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Distribuidoras — Top 10 ({labelA})</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Distribuidoras — Top 10 ({labelA})</h3>
           <GraficoDistribuidoras dados={metricasA.top10Distrib} cor={COR_A} />
         </div>
         <div>
-          <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Distribuidoras — Top 10 ({labelB})</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Distribuidoras — Top 10 ({labelB})</h3>
           <GraficoDistribuidoras dados={metricasB.top10Distrib} cor={COR_B} />
         </div>
       </div>
@@ -328,7 +328,7 @@ function CardResumo({
       <p className="mb-2 text-sm font-semibold" style={{ color: cor }}>
         {label}
       </p>
-      <ul className="space-y-1 text-sm text-slate-700">
+      <ul className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
         <li>{metricas.nPostos} postos GF credenciados</li>
         <li>
           {metricas.nMuns} municípios atendidos ({metricas.cobPct.toFixed(1)}% de cobertura)

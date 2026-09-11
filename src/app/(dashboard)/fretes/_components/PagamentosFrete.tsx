@@ -39,8 +39,8 @@ export function PagamentosFrete({
 
   return (
     <div className="card mb-6 p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">💰 Pagamento do frete</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">💰 Pagamento do frete</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Confirme aqui quando cada parcela for paga ao motorista — isso não movimenta dinheiro automaticamente, é só
         pra manter o controle.
       </p>
@@ -74,12 +74,12 @@ function LinhaPagamento({
   }
 
   return (
-    <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+    <div className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3">
       <div>
-        <p className="text-sm font-medium text-slate-900">
+        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
           {LABEL_TIPO[pagamento.tipo]} — {pagamento.percentual}%
         </p>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           {formatoMoeda.format(pagamento.valor)}
           {pagamento.status === "pago" && pagamento.pago_em && ` — pago em ${new Date(pagamento.pago_em).toLocaleDateString("pt-BR")}`}
         </p>

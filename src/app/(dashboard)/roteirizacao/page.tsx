@@ -82,7 +82,7 @@ export default async function RoteirizacaoUfPage({
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -94,7 +94,7 @@ export default async function RoteirizacaoUfPage({
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">UF</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">UF</label>
           <select name="uf" defaultValue={uf ?? ""} className="input text-sm">
             <option value="">Selecione...</option>
             {UFS.map((sigla) => (
@@ -105,7 +105,7 @@ export default async function RoteirizacaoUfPage({
           </select>
         </div>
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Município</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Município</label>
           <input type="text" name="municipio" defaultValue={municipio ?? ""} placeholder="Opcional" className="input text-sm" />
         </div>
         <button type="submit" className="btn-secondary text-sm">
@@ -138,11 +138,11 @@ export default async function RoteirizacaoUfPage({
       )}
 
       {empresaSelecionada && !uf && (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">Escolha uma UF para começar.</p>
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Escolha uma UF para começar.</p>
       )}
 
       {empresaSelecionada && uf && postos.length === 0 && (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Nenhum posto ativo com coordenadas encontrado para esse filtro.
         </p>
       )}
@@ -171,16 +171,16 @@ export default async function RoteirizacaoUfPage({
 
           {ranking.length > 0 && (
             <div className="mb-6 card p-4">
-              <h2 className="mb-3 text-sm font-semibold text-slate-900">Top 5 mais baratos por combustível</h2>
+              <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Top 5 mais baratos por combustível</h2>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {ranking.map(({ combustivel, top5 }) => (
-                  <div key={combustivel} className="rounded-lg border border-slate-100 p-3">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{combustivel}</p>
+                  <div key={combustivel} className="rounded-lg border border-slate-100 dark:border-slate-700 p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{combustivel}</p>
                     <ol className="space-y-1.5">
                       {top5.map((p, i) => (
                         <li key={p.cnpj} className="flex items-center gap-2 text-sm">
                           <span className="w-4 shrink-0 text-xs font-semibold text-slate-400">{i + 1}</span>
-                          <span className="min-w-0 flex-1 truncate text-slate-700" title={p.razaoSocial ?? formatCNPJ(p.cnpj)}>
+                          <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-300" title={p.razaoSocial ?? formatCNPJ(p.cnpj)}>
                             {p.razaoSocial ?? formatCNPJ(p.cnpj)}
                           </span>
                           <span className="shrink-0 font-medium tabular-nums text-status-ativo">
@@ -197,7 +197,7 @@ export default async function RoteirizacaoUfPage({
 
           <div className="card overflow-x-auto p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-900">Postos ({postos.length})</h2>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Postos ({postos.length})</h2>
               <SalvarConsultaForm
                 tipo="estado"
                 empresaId={empresaSelecionada}
@@ -206,7 +206,7 @@ export default async function RoteirizacaoUfPage({
               />
             </div>
             <table className="w-full border-separate border-spacing-0 text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="whitespace-nowrap py-2 pr-4"><span className="inline-flex items-center gap-1">Score <AjudaIcon chave="roteirizacao.score_posto" /></span></th>
                   <th className="py-2 pr-4">Razão social</th>
@@ -216,15 +216,15 @@ export default async function RoteirizacaoUfPage({
                   <th className="whitespace-nowrap py-2">Fonte</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {postos.map((p) => (
                   <tr key={p.cnpj} className="transition-colors hover:bg-frota-50/60">
                     <td className="py-2.5 pr-4 align-top">
                       <ScoreBadge score={p.score} />
                     </td>
-                    <td className="py-2.5 pr-4 align-top text-slate-700">{p.razaoSocial ?? formatCNPJ(p.cnpj)}</td>
-                    <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">{p.bandeira ?? "—"}</td>
-                    <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600">
+                    <td className="py-2.5 pr-4 align-top text-slate-700 dark:text-slate-300">{p.razaoSocial ?? formatCNPJ(p.cnpj)}</td>
+                    <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">{p.bandeira ?? "—"}</td>
+                    <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-600 dark:text-slate-300">
                       {p.municipio ?? "—"} - {p.uf ?? "—"}
                     </td>
                     <td className="py-2.5 pr-4 align-top">
@@ -241,7 +241,7 @@ export default async function RoteirizacaoUfPage({
                           Base ANP
                         </span>
                       ) : (
-                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+                        <span className="rounded-md bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300">
                           Próprio
                         </span>
                       )}

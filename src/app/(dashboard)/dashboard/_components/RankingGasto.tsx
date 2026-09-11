@@ -50,7 +50,7 @@ export function RankingGasto({ itens, colunaExtra }: { itens: ItemRankingGasto[]
 
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400 dark:text-slate-400">
             <tr>
               <th className="py-2 pr-4">#</th>
               <th className="py-2 pr-4">{colunaExtra}</th>
@@ -59,19 +59,19 @@ export function RankingGasto({ itens, colunaExtra }: { itens: ItemRankingGasto[]
               <th className="py-2">Abastecimentos</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:divide-slate-700">
             {itens.map((item, i) => (
               <tr key={item.chave}>
                 <td className="py-2 pr-4 text-xs font-semibold text-slate-400">{i + 1}</td>
-                <td className="py-2 pr-4 text-slate-700">
+                <td className="py-2 pr-4 text-slate-700 dark:text-slate-300 dark:text-slate-300">
                   {item.label}
                   {item.sub && <span className="ml-1 text-xs text-slate-400">{item.sub}</span>}
                 </td>
-                <td className="py-2 pr-4 tabular-nums font-medium text-slate-900">{formatarMoeda(item.gasto)}</td>
-                <td className="py-2 pr-4 tabular-nums text-slate-600">
+                <td className="py-2 pr-4 tabular-nums font-medium text-slate-900 dark:text-slate-100 dark:text-slate-100">{formatarMoeda(item.gasto)}</td>
+                <td className="py-2 pr-4 tabular-nums text-slate-600 dark:text-slate-300 dark:text-slate-300">
                   {item.litros.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L
                 </td>
-                <td className="py-2 tabular-nums text-slate-600">{item.qtd}</td>
+                <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300 dark:text-slate-300">{item.qtd}</td>
               </tr>
             ))}
           </tbody>

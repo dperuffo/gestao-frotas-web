@@ -180,7 +180,7 @@ export function BotaoGerarCardPng({
           </button>
         )}
       </div>
-      <canvas ref={canvasRef} className={pronto ? "mt-3 w-full max-w-xs rounded-lg border border-slate-200" : "hidden"} />
+      <canvas ref={canvasRef} className={pronto ? "mt-3 w-full max-w-xs rounded-lg border border-slate-200 dark:border-slate-700" : "hidden"} />
     </div>
   );
 }

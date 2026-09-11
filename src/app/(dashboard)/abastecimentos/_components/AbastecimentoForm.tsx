@@ -54,7 +54,7 @@ export function AbastecimentoForm({
       )}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Abastecimento</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Abastecimento</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Data e hora">
             <input
@@ -141,7 +141,7 @@ export function AbastecimentoForm({
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Posto</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Posto</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Nome do posto">
             <input name="pv_razao_social" defaultValue={abastecimento?.pv_razao_social ?? ""} className="input" />
@@ -155,10 +155,10 @@ export function AbastecimentoForm({
         </div>
 
         {abastecimento && nomeEmpresaAtual && (
-          <p className="mt-4 text-xs text-slate-500">Cliente: {nomeEmpresaAtual} (não pode ser alterado aqui).</p>
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Cliente: {nomeEmpresaAtual} (não pode ser alterado aqui).</p>
         )}
         {abastecimento && (
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Identificador: {abastecimento.identificador} · Origem:{" "}
             {
               // Fase 27.55 — o robô de teste (negociação com postos) também
@@ -195,7 +195,7 @@ function Campo({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

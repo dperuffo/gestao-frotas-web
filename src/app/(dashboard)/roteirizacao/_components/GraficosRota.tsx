@@ -98,7 +98,7 @@ export function GraficosRota({
   return (
     <div className="space-y-6">
       <div>
-        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900">📈 Custo Acumulado ao Longo da Rota <AjudaIcon chave="roteirizacao.custo_acumulado" /></p>
+        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">📈 Custo Acumulado ao Longo da Rota <AjudaIcon chave="roteirizacao.custo_acumulado" /></p>
         <ResponsiveContainer width="100%" height={260}>
           <AreaChart data={dadosCusto} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E8F5E9" />
@@ -114,7 +114,7 @@ export function GraficosRota({
       </div>
 
       <div>
-        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900">🛢 Nível do Tanque ao Longo da Rota <AjudaIcon chave="roteirizacao.nivel_tanque" /></p>
+        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">🛢 Nível do Tanque ao Longo da Rota <AjudaIcon chave="roteirizacao.nivel_tanque" /></p>
         <ResponsiveContainer width="100%" height={240}>
           <LineChart data={dadosTanque} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E3F2FD" />
@@ -145,7 +145,7 @@ export function GraficosRota({
       </div>
 
       <div>
-        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900">🏢 Custo por Posto de Abastecimento <AjudaIcon chave="roteirizacao.custo_por_posto" /></p>
+        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">🏢 Custo por Posto de Abastecimento <AjudaIcon chave="roteirizacao.custo_por_posto" /></p>
         <ResponsiveContainer width="100%" height={Math.max(180, dadosPorPosto.length * 40 + 40)}>
           <BarChart
             data={dadosPorPosto}

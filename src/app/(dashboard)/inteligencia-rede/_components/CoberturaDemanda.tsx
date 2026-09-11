@@ -120,12 +120,12 @@ export function CoberturaDemanda({ postosPorUf, demandaPorUf }: { postosPorUf: R
         <MiniKpi label="⛽ Total postos GF" valor={formatarInt(totalPostosGf)} />
       </div>
 
-      <p className="mb-1 text-xs font-medium text-slate-600">🗺️ Mapa de Gaps — Demanda real vs Cobertura GF</p>
+      <p className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-300">🗺️ Mapa de Gaps — Demanda real vs Cobertura GF</p>
       <p className="mb-2 text-xs text-slate-400">Tamanho da bolha = demanda (abastecimentos reais). Cor = severidade do gap.</p>
       <MapaGapCoberturaLazy pontos={pontosMapa} />
 
       <div className="mt-6">
-        <p className="mb-2 text-xs font-medium text-slate-600">📊 Top 15 UFs — Prioridade de Expansão</p>
+        <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">📊 Top 15 UFs — Prioridade de Expansão</p>
         <ResponsiveContainer width="100%" height={340}>
           <BarChart data={top15} margin={{ top: 20, right: 16, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -144,15 +144,15 @@ export function CoberturaDemanda({ postosPorUf, demandaPorUf }: { postosPorUf: R
 
       <div className="mt-6 space-y-2">
         {insights.map((texto, i) => (
-          <div key={i} className="rounded-lg bg-sky-50 px-3 py-2 text-sm text-slate-700">
+          <div key={i} className="rounded-lg bg-sky-50 px-3 py-2 text-sm text-slate-700 dark:text-slate-300">
             {texto}
           </div>
         ))}
       </div>
 
-      <details className="mt-4 rounded-lg border border-slate-200">
-        <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-slate-700">ℹ️ Como o Gap Score é calculado</summary>
-        <div className="space-y-1 px-4 pb-4 pt-0 text-xs text-slate-600">
+      <details className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700">
+        <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300">ℹ️ Como o Gap Score é calculado</summary>
+        <div className="space-y-1 px-4 pb-4 pt-0 text-xs text-slate-600 dark:text-slate-300">
           <p>
             <strong>Gap Score</strong> = demanda_normalizada × (1 − cobertura_normalizada)
           </p>
@@ -165,7 +165,7 @@ export function CoberturaDemanda({ postosPorUf, demandaPorUf }: { postosPorUf: R
 
       <div className="mt-6 overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="py-2 pr-3">UF</th>
               <th className="py-2 pr-3">Demanda (abast. reais)</th>
@@ -175,15 +175,15 @@ export function CoberturaDemanda({ postosPorUf, demandaPorUf }: { postosPorUf: R
               <th className="py-2">Ação sugerida</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhas.map((l) => (
               <tr key={l.uf}>
-                <td className="py-2 pr-3 text-slate-700">{l.uf}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-600">{l.demanda}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-600">{l.postosGf}</td>
-                <td className="py-2 pr-3 tabular-nums text-slate-600">{l.gap.toFixed(3)}</td>
+                <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{l.uf}</td>
+                <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{l.demanda}</td>
+                <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{l.postosGf}</td>
+                <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{l.gap.toFixed(3)}</td>
                 <td className="py-2 pr-3">{prioridade(l.gap)}</td>
-                <td className="py-2 text-slate-600">{acaoSugerida(l.gap)}</td>
+                <td className="py-2 text-slate-600 dark:text-slate-300">{acaoSugerida(l.gap)}</td>
               </tr>
             ))}
           </tbody>
@@ -197,7 +197,7 @@ function MiniKpi({ label, valor }: { label: string; valor: string }) {
   return (
     <div className="card p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{valor}</p>
     </div>
   );
 }

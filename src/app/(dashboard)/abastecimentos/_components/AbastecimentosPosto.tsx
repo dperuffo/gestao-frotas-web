@@ -43,7 +43,7 @@ function nomeProvedor(provedor: string) {
 }
 
 function BadgeProvedor({ provedor }: { provedor: string }) {
-  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 text-slate-600";
+  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300";
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${classe}`}>
       {nomeProvedor(provedor)}
@@ -439,8 +439,8 @@ export async function AbastecimentosPosto({
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Abastecimentos Fornecidos</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Abastecimentos Fornecidos</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Combustível que você forneceu aos seus clientes{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
         </p>
       </div>
@@ -460,7 +460,7 @@ export async function AbastecimentosPosto({
       <div className="mb-4 flex flex-wrap gap-2">
         <Link
           href={linkFiltro({ combustivel: undefined })}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${!combustivel ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`rounded-full px-3 py-1 text-xs font-medium ${!combustivel ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
         >
           Todos
         </Link>
@@ -468,7 +468,7 @@ export async function AbastecimentosPosto({
           <Link
             key={p}
             href={linkFiltro({ combustivel: p })}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${combustivel === p ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${combustivel === p ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
           >
             {p}
           </Link>
@@ -477,7 +477,7 @@ export async function AbastecimentosPosto({
             precisar abrir registro por registro procurando a bolinha vermelha. */}
         <Link
           href={linkFiltro({ ajuste: ajuste === "pendente" ? undefined : "pendente" })}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${ajuste === "pendente" ? "bg-red-500 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`rounded-full px-3 py-1 text-xs font-medium ${ajuste === "pendente" ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
         >
           🔴 Pendente de ajuste
         </Link>
@@ -489,10 +489,10 @@ export async function AbastecimentosPosto({
           (mesmo tratamento do lado cliente, ver abastecimentos/page.tsx). */}
       {provedoresOpcoes.length > 1 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-          <span className="font-medium text-slate-500">Meio de pagamento:</span>
+          <span className="font-medium text-slate-500 dark:text-slate-400">Meio de pagamento:</span>
           <Link
             href={linkFiltro({ provedor: undefined })}
-            className={`rounded-full px-3 py-1 font-medium ${!provedor ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            className={`rounded-full px-3 py-1 font-medium ${!provedor ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
           >
             Todos
           </Link>
@@ -502,7 +502,7 @@ export async function AbastecimentosPosto({
               href={linkFiltro({ provedor: p })}
               title={nomeProvedor(p)}
               className={`flex items-center rounded-lg border-2 px-2 py-1 ${
-                provedor === p ? "border-frota-600 bg-white" : "border-transparent bg-slate-100 opacity-60 hover:opacity-100"
+                provedor === p ? "border-frota-600 bg-white dark:bg-slate-800" : "border-transparent bg-slate-100 dark:bg-slate-700 opacity-60 hover:opacity-100"
               }`}
             >
               <LogoProvedor provedor={p} className="h-4 w-auto" />
@@ -517,28 +517,28 @@ export async function AbastecimentosPosto({
           da própria linha da tabela (verde/vermelho/âmbar), pra reconhecer
           de relance. */}
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-medium text-slate-500">NF-e:</span>
+        <span className="font-medium text-slate-500 dark:text-slate-400">NF-e:</span>
         <Link
           href={linkFiltro({ nf: undefined })}
-          className={`rounded-full px-3 py-1 font-medium ${!nf ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`rounded-full px-3 py-1 font-medium ${!nf ? "bg-slate-700 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
         >
           Todas ({contagemNf.todos})
         </Link>
         <Link
           href={linkFiltro({ nf: nf === "emitida" ? undefined : "emitida" })}
-          className={`rounded-full px-3 py-1 font-medium ${nf === "emitida" ? "bg-green-600 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`rounded-full px-3 py-1 font-medium ${nf === "emitida" ? "bg-green-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
         >
           Emitida ({contagemNf.emitida})
         </Link>
         <Link
           href={linkFiltro({ nf: nf === "rejeitada" ? undefined : "rejeitada" })}
-          className={`rounded-full px-3 py-1 font-medium ${nf === "rejeitada" ? "bg-red-600 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`rounded-full px-3 py-1 font-medium ${nf === "rejeitada" ? "bg-red-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
         >
           Rejeitada ({contagemNf.rejeitada})
         </Link>
         <Link
           href={linkFiltro({ nf: nf === "pendente" ? undefined : "pendente" })}
-          className={`rounded-full px-3 py-1 font-medium ${nf === "pendente" ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`rounded-full px-3 py-1 font-medium ${nf === "pendente" ? "bg-amber-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
         >
           Pendente ({contagemNf.pendente})
         </Link>
@@ -551,7 +551,7 @@ export async function AbastecimentosPosto({
         <input type="hidden" name="nf" value={nf ?? ""} />
         <input type="hidden" name="provedor" value={provedor ?? ""} />
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
           <select name="cliente" defaultValue={cliente ?? ""} className="input text-sm">
             <option value="">Todos os clientes</option>
             {clientesOpcoes.map((c) => (
@@ -579,7 +579,7 @@ export async function AbastecimentosPosto({
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">Data</th>
@@ -593,7 +593,7 @@ export async function AbastecimentosPosto({
               <th className="px-4 py-3">NF-e</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {registros.map((r) => {
               const ehProfrotas = r.provedor === "profrotas";
               const idNum = Number(r.id);
@@ -609,7 +609,7 @@ export async function AbastecimentosPosto({
                   <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">
                     {r.codigo_abastecimento ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {/* Fase 27.147 — linhas de outros provedores também têm
                         página de detalhe/ajuste (ver /abastecimentos/externo/[id],
                         Fase 27.142). `r.id` já é o id real da tabela-fonte (a
@@ -627,14 +627,14 @@ export async function AbastecimentosPosto({
                       {r.data_abastecimento ? formatDate(r.data_abastecimento) : "—"}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-700">
+                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                     {(r.empresa_id ? nomesClientes.get(r.empresa_id) : null) ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{r.placa ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.motorista_nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.produto ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.litros ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.placa ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.motorista_nome ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.produto ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.litros ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {r.valor_total != null ? formatarMoeda(r.valor_total) : "—"}
                   </td>
                   <td className="px-4 py-3">
@@ -657,7 +657,7 @@ export async function AbastecimentosPosto({
                             extraídos do XML já mostrados em
                             /notas-fiscais, agora também aqui. */}
                         {(pendencia.nomeArquivo || pendencia.cnpjEmitente || pendencia.produtoNomeXml) && (
-                          <p className="mt-1 max-w-xs text-xs text-slate-500">
+                          <p className="mt-1 max-w-xs text-xs text-slate-500 dark:text-slate-400">
                             {pendencia.nomeArquivo ? `Arquivo: ${pendencia.nomeArquivo}` : ""}
                             {pendencia.cnpjEmitente ? `${pendencia.nomeArquivo ? " · " : ""}CNPJ emitente ${pendencia.cnpjEmitente}` : ""}
                             {pendencia.produtoNomeXml ? `, ${pendencia.produtoNomeXml}` : ""}

@@ -167,7 +167,7 @@ function RegioesCarasBaratas({ precosPorUf, combustiveis }: { precosPorUf: Preco
 
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">UF</th>
                   <th className="py-2 pr-3">Categoria</th>
@@ -175,13 +175,13 @@ function RegioesCarasBaratas({ precosPorUf, combustiveis }: { precosPorUf: Preco
                   <th className="py-2">Postos</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {dados.linhas.map((l) => (
                   <tr key={l.uf}>
-                    <td className="py-2 pr-3 text-slate-700">{l.uf}</td>
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{l.uf}</td>
                     <td className="py-2 pr-3">{l.categoria}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda(l.precoMedio, 4)}</td>
-                    <td className="py-2 tabular-nums text-slate-600">{l.qtdPostos}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarMoeda(l.precoMedio, 4)}</td>
+                    <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">{l.qtdPostos}</td>
                   </tr>
                 ))}
               </tbody>
@@ -252,7 +252,7 @@ function ClustersOportunidade({ historico, combustiveis }: { historico: Registro
         <>
           <div className="mb-6 grid gap-6 lg:grid-cols-2">
             <div>
-              <p className="mb-2 text-xs font-medium text-slate-600">Distribuição por cluster</p>
+              <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Distribuição por cluster</p>
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie data={contagemCluster} dataKey="postos" nameKey="cluster" innerRadius={60} outerRadius={100} label={(e) => e.cluster.split(" ")[0]}>
@@ -265,7 +265,7 @@ function ClustersOportunidade({ historico, combustiveis }: { historico: Registro
               </ResponsiveContainer>
             </div>
             <div>
-              <p className="mb-2 text-xs font-medium text-slate-600">Top 15 municípios mais baratos</p>
+              <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Top 15 municípios mais baratos</p>
               <BarraHorizontal
                 dados={top15.map((m) => ({
                   label: `${truncar(m.municipio, 20)} (${m.uf})`,
@@ -278,10 +278,10 @@ function ClustersOportunidade({ historico, combustiveis }: { historico: Registro
             </div>
           </div>
 
-          <p className="mb-2 text-xs font-medium text-slate-600">📋 Tabela completa de municípios</p>
+          <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">📋 Tabela completa de municípios</p>
           <div className="max-h-96 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-white text-xs uppercase text-slate-500">
+              <thead className="sticky top-0 bg-white dark:bg-slate-800 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">Município</th>
                   <th className="py-2 pr-3">UF</th>
@@ -291,20 +291,20 @@ function ClustersOportunidade({ historico, combustiveis }: { historico: Registro
                   <th className="py-2">Postos</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {[...municipios.linhas]
                   .sort((a, b) => a.deltaVsMedia - b.deltaVsMedia)
                   .map((m) => (
                     <tr key={`${m.uf}__${m.municipio}`}>
-                      <td className="py-2 pr-3 text-slate-700">{m.municipio}</td>
-                      <td className="py-2 pr-3 text-slate-600">{m.uf}</td>
+                      <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{m.municipio}</td>
+                      <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{m.uf}</td>
                       <td className="py-2 pr-3">{m.cluster}</td>
-                      <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda(m.precoMedio, 4)}</td>
-                      <td className="py-2 pr-3 tabular-nums text-slate-600">
+                      <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarMoeda(m.precoMedio, 4)}</td>
+                      <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">
                         {m.deltaVsMedia >= 0 ? "+" : ""}
                         {m.deltaVsMedia.toFixed(2)}%
                       </td>
-                      <td className="py-2 tabular-nums text-slate-600">{m.postos}</td>
+                      <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">{m.postos}</td>
                     </tr>
                   ))}
               </tbody>
@@ -381,7 +381,7 @@ function GfVsConcorrencia({ desvios, combustiveis }: { desvios: DesvioAnp[]; com
 
           {alertas.length > 0 && (
             <div className="mb-4 space-y-2">
-              <p className="text-xs font-medium text-slate-600">⚠️ Atenção</p>
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-300">⚠️ Atenção</p>
               {alertas.map((a) => (
                 <div key={a.uf} className="rounded-lg border-l-4 bg-red-50 px-3 py-2 text-sm" style={{ borderColor: "#E53935" }}>
                   🔴 <strong>{a.uf}</strong> — GF {formatarMoeda(a.gfMed)} vs ANP {formatarMoeda(a.anpMed)} (
@@ -395,7 +395,7 @@ function GfVsConcorrencia({ desvios, combustiveis }: { desvios: DesvioAnp[]; com
 
           {oportunidades.length > 0 && (
             <div className="mb-4 space-y-2">
-              <p className="text-xs font-medium text-slate-600">💚 Destaque</p>
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-300">💚 Destaque</p>
               {oportunidades.map((o) => (
                 <div key={o.uf} className="rounded-lg border-l-4 bg-emerald-50 px-3 py-2 text-sm" style={{ borderColor: "#43A047" }}>
                   💚 <strong>{o.uf}</strong> — GF {formatarMoeda(o.gfMed)} vs ANP {formatarMoeda(o.anpMed)} ({o.deltaPct.toFixed(1)}%) ·
@@ -407,7 +407,7 @@ function GfVsConcorrencia({ desvios, combustiveis }: { desvios: DesvioAnp[]; com
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">UF</th>
                   <th className="py-2 pr-3">GF médio</th>
@@ -418,19 +418,19 @@ function GfVsConcorrencia({ desvios, combustiveis }: { desvios: DesvioAnp[]; com
                   <th className="py-2">Postos</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {comp.map((c) => (
                   <tr key={c.uf}>
-                    <td className="py-2 pr-3 text-slate-700">{c.uf}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda(c.gfMed, 4)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(c.anpMed, 4)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(c.deltaAbs, 4)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{c.uf}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarMoeda(c.gfMed, 4)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(c.anpMed, 4)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(c.deltaAbs, 4)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">
                       {c.deltaPct >= 0 ? "+" : ""}
                       {c.deltaPct.toFixed(2)}%
                     </td>
                     <td className="py-2 pr-3 text-xs text-slate-400">{c.nivelAnp}</td>
-                    <td className="py-2 tabular-nums text-slate-600">{c.postos}</td>
+                    <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">{c.postos}</td>
                   </tr>
                 ))}
               </tbody>
@@ -526,20 +526,20 @@ function FrotaReal({
         <p className="p-4 text-sm text-slate-400">Nenhum abastecimento de {atual} registrado ainda.</p>
       ) : (
         <>
-          <p className="mb-2 text-xs font-medium text-slate-600">🌎 Mapa de calor — postos visitados pela frota</p>
+          <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">🌎 Mapa de calor — postos visitados pela frota</p>
           <p className="mb-2 text-xs text-slate-400">Tamanho = frequência de visitas. Cor = preço médio pago (verde barato → vermelho caro).</p>
           <MapaFrotaRealLazy pontos={pontosMapa} />
 
           <div className="mt-6 grid gap-6 lg:grid-cols-5">
             <div className="lg:col-span-3">
-              <p className="mb-2 text-xs font-medium text-slate-600">🏆 Ranking de postos mais utilizados</p>
+              <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">🏆 Ranking de postos mais utilizados</p>
               <BarraHorizontal
                 dados={ranking.map((p) => ({ label: truncar(p.razaoSocial ?? p.cnpj, 30), valor: p.visitas, cor: "#283593", texto: formatarInt(p.visitas) }))}
                 eixoX="Abastecimentos"
               />
             </div>
             <div className="lg:col-span-2">
-              <p className="mb-2 text-xs font-medium text-slate-600">📊 Preço pago por UF (ref.: {atual} ANP)</p>
+              <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">📊 Preço pago por UF (ref.: {atual} ANP)</p>
               <ResponsiveContainer width="100%" height={Math.max(220, porUf.length * 26)}>
                 <BarChart data={porUf} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -556,7 +556,7 @@ function FrotaReal({
 
           <div className="mt-6 overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">UF</th>
                   <th className="py-2 pr-3">Preço real</th>
@@ -565,14 +565,14 @@ function FrotaReal({
                   <th className="py-2">Δ% vs ANP</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {porUf.map((u) => (
                   <tr key={u.uf}>
-                    <td className="py-2 pr-3 text-slate-700">{u.uf}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda(u.precoReal)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{u.visitas}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{u.anpRef != null ? formatarMoeda(u.anpRef) : "—"}</td>
-                    <td className="py-2 tabular-nums text-slate-600">
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{u.uf}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarMoeda(u.precoReal)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{u.visitas}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{u.anpRef != null ? formatarMoeda(u.anpRef) : "—"}</td>
+                    <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">
                       {u.deltaPct != null ? `${u.deltaPct >= 0 ? "+" : ""}${u.deltaPct.toFixed(1)}%` : "—"}
                     </td>
                   </tr>
@@ -589,7 +589,7 @@ function FrotaReal({
 function SeletorCombustivel({ opcoes, atual, onChange }: { opcoes: string[]; atual: string; onChange: (v: string) => void }) {
   return (
     <div className="mb-4 flex items-center gap-2">
-      <label className="text-xs font-medium text-slate-500">Combustível:</label>
+      <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Combustível:</label>
       <select value={atual} onChange={(e) => onChange(e.target.value)} className="input w-auto text-sm">
         {opcoes.map((c) => (
           <option key={c} value={c}>
@@ -604,9 +604,9 @@ function SeletorCombustivel({ opcoes, atual, onChange }: { opcoes: string[]; atu
 function CardDestaque({ titulo, valor, linha1, linha2, bg, borda }: { titulo: string; valor: string; linha1: string; linha2?: string; bg: string; borda: string }) {
   return (
     <div className="rounded-lg border-l-4 p-3 text-sm" style={{ backgroundColor: bg, borderColor: borda }}>
-      <p className="text-xs font-medium text-slate-500">{titulo}</p>
-      <p className="mt-0.5 text-lg font-semibold text-slate-900">{valor}</p>
-      <p className="text-xs text-slate-600">{linha1}</p>
+      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{titulo}</p>
+      <p className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-100">{valor}</p>
+      <p className="text-xs text-slate-600 dark:text-slate-300">{linha1}</p>
       {linha2 && <p className="text-xs text-slate-400">{linha2}</p>}
     </div>
   );
@@ -616,7 +616,7 @@ function MiniKpi({ label, valor }: { label: string; valor: string }) {
   return (
     <div className="card p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{valor}</p>
     </div>
   );
 }
@@ -628,13 +628,13 @@ function BarraHorizontal({ dados, eixoX }: { dados: { label: string; valor: numb
       <div className="space-y-1.5">
         {dados.map((d, i) => (
           <div key={`${d.label}__${i}`} className="flex items-center gap-2 text-xs">
-            <span className="w-32 shrink-0 truncate text-slate-600" title={d.label}>
+            <span className="w-32 shrink-0 truncate text-slate-600 dark:text-slate-300" title={d.label}>
               {d.label}
             </span>
-            <div className="h-4 flex-1 rounded bg-slate-100">
+            <div className="h-4 flex-1 rounded bg-slate-100 dark:bg-slate-700">
               <div className="h-4 rounded" style={{ width: `${Math.max(2, (d.valor / maxValor) * 100)}%`, backgroundColor: d.cor }} />
             </div>
-            <span className="w-16 shrink-0 text-right tabular-nums text-slate-500">{d.texto}</span>
+            <span className="w-16 shrink-0 text-right tabular-nums text-slate-500 dark:text-slate-400">{d.texto}</span>
           </div>
         ))}
       </div>

@@ -37,8 +37,8 @@ export function RecolocarParaBaseCard({
 
   return (
     <div className="card mb-6 border border-amber-200 bg-amber-50/50 p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">↩️ Recolocar para a minha base</h2>
-      <p className="mb-3 text-xs text-slate-600">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">↩️ Recolocar para a minha base</h2>
+      <p className="mb-3 text-xs text-slate-600 dark:text-slate-300">
         Ninguém de fora pegou (ou você recusou as propostas)? Recoloque a solicitação para os seus motoristas
         próprios. As propostas abertas de fora são encerradas.
       </p>
@@ -46,11 +46,11 @@ export function RecolocarParaBaseCard({
       {erro && <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <div className="mb-3 space-y-2">
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
           <input type="radio" checked={modo === "aberta"} onChange={() => setModo("aberta")} className="h-4 w-4" />
           Abrir para todos os motoristas da base
         </label>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
           <input type="radio" checked={modo === "direto"} onChange={() => setModo("direto")} className="h-4 w-4" />
           Atribuir direto a um motorista da base
         </label>
@@ -65,7 +65,7 @@ export function RecolocarParaBaseCard({
           </select>
         )}
         {modo === "direto" && motoristas.length === 0 && (
-          <p className="text-xs text-slate-500">Nenhum motorista próprio ativo cadastrado.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Nenhum motorista próprio ativo cadastrado.</p>
         )}
       </div>
 

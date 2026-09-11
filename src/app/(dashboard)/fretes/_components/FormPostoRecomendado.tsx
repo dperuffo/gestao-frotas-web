@@ -28,14 +28,14 @@ export function FormPostoRecomendado({
   }
 
   return (
-    <form ref={formRef} action={handleSubmit} className="flex flex-wrap items-end gap-2 rounded-lg bg-slate-50 p-3">
+    <form ref={formRef} action={handleSubmit} className="flex flex-wrap items-end gap-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3">
       <div className="flex-1 min-w-[160px]">
-        <label className="mb-1 block text-xs font-medium text-slate-500">Nome do posto</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Nome do posto</label>
         <input type="text" name="nome_posto" required placeholder='Ex.: "Posto Bandeirantes - km 320"' className="input text-sm" />
       </div>
       {itensParceria.length > 0 && (
         <div className="flex-1 min-w-[160px]">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Vincular benefício (opcional)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Vincular benefício (opcional)</label>
           <select name="item_catalogo_id" className="input text-sm">
             <option value="">Nenhum</option>
             {itensParceria.map((item) => (
@@ -48,7 +48,7 @@ export function FormPostoRecomendado({
         </div>
       )}
       <div className="flex-1 min-w-[160px]">
-        <label className="mb-1 block text-xs font-medium text-slate-500">Observação</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Observação</label>
         <input type="text" name="observacao" placeholder="Opcional" className="input text-sm" />
       </div>
       <button type="submit" disabled={isPending} className="btn-secondary text-sm">

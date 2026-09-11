@@ -59,7 +59,7 @@ export function GraficoVariacaoPrecos({ dados }: { dados: ItemVariacaoPreco[] })
 
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="py-2 pr-4">Combustível</th>
               <th className="py-2 pr-4">Mín.</th>
@@ -70,18 +70,18 @@ export function GraficoVariacaoPrecos({ dados }: { dados: ItemVariacaoPreco[] })
               <th className="py-2">Fonte ANP</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {dados.map((d) => (
               <tr key={d.item_nome}>
-                <td className="py-2 pr-4 text-slate-700">{d.item_nome}</td>
-                <td className="py-2 pr-4 tabular-nums text-slate-600">{formatarMoeda(d.preco_min)}</td>
-                <td className="py-2 pr-4 tabular-nums font-medium text-slate-900">{formatarMoeda(d.preco_med)}</td>
-                <td className="py-2 pr-4 tabular-nums text-slate-600">{formatarMoeda(d.preco_max)}</td>
-                <td className="py-2 pr-4 tabular-nums text-slate-600">
+                <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{d.item_nome}</td>
+                <td className="py-2 pr-4 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(d.preco_min)}</td>
+                <td className="py-2 pr-4 tabular-nums font-medium text-slate-900 dark:text-slate-100">{formatarMoeda(d.preco_med)}</td>
+                <td className="py-2 pr-4 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(d.preco_max)}</td>
+                <td className="py-2 pr-4 tabular-nums text-slate-600 dark:text-slate-300">
                   {(d.coef_variacao * 100).toFixed(1)}%
                   {d.coef_variacao > 0.08 && <span className="ml-1 text-amber-600" title="Alta variação de preço">⚠️</span>}
                 </td>
-                <td className="py-2 pr-4 tabular-nums text-slate-600">
+                <td className="py-2 pr-4 tabular-nums text-slate-600 dark:text-slate-300">
                   {d.anp_preco_med != null ? formatarMoeda(d.anp_preco_med) : "—"}
                 </td>
                 <td className="py-2 text-xs text-slate-400">

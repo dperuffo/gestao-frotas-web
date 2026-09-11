@@ -57,7 +57,7 @@ function nomeProvedor(provedor: string) {
 }
 
 function BadgeProvedor({ provedor }: { provedor: string }) {
-  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 text-slate-600";
+  const classe = CORES_PROVEDOR[provedor] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300";
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${classe}`}>
       {nomeProvedor(provedor)}
@@ -381,7 +381,7 @@ export default async function AbastecimentosPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -398,7 +398,7 @@ export default async function AbastecimentosPage({
       )}
 
       {semClienteEscolhido && (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver os abastecimentos dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para ver os abastecimentos dele.</p>
       )}
 
       {!semClienteEscolhido && (
@@ -451,10 +451,10 @@ export default async function AbastecimentosPage({
           um provedor específico, não tem logo própria. */}
       {provedoresOpcoes.length > 1 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-          <span className="font-medium text-slate-500">Meio de pagamento:</span>
+          <span className="font-medium text-slate-500 dark:text-slate-400">Meio de pagamento:</span>
           <Link
             href={linkFiltro({ provedor: undefined })}
-            className={`rounded-full px-3 py-1 font-medium ${!provedor ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            className={`rounded-full px-3 py-1 font-medium ${!provedor ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
           >
             Todos
           </Link>
@@ -464,7 +464,7 @@ export default async function AbastecimentosPage({
               href={linkFiltro({ provedor: p })}
               title={nomeProvedor(p)}
               className={`flex items-center rounded-lg border-2 px-2 py-1 ${
-                provedor === p ? "border-frota-600 bg-white" : "border-transparent bg-slate-100 opacity-60 hover:opacity-100"
+                provedor === p ? "border-frota-600 bg-white dark:bg-slate-800" : "border-transparent bg-slate-100 dark:bg-slate-700 opacity-60 hover:opacity-100"
               }`}
             >
               <LogoProvedor provedor={p} className="h-4 w-auto" />
@@ -479,7 +479,7 @@ export default async function AbastecimentosPage({
       <div className="mb-4">
         <Link
           href={linkFiltro({ ajuste: ajuste === "pendente" ? undefined : "pendente" })}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${ajuste === "pendente" ? "bg-red-500 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`rounded-full px-3 py-1 text-xs font-medium ${ajuste === "pendente" ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
         >
           🔴 Pendente de ajuste
         </Link>
@@ -488,7 +488,7 @@ export default async function AbastecimentosPage({
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar abastecimentos: {error.message}</p>}
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">Data</th>
@@ -502,7 +502,7 @@ export default async function AbastecimentosPage({
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {pendentesManuais.map((p) => (
               <tr key={`manual-${p.id}`} className="bg-amber-50/70 transition-colors hover:bg-amber-100/70">
                 <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{p.codigo_abastecimento ?? "—"}</td>
@@ -514,12 +514,12 @@ export default async function AbastecimentosPage({
                     {formatDate(p.data_abastecimento)}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{p.placa}</td>
-                <td className="px-4 py-3 text-slate-600">{p.motorista_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{p.combustivel ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{p.quantidade ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{formatarMoeda(p.valor_total)}</td>
-                <td className="px-4 py-3 text-slate-600">{p.posto_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.placa}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.motorista_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.combustivel ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.quantidade ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarMoeda(p.valor_total)}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.posto_nome ?? "—"}</td>
                 <td className="px-4 py-3">
                   <BadgeProvedor provedor="manual" />
                 </td>
@@ -570,14 +570,14 @@ export default async function AbastecimentosPage({
                       {dataCelula}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{r.placa ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.motorista_nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.produto ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.litros ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.placa ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.motorista_nome ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.produto ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.litros ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {r.valor_total != null ? formatarMoeda(r.valor_total) : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{r.posto_nome ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.posto_nome ?? "—"}</td>
                   <td className="px-4 py-3">
                     <BadgeProvedor provedor={r.provedor} />
                   </td>

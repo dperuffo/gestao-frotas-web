@@ -77,23 +77,23 @@ export function CartaoReputacaoMotorista({ reputacao }: { reputacao: ReputacaoMo
           🏷️ {tag}
         </span>
       ))}
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+      <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[11px] text-slate-600 dark:text-slate-300">
         {media_estrelas !== null ? `⭐ ${media_estrelas.toFixed(1)} (${total_avaliacoes})` : "⭐ Sem avaliações ainda"}
       </span>
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+      <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[11px] text-slate-600 dark:text-slate-300">
         📦 {fretes_concluidos} concluído{fretes_concluidos === 1 ? "" : "s"}
         {taxa_conclusao !== null ? ` · ${taxa_conclusao}% de conclusão` : ""}
       </span>
-      <span className={`rounded-full px-2 py-0.5 text-[11px] ${cnh_valida ? "bg-slate-100 text-slate-600" : "bg-amber-100 text-amber-700"}`}>
+      <span className={`rounded-full px-2 py-0.5 text-[11px] ${cnh_valida ? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300" : "bg-amber-100 text-amber-700"}`}>
         {cnh_valida ? "🪪 CNH válida" : "🪪 CNH vencida/ausente"}
       </span>
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+      <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[11px] text-slate-600 dark:text-slate-300">
         {telefone_verificado ? "📱 Telefone verificado" : "📱 Telefone não verificado"}
       </span>
       {seguranca_2fa_ativo && (
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">🔒 2FA ativo</span>
+        <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[11px] text-slate-600 dark:text-slate-300">🔒 2FA ativo</span>
       )}
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">{formatarTempoCadastro(dias_cadastro)}</span>
+      <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[11px] text-slate-600 dark:text-slate-300">{formatarTempoCadastro(dias_cadastro)}</span>
     </div>
   );
 }

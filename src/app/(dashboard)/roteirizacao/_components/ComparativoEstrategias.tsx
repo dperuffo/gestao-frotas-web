@@ -23,7 +23,7 @@ export function ComparativoEstrategias({
 
   return (
     <div className="mb-6">
-      <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
         ⚖️ Comparativo de Estratégias <AjudaIcon chave="roteirizacao.comparativo_estrategias" />
       </p>
       <div className="grid gap-3 sm:grid-cols-4">
@@ -33,18 +33,18 @@ export function ComparativoEstrategias({
             <div
               key={c.chave}
               className={`rounded-xl border p-3 text-center ${
-                ativa ? "border-frota-600 bg-frota-50 ring-1 ring-frota-600" : "border-slate-200 bg-slate-50"
+                ativa ? "border-frota-600 bg-frota-50 ring-1 ring-frota-600" : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
               }`}
             >
-              <p className="text-xs font-semibold text-slate-700">
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {c.icone} {c.nome} {ativa && <span className="text-frota-600">✓</span>}
               </p>
               <p className="mt-2 text-lg font-bold text-emerald-700">
                 {c.custoTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
               </p>
-              <p className="mt-1 text-xs text-slate-500">{c.numParadas} parada(s)</p>
-              <p className="text-xs text-slate-500">{c.litrosTotal} L</p>
-              <p className="text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{c.numParadas} parada(s)</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{c.litrosTotal} L</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Grade média:{" "}
                 <span style={{ color: CORES_GRADE[c.gradeMedia] }} className="font-semibold">
                   {c.gradeMedia}

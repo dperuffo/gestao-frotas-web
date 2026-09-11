@@ -20,8 +20,8 @@ export function FormularioLogoutInatividade({ minutosAtuais }: { minutosAtuais: 
 
   return (
     <div className="card max-w-lg p-6">
-      <h2 className="text-sm font-semibold text-slate-900">Logout automático por inatividade</h2>
-      <p className="mb-4 mt-1 text-xs text-slate-500">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Logout automático por inatividade</h2>
+      <p className="mb-4 mt-1 text-xs text-slate-500 dark:text-slate-400">
         Se um usuário ficar sem interagir com o sistema (sem mexer o mouse, digitar ou rolar a tela) por
         esse tempo, ele é desconectado automaticamente e precisa entrar de novo. Vale para todos os
         perfis (admin, gestor de frota, analista e posto) em todos os clientes.
@@ -45,7 +45,7 @@ export function FormularioLogoutInatividade({ minutosAtuais }: { minutosAtuais: 
         }}
       >
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Tempo de inatividade (minutos)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tempo de inatividade (minutos)</label>
           <input
             type="number"
             name="logout_inatividade_minutos"
@@ -60,12 +60,12 @@ export function FormularioLogoutInatividade({ minutosAtuais }: { minutosAtuais: 
         <button type="submit" disabled={isPending} className="btn-primary text-sm">
           {isPending ? "Salvando..." : "Salvar"}
         </button>
-        {ok && <span className="text-xs text-green-700">Salvo.</span>}
+        {ok && <span className="text-xs text-green-700 dark:text-green-400">Salvo.</span>}
       </form>
 
-      {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
+      {erro && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{erro}</p>}
 
-      <p className="mt-4 text-xs text-slate-400">
+      <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
         Entre {LOGOUT_INATIVIDADE_MINUTOS_MIN} e {LOGOUT_INATIVIDADE_MINUTOS_MAX} minutos.
       </p>
     </div>

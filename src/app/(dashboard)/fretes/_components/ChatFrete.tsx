@@ -109,12 +109,12 @@ export function ChatFrete({
 
   return (
     <div className="card mb-6 p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">💬 Chat com o motorista</h2>
-      <p className="mb-3 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">💬 Chat com o motorista</h2>
+      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
         Conversa direta com {nomeMotorista ?? "o motorista"} sobre esse frete. Ele recebe e responde pelo app.
       </p>
 
-      <div className="mb-3 max-h-80 space-y-2 overflow-y-auto rounded-lg bg-slate-50 p-3">
+      <div className="mb-3 max-h-80 space-y-2 overflow-y-auto rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3">
         {carregando && <p className="text-sm text-slate-400">Carregando mensagens...</p>}
         {!carregando && mensagens.length === 0 && (
           <p className="text-sm text-slate-400">Nenhuma mensagem ainda. Envie a primeira.</p>
@@ -125,7 +125,7 @@ export function ChatFrete({
             <div key={m.id} className={`flex ${daEmpresa ? "justify-end" : "justify-start"}`}>
               <div
                 className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                  daEmpresa ? "bg-frota-600 text-white" : "border border-slate-200 bg-white text-slate-800"
+                  daEmpresa ? "bg-frota-600 text-white" : "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
                 }`}
               >
                 <p className="whitespace-pre-wrap">{m.mensagem}</p>

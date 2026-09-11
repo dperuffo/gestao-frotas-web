@@ -99,8 +99,8 @@ export default async function InteligenciaRedePage({
   if (perfil == null || ehPosto) {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Esta tela não está disponível pro seu perfil. Fale com um administrador se você
           precisa desses dados.
         </p>
@@ -118,7 +118,7 @@ export default async function InteligenciaRedePage({
         <CabecalhoPagina titulo="Inteligência de Rede" descricao="Selecione a empresa pra ver a rede de postos dela." />
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue="" className="input text-sm">
               <option value="" disabled>
                 Selecione…
@@ -574,7 +574,7 @@ export default async function InteligenciaRedePage({
       {!ehAdmin && empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -590,7 +590,7 @@ export default async function InteligenciaRedePage({
       )}
 
       <div className="mb-6 card p-4">
-        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
           📊 Visão Geral da Rede <AjudaIcon chave="inteligencia_rede.visao_geral" />
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -632,7 +632,7 @@ export default async function InteligenciaRedePage({
               <>
                 <div className="mb-6 card p-4">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <h2 className="text-sm font-semibold text-slate-900">Preço médio da rede vs referência ANP</h2>
+                    <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Preço médio da rede vs referência ANP</h2>
                     {ehAdmin && (
                       <Link href="/inteligencia-rede/importar-precos-anp" className="btn-secondary">
                         Atualizar preços oficiais ANP
@@ -657,7 +657,7 @@ export default async function InteligenciaRedePage({
                           e o conteúdo vazava por cima do menu lateral. */}
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                          <thead className="text-xs uppercase text-slate-500">
+                          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                             <tr>
                               <th className="py-2">Combustível</th>
                               <th className="py-2">Preço médio da rede</th>
@@ -665,12 +665,12 @@ export default async function InteligenciaRedePage({
                               <th className="py-2">Diferença</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {precoPorCombustivel.map((p) => (
                               <tr key={p.combustivel}>
-                                <td className="py-2 text-slate-700">{p.combustivel}</td>
-                                <td className="py-2 text-slate-700">{formatarMoeda(p.precoMedio)}</td>
-                                <td className="py-2 text-slate-600">
+                                <td className="py-2 text-slate-700 dark:text-slate-300">{p.combustivel}</td>
+                                <td className="py-2 text-slate-700 dark:text-slate-300">{formatarMoeda(p.precoMedio)}</td>
+                                <td className="py-2 text-slate-600 dark:text-slate-300">
                                   {p.referencia ? (
                                     <>
                                       {formatarMoeda(p.referencia)}{" "}
@@ -708,7 +708,7 @@ export default async function InteligenciaRedePage({
                 </div>
 
                 <div className="card p-4">
-                  <h2 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+                  <h2 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
                   💰 Saving Mensal Acumulado <AjudaIcon chave="inteligencia_rede.saving_acumulado" />
                 </h2>
                   <p className="mb-3 text-xs text-slate-400">
@@ -725,7 +725,7 @@ export default async function InteligenciaRedePage({
             label: "⚠️ Alertas de Preço",
             conteudo: (
               <div className="card p-4">
-                <h2 className="mb-1 text-sm font-semibold text-slate-900">Postos com preço acima do ANP</h2>
+                <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Postos com preço acima do ANP</h2>
                 <p className="mb-4 text-xs text-slate-400">
                   Postos GF com preço mais de 5% acima da referência ANP (município → estado → Brasil).
                 </p>
@@ -746,26 +746,26 @@ export default async function InteligenciaRedePage({
                 {alertasPorEstado.length > 0 ? (
                   <div className="mb-6 grid gap-4 lg:grid-cols-2">
                     <div>
-                      <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">
+                      <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                         Postos em Alerta por Estado
                       </h3>
                       <GraficoAlertasPorEstadoLazy dados={alertasPorEstado} />
                     </div>
                     <div className="overflow-x-auto">
-                      <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Resumo por Estado</h3>
+                      <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Resumo por Estado</h3>
                       <table className="w-full text-left text-sm">
-                        <thead className="text-xs uppercase text-slate-500">
+                        <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                           <tr>
                             <th className="py-2">Estado</th>
                             <th className="py-2">Postos</th>
                             <th className="py-2">Pior Desvio</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                           {alertasPorEstado.map((e) => (
                             <tr key={e.uf}>
-                              <td className="py-2 text-slate-700">{e.uf}</td>
-                              <td className="py-2 text-slate-700">{e.postosAlerta}</td>
+                              <td className="py-2 text-slate-700 dark:text-slate-300">{e.uf}</td>
+                              <td className="py-2 text-slate-700 dark:text-slate-300">{e.postosAlerta}</td>
                               <td className="py-2 text-red-600">+{e.piorDesvio.toFixed(1)}%</td>
                             </tr>
                           ))}
@@ -779,11 +779,11 @@ export default async function InteligenciaRedePage({
 
                 {top20Alertas.length > 0 && (
                   <div className="overflow-x-auto">
-                    <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">
+                    <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                       Top 20 Postos com Maior Desvio
                     </h3>
                     <table className="w-full text-left text-sm">
-                      <thead className="text-xs uppercase text-slate-500">
+                      <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                         <tr>
                           <th className="py-2 pr-3">Posto</th>
                           <th className="py-2 pr-3">Município</th>
@@ -795,15 +795,15 @@ export default async function InteligenciaRedePage({
                           <th className="py-2">Desvio</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                         {top20Alertas.map((a, i) => (
                           <tr key={`${a.cnpj}__${a.combustivel}__${i}`}>
-                            <td className="py-2 pr-3 text-slate-700">{a.razao_social ?? "—"}</td>
-                            <td className="py-2 pr-3 text-slate-600">{a.municipio ?? "—"}</td>
-                            <td className="py-2 pr-3 text-slate-600">{a.uf ?? "—"}</td>
-                            <td className="py-2 pr-3 text-slate-600">{a.combustivel}</td>
-                            <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda3(a.preco_gf)}</td>
-                            <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda3(a.preco_anp)}</td>
+                            <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{a.razao_social ?? "—"}</td>
+                            <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{a.municipio ?? "—"}</td>
+                            <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{a.uf ?? "—"}</td>
+                            <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{a.combustivel}</td>
+                            <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarMoeda3(a.preco_gf)}</td>
+                            <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda3(a.preco_anp)}</td>
                             <td className="py-2 pr-3 text-xs text-slate-400">{a.nivel_anp}</td>
                             <td className="py-2 font-medium text-red-600">
                               +{a.diff_pct.toFixed(1)}% (+{formatarMoeda3(a.diff_rs)})
@@ -822,7 +822,7 @@ export default async function InteligenciaRedePage({
             label: "⚖️ Modo Comparativo",
             conteudo: (
               <div className="card p-4">
-                <h2 className="mb-1 text-sm font-semibold text-slate-900">Comparar dois estados ou regiões</h2>
+                <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Comparar dois estados ou regiões</h2>
                 <p className="mb-4 text-xs text-slate-400">
                   Postos, cobertura, distribuidoras e preço médio por combustível, lado a lado.
                 </p>
@@ -843,7 +843,7 @@ export default async function InteligenciaRedePage({
             conteudo: (
               <>
                 <div className="mb-6 card p-4">
-                  <h2 className="mb-1 text-sm font-semibold text-slate-900">
+                  <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                     🗺️ Cobertura da Rede por Macrorregião
                   </h2>
                   <p className="mb-3 text-xs text-slate-400">
@@ -854,7 +854,7 @@ export default async function InteligenciaRedePage({
                 </div>
 
                 <div className="card p-4">
-                  <h2 className="mb-1 text-sm font-semibold text-slate-900">🎯 Top Oportunidades de Expansão</h2>
+                  <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">🎯 Top Oportunidades de Expansão</h2>
                   <p className="mb-3 text-xs text-slate-400">
                     Ranqueamento dos estados com maior potencial: menor penetração GF e maior preço
                     de mercado (diesel ANP) = maior oportunidade.
@@ -862,7 +862,7 @@ export default async function InteligenciaRedePage({
                   <GraficoOportunidadesExpansaoLazy dados={oportunidades} />
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                      <thead className="text-xs uppercase text-slate-500">
+                      <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                         <tr>
                           <th className="py-2 pr-3">UF</th>
                           <th className="py-2 pr-3">Postos GF</th>
@@ -871,16 +871,16 @@ export default async function InteligenciaRedePage({
                           <th className="py-2">Score</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                         {oportunidades.map((o) => (
                           <tr key={o.uf}>
-                            <td className="py-2 pr-3 text-slate-700">{o.uf}</td>
-                            <td className="py-2 pr-3 text-slate-600">{o.postosGf}</td>
-                            <td className="py-2 pr-3 text-slate-600">{o.penetracaoPct.toFixed(2)}%</td>
-                            <td className="py-2 pr-3 text-slate-600">
+                            <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{o.uf}</td>
+                            <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{o.postosGf}</td>
+                            <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{o.penetracaoPct.toFixed(2)}%</td>
+                            <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">
                               {o.dieselAnp != null ? formatarMoeda(o.dieselAnp) : "—"}
                             </td>
-                            <td className="py-2 font-medium text-slate-900">{o.score.toFixed(0)}</td>
+                            <td className="py-2 font-medium text-slate-900 dark:text-slate-100">{o.score.toFixed(0)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -895,7 +895,7 @@ export default async function InteligenciaRedePage({
             label: "🎯 Cobertura × Demanda",
             conteudo: (
               <div className="card p-4">
-                <h2 className="mb-1 text-sm font-semibold text-slate-900">
+                <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Cobertura × Demanda — Expansão Estratégica da Rede
                 </h2>
                 <p className="mb-4 text-xs text-slate-400">
@@ -910,7 +910,7 @@ export default async function InteligenciaRedePage({
             label: "🔀 Cruzamentos Avançados",
             conteudo: (
               <div className="card p-4">
-                <h2 className="mb-1 text-sm font-semibold text-slate-900">
+                <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Cruzamentos Avançados — Preço × Localização × Concorrência
                 </h2>
                 <p className="mb-4 text-xs text-slate-400">
@@ -932,7 +932,7 @@ export default async function InteligenciaRedePage({
             label: "🚦 Operacional",
             conteudo: (
               <div className="card p-4">
-                <h2 className="mb-1 text-sm font-semibold text-slate-900">Dashboard Operacional</h2>
+                <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Dashboard Operacional</h2>
                 <p className="mb-4 text-xs text-slate-400">
                   Mapa de preços, postos com preço inconsistente vs ANP, score composto por região e
                   distribuição de graus A/B/C/D.
@@ -953,7 +953,7 @@ export default async function InteligenciaRedePage({
             label: "📈 Evolução Temporal",
             conteudo: (
               <div className="card p-4">
-                <h2 className="mb-1 text-sm font-semibold text-slate-900">
+                <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Evolução Temporal de Preços
                 </h2>
                 <p className="mb-4 text-xs text-slate-400">
@@ -968,7 +968,7 @@ export default async function InteligenciaRedePage({
             label: "📅 Tendência & Sazonalidade",
             conteudo: (
               <div className="card p-4">
-                <h2 className="mb-1 text-sm font-semibold text-slate-900">
+                <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Tendência de preço e sazonalidade por estado
                 </h2>
                 <p className="mb-4 text-xs text-slate-400">
@@ -985,21 +985,21 @@ export default async function InteligenciaRedePage({
             conteudo: (
               <>
                 <div className="mb-6 card p-4">
-                  <h2 className="mb-1 text-sm font-semibold text-slate-900">🗺️ Mapa de Densidade</h2>
+                  <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">🗺️ Mapa de Densidade</h2>
                   <p className="mb-3 text-xs text-slate-400">Distribuição geográfica dos postos GF.</p>
                   <MapaDensidadeLazy pontos={pontosMapa} />
                 </div>
 
                 <div className="mb-6 card p-4">
-                  <h2 className="mb-3 text-sm font-semibold text-slate-900">Top 10 Municípios com Mais Postos GF</h2>
+                  <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Top 10 Municípios com Mais Postos GF</h2>
                   <GraficoTopMunicipiosLazy dados={topMunicipios} />
                 </div>
 
                 <div className="card p-4">
-                  <h2 className="mb-3 text-sm font-semibold text-slate-900">Cobertura por estado (vs referência ANP)</h2>
+                  <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Cobertura por estado (vs referência ANP)</h2>
                   {cobertura.length > 0 ? (
                     <table className="w-full text-left text-sm">
-                      <thead className="text-xs uppercase text-slate-500">
+                      <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                         <tr>
                           <th className="py-2">UF</th>
                           <th className="py-2">Postos na rede</th>
@@ -1007,13 +1007,13 @@ export default async function InteligenciaRedePage({
                           <th className="py-2">Penetração</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                         {cobertura.map((c) => (
                           <tr key={c.uf}>
-                            <td className="py-2 text-slate-700">{c.uf}</td>
-                            <td className="py-2 text-slate-700">{c.postosGf}</td>
-                            <td className="py-2 text-slate-600">{c.totalAnp || "—"}</td>
-                            <td className="py-2 text-slate-600">{c.totalAnp ? `${c.penetracao.toFixed(2)}%` : "—"}</td>
+                            <td className="py-2 text-slate-700 dark:text-slate-300">{c.uf}</td>
+                            <td className="py-2 text-slate-700 dark:text-slate-300">{c.postosGf}</td>
+                            <td className="py-2 text-slate-600 dark:text-slate-300">{c.totalAnp || "—"}</td>
+                            <td className="py-2 text-slate-600 dark:text-slate-300">{c.totalAnp ? `${c.penetracao.toFixed(2)}%` : "—"}</td>
                           </tr>
                         ))}
                       </tbody>

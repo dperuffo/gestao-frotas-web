@@ -56,16 +56,16 @@ export function LinkRastreioFrete({
     <div className="card mb-6 p-4">
       <div className="mb-1 flex items-center gap-1.5">
         <Link2 className="h-4 w-4 text-slate-400" />
-        <h2 className="text-sm font-semibold text-slate-900">Link de rastreio público</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Link de rastreio público</h2>
       </div>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
         Sem login, só leitura, com expiração — mande pro dono da carga acompanhar o status sem precisar ligar.
       </p>
       {erro && <p className="mb-2 text-xs text-red-600">{erro}</p>}
 
       {linkAtivo ? (
         <div className="flex flex-wrap items-center gap-2">
-          <code className="max-w-full truncate rounded bg-slate-50 px-2 py-1 text-xs text-slate-700" title={url}>{url}</code>
+          <code className="max-w-full truncate rounded bg-slate-50 dark:bg-slate-800/50 px-2 py-1 text-xs text-slate-700 dark:text-slate-300" title={url}>{url}</code>
           <button type="button" onClick={copiar} className="btn-secondary flex items-center gap-1 text-xs">
             <Copy className="h-3 w-3" /> {copiado ? "Copiado!" : "Copiar"}
           </button>

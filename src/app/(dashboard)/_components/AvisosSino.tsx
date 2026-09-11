@@ -27,9 +27,9 @@ export function AvisosSino({ avisosIniciais }: { avisosIniciais: AvisoParaUsuari
         type="button"
         onClick={() => setAberto(true)}
         title="Avisos"
-        className="menu-item-link flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-900/5"
+        className="menu-item-link flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/10"
       >
-        <Bell className="h-4 w-4 shrink-0 text-slate-500" />
+        <Bell className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
         <span className="menu-item-label">Avisos</span>
         {naoLidos > 0 && (
           <span className="menu-item-extra ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">

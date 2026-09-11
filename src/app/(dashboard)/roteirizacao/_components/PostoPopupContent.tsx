@@ -45,7 +45,7 @@ export function PostoPopupContent({ cnpj, lat, lon }: { cnpj: string; lat: numbe
       href={`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-2 flex items-center justify-center gap-1 rounded-md border border-slate-200 py-1.5 text-xs font-medium text-frota-600 hover:bg-slate-50"
+      className="mt-2 flex items-center justify-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 py-1.5 text-xs font-medium text-frota-600 hover:bg-slate-50"
     >
       Ver no Google Maps ↗
     </a>
@@ -70,13 +70,13 @@ export function PostoPopupContent({ cnpj, lat, lon }: { cnpj: string; lat: numbe
 
   return (
     <div className="w-[220px] text-sm leading-snug">
-      <p className="break-words font-semibold text-slate-900">{detalhe.razaoSocial ?? formatCNPJ(detalhe.cnpj)}</p>
-      <p className="text-xs text-slate-500">
+      <p className="break-words font-semibold text-slate-900 dark:text-slate-100">{detalhe.razaoSocial ?? formatCNPJ(detalhe.cnpj)}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         {formatCNPJ(detalhe.cnpj)} · {detalhe.municipio ?? "—"}-{detalhe.uf ?? "—"}
       </p>
-      {detalhe.bandeira && <p className="text-xs text-slate-500">{detalhe.bandeira}</p>}
+      {detalhe.bandeira && <p className="text-xs text-slate-500 dark:text-slate-400">{detalhe.bandeira}</p>}
 
-      <div className="mt-2 max-h-[220px] space-y-1 overflow-y-auto border-t border-slate-100 pt-1.5">
+      <div className="mt-2 max-h-[220px] space-y-1 overflow-y-auto border-t border-slate-100 dark:border-slate-700 pt-1.5">
         {detalhe.precos.length === 0 ? (
           <p className="text-xs text-slate-400">Sem preço registrado (próprio ou ANP).</p>
         ) : (
@@ -89,9 +89,9 @@ export function PostoPopupContent({ cnpj, lat, lon }: { cnpj: string; lat: numbe
               key={`${p.categoria}__${p.combustivelGf ?? ""}`}
               className="flex items-baseline justify-between gap-2 text-xs"
             >
-              <span className="truncate text-slate-600" title={p.combustivelGf ?? p.categoria}>{p.combustivelGf ?? p.categoria}</span>
+              <span className="truncate text-slate-600 dark:text-slate-300" title={p.combustivelGf ?? p.categoria}>{p.combustivelGf ?? p.categoria}</span>
               <span className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-                <span className="font-medium text-slate-900">R$ {p.preco.toFixed(3)}</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">R$ {p.preco.toFixed(3)}</span>
                 <span className={`text-[10px] ${FONTE_COR[p.fonte] ?? "text-slate-400"}`}>
                   {FONTE_LABEL[p.fonte] ?? p.fonte}
                 </span>

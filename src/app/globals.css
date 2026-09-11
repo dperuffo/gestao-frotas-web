@@ -18,7 +18,7 @@
    com sombra difusa suave, header em gradiente. Substitui o Swiss
    Minimalism monocromático/reto da fase anterior (28/08). */
 body {
-  @apply bg-frota-50 text-slate-900 antialiased;
+  @apply bg-frota-50 text-slate-900 antialiased dark:bg-slate-900 dark:text-slate-100;
 }
 
 /* .card é a classe central usada em ~150 telas (ver README, fases de
@@ -27,7 +27,7 @@ body {
    branca, 1px de borda, sombra difusa tingida de slate (--shadow do
    arquivo), cantos arredondados (14px, token `xl` do tailwind.config). */
 .card {
-  @apply rounded-xl border border-slate-200 bg-white shadow-card;
+  @apply rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-700 dark:bg-slate-800;
 }
 
 /* Fase Paleta-Clara (04/09/2026, pedido do Daniel: "tons escuros no menu,
@@ -39,22 +39,22 @@ body {
    retos e sem blur. O item ativo continua marcado por
    `.glass-nav-ativo` (borda esquerda + acento taupe). */
 .glass-nav {
-  @apply border-r border-slate-200 bg-frota-50;
+  @apply border-r border-slate-200 bg-frota-50 dark:border-slate-700 dark:bg-slate-900;
 }
 
 /* Barra de abas (AbasPainel.tsx) — vira um segmented control claro, comum
    em produtos SaaS corporativos: trilho cinza-claro, aba ativa em branco
    com sombra e texto na cor de destaque (peso 500, conforme design.md). */
 .glass-tabbar {
-  @apply inline-flex items-center gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-slate-100 p-1;
+  @apply inline-flex items-center gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800;
 }
 
 .glass-tab {
-  @apply whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700;
+  @apply whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200;
 }
 
 .glass-tab-ativa {
-  @apply bg-white text-frota-600 shadow-sm;
+  @apply bg-white text-frota-600 shadow-sm dark:bg-slate-700 dark:text-frota-100;
 }
 
 /* Fase Paleta-Clara (04/09/2026) — texto/ícone do menu agora sobre fundo
@@ -62,13 +62,13 @@ body {
    mantendo a mesma hierarquia (texto principal > texto secundário/muted >
    ícone). */
 .glass-nav-texto {
-  @apply text-slate-800;
+  @apply text-slate-800 dark:text-slate-100;
 }
 .glass-nav-texto-muted {
-  @apply text-slate-500;
+  @apply text-slate-500 dark:text-slate-400;
 }
 .glass-nav-icone {
-  @apply text-slate-500;
+  @apply text-slate-500 dark:text-slate-400;
 }
 /* Indicador de item ativo no menu — accent color (design.md: "Active item:
    accent color indicator. Font weight 500 when active."), usado por
@@ -77,7 +77,7 @@ body {
    texto branco pra um leve tingimento do próprio acento (`accento/10`) +
    texto escuro — mesmo acento taupe, adaptado pro fundo claro. */
 .glass-nav-ativo {
-  @apply border-l-2 border-accento bg-accento/10 font-medium text-frota-900;
+  @apply border-l-2 border-accento bg-accento/10 font-medium text-frota-900 dark:text-frota-50;
 }
 .glass-nav-acento {
   @apply text-accento;
@@ -144,7 +144,7 @@ body {
 .btn-secondary {
   @apply inline-flex items-center justify-center rounded-xl border-[1.5px] border-slate-300
     bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50
-    active:translate-y-px;
+    active:translate-y-px dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
 }
 
 /* Inputs (design.md): label acima (já é o padrão dos formulários do app),
@@ -152,7 +152,8 @@ body {
    "floating labels". */
 .input {
   @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
-    focus:border-frota-500 focus:outline-none focus:ring-2 focus:ring-frota-500 focus:ring-offset-2;
+    focus:border-frota-500 focus:outline-none focus:ring-2 focus:ring-frota-500 focus:ring-offset-2
+    dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:focus:ring-offset-slate-900;
 }
 
 /* Fase Design-ProFrotas-Divergencias — badge do HTML de referência é pill

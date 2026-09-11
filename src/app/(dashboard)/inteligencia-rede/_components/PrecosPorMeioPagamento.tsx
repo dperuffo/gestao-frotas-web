@@ -179,7 +179,7 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
       </div>
 
       <div className="mb-6 card p-4">
-        <h3 className="mb-1 text-sm font-semibold text-slate-900">⛽ Volume por combustível</h3>
+        <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">⛽ Volume por combustível</h3>
         <p className="mb-3 text-xs text-slate-400">
           Litros transacionados por tipo de combustível — o preço médio de cada meio de pagamento pode variar
           conforme o mix de combustível que passa por ele.
@@ -200,7 +200,7 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
       </div>
 
       <div className="mb-6 card p-4">
-        <h3 className="mb-1 text-sm font-semibold text-slate-900">💳 Preço médio por meio de pagamento</h3>
+        <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">💳 Preço médio por meio de pagamento</h3>
         <p className="mb-3 text-xs text-slate-400">
           Média ponderada por litro (todos os combustíveis), do mais em conta ao mais caro.
         </p>
@@ -227,7 +227,7 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-slate-500">
+            <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="py-2 pr-3">Meio de pagamento</th>
                 <th className="py-2 pr-3">Preço médio</th>
@@ -236,11 +236,11 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
                 <th className="py-2">Abastecimentos</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {porProvedor.map((p) => (
                 <tr key={p.provedor}>
-                  <td className="py-2 pr-3 text-slate-700">{p.provedor}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-700">
+                  <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{p.provedor}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">
                     {formatarMoeda3(p.precoMedio)}
                     {maisVantajoso && p.provedor === maisVantajoso.provedor && (
                       <span className="ml-1 badge-ativo">mais vantajoso</span>
@@ -249,11 +249,11 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
                       <span className="ml-1 badge-atencao">mais caro</span>
                     )}
                   </td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarLitros(p.litros)}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">
+                  <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarLitros(p.litros)}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">
                     {p.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </td>
-                  <td className="py-2 tabular-nums text-slate-600">{formatarInt(p.qtd)}</td>
+                  <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">{formatarInt(p.qtd)}</td>
                 </tr>
               ))}
             </tbody>
@@ -262,12 +262,12 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
       </div>
 
       <div className="mb-6 card overflow-x-auto p-4">
-        <h3 className="mb-1 text-sm font-semibold text-slate-900">Preço médio por combustível × meio de pagamento</h3>
+        <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Preço médio por combustível × meio de pagamento</h3>
         <p className="mb-3 text-xs text-slate-400">
           Variação de preço entre os meios de pagamento, separado por tipo de combustível.
         </p>
         <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="py-2 pr-3">Combustível</th>
               {provedoresDisponiveis.map((p) => (
@@ -277,18 +277,18 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {combustiveisDisponiveis.map((combustivel) => {
               const linha = cruzamento.get(combustivel);
               const valores = provedoresDisponiveis.map((p) => linha?.get(p)?.precoMedio).filter((v): v is number => v != null);
               const menor = valores.length > 0 ? Math.min(...valores) : null;
               return (
                 <tr key={combustivel}>
-                  <td className="py-2 pr-3 text-slate-700">{combustivel}</td>
+                  <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{combustivel}</td>
                   {provedoresDisponiveis.map((p) => {
                     const v = linha?.get(p)?.precoMedio;
                     return (
-                      <td key={p} className={`py-2 pr-3 tabular-nums ${v != null && v === menor ? "font-semibold text-emerald-700" : "text-slate-600"}`}>
+                      <td key={p} className={`py-2 pr-3 tabular-nums ${v != null && v === menor ? "font-semibold text-emerald-700" : "text-slate-600 dark:text-slate-300"}`}>
                         {v != null ? formatarMoeda3(v) : "—"}
                       </td>
                     );
@@ -301,7 +301,7 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
       </div>
 
       <div className="card p-4">
-        <h3 className="mb-1 text-sm font-semibold text-slate-900">Onde é mais vantajoso e com qual meio de pagamento</h3>
+        <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Onde é mais vantajoso e com qual meio de pagamento</h3>
         <p className="mb-3 text-xs text-slate-400">
           Por {modoGeo === "estado" ? "estado" : "região"}, o meio de pagamento mais barato vs. o mais caro (para o
           combustível selecionado).
@@ -312,20 +312,20 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
             <button
               type="button"
               onClick={() => setModoGeo("estado")}
-              className={`rounded-full px-3 py-1 ${modoGeo === "estado" ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 ${modoGeo === "estado" ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
             >
               🗺️ Estados
             </button>
             <button
               type="button"
               onClick={() => setModoGeo("regiao")}
-              className={`rounded-full px-3 py-1 ${modoGeo === "regiao" ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 ${modoGeo === "regiao" ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
             >
               🌎 Regiões
             </button>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Combustível</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Combustível</label>
             <select value={combustivelFiltro} onChange={(e) => setCombustivelFiltro(e.target.value)} className="input text-sm">
               <option value="__todos__">Todos os combustíveis</option>
               {combustiveisDisponiveis.map((c) => (
@@ -340,7 +340,7 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
         {rankingGeo.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">{modoGeo === "estado" ? "UF" : "Região"}</th>
                   <th className="py-2 pr-3">Mais vantajoso</th>
@@ -350,14 +350,14 @@ export function PrecosPorMeioPagamento({ dados }: { dados: ItemPrecoMeioPagament
                   <th className="py-2">Economia</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {rankingGeo.map((r) => (
                   <tr key={r.local}>
-                    <td className="py-2 pr-3 text-slate-700">{r.local}</td>
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{r.local}</td>
                     <td className="py-2 pr-3 text-emerald-700">{r.melhorProvedor}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda3(r.precoMelhor)}</td>
-                    <td className="py-2 pr-3 text-slate-600">{r.qtdMeios > 1 ? r.piorProvedor : "—"}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{r.qtdMeios > 1 ? formatarMoeda3(r.precoPior) : "—"}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda3(r.precoMelhor)}</td>
+                    <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{r.qtdMeios > 1 ? r.piorProvedor : "—"}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{r.qtdMeios > 1 ? formatarMoeda3(r.precoPior) : "—"}</td>
                     <td className="py-2">
                       {r.qtdMeios > 1 ? (
                         <span className="badge-ativo">{r.economiaPct.toFixed(1)}%</span>

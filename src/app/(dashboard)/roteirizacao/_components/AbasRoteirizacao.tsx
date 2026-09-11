@@ -25,7 +25,7 @@ export type AbaRoteirizacaoAtiva = (typeof ABAS)[number]["chave"];
 
 export function AbasRoteirizacao({ ativo }: { ativo: AbaRoteirizacaoAtiva }) {
   return (
-    <div className="mb-6 flex flex-wrap gap-2 border-b border-slate-200">
+    <div className="mb-6 flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-700">
       {ABAS.map((aba) => (
         <Link
           key={aba.chave}
@@ -34,7 +34,7 @@ export function AbasRoteirizacao({ ativo }: { ativo: AbaRoteirizacaoAtiva }) {
             "border-b-2 px-3 py-2 text-sm font-medium " +
             (ativo === aba.chave
               ? "border-frota-600 text-frota-600"
-              : "border-transparent text-slate-500 hover:text-slate-700")
+              : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700")
           }
         >
           {aba.label}

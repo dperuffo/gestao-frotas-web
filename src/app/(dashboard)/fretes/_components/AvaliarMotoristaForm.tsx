@@ -55,7 +55,7 @@ export function AvaliarMotoristaForm({ freteId, empresaId }: { freteId: string; 
             className={`rounded-full border px-2.5 py-1 text-xs ${
               tags.includes(tag)
                 ? "border-frota-500 bg-frota-100 text-frota-700"
-                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
             }`}
           >
             {tag}

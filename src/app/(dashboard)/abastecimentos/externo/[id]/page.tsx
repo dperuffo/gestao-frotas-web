@@ -58,7 +58,7 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
           descricao={`ID ${abastecimento.codigo_abastecimento} · ${abastecimento.provedor}`}
         />
         <ValoresCard abastecimento={abastecimento} nomeCliente={nomeCliente ?? null} />
-        <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="mt-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Este posto ainda não está cadastrado na plataforma, então não há como abrir um pedido de
           ajuste com aprovação da contraparte para este registro.
         </p>
@@ -152,7 +152,7 @@ type AbastecimentoExterno = {
 function ValoresCard({ abastecimento, nomeCliente }: { abastecimento: AbastecimentoExterno; nomeCliente: string | null }) {
   return (
     <div className="mb-6 card p-6">
-      <h2 className="mb-4 text-sm font-semibold text-slate-900">Valores atuais</h2>
+      <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Valores atuais</h2>
       <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
         <ValorAtual label="Data e hora" valor={formatarDataHoraBr(abastecimento.data_abastecimento)} />
         <ValorAtual label="Placa" valor={abastecimento.placa ?? "—"} />
@@ -190,7 +190,7 @@ function ValorAtual({ label, valor }: { label: string; valor: string }) {
   return (
     <div>
       <p className="text-xs text-slate-400">{label}</p>
-      <p className="text-slate-700">{valor}</p>
+      <p className="text-slate-700 dark:text-slate-300">{valor}</p>
     </div>
   );
 }

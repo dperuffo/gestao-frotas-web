@@ -42,16 +42,16 @@ export default function ErroDashboard({
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
       <div className="card max-w-md p-8">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-          <AlertTriangle className="h-6 w-6 text-red-600" />
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/40">
+          <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">Algo deu errado nesta tela</h2>
-        <p className="mt-2 text-sm text-gray-500">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Algo deu errado nesta tela</h2>
+        <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">
           O erro já foi registrado automaticamente. Você pode tentar novamente ou voltar para o
           início.
         </p>
         {error.digest && (
-          <p className="mt-3 text-xs text-gray-400">Código de referência: {error.digest}</p>
+          <p className="mt-3 text-xs text-gray-400 dark:text-slate-500">Código de referência: {error.digest}</p>
         )}
         <div className="mt-6 flex justify-center gap-3">
           <button onClick={() => reset()} className="btn-primary inline-flex items-center gap-2">

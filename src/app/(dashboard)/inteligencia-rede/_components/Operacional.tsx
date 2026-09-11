@@ -181,7 +181,7 @@ function MapaPrecos({ precosMapa }: { precosMapa: PontoPrecoBruto[] }) {
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
-        <label className="text-xs font-medium text-slate-500">Combustível:</label>
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Combustível:</label>
         <select value={sel} onChange={(e) => setSel(e.target.value)} className="input w-auto text-sm">
           {combustiveis.map((c) => (
             <option key={c} value={c}>
@@ -218,7 +218,7 @@ function PostosInconsistentes({ desvios }: { desvios: DesvioAnp[] }) {
   return (
     <div>
       <div className="mb-4">
-        <label className="mb-1 block text-xs font-medium text-slate-500">
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
           Tolerância de desvio vs ANP: <strong>{tolerancia}%</strong>
         </label>
         <input
@@ -245,7 +245,7 @@ function PostosInconsistentes({ desvios }: { desvios: DesvioAnp[] }) {
 
       {top20.length > 0 && (
         <>
-          <p className="mb-2 text-xs font-medium text-slate-600">Top 20 postos com maior desvio vs ANP</p>
+          <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Top 20 postos com maior desvio vs ANP</p>
           <BarraHorizontal
             dados={top20.map((d) => ({
               label: `${truncar(d.razaoSocial ?? d.cnpj, 25)} (${d.uf})`,
@@ -259,7 +259,7 @@ function PostosInconsistentes({ desvios }: { desvios: DesvioAnp[] }) {
 
           <div className="max-h-96 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-white text-xs uppercase text-slate-500">
+              <thead className="sticky top-0 bg-white dark:bg-slate-800 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">Razão Social</th>
                   <th className="py-2 pr-3">Município</th>
@@ -271,15 +271,15 @@ function PostosInconsistentes({ desvios }: { desvios: DesvioAnp[] }) {
                   <th className="py-2">Desvio</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {filtrado.map((d, i) => (
                   <tr key={`${d.cnpj}__${d.combustivel}__${i}`}>
-                    <td className="py-2 pr-3 text-slate-700">{d.razaoSocial ?? "—"}</td>
-                    <td className="py-2 pr-3 text-slate-600">{d.municipio ?? "—"}</td>
-                    <td className="py-2 pr-3 text-slate-600">{d.uf ?? "—"}</td>
-                    <td className="py-2 pr-3 text-slate-600">{d.combustivel}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda(d.precoGf)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(d.precoAnp)}</td>
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{d.razaoSocial ?? "—"}</td>
+                    <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{d.municipio ?? "—"}</td>
+                    <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{d.uf ?? "—"}</td>
+                    <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{d.combustivel}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarMoeda(d.precoGf)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(d.precoAnp)}</td>
                     <td className="py-2 pr-3 text-xs text-slate-400">{d.nivelAnp}</td>
                     <td className={`py-2 font-medium ${d.diffPct > 0 ? "text-red-600" : "text-sky-600"}`}>
                       {d.diffPct > 0 ? "+" : ""}
@@ -325,14 +325,14 @@ function ScorePorRegiao({ scores }: { scores: Score[] }) {
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
-        <label className="text-xs font-medium text-slate-500">Granularidade:</label>
-        <div className="flex overflow-hidden rounded-md border border-slate-200 text-sm">
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Granularidade:</label>
+        <div className="flex overflow-hidden rounded-md border border-slate-200 dark:border-slate-700 text-sm">
           {(["Macrorregião", "UF"] as const).map((opcao) => (
             <button
               key={opcao}
               type="button"
               onClick={() => setGranularidade(opcao)}
-              className={`px-3 py-1.5 ${granularidade === opcao ? "bg-frota-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+              className={`px-3 py-1.5 ${granularidade === opcao ? "bg-frota-600 text-white" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50"}`}
             >
               {opcao}
             </button>
@@ -367,19 +367,19 @@ function ScorePorRegiao({ scores }: { scores: Score[] }) {
       </p>
 
       <table className="w-full text-left text-sm">
-        <thead className="text-xs uppercase text-slate-500">
+        <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
           <tr>
             <th className="py-2 pr-3">{granularidade}</th>
             <th className="py-2 pr-3">Score médio</th>
             <th className="py-2">Postos</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {agrupado.map((a) => (
             <tr key={a.chave}>
-              <td className="py-2 pr-3 text-slate-700">{a.chave}</td>
-              <td className="py-2 pr-3 tabular-nums text-slate-700">{a.scoreMedio.toFixed(1)}</td>
-              <td className="py-2 tabular-nums text-slate-600">{a.n}</td>
+              <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{a.chave}</td>
+              <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{a.scoreMedio.toFixed(1)}</td>
+              <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">{a.n}</td>
             </tr>
           ))}
         </tbody>
@@ -439,7 +439,7 @@ function DistribuicaoGrade({ scores }: { scores: Score[] }) {
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
         <div>
-          <p className="mb-2 text-xs font-medium text-slate-600">Distribuição geral</p>
+          <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Distribuição geral</p>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={dadosDonut} dataKey="value" nameKey="name" innerRadius={70} outerRadius={110} label={(entry) => `${entry.name} ${((entry.value / total) * 100).toFixed(0)}%`}>
@@ -452,7 +452,7 @@ function DistribuicaoGrade({ scores }: { scores: Score[] }) {
           </ResponsiveContainer>
         </div>
         <div>
-          <p className="mb-2 text-xs font-medium text-slate-600">% por categoria — UF</p>
+          <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">% por categoria — UF</p>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={porUf} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -469,11 +469,11 @@ function DistribuicaoGrade({ scores }: { scores: Score[] }) {
         </div>
       </div>
 
-      <details className="rounded-lg border border-slate-200">
-        <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-slate-700">📋 Ver tabela completa por UF</summary>
+      <details className="rounded-lg border border-slate-200 dark:border-slate-700">
+        <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300">📋 Ver tabela completa por UF</summary>
         <div className="overflow-x-auto p-4 pt-0">
           <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-slate-500">
+            <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="py-2 pr-3">UF</th>
                 <th className="py-2 pr-3">A</th>
@@ -483,15 +483,15 @@ function DistribuicaoGrade({ scores }: { scores: Score[] }) {
                 <th className="py-2">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {porUf.map((u) => (
                 <tr key={u.uf}>
-                  <td className="py-2 pr-3 text-slate-700">{u.uf}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{u.contagem.A}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{u.contagem.B}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{u.contagem.C}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{u.contagem.D}</td>
-                  <td className="py-2 tabular-nums text-slate-600">{u.total}</td>
+                  <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{u.uf}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{u.contagem.A}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{u.contagem.B}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{u.contagem.C}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{u.contagem.D}</td>
+                  <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">{u.total}</td>
                 </tr>
               ))}
             </tbody>
@@ -506,7 +506,7 @@ function MiniKpi({ label, valor, sub }: { label: string; valor: string; sub?: st
   return (
     <div className="card p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{valor}</p>
       {sub && <p className="text-xs text-slate-400">{sub}</p>}
     </div>
   );
@@ -519,13 +519,13 @@ function BarraHorizontal({ dados, eixoX }: { dados: { label: string; valor: numb
       <div className="space-y-1.5">
         {dados.map((d, i) => (
           <div key={`${d.label}__${i}`} className="flex items-center gap-2 text-xs">
-            <span className="w-40 shrink-0 truncate text-slate-600" title={d.label}>
+            <span className="w-40 shrink-0 truncate text-slate-600 dark:text-slate-300" title={d.label}>
               {d.label}
             </span>
-            <div className="h-4 flex-1 rounded bg-slate-100">
+            <div className="h-4 flex-1 rounded bg-slate-100 dark:bg-slate-700">
               <div className="h-4 rounded" style={{ width: `${Math.max(2, (d.valor / maxValor) * 100)}%`, backgroundColor: d.cor }} />
             </div>
-            <span className="w-16 shrink-0 text-right tabular-nums text-slate-500">{d.texto}</span>
+            <span className="w-16 shrink-0 text-right tabular-nums text-slate-500 dark:text-slate-400">{d.texto}</span>
           </div>
         ))}
       </div>

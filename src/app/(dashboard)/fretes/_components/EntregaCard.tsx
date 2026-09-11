@@ -26,8 +26,8 @@ export function EntregaCard({
 
   return (
     <div className="card mb-6 p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">✅ Entrega confirmada (canhoto digital)</h2>
-      <p className="mb-3 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">✅ Entrega confirmada (canhoto digital)</h2>
+      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
         {entrega.nomeRecebedor}
         {entrega.documentoRecebedor ? ` · doc. ${entrega.documentoRecebedor}` : ""} · {dataConfirmacao}
       </p>
@@ -37,7 +37,7 @@ export function EntregaCard({
           <p className="mb-1 text-[10px] font-semibold uppercase text-slate-400">Foto do canhoto</p>
           {entrega.fotoCanhotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- signed URL do Storage (expira em 1h, ver fretes/[id]/page.tsx); next/image não ajudaria a cachear algo que muda a cada load.
-            <img src={entrega.fotoCanhotoUrl} alt="Foto do canhoto" className="h-40 w-full rounded-lg border border-slate-200 object-cover" />
+            <img src={entrega.fotoCanhotoUrl} alt="Foto do canhoto" className="h-40 w-full rounded-lg border border-slate-200 dark:border-slate-700 object-cover" />
           ) : (
             <p className="text-xs text-slate-400">Sem foto.</p>
           )}
@@ -46,7 +46,7 @@ export function EntregaCard({
           <p className="mb-1 text-[10px] font-semibold uppercase text-slate-400">Assinatura do recebedor</p>
           {entrega.assinaturaUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- mesmo motivo: signed URL de curta duração.
-            <img src={entrega.assinaturaUrl} alt="Assinatura do recebedor" className="h-40 w-full rounded-lg border border-slate-200 bg-white object-contain" />
+            <img src={entrega.assinaturaUrl} alt="Assinatura do recebedor" className="h-40 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 object-contain" />
           ) : (
             <p className="text-xs text-slate-400">Sem assinatura.</p>
           )}

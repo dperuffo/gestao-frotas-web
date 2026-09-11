@@ -27,7 +27,7 @@ export function ImportForm() {
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="card space-y-4 p-6">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Arquivo precos_anp.xlsx
           </label>
           <input type="file" name="arquivo" accept=".xlsx" required className="input" />
@@ -54,7 +54,7 @@ export function ImportForm() {
               Erros: <strong>{resultado.erros}</strong>
             </span>
           </div>
-          <div className="mt-3 flex flex-wrap gap-4 text-slate-600">
+          <div className="mt-3 flex flex-wrap gap-4 text-slate-600 dark:text-slate-300">
             {Object.entries(resultado.porNivel).map(([nivel, qtd]) => (
               <span key={nivel}>
                 {nivel}: <strong>{qtd}</strong>

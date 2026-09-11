@@ -24,7 +24,7 @@ export default async function NovoAbastecimentoPage({
     <div>
       <CabecalhoPagina titulo="Lançar Abastecimento Manual" />
 
-      <div className="mb-6 flex gap-2 border-b border-slate-200">
+      <div className="mb-6 flex gap-2 border-b border-slate-200 dark:border-slate-700">
         <AbaLink fonte="externo" ativo={fonteAtual === "externo"}>
           Posto Externo
         </AbaLink>
@@ -48,7 +48,7 @@ function AbaLink({ fonte, ativo, children }: { fonte: string; ativo: boolean; ch
       href={`/abastecimentos/novo?fonte=${fonte}`}
       className={
         "border-b-2 px-3 py-2 text-sm font-medium " +
-        (ativo ? "border-frota-600 text-frota-600" : "border-transparent text-slate-500 hover:text-slate-700")
+        (ativo ? "border-frota-600 text-frota-600" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700")
       }
     >
       {children}

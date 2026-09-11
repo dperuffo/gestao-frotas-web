@@ -42,7 +42,7 @@ export default async function EditarAbastecimentoInternoPage({ params }: { param
       />
 
       <div className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Valores</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Valores</h2>
         <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
           <ValorAtual label="Data e hora" valor={formatarDataHoraBr(abastecimento.data_abastecimento)} />
           <ValorAtual label="Placa" valor={abastecimento.placa ?? "—"} />
@@ -85,7 +85,7 @@ function ValorAtual({ label, valor }: { label: string; valor: string }) {
   return (
     <div>
       <p className="text-xs text-slate-400">{label}</p>
-      <p className="text-slate-700">{valor}</p>
+      <p className="text-slate-700 dark:text-slate-300">{valor}</p>
     </div>
   );
 }

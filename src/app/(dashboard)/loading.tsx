@@ -13,21 +13,21 @@ export default function DashboardLoading() {
   return (
     <div className="animate-pulse space-y-6" aria-busy="true" aria-label="Carregando conteúdo da página">
       <div className="space-y-2">
-        <div className="h-6 w-56 rounded bg-slate-200" />
-        <div className="h-4 w-80 rounded bg-slate-100" />
+        <div className="h-6 w-56 rounded bg-slate-200 dark:bg-slate-700" />
+        <div className="h-4 w-80 rounded bg-slate-100 dark:bg-slate-800" />
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="card h-20 bg-slate-100" />
+          <div key={i} className="card h-20 bg-slate-100 dark:bg-slate-800" />
         ))}
       </div>
 
-      <div className="card h-64 bg-slate-100" />
+      <div className="card h-64 bg-slate-100 dark:bg-slate-800" />
 
       <div className="card space-y-3 p-4">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-4 w-full rounded bg-slate-100" />
+          <div key={i} className="h-4 w-full rounded bg-slate-100 dark:bg-slate-700" />
         ))}
       </div>
     </div>

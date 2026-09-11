@@ -80,22 +80,22 @@ function LinhaProposta({ empresaId, proposta, freteAberto }: { empresaId: string
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 p-4">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-medium text-slate-900">{proposta.nome_motorista}</p>
-          <p className="text-xs text-slate-500">{proposta.telefone_motorista ?? "—"}</p>
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{proposta.nome_motorista}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{proposta.telefone_motorista ?? "—"}</p>
           <CartaoReputacaoMotorista reputacao={proposta} />
         </div>
         <div className="text-right">
-          <p className="text-lg font-semibold text-slate-900">{formatoMoeda.format(proposta.ultimo_valor)}</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">{formatoMoeda.format(proposta.ultimo_valor)}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Rodada {proposta.rodada_atual} · última de {proposta.ultimo_autor === "motorista" ? "motorista" : "você"}
           </p>
         </div>
       </div>
 
-      <p className="mt-2 text-xs font-medium text-slate-500">{LABEL_STATUS[proposta.status] ?? proposta.status}</p>
+      <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{LABEL_STATUS[proposta.status] ?? proposta.status}</p>
       {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
 
       {podeAgir && (
@@ -115,7 +115,7 @@ function LinhaProposta({ empresaId, proposta, freteAberto }: { empresaId: string
       {contrapropondo && (
         <div className="mt-3 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Novo valor (R$)</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Novo valor (R$)</label>
             <input
               type="number"
               min="0.01"

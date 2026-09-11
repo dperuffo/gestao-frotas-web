@@ -13,7 +13,7 @@ import type { PrecosPorMeioPagamento as PrecosPorMeioPagamentoType } from "./Pre
 const PrecosPorMeioPagamento = dynamic(() => import("./PrecosPorMeioPagamento").then((m) => m.PrecosPorMeioPagamento), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[300px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-400">
+    <div className="flex h-[300px] items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm text-slate-400">
       Carregando gráfico...
     </div>
   ),

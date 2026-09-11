@@ -48,7 +48,7 @@ export function GraficoMeiosPagamento({ dados }: { dados: FatiaPagamento[] }) {
               />
               <LogoProvedor provedor={d.provedor} className="h-4 w-auto" />
             </span>
-            <span className="whitespace-nowrap font-medium text-slate-700">
+            <span className="whitespace-nowrap font-medium text-slate-700 dark:text-slate-300">
               {formatarMoeda(d.valor)}{" "}
               <span className="text-xs font-normal text-slate-400">
                 ({total > 0 ? Math.round((d.valor / total) * 100) : 0}%)

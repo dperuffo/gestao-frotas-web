@@ -35,7 +35,7 @@ export function GraficoFretes({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Fretes por status</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Fretes por status</p>
         {comStatus.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
@@ -60,8 +60,8 @@ export function GraficoFretes({
                     style={{ backgroundColor: CORES_STATUS[d.label] ?? CORES_GRAFICO.neutro }}
                     aria-hidden="true"
                   />
-                  <span className="text-slate-600">{d.label}</span>
-                  <span className="font-medium text-slate-900">{d.total}</span>
+                  <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{d.total}</span>
                 </li>
               ))}
             </ul>
@@ -70,7 +70,7 @@ export function GraficoFretes({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Motoristas com mais valor em fretes concluídos</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Motoristas com mais valor em fretes concluídos</p>
         {topMotoristas.length === 0 ? (
           <p className="text-sm text-slate-400">Sem fretes concluídos ainda.</p>
         ) : (

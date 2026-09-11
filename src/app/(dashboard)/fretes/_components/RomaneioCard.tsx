@@ -28,8 +28,8 @@ export function RomaneioCard({ freteId, empresaId, nfes }: { freteId: string; em
 
   return (
     <div className="card mb-6 p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">📦 Romaneio (NF-e da carga)</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">📦 Romaneio (NF-e da carga)</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         NF-e do embarcador — peso, volume e valor somados aqui viram o manifesto de carga do CT-e/MDF-e.
       </p>
 
@@ -43,12 +43,12 @@ export function RomaneioCard({ freteId, empresaId, nfes }: { freteId: string; em
 
       <div className="mb-3 space-y-2">
         {nfes.map((n) => (
-          <div key={n.id} className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
+          <div key={n.id} className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-medium text-slate-900">Nº {n.numeroNf ?? "—"} / série {n.serieNf ?? "—"}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100">Nº {n.numeroNf ?? "—"} / série {n.serieNf ?? "—"}</span>
               <span className="shrink-0 text-[10px] text-slate-400">{n.origem === "digitada" ? "digitada" : "upload"}</span>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {n.nomeEmitente ?? "—"}
               {n.valorNf != null ? ` · ${formatoMoeda.format(n.valorNf)}` : ""}
               {n.pesoBrutoKg != null ? ` · ${n.pesoBrutoKg.toLocaleString("pt-BR")} kg` : ""}
@@ -69,9 +69,9 @@ export function RomaneioCard({ freteId, empresaId, nfes }: { freteId: string; em
 
 function Indicador({ label, valor }: { label: string; valor: string }) {
   return (
-    <div className="rounded-lg bg-slate-50 px-3 py-2">
+    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-3 py-2">
       <p className="text-[10px] uppercase text-slate-400">{label}</p>
-      <p className="font-semibold text-slate-900">{valor}</p>
+      <p className="font-semibold text-slate-900 dark:text-slate-100">{valor}</p>
     </div>
   );
 }
@@ -151,7 +151,7 @@ function FormDigitarNfe({ freteId, empresaId }: { freteId: string; empresaId: st
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-2">
-      <label className="block cursor-pointer rounded-lg border border-dashed border-slate-300 px-2 py-1.5 text-center text-xs text-slate-500 hover:bg-slate-50">
+      <label className="block cursor-pointer rounded-lg border border-dashed border-slate-300 px-2 py-1.5 text-center text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-50">
         {lendoFoto ? "Lendo a foto (OCR)..." : "📷 Ler chave de uma foto (OCR, opcional)"}
         <input type="file" accept="image/*" capture="environment" onChange={handleFotoOcr} disabled={lendoFoto} className="hidden" />
       </label>

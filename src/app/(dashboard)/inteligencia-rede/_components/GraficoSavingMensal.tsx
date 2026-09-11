@@ -61,7 +61,7 @@ export function GraficoSavingMensal({
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
-        <label className="text-xs font-medium text-slate-500">Combustível:</label>
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Combustível:</label>
         <select value={selecionado} onChange={(e) => setSelecionado(e.target.value)} className="input w-auto text-sm">
           <option value="Todos">Todos</option>
           {combustiveis.map((c) => (
@@ -102,7 +102,7 @@ export function GraficoSavingMensal({
           </ResponsiveContainer>
 
           {savingAcumulado != null && (
-            <div className="mt-3 rounded-lg bg-slate-50 px-4 py-2.5 text-sm">
+            <div className="mt-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-2.5 text-sm">
               Saldo acumulado do período:{" "}
               <strong className={savingAcumulado > 0 ? "text-status-ativo" : "text-red-600"}>
                 {formatarMoeda(Math.abs(savingAcumulado))}/L

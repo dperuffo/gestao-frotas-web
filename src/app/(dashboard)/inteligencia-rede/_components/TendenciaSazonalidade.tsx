@@ -233,7 +233,7 @@ export function TendenciaSazonalidade({ serie, volatilidade }: { serie: PontoSer
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
-        <label className="text-xs font-medium text-slate-500">Combustível:</label>
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Combustível:</label>
         <select value={selecionado} onChange={(e) => setSelecionado(e.target.value)} className="input w-auto text-sm">
           <option value="Todos">Todos</option>
           {combustiveis.map((c) => (
@@ -256,7 +256,7 @@ export function TendenciaSazonalidade({ serie, volatilidade }: { serie: PontoSer
       </div>
 
       <div className="mb-6">
-        <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Tendência de preço por estado (regressão linear)</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Tendência de preço por estado (regressão linear)</h3>
         <ResponsiveContainer width="100%" height={340}>
           <LineChart data={dadosGraficoTendencia} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -286,14 +286,14 @@ export function TendenciaSazonalidade({ serie, volatilidade }: { serie: PontoSer
       </div>
 
       <div className="mb-6">
-        <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Sazonalidade — preço médio por mês do ano</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Sazonalidade — preço médio por mês do ano</h3>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-xs">
             <thead>
               <tr>
-                <th className="p-1 text-left text-slate-500">UF</th>
+                <th className="p-1 text-left text-slate-500 dark:text-slate-400">UF</th>
                 {["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"].map((m) => (
-                  <th key={m} className="p-1 text-center text-slate-500">
+                  <th key={m} className="p-1 text-center text-slate-500 dark:text-slate-400">
                     {m}
                   </th>
                 ))}
@@ -302,7 +302,7 @@ export function TendenciaSazonalidade({ serie, volatilidade }: { serie: PontoSer
             <tbody>
               {heatmap.linhas.map((l) => (
                 <tr key={l.uf}>
-                  <td className="p-1 font-medium text-slate-700">{l.uf}</td>
+                  <td className="p-1 font-medium text-slate-700 dark:text-slate-300">{l.uf}</td>
                   {l.valores.map((v, i) => {
                     const variacao = l.variacoes[i];
                     return (
@@ -347,7 +347,7 @@ export function TendenciaSazonalidade({ serie, volatilidade }: { serie: PontoSer
       </div>
 
       <div className="mb-6">
-        <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Volatilidade por combustível (desvio padrão mensal)</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Volatilidade por combustível (desvio padrão mensal)</h3>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={dadosVolatilidade} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -371,9 +371,9 @@ export function TendenciaSazonalidade({ serie, volatilidade }: { serie: PontoSer
       </div>
 
       <div className="overflow-x-auto">
-        <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Resumo por estado</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Resumo por estado</h3>
         <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="py-2 pr-3">UF</th>
               <th className="py-2 pr-3">Preço médio</th>
@@ -384,20 +384,20 @@ export function TendenciaSazonalidade({ serie, volatilidade }: { serie: PontoSer
               <th className="py-2">Δ R$/mês</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {[...seriesPorUf]
               .sort((a, b) => a.uf.localeCompare(b.uf))
               .map((s) => (
                 <tr key={s.uf}>
-                  <td className="py-2 pr-3 text-slate-700">{s.uf}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(s.media)}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(s.minimo)}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(s.maximo)}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(s.desvio)}</td>
+                  <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{s.uf}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(s.media)}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(s.minimo)}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(s.maximo)}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(s.desvio)}</td>
                   <td className="py-2 pr-3">
                     {s.tendenciaMes > 0.01 ? "📈 Alta" : s.tendenciaMes < -0.01 ? "📉 Queda" : "➡️ Estável"}
                   </td>
-                  <td className="py-2 tabular-nums text-slate-600">
+                  <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">
                     {s.tendenciaMes >= 0 ? "+" : ""}
                     {formatarMoeda(s.tendenciaMes)}
                   </td>
@@ -411,5 +411,5 @@ export function TendenciaSazonalidade({ serie, volatilidade }: { serie: PontoSer
 }
 
 function Insight({ texto }: { texto: string }) {
-  return <div className="rounded-lg bg-sky-50 px-3 py-2 text-sm text-slate-700">{texto}</div>;
+  return <div className="rounded-lg bg-sky-50 px-3 py-2 text-sm text-slate-700 dark:text-slate-300">{texto}</div>;
 }

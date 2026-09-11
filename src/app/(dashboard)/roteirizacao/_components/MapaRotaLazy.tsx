@@ -9,7 +9,7 @@ import type { MarcadorMapa } from "./MapaRota";
 const MapaRota = dynamic(() => import("./MapaRota"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[600px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-400">
+    <div className="flex h-[600px] items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm text-slate-400">
       Carregando mapa...
     </div>
   ),

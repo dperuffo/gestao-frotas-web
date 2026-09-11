@@ -693,8 +693,8 @@ export default async function DashboardPage({
       <div className="mb-6 card p-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Cliente e período</h2>
-            <p className="text-xs text-slate-500">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Cliente e período</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Direciona os indicadores da frota abaixo pelo cliente selecionado (motoristas, veículos,
               consumo, CNH, centro de custo e indicadores avançados). &quot;Clientes ativos&quot; e
               &quot;Top 5 clientes por gasto&quot; continuam sempre em nível de rede.
@@ -704,7 +704,7 @@ export default async function DashboardPage({
             {combustivelSelecionado && <input type="hidden" name="combustivel" value={combustivelSelecionado} />}
             {empresas.length > 1 && (
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
                 <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
                   <option value="">Selecione um cliente...</option>
                   {empresas.map((e) => (
@@ -716,7 +716,7 @@ export default async function DashboardPage({
               </div>
             )}
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Período</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Período</label>
               <select name="mesAno" defaultValue={`${indAno}-${indMes}`} className="input text-sm">
                 {opcoesMes.map((o) => (
                   <option key={`${o.ano}-${o.mes}`} value={`${o.ano}-${o.mes}`}>
@@ -760,8 +760,8 @@ export default async function DashboardPage({
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-frota-500">
             <Trophy className="h-5 w-5 text-white" aria-hidden="true" />
           </div>
-          <p className="text-sm text-slate-600">
-            Destaque do mês: a placa <span className="font-medium text-slate-900">{veiculoDestaque.placa}</span> teve
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Destaque do mês: a placa <span className="font-medium text-slate-900 dark:text-slate-100">{veiculoDestaque.placa}</span> teve
             o melhor km/L da frota ({veiculoDestaque.mediaKmL.toFixed(2)} km/l)
             {percentualAcimaMedia != null && percentualAcimaMedia > 0 && <>, {percentualAcimaMedia}% acima da média</>}.
           </p>
@@ -791,7 +791,7 @@ export default async function DashboardPage({
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         {!paineisOcultosSet.has("dashboard.consumo_grafico") && (
         <div className="card p-4 lg:col-span-2">
-          <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+          <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
             Consumo e gasto — últimos 6 meses <AjudaIcon chave="dashboard.consumo_grafico" />
           </h2>
           <GraficoConsumoLazy dados={dadosGrafico} />
@@ -800,7 +800,7 @@ export default async function DashboardPage({
 
         {!paineisOcultosSet.has("dashboard.cnh_vencendo") && (
         <div className="card p-4">
-          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
             CNH vencendo em 30 dias <AjudaIcon chave="dashboard.cnh_vencendo" />
           </h2>
           {cnhVencendo && cnhVencendo.length > 0 ? (
@@ -823,7 +823,7 @@ export default async function DashboardPage({
                         {dias} {dias === 1 ? "dia" : "dias"} · {formatDate(m.cnh_vencimento)}
                       </span>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
                       <div
                         className={`h-full rounded-full ${urgente ? "bg-status-inativo" : "bg-status-atencao"}`}
                         style={{ width: `${Math.min(100, Math.max(6, (dias / 30) * 100))}%` }}
@@ -843,23 +843,23 @@ export default async function DashboardPage({
 
       {!paineisOcultosSet.has("dashboard.top_clientes") && (
       <div className="mb-6 card p-4">
-        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
           Top 5 clientes por gasto (últimos 6 meses) <AjudaIcon chave="dashboard.top_clientes" />
         </h2>
         {topClientes.length > 0 ? (
           <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-slate-500">
+            <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="py-2">Cliente</th>
                 <th className="py-2">Valor</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {topClientes.map((c) => (
                 <tr key={c.nome}>
-                  <td className="py-2 text-slate-700">{c.nome}</td>
-                  <td className="py-2 text-slate-700">{formatarMoeda(c.valor)}</td>
+                  <td className="py-2 text-slate-700 dark:text-slate-300">{c.nome}</td>
+                  <td className="py-2 text-slate-700 dark:text-slate-300">{formatarMoeda(c.valor)}</td>
                 </tr>
               ))}
             </tbody>
@@ -873,12 +873,12 @@ export default async function DashboardPage({
 
       {!paineisOcultosSet.has("dashboard.centro_custo") && (
       <div className="card p-4">
-        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
           Desempenho por centro de custo <AjudaIcon chave="dashboard.centro_custo" />
         </h2>
 
         {!empresaSelecionada && (
-          <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+          <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
             Selecione um cliente no seletor do topo da página para ver os indicadores dos centros de custo dele.
           </p>
         )}
@@ -890,8 +890,8 @@ export default async function DashboardPage({
         {empresaSelecionada && !erroCentroCusto && (
           <>
             {nomeEmpresaSelecionada && (
-              <p className="mb-3 text-xs text-slate-500">
-                Cliente: <span className="font-medium text-slate-700">{nomeEmpresaSelecionada}</span> ·{" "}
+              <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                Cliente: <span className="font-medium text-slate-700 dark:text-slate-300">{nomeEmpresaSelecionada}</span> ·{" "}
                 {opcoesMes.find((o) => o.ano === indAno && o.mes === indMes)?.label}
               </p>
             )}
@@ -905,7 +905,7 @@ export default async function DashboardPage({
             {indicadoresCentroCusto && indicadoresCentroCusto.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="text-xs uppercase text-slate-500">
+                  <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="py-2 pr-4">Centro de custo</th>
                       <th className="py-2 pr-4">Veículos</th>
@@ -915,7 +915,7 @@ export default async function DashboardPage({
                       <th className="py-2">Consumo médio</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {indicadoresCentroCusto.map((c) => (
                       <tr key={c.centro_custo_id}>
                         <td className="py-2.5 pr-4">
@@ -926,13 +926,13 @@ export default async function DashboardPage({
                             {c.centro_custo_nome}
                           </Link>
                         </td>
-                        <td className="py-2.5 pr-4 text-slate-600">{c.qtd_veiculos}</td>
-                        <td className="py-2.5 pr-4 text-slate-600">{formatarMoeda(c.custo_abastecimento ?? 0)}</td>
-                        <td className="py-2.5 pr-4 text-slate-600">{formatarMoeda(c.custo_manutencao ?? 0)}</td>
-                        <td className="py-2.5 pr-4 text-slate-600">
+                        <td className="py-2.5 pr-4 text-slate-600 dark:text-slate-300">{c.qtd_veiculos}</td>
+                        <td className="py-2.5 pr-4 text-slate-600 dark:text-slate-300">{formatarMoeda(c.custo_abastecimento ?? 0)}</td>
+                        <td className="py-2.5 pr-4 text-slate-600 dark:text-slate-300">{formatarMoeda(c.custo_manutencao ?? 0)}</td>
+                        <td className="py-2.5 pr-4 text-slate-600 dark:text-slate-300">
                           {c.custo_por_km != null ? `R$ ${c.custo_por_km.toFixed(3)}` : "—"}
                         </td>
-                        <td className="py-2.5 text-slate-600">
+                        <td className="py-2.5 text-slate-600 dark:text-slate-300">
                           {c.consumo_medio != null ? `${c.consumo_medio.toFixed(2)} km/l` : "—"}
                         </td>
                       </tr>
@@ -951,7 +951,7 @@ export default async function DashboardPage({
       {!paineisOcultosSet.has("dashboard.manutencao_preditiva") && empresaSelecionada && manutencaoKpis && (
         <div className="mt-6 card p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
               Manutenção preditiva <AjudaIcon chave="dashboard.manutencao_preditiva" />
             </h2>
             <Link href="/manutencao-preditiva" className="text-xs font-medium text-frota-600 hover:underline">
@@ -980,8 +980,8 @@ export default async function DashboardPage({
       <div id="indicadores-avancados" className="mt-8 scroll-mt-4">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Indicadores avançados</h2>
-            <p className="text-sm text-slate-500">Preços, consumo e rankings do período selecionado no topo da página.</p>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Indicadores avançados</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Preços, consumo e rankings do período selecionado no topo da página.</p>
           </div>
           {/* Fase Dashboard-Filtro-Combustivel (19/07) — pedido do Daniel:
               seletor de combustível pros indicadores 2 (previsão de
@@ -996,7 +996,7 @@ export default async function DashboardPage({
                 <input type="hidden" name="empresa" value={empresaSelecionada} />
                 <input type="hidden" name="mesAno" value={`${indAno}-${indMes}`} />
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-500">Combustível</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Combustível</label>
                   <select name="combustivel" defaultValue={combustivelSelecionado ?? ""} className="input text-sm">
                     <option value="">Todos os combustíveis</option>
                     {PRODUTOS_POSTO.map((p) => (
@@ -1015,7 +1015,7 @@ export default async function DashboardPage({
         </div>
 
         {!empresaSelecionada && (
-          <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+          <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
             Selecione um cliente no seletor do topo da página para ver os indicadores avançados dele.
           </p>
         )}
@@ -1033,8 +1033,8 @@ export default async function DashboardPage({
             )}
             {!paineisOcultosSet.has("dashboard.variacao_precos") && (
               <div className="card p-4">
-                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">1. Variação de preços por combustível <AjudaIcon chave="dashboard.variacao_precos" /></h3>
-                <p className="mb-3 text-xs text-slate-500">
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">1. Variação de preços por combustível <AjudaIcon chave="dashboard.variacao_precos" /></h3>
+                <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                   Faixa de preço paga na rede do cliente, comparada à referência ANP do estado mais frequente.
                 </p>
                 <GraficoVariacaoPrecosLazy dados={variacaoPrecos ?? []} />
@@ -1043,14 +1043,14 @@ export default async function DashboardPage({
 
             {!paineisOcultosSet.has("dashboard.consumo_diario") && (
               <div className="card p-4">
-                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">2. Previsão de consumo — {opcoesMes.find((o) => o.ano === indAno && o.mes === indMes)?.label} <AjudaIcon chave="dashboard.consumo_diario" /></h3>
-                <p className="mb-3 text-xs text-slate-500">
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">2. Previsão de consumo — {opcoesMes.find((o) => o.ano === indAno && o.mes === indMes)?.label} <AjudaIcon chave="dashboard.consumo_diario" /></h3>
+                <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                   Litros e custo (R$) por dia; dias restantes do mês projetados com base no padrão de consumo por dia
                   da semana (últimos 90 dias) e no preço médio do período.
                 </p>
                 <GraficoPrevisaoConsumoLazy dados={dadosPrevisaoConsumoComCusto} />
                 {isMesAtual && diaAtual < diasNoMes && (
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                     Realizado até o dia {diaAtual}: {totalLitrosMes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L (
                     {formatarMoeda(totalValorMes)}) · Projeção para os {diasNoMes - diaAtual} dias restantes:{" "}
                     {totalLitrosProjetado.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L (
@@ -1066,7 +1066,7 @@ export default async function DashboardPage({
 
             {!paineisOcultosSet.has("dashboard.evolucao_preco_medio") && (
               <div className="card p-4">
-                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">3. Evolução do preço médio por abastecimento (R$/L) <AjudaIcon chave="dashboard.evolucao_preco_medio" /></h3>
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">3. Evolução do preço médio por abastecimento (R$/L) <AjudaIcon chave="dashboard.evolucao_preco_medio" /></h3>
                 <GraficoEvolucaoPrecoMedioLazy dados={dadosPrecoMedio} />
               </div>
             )}
@@ -1075,13 +1075,13 @@ export default async function DashboardPage({
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {!paineisOcultosSet.has("dashboard.volume_postos") && (
                   <div className="card p-4">
-                    <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">4. Evolutivo de volume — Top 5 postos <AjudaIcon chave="dashboard.volume_postos" /></h3>
+                    <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">4. Evolutivo de volume — Top 5 postos <AjudaIcon chave="dashboard.volume_postos" /></h3>
                     <GraficoEvolutivoPostosLazy dados={dadosEvolutivoPostos} postos={postosNomes} />
                   </div>
                 )}
                 {!paineisOcultosSet.has("dashboard.ranking_top5") && (
                   <div className="card p-4">
-                    <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">5. Top 5 postos — maior volume no período <AjudaIcon chave="dashboard.ranking_top5" /></h3>
+                    <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">5. Top 5 postos — maior volume no período <AjudaIcon chave="dashboard.ranking_top5" /></h3>
                     <GraficoTopPostosLazy dados={dadosTopPostos} />
                   </div>
                 )}
@@ -1090,23 +1090,23 @@ export default async function DashboardPage({
 
             {!paineisOcultosSet.has("dashboard.ranking_veiculos") && (
               <div className="card p-4">
-                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">6. Ranking de veículos — maior gasto no período <AjudaIcon chave="dashboard.ranking_veiculos" /></h3>
-                <p className="mb-3 text-xs text-slate-500">Top 10 no gráfico; frota completa não cabe num único painel.</p>
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">6. Ranking de veículos — maior gasto no período <AjudaIcon chave="dashboard.ranking_veiculos" /></h3>
+                <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">Top 10 no gráfico; frota completa não cabe num único painel.</p>
                 <RankingGasto itens={itensRankingVeiculos} colunaExtra="Placa" />
               </div>
             )}
 
             {!paineisOcultosSet.has("dashboard.ranking_motoristas") && (
               <div className="card p-4">
-                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">7. Ranking de motoristas — maior gasto no período <AjudaIcon chave="dashboard.ranking_motoristas" /></h3>
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">7. Ranking de motoristas — maior gasto no período <AjudaIcon chave="dashboard.ranking_motoristas" /></h3>
                 <RankingGasto itens={itensRankingMotoristas} colunaExtra="Motorista" />
               </div>
             )}
 
             {!paineisOcultosSet.has("dashboard.eficiencia_veiculos") && (
               <div className="card p-4">
-                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">8. Eficiência real por veículo <AjudaIcon chave="dashboard.eficiencia_veiculos" /></h3>
-                <p className="mb-3 text-xs text-slate-500">
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">8. Eficiência real por veículo <AjudaIcon chave="dashboard.eficiencia_veiculos" /></h3>
+                <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                   KM rodado e km/L calculados a partir de hodômetros consecutivos reais dos abastecimentos, de qualquer
                   meio de pagamento integrado (GF). Não inclui comparação com rota planejada — sem dado real de GPS/trajetória,
                   essa parte não é confiável para exibir aqui.
@@ -1117,8 +1117,8 @@ export default async function DashboardPage({
 
             {!paineisOcultosSet.has("dashboard.desempenho_por_ativo") && (
               <div className="card p-4">
-                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">9. Desempenho por marca/modelo/motor <AjudaIcon chave="dashboard.desempenho_por_ativo" /></h3>
-                <p className="mb-3 text-xs text-slate-500">
+                <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">9. Desempenho por marca/modelo/motor <AjudaIcon chave="dashboard.desempenho_por_ativo" /></h3>
+                <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                   Km/L, R$/L pago, custo por km (TCO) e score de manutenção agrupados pelas características do veículo —
                   use pra comparar se vale continuar comprando essa marca/modelo/motor ou trocar de fornecedor.
                 </p>
@@ -1138,9 +1138,9 @@ export default async function DashboardPage({
 
 function MiniIndicador({ label, valor }: { label: string; valor: string }) {
   return (
-    <div className="rounded-lg border border-slate-100 p-3">
+    <div className="rounded-lg border border-slate-100 dark:border-slate-700 p-3">
       <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{valor}</p>
     </div>
   );
 }

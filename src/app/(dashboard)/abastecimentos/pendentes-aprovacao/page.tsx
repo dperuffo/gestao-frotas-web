@@ -93,7 +93,7 @@ export default async function AbastecimentosPendentesAprovacaoPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -110,7 +110,7 @@ export default async function AbastecimentosPendentesAprovacaoPage({
       )}
 
       {pendentes.length === 0 ? (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Nenhum lançamento manual pendente de aprovação no momento.
         </p>
       ) : (
@@ -123,10 +123,10 @@ export default async function AbastecimentosPendentesAprovacaoPage({
                   <img
                     src={p.fotoUrl}
                     alt="Foto do cupom fiscal"
-                    className="h-32 w-24 shrink-0 rounded-lg border border-slate-200 object-cover"
+                    className="h-32 w-24 shrink-0 rounded-lg border border-slate-200 dark:border-slate-700 object-cover"
                   />
                 ) : (
-                  <div className="flex h-32 w-24 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-center text-[10px] text-slate-400">
+                  <div className="flex h-32 w-24 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-center text-[10px] text-slate-400">
                     Sem foto
                   </div>
                 )}
@@ -136,20 +136,20 @@ export default async function AbastecimentosPendentesAprovacaoPage({
                       {nomesEmpresas[p.empresa_id] ?? "Cliente não identificado"}
                     </p>
                   )}
-                  <p className="font-medium text-slate-900">
+                  <p className="font-medium text-slate-900 dark:text-slate-100">
                     {p.placa} · {p.motorista_nome ?? "Motorista não identificado"}
                   </p>
-                  <p className="text-slate-500">{formatarDataHoraBr(p.data_abastecimento)}</p>
-                  <p className="text-slate-600">
+                  <p className="text-slate-500 dark:text-slate-400">{formatarDataHoraBr(p.data_abastecimento)}</p>
+                  <p className="text-slate-600 dark:text-slate-300">
                     {p.combustivel ?? "—"} · {p.quantidade.toLocaleString("pt-BR")} L
                     {p.valor_unitario != null ? ` · ${formatarMoeda(p.valor_unitario)}/L` : ""}
                   </p>
-                  <p className="font-medium text-slate-900">{formatarMoeda(p.valor_total)}</p>
-                  <p className="text-slate-500">{p.posto_nome ?? "Posto não identificado"}</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">{formatarMoeda(p.valor_total)}</p>
+                  <p className="text-slate-500 dark:text-slate-400">{p.posto_nome ?? "Posto não identificado"}</p>
                   {p.hodometro != null && <p className="text-xs text-slate-400">Hodômetro: {p.hodometro.toLocaleString("pt-BR")} km</p>}
                 </div>
               </div>
-              <div className="border-t border-slate-100 px-4 py-3">
+              <div className="border-t border-slate-100 dark:border-slate-700 px-4 py-3">
                 <AcaoAprovacaoManual id={p.id} />
               </div>
             </div>

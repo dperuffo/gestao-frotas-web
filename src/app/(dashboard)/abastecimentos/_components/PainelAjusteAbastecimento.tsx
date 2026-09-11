@@ -92,10 +92,10 @@ export function PainelAjusteAbastecimento({
   if (!ajusteAberto) {
     return (
       <div className="card p-6">
-        <h2 className="mb-1 text-sm font-semibold text-slate-900">Ajuste de registro</h2>
+        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Ajuste de registro</h2>
         {cicloFechado ? (
           <>
-            <p className="mb-4 text-xs text-slate-500">
+            <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
               Encontrou um erro neste abastecimento? Solicite um ajuste — a outra parte (cliente ou posto)
               recebe uma notificação para aprovar ou recusar antes de qualquer mudança valer.
             </p>
@@ -108,7 +108,7 @@ export function PainelAjusteAbastecimento({
           </>
         ) : (
           <>
-            <p className="mb-4 text-xs text-slate-500">
+            <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
               Encontrou um erro neste abastecimento? Solicite um ajuste — a outra parte (cliente ou posto)
               recebe uma notificação para aprovar ou recusar antes de qualquer mudança valer.
             </p>
@@ -148,7 +148,7 @@ export function PainelAjusteAbastecimento({
   return (
     <div className="card p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">Ajuste de registro</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Ajuste de registro</h2>
         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
           {STATUS_AJUSTE_LABEL[ajusteAberto.status as StatusAjuste] ?? ajusteAberto.status}
         </span>
@@ -156,14 +156,14 @@ export function PainelAjusteAbastecimento({
 
       <div className="mb-4 space-y-3">
         {rodadas.map((r) => (
-          <div key={r.numero_rodada} className="rounded-lg border border-slate-100 p-3 text-sm">
+          <div key={r.numero_rodada} className="rounded-lg border border-slate-100 dark:border-slate-700 p-3 text-sm">
             <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
               <span>
                 Rodada #{r.numero_rodada} — proposta {r.autor === "cliente" ? "do cliente" : "do posto"}
               </span>
               <span>{formatarDataHoraBr(r.criado_em)}</span>
             </div>
-            <ul className="space-y-1 text-slate-700">
+            <ul className="space-y-1 text-slate-700 dark:text-slate-300">
               {CAMPOS_ORDEM.map((campo) => {
                 const valor = r[campo];
                 if (valor == null) return null;
@@ -175,7 +175,7 @@ export function PainelAjusteAbastecimento({
                 );
               })}
             </ul>
-            {r.motivo && <p className="mt-1 text-xs italic text-slate-500">&ldquo;{r.motivo}&rdquo;</p>}
+            {r.motivo && <p className="mt-1 text-xs italic text-slate-500 dark:text-slate-400">&ldquo;{r.motivo}&rdquo;</p>}
           </div>
         ))}
       </div>
@@ -217,7 +217,7 @@ export function PainelAjusteAbastecimento({
       )}
 
       <div className="mt-3 flex justify-end">
-        <button type="button" disabled={isPending} onClick={handleCancelar} className="text-xs text-slate-500 hover:underline">
+        <button type="button" disabled={isPending} onClick={handleCancelar} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">
           Cancelar solicitação
         </button>
       </div>

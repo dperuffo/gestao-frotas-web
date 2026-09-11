@@ -53,7 +53,7 @@ export function SalvarConsultaForm({
       <button type="button" onClick={() => setAberto(false)} className="text-sm text-slate-400 hover:text-slate-600">
         Cancelar
       </button>
-      {mensagem && <span className="text-xs text-slate-500">{mensagem}</span>}
+      {mensagem && <span className="text-xs text-slate-500 dark:text-slate-400">{mensagem}</span>}
     </div>
   );
 }

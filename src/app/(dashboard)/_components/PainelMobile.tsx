@@ -68,12 +68,12 @@ export function PainelMobile({ menu, children }: { menu: ReactNode; children: Re
 
   return (
     <>
-      <div className="glass-nav sticky top-0 z-40 flex items-center gap-3 border-b border-slate-200 px-4 py-3 lg:hidden">
+      <div className="glass-nav sticky top-0 z-40 flex items-center gap-3 border-b border-slate-200 px-4 py-3 lg:hidden dark:border-slate-700">
         <button
           type="button"
           onClick={() => setAberto(true)}
           aria-label="Abrir menu"
-          className="glass-nav-texto flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 p-2"
+          className="glass-nav-texto flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 p-2 dark:border-slate-700 dark:bg-slate-800"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -97,7 +97,7 @@ export function PainelMobile({ menu, children }: { menu: ReactNode; children: Re
           type="button"
           onClick={() => setAberto(false)}
           aria-label="Fechar menu"
-          className="glass-nav-texto absolute right-3 top-3 z-10 rounded-lg border border-slate-200 bg-slate-100 p-1.5 lg:hidden"
+          className="glass-nav-texto absolute right-3 top-3 z-10 rounded-lg border border-slate-200 bg-slate-100 p-1.5 lg:hidden dark:border-slate-700 dark:bg-slate-800"
         >
           <X className="h-4 w-4" />
         </button>
@@ -110,7 +110,7 @@ export function PainelMobile({ menu, children }: { menu: ReactNode; children: Re
           onClick={alternarColapsado}
           aria-label={colapsado ? "Expandir menu" : "Recolher menu"}
           title={colapsado ? "Expandir menu" : "Recolher menu"}
-          className="glass-nav-texto absolute -right-3 top-16 z-10 hidden rounded-full border border-slate-200 bg-white p-1 shadow-sm hover:bg-slate-50 lg:flex"
+          className="glass-nav-texto absolute -right-3 top-16 z-10 hidden rounded-full border border-slate-200 bg-white p-1 shadow-sm hover:bg-slate-50 lg:flex dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
         >
           {colapsado ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
         </button>

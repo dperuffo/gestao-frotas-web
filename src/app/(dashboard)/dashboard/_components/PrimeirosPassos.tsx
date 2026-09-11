@@ -41,8 +41,8 @@ export function PrimeirosPassos({
 
   return (
     <div className="mb-6 card border-frota-100 bg-frota-50/40 p-4">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">🚀 Primeiros passos na plataforma</h2>
-      <p className="mb-3 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">🚀 Primeiros passos na plataforma</h2>
+      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
         O essencial pra começar a operar. Você já pode consultar rotas e preços de combustível agora
         mesmo — não precisa esperar terminar esta lista.
       </p>
@@ -126,15 +126,15 @@ function PassoItem({
   textoAcao: string;
 }) {
   return (
-    <li className="flex items-start gap-3 rounded-lg bg-white p-3">
+    <li className="flex items-start gap-3 rounded-lg bg-white dark:bg-slate-800 p-3">
       <span className={`mt-0.5 text-lg ${feito ? "" : "opacity-40"}`} aria-hidden>
         {feito ? "✅" : "⬜"}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-slate-800">
+        <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
           {titulo} {opcional && <span className="font-normal text-slate-400">(opcional)</span>}
         </p>
-        <p className="mt-0.5 text-xs text-slate-500">{descricao}</p>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{descricao}</p>
       </div>
       {!feito && (
         <Link href={href} className="btn-secondary shrink-0 whitespace-nowrap text-xs">

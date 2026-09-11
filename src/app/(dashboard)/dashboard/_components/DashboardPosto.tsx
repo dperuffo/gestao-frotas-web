@@ -191,8 +191,8 @@ export async function DashboardPosto({
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Desempenho de vendas e negociações{nomeEmpresaSelecionada ? ` — ${nomeEmpresaSelecionada}` : ""}.
           </p>
         </div>
@@ -224,11 +224,11 @@ export async function DashboardPosto({
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="card overflow-x-auto">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Desempenho por combustível</h2>
+          <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Desempenho por combustível</h2>
           </div>
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3">Combustível</th>
                 <th className="px-4 py-3">Volume</th>
@@ -237,14 +237,14 @@ export async function DashboardPosto({
                 <th className="px-4 py-3">%</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {desempenhoPorCombustivel.map((d) => (
                 <tr key={d.combustivel} className="transition-colors hover:bg-frota-50/60">
-                  <td className="px-4 py-3 text-slate-700">{d.combustivel}</td>
-                  <td className="px-4 py-3 text-slate-500">{d.volume.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L</td>
-                  <td className="px-4 py-3 text-slate-500">{formatarMoeda(d.precoMedio)}</td>
-                  <td className="px-4 py-3 text-slate-500">{formatarMoeda(d.receita)}</td>
-                  <td className="px-4 py-3 text-slate-500">{d.participacao.toFixed(0)}%</td>
+                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{d.combustivel}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{d.volume.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatarMoeda(d.precoMedio)}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatarMoeda(d.receita)}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{d.participacao.toFixed(0)}%</td>
                 </tr>
               ))}
               {desempenhoPorCombustivel.length === 0 && (
@@ -259,8 +259,8 @@ export async function DashboardPosto({
         </div>
 
         <div className="card">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Venda diária por combustível (L)</h2>
+          <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Venda diária por combustível (L)</h2>
           </div>
           <div className="p-2">
             <GraficoEvolutivoPostosLazy dados={dadosGraficoDiario} postos={combustiveisNoPeriodo} />
@@ -287,11 +287,11 @@ export async function DashboardPosto({
       </div>
 
       <div className="card overflow-x-auto">
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">Negociações vigentes agora</h2>
+        <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Negociações vigentes agora</h2>
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Cliente</th>
               <th className="px-4 py-3">Combustível</th>
@@ -301,20 +301,20 @@ export async function DashboardPosto({
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {vigentesLista.map((n) => (
               <tr key={n.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-700">{n.cliente_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-500">{n.combustivel ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{n.cliente_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{n.combustivel ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                   {n.vigencia_inicio && n.vigencia_fim
                     ? `${formatarDataBr(n.vigencia_inicio)} – ${formatarDataBr(n.vigencia_fim)}`
                     : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                   {n.volume_minimo_mensal != null ? `${n.volume_minimo_mensal.toLocaleString("pt-BR")} L` : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                   {n.preco_unitario != null
                     ? n.preco_unitario.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                     : "—"}
@@ -347,19 +347,19 @@ export async function DashboardPosto({
 
       {listaNegociacoes.some((n) => n.status === "pendente_posto") && (
         <div className="mt-6 card overflow-x-auto">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Aguardando sua resposta</h2>
+          <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Aguardando sua resposta</h2>
           </div>
           <table className="w-full text-left text-sm">
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {listaNegociacoes
                 .filter((n) => n.status === "pendente_posto")
                 .slice(0, 10)
                 .map((n) => (
                   <tr key={n.id} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 text-slate-700">{n.cliente_nome ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{n.cliente_nome ?? "—"}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                      <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300">
                         {STATUS_NEGOCIACAO_LABEL[n.status as StatusNegociacao] ?? n.status}
                       </span>
                     </td>

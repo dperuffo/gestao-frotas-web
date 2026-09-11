@@ -87,7 +87,7 @@ export function AcaoAprovacaoManual({ id }: { id: number }) {
                 setMotivo("");
                 setErro(undefined);
               }}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 disabled:opacity-50"
             >
               Cancelar
             </button>

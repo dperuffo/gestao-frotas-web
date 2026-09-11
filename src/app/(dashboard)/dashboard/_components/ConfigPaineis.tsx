@@ -66,7 +66,7 @@ export function ConfigPaineis({
           <div className="fixed inset-0 z-[90]" onClick={() => setAberto(false)} />
           <div className="card absolute right-0 top-full z-[100] mt-2 w-72 p-3">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Painéis visíveis
               </p>
               <button type="button" onClick={() => setAberto(false)} aria-label="Fechar">
@@ -76,7 +76,7 @@ export function ConfigPaineis({
             <ul className="space-y-1">
               {opcoes.map((opcao) => (
                 <li key={opcao.chave}>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50">
                     <input
                       type="checkbox"
                       checked={!ocultos.has(opcao.chave)}

@@ -27,8 +27,8 @@ const STATUS_MDFE_BADGE: Record<string, { texto: string; classe: string }> = {
   autorizado: { texto: "Em viagem", classe: "bg-emerald-50 text-emerald-700" },
   enviando: { texto: "Enviando...", classe: "bg-amber-50 text-amber-700" },
   rejeitado: { texto: "Rejeitado pela SEFAZ", classe: "bg-red-50 text-red-700" },
-  encerrado: { texto: "Encerrado", classe: "bg-slate-100 text-slate-500" },
-  cancelado: { texto: "Cancelado", classe: "bg-slate-100 text-slate-500" },
+  encerrado: { texto: "Encerrado", classe: "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400" },
+  cancelado: { texto: "Cancelado", classe: "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400" },
 };
 
 const DIAS_ALERTA_MDFE_ABERTO = 3;
@@ -62,8 +62,8 @@ export function MdfeCard({
 
   return (
     <div className="card mb-6 p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">🚛 Viagem (MDF-e)</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">🚛 Viagem (MDF-e)</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Agrupa os CT-e autorizados deste frete em um único manifesto — obrigatório pra circular sem multa/retenção
         de carga.
       </p>
@@ -176,7 +176,7 @@ function MdfeStatusCard({ empresaId, mdfe }: { empresaId: string; mdfe: MdfeAtiv
   const [mensagem, setMensagem] = useState<{ tipo: "erro" | "sucesso"; texto: string } | undefined>();
   const [isPending, startTransition] = useTransition();
 
-  const badge = STATUS_MDFE_BADGE[mdfe.status] ?? { texto: mdfe.status, classe: "bg-slate-100 text-slate-500" };
+  const badge = STATUS_MDFE_BADGE[mdfe.status] ?? { texto: mdfe.status, classe: "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400" };
   const diasAberto = Math.floor((Date.now() - new Date(mdfe.criadoEm).getTime()) / (1000 * 60 * 60 * 24));
   const abertoHaMuitoTempo = mdfe.status === "autorizado" && diasAberto >= DIAS_ALERTA_MDFE_ABERTO;
 
@@ -204,13 +204,13 @@ function MdfeStatusCard({ empresaId, mdfe }: { empresaId: string; mdfe: MdfeAtiv
   return (
     <div className="card mb-6 p-6">
       <div className="mb-1 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-slate-900">🚛 Viagem (MDF-e) — Nº {mdfe.numeroMdfe ?? "—"}</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">🚛 Viagem (MDF-e) — Nº {mdfe.numeroMdfe ?? "—"}</h2>
         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.classe}`}>{badge.texto}</span>
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         {mdfe.placaVeiculo} · {mdfe.condutorNome ?? "—"} · {mdfe.ufCarregamento} → {mdfe.ufDescarregamento}
       </p>
-      {mdfe.protocoloAutorizacao && <p className="mt-1 text-xs text-slate-500">Protocolo {mdfe.protocoloAutorizacao}</p>}
+      {mdfe.protocoloAutorizacao && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Protocolo {mdfe.protocoloAutorizacao}</p>}
       {mdfe.motivoRejeicao && <p className="mt-1 text-xs text-red-600">{mdfe.motivoRejeicao}</p>}
       {abertoHaMuitoTempo && (
         <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">

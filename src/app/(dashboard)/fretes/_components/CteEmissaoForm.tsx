@@ -89,8 +89,8 @@ function CampoParceiro({
   }
 
   return (
-    <fieldset className="rounded-lg border border-slate-200 p-3">
-      <legend className="px-1 text-xs font-semibold uppercase text-slate-500">{titulo}</legend>
+    <fieldset className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+      <legend className="px-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{titulo}</legend>
       {parceiros.length > 0 && (
         <select
           className="input mb-2 text-xs"
@@ -247,9 +247,9 @@ export function CteEmissaoForm({
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-3 rounded-lg bg-slate-50 p-3">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-700">Emitir CT-e</span>
+        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Emitir CT-e</span>
         <button type="button" onClick={() => setAberto(false)} className="text-xs text-slate-400 hover:underline">
           fechar
         </button>
@@ -274,8 +274,8 @@ export function CteEmissaoForm({
         </select>
       </div>
 
-      <fieldset className="rounded-lg border border-slate-200 p-3">
-        <legend className="px-1 text-xs font-semibold uppercase text-slate-500">Prestação</legend>
+      <fieldset className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+        <legend className="px-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Prestação</legend>
         <div className="grid grid-cols-2 gap-2">
           <input name="municipio_inicio" defaultValue={municipioInicioPadrao} placeholder="Município início" required className="input text-xs" />
           <input name="uf_inicio" defaultValue={ufInicioPadrao} placeholder="UF início" maxLength={2} required className="input text-xs uppercase" />
@@ -292,8 +292,8 @@ export function CteEmissaoForm({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-lg border border-slate-200 p-3">
-        <legend className="px-1 text-xs font-semibold uppercase text-slate-500">ICMS</legend>
+      <fieldset className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+        <legend className="px-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">ICMS</legend>
         <div className="grid grid-cols-4 gap-2">
           <input name="icms_cst" placeholder="CST" required className="input text-xs" />
           <input name="icms_base" type="number" step="0.01" placeholder="Base" className="input text-xs" />
@@ -303,7 +303,7 @@ export function CteEmissaoForm({
       </fieldset>
 
       <div>
-        <label className="mb-1 block text-xs text-slate-500">Chaves de NF-e da carga (uma por linha ou separadas por vírgula)</label>
+        <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">Chaves de NF-e da carga (uma por linha ou separadas por vírgula)</label>
         <textarea name="chaves_nfe" rows={2} defaultValue={chavesNfePadrao} className="input w-full text-xs" placeholder="44 dígitos cada" />
         {chavesNfePadrao && <p className="mt-1 text-[11px] text-slate-400">Pré-preenchido com as NF-e do romaneio deste frete.</p>}
       </div>

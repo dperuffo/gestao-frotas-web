@@ -55,12 +55,12 @@ export function BuscaLocalInput({
       />
       {isPending && <span className="absolute right-2 top-2.5 text-xs text-slate-400">buscando...</span>}
       {mostrar && sugestoes.length > 0 && (
-        <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+        <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
           {sugestoes.map((s, i) => (
             <li key={i}>
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-frota-50/60"
+                className="block w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 transition-colors hover:bg-frota-50/60"
                 onClick={() => {
                   setTexto(s.label);
                   setMostrar(false);

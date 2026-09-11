@@ -44,7 +44,7 @@ const STATUS_CTE_BADGE: Record<string, { texto: string; classe: string }> = {
   enviando: { texto: "Enviando...", classe: "bg-amber-50 text-amber-700" },
   rascunho: { texto: "Rascunho (falhou o envio)", classe: "bg-amber-50 text-amber-700" },
   rejeitado: { texto: "Rejeitado pela SEFAZ", classe: "bg-red-50 text-red-700" },
-  cancelado: { texto: "Cancelado", classe: "bg-slate-100 text-slate-500" },
+  cancelado: { texto: "Cancelado", classe: "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400" },
 };
 
 export function FretesDocumentos({
@@ -74,25 +74,25 @@ export function FretesDocumentos({
 }) {
   return (
     <div className="card mb-6 p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">📄 Documentos do frete (CT-e / CIOT)</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">📄 Documentos do frete (CT-e / CIOT)</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Emitidos fora da plataforma (SEFAZ / integradora credenciada na ANTT) — aqui é só o registro e a
         conferência de status.
       </p>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div>
-          <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">CT-e</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">CT-e</h3>
           <div className="mb-3 space-y-2">
             {ctes.map((c) => {
-              const badge = STATUS_CTE_BADGE[c.status] ?? { texto: c.status, classe: "bg-slate-100 text-slate-500" };
+              const badge = STATUS_CTE_BADGE[c.status] ?? { texto: c.status, classe: "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400" };
               return (
-                <div key={c.id} className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                <div key={c.id} className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-slate-900">Nº {c.numero_cte ?? "—"} / série {c.serie ?? "—"}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">Nº {c.numero_cte ?? "—"} / série {c.serie ?? "—"}</span>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.classe}`}>{badge.texto}</span>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {c.valor_prestacao != null ? formatoMoeda.format(c.valor_prestacao) : "—"} · protocolo{" "}
                     {c.protocolo_autorizacao ?? "—"}
                     {c.data_emissao ? ` · ${new Date(c.data_emissao).toLocaleDateString("pt-BR")}` : ""}
@@ -127,24 +127,24 @@ export function FretesDocumentos({
         </div>
 
         <div>
-          <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">CIOT</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">CIOT</h3>
           <div className="mb-3 space-y-2">
             {ciots.map((c) => (
-              <div key={c.id} className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
+              <div key={c.id} className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-slate-900 font-mono">{c.numero_ciot}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100 font-mono">{c.numero_ciot}</span>
                   {c.anexoUrl && (
                     <a href={c.anexoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-frota-600 hover:underline">
                       Ver anexo
                     </a>
                   )}
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {c.placa_veiculo ?? "—"} · RNTRC {c.rntrc ?? "—"} ·{" "}
                   {c.valor_frete != null ? formatoMoeda.format(c.valor_frete) : "—"}
                   {c.data_emissao ? ` · ${new Date(c.data_emissao).toLocaleDateString("pt-BR")}` : ""}
                 </p>
-                {c.observacao && <p className="mt-1 text-xs text-slate-500">{c.observacao}</p>}
+                {c.observacao && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{c.observacao}</p>}
               </div>
             ))}
             {ciots.length === 0 && <p className="text-xs text-slate-400">Nenhum CIOT registrado ainda.</p>}

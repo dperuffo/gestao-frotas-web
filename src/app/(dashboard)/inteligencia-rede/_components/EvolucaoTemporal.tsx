@@ -222,7 +222,7 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
     <div>
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-500">Combustível:</label>
+          <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Combustível:</label>
           <select value={combustivelSel} onChange={(e) => setCombustivelSel(e.target.value)} className="input w-auto text-sm">
             <option value="Todos">Todos</option>
             {combustiveis.map((c) => (
@@ -233,7 +233,7 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-500">UF:</label>
+          <label className="text-xs font-medium text-slate-500 dark:text-slate-400">UF:</label>
           <select value={ufSel} onChange={(e) => setUfSel(e.target.value)} className="input w-auto text-sm">
             <option value="Todos">Todos</option>
             {ufs.map((uf) => (
@@ -244,7 +244,7 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-500">Granularidade:</label>
+          <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Granularidade:</label>
           <select
             value={granularidade}
             onChange={(e) => setGranularidade(e.target.value as "Semanal" | "Mensal")}
@@ -261,7 +261,7 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
       ) : (
         <>
           <div className="mb-6">
-            <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">🗺️ Tendência de preço por UF</h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">🗺️ Tendência de preço por UF</h3>
             {tendenciaPorUf.length === 0 ? (
               <p className="p-4 text-sm text-slate-400">
                 Dados insuficientes para traçar tendências regionais. São necessários pelo menos 2 períodos por UF.
@@ -342,7 +342,7 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
           </div>
 
           <div className="mb-6">
-            <h3 className="mb-1 text-xs font-semibold uppercase text-slate-500">🌊 Volatilidade de preços por UF</h3>
+            <h3 className="mb-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">🌊 Volatilidade de preços por UF</h3>
             <p className="mb-3 text-xs text-slate-400">
               Desvio padrão do preço médio {granularidade === "Semanal" ? "semanal" : "mensal"} por estado — quanto maior,
               mais instável o preço na região.
@@ -371,7 +371,7 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
           </div>
 
           <div>
-            <h3 className="mb-1 text-xs font-semibold uppercase text-slate-500">🏆 Ranking de estabilidade por posto</h3>
+            <h3 className="mb-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">🏆 Ranking de estabilidade por posto</h3>
             <p className="mb-3 text-xs text-slate-400">
               Postos com histórico de pelo menos 3 registros, ordenados pelo menor coeficiente de variação de preço.
             </p>
@@ -381,30 +381,30 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
               </p>
             ) : (
               <>
-                <p className="mb-2 text-xs font-medium text-slate-600">🥇 Top 10 mais estáveis</p>
+                <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">🥇 Top 10 mais estáveis</p>
                 <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   {rankingPostos.slice(0, 10).map((p, i) => {
                     const medalha = ["🥇", "🥈", "🥉"][i] ?? `#${i + 1}`;
                     const [bg, borda] = p.cvPct < 1 ? ["#E8F5E9", "#43A047"] : p.cvPct < 3 ? ["#FFF8E1", "#F57C00"] : ["#FCE4EC", "#E53935"];
                     return (
                       <div key={p.cnpj} className="rounded-lg border p-3 text-xs" style={{ backgroundColor: bg, borderColor: borda }}>
-                        <p className="font-semibold text-slate-700">{medalha}</p>
-                        <p className="mt-1 font-medium text-slate-800" title={p.razaoSocial}>
+                        <p className="font-semibold text-slate-700 dark:text-slate-300">{medalha}</p>
+                        <p className="mt-1 font-medium text-slate-800 dark:text-slate-100" title={p.razaoSocial}>
                           {truncar(p.razaoSocial, 22)}
                         </p>
-                        <p className="text-slate-500">
+                        <p className="text-slate-500 dark:text-slate-400">
                           {p.municipio}/{p.uf}
                         </p>
                         <p className="mt-1 font-semibold" style={{ color: borda }}>
                           CV {p.cvPct.toFixed(2)}%
                         </p>
-                        <p className="text-slate-500">{formatarMoeda(p.media)} médio</p>
+                        <p className="text-slate-500 dark:text-slate-400">{formatarMoeda(p.media)} médio</p>
                       </div>
                     );
                   })}
                 </div>
 
-                <p className="mb-2 text-xs font-medium text-slate-600">📊 Distribuição de estabilidade (top 20 postos)</p>
+                <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">📊 Distribuição de estabilidade (top 20 postos)</p>
                 <div className="mb-6">
                   <BarraHorizontal
                     titulo=""
@@ -418,10 +418,10 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
                   />
                 </div>
 
-                <p className="mb-2 text-xs font-medium text-slate-600">📋 Tabela completa de estabilidade</p>
+                <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">📋 Tabela completa de estabilidade</p>
                 <div className="max-h-96 overflow-y-auto overflow-x-auto">
                   <table className="w-full text-left text-sm">
-                    <thead className="sticky top-0 bg-white text-xs uppercase text-slate-500">
+                    <thead className="sticky top-0 bg-white dark:bg-slate-800 text-xs uppercase text-slate-500 dark:text-slate-400">
                       <tr>
                         <th className="py-2 pr-3">Posto</th>
                         <th className="py-2 pr-3">Município</th>
@@ -435,19 +435,19 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
                         <th className="py-2">Amplitude</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                       {rankingPostos.map((p) => (
                         <tr key={p.cnpj}>
-                          <td className="py-2 pr-3 text-slate-700">{p.razaoSocial}</td>
-                          <td className="py-2 pr-3 text-slate-600">{p.municipio}</td>
-                          <td className="py-2 pr-3 text-slate-600">{p.uf}</td>
-                          <td className="py-2 pr-3 tabular-nums text-slate-600">{p.n}</td>
-                          <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(p.media, 4)}</td>
-                          <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(p.std, 4)}</td>
-                          <td className="py-2 pr-3 tabular-nums text-slate-600">{p.cvPct.toFixed(2)}%</td>
-                          <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(p.min, 4)}</td>
-                          <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(p.max, 4)}</td>
-                          <td className="py-2 tabular-nums text-slate-600">{formatarMoeda(p.amplitude, 4)}</td>
+                          <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{p.razaoSocial}</td>
+                          <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{p.municipio}</td>
+                          <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{p.uf}</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{p.n}</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(p.media, 4)}</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(p.std, 4)}</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{p.cvPct.toFixed(2)}%</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(p.min, 4)}</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(p.max, 4)}</td>
+                          <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(p.amplitude, 4)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -474,20 +474,20 @@ function BarraHorizontal({
   const maxValor = Math.max(1e-9, ...dados.map((d) => d.valor));
   return (
     <div>
-      {titulo && <p className="mb-2 text-xs font-medium text-slate-600">{titulo}</p>}
+      {titulo && <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">{titulo}</p>}
       <div className="space-y-1.5">
         {dados.map((d) => (
           <div key={d.label} className="flex items-center gap-2 text-xs">
-            <span className="w-32 shrink-0 truncate text-slate-600" title={d.label}>
+            <span className="w-32 shrink-0 truncate text-slate-600 dark:text-slate-300" title={d.label}>
               {d.label}
             </span>
-            <div className="h-4 flex-1 rounded bg-slate-100">
+            <div className="h-4 flex-1 rounded bg-slate-100 dark:bg-slate-700">
               <div
                 className="h-4 rounded"
                 style={{ width: `${Math.max(2, (d.valor / maxValor) * 100)}%`, backgroundColor: d.cor }}
               />
             </div>
-            <span className="w-16 shrink-0 text-right tabular-nums text-slate-500">{d.texto}</span>
+            <span className="w-16 shrink-0 text-right tabular-nums text-slate-500 dark:text-slate-400">{d.texto}</span>
           </div>
         ))}
       </div>

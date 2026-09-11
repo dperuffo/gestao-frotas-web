@@ -35,17 +35,17 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Dados do frete</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Dados do frete</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Título<span className="text-red-500"> *</span>
             </label>
             <input type="text" name="titulo" required placeholder='Ex.: "Carga seca Porto Alegre → São Paulo"' className="input" />
           </div>
 
           <div className="sm:col-span-2">
-            <p className="mb-1 text-xs text-slate-500">
+            <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">
               Origem e destino abaixo são só a cidade, pra calcular km e mostrar no mapa — os endereços completos de
               coleta e entrega (rua, número, horário) você preenche mais abaixo.
             </p>
@@ -54,38 +54,38 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
           <CampoLocalFrete label="Destino (cidade)" prefixo="destino" />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Tipo de carga</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tipo de carga</label>
             <input type="text" name="tipo_carga" placeholder="Ex.: carga seca, granel, refrigerado..." className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Peso da carga (kg)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Peso da carga (kg)</label>
             <input type="number" min="1" step="0.1" name="peso_carga_kg" className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Comprimento (m)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Comprimento (m)</label>
             <input type="number" min="0.1" step="0.01" name="carga_comprimento_m" className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Largura (m)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Largura (m)</label>
             <input type="number" min="0.1" step="0.01" name="carga_largura_m" className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Altura (m)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Altura (m)</label>
             <input type="number" min="0.1" step="0.01" name="carga_altura_m" className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Km estimado (opcional)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Km estimado (opcional)</label>
             <input type="number" min="1" step="0.1" name="km_estimado" className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Valor do frete (R$){modo === "mercado" ? " — valor de partida" : ""}
               <span className="text-red-500"> *</span>
             </label>
             <input type="number" min="0.01" step="0.01" name="valor_oferecido" required className="input" />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-slate-700">Descrição</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Descrição</label>
             <textarea name="descricao" rows={3} className="input" />
           </div>
         </div>
@@ -93,8 +93,8 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
 
       <section className="card space-y-4 p-6">
         <div>
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">Endereços completos</h2>
-          <p className="text-xs text-slate-500">
+          <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Endereços completos</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Essas informações aparecem pro motorista antes de aceitar o frete — quanto mais completas, mais fácil
             pra ele avaliar se topa (inclusive a distância até o ponto de coleta).
           </p>
@@ -104,19 +104,19 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-1 text-sm font-semibold text-slate-900">Veículo e carroceria</h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Veículo e carroceria</h2>
+        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
           Opcional — se não marcar nada, o frete aparece pra qualquer motorista. Marcando, só motoristas com veículo
           compatível veem esse frete na busca deles.
         </p>
         <div className="mb-4">
-          <p className="mb-2 text-xs font-medium text-slate-500">Veículos aceitos</p>
+          <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">Veículos aceitos</p>
           {GRUPOS_VEICULO.map((g) => (
             <div key={g.grupo} className="mb-2">
               <p className="mb-1 text-[11px] uppercase tracking-wide text-slate-400">{g.grupo}</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 {g.opcoes.map((v) => (
-                  <label key={v} className="flex items-center gap-1.5 text-sm text-slate-700">
+                  <label key={v} className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300">
                     <input type="checkbox" name="veiculos_aceitos" value={v} className="h-4 w-4 rounded border-slate-300" />
                     {v}
                   </label>
@@ -126,10 +126,10 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
           ))}
         </div>
         <div>
-          <p className="mb-2 text-xs font-medium text-slate-500">Carrocerias aceitas</p>
+          <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">Carrocerias aceitas</p>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {CARROCERIAS_FRETE.map((c) => (
-              <label key={c} className="flex items-center gap-1.5 text-sm text-slate-700">
+              <label key={c} className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300">
                 <input type="checkbox" name="carrocerias_aceitas" value={c} className="h-4 w-4 rounded border-slate-300" />
                 {c}
               </label>
@@ -139,14 +139,14 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-1 text-sm font-semibold text-slate-900">Adiantamento e combustível</h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Adiantamento e combustível</h2>
+        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
           Condições financeiras do frete — pagamento em duas parcelas e, se quiser, uma reserva de combustível pro
           motorista abastecer durante o frete (consumida antes da cota normal do veículo).
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Adiantamento na aceitação (%)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Adiantamento na aceitação (%)</label>
             <input
               type="number"
               min="0"
@@ -156,12 +156,12 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
               defaultValue={30}
               className="input"
             />
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               O motorista aceita o frete → você paga esse % de entrada. O restante fica pra pagar na conclusão.
             </p>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Reserva de combustível</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Reserva de combustível</label>
             <select
               name="saldo_combustivel_tipo"
               value={tipoSaldoCombustivel}
@@ -188,8 +188,8 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-1 text-sm font-semibold text-slate-900">Quem vai dirigir?</h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Quem vai dirigir?</h2>
+        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
           Se você já sabe quem vai fazer o frete (motorista próprio ou parceiro), atribua direto — ele só confirma ou
           recusa, sem negociação. Se deixar em aberto, qualquer motorista da rede pode ver e propor um valor.
         </p>
@@ -212,12 +212,12 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
         </div>
 
         {modo === "mercado" && (
-          <div className="mb-4 rounded-lg bg-slate-50 p-4">
-            <p className="mb-2 text-sm font-medium text-slate-700">
+          <div className="mb-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 p-4">
+            <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
               Enviar a solicitação para<span className="text-red-500"> *</span>
             </p>
             <input type="hidden" name="publico_alvo" value={publicoAlvo} />
-            <label className="mb-2 flex items-start gap-2 text-sm text-slate-700">
+            <label className="mb-2 flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input
                 type="radio"
                 name="publico_alvo_opcao"
@@ -227,13 +227,13 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
               />
               <span>
                 <span className="font-medium">Motoristas de fora da base</span>
-                <span className="block text-xs text-slate-500">
+                <span className="block text-xs text-slate-500 dark:text-slate-400">
                   Rede e parceiros — seus motoristas próprios não veem esta solicitação. Se ninguém pegar (ou você
                   recusar as propostas), dá pra recolocar depois pra sua base.
                 </span>
               </span>
             </label>
-            <label className="flex items-start gap-2 text-sm text-slate-700">
+            <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input
                 type="radio"
                 name="publico_alvo_opcao"
@@ -243,7 +243,7 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
               />
               <span>
                 <span className="font-medium">Motoristas da minha base</span>
-                <span className="block text-xs text-slate-500">
+                <span className="block text-xs text-slate-500 dark:text-slate-400">
                   Só os motoristas próprios da sua empresa veem e podem aceitar/propor valor.
                 </span>
               </span>
@@ -253,7 +253,7 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
 
         {modo === "direto" && (
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Motorista</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Motorista</label>
             <select
               name="motorista_id"
               value={motoristaId}
@@ -297,7 +297,7 @@ export function FreteForm({ empresaId, motoristas }: { empresaId: string; motori
               )}
             </select>
             {motoristas.length === 0 && (
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                 Nenhum motorista próprio ou parceiro ativo ainda. Cadastre motoristas ou convide parceiros em{" "}
                 <span className="font-medium">Motoristas Parceiros</span>.
               </p>

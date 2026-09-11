@@ -36,7 +36,7 @@ export function CampoLocalFrete({
 
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         <span className="text-red-500"> *</span>
       </label>
@@ -62,7 +62,7 @@ export function CampoLocalFrete({
         </button>
       </div>
       {sugestoes.length > 0 && (
-        <ul className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white text-sm shadow-sm">
+        <ul className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm shadow-sm">
           {sugestoes.map((s, i) => (
             <li key={i}>
               <button

@@ -60,7 +60,7 @@ export function ComparativoPrecos({
   return (
     <div className="space-y-4">
       <div>
-        <p className="mb-2 text-sm font-semibold text-slate-900">📊 Comparativo de Preços</p>
+        <p className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">📊 Comparativo de Preços</p>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={dadosBarra} margin={{ top: 10, right: 16, left: 0, bottom: 40 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E8F5E9" />
@@ -78,20 +78,20 @@ export function ComparativoPrecos({
 
       {economiaRows.length > 0 && (
         <div>
-          <p className="mb-2 text-sm font-semibold text-slate-900">💡 Projeção de Economia</p>
+          <p className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">💡 Projeção de Economia</p>
           <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-slate-500">
+            <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="py-1.5 pr-3">Cenário</th>
                 <th className="py-1.5 pr-3">Custo no cenário</th>
                 <th className="py-1.5">Economia</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {economiaRows.map((r) => (
                 <tr key={r.cenario}>
-                  <td className="py-1.5 pr-3 text-slate-600">{r.cenario}</td>
-                  <td className="py-1.5 pr-3 tabular-nums text-slate-700">{formatarMoeda(r.custo, 2)}</td>
+                  <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-300">{r.cenario}</td>
+                  <td className="py-1.5 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarMoeda(r.custo, 2)}</td>
                   <td className={`py-1.5 tabular-nums font-medium ${r.economia >= 0 ? "text-emerald-700" : "text-red-600"}`}>
                     {r.economia >= 0 ? "▼ economizou " : "▲ pagou a mais "}
                     {formatarMoeda(Math.abs(r.economia), 2)}

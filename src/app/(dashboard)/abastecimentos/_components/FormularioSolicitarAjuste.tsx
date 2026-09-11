@@ -132,10 +132,10 @@ export function FormularioSolicitarAjuste({
 
   return (
     <form onSubmit={handleSubmit} className="card space-y-4 p-6">
-      <h2 className="text-sm font-semibold text-slate-900">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
         {ajusteIdParaContraproposta ? "Enviar contraproposta" : "Solicitar ajuste"}
       </h2>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Os campos já vêm com os valores atuais — edite só o que precisa corrigir. A outra parte
         (cliente ou posto) vai receber uma notificação para aprovar ou recusar.
       </p>
@@ -210,7 +210,7 @@ export function FormularioSolicitarAjuste({
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Motivo (opcional)</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Motivo (opcional)</label>
         <textarea name="motivo" rows={2} className="input" placeholder="Ex: litros digitados errado, deveria ser 45L" />
       </div>
 
@@ -233,7 +233,7 @@ export function FormularioSolicitarAjuste({
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-medium text-slate-500">{label}</label>
+      <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{label}</label>
       {children}
     </div>
   );

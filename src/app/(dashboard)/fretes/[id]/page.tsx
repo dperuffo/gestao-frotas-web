@@ -102,7 +102,7 @@ export default async function FreteDetalhePage({
     .maybeSingle();
 
   if (!frete) {
-    return <p className="p-4 text-sm text-slate-500">Frete não encontrado.</p>;
+    return <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Frete não encontrado.</p>;
   }
 
   const freteTipado = frete as FreteDetalhe;
@@ -398,7 +398,7 @@ export default async function FreteDetalhePage({
           titulo={freteTipado.titulo}
           descricao={`${freteTipado.origem_label} → ${freteTipado.destino_label}`}
           acoes={
-            <span className="text-xs font-medium text-slate-500">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
               {LABEL_STATUS[freteTipado.status] ?? freteTipado.status}
               {freteTipado.status === "disponivel" &&
                 (freteTipado.publico_alvo === "base" ? " — minha base" : " — fora da base")}
@@ -407,31 +407,31 @@ export default async function FreteDetalhePage({
         />
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <div>
-            <p className="text-xs uppercase text-slate-500">Valor</p>
-            <p className="font-semibold text-slate-900">{formatoMoeda.format(freteTipado.valor_oferecido)}</p>
+            <p className="text-xs uppercase text-slate-500 dark:text-slate-400">Valor</p>
+            <p className="font-semibold text-slate-900 dark:text-slate-100">{formatoMoeda.format(freteTipado.valor_oferecido)}</p>
           </div>
           {freteTipado.km_estimado && (
             <div>
-              <p className="text-xs uppercase text-slate-500">Km estimado</p>
-              <p className="font-semibold text-slate-900">{freteTipado.km_estimado.toLocaleString("pt-BR")}</p>
+              <p className="text-xs uppercase text-slate-500 dark:text-slate-400">Km estimado</p>
+              <p className="font-semibold text-slate-900 dark:text-slate-100">{freteTipado.km_estimado.toLocaleString("pt-BR")}</p>
             </div>
           )}
           {freteTipado.tipo_carga && (
             <div>
-              <p className="text-xs uppercase text-slate-500">Carga</p>
-              <p className="font-semibold text-slate-900">{freteTipado.tipo_carga}</p>
+              <p className="text-xs uppercase text-slate-500 dark:text-slate-400">Carga</p>
+              <p className="font-semibold text-slate-900 dark:text-slate-100">{freteTipado.tipo_carga}</p>
             </div>
           )}
           {freteTipado.peso_carga_kg && (
             <div>
-              <p className="text-xs uppercase text-slate-500">Peso</p>
-              <p className="font-semibold text-slate-900">{freteTipado.peso_carga_kg.toLocaleString("pt-BR")} kg</p>
+              <p className="text-xs uppercase text-slate-500 dark:text-slate-400">Peso</p>
+              <p className="font-semibold text-slate-900 dark:text-slate-100">{freteTipado.peso_carga_kg.toLocaleString("pt-BR")} kg</p>
             </div>
           )}
         </div>
-        {freteTipado.descricao && <p className="mt-4 text-sm text-slate-600">{freteTipado.descricao}</p>}
+        {freteTipado.descricao && <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">{freteTipado.descricao}</p>}
         {(freteTipado.carga_comprimento_m || freteTipado.carga_largura_m || freteTipado.carga_altura_m) && (
-          <p className="mt-3 text-xs text-slate-500">
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
             📐 Dimensões: {freteTipado.carga_comprimento_m ?? "—"}m × {freteTipado.carga_largura_m ?? "—"}m ×{" "}
             {freteTipado.carga_altura_m ?? "—"}m (C×L×A)
           </p>
@@ -444,7 +444,7 @@ export default async function FreteDetalhePage({
               </span>
             ))}
             {(freteTipado.carrocerias_aceitas ?? []).map((c) => (
-              <span key={c} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+              <span key={c} className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[11px] text-slate-600 dark:text-slate-300">
                 📦 {c}
               </span>
             ))}
@@ -492,8 +492,8 @@ export default async function FreteDetalhePage({
       )}
 
       <div className="card mb-6 p-6">
-        <h2 className="mb-1 text-sm font-semibold text-slate-900">🗓️ Agendamento de Pátio</h2>
-        <p className="mb-3 text-xs text-slate-500">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">🗓️ Agendamento de Pátio</h2>
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
           Janela de carga/descarga combinada com o local. Confirma sozinho pra &quot;em andamento&quot;/&quot;concluído&quot; quando o
           motorista bate o checkpoint no app dele — não precisa marcar chegada/saída aqui.
         </p>
@@ -551,7 +551,7 @@ export default async function FreteDetalhePage({
       />
 
       {freteTipado.status === "aguardando_confirmacao" && (
-        <p className="card mb-6 p-4 text-sm text-slate-600">
+        <p className="card mb-6 p-4 text-sm text-slate-600 dark:text-slate-300">
           Frete atribuído diretamente — aguardando o motorista aceitar ou recusar no app dele.
         </p>
       )}
@@ -562,7 +562,7 @@ export default async function FreteDetalhePage({
 
       {(freteTipado.status === "disponivel" || (propostas ?? []).length > 0) && (
         <div className="mb-6">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Propostas recebidas</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Propostas recebidas</h2>
           <PainelPropostas
             empresaId={empresaId}
             propostas={(propostas ?? []) as unknown as Proposta[]}
@@ -573,17 +573,17 @@ export default async function FreteDetalhePage({
 
       {freteTipado.status !== "cancelado" && freteTipado.status !== "recusado" && (
         <div className="card mb-6 p-6">
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">🛢️ Postos recomendados</h2>
-          <p className="mb-3 text-xs text-slate-500">
+          <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">🛢️ Postos recomendados</h2>
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
             Sugira paradas de abastecimento no caminho — pode vincular a um benefício de Parcerias Locais daquele posto.
           </p>
           <div className="mb-3 space-y-2">
             {(postos ?? []).map((p) => (
-              <div key={p.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
+              <div key={p.id} className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm">
                 <div>
-                  <span className="font-medium text-slate-900">{p.nome_posto}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{p.nome_posto}</span>
                   {p.item_catalogo_id && <span className="ml-2 text-xs text-frota-600">🎟️ com benefício vinculado</span>}
-                  {p.observacao && <span className="ml-2 text-xs text-slate-500">{p.observacao}</span>}
+                  {p.observacao && <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">{p.observacao}</span>}
                 </div>
                 <RemoverPostoRecomendadoButton id={p.id} freteId={id} empresaId={empresaId} />
               </div>
@@ -596,7 +596,7 @@ export default async function FreteDetalhePage({
 
       {emAndamentoOuConcluido && (eventos ?? []).length > 0 && (
         <div className="card mb-6 p-6">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">📍 Linha do tempo</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">📍 Linha do tempo</h2>
           <div className="space-y-2 text-sm">
             {eventosComFoto.map((e) => {
               const isPanico = e.tipo_evento === "panico";
@@ -605,30 +605,30 @@ export default async function FreteDetalhePage({
                 <div
                   key={e.id}
                   className={`flex flex-wrap items-center justify-between gap-2 border-b border-dashed pb-2 ${
-                    isPanico && !panicoResolvido ? "border-red-200 bg-red-50/50 px-2" : "border-slate-200"
+                    isPanico && !panicoResolvido ? "border-red-200 bg-red-50/50 px-2" : "border-slate-200 dark:border-slate-700"
                   }`}
                 >
-                  <span className="flex items-center gap-2 text-slate-700">
+                  <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                     {LABEL_EVENTO[e.tipo_evento] ?? e.tipo_evento}
                     {e.codigo_ocorrencia && (
                       <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">
                         {LABEL_CODIGO_OCORRENCIA[e.codigo_ocorrencia] ?? e.codigo_ocorrencia}
                       </span>
                     )}
-                    {e.observacao && <span className="text-xs text-slate-500">— {e.observacao}</span>}
+                    {e.observacao && <span className="text-xs text-slate-500 dark:text-slate-400">— {e.observacao}</span>}
                     {e.fotoUrl && (
                       <a href={e.fotoUrl} target="_blank" rel="noopener noreferrer" title="Ver foto do motorista">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={e.fotoUrl}
                           alt={`Foto anexada em ${LABEL_EVENTO[e.tipo_evento] ?? e.tipo_evento}`}
-                          className="h-8 w-8 rounded border border-slate-200 object-cover hover:opacity-80"
+                          className="h-8 w-8 rounded border border-slate-200 dark:border-slate-700 object-cover hover:opacity-80"
                         />
                       </a>
                     )}
                     {isPanico &&
                       (panicoResolvido ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                        <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300">
                           Resolvido por {e.resolvido_por} em {new Date(e.resolvido_em!).toLocaleString("pt-BR")}
                           {e.resolvido_observacao ? ` — ${e.resolvido_observacao}` : ""}
                         </span>
@@ -663,16 +663,16 @@ export default async function FreteDetalhePage({
 
       {freteTipado.status === "concluido" && (
         <div className="card p-6">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">⭐ Avaliação</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">⭐ Avaliação</h2>
           {avaliacaoMotorista && (
-            <p className="mb-2 text-sm text-slate-600">
+            <p className="mb-2 text-sm text-slate-600 dark:text-slate-300">
               Você avaliou o motorista: {"★".repeat(avaliacaoMotorista.estrelas)}
               {avaliacaoMotorista.comentario && ` — ${avaliacaoMotorista.comentario}`}
             </p>
           )}
           {!avaliacaoMotorista && <AvaliarMotoristaForm freteId={id} empresaId={empresaId} />}
           {avaliacaoCliente && (
-            <p className="mt-3 text-sm text-slate-600">
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
               O motorista avaliou você: {"★".repeat(avaliacaoCliente.estrelas)}
               {avaliacaoCliente.comentario && ` — ${avaliacaoCliente.comentario}`}
             </p>
@@ -716,22 +716,22 @@ function BlocoEndereco({
 
   return (
     <div className="card p-5">
-      <h3 className="mb-2 text-sm font-semibold text-slate-900">{titulo}</h3>
+      <h3 className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{titulo}</h3>
       {linhaEndereco ? (
-        <p className="text-sm text-slate-700">{linhaEndereco}</p>
+        <p className="text-sm text-slate-700 dark:text-slate-300">{linhaEndereco}</p>
       ) : (
         <p className="text-sm text-slate-400">Endereço não informado.</p>
       )}
-      {cep && <p className="text-xs text-slate-500">CEP {cep}</p>}
-      {referencia && <p className="text-xs text-slate-500">Referência: {referencia}</p>}
+      {cep && <p className="text-xs text-slate-500 dark:text-slate-400">CEP {cep}</p>}
+      {referencia && <p className="text-xs text-slate-500 dark:text-slate-400">Referência: {referencia}</p>}
       {(data || hora) && (
-        <p className="mt-2 text-xs text-slate-600">
+        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
           🗓️ {data ? new Date(`${data}T00:00:00`).toLocaleDateString("pt-BR") : "Data não informada"}
           {hora ? ` às ${hora.slice(0, 5)}` : ""}
         </p>
       )}
       {(contatoNome || contatoTelefone) && (
-        <p className="mt-1 text-xs text-slate-600">
+        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
           👤 {contatoNome ?? "Contato"} {contatoTelefone ? `— ${contatoTelefone}` : ""}
         </p>
       )}

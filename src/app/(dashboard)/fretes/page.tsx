@@ -51,7 +51,7 @@ const COR_STATUS: Record<string, string> = {
   aguardando_confirmacao: "text-xs font-medium text-status-atencao",
   aceito: "badge-ativo",
   em_andamento: "badge-ativo",
-  concluido: "text-xs font-medium text-slate-500",
+  concluido: "text-xs font-medium text-slate-500 dark:text-slate-400",
   cancelado: "badge-inativo",
   recusado: "badge-inativo",
 };
@@ -155,7 +155,7 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -195,7 +195,7 @@ export default async function FretesPage({ searchParams }: { searchParams: Promi
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e publicar fretes.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione uma empresa acima pra ver e publicar fretes.</p>
       ) : totalGeral === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">
           Nenhum frete publicado ainda. Clique em &quot;+ Publicar frete&quot; pra começar.
@@ -293,7 +293,7 @@ function renderGrid(
         {lista.map((f) => (
         <div key={f.id} className="card flex flex-col gap-3 p-5 transition hover:border-frota-300">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-slate-900">{f.titulo}</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100">{f.titulo}</h3>
             <span className={COR_STATUS[f.status] ?? "badge-inativo"}>
               {f.status === "disponivel"
                 ? f.publico_alvo === "base"
@@ -302,16 +302,16 @@ function renderGrid(
                 : LABEL_STATUS[f.status] ?? f.status}
             </span>
           </div>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             {f.origem_label} → {f.destino_label}
           </p>
           <div className="flex items-center justify-between text-sm">
-            <span className="font-semibold text-slate-900">{formatoMoeda.format(f.valor_oferecido)}</span>
-            {f.km_estimado && <span className="text-slate-500">{f.km_estimado.toLocaleString("pt-BR")} km</span>}
+            <span className="font-semibold text-slate-900 dark:text-slate-100">{formatoMoeda.format(f.valor_oferecido)}</span>
+            {f.km_estimado && <span className="text-slate-500 dark:text-slate-400">{f.km_estimado.toLocaleString("pt-BR")} km</span>}
           </div>
           {f.nome_motorista && (
-            <p className="text-xs text-slate-500">
-              Motorista: <span className="font-medium text-slate-700">{f.nome_motorista}</span>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Motorista: <span className="font-medium text-slate-700 dark:text-slate-300">{f.nome_motorista}</span>
             </p>
           )}
 

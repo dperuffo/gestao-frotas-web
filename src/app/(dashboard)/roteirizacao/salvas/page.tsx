@@ -56,17 +56,17 @@ export default async function RoteirizacaoSalvasPage() {
       <AbasRoteirizacao ativo="salvas" />
 
       {!rotas || rotas.length === 0 ? (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Nenhuma consulta salva ainda. Use o botão &quot;Salvar consulta&quot; nas outras abas para guardar uma
           rota ou busca para acessar depois.
         </p>
       ) : (
-        <div className="card divide-y divide-slate-100">
+        <div className="card divide-y divide-slate-100 dark:divide-slate-700">
           {rotas.map((r) => (
             <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
               <div>
-                <p className="font-medium text-slate-900">{r.nome}</p>
-                <p className="text-xs text-slate-500">
+                <p className="font-medium text-slate-900 dark:text-slate-100">{r.nome}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {TIPO_LABEL[r.tipo] ?? r.tipo}
                   {r.criado_em ? ` · ${new Date(r.criado_em).toLocaleString("pt-BR")}` : ""}
                 </p>
