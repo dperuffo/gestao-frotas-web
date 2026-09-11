@@ -31,8 +31,8 @@ export default async function LogAuditoriaPage({
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">Esta tela é exclusiva do time interno (perfil administrador).</p>
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Esta tela é exclusiva do time interno (perfil administrador).</p>
       </div>
     );
   }
@@ -105,11 +105,11 @@ export default async function LogAuditoriaPage({
 
       <form className="card mb-4 flex flex-wrap items-end gap-2 p-4">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Ação</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Ação</label>
           <input type="text" name="acao" defaultValue={sp.acao ?? ""} placeholder="ex.: permissao" className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Entidade</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Entidade</label>
           <input
             type="text"
             name="entidade"
@@ -119,15 +119,15 @@ export default async function LogAuditoriaPage({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Usuário</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Usuário</label>
           <input type="text" name="usuario" defaultValue={sp.usuario ?? ""} placeholder="e-mail" className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">De</label>
           <input type="date" name="desde" defaultValue={sp.desde ?? ""} className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Até</label>
           <input type="date" name="ate" defaultValue={sp.ate ?? ""} className="input text-sm" />
         </div>
         <button type="submit" className="btn-primary text-sm">
@@ -139,7 +139,7 @@ export default async function LogAuditoriaPage({
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Quando</th>
               <th className="px-4 py-3">Usuário</th>
@@ -148,13 +148,13 @@ export default async function LogAuditoriaPage({
               <th className="px-4 py-3">Detalhes</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {(itens ?? []).map((log) => (
               <tr key={log.id}>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatarDataHoraBr(log.criado_em)}</td>
-                <td className="px-4 py-3 text-slate-600">{log.usuario_email}</td>
-                <td className="px-4 py-3 text-slate-700">{log.acao}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600 dark:text-slate-300">{formatarDataHoraBr(log.criado_em)}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{log.usuario_email}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{log.acao}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {log.entidade}
                   {log.entidade_id && <span className="text-slate-400"> · {log.entidade_id}</span>}
                 </td>

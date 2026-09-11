@@ -26,7 +26,7 @@ export function AcoesCapacidade({ id, status }: { id: string; status: string }) 
           <button type="button" disabled={pendente} onClick={() => marcar("utilizada")} className="text-xs font-medium text-frota-600 hover:underline">
             Marcar utilizada
           </button>
-          <button type="button" disabled={pendente} onClick={() => marcar("cancelada")} className="text-xs font-medium text-slate-500 hover:underline">
+          <button type="button" disabled={pendente} onClick={() => marcar("cancelada")} className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:underline">
             Cancelar
           </button>
         </>

@@ -49,7 +49,7 @@ export function FormularioContraproposta({
     <div className="card space-y-4 p-6">
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
-      <p className="text-sm font-medium text-slate-700">É a sua vez de responder esta negociação.</p>
+      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">É a sua vez de responder esta negociação.</p>
 
       {!mostrarContraproposta && (
         <div className="flex flex-wrap gap-2">
@@ -76,10 +76,10 @@ export function FormularioContraproposta({
       )}
 
       {mostrarContraproposta && (
-        <form onSubmit={handleSubmitContraproposta} className="space-y-4 border-t border-slate-100 pt-4">
+        <form onSubmit={handleSubmitContraproposta} className="space-y-4 border-t border-slate-100 dark:border-slate-700 pt-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Combustível</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Combustível</label>
               <select name="combustivel" required className="input" defaultValue={ultimaRodada.combustivel}>
                 {PRODUTOS_POSTO.map((p) => (
                   <option key={p} value={p}>
@@ -89,7 +89,7 @@ export function FormularioContraproposta({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Volume mínimo mensal (L)</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Volume mínimo mensal (L)</label>
               <input
                 type="number"
                 name="volume_minimo_mensal"
@@ -101,7 +101,7 @@ export function FormularioContraproposta({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Preço por litro (R$)</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Preço por litro (R$)</label>
               <input
                 type="number"
                 name="preco_unitario"
@@ -113,7 +113,7 @@ export function FormularioContraproposta({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Vigência — início</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Vigência — início</label>
               <input
                 type="date"
                 name="vigencia_inicio"
@@ -123,7 +123,7 @@ export function FormularioContraproposta({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Vigência — fim</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Vigência — fim</label>
               <input
                 type="date"
                 name="vigencia_fim"

@@ -102,7 +102,7 @@ export default async function PneusPage({ searchParams }: { searchParams: Promis
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -119,7 +119,7 @@ export default async function PneusPage({ searchParams }: { searchParams: Promis
       )}
 
       {semClienteEscolhido || !empresaSelecionada ? (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Selecione um cliente acima pra ver os pneus dele.
         </p>
       ) : (
@@ -139,7 +139,7 @@ export default async function PneusPage({ searchParams }: { searchParams: Promis
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Placa</th>
                   <th className="px-4 py-3">Posição</th>
@@ -151,21 +151,21 @@ export default async function PneusPage({ searchParams }: { searchParams: Promis
                   <th className="px-4 py-3">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {pneus.map((p) => {
                   const km = kmRodado(p);
                   const custoKm = custoPorKm(p);
                   return (
                     <tr key={p.id}>
-                      <td className="px-4 py-3 font-medium text-slate-900">{p.placa}</td>
-                      <td className="px-4 py-3 text-slate-600">{p.posicao}</td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{p.placa}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.posicao}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {[p.marca, p.modelo].filter(Boolean).join(" ") || "—"}
                         {p.medida ? <span className="text-xs text-slate-400"> ({p.medida})</span> : null}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{km != null ? `${km.toLocaleString("pt-BR")} km` : "—"}</td>
-                      <td className="px-4 py-3 text-slate-600">{p.numero_recapagens}</td>
-                      <td className="px-4 py-3 text-slate-600">{custoKm != null ? formatarMoeda(custoKm) : "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{km != null ? `${km.toLocaleString("pt-BR")} km` : "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.numero_recapagens}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{custoKm != null ? formatarMoeda(custoKm) : "—"}</td>
                       <td className="px-4 py-3">
                         <span
                           className={

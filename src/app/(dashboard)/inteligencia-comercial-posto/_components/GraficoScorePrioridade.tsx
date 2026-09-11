@@ -30,7 +30,7 @@ export function GraficoScorePrioridade({ dados }: { dados: ItemScoreCliente[] })
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Clientes por prioridade</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Clientes por prioridade</p>
         <div className="flex items-center gap-4">
           <div style={{ width: 110, height: 110 }} className="shrink-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -48,8 +48,8 @@ export function GraficoScorePrioridade({ dados }: { dados: ItemScoreCliente[] })
             {distribuicao.map((d) => (
               <li key={d.chave} className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: CORES_PRIORIDADE[d.chave] }} aria-hidden="true" />
-                <span className="text-slate-600">{d.label}</span>
-                <span className="font-medium text-slate-900">{d.total}</span>
+                <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{d.total}</span>
               </li>
             ))}
           </ul>
@@ -57,7 +57,7 @@ export function GraficoScorePrioridade({ dados }: { dados: ItemScoreCliente[] })
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Maiores scores (contatar primeiro)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Maiores scores (contatar primeiro)</p>
         <ResponsiveContainer width="100%" height={Math.max(180, top.length * 36)}>
           <BarChart data={top} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }} barCategoryGap="25%">
             <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />

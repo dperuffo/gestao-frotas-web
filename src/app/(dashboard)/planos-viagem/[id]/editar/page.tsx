@@ -86,7 +86,7 @@ export default async function EditarPlanoViagemPage({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-frota-800">
               Pré-Pedido nº {prePedido.numero}
-              <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-normal text-frota-600">
+              <span className="ml-2 rounded-full bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-normal text-frota-600">
                 {prePedido.status === "ativo" ? "Ativo" : prePedido.status === "concluido" ? "Concluído" : "Cancelado"}
               </span>
             </h2>
@@ -100,9 +100,9 @@ export default async function EditarPlanoViagemPage({
             {prePedido.paradas.map((p) => (
               <li
                 key={p.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-white dark:bg-slate-800 px-3 py-2 text-sm"
               >
-                <span className="text-slate-700">
+                <span className="text-slate-700 dark:text-slate-300">
                   <strong>{p.posto_nome ?? p.posto_cnpj}</strong>
                   {p.km_previsto != null && <span className="text-slate-400"> · km {p.km_previsto}</span>}
                   {p.litros_previstos != null && <span className="text-slate-400"> · {p.litros_previstos} L previstos</span>}
@@ -111,7 +111,7 @@ export default async function EditarPlanoViagemPage({
                   className={
                     p.atendido
                       ? "rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
-                      : "rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500"
+                      : "rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400"
                   }
                 >
                   {p.atendido ? "Abastecido" : "Pendente"}

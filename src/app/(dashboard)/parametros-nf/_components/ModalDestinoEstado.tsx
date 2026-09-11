@@ -72,7 +72,7 @@ export function ModalDestinoEstado({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl bg-white dark:bg-slate-800 shadow-xl">
         <div className="flex items-center justify-between rounded-t-xl bg-frota-700 px-6 py-4 text-white">
           <h2 className="text-base font-semibold">Configuração de Envio de Nota Personalizado por Estado</h2>
           <button type="button" onClick={onFechar} aria-label="Fechar" className="text-white/80 hover:text-white">
@@ -83,12 +83,12 @@ export function ModalDestinoEstado({
           {erro && <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
           <p className="text-sm font-medium text-frota-700">Local de destino da Nota Fiscal</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Selecione o CNPJ/empresa que receberá as notas fiscais de abastecimentos.
           </p>
 
           <div className="mt-4">
-            <label className="mb-1 block text-sm font-medium text-slate-700">CNPJ padrão para recebimento de NFs *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">CNPJ padrão para recebimento de NFs *</label>
             <input
               value={cnpjPadrao}
               onChange={(e) => setCnpjPadrao(e.target.value)}
@@ -103,7 +103,7 @@ export function ModalDestinoEstado({
             </datalist>
           </div>
 
-          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
             <input
               type="checkbox"
               checked={adicionarExcecoes}
@@ -114,16 +114,16 @@ export function ModalDestinoEstado({
           </label>
 
           {adicionarExcecoes && (
-            <div className="mt-3 rounded-lg border border-slate-200 p-3">
+            <div className="mt-3 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <p className="mb-1 text-xs font-medium text-slate-500">Estados</p>
-                  <div className="h-48 overflow-y-auto rounded-lg border border-slate-200">
+                  <p className="mb-1 text-xs font-medium text-slate-500 dark:text-slate-400">Estados</p>
+                  <div className="h-48 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700">
                     {UFS.map((uf) => (
                       <label
                         key={uf}
-                        className={`flex items-center gap-2 border-b border-slate-100 px-3 py-1.5 text-sm last:border-b-0 ${
-                          ufsJaUsadas.has(uf) ? "text-slate-300" : "text-slate-700"
+                        className={`flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 px-3 py-1.5 text-sm last:border-b-0 ${
+                          ufsJaUsadas.has(uf) ? "text-slate-300" : "text-slate-700 dark:text-slate-300"
                         }`}
                       >
                         <input
@@ -140,7 +140,7 @@ export function ModalDestinoEstado({
                 </div>
                 <div className="flex flex-col justify-between">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500">
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
                       CNPJ/Razão Social - Frota/Unidade
                     </label>
                     <input
@@ -165,7 +165,7 @@ export function ModalDestinoEstado({
               {grupos.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {grupos.map((g, idx) => (
-                    <div key={idx} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                    <div key={idx} className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm">
                       <span>
                         <strong>{g.ufs.join(", ")}</strong> → {g.cnpj}
                       </span>
@@ -179,7 +179,7 @@ export function ModalDestinoEstado({
             </div>
           )}
         </div>
-        <div className="flex justify-end gap-2 border-t border-slate-200 px-6 py-4">
+        <div className="flex justify-end gap-2 border-t border-slate-200 dark:border-slate-700 px-6 py-4">
           <button type="button" onClick={onFechar} className="btn-secondary">
             Cancelar
           </button>

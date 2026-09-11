@@ -99,35 +99,35 @@ export default async function LgpdPage() {
       {!ehAdmin && (
         <>
           <div className="card mb-6 p-5">
-            <h2 className="mb-3 text-sm font-semibold text-slate-900">Seus dados cadastrais</h2>
+            <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Seus dados cadastrais</h2>
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Nome</dt>
-                <dd className="text-slate-700">{meuUsuario?.nome ?? "—"}</dd>
+                <dd className="text-slate-700 dark:text-slate-300">{meuUsuario?.nome ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">E-mail</dt>
-                <dd className="text-slate-700">{meuUsuario?.email ?? user?.email ?? "—"}</dd>
+                <dd className="text-slate-700 dark:text-slate-300">{meuUsuario?.email ?? user?.email ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">CPF</dt>
-                <dd className="text-slate-700">{meuUsuario?.cpf || "—"}</dd>
+                <dd className="text-slate-700 dark:text-slate-300">{meuUsuario?.cpf || "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Telefone</dt>
-                <dd className="text-slate-700">{meuUsuario?.telefone || "—"}</dd>
+                <dd className="text-slate-700 dark:text-slate-300">{meuUsuario?.telefone || "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Cliente vinculado</dt>
-                <dd className="text-slate-700">{meuUsuario?.empresa_nome || "—"}</dd>
+                <dd className="text-slate-700 dark:text-slate-300">{meuUsuario?.empresa_nome || "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Cadastrado em</dt>
-                <dd className="text-slate-700">{formatarDataHora(meuUsuario?.created_at ?? null)}</dd>
+                <dd className="text-slate-700 dark:text-slate-300">{formatarDataHora(meuUsuario?.created_at ?? null)}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Autenticação em 2 fatores (MFA)</dt>
-                <dd className="text-slate-700">{meuUsuario?.mfa_habilitado ? "Ativada" : "Não ativada"}</dd>
+                <dd className="text-slate-700 dark:text-slate-300">{meuUsuario?.mfa_habilitado ? "Ativada" : "Não ativada"}</dd>
               </div>
             </dl>
             <p className="mt-3 text-xs text-slate-400">
@@ -137,8 +137,8 @@ export default async function LgpdPage() {
           </div>
 
           <div className="card mb-6 p-5">
-            <h2 className="mb-1 text-sm font-semibold text-slate-900">Revogar consentimento</h2>
-            <p className="mb-3 text-xs text-slate-500">
+            <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Revogar consentimento</h2>
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
               Você pode revogar, a qualquer momento, o consentimento dado no cadastro (art. 8º, §5º da LGPD). Isso não
               encerra sua conta nem apaga seus dados — o tratamento necessário à prestação do serviço contratado
               continua (art. 7º, V), mas a revogação fica registrada no seu histórico abaixo.
@@ -147,8 +147,8 @@ export default async function LgpdPage() {
           </div>
 
           <div className="card mb-6 p-5">
-            <h2 className="mb-1 text-sm font-semibold text-slate-900">Solicitar exclusão dos meus dados</h2>
-            <p className="mb-3 text-xs text-slate-500">
+            <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Solicitar exclusão dos meus dados</h2>
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
               Direito ao esquecimento (art. 18, VI). A solicitação é revisada pela equipe FNI antes da execução —
               respeitando prazos legais de retenção (ex.: notas fiscais, faturamento) — e você recebe um retorno por
               e-mail.
@@ -168,16 +168,16 @@ export default async function LgpdPage() {
                       <th className="py-1.5">Executado em</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {minhasExclusoes.map((e) => {
                       const status = STATUS_EXCLUSAO_LABEL[e.status] ?? { texto: e.status, classe: "badge-atencao" };
                       return (
                         <tr key={e.id}>
-                          <td className="py-1.5 pr-3 text-slate-600">{formatarDataHora(e.solicitado_em)}</td>
+                          <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-300">{formatarDataHora(e.solicitado_em)}</td>
                           <td className="py-1.5 pr-3">
                             <span className={status.classe}>{status.texto}</span>
                           </td>
-                          <td className="py-1.5 text-slate-600">{formatarDataHora(e.executado_em)}</td>
+                          <td className="py-1.5 text-slate-600 dark:text-slate-300">{formatarDataHora(e.executado_em)}</td>
                         </tr>
                       );
                     })}
@@ -188,7 +188,7 @@ export default async function LgpdPage() {
           </div>
 
           <div className="card mb-6 p-5">
-            <h2 className="mb-3 text-sm font-semibold text-slate-900">Histórico de consentimento</h2>
+            <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Histórico de consentimento</h2>
             {consentimentos.length === 0 ? (
               <p className="text-xs text-slate-400">Nenhum registro de consentimento encontrado.</p>
             ) : (
@@ -201,12 +201,12 @@ export default async function LgpdPage() {
                       <th className="py-1.5">IP</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {consentimentos.map((c) => (
                       <tr key={c.id}>
-                        <td className="py-1.5 pr-3 text-slate-600">{formatarDataHora(c.timestamp)}</td>
-                        <td className="py-1.5 pr-3 text-slate-600">{TIPO_CONSENTIMENTO_LABEL[c.tipo] ?? c.tipo}</td>
-                        <td className="py-1.5 text-slate-600">{c.ip ?? "—"}</td>
+                        <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-300">{formatarDataHora(c.timestamp)}</td>
+                        <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-300">{TIPO_CONSENTIMENTO_LABEL[c.tipo] ?? c.tipo}</td>
+                        <td className="py-1.5 text-slate-600 dark:text-slate-300">{c.ip ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -219,8 +219,8 @@ export default async function LgpdPage() {
 
       {ehAdmin && (
         <div className="card p-5">
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">Solicitações de exclusão de dados (todos os clientes)</h2>
-          <p className="mb-4 text-xs text-slate-500">
+          <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Solicitações de exclusão de dados (todos os clientes)</h2>
+          <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
             Painel interno FNI — revise cada solicitação (obrigações contratuais e prazos legais de retenção) antes de
             executar a exclusão e marcar como concluída aqui.
           </p>
@@ -229,7 +229,7 @@ export default async function LgpdPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Cliente</th>
                     <th className="px-4 py-3">E-mail</th>
@@ -239,18 +239,18 @@ export default async function LgpdPage() {
                     <th className="px-4 py-3">Ação</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {todasExclusoes.map((e) => {
                     const status = STATUS_EXCLUSAO_LABEL[e.status] ?? { texto: e.status, classe: "badge-atencao" };
                     return (
                       <tr key={e.id} className="transition-colors hover:bg-frota-50/60">
-                        <td className="px-4 py-3 text-slate-600">{nomeEmpresa(e.empresa_id)}</td>
-                        <td className="px-4 py-3 text-slate-600">{e.email}</td>
-                        <td className="px-4 py-3 text-slate-600">{formatarDataHora(e.solicitado_em)}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{nomeEmpresa(e.empresa_id)}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{e.email}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarDataHora(e.solicitado_em)}</td>
                         <td className="px-4 py-3">
                           <span className={status.classe}>{status.texto}</span>
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{formatarDataHora(e.executado_em)}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarDataHora(e.executado_em)}</td>
                         <td className="px-4 py-3">{e.status === "pendente" && <BotaoMarcarExecutada id={e.id} />}</td>
                       </tr>
                     );

@@ -58,64 +58,64 @@ export function ClienteForm({
       {sucesso && <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">Dados salvos.</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Identificação</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Identificação</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               CNPJ ou CPF{modo === "criar" && <span className="text-red-500"> *</span>}
             </label>
             {modo === "criar" ? (
               <input name="cnpj_cpf" required maxLength={18} className="input" placeholder="Só números ou formatado" />
             ) : (
-              <input value={valoresIniciais?.cnpjCpf ?? ""} disabled className="input bg-slate-50 text-slate-500" />
+              <input value={valoresIniciais?.cnpjCpf ?? ""} disabled className="input bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400" />
             )}
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Razão social / Nome<span className="text-red-500"> *</span>
             </label>
             <input name="razao_social" required defaultValue={valoresIniciais?.razaoSocial} className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Inscrição estadual</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Inscrição estadual</label>
             <input name="ie" defaultValue={valoresIniciais?.ie ?? ""} className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Telefone</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Telefone</label>
             <input name="telefone" defaultValue={valoresIniciais?.telefone ?? ""} className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">E-mail</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">E-mail</label>
             <input name="email" type="email" defaultValue={valoresIniciais?.email ?? ""} className="input" />
           </div>
         </div>
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Endereço</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Endereço</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-slate-700">Logradouro</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Logradouro</label>
             <input name="endereco_logradouro" defaultValue={valoresIniciais?.enderecoLogradouro ?? ""} className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Número</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Número</label>
             <input name="endereco_numero" defaultValue={valoresIniciais?.enderecoNumero ?? ""} className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Bairro</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Bairro</label>
             <input name="endereco_bairro" defaultValue={valoresIniciais?.enderecoBairro ?? ""} className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Município</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Município</label>
             <input name="endereco_municipio" defaultValue={valoresIniciais?.enderecoMunicipio ?? ""} className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">UF</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">UF</label>
             <input name="endereco_uf" maxLength={2} defaultValue={valoresIniciais?.enderecoUf ?? ""} className="input uppercase" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">CEP</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">CEP</label>
             <input name="endereco_cep" defaultValue={valoresIniciais?.enderecoCep ?? ""} className="input" />
           </div>
         </div>

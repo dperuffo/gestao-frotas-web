@@ -22,7 +22,7 @@ export function GraficoAvaliacoes({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Distribuição de notas</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Distribuição de notas</p>
         {dadosDistribuicao.every((d) => d.total === 0) ? (
           <p className="text-sm text-slate-400">Sem avaliações.</p>
         ) : (
@@ -43,7 +43,7 @@ export function GraficoAvaliacoes({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Nota média por cliente (2+ avaliações)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Nota média por cliente (2+ avaliações)</p>
         {rankingClientes.length === 0 ? (
           <p className="text-sm text-slate-400">Nenhum cliente com 2+ avaliações ainda.</p>
         ) : (

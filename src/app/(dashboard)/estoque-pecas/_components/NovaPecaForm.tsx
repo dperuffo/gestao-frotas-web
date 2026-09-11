@@ -26,17 +26,17 @@ export function NovaPecaForm({ empresaId }: { empresaId: string }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Nome da peça <span className="text-red-500">*</span>
           </label>
           <input name="nome" required className="input" placeholder="Filtro de óleo, pastilha de freio..." />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Código / SKU</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Código / SKU</label>
           <input name="codigo" className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Unidade de medida</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Unidade de medida</label>
           <select name="unidade_medida" className="input" defaultValue="un">
             <option value="un">Unidade (un)</option>
             <option value="l">Litro (l)</option>
@@ -46,20 +46,20 @@ export function NovaPecaForm({ empresaId }: { empresaId: string }) {
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Estoque mínimo</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Estoque mínimo</label>
           <input type="number" name="quantidade_minima" min={0} step="0.01" defaultValue={0} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Estoque inicial (opcional)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Estoque inicial (opcional)</label>
           <input type="number" name="quantidade_inicial" min={0} step="0.01" className="input" placeholder="0" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Custo unitário (estoque inicial)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Custo unitário (estoque inicial)</label>
           <input type="number" name="custo_unitario" min={0} step="0.01" className="input" placeholder="R$" />
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+      <div className="flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
         <button type="submit" disabled={isPending} className="btn-primary">
           {isPending ? "Salvando..." : "Cadastrar Peça"}
         </button>

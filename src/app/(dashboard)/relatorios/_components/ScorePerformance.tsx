@@ -121,10 +121,10 @@ export function ScorePerformance({
               if (!active || !payload || payload.length === 0) return null;
               const p = payload[0].payload as (typeof pontos)[number];
               return (
-                <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs shadow-sm">
-                  <p className="font-medium text-slate-800">{p.razaoSocial ?? p.cnpj}</p>
-                  <p className="text-slate-500">{p.uf}</p>
-                  <p className="text-slate-600">
+                <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs shadow-sm">
+                  <p className="font-medium text-slate-800 dark:text-slate-100">{p.razaoSocial ?? p.cnpj}</p>
+                  <p className="text-slate-500 dark:text-slate-400">{p.uf}</p>
+                  <p className="text-slate-600 dark:text-slate-300">
                     Score: <strong>{p.score.toFixed(1)}</strong> (Grau {p.grade}) · Utilização: <strong>{p.utilizacao}</strong>
                   </p>
                 </div>
@@ -137,13 +137,13 @@ export function ScorePerformance({
         </ScatterChart>
       </ResponsiveContainer>
 
-      <p className="mb-2 mt-4 text-xs font-medium text-slate-600">🔴 Postos em risco (score baixo, uso alto) — atenção prioritária</p>
+      <p className="mb-2 mt-4 text-xs font-medium text-slate-600 dark:text-slate-300">🔴 Postos em risco (score baixo, uso alto) — atenção prioritária</p>
       {quadrantes.risco.length === 0 ? (
         <p className="text-sm text-slate-400">Nenhum posto nesse quadrante.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-slate-500">
+            <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="py-2 pr-3">Posto</th>
                 <th className="py-2 pr-3">UF</th>
@@ -151,17 +151,17 @@ export function ScorePerformance({
                 <th className="py-2">Utilização</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {quadrantes.risco
                 .sort((a, b) => b.utilizacao - a.utilizacao)
                 .map((p) => (
                   <tr key={p.cnpj} className="transition-colors hover:bg-frota-50/60">
-                    <td className="py-2 pr-3 text-slate-700">{p.razaoSocial ?? p.cnpj}</td>
-                    <td className="py-2 pr-3 text-slate-600">{p.uf}</td>
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{p.razaoSocial ?? p.cnpj}</td>
+                    <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{p.uf}</td>
                     <td className="py-2 pr-3 tabular-nums font-medium" style={{ color: CORES_GRADE[p.grade] }}>
                       {p.score.toFixed(1)}
                     </td>
-                    <td className="py-2 tabular-nums text-slate-600">{p.utilizacao}</td>
+                    <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">{p.utilizacao}</td>
                   </tr>
                 ))}
             </tbody>

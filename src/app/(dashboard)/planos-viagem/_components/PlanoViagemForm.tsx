@@ -280,7 +280,7 @@ export function PlanoViagemForm({
       )}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Identificação</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Identificação</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Nome do Plano" required className="sm:col-span-2">
             <input
@@ -378,7 +378,7 @@ export function PlanoViagemForm({
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Combustível</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Combustível</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Consumo (km/L)">
             <input
@@ -403,20 +403,20 @@ export function PlanoViagemForm({
             />
           </Campo>
           <Campo label="Custo combustível estimado">
-            <div className="input flex items-center bg-slate-50 font-medium text-slate-700">
+            <div className="input flex items-center bg-slate-50 dark:bg-slate-800/50 font-medium text-slate-700 dark:text-slate-300">
               {formatarMoeda(custoCombustivelEstimado)}
             </div>
           </Campo>
         </div>
 
-        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Combustível real (do Controle de Custos)
               </p>
               {combustivelRealValor != null ? (
-                <p className="mt-1 text-sm text-slate-700">
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
                   {formatarMoeda(combustivelRealValor)} — {combustivelRealLitros?.toLocaleString("pt-BR")} L
                 </p>
               ) : (
@@ -442,7 +442,7 @@ export function PlanoViagemForm({
 
       <section className="card p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-900">Pedágios</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Pedágios</h2>
           <div className="flex items-center gap-2">
             {rotaSalvaId && (
               <button
@@ -469,10 +469,10 @@ export function PlanoViagemForm({
         ) : (
           <div className="space-y-3">
             {pedagios.map((p, i) => (
-              <div key={i} className="rounded-lg border border-slate-200 p-3">
+              <div key={i} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px_auto] sm:items-end">
                   <div className="relative">
-                    <label className="mb-1 block text-xs font-medium text-slate-500">Nome da praça</label>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Nome da praça</label>
                     <input
                       type="text"
                       placeholder="Buscar na base de pedágios..."
@@ -484,7 +484,7 @@ export function PlanoViagemForm({
                       className="input w-full"
                     />
                     {linhaComSugestoes === i && sugestoesPraca.length > 0 && (
-                      <ul className="absolute top-full left-0 z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                      <ul className="absolute top-full left-0 z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
                         {sugestoesPraca.map((s) => (
                           <li key={s.id}>
                             <button
@@ -492,10 +492,10 @@ export function PlanoViagemForm({
                               onMouseDown={() => selecionarSugestaoPraca(i, s)}
                               className="flex w-full flex-col items-start px-3 py-2 text-left text-sm transition-colors hover:bg-frota-50/60"
                             >
-                              <span className="font-medium text-slate-800">
+                              <span className="font-medium text-slate-800 dark:text-slate-100">
                                 {s.nome} {s.uf ? `— ${s.uf}` : ""}
                               </span>
-                              <span className="text-xs text-slate-500">
+                              <span className="text-xs text-slate-500 dark:text-slate-400">
                                 {s.concessionaria ?? "—"}
                                 {s.valorCarro != null ? ` · carro ${formatarMoeda(s.valorCarro)}` : ""}
                                 {s.valorCaminhaoEixo != null
@@ -509,7 +509,7 @@ export function PlanoViagemForm({
                     )}
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500">Valor (R$)</label>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Valor (R$)</label>
                     <input
                       type="number"
                       min={0}
@@ -533,13 +533,13 @@ export function PlanoViagemForm({
           </div>
         )}
 
-        <p className="mt-4 text-right text-sm text-slate-600">
-          Total Pedágios: <strong className="text-slate-900">{formatarMoeda(pedagiosTotal)}</strong>
+        <p className="mt-4 text-right text-sm text-slate-600 dark:text-slate-300">
+          Total Pedágios: <strong className="text-slate-900 dark:text-slate-100">{formatarMoeda(pedagiosTotal)}</strong>
         </p>
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Diárias / Pernoites</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Diárias / Pernoites</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Nº de diárias">
             <input
@@ -597,7 +597,7 @@ export function PlanoViagemForm({
             />
           </Campo>
           <Campo label="Custo diárias">
-            <div className="input flex items-center bg-slate-50 font-medium text-slate-700">
+            <div className="input flex items-center bg-slate-50 dark:bg-slate-800/50 font-medium text-slate-700 dark:text-slate-300">
               {formatarMoeda(custoDiarias)}
             </div>
           </Campo>
@@ -605,7 +605,7 @@ export function PlanoViagemForm({
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Manutenção + Pneus</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Manutenção + Pneus</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Custo por km (R$/km)">
             <input
@@ -619,7 +619,7 @@ export function PlanoViagemForm({
             />
           </Campo>
           <Campo label="Custo manutenção">
-            <div className="input flex items-center bg-slate-50 font-medium text-slate-700">
+            <div className="input flex items-center bg-slate-50 dark:bg-slate-800/50 font-medium text-slate-700 dark:text-slate-300">
               {formatarMoeda(custoManutencaoEstimado)}
             </div>
           </Campo>
@@ -627,7 +627,7 @@ export function PlanoViagemForm({
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Receita e Totais</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Receita e Totais</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Receita da viagem (R$)">
             <input
@@ -641,7 +641,7 @@ export function PlanoViagemForm({
             />
           </Campo>
           <Campo label="Custo total estimado">
-            <div className="input flex items-center bg-slate-50 font-medium text-slate-700">
+            <div className="input flex items-center bg-slate-50 dark:bg-slate-800/50 font-medium text-slate-700 dark:text-slate-300">
               {formatarMoeda(custoTotalEstimado)}
             </div>
           </Campo>
@@ -659,7 +659,7 @@ export function PlanoViagemForm({
           </Campo>
           <Campo label="Margem estimada (receita − custo estimado)">
             <div
-              className={`input flex items-center bg-slate-50 font-semibold ${
+              className={`input flex items-center bg-slate-50 dark:bg-slate-800/50 font-semibold ${
                 lucroEstimado >= 0 ? "text-green-700" : "text-red-600"
               }`}
             >
@@ -669,7 +669,7 @@ export function PlanoViagemForm({
           {lucroReal != null && (
             <Campo label="Margem real (receita − custo real)">
               <div
-                className={`input flex items-center bg-slate-50 font-semibold ${
+                className={`input flex items-center bg-slate-50 dark:bg-slate-800/50 font-semibold ${
                   lucroReal >= 0 ? "text-green-700" : "text-red-600"
                 }`}
               >
@@ -681,7 +681,7 @@ export function PlanoViagemForm({
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Centro de Custo</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Centro de Custo</h2>
         <Campo label="Centro de Custo (opcional)">
           <select name="centro_custo_id" defaultValue={plano?.centro_custo_id ?? ""} className="input max-w-sm">
             <option value="">— Nenhum (sem lançamento automático) —</option>
@@ -720,7 +720,7 @@ function Campo({
 }) {
   return (
     <div className={className}>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

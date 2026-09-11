@@ -107,7 +107,7 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input max-w-sm text-sm">
               <option value="">Todos os clientes</option>
               {empresas.map((e) => (
@@ -139,7 +139,7 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar Rotogramas: {error.message}</p>}
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">#</th>
               <th className="px-4 py-3">Rota</th>
@@ -150,20 +150,20 @@ export default async function RotogramaListaPage({ searchParams }: { searchParam
               <th className="px-4 py-3">Criado em</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {rotogramas.map((r) => (
               <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-500">{r.numero}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{r.numero}</td>
                 <td className="px-4 py-3">
                   <Link href={`/rotograma/${r.id}`} className="font-medium text-frota-600 hover:underline">
                     {r.origem} → {r.destino}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{r.motorista ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{r.placa ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{r.data_viagem ? formatDate(r.data_viagem) : "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{r.empresas?.nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{formatDate(r.criado_em)}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.motorista ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.placa ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.data_viagem ? formatDate(r.data_viagem) : "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.empresas?.nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatDate(r.criado_em)}</td>
               </tr>
             ))}
             {rotogramas?.length === 0 && (

@@ -68,9 +68,9 @@ export function VisaoCiclosPorContraparte({
 
   return (
     <div className="mb-6 card">
-      <div className="border-b border-slate-100 px-4 py-3">
+      <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-slate-900">Ciclos por {rotuloColuna.toLowerCase()}</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Ciclos por {rotuloColuna.toLowerCase()}</h2>
           <input
             type="text"
             value={busca}
@@ -116,7 +116,7 @@ export function VisaoCiclosPorContraparte({
 
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">{rotuloColuna}</th>
               <th className="px-4 py-3">Ciclo atual</th>
@@ -124,11 +124,11 @@ export function VisaoCiclosPorContraparte({
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhasFiltradas.map((l) => (
               <tr key={l.contraparteId} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3">
-                  <p className="font-medium text-slate-700">{l.contraparteNome}</p>
+                  <p className="font-medium text-slate-700 dark:text-slate-300">{l.contraparteNome}</p>
                   {l.cicloFaturamentoDias > 0 && (
                     <p className="text-xs text-slate-400">Ciclo de {l.cicloFaturamentoDias} dias</p>
                   )}
@@ -139,7 +139,7 @@ export function VisaoCiclosPorContraparte({
                       <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
                         Em andamento
                       </span>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                         {formatarDataBr(l.cicloAtual.periodo_inicio)} – {formatarDataBr(l.cicloAtual.periodo_fim_previsto)} ·{" "}
                         {l.cicloAtual.quantidade_abastecimentos} abastecimento
                         {l.cicloAtual.quantidade_abastecimentos === 1 ? "" : "s"} ·{" "}
@@ -178,8 +178,8 @@ export function VisaoCiclosPorContraparte({
                     )}
                   </div>
                   {l.valorEmAberto > 0 && (
-                    <p className="mt-1 text-xs text-slate-500">
-                      Em aberto: <strong className="text-slate-700">{formatarMoeda(l.valorEmAberto)}</strong>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      Em aberto: <strong className="text-slate-700 dark:text-slate-300">{formatarMoeda(l.valorEmAberto)}</strong>
                       {l.valorVencido > 0 && <span className="text-red-600"> ({formatarMoeda(l.valorVencido)} vencido)</span>}
                     </p>
                   )}
@@ -229,7 +229,7 @@ function FiltroChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-1 text-xs font-medium ${ativo ? corAtivo : "bg-slate-100 text-slate-600"}`}
+      className={`rounded-full px-3 py-1 text-xs font-medium ${ativo ? corAtivo : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
     >
       {label} <span className={ativo ? "opacity-80" : "text-slate-400"}>{contagem}</span>
     </button>
@@ -238,6 +238,6 @@ function FiltroChip({
 
 function Chip({ texto, cor }: { texto: string; cor: "vermelho" | "verde" | "neutro" }) {
   const cores =
-    cor === "vermelho" ? "bg-red-100 text-red-700" : cor === "verde" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600";
+    cor === "vermelho" ? "bg-red-100 text-red-700" : cor === "verde" ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300";
   return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cores}`}>{texto}</span>;
 }

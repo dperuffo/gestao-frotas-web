@@ -23,7 +23,7 @@ export function VisualizacaoRotograma({ riscos, paradas }: { riscos: RotogramaRi
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <div className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">⚠️ Pontos de risco ({riscos.length})</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">⚠️ Pontos de risco ({riscos.length})</h2>
         {riscos.length === 0 ? (
           <p className="text-sm text-slate-400">Nenhum ponto de risco cadastrado.</p>
         ) : (
@@ -35,7 +35,7 @@ export function VisualizacaoRotograma({ riscos, paradas }: { riscos: RotogramaRi
                   <div className="flex items-start gap-2">
                     <span className="mt-0.5 shrink-0">{iconeRisco(r.categoria)}</span>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-900">{r.local}</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{r.local}</p>
                       <p className={`text-xs ${cor.text}`}>{r.descricao}</p>
                     </div>
                   </div>
@@ -47,7 +47,7 @@ export function VisualizacaoRotograma({ riscos, paradas }: { riscos: RotogramaRi
       </div>
 
       <div className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">📍 Pontos de parada ({paradas.length})</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">📍 Pontos de parada ({paradas.length})</h2>
         {paradas.length === 0 ? (
           <p className="text-sm text-slate-400">Nenhuma parada cadastrada.</p>
         ) : (
@@ -57,7 +57,7 @@ export function VisualizacaoRotograma({ riscos, paradas }: { riscos: RotogramaRi
                 <div className="flex items-start gap-2">
                   <span className="mt-0.5 shrink-0">{iconeParada(p.categoria)}</span>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-900">{p.local}</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{p.local}</p>
                     <p className={`text-xs ${CORES_PARADA.text}`}>{p.descricao}</p>
                   </div>
                 </div>
@@ -68,7 +68,7 @@ export function VisualizacaoRotograma({ riscos, paradas }: { riscos: RotogramaRi
       </div>
 
       <div className="card p-6 lg:col-span-2">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">☎️ Contatos de emergência</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">☎️ Contatos de emergência</h2>
         <div className="flex flex-wrap gap-3">
           {CONTATOS_EMERGENCIA.map((c) => (
             <div key={c.nome} className="rounded-lg bg-slate-900 px-4 py-2 text-center text-white">

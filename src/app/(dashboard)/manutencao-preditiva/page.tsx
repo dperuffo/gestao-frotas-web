@@ -109,7 +109,7 @@ export default async function ManutencaoPreditivaPage({
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -121,7 +121,7 @@ export default async function ManutencaoPreditivaPage({
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
           <input
             type="search"
             name="busca"
@@ -132,7 +132,7 @@ export default async function ManutencaoPreditivaPage({
         </div>
         {(centrosCusto?.length ?? 0) > 0 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Centro de custo</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Centro de custo</label>
             <select name="centroCusto" defaultValue={centroCusto ?? ""} className="input text-sm">
               <option value="">Todos</option>
               {centrosCusto!.map((c) => (
@@ -144,7 +144,7 @@ export default async function ManutencaoPreditivaPage({
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Status</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Status</label>
           <select name="status" defaultValue={status ?? ""} className="input text-sm">
             <option value="">Todos</option>
             <option value="critico">🔴 Crítico</option>
@@ -153,7 +153,7 @@ export default async function ManutencaoPreditivaPage({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Ordenar por</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Ordenar por</label>
           <select name="ordenar" defaultValue={ordenar} className="input text-sm">
             <option value="score">Pior estado primeiro</option>
             <option value="km">Maior km</option>
@@ -214,7 +214,7 @@ export default async function ManutencaoPreditivaPage({
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Placa</th>
@@ -225,7 +225,7 @@ export default async function ManutencaoPreditivaPage({
                   <th className="px-4 py-3">Alertas</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {veiculos.map((v) => (
                   <tr key={v.placa} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
@@ -240,17 +240,17 @@ export default async function ManutencaoPreditivaPage({
                       </Link>
                       {v.empresa_dona_nome && <span className="ml-2 text-xs text-slate-400">({v.empresa_dona_nome})</span>}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{v.centro_custo_nome ?? "—"}</td>
-                    <td className="px-4 py-3 tabular-nums text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.centro_custo_nome ?? "—"}</td>
+                    <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">
                       {v.km_atual > 0 ? `${Math.round(v.km_atual).toLocaleString("pt-BR")} km` : "—"}
                     </td>
                     <td className="px-4 py-3">
                       <ScoreBar score={v.score_geral} />
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
+                    <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
                       {v.n_criticos > 0 && <span className="mr-2 text-red-600">{v.n_criticos} crítico(s)</span>}
                       {v.n_alertas > 0 && <span className="text-amber-600">{v.n_alertas} alerta(s)</span>}
                       {v.n_criticos === 0 && v.n_alertas === 0 && "—"}
@@ -269,7 +269,7 @@ export default async function ManutencaoPreditivaPage({
           </div>
 
           {totalPaginas > 1 && (
-            <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
+            <div className="mt-4 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
               <span>
                 Página {pagina} de {totalPaginas} · {total} veículo(s)
               </span>

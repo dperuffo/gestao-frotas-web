@@ -25,8 +25,8 @@ export default async function DocumentosEmpresaDetalhePage({ params }: { params:
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">Esta tela é exclusiva do time interno (perfil administrador).</p>
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Esta tela é exclusiva do time interno (perfil administrador).</p>
       </div>
     );
   }
@@ -62,13 +62,13 @@ export default async function DocumentosEmpresaDetalhePage({ params }: { params:
       />
 
       <div className="card p-6">
-        <h2 className="text-sm font-semibold text-slate-900">Documentos da empresa</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Documentos da empresa</h2>
         <ul className="mt-3 space-y-2 text-sm">
           {TIPOS_DOCUMENTO_EMPRESA.map((tipo) => {
             const doc = documentosEmpresa.get(tipo);
             return (
-              <li key={tipo} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2">
-                <span className="text-slate-700">{LABEL_TIPO_DOCUMENTO[tipo]}</span>
+              <li key={tipo} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
+                <span className="text-slate-700 dark:text-slate-300">{LABEL_TIPO_DOCUMENTO[tipo]}</span>
                 {doc ? (
                   <a href={urlsPorDocumento.get(doc.id) ?? "#"} target="_blank" rel="noreferrer" className="text-frota-600 hover:underline">
                     Ver {doc.nomeArquivo}
@@ -83,20 +83,20 @@ export default async function DocumentosEmpresaDetalhePage({ params }: { params:
       </div>
 
       <div className="card mt-6 p-6">
-        <h2 className="text-sm font-semibold text-slate-900">Sócios</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Sócios</h2>
         <div className="mt-3 space-y-4">
           {situacao.socios.map((s) => {
             const docs = documentosPorSocio.get(s.id) ?? [];
             return (
-              <div key={s.id} className="rounded-lg border border-slate-200 p-4">
-                <p className="text-sm font-semibold text-slate-800">{s.nome}</p>
-                <p className="text-xs text-slate-500">CPF: {s.cpf}</p>
+              <div key={s.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{s.nome}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">CPF: {s.cpf}</p>
                 <ul className="mt-2 space-y-2 text-sm">
                   {TIPOS_DOCUMENTO_SOCIO.map((tipo) => {
                     const doc = docs.find((d) => d.tipo === tipo);
                     return (
-                      <li key={tipo} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2">
-                        <span className="text-slate-700">{LABEL_TIPO_DOCUMENTO[tipo]}</span>
+                      <li key={tipo} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 dark:border-slate-700 px-3 py-2">
+                        <span className="text-slate-700 dark:text-slate-300">{LABEL_TIPO_DOCUMENTO[tipo]}</span>
                         {doc ? (
                           <a href={urlsPorDocumento.get(doc.id) ?? "#"} target="_blank" rel="noreferrer" className="text-frota-600 hover:underline">
                             Ver {doc.nomeArquivo}

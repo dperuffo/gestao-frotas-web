@@ -42,8 +42,8 @@ export default async function ResgatesFidelidadePage({
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">Esta tela é exclusiva do time interno (perfil administrador).</p>
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Esta tela é exclusiva do time interno (perfil administrador).</p>
       </div>
     );
   }
@@ -108,10 +108,10 @@ export default async function ResgatesFidelidadePage({
         }
       />
 
-      <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+      <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
         <Link
           href={linkFiltro("")}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${!statusParam ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+          className={`rounded-full px-3 py-1 text-xs font-medium ${!statusParam ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200"}`}
         >
           Todos
         </Link>
@@ -119,7 +119,7 @@ export default async function ResgatesFidelidadePage({
           <Link
             key={s}
             href={linkFiltro(s)}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${statusParam === s ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${statusParam === s ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200"}`}
           >
             {s === "solicitado" ? "Solicitado" : s === "em_andamento" ? "Em andamento" : s === "concluido" ? "Concluído" : "Cancelado"}
           </Link>
@@ -129,7 +129,7 @@ export default async function ResgatesFidelidadePage({
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar resgates: {error.message}</p>}
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Motorista</th>
               <th className="px-4 py-3">Item</th>
@@ -139,21 +139,21 @@ export default async function ResgatesFidelidadePage({
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {resgates.map((r) => (
               <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-900">
+                <td className="px-4 py-3 text-slate-900 dark:text-slate-100">
                   {nomeMotorista.get(r.motorista_id) ?? r.motorista_id}
                   {r.dependente_id && (
-                    <span className="block text-xs text-slate-500">
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">
                       Para: {nomeDependente.get(r.dependente_id) ?? "dependente"}
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 font-medium text-slate-900">{r.titulo}</td>
-                <td className="px-4 py-3 text-slate-600">{LABEL_CATEGORIA[r.categoria] ?? r.categoria}</td>
-                <td className="px-4 py-3 text-slate-600">{r.pontos_gastos.toLocaleString("pt-BR")}</td>
-                <td className="px-4 py-3 text-slate-600">{formatDate(r.solicitado_em)}</td>
+                <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{r.titulo}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{LABEL_CATEGORIA[r.categoria] ?? r.categoria}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.pontos_gastos.toLocaleString("pt-BR")}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatDate(r.solicitado_em)}</td>
                 <td className="px-4 py-3">
                   <AtualizarStatusResgate id={r.id} status={r.status} />
                 </td>

@@ -33,8 +33,8 @@ export function MissoesGlobaisGestao({ empresaId, missoesIniciais }: { empresaId
     <div className="mb-8">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">🎯 Missões da rede</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">🎯 Missões da rede</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Crie desafios que valem pra QUALQUER motorista da rede &quot;Estrada que Cuida&quot; — ex.: abastecer no
             seu posto algumas vezes no mês. Cada missão concluída dá pontos bônus e aparece na Home do app do
             motorista.
@@ -124,17 +124,17 @@ function CardMissaoGlobal({
     <div className="card p-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-medium text-slate-900">{missao.titulo}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{missao.descricao || "Sem descrição."}</p>
+          <p className="font-medium text-slate-900 dark:text-slate-100">{missao.titulo}</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{missao.descricao || "Sem descrição."}</p>
         </div>
         <span className={missao.ativa ? "badge-ativo" : "badge-inativo"}>{missao.ativa ? "Ativa" : "Inativa"}</span>
       </div>
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
         <span>📊 {LABEL_METRICA_MISSAO[missao.tipo_metrica] ?? missao.tipo_metrica}</span>
         <span>🎯 Meta: {missao.meta}</span>
         <span>🏅 +{missao.bonus} pontos</span>
       </div>
-      <div className="mt-3 flex items-center gap-3 border-t border-dashed border-slate-200 pt-2">
+      <div className="mt-3 flex items-center gap-3 border-t border-dashed border-slate-200 dark:border-slate-700 pt-2">
         <button type="button" onClick={() => setEditando(true)} className="text-xs font-medium text-frota-600 hover:underline">
           Editar
         </button>
@@ -200,13 +200,13 @@ function MissaoGlobalForm({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             Título <span className="text-red-500">*</span>
           </label>
           <input type="text" name="titulo" required defaultValue={missao?.titulo ?? ""} placeholder='Ex.: "Abasteça 3x no nosso posto"' className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Ícone</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Ícone</label>
           <select name="icone" defaultValue={missao?.icone ?? "flag_outlined"} className="input">
             {ICONES_MISSAO.map((i) => (
               <option key={i.valor} value={i.valor}>
@@ -218,13 +218,13 @@ function MissaoGlobalForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Descrição</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Descrição</label>
         <textarea name="descricao" rows={2} defaultValue={missao?.descricao ?? ""} placeholder="O que o motorista precisa fazer pra concluir." className="input" />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Métrica</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Métrica</label>
           <select name="tipo_metrica" value={tipoMetrica} onChange={(e) => setTipoMetrica(e.target.value)} className="input">
             {METRICAS_MISSAO.map((m) => (
               <option key={m.valor} value={m.valor}>
@@ -235,9 +235,9 @@ function MissaoGlobalForm({
           <p className="mt-1 text-xs text-slate-400">{METRICAS_MISSAO.find((m) => m.valor === tipoMetrica)?.descricao}</p>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Meta</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Meta</label>
           {binaria ? (
-            <input type="text" value="Concluiu / não concluiu" disabled className="input bg-slate-50 text-slate-400" />
+            <input type="text" value="Concluiu / não concluiu" disabled className="input bg-slate-50 dark:bg-slate-800/50 text-slate-400" />
           ) : (
             <input type="number" name="meta" min="1" step="1" required defaultValue={missao?.meta ?? ""} className="input" />
           )}
@@ -246,11 +246,11 @@ function MissaoGlobalForm({
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Bônus em pontos</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Bônus em pontos</label>
           <input type="number" name="bonus" min="0" step="1" defaultValue={missao?.bonus ?? 100} className="input" />
         </div>
         {missao && (
-          <label className="flex items-center gap-2 self-end pb-2 text-sm text-slate-700">
+          <label className="flex items-center gap-2 self-end pb-2 text-sm text-slate-700 dark:text-slate-300">
             <input type="checkbox" name="ativa" defaultChecked={missao.ativa} className="h-4 w-4 rounded border-slate-300" />
             Missão ativa
           </label>

@@ -31,11 +31,11 @@ export function FormularioAjuste({ veiculoId, placa, empresaId }: { veiculoId: s
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 border-t border-slate-100 pt-4">
+    <form onSubmit={handleSubmit} className="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4">
       {erro && <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Tipo</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tipo</label>
           <select name="tipo" required defaultValue="" className="input text-sm">
             <option value="" disabled>
               Selecione...
@@ -48,16 +48,16 @@ export function FormularioAjuste({ veiculoId, placa, empresaId }: { veiculoId: s
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Valor (R$)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Valor (R$)</label>
           <input name="valor" type="number" step="0.01" required className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Data</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Data</label>
           <input name="data_ajuste" type="date" required className="input text-sm" />
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Motivo (opcional)</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Motivo (opcional)</label>
         <textarea name="motivo" rows={2} className="input text-sm" placeholder="Ex.: instalação de baú refrigerado, venda para terceiro, sinistro com perda total..." />
       </div>
       <button type="submit" disabled={isPending} className="btn-primary text-sm disabled:opacity-50">

@@ -60,8 +60,8 @@ export function AlocarVeiculoForm({
 
   return (
     <div className="card p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">Veículos alocados a este centro de custo</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Veículos alocados a este centro de custo</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Busque e marque quantos veículos precisar — dá pra alocar ou remover vários de uma vez.
       </p>
 
@@ -75,7 +75,7 @@ export function AlocarVeiculoForm({
       />
 
       {historico.length > 0 && (
-        <div className="mt-4 border-t border-slate-100 pt-3">
+        <div className="mt-4 border-t border-slate-100 dark:border-slate-700 pt-3">
           <button
             type="button"
             onClick={() => setMostrarHistorico((v) => !v)}
@@ -96,10 +96,10 @@ export function AlocarVeiculoForm({
               <tbody className="divide-y divide-slate-50">
                 {historico.map((h) => (
                   <tr key={h.id}>
-                    <td className="py-1.5 pr-3 text-slate-700">{h.placa}</td>
-                    <td className="py-1.5 pr-3 text-slate-600">{formatarData(h.data_inicio)}</td>
-                    <td className="py-1.5 pr-3 text-slate-600">{formatarData(h.data_fim)}</td>
-                    <td className="py-1.5 text-slate-600">{h.ativo && !h.data_fim ? "Vigente" : "Encerrada"}</td>
+                    <td className="py-1.5 pr-3 text-slate-700 dark:text-slate-300">{h.placa}</td>
+                    <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-300">{formatarData(h.data_inicio)}</td>
+                    <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-300">{formatarData(h.data_fim)}</td>
+                    <td className="py-1.5 text-slate-600 dark:text-slate-300">{h.ativo && !h.data_fim ? "Vigente" : "Encerrada"}</td>
                   </tr>
                 ))}
               </tbody>

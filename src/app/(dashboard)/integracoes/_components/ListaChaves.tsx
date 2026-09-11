@@ -81,10 +81,10 @@ export function ListaChaves({ chaves }: { chaves: ChaveProfrotas[] }) {
 
   return (
     <div className="card overflow-x-auto">
-      <h2 className="px-4 pt-4 text-sm font-semibold text-slate-900">Chaves cadastradas</h2>
+      <h2 className="px-4 pt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Chaves cadastradas</h2>
       {erro && <p className="mx-4 mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       <table className="mt-2 w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+        <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
           <tr>
             <th className="px-4 py-3">Cliente</th>
             <th className="px-4 py-3">CNPJ da frota</th>
@@ -94,10 +94,10 @@ export function ListaChaves({ chaves }: { chaves: ChaveProfrotas[] }) {
             <th className="px-4 py-3"><span className="inline-flex items-center gap-1">Ações <AjudaIcon chave="integracoes.sync_manual" /></span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {chaves.map((c) => (
             <tr key={c.id} className="align-top transition-colors hover:bg-frota-50/60">
-              <td className="px-4 py-3 font-medium text-slate-700">
+              <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">
                 {c.nome_empresa}
                 {c.avisoLimite && (
                   <p className="mt-1 max-w-xs text-xs font-normal text-red-700">
@@ -108,12 +108,12 @@ export function ListaChaves({ chaves }: { chaves: ChaveProfrotas[] }) {
                   </p>
                 )}
               </td>
-              <td className="px-4 py-3 text-slate-600">{formatarCnpj(c.cnpj_frota)}</td>
-              <td className="px-4 py-3 text-slate-600">
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarCnpj(c.cnpj_frota)}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                 {formatarDataHora(c.ultimo_sync)}
-                {mensagens[c.cnpj_frota] && <p className="mt-1 text-xs text-slate-500">{mensagens[c.cnpj_frota]}</p>}
+                {mensagens[c.cnpj_frota] && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{mensagens[c.cnpj_frota]}</p>}
               </td>
-              <td className="px-4 py-3 text-slate-600">{(c.registros_sync ?? 0).toLocaleString("pt-BR")}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{(c.registros_sync ?? 0).toLocaleString("pt-BR")}</td>
               <td className="px-4 py-3">
                 <span className={c.ativo ? "badge-ativo" : "badge-inativo"}>{c.ativo ? "Ativo" : "Inativo"}</span>
                 {c.avisoLimite && <span className="ml-1 badge-inativo">Limite excedido</span>}
@@ -132,7 +132,7 @@ export function ListaChaves({ chaves }: { chaves: ChaveProfrotas[] }) {
                     type="button"
                     onClick={() => handleAlternarAtivo(c.id, c.ativo)}
                     disabled={isPending}
-                    className="text-slate-600 hover:underline disabled:opacity-50"
+                    className="text-slate-600 dark:text-slate-300 hover:underline disabled:opacity-50"
                   >
                     {c.ativo ? "Desativar" : "Ativar"}
                   </button>

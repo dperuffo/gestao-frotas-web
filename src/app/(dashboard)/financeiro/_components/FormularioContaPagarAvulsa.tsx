@@ -35,21 +35,21 @@ export function FormularioContaPagarAvulsa({ empresaId }: { empresaId: string })
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Credor</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Credor</label>
           <input type="text" name="credor_nome" required className="input" placeholder="Posto Alvorada" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Valor (R$)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Valor (R$)</label>
           <input type="number" name="valor_original" step="0.01" min={0.01} required className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Vencimento</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Vencimento</label>
           <input type="date" name="vencimento" required className="input" />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Descrição (opcional)</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Descrição (opcional)</label>
         <input type="text" name="descricao" className="input" />
       </div>
 

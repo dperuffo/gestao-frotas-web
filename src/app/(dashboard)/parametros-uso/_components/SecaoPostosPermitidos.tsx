@@ -57,7 +57,7 @@ export function SecaoPostosPermitidos({
     <div>
       <div className="card mb-4 p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Restringe o abastecimento a postos autorizados, por cliente, veículo ou motorista, com limite de
             valor/volume opcional. A lista de postos vem das negociações já feitas com a rede.
           </p>
@@ -69,7 +69,7 @@ export function SecaoPostosPermitidos({
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Classificação</th>
               <th className="px-4 py-3">Veículo</th>
@@ -80,14 +80,14 @@ export function SecaoPostosPermitidos({
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhas.map((l) => (
               <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-600">{l.classificacao ?? "Todos"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.placa ?? "Todos"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.motoristas?.nome_completo ?? "Todos"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.postos_cnpj.map(nomePosto).join(", ")}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.classificacao ?? "Todos"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.placa ?? "Todos"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.motoristas?.nome_completo ?? "Todos"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.postos_cnpj.map(nomePosto).join(", ")}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {l.tipo_limite === "Sem limite"
                     ? "Sem limite"
                     : `${l.tipo_limite === "Valor" ? "R$" : "L"} ${l.valor_maximo ?? "—"}`}
@@ -120,7 +120,7 @@ export function SecaoPostosPermitidos({
           <input type="hidden" name="empresa_id" value={empresaId} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Classificação</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Classificação</label>
             <select name="classificacao" defaultValue="" className="input">
               <option value="">Todos</option>
               <option value="Leve">Leve</option>
@@ -129,7 +129,7 @@ export function SecaoPostosPermitidos({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Veículo (placa)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
             <select name="placa" defaultValue="" className="input">
               <option value="">Todos os veículos</option>
               {veiculos.map((v) => (
@@ -141,7 +141,7 @@ export function SecaoPostosPermitidos({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Motorista</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Motorista</label>
             <select name="motorista_id" defaultValue="" className="input">
               <option value="">Todos os motoristas</option>
               {motoristas.map((m) => (
@@ -153,15 +153,15 @@ export function SecaoPostosPermitidos({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Postos permitidos *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Postos permitidos *</label>
             {postos.length === 0 ? (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Nenhum posto negociado ainda — feche uma negociação em &quot;Negociações com Postos&quot; primeiro.
               </p>
             ) : (
-              <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
+              <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 p-2">
                 {postos.map((p) => (
-                  <label key={p.cnpj} className="flex items-center gap-2 text-sm text-slate-700">
+                  <label key={p.cnpj} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                     <input type="checkbox" name="postos_cnpj" value={p.cnpj} className="h-4 w-4 rounded border-slate-300" />
                     {p.nome}
                   </label>
@@ -171,7 +171,7 @@ export function SecaoPostosPermitidos({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Tipo de limite</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tipo de limite</label>
             <select
               name="tipo_limite"
               value={tipoLimite}
@@ -186,13 +186,13 @@ export function SecaoPostosPermitidos({
 
           {tipoLimite !== "Sem limite" && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Valor máximo</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Valor máximo</label>
               <input type="number" name="valor_maximo" min={0.01} step="0.01" className="input" />
             </div>
           )}
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Observação</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
             <textarea name="observacao" rows={2} className="input" />
           </div>
 

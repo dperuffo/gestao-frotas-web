@@ -169,7 +169,7 @@ export default async function MotoristasPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -186,7 +186,7 @@ export default async function MotoristasPage({
       )}
 
       {semClienteEscolhido ? (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver os motoristas dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para ver os motoristas dele.</p>
       ) : (
         <>
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -248,7 +248,7 @@ export default async function MotoristasPage({
           <div className="card overflow-x-auto">
             {error && <p className="p-4 text-sm text-red-600">Erro ao carregar motoristas: {error.message}</p>}
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Nome</th>
                   <th className="px-4 py-3">CPF</th>
@@ -260,7 +260,7 @@ export default async function MotoristasPage({
                   <th className="px-4 py-3">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {motoristas.map((m) => (
                   <tr key={m.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
@@ -275,11 +275,11 @@ export default async function MotoristasPage({
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{m.cpf ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{m.telefone ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{m.classificacao}</td>
-                    <td className="px-4 py-3 text-slate-600">{formatDate(m.cnh_vencimento)}</td>
-                    <td className="px-4 py-3 text-slate-600">{m.empresas?.nome ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.cpf ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.telefone ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.classificacao}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatDate(m.cnh_vencimento)}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.empresas?.nome ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span className={m.status === "Ativo" ? "badge-ativo" : "badge-inativo"}>{m.status}</span>
                     </td>

@@ -122,7 +122,7 @@ export default async function VeiculosPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -139,7 +139,7 @@ export default async function VeiculosPage({
       )}
 
       {!empresaSelecionada && empresas.length > 1 ? (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver a frota dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para ver a frota dele.</p>
       ) : (
         <>
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -197,7 +197,7 @@ export default async function VeiculosPage({
           <div className="card overflow-x-auto">
             {error && <p className="p-4 text-sm text-red-600">Erro ao carregar veículos: {error.message}</p>}
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Placa</th>
                   <th className="px-4 py-3">Marca/Modelo</th>
@@ -213,7 +213,7 @@ export default async function VeiculosPage({
                   <th className="px-4 py-3">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {veiculosDaPagina.map((v) => (
                   <tr key={v.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
@@ -229,14 +229,14 @@ export default async function VeiculosPage({
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{v.tipo_veiculo ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{v.tipo ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{v.classificacao ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{v.centro_custo_nome ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.tipo_veiculo ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.tipo ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.classificacao ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.centro_custo_nome ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {[v.municipio, v.uf_veiculo].filter(Boolean).join("/") || "—"}
                     </td>
                     <td className="px-4 py-3">

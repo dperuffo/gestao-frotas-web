@@ -129,7 +129,7 @@ export default async function ClientesPage({
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar clientes: {error.message}</p>}
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Razão Social</th>
               <th className="px-4 py-3">CNPJ</th>
@@ -140,7 +140,7 @@ export default async function ClientesPage({
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {clientes?.map((c) => (
               <tr key={c.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3">
@@ -148,10 +148,10 @@ export default async function ClientesPage({
                     {c.nome}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{formatCNPJ(c.cnpj)}</td>
-                <td className="px-4 py-3 text-slate-600">{c.uf ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{c.segmento_transporte ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{c.plano}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatCNPJ(c.cnpj)}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.uf ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.segmento_transporte ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.plano}</td>
                 <td className="px-4 py-3">
                   <span className={badgeClasse(c.status)}>
                     {STATUS_EMPRESA_LABEL[c.status as StatusEmpresa] ?? c.status}
@@ -175,26 +175,26 @@ export default async function ClientesPage({
 
       {ehAdmin && (
         <div className="card mt-6 overflow-x-auto">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Últimos acessos</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+          <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Últimos acessos</h2>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
               Logins recentes de clientes na plataforma, inclusive em período trial/gratuito.
             </p>
           </div>
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3">Cliente</th>
                 <th className="px-4 py-3">E-mail</th>
                 <th className="px-4 py-3">Data/hora</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {ultimosAcessos.map((a) => (
                 <tr key={a.id} className="transition-colors hover:bg-frota-50/60">
-                  <td className="px-4 py-3 text-slate-700">{a.empresas?.nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{a.user_email}</td>
-                  <td className="px-4 py-3 text-slate-600">{formatDataHora(a.criado_em)}</td>
+                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{a.empresas?.nome ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.user_email}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatDataHora(a.criado_em)}</td>
                 </tr>
               ))}
               {ultimosAcessos.length === 0 && (

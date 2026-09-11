@@ -108,7 +108,7 @@ export function Anomalias({ historico }: { historico: RegistroHistorico[] }) {
 
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-700">💲 Preços fora do padrão ({outliers.length})</h3>
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">💲 Preços fora do padrão ({outliers.length})</h3>
           {combustiveis.length > 1 && (
             <select value={combustivelFiltro} onChange={(e) => setCombustivelFiltro(e.target.value)} className="input w-auto text-sm">
               <option value="">Todos os combustíveis</option>
@@ -125,7 +125,7 @@ export function Anomalias({ historico }: { historico: RegistroHistorico[] }) {
         ) : (
           <div className="max-h-96 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-white text-xs uppercase text-slate-500">
+              <thead className="sticky top-0 bg-white dark:bg-slate-800 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">Posto</th>
                   <th className="py-2 pr-3">Município/UF</th>
@@ -136,17 +136,17 @@ export function Anomalias({ historico }: { historico: RegistroHistorico[] }) {
                   <th className="py-2">Desvio</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {outliersFiltrados.slice(0, 200).map((o, i) => (
                   <tr key={`${o.cnpj}__${o.combustivel}__${o.dataRef}__${i}`} className="transition-colors hover:bg-frota-50/60">
-                    <td className="py-2 pr-3 text-slate-700">{o.razaoSocial ?? o.cnpj}</td>
-                    <td className="py-2 pr-3 text-slate-600">
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{o.razaoSocial ?? o.cnpj}</td>
+                    <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">
                       {o.municipio}/{o.uf}
                     </td>
-                    <td className="py-2 pr-3 text-slate-600">{o.combustivel}</td>
-                    <td className="py-2 pr-3 text-slate-600">{formatarDataBr(o.dataRef)}</td>
-                    <td className="py-2 pr-3 tabular-nums font-medium text-slate-900">{formatarMoeda(o.preco)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-500">{formatarMoeda(o.mediana)}</td>
+                    <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{o.combustivel}</td>
+                    <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{formatarDataBr(o.dataRef)}</td>
+                    <td className="py-2 pr-3 tabular-nums font-medium text-slate-900 dark:text-slate-100">{formatarMoeda(o.preco)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-500 dark:text-slate-400">{formatarMoeda(o.mediana)}</td>
                     <td className={`py-2 tabular-nums font-medium ${o.deltaPct >= 0 ? "text-red-600" : "text-emerald-600"}`}>
                       {o.deltaPct >= 0 ? "+" : ""}
                       {o.deltaPct.toFixed(1)}%
@@ -163,7 +163,7 @@ export function Anomalias({ historico }: { historico: RegistroHistorico[] }) {
       </div>
 
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-slate-700">🏭 Postos inconsistentes ({postosInconsistentes.length})</h3>
+        <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">🏭 Postos inconsistentes ({postosInconsistentes.length})</h3>
         <p className="mb-3 text-xs text-slate-400">
           Coeficiente de variação (CV) acima de 5% entre os registros do mesmo posto+combustível — preço instável.
         </p>
@@ -172,7 +172,7 @@ export function Anomalias({ historico }: { historico: RegistroHistorico[] }) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">Posto</th>
                   <th className="py-2 pr-3">UF</th>
@@ -181,13 +181,13 @@ export function Anomalias({ historico }: { historico: RegistroHistorico[] }) {
                   <th className="py-2">CV</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {postosInconsistentes.slice(0, 50).map((p, i) => (
                   <tr key={`${p.cnpj}__${p.combustivel}__${i}`} className="transition-colors hover:bg-frota-50/60">
-                    <td className="py-2 pr-3 text-slate-700">{p.razaoSocial ?? p.cnpj}</td>
-                    <td className="py-2 pr-3 text-slate-600">{p.uf}</td>
-                    <td className="py-2 pr-3 text-slate-600">{p.combustivel}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{p.registros}</td>
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{p.razaoSocial ?? p.cnpj}</td>
+                    <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{p.uf}</td>
+                    <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{p.combustivel}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{p.registros}</td>
                     <td className="py-2 tabular-nums font-medium text-red-600">{p.cv.toFixed(1)}%</td>
                   </tr>
                 ))}

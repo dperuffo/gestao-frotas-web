@@ -100,7 +100,7 @@ export function TabelaComparacaoVeiculos({ veiculos, placaSelecionada }: { veicu
   return (
     <div className="card overflow-x-auto">
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+        <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
           <tr>
             <th className="cursor-pointer select-none px-4 py-3 hover:text-slate-700" onClick={() => handleOrdenar("placa")}>
               Placa {ordenarPor === "placa" && (ordemAsc ? "↑" : "↓")}
@@ -116,7 +116,7 @@ export function TabelaComparacaoVeiculos({ veiculos, placaSelecionada }: { veicu
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {ordenados.map((v) => (
             <tr key={v.placa} className={`transition-colors hover:bg-frota-50/60 ${placaSelecionada === v.placa ? "bg-frota-50" : ""}`}>
               <td className="px-4 py-2.5">
@@ -125,7 +125,7 @@ export function TabelaComparacaoVeiculos({ veiculos, placaSelecionada }: { veicu
                 </Link>
               </td>
               {COLUNAS.map((col) => (
-                <td key={String(col.chave)} className={`px-4 py-2.5 text-slate-600 ${col.numerica ? "text-right tabular-nums" : ""}`}>
+                <td key={String(col.chave)} className={`px-4 py-2.5 text-slate-600 dark:text-slate-300 ${col.numerica ? "text-right tabular-nums" : ""}`}>
                   {col.formatar(v)}
                 </td>
               ))}

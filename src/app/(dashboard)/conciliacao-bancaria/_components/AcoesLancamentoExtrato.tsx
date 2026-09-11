@@ -19,7 +19,7 @@ import { formatarMoeda, formatarDataSemFuso, type SugestaoConciliacao, type Cont
 const COR_CONFIANCA: Record<string, string> = {
   alta: "bg-green-100 text-green-800",
   media: "bg-amber-100 text-amber-800",
-  baixa: "bg-slate-200 text-slate-600",
+  baixa: "bg-slate-200 text-slate-600 dark:text-slate-300",
 };
 
 const LABEL_CONFIANCA: Record<string, string> = {
@@ -84,12 +84,12 @@ export function AcoesLancamentoExtrato({
       {sugestoes.length > 0 ? (
         <div className="space-y-1">
           {sugestoes.map((s) => (
-            <div key={s.id} className="flex items-center justify-between gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs">
+            <div key={s.id} className="flex items-center justify-between gap-2 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 text-xs">
               <div>
                 <span className={`mr-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${COR_CONFIANCA[s.confianca]}`}>
                   {LABEL_CONFIANCA[s.confianca]}
                 </span>
-                <span className="font-medium text-slate-700">{s.nome}</span>{" "}
+                <span className="font-medium text-slate-700 dark:text-slate-300">{s.nome}</span>{" "}
                 <span className="text-slate-400">
                   · venc. {formatarDataSemFuso(s.vencimento)} · {formatarMoeda(s.saldoEmAberto)}
                   {s.diferencaDias > 0 ? ` (±${s.diferencaDias}d)` : ""}
@@ -127,7 +127,7 @@ export function AcoesLancamentoExtrato({
               const conta = outrasContas.find((c) => c.id === contaManualId);
               if (conta) confirmar(conta);
             }}
-            className="shrink-0 rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+            className="shrink-0 rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-50"
           >
             Vincular
           </button>
@@ -135,7 +135,7 @@ export function AcoesLancamentoExtrato({
       )}
 
       <div className="flex gap-3 pt-1">
-        <button type="button" disabled={isPending} onClick={ignorar} className="text-xs text-slate-500 hover:underline disabled:opacity-50">
+        <button type="button" disabled={isPending} onClick={ignorar} className="text-xs text-slate-500 dark:text-slate-400 hover:underline disabled:opacity-50">
           Ignorar
         </button>
         <button type="button" disabled={isPending} onClick={excluir} className="text-xs text-red-600 hover:underline disabled:opacity-50">

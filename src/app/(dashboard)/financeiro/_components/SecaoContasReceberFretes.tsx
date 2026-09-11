@@ -65,7 +65,7 @@ export async function SecaoContasReceberFretes({ empresaId }: { empresaId: strin
   return (
     <div className="mt-6">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">📄 Faturamento de Fretes — Contas a Receber</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">📄 Faturamento de Fretes — Contas a Receber</h2>
         <Link href={`/faturas-fretes?empresa=${empresaId}`} className="text-xs font-medium text-frota-600 hover:underline">
           Ver faturas de frete →
         </Link>
@@ -74,7 +74,7 @@ export async function SecaoContasReceberFretes({ empresaId }: { empresaId: strin
       <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">A receber (em aberto)</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{formatoMoeda.format(totalEmAberto)}</p>
+          <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">{formatoMoeda.format(totalEmAberto)}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Vencido (inadimplência)</p>
@@ -88,7 +88,7 @@ export async function SecaoContasReceberFretes({ empresaId }: { empresaId: strin
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="card p-4">
-          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Aging de vencidas</h3>
+          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Aging de vencidas</h3>
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase text-slate-400">
               <tr>
@@ -97,12 +97,12 @@ export async function SecaoContasReceberFretes({ empresaId }: { empresaId: strin
                 <th className="py-1 text-right">Valor</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {aging.map((f) => (
                 <tr key={f.chave}>
-                  <td className="py-1.5 text-slate-600">{f.label}</td>
-                  <td className="py-1.5 text-right text-slate-600">{f.quantidade}</td>
-                  <td className="py-1.5 text-right font-medium text-slate-900">{formatoMoeda.format(f.valor)}</td>
+                  <td className="py-1.5 text-slate-600 dark:text-slate-300">{f.label}</td>
+                  <td className="py-1.5 text-right text-slate-600 dark:text-slate-300">{f.quantidade}</td>
+                  <td className="py-1.5 text-right font-medium text-slate-900 dark:text-slate-100">{formatoMoeda.format(f.valor)}</td>
                 </tr>
               ))}
             </tbody>
@@ -110,7 +110,7 @@ export async function SecaoContasReceberFretes({ empresaId }: { empresaId: strin
         </div>
 
         <div className="card p-4">
-          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Inadimplência por devedor</h3>
+          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Inadimplência por devedor</h3>
           {inadimplenciaPorDevedor.length === 0 ? (
             <p className="text-sm text-slate-400">Nenhuma conta vencida no momento.</p>
           ) : (
@@ -122,11 +122,11 @@ export async function SecaoContasReceberFretes({ empresaId }: { empresaId: strin
                   <th className="py-1 text-right">Valor</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {inadimplenciaPorDevedor.map((d) => (
                   <tr key={d.nome}>
-                    <td className="py-1.5 text-slate-600">{d.nome}</td>
-                    <td className="py-1.5 text-right text-slate-600">{d.quantidade}</td>
+                    <td className="py-1.5 text-slate-600 dark:text-slate-300">{d.nome}</td>
+                    <td className="py-1.5 text-right text-slate-600 dark:text-slate-300">{d.quantidade}</td>
                     <td className="py-1.5 text-right font-medium text-red-600">{formatoMoeda.format(d.valor)}</td>
                   </tr>
                 ))}

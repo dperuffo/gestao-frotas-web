@@ -72,7 +72,7 @@ const COR_BADGE_ESTADO: Record<StatusAtual["estado"], string> = {
   dirigindo: "bg-green-100 text-green-800",
   pausa: "bg-amber-100 text-amber-800",
   descanso: "bg-sky-100 text-sky-800",
-  nunca_iniciado: "bg-slate-100 text-slate-500",
+  nunca_iniciado: "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400",
 };
 
 const LABEL_SEGMENTO: Record<RegistroDetalhado["tipo_segmento"], string> = {
@@ -260,7 +260,7 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -272,16 +272,16 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">De</label>
           <input type="date" name="inicio" defaultValue={dataInicio} className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Até</label>
           <input type="date" name="fim" defaultValue={dataFim} className="input text-sm" />
         </div>
         {motoristasParaSelecao.length > 0 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Registro detalhado de</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Registro detalhado de</label>
             <select name="motorista" defaultValue={motoristaParam ?? ""} className="input text-sm">
               <option value="">Selecione um motorista...</option>
               {motoristasParaSelecao.map((m) => (
@@ -310,8 +310,8 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
       {empresaSelecionada && !error && (
         <>
           <div className="mb-3 mt-2">
-            <h2 className="text-sm font-semibold text-slate-900">Agora</h2>
-            <p className="text-xs text-slate-500">Estado atual de cada motorista, a partir do último evento registrado.</p>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Agora</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Estado atual de cada motorista, a partir do último evento registrado.</p>
           </div>
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <IndicadorColorido cor="green" icon={Truck} label="Dirigindo agora" valor={String(dirigindoAgora)} />
@@ -334,8 +334,8 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
           )}
 
           <div className="mb-3 mt-6">
-            <h2 className="text-sm font-semibold text-slate-900">Período selecionado</h2>
-            <p className="text-xs text-slate-500">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Período selecionado</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Soma de todas as jornadas registradas entre {new Date(`${dataInicio}T12:00:00`).toLocaleDateString("pt-BR")} e{" "}
               {new Date(`${dataFim}T12:00:00`).toLocaleDateString("pt-BR")}.
             </p>
@@ -360,8 +360,8 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
           </div>
 
           <div className="card mb-6 overflow-hidden">
-            <div className="border-b border-slate-100 px-4 py-3">
-              <h3 className="text-sm font-semibold text-slate-900">Horas por dia (dirigindo / pausa / descanso)</h3>
+            <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Horas por dia (dirigindo / pausa / descanso)</h3>
             </div>
             <GraficoHorasDirigidasLazy dados={dadosGrafico} />
           </div>
@@ -369,11 +369,11 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
           <GraficoResumoJornada porEstado={porEstado} rankingHoras={rankingHoras} />
 
           <div className="card overflow-x-auto">
-            <div className="border-b border-slate-100 px-4 py-3">
-              <h3 className="text-sm font-semibold text-slate-900">Por motorista</h3>
+            <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Por motorista</h3>
             </div>
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Motorista</th>
                   <th className="px-4 py-3">Estado agora</th>
@@ -383,13 +383,13 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
                   <th className="px-4 py-3">Alertas</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {rankingMotoristas.map((m) => {
                   const status = statusAtual.find((s) => s.motorista_id === m.motoristaId);
                   const totalAlertas = m.alertasConducao + m.alertasDescanso;
                   return (
                     <tr key={m.motoristaId} className="transition-colors hover:bg-frota-50/60">
-                      <td className="px-4 py-3 font-medium text-slate-900">{m.nome}</td>
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{m.nome}</td>
                       <td className="px-4 py-3">
                         {status && (
                           <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${COR_BADGE_ESTADO[status.estado]}`}>
@@ -397,9 +397,9 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{status ? formatarDuracao(status.duracao_minutos) : "—"}</td>
-                      <td className="px-4 py-3 tabular-nums text-slate-700">{m.horasDirigidas.toFixed(1)}h</td>
-                      <td className="px-4 py-3 tabular-nums text-slate-600">{m.pausas}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{status ? formatarDuracao(status.duracao_minutos) : "—"}</td>
+                      <td className="px-4 py-3 tabular-nums text-slate-700 dark:text-slate-300">{m.horasDirigidas.toFixed(1)}h</td>
+                      <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">{m.pausas}</td>
                       <td className="px-4 py-3">
                         {totalAlertas > 0 ? (
                           <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800">{totalAlertas}</span>
@@ -422,12 +422,12 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
           </div>
 
           <div className="card mt-6 overflow-x-auto">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-700 px-4 py-3">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Registro detalhado (tracking){nomeMotoristaSelecionado ? ` — ${nomeMotoristaSelecionado}` : ""}
                 </h3>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   Cada linha é um trecho contínuo de condução, pausa ou descanso, com data/hora de início e fim, a
                   partir dos eventos registrados pelo motorista no app.
                 </p>
@@ -459,7 +459,7 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
             ) : (
               <>
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Tipo</th>
                       <th className="px-4 py-3">Início</th>
@@ -467,7 +467,7 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
                       <th className="px-4 py-3">Duração</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {registroPaginado.map((r, i) => (
                       <tr key={`${r.motorista_id}-${r.inicio}-${i}`} className="transition-colors hover:bg-frota-50/60">
                         <td className="px-4 py-3">
@@ -475,15 +475,15 @@ export default async function JornadaMotoristasPage({ searchParams }: { searchPa
                             {LABEL_SEGMENTO[r.tipo_segmento]}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{formatarDataHoraBr(r.inicio)}</td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarDataHoraBr(r.inicio)}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {r.em_andamento ? (
                             <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">Em andamento</span>
                           ) : (
                             formatarDataHoraBr(r.fim)
                           )}
                         </td>
-                        <td className="px-4 py-3 tabular-nums text-slate-700">{formatarDuracao(r.duracao_minutos)}</td>
+                        <td className="px-4 py-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarDuracao(r.duracao_minutos)}</td>
                       </tr>
                     ))}
                     {registroDoMotorista.length === 0 && (

@@ -29,13 +29,13 @@ export function SecaoDrePosto({ dados }: { dados: DrePostoDados }) {
 
   return (
     <div className="card mb-6 p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">DRE gerencial</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">DRE gerencial</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Resultado do posto no período, por competência (mês de referência da fatura/despesa, não data de
         pagamento). Não inclui impostos sobre venda nem depreciação — é um DRE gerencial, não fiscal.
       </p>
       <table className="w-full text-left text-sm">
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           <LinhaDre label="Receita bruta (faturas emitidas)" valor={dados.receita_bruta} negrito />
           <LinhaDre label="(–) Custo do combustível repassado à distribuidora" valor={-dados.cmv_combustivel} />
           <LinhaDre label="= Lucro bruto" valor={dados.lucro_bruto} negrito subtotal />
@@ -50,8 +50,8 @@ export function SecaoDrePosto({ dados }: { dados: DrePostoDados }) {
         </tbody>
       </table>
       {margemLiquida !== null && (
-        <p className="mt-3 text-xs text-slate-500">
-          Margem líquida: <span className="font-medium text-slate-700">{margemLiquida.toFixed(1)}%</span>
+        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+          Margem líquida: <span className="font-medium text-slate-700 dark:text-slate-300">{margemLiquida.toFixed(1)}%</span>
         </p>
       )}
     </div>
@@ -73,10 +73,10 @@ function LinhaDre({
   subtotal?: boolean;
   destaque?: boolean;
 }) {
-  const cor = destaque ? (valor < 0 ? "text-red-600" : "text-green-600") : valor < 0 ? "text-slate-500" : "text-slate-700";
+  const cor = destaque ? (valor < 0 ? "text-red-600" : "text-green-600") : valor < 0 ? "text-slate-500 dark:text-slate-400" : "text-slate-700 dark:text-slate-300";
   return (
-    <tr className={subtotal ? "bg-slate-50" : ""}>
-      <td className={`py-2 pr-4 ${indent ? "pl-6 text-slate-500" : "text-slate-700"} ${negrito ? "font-semibold" : ""}`}>
+    <tr className={subtotal ? "bg-slate-50 dark:bg-slate-800/50" : ""}>
+      <td className={`py-2 pr-4 ${indent ? "pl-6 text-slate-500 dark:text-slate-400" : "text-slate-700 dark:text-slate-300"} ${negrito ? "font-semibold" : ""}`}>
         {label}
       </td>
       <td className={`py-2 text-right ${cor} ${negrito ? "font-semibold" : ""}`}>{formatarMoeda(valor)}</td>

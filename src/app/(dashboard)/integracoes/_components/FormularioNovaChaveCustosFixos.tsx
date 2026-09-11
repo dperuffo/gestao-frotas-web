@@ -53,8 +53,8 @@ export function FormularioNovaChaveCustosFixos({
 
   return (
     <div className="card p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">Gerar chave de API</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Gerar chave de API</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Dê essa chave pro time técnico do cliente (ERP, cartão de combustível, corretora, oficina credenciada
         etc.) usar. Marque só as permissões que aquele sistema vai precisar.
       </p>
@@ -64,7 +64,7 @@ export function FormularioNovaChaveCustosFixos({
           <p className="text-sm font-medium text-amber-800">
             Copie a chave agora — ela não será mostrada novamente.
           </p>
-          <code className="mt-2 block break-all rounded bg-white px-3 py-2 text-xs text-slate-800">
+          <code className="mt-2 block break-all rounded bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100">
             {chaveGerada}
           </code>
           <button
@@ -79,7 +79,7 @@ export function FormularioNovaChaveCustosFixos({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
               <select name="empresa_id" required className="input" defaultValue="">
                 <option value="" disabled>
                   Selecione
@@ -92,23 +92,23 @@ export function FormularioNovaChaveCustosFixos({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Nome da chave</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Nome da chave</label>
               <input type="text" name="nome" required className="input" placeholder="Ex: Ticket Log — combustível" />
             </div>
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-medium text-slate-500">Permissões desta chave</p>
+            <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">Permissões desta chave</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {CATEGORIAS.map((categoria) => (
-                <div key={categoria} className="rounded-lg border border-slate-200 p-3">
+                <div key={categoria} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{categoria}</p>
                   <div className="space-y-1.5">
                     {CATALOGO_ESCOPOS.filter((e) => e.categoria === categoria).map((e) => (
-                      <label key={e.escopo} className="flex items-start gap-2 text-xs text-slate-600">
+                      <label key={e.escopo} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
                         <input type="checkbox" name="escopos" value={e.escopo} className="mt-0.5" />
                         <span>
-                          <span className="font-medium text-slate-700">{e.label}</span> — {e.descricao}
+                          <span className="font-medium text-slate-700 dark:text-slate-300">{e.label}</span> — {e.descricao}
                         </span>
                       </label>
                     ))}

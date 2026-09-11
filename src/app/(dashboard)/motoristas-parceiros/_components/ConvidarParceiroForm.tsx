@@ -21,15 +21,15 @@ export function ConvidarParceiroForm({ empresaId }: { empresaId: string }) {
 
   return (
     <div className="card p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">Convidar motorista parceiro</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Convidar motorista parceiro</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Busque pelo CPF ou telefone — o motorista precisa já ter conta no app &quot;Estrada que Cuida&quot;. Ele recebe o
         convite lá e decide se aceita entrar na sua rede.
       </p>
 
       <form action={formAction} className="flex items-end gap-2">
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">CPF ou telefone</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">CPF ou telefone</label>
           <input name="documento" type="text" required placeholder="000.000.000-00 ou (11) 99999-9999" className="input" />
         </div>
         <button type="submit" disabled={isPending} className="btn-secondary text-sm">
@@ -40,10 +40,10 @@ export function ConvidarParceiroForm({ empresaId }: { empresaId: string }) {
       {estado?.erro && <p className="mt-3 text-sm text-red-600">{estado.erro}</p>}
 
       {estado?.encontrado && !convidado && (
-        <div className="mt-4 flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+        <div className="mt-4 flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3">
           <div>
-            <p className="text-sm font-medium text-slate-900">{estado.encontrado.nome_completo}</p>
-            <p className="text-xs text-slate-500">{estado.encontrado.telefone ?? "sem telefone cadastrado"}</p>
+            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{estado.encontrado.nome_completo}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{estado.encontrado.telefone ?? "sem telefone cadastrado"}</p>
           </div>
           <button type="button" onClick={handleConvidar} disabled={convidando} className="btn-primary text-sm">
             {convidando ? "Convidando..." : "Convidar"}

@@ -15,8 +15,8 @@ export default function ImportarMotoristasPage() {
         }
       />
 
-      <div className="mb-6 card p-4 text-sm text-slate-600">
-        <p className="font-medium text-slate-700">Colunas do arquivo:</p>
+      <div className="mb-6 card p-4 text-sm text-slate-600 dark:text-slate-300">
+        <p className="font-medium text-slate-700 dark:text-slate-300">Colunas do arquivo:</p>
         <p className="mt-1">
           <code>nome_completo</code>, <code>cpf</code> e <code>cnpj_cliente</code> (CNPJ do
           cliente já cadastrado) são obrigatórias. <code>telefone</code>, <code>email</code>,{" "}

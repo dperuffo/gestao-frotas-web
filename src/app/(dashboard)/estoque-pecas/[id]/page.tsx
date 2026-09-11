@@ -67,29 +67,29 @@ export default async function PecaDetalhePage({
             {peca.nome} {peca.codigo ? <span className="text-slate-400">· {peca.codigo}</span> : null}
           </>
         }
-        acoes={!peca.ativa ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Inativa</span> : undefined}
+        acoes={!peca.ativa ? <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300">Inativa</span> : undefined}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <div className="card space-y-3 p-6">
-            <h2 className="text-sm font-semibold text-slate-700">Situação do estoque</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Situação do estoque</h2>
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Saldo atual</dt>
-                <dd className={`mt-0.5 text-lg font-semibold ${abaixo ? "text-red-700" : "text-slate-800"}`}>
+                <dd className={`mt-0.5 text-lg font-semibold ${abaixo ? "text-red-700" : "text-slate-800 dark:text-slate-100"}`}>
                   {peca.quantidade_atual} {peca.unidade_medida}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Estoque mínimo</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-slate-800">
+                <dd className="mt-0.5 text-lg font-semibold text-slate-800 dark:text-slate-100">
                   {peca.quantidade_minima} {peca.unidade_medida}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Custo médio</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-slate-800">{formatarMoeda(peca.custo_unitario_medio)}</dd>
+                <dd className="mt-0.5 text-lg font-semibold text-slate-800 dark:text-slate-100">{formatarMoeda(peca.custo_unitario_medio)}</dd>
               </div>
             </div>
             {abaixo && (
@@ -97,13 +97,13 @@ export default async function PecaDetalhePage({
                 Saldo abaixo (ou igual) ao estoque mínimo definido. Considere repor.
               </p>
             )}
-            <div className="border-t border-slate-100 pt-3">
+            <div className="border-t border-slate-100 dark:border-slate-700 pt-3">
               <DesativarPecaButton pecaId={peca.id} ativa={peca.ativa} />
             </div>
           </div>
 
           <div className="card space-y-2 p-6">
-            <h2 className="text-sm font-semibold text-slate-700">Histórico de movimentos</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Histórico de movimentos</h2>
             {movimentos.length > 0 ? (
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase text-slate-400">
@@ -116,26 +116,26 @@ export default async function PecaDetalhePage({
                     <th className="py-2 pr-3">Por</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {movimentos.map((m) => (
                     <tr key={m.id}>
-                      <td className="py-2 pr-3 text-slate-600">{new Date(m.criado_em).toLocaleString("pt-BR")}</td>
+                      <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{new Date(m.criado_em).toLocaleString("pt-BR")}</td>
                       <td className="py-2 pr-3">
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${TIPO_MOVIMENTO_COR[m.tipo_movimento] ?? "bg-slate-100 text-slate-600"}`}>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${TIPO_MOVIMENTO_COR[m.tipo_movimento] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
                           {TIPO_MOVIMENTO_LABEL[m.tipo_movimento] ?? m.tipo_movimento}
                         </span>
                       </td>
-                      <td className="py-2 pr-3 tabular-nums text-slate-700">
+                      <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">
                         {m.tipo_movimento === "saida" ? "-" : "+"}
                         {m.quantidade} {peca.unidade_medida}
                         {m.custo_unitario != null && <span className="ml-1 text-xs text-slate-400">({formatarMoeda(m.custo_unitario)}/un)</span>}
                       </td>
-                      <td className="py-2 pr-3 text-slate-600">
+                      <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">
                         {m.placa ?? "—"}
                         {m.manutencao_id ? <span className="ml-1 text-xs text-slate-400">· OS #{m.manutencao_id}</span> : null}
                       </td>
-                      <td className="py-2 pr-3 text-slate-600">{m.motivo ?? "—"}</td>
-                      <td className="py-2 pr-3 text-slate-500">{m.criado_por ?? "—"}</td>
+                      <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{m.motivo ?? "—"}</td>
+                      <td className="py-2 pr-3 text-slate-500 dark:text-slate-400">{m.criado_por ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -148,7 +148,7 @@ export default async function PecaDetalhePage({
 
         <div className="space-y-6">
           <div className="card space-y-3 p-6">
-            <h2 className="text-sm font-semibold text-slate-700">Registrar movimento</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Registrar movimento</h2>
             <RegistrarMovimentoForm pecaId={peca.id} empresaId={peca.empresa_id} manutencoes={manutencoesRecentes ?? []} />
           </div>
         </div>

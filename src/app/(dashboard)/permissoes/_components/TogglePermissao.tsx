@@ -34,7 +34,7 @@ export function TogglePermissao({
       }`}
     >
       <span
-        className={`h-4 w-4 transform rounded-full bg-white shadow transition ${
+        className={`h-4 w-4 transform rounded-full bg-white dark:bg-slate-800 shadow transition ${
           permitido ? "translate-x-6" : "translate-x-1"
         }`}
       />

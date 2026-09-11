@@ -50,7 +50,7 @@ export function GraficoManutencao({
       />
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Distribuição por status</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Distribuição por status</p>
         {distribuicao.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
@@ -71,8 +71,8 @@ export function GraficoManutencao({
               {distribuicao.map((d) => (
                 <li key={d.label} className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: d.cor }} aria-hidden="true" />
-                  <span className="text-slate-600">{d.label}</span>
-                  <span className="font-medium text-slate-900">{d.total}</span>
+                  <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{d.total}</span>
                 </li>
               ))}
             </ul>
@@ -81,7 +81,7 @@ export function GraficoManutencao({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Veículos mais críticos (menor score)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Veículos mais críticos (menor score)</p>
         {pioresPrimeiro.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (

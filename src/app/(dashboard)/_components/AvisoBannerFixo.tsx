@@ -48,8 +48,8 @@ export function AvisoBannerFixo({ avisos }: { avisos: AvisoParaUsuario[] }) {
         >
           <div className="flex items-center gap-3">
             <span className="text-2xl">{TIPO_ICONE[a.tipo]}</span>
-            <p className="text-sm text-slate-700">
-              <strong className="font-semibold text-slate-900">{a.titulo}.</strong> {a.resumo}
+            <p className="text-sm text-slate-700 dark:text-slate-300">
+              <strong className="font-semibold text-slate-900 dark:text-slate-100">{a.titulo}.</strong> {a.resumo}
             </p>
           </div>
           <button

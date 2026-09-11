@@ -14,8 +14,8 @@ export default async function ImportarPostosPage() {
         descricao="Principal forma de cadastro dos postos revendedores: envie a planilha recorrente com a rede de postos credenciados/negociados de UM cliente por vez (o arquivo não traz o CNPJ do cliente — selecione abaixo)."
       />
 
-      <div className="mb-6 card p-4 text-sm text-slate-600">
-        <p className="font-medium text-slate-700">Sobre esta importação:</p>
+      <div className="mb-6 card p-4 text-sm text-slate-600 dark:text-slate-300">
+        <p className="font-medium text-slate-700 dark:text-slate-300">Sobre esta importação:</p>
         <p className="mt-1">
           Envie o arquivo exatamente como exportado do sistema de origem (aba &quot;Ponto de
           Venda&quot;, 43 colunas). Reenviar um CNPJ já existente atualiza os dados desse posto

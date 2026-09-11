@@ -134,39 +134,39 @@ export default async function CicloAbertoPage({
       </div>
 
       <div className="card overflow-x-auto">
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
+        <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Detalhamento do abastecimento ({ciclo.quantidade_abastecimentos})
           </h2>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Abastecimentos já registrados no ciclo atual que compõem o valor acumulado acima.
           </p>
           {/* Fase 27.115 — filtro por status de NF-e (mesmo padrão visual do
               filtro já existente em /abastecimentos). */}
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-medium text-slate-500">NF-e:</span>
+            <span className="font-medium text-slate-500 dark:text-slate-400">NF-e:</span>
             <Link
               href={linkFiltroNf(undefined)}
-              className={`rounded-full px-3 py-1 font-medium ${!nf ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 font-medium ${!nf ? "bg-slate-700 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
             >
               Todos ({contagemNf.todos})
             </Link>
             <Link
               href={linkFiltroNf(nf === "com" ? undefined : "com")}
-              className={`rounded-full px-3 py-1 font-medium ${nf === "com" ? "bg-green-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 font-medium ${nf === "com" ? "bg-green-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
             >
               Com NF-e ({contagemNf.com})
             </Link>
             <Link
               href={linkFiltroNf(nf === "pendente" ? undefined : "pendente")}
-              className={`rounded-full px-3 py-1 font-medium ${nf === "pendente" ? "bg-red-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 font-medium ${nf === "pendente" ? "bg-red-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
             >
               Pendente NF-e ({contagemNf.pendente})
             </Link>
           </div>
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Data</th>
               <th className="px-4 py-3">Motorista</th>
@@ -178,22 +178,22 @@ export default async function CicloAbertoPage({
               <th className="px-4 py-3">NF-e</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {abastecimentos.map((a) => (
               <tr key={a.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-700">
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                   {a.data_abastecimento ? formatarDataBr(a.data_abastecimento) : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{a.motorista_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{a.veiculo_placa ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{a.item_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.motorista_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.veiculo_placa ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.item_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {a.item_quantidade != null ? a.item_quantidade.toLocaleString("pt-BR") : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {a.item_valor_unitario != null ? formatarMoeda(a.item_valor_unitario) : "—"}
                 </td>
-                <td className="px-4 py-3 font-medium text-slate-700">
+                <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">
                   {a.item_valor_total != null ? formatarMoeda(a.item_valor_total) : "—"}
                 </td>
                 <td className="px-4 py-3">

@@ -43,7 +43,7 @@ export function FormularioAvaliacao({ empresaId }: { empresaId: string | null })
       {empresaId && <input type="hidden" name="empresa_id" value={empresaId} />}
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">Sua nota</label>
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Sua nota</label>
         <div className="flex items-center gap-1" onMouseLeave={() => setHover(0)}>
           {[1, 2, 3, 4, 5].map((n) => (
             <button
@@ -62,13 +62,13 @@ export function FormularioAvaliacao({ empresaId }: { empresaId: string | null })
             </button>
           ))}
           {notaExibida > 0 && (
-            <span className="ml-2 text-sm font-medium text-slate-600">{rotuloNota(notaExibida)}</span>
+            <span className="ml-2 text-sm font-medium text-slate-600 dark:text-slate-300">{rotuloNota(notaExibida)}</span>
           )}
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
           Observações <span className="font-normal text-slate-400">(opcional)</span>
         </label>
         <textarea

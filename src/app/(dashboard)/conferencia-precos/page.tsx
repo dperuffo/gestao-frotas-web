@@ -240,7 +240,7 @@ export default async function ConferenciaPrecosPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione...</option>
               {empresas.map((e) => (
@@ -310,13 +310,13 @@ export default async function ConferenciaPrecosPage({
             <div className="flex flex-wrap gap-2">
               <Link
                 href={linkFiltro({ tab: "divergencias" })}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${tab === "divergencias" ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${tab === "divergencias" ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
               >
                 Divergências de Preço
               </Link>
               <Link
                 href={linkFiltro({ tab: "extrato" })}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${tab === "extrato" ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${tab === "extrato" ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
               >
                 Extrato Diário
               </Link>
@@ -325,11 +325,11 @@ export default async function ConferenciaPrecosPage({
               <input type="hidden" name="empresa" value={empresaSelecionada} />
               <input type="hidden" name="tab" value={tab} />
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">De</label>
                 <input type="date" name="de" defaultValue={de} className="input text-sm" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Até</label>
                 <input type="date" name="ate" defaultValue={ate} className="input text-sm" />
               </div>
               <button type="submit" className="btn-secondary text-sm">
@@ -347,7 +347,7 @@ export default async function ConferenciaPrecosPage({
               />
               <div className="card overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Data</th>
                     <th className="px-4 py-3">{rotuloContraparte}</th>
@@ -360,22 +360,22 @@ export default async function ConferenciaPrecosPage({
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {divergencias.map((d) => {
                     const acimaDoAcordo = (d.diferenca_rs ?? 0) > 0;
                     return (
                       <tr key={`${d.provedor}-${d.id}`} className="transition-colors hover:bg-frota-50/60">
-                        <td className="px-4 py-3 text-slate-600">{formatarDataHoraBr(d.data_abastecimento)}</td>
-                        <td className="px-4 py-3 text-slate-700">{d.contraparteNome}</td>
-                        <td className="px-4 py-3 text-slate-600">{d.placa ?? "—"}</td>
-                        <td className="px-4 py-3 text-slate-600">{d.combustivel ?? "—"}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarDataHoraBr(d.data_abastecimento)}</td>
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{d.contraparteNome}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{d.placa ?? "—"}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{d.combustivel ?? "—"}</td>
                         <td className="px-4 py-3">
                           <LogoProvedor provedor={d.provedor} className="h-5 w-auto" />
                         </td>
-                        <td className="px-4 py-3 tabular-nums text-slate-700">
+                        <td className="px-4 py-3 tabular-nums text-slate-700 dark:text-slate-300">
                           {d.preco_praticado != null ? formatarMoeda(d.preco_praticado) : "—"}
                         </td>
-                        <td className="px-4 py-3 tabular-nums text-slate-500">
+                        <td className="px-4 py-3 tabular-nums text-slate-500 dark:text-slate-400">
                           {d.preco_acordado != null ? formatarMoeda(d.preco_acordado) : "—"}
                         </td>
                         <td className="px-4 py-3 tabular-nums">
@@ -414,7 +414,7 @@ export default async function ConferenciaPrecosPage({
               <GraficoExtratoDiario valorPorDia={valorPorDia} porProvedor={valorPorProvedorExtrato} />
               <div className="card overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Dia</th>
                     <th className="px-4 py-3">Meio de pagamento</th>
@@ -424,18 +424,18 @@ export default async function ConferenciaPrecosPage({
                     <th className="px-4 py-3">Divergências</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {extrato.map((e) => (
                     <tr key={`${e.dia}-${e.provedor}`} className="transition-colors hover:bg-frota-50/60">
-                      <td className="px-4 py-3 text-slate-700">{formatarDataBr(e.dia)}</td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{formatarDataBr(e.dia)}</td>
                       <td className="px-4 py-3">
                         <LogoProvedor provedor={e.provedor} className="h-5 w-auto" />
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-600">{e.qtd_abastecimentos}</td>
-                      <td className="px-4 py-3 tabular-nums text-slate-600">
+                      <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">{e.qtd_abastecimentos}</td>
+                      <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">
                         {e.litros.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-700">{formatarMoeda(e.valor_total)}</td>
+                      <td className="px-4 py-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarMoeda(e.valor_total)}</td>
                       <td className="px-4 py-3 tabular-nums">
                         {e.qtd_divergencias > 0 ? (
                           <span className="text-red-600">

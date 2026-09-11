@@ -65,7 +65,7 @@ export default async function MotoristasParceirosPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -82,7 +82,7 @@ export default async function MotoristasParceirosPage({
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione uma empresa acima.</p>
       ) : (
         <div className="space-y-6">
           <ConvidarParceiroForm empresaId={empresaSelecionada} />
@@ -102,7 +102,7 @@ export default async function MotoristasParceirosPage({
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Motorista</th>
                   <th className="px-4 py-3">Telefone</th>
@@ -110,14 +110,14 @@ export default async function MotoristasParceirosPage({
                   <th className="px-4 py-3">Convidado em</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {parceiros.map((p) => (
                   <tr key={p.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900">{p.nome_completo}</p>
+                      <p className="font-medium text-slate-900 dark:text-slate-100">{p.nome_completo}</p>
                       <CartaoReputacaoMotorista reputacao={p} />
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{p.telefone ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.telefone ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span
                         className={
@@ -131,7 +131,7 @@ export default async function MotoristasParceirosPage({
                         {LABEL_STATUS[p.status] ?? p.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{new Date(p.convidado_em).toLocaleDateString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{new Date(p.convidado_em).toLocaleDateString("pt-BR")}</td>
                   </tr>
                 ))}
                 {parceiros.length === 0 && (

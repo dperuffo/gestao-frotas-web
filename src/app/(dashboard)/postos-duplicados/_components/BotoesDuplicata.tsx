@@ -27,7 +27,7 @@ export function BotoesDuplicata({ id }: { id: string }) {
   }
 
   if (resolvido === "descartado") {
-    return <p className="mt-2 text-xs font-medium text-slate-500">✓ Descartado — não é duplicata.</p>;
+    return <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">✓ Descartado — não é duplicata.</p>;
   }
   if (resolvido === "confirmado_duplicata") {
     return <p className="mt-2 text-xs font-medium text-red-700">✓ Confirmado como duplicata.</p>;

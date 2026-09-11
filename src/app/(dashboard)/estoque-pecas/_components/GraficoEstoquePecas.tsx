@@ -46,7 +46,7 @@ export function GraficoEstoquePecas({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Situação do estoque</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Situação do estoque</p>
         {situacao.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
@@ -71,8 +71,8 @@ export function GraficoEstoquePecas({
                     style={{ backgroundColor: d.label === "OK" ? "#16a34a" : "#dc2626" }}
                     aria-hidden="true"
                   />
-                  <span className="text-slate-600">{d.label}</span>
-                  <span className="font-medium text-slate-900">{d.total}</span>
+                  <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{d.total}</span>
                 </li>
               ))}
             </ul>
@@ -81,7 +81,7 @@ export function GraficoEstoquePecas({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Maior valor em estoque (top 8)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Maior valor em estoque (top 8)</p>
         {rankingValor.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (

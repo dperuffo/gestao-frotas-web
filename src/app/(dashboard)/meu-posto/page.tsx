@@ -42,7 +42,7 @@ export default async function MeuPostoPage({ searchParams }: { searchParams: Pro
       {opcoes.length > 1 && (
         <form className="mb-4 flex items-end gap-2 text-sm">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Posto</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Posto</label>
             <select name="empresa" defaultValue={atual?.id} className="input">
               {opcoes.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -58,7 +58,7 @@ export default async function MeuPostoPage({ searchParams }: { searchParams: Pro
       )}
 
       {!atual ? (
-        <div className="card p-6 text-sm text-slate-500">Nenhum posto (Revenda) vinculado a este usuário.</div>
+        <div className="card p-6 text-sm text-slate-500 dark:text-slate-400">Nenhum posto (Revenda) vinculado a este usuário.</div>
       ) : (
         <MeuPostoForm empresa={atual} />
       )}

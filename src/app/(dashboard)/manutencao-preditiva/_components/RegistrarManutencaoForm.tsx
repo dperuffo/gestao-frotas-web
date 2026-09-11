@@ -79,7 +79,7 @@ export function RegistrarManutencaoForm({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Data <span className="text-red-500">*</span>
           </label>
           <input
@@ -91,11 +91,11 @@ export function RegistrarManutencaoForm({
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Hodômetro (km)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Hodômetro (km)</label>
           <input type="number" name="hodometro" min={0} defaultValue={kmAtual > 0 ? Math.round(kmAtual) : ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Custo total (R$)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Custo total (R$)</label>
           <input
             type="number"
             name="custo_total"
@@ -112,7 +112,7 @@ export function RegistrarManutencaoForm({
             entre na conta certa (o "não classificado" só existe pra manutenção
             antiga, registrada antes desta fase). */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Tipo <span className="text-red-500">*</span>
           </label>
           <select name="tipo" required defaultValue="" className="input">
@@ -124,11 +124,11 @@ export function RegistrarManutencaoForm({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Técnico</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Técnico</label>
           <input name="tecnico" className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Oficina</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Oficina</label>
           <input name="oficina" className="input" />
         </div>
         {/* Fase TCO 3 (29/07/2026) — opcional, usado só pra estimar custo de
@@ -136,7 +136,7 @@ export function RegistrarManutencaoForm({
             não dá pra medir automaticamente, então é preenchimento manual do
             gestor mesmo. */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Dias parado <span className="font-normal text-slate-400">(opcional)</span>
           </label>
           <input type="number" name="dias_parado" min={0} step="1" className="input" />
@@ -184,12 +184,12 @@ export function RegistrarManutencaoForm({
       )}
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
           Itens realizados <span className="text-red-500">*</span>
         </label>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {ITENS_MANUTENCAO.map((item) => (
-            <label key={item} className="flex items-center gap-2 text-sm text-slate-700">
+            <label key={item} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input type="checkbox" name="itens_realizados" value={item} className="h-4 w-4 rounded border-slate-300" />
               {item}
             </label>
@@ -198,12 +198,12 @@ export function RegistrarManutencaoForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Observações</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observações</label>
         <textarea name="obs_gerais" rows={3} className="input" placeholder="Condições, peças substituídas, pendências..." />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
           Fotos do serviço <span className="font-normal text-slate-400">(opcional — evidência pra compliance)</span>
         </label>
         <input type="file" name="fotos" accept="image/*" multiple className="input" />

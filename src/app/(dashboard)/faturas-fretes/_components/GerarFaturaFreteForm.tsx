@@ -31,12 +31,12 @@ export function ListaTomadoresPendentes({ empresaId, tomadores }: { empresaId: s
         <div key={t.tomadorCnpj} className="card p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-semibold text-slate-900">{t.tomadorNome ?? "Tomador sem nome cadastrado"}</h3>
-              <p className="text-xs text-slate-500">{t.tomadorCnpj}</p>
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">{t.tomadorNome ?? "Tomador sem nome cadastrado"}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t.tomadorCnpj}</p>
             </div>
             <div className="flex items-center gap-4 text-sm">
-              <span className="text-slate-500">{t.quantidade} CT-e(s)</span>
-              <span className="font-semibold text-slate-900">{formatoMoeda.format(t.valorTotal)}</span>
+              <span className="text-slate-500 dark:text-slate-400">{t.quantidade} CT-e(s)</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-100">{formatoMoeda.format(t.valorTotal)}</span>
               <button
                 type="button"
                 onClick={() => setExpandido(expandido === t.tomadorCnpj ? null : t.tomadorCnpj)}
@@ -79,20 +79,20 @@ function FormGerarFatura({ empresaId, tomador }: { empresaId: string; tomador: T
       <input type="hidden" name="tomador_nome" value={tomador.tomadorNome ?? ""} />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Período — início</label>
+          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Período — início</label>
           <input type="date" name="periodo_inicio" required defaultValue={tomador.dataMin} className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Período — fim</label>
+          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Período — fim</label>
           <input type="date" name="periodo_fim" required defaultValue={tomador.dataMax} className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Vencimento</label>
+          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Vencimento</label>
           <input type="date" name="vencimento" required className="input text-sm" />
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-600">Observações</label>
+        <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Observações</label>
         <textarea name="observacoes" rows={2} className="input text-sm" />
       </div>
       <button type="submit" disabled={isPending} className="btn-primary text-sm disabled:opacity-50">

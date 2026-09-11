@@ -10,8 +10,8 @@ export default async function ImportarPostosAnpPage() {
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           A atualização do universo de postos ANP é exclusiva do time interno (perfil
           administrador).
         </p>
@@ -32,8 +32,8 @@ export default async function ImportarPostosAnpPage() {
         }
       />
 
-      <div className="mb-6 card p-4 text-sm text-slate-600">
-        <p className="font-medium text-slate-700">Colunas esperadas (cabeçalho da planilha):</p>
+      <div className="mb-6 card p-4 text-sm text-slate-600 dark:text-slate-300">
+        <p className="font-medium text-slate-700 dark:text-slate-300">Colunas esperadas (cabeçalho da planilha):</p>
         <p className="mt-1">
           <code>UF</code>, <code>Município</code>, <code>Razão Social</code>,{" "}
           <code>CNPJ</code> (obrigatórias), e opcionalmente{" "}

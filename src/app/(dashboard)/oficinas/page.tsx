@@ -107,7 +107,7 @@ export default async function OficinasPage({ searchParams }: { searchParams: Pro
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -133,11 +133,11 @@ export default async function OficinasPage({ searchParams }: { searchParams: Pro
                 <form className="mb-4 flex flex-wrap items-end gap-2">
                   {empresaSelecionada && <input type="hidden" name="empresa" value={empresaSelecionada} />}
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
                     <input type="search" name="q" defaultValue={q ?? ""} placeholder="Nome ou município..." className="input text-sm" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500">Estado (UF)</label>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Estado (UF)</label>
                     <select name="uf" defaultValue={uf ?? ""} className="input text-sm">
                       <option value="">Todos</option>
                       {ufsDisponiveis.map((u) => (
@@ -148,7 +148,7 @@ export default async function OficinasPage({ searchParams }: { searchParams: Pro
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500">Especialidade</label>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Especialidade</label>
                     <select name="especialidade" defaultValue={especialidade ?? ""} className="input text-sm">
                       <option value="">Todas</option>
                       {ESPECIALIDADES_OFICINA.map((e) => (

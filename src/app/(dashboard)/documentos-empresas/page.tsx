@@ -6,7 +6,7 @@ import { LABEL_STATUS_DOCUMENTACAO, STATUS_DOCUMENTACAO, type StatusDocumentacao
 type SearchParams = { status?: string; q?: string };
 
 const COR_STATUS: Record<StatusDocumentacao, string> = {
-  nao_iniciada: "bg-slate-100 text-slate-600",
+  nao_iniciada: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300",
   pendente: "bg-amber-100 text-amber-700",
   aprovada: "bg-green-100 text-green-700",
   rejeitada: "bg-red-100 text-red-700",
@@ -23,8 +23,8 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">Esta tela é exclusiva do time interno (perfil administrador).</p>
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Esta tela é exclusiva do time interno (perfil administrador).</p>
       </div>
     );
   }
@@ -70,7 +70,7 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
           <Link
             key={s}
             href={`/documentos-empresas?status=${s}`}
-            className={`rounded-full px-3 py-1 font-medium ${status === s ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            className={`rounded-full px-3 py-1 font-medium ${status === s ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
           >
             {LABEL_STATUS_DOCUMENTACAO[s]} ({contagemPorStatus[s]})
           </Link>
@@ -92,7 +92,7 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Empresa</th>
               <th className="px-4 py-3">CNPJ</th>
@@ -102,13 +102,13 @@ export default async function DocumentosEmpresasPage({ searchParams }: { searchP
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {listaFiltrada.map((e) => (
               <tr key={e.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 font-medium text-slate-800">{e.nome}</td>
-                <td className="px-4 py-3 text-slate-600">{e.cnpj ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{e.segmento === "Revenda" ? "Posto" : "Cliente"}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">{e.nome}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{e.cnpj ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{e.segmento === "Revenda" ? "Posto" : "Cliente"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {e.documentacao_enviada_em ? new Date(e.documentacao_enviada_em).toLocaleString("pt-BR") : "—"}
                 </td>
                 <td className="px-4 py-3">

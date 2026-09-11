@@ -267,7 +267,7 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -408,8 +408,8 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
 
           {ehPosto && !redeDoPosto && (
             <div className="card mb-6 p-6">
-              <h2 className="mb-1 text-sm font-semibold text-slate-900">Rede de Postos</h2>
-              <p className="text-xs text-slate-500">
+              <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Rede de Postos</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Junte vários postos numa assinatura só, paga por você (a empresa administradora) em nome
                 de todos. Disponível a partir do plano Profissional.
               </p>
@@ -419,8 +419,8 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
 
           {ehPosto && redeDoPosto && !ehAdministradoraDaRede && (
             <div className="card mb-6 p-6">
-              <h2 className="mb-1 text-sm font-semibold text-slate-900">Rede de Postos</h2>
-              <p className="text-sm text-slate-600">
+              <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Rede de Postos</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
                 Este posto faz parte da rede <strong>{redeDoPosto.nome}</strong>. A assinatura é única e
                 gerenciada pela empresa administradora da rede — fale com ela para alterar o plano.
               </p>
@@ -429,10 +429,10 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
 
           {!ehPosto && !grupoFrotaDoCliente && (
             <div className="card mb-6 p-6">
-              <h2 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+              <h2 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Grupo Econômico <AjudaIcon chave="grupo_economico.pagina" />
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Tem mais de uma empresa — matriz e filiais do mesmo CNPJ raiz, ou empresas distintas do
                 mesmo grupo? Junte todas numa assinatura só, paga por você (a empresa administradora) em
                 nome de todo o grupo. Disponível a partir do plano Profissional. Também é possível{" "}
@@ -447,8 +447,8 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
 
           {!ehPosto && grupoFrotaDoCliente && !ehAdministradoraDoGrupoFrota && (
             <div className="card mb-6 p-6">
-              <h2 className="mb-1 text-sm font-semibold text-slate-900">Grupo Econômico</h2>
-              <p className="text-sm text-slate-600">
+              <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Grupo Econômico</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
                 Esta empresa faz parte do grupo <strong>{grupoFrotaDoCliente.nome}</strong>. Quando o
                 grupo tem assinatura própria, ela é única e gerenciada pela empresa administradora — fale
                 com ela para alterar o plano.
@@ -459,7 +459,7 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
           {(!ehPosto || (ehPosto && (!redeDoPosto || ehAdministradoraDaRede))) &&
             (ehPosto || !grupoFrotaDoCliente || ehAdministradoraDoGrupoFrota) && (
           <div className="card mb-6 p-6">
-            <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+            <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
               Planos disponíveis <AjudaIcon chave="assinatura.termo_adesao" />
             </h2>
             {ehPosto ? (
@@ -470,22 +470,22 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
                   return (
                     <div
                       key={plano}
-                      className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : "border-slate-200"}`}
+                      className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : "border-slate-200 dark:border-slate-700"}`}
                     >
-                      <p className="text-sm font-semibold text-slate-900">{PLANO_POSTO_LABEL[plano]}</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{PLANO_POSTO_LABEL[plano]}</p>
                       <p className="mt-1 text-lg font-semibold text-frota-700">{formatarPrecoPlano(precos?.[plano])}</p>
                       {faixaPostos.postos_inclusos != null && faixaPostos.preco_excedente_centavos != null ? (
-                        <p className="mt-1 text-xs text-slate-500">
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                           Inclui {faixaPostos.postos_inclusos} postos na rede ·{" "}
                           {(faixaPostos.preco_excedente_centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                           /posto excedente
                         </p>
                       ) : (
-                        <p className="mt-1 text-xs text-slate-500">1 posto (sem Rede de Postos)</p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">1 posto (sem Rede de Postos)</p>
                       )}
-                      <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+                      <ul className="mt-3 space-y-1 border-t border-slate-100 dark:border-slate-700 pt-3">
                         {FEATURES_PLANO_POSTO[plano].map((feature) => (
-                          <li key={feature} className="flex items-start gap-1.5 text-xs text-slate-600">
+                          <li key={feature} className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-300">
                             <span className="mt-0.5 text-frota-600">✓</span>
                             <span>{feature}</span>
                           </li>
@@ -519,18 +519,18 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
                   return (
                     <div
                       key={plano}
-                      className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : "border-slate-200"}`}
+                      className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : "border-slate-200 dark:border-slate-700"}`}
                     >
-                      <p className="text-sm font-semibold text-slate-900">{PLANO_GRUPO_FROTA_LABEL[plano]}</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{PLANO_GRUPO_FROTA_LABEL[plano]}</p>
                       <p className="mt-1 text-lg font-semibold text-frota-700">{formatarPrecoPlano(precos?.[plano])}</p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                         Inclui {faixaEmpresas.empresas_inclusas} empresas no grupo ·{" "}
                         {(faixaEmpresas.preco_excedente_centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         /empresa excedente
                       </p>
-                      <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+                      <ul className="mt-3 space-y-1 border-t border-slate-100 dark:border-slate-700 pt-3">
                         {FEATURES_GRUPO_FROTA[plano].map((feature) => (
-                          <li key={feature} className="flex items-start gap-1.5 text-xs text-slate-600">
+                          <li key={feature} className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-300">
                             <span className="mt-0.5 text-frota-600">✓</span>
                             <span>{feature}</span>
                           </li>
@@ -562,11 +562,11 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
                 return (
                   <div
                     key={plano}
-                    className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : "border-slate-200"}`}
+                    className={`rounded-lg border p-4 ${ehAtual ? "border-frota-600 bg-frota-50" : "border-slate-200 dark:border-slate-700"}`}
                   >
-                    <p className="text-sm font-semibold text-slate-900">{PLANO_LABEL[plano]}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{PLANO_LABEL[plano]}</p>
                     <p className="mt-1 text-lg font-semibold text-frota-700">{formatarPrecoPlano(precos?.[plano])}</p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                       Até {limites.max_usuarios < 0 ? "usuários ilimitados" : `${limites.max_usuarios} usuário(s)`} ·{" "}
                       {limites.max_veiculos < 0 ? "veículos ilimitados" : `${limites.max_veiculos} veículos`}
                     </p>
@@ -577,9 +577,9 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
                         /veículo excedente
                       </p>
                     )}
-                    <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+                    <ul className="mt-3 space-y-1 border-t border-slate-100 dark:border-slate-700 pt-3">
                       {FEATURES_PLANO[plano].map((feature) => (
-                        <li key={feature} className="flex items-start gap-1.5 text-xs text-slate-600">
+                        <li key={feature} className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-300">
                           <span className="mt-0.5 text-frota-600">✓</span>
                           <span>{feature}</span>
                         </li>
@@ -607,19 +607,19 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
 
           <div className="card mb-6 p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-900">Pagamento</h2>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Pagamento</h2>
               <BotaoPortalPagamento empresaId={empresa.id} temAssinatura={!!empresa.stripe_customer_id} />
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Gerencie forma de pagamento, baixe recibos ou cancele a assinatura direto pelo portal do
               Stripe.
             </p>
           </div>
 
           <div className="card overflow-x-auto p-6">
-            <h2 className="mb-4 text-sm font-semibold text-slate-900">Histórico de faturas</h2>
+            <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Histórico de faturas</h2>
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Período</th>
                   <th className="px-4 py-3">Valor</th>
@@ -627,21 +627,21 @@ export default async function AssinaturaPage({ searchParams }: { searchParams: P
                   <th className="px-4 py-3">Data</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {invoices.map((inv) => (
                   <tr key={inv.id}>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {inv.periodo_inicio && inv.periodo_fim
                         ? `${new Date(inv.periodo_inicio).toLocaleDateString("pt-BR")} – ${new Date(inv.periodo_fim).toLocaleDateString("pt-BR")}`
                         : "—"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {inv.valor_cents != null ? (inv.valor_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
                     </td>
                     <td className="px-4 py-3">
                       <span className={inv.status === "pago" ? "badge-ativo" : "badge-inativo"}>{inv.status}</span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{new Date(inv.criado_em).toLocaleDateString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{new Date(inv.criado_em).toLocaleDateString("pt-BR")}</td>
                   </tr>
                 ))}
                 {invoices.length === 0 && (

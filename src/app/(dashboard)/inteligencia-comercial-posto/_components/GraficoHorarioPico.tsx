@@ -42,7 +42,7 @@ export function GraficoHorarioPico({ dados }: { dados: ItemHorarioPico[] }) {
 
   return (
     <div className="card mb-6 overflow-x-auto p-5">
-      <p className="mb-3 text-xs font-medium uppercase text-slate-500">
+      <p className="mb-3 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
         Ticket médio por dia × horário (mais forte = maior ticket)
       </p>
       <table className="border-collapse text-xs">
@@ -50,7 +50,7 @@ export function GraficoHorarioPico({ dados }: { dados: ItemHorarioPico[] }) {
           <tr>
             <th className="px-2 py-1 text-left text-slate-400" />
             {faixas.map((f) => (
-              <th key={f} className="px-2 py-1 text-center font-medium text-slate-500">
+              <th key={f} className="px-2 py-1 text-center font-medium text-slate-500 dark:text-slate-400">
                 {f}
               </th>
             ))}
@@ -59,7 +59,7 @@ export function GraficoHorarioPico({ dados }: { dados: ItemHorarioPico[] }) {
         <tbody>
           {dias.map(({ dia, label }) => (
             <tr key={dia}>
-              <td className="px-2 py-1 text-right font-medium text-slate-600">{label}</td>
+              <td className="px-2 py-1 text-right font-medium text-slate-600 dark:text-slate-300">{label}</td>
               {faixas.map((f) => {
                 const c = celula(dia, f);
                 const ticket = c?.ticket_medio ?? null;
@@ -71,7 +71,7 @@ export function GraficoHorarioPico({ dados }: { dados: ItemHorarioPico[] }) {
                           ? `${label} · ${f}: ${ticket != null ? ticket.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "sem dados"} (${c.qtd_abastecimentos} abastecimentos)`
                           : "Sem dados"
                       }
-                      className="flex h-9 w-16 items-center justify-center rounded text-[11px] font-medium text-slate-700"
+                      className="flex h-9 w-16 items-center justify-center rounded text-[11px] font-medium text-slate-700 dark:text-slate-300"
                       style={{ backgroundColor: ticket != null ? corPorIntensidade(ticket, min, max) : "#f8fafc" }}
                     >
                       {ticket != null ? ticket.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace("R$", "").trim() : "—"}

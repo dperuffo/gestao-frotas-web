@@ -25,14 +25,14 @@ export function FormularioRegimeTributario({
 
   return (
     <form action={formAction} className="card p-4">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">Dados fiscais da sua empresa</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Dados fiscais da sua empresa</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Usados só pra calcular a apuração abaixo — confirme com o seu contador se tiver dúvida.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Regime tributário</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Regime tributário</label>
           <select name="regime_tributario" defaultValue={regimeAtual ?? ""} required className="input text-sm">
             <option value="" disabled>
               Selecione...
@@ -43,7 +43,7 @@ export function FormularioRegimeTributario({
         </div>
 
         <div className="flex items-end">
-          <label className="flex items-start gap-2 text-xs text-slate-600">
+          <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
             <input
               type="checkbox"
               name="elegivel_credito_icms_combustivel"

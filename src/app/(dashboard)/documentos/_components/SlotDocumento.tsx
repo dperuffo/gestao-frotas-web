@@ -57,11 +57,11 @@ export function SlotDocumento({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2">
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-slate-700">{label}</p>
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</p>
         {documento ? (
-          <p className="truncate text-xs text-slate-500" title={documento.nomeArquivo}>
+          <p className="truncate text-xs text-slate-500 dark:text-slate-400" title={documento.nomeArquivo}>
             {documento.url ? (
               <a href={documento.url} target="_blank" rel="noreferrer" className="text-frota-600 hover:underline">
                 {documento.nomeArquivo}
@@ -81,7 +81,7 @@ export function SlotDocumento({
           onChange={enviar}
           disabled={isPending}
           accept=".pdf,.jpg,.jpeg,.png"
-          className="text-xs text-slate-500 file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs"
+          className="text-xs text-slate-500 dark:text-slate-400 file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs"
         />
         {documento && (
           <button type="button" onClick={remover} disabled={isPending} className="text-xs text-red-600 hover:underline">

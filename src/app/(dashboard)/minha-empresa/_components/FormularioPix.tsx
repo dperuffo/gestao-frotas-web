@@ -25,8 +25,8 @@ export function FormularioPix({ empresaId, pixChaveAtual }: { empresaId: string;
 
   return (
     <div className="card p-6">
-      <h2 className="text-sm font-semibold text-slate-900">Chave PIX para recebimento</h2>
-      <p className="mt-1 text-xs text-slate-500">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Chave PIX para recebimento</h2>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         Usada no QR Code de pagamento do boleto/documento de cobrança enviado aos clientes ao fechar
         cada ciclo de abastecimento. Pode ser CPF, CNPJ, e-mail, telefone ou chave aleatória.
       </p>

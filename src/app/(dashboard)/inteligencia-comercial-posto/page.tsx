@@ -32,8 +32,8 @@ const CHURN_STATUS_CLASSE: Record<string, string> = {
   em_dia: "bg-green-100 text-green-700",
   atencao: "bg-amber-100 text-amber-700",
   critico: "bg-red-100 text-red-700",
-  sem_historico: "bg-slate-100 text-slate-600",
-  nunca_abasteceu: "bg-slate-100 text-slate-600",
+  sem_historico: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300",
+  nunca_abasteceu: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300",
 };
 
 const PRECO_STATUS_LABEL: Record<string, string> = {
@@ -47,7 +47,7 @@ const PRECO_STATUS_CLASSE: Record<string, string> = {
   sensivel: "bg-red-100 text-red-700",
   moderado: "bg-amber-100 text-amber-700",
   estavel: "bg-green-100 text-green-700",
-  dados_insuficientes: "bg-slate-100 text-slate-600",
+  dados_insuficientes: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300",
 };
 
 const FUGA_STATUS_LABEL: Record<string, string> = {
@@ -61,7 +61,7 @@ const FUGA_STATUS_CLASSE: Record<string, string> = {
   alerta_fuga: "bg-red-100 text-red-700",
   atencao: "bg-amber-100 text-amber-700",
   estavel: "bg-green-100 text-green-700",
-  sem_dados_suficientes: "bg-slate-100 text-slate-600",
+  sem_dados_suficientes: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300",
 };
 
 const PRIORIDADE_LABEL: Record<string, string> = { critico: "Crítico", atencao: "Atenção", saudavel: "Saudável" };
@@ -114,7 +114,7 @@ export default async function InteligenciaComercialPostoPage({
   }
 
   if (empresaSelecionada && segmentoSelecionado !== "Revenda") {
-    return <div className="card p-6 text-sm text-slate-600">Esta tela é exclusiva para postos revendedores.</div>;
+    return <div className="card p-6 text-sm text-slate-600 dark:text-slate-300">Esta tela é exclusiva para postos revendedores.</div>;
   }
 
   const { data: churnData, error: erroChurn } =
@@ -214,7 +214,7 @@ export default async function InteligenciaComercialPostoPage({
         <form className="mb-4 flex items-end gap-2">
           <input type="hidden" name="tab" value={tab} />
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione...</option>
               {empresas.map((e) => (
@@ -231,7 +231,7 @@ export default async function InteligenciaComercialPostoPage({
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
           {empresas.length > 1 ? "Selecione uma empresa acima." : "Nenhuma empresa vinculada ao seu usuário."}
         </p>
       ) : (
@@ -251,7 +251,7 @@ export default async function InteligenciaComercialPostoPage({
               <Link
                 key={aba}
                 href={linkAba(aba)}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${tab === aba ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${tab === aba ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
               >
                 {label}
               </Link>
@@ -266,7 +266,7 @@ export default async function InteligenciaComercialPostoPage({
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Cliente</th>
                       <th className="px-4 py-3">Churn</th>
@@ -277,19 +277,19 @@ export default async function InteligenciaComercialPostoPage({
                       <th className="px-4 py-3">Ação</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {clientesScore.map((c) => {
                       const contatos = contatosPorCliente.get(c.empresa_cliente_id) ?? [];
                       return (
                         <tr key={c.empresa_cliente_id} className="align-top transition-colors hover:bg-frota-50/60">
-                          <td className="px-4 py-3 font-medium text-slate-900">{c.nome}</td>
-                          <td className="px-4 py-3 text-slate-500">{CHURN_STATUS_LABEL[c.status_churn ?? ""] ?? "—"}</td>
-                          <td className="px-4 py-3 text-slate-500">{PRECO_STATUS_LABEL[c.status_preco ?? ""] ?? "—"}</td>
-                          <td className="px-4 py-3 text-slate-500">{FUGA_STATUS_LABEL[c.status_fuga ?? ""] ?? "—"}</td>
-                          <td className="px-4 py-3 font-medium text-slate-700">{c.score}</td>
+                          <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{c.nome}</td>
+                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{CHURN_STATUS_LABEL[c.status_churn ?? ""] ?? "—"}</td>
+                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{PRECO_STATUS_LABEL[c.status_preco ?? ""] ?? "—"}</td>
+                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{FUGA_STATUS_LABEL[c.status_fuga ?? ""] ?? "—"}</td>
+                          <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{c.score}</td>
                           <td className="px-4 py-3">
                             <span
-                              className={`rounded-full px-2 py-0.5 text-xs font-medium ${PRIORIDADE_CLASSE[c.prioridade] ?? "bg-slate-100 text-slate-600"}`}
+                              className={`rounded-full px-2 py-0.5 text-xs font-medium ${PRIORIDADE_CLASSE[c.prioridade] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
                             >
                               {PRIORIDADE_LABEL[c.prioridade] ?? c.prioridade}
                             </span>
@@ -301,7 +301,7 @@ export default async function InteligenciaComercialPostoPage({
                               </summary>
                               <div className="mt-2 w-64 space-y-2">
                                 {contatos.slice(0, 3).map((ct) => (
-                                  <div key={ct.id} className="rounded bg-slate-50 p-2 text-xs text-slate-600">
+                                  <div key={ct.id} className="rounded bg-slate-50 dark:bg-slate-800/50 p-2 text-xs text-slate-600 dark:text-slate-300">
                                     <p>{ct.nota}</p>
                                     <p className="mt-1 text-slate-400">
                                       {ct.criado_por ?? "—"} · {new Date(ct.criado_em).toLocaleDateString("pt-BR")}
@@ -362,7 +362,7 @@ export default async function InteligenciaComercialPostoPage({
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Cliente</th>
                       <th className="px-4 py-3">Cidade/UF</th>
@@ -373,24 +373,24 @@ export default async function InteligenciaComercialPostoPage({
                       <th className="px-4 py-3" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {clientesChurn.map((c) => (
                       <tr key={c.empresa_cliente_id} className="transition-colors hover:bg-frota-50/60">
-                        <td className="px-4 py-3 font-medium text-slate-900">{c.nome}</td>
-                        <td className="px-4 py-3 text-slate-600">{c.municipio ? `${c.municipio}/${c.uf ?? ""}` : "—"}</td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{c.nome}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.municipio ? `${c.municipio}/${c.uf ?? ""}` : "—"}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                           {c.ultima_compra
                             ? `${new Date(c.ultima_compra).toLocaleDateString("pt-BR")} (${c.dias_desde_ultima_compra}d)`
                             : "—"}
                         </td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                           {c.intervalo_medio_dias != null ? `${c.intervalo_medio_dias} dias` : "—"}
                         </td>
-                        <td className="px-4 py-3 text-slate-500">{c.razao_atraso != null ? `${c.razao_atraso}x` : "—"}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{c.razao_atraso != null ? `${c.razao_atraso}x` : "—"}</td>
                         <td className="px-4 py-3">
                           <span
                             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                              CHURN_STATUS_CLASSE[c.status] ?? "bg-slate-100 text-slate-600"
+                              CHURN_STATUS_CLASSE[c.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                             }`}
                           >
                             {CHURN_STATUS_LABEL[c.status] ?? c.status}
@@ -436,7 +436,7 @@ export default async function InteligenciaComercialPostoPage({
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Cliente</th>
                       <th className="px-4 py-3">Preço médio pago</th>
@@ -446,24 +446,24 @@ export default async function InteligenciaComercialPostoPage({
                       <th className="px-4 py-3">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {clientesPreco.map((c) => (
                       <tr key={c.empresa_cliente_id} className="transition-colors hover:bg-frota-50/60">
-                        <td className="px-4 py-3 font-medium text-slate-900">{c.nome}</td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{c.nome}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {c.preco_medio_pago != null
                             ? c.preco_medio_pago.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                             : "—"}
                         </td>
-                        <td className="px-4 py-3 text-slate-500">{c.qtd_preco_baixo}</td>
-                        <td className="px-4 py-3 text-slate-500">{c.qtd_preco_alto}</td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{c.qtd_preco_baixo}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{c.qtd_preco_alto}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                           {c.indice_sensibilidade != null ? c.indice_sensibilidade.toFixed(2) : "—"}
                         </td>
                         <td className="px-4 py-3">
                           <span
                             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                              PRECO_STATUS_CLASSE[c.status] ?? "bg-slate-100 text-slate-600"
+                              PRECO_STATUS_CLASSE[c.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                             }`}
                           >
                             {PRECO_STATUS_LABEL[c.status] ?? c.status}
@@ -498,7 +498,7 @@ export default async function InteligenciaComercialPostoPage({
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Dia da semana</th>
                       <th className="px-4 py-3">Faixa de horário</th>
@@ -507,19 +507,19 @@ export default async function InteligenciaComercialPostoPage({
                       <th className="px-4 py-3">Ticket médio</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {horarios.map((h, idx) => (
                       <tr
                         key={`${h.dia_semana}-${h.faixa_horario}`}
                         className={`transition-colors hover:bg-frota-50/60 ${idx < 3 ? "bg-amber-50/50" : ""}`}
                       >
-                        <td className="px-4 py-3 font-medium text-slate-900">{h.dia_semana_label}</td>
-                        <td className="px-4 py-3 text-slate-600">{h.faixa_horario}</td>
-                        <td className="px-4 py-3 text-slate-500">{h.qtd_abastecimentos}</td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{h.dia_semana_label}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{h.faixa_horario}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{h.qtd_abastecimentos}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                           {h.litros_medio != null ? `${h.litros_medio} L` : "—"}
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-700">
+                        <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">
                           {h.ticket_medio != null
                             ? h.ticket_medio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                             : "—"}
@@ -552,7 +552,7 @@ export default async function InteligenciaComercialPostoPage({
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Cliente</th>
                       <th className="px-4 py-3">Litros aqui (90d)</th>
@@ -563,27 +563,27 @@ export default async function InteligenciaComercialPostoPage({
                       <th className="px-4 py-3">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {clientesFuga.map((c) => (
                       <tr key={c.empresa_cliente_id} className="transition-colors hover:bg-frota-50/60">
-                        <td className="px-4 py-3 font-medium text-slate-900">{c.nome}</td>
-                        <td className="px-4 py-3 text-slate-600">{c.litros_aqui_periodo_atual.toLocaleString("pt-BR")} L</td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{c.nome}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.litros_aqui_periodo_atual.toLocaleString("pt-BR")} L</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                           {c.litros_aqui_periodo_anterior.toLocaleString("pt-BR")} L
                         </td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                           {c.participacao_atual != null ? `${(c.participacao_atual * 100).toFixed(0)}%` : "—"}
                         </td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                           {c.participacao_anterior != null ? `${(c.participacao_anterior * 100).toFixed(0)}%` : "—"}
                         </td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                           {c.queda_participacao_pp != null ? `${c.queda_participacao_pp} p.p.` : "—"}
                         </td>
                         <td className="px-4 py-3">
                           <span
                             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                              FUGA_STATUS_CLASSE[c.status] ?? "bg-slate-100 text-slate-600"
+                              FUGA_STATUS_CLASSE[c.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                             }`}
                           >
                             {FUGA_STATUS_LABEL[c.status] ?? c.status}
@@ -618,7 +618,7 @@ export default async function InteligenciaComercialPostoPage({
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">#</th>
                       <th className="px-4 py-3">Cliente</th>
@@ -627,19 +627,19 @@ export default async function InteligenciaComercialPostoPage({
                       <th className="px-4 py-3">% acumulado</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {clientesPareto.map((c) => (
                       <tr
                         key={c.empresa_cliente_id}
                         className={`transition-colors hover:bg-frota-50/60 ${Number(c.posicao) <= 3 ? "bg-amber-50/50" : ""}`}
                       >
-                        <td className="px-4 py-3 text-slate-500">{c.posicao}</td>
-                        <td className="px-4 py-3 font-medium text-slate-900">{c.nome}</td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{c.posicao}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{c.nome}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {c.receita.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </td>
-                        <td className="px-4 py-3 text-slate-500">{c.participacao_pct}%</td>
-                        <td className="px-4 py-3 font-medium text-slate-700">{c.participacao_acumulada_pct}%</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{c.participacao_pct}%</td>
+                        <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{c.participacao_acumulada_pct}%</td>
                       </tr>
                     ))}
                     {clientesPareto.length === 0 && (
@@ -668,7 +668,7 @@ export default async function InteligenciaComercialPostoPage({
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Cliente</th>
                       {produtosUnicos.map((p) => (
@@ -678,10 +678,10 @@ export default async function InteligenciaComercialPostoPage({
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {[...mixPorCliente.entries()].map(([id, info]) => (
                       <tr key={id} className="transition-colors hover:bg-frota-50/60">
-                        <td className="px-4 py-3 font-medium text-slate-900">{info.nome}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{info.nome}</td>
                         {produtosUnicos.map((p) => (
                           <td key={p} className="px-4 py-3 text-center">
                             {info.produtos.get(p) ? (
@@ -725,7 +725,7 @@ export default async function InteligenciaComercialPostoPage({
 
               <div className="card overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Combustível</th>
                       <th className="px-4 py-3">Seu preço</th>
@@ -734,17 +734,17 @@ export default async function InteligenciaComercialPostoPage({
                       <th className="px-4 py-3">Diferença</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {precoRegional.map((p) => (
                       <tr key={p.combustivel} className="transition-colors hover:bg-frota-50/60">
-                        <td className="px-4 py-3 font-medium text-slate-900">{p.combustivel}</td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{p.combustivel}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {p.preco_posto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                           {p.preco_anp.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </td>
-                        <td className="px-4 py-3 text-slate-500">{p.nivel_anp}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{p.nivel_anp}</td>
                         <td className="px-4 py-3">
                           <span className={`font-medium ${p.diff_pct > 0 ? "text-red-600" : "text-green-600"}`}>
                             {p.diff_pct > 0 ? "+" : ""}

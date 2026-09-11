@@ -7,7 +7,7 @@ import type { Database } from "@/types/database.types";
 type Empresa = Database["public"]["Tables"]["empresas"]["Row"];
 
 const STATUS_LABEL: Record<string, { texto: string; cor: string }> = {
-  pendente: { texto: "Cadastro ainda não confirmado", cor: "bg-slate-100 text-slate-600" },
+  pendente: { texto: "Cadastro ainda não confirmado", cor: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300" },
   confirmado: { texto: "✓ CNPJ confirmado na base ANP", cor: "bg-green-50 text-green-700" },
   novo_sem_anp: { texto: "Posto novo — CNPJ não está na base ANP ainda", cor: "bg-blue-50 text-blue-700" },
   possivel_duplicidade: {
@@ -83,7 +83,7 @@ export function MeuPostoForm({ empresa }: { empresa: Empresa }) {
       )}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Identificação</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Identificação</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="CNPJ" required>
             <input name="cnpj" required defaultValue={empresa.cnpj ?? ""} className="input" placeholder="00.000.000/0001-00" />
@@ -95,7 +95,7 @@ export function MeuPostoForm({ empresa }: { empresa: Empresa }) {
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Endereço completo</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Endereço completo</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Logradouro" className="sm:col-span-2">
             <input name="logradouro" defaultValue={empresa.logradouro ?? ""} className="input" />
@@ -122,8 +122,8 @@ export function MeuPostoForm({ empresa }: { empresa: Empresa }) {
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-1 text-sm font-semibold text-slate-900">Localização (latitude/longitude)</h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Localização (latitude/longitude)</h2>
+        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
           Usada pra comparar seu posto com a base da ANP e evitar cadastro duplicado, além de posicionar seu posto
           certinho no mapa de consultas/roteirização.
         </p>
@@ -155,7 +155,7 @@ export function MeuPostoForm({ empresa }: { empresa: Empresa }) {
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Contatos</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Contatos</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Telefone de contato">
             <input name="telefone_contato" defaultValue={empresa.telefone_contato ?? ""} className="input" />
@@ -188,7 +188,7 @@ function Campo({
 }) {
   return (
     <div className={className}>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

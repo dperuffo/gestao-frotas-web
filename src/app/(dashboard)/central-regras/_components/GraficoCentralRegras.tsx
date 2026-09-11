@@ -14,7 +14,7 @@ export function GraficoCentralRegras({ dados }: { dados: ItemPendencia[] }) {
 
   return (
     <div className="card mb-6 p-5">
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">Pendências por sistema</p>
+      <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Pendências por sistema</p>
       <ResponsiveContainer width="100%" height={Math.max(120, comDados.length * 36)}>
         <BarChart data={comDados} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />

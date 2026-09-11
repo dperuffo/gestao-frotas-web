@@ -38,15 +38,15 @@ export function ModalTermoAdesao({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl">
-        <div className="border-b border-slate-200 px-6 py-4">
-          <h2 className="text-base font-semibold text-slate-900">Termo de Adesão e Contrato de Prestação de Serviços</h2>
-          <p className="mt-1 text-xs text-slate-500">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl bg-white dark:bg-slate-800 shadow-xl">
+        <div className="border-b border-slate-200 dark:border-slate-700 px-6 py-4">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Termo de Adesão e Contrato de Prestação de Serviços</h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Plano selecionado: <strong>{planoLabel}</strong> — {precoLabel} · Versão {VERSAO_TERMO_ADESAO}
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 text-sm text-slate-700">
+        <div className="flex-1 overflow-y-auto px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
           {paragrafos.map((p, i) =>
             p === "" ? (
               <div key={i} className="h-2" />
@@ -55,15 +55,15 @@ export function ModalTermoAdesao({
                 {p}
               </p>
             ) : (
-              <p key={i} className="mb-2 text-xs leading-relaxed text-slate-600">
+              <p key={i} className="mb-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                 {p}
               </p>
             )
           )}
         </div>
 
-        <div className="border-t border-slate-200 px-6 py-4">
-          <label className="flex items-start gap-2 text-xs text-slate-700">
+        <div className="border-t border-slate-200 dark:border-slate-700 px-6 py-4">
+          <label className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
             <input
               type="checkbox"
               checked={aceitou}

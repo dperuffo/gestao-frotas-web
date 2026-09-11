@@ -82,7 +82,7 @@ export default async function TabelasFretePage({ searchParams }: { searchParams:
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -99,7 +99,7 @@ export default async function TabelasFretePage({ searchParams }: { searchParams:
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e cadastrar tabelas de frete.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione uma empresa acima pra ver e cadastrar tabelas de frete.</p>
       ) : tabelas.length === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">
           Nenhuma tabela de frete cadastrada ainda. Clique em &quot;+ Nova tabela&quot; pra começar.
@@ -109,18 +109,18 @@ export default async function TabelasFretePage({ searchParams }: { searchParams:
           {tabelas.map((t) => (
             <div key={t.id} className="card flex flex-col gap-2 p-5 transition hover:border-frota-300">
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold text-slate-900">{t.nome}</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100">{t.nome}</h3>
                 <span className={t.ativo ? "badge-ativo" : "badge-inativo"}>{t.ativo ? "Ativa" : "Inativa"}</span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {t.cliente_tomador_id ? (nomesParceiros.get(t.cliente_tomador_id) ?? "Cliente específico") : "Geral (qualquer cliente)"}
               </p>
               {(t.uf_origem || t.uf_destino) && (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {t.cidade_origem ?? t.uf_origem ?? "—"} → {t.cidade_destino ?? t.uf_destino ?? "—"}
                 </p>
               )}
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Ad valorem {t.percentual_ad_valorem}% · GRIS {t.percentual_gris}% · ICMS {t.percentual_icms}%
               </p>
               <div className="mt-auto flex items-center gap-3 border-t border-dashed border-slate-300 pt-2 text-xs">

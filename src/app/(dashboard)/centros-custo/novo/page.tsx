@@ -20,10 +20,10 @@ export default async function NovoCentroCustoPage({
 
       {!empresaSelecionada ? (
         <div className="card max-w-lg space-y-4 p-6">
-          <p className="text-sm text-slate-600">Selecione o cliente para o qual este centro de custo será criado.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">Selecione o cliente para o qual este centro de custo será criado.</p>
           <form className="flex items-end gap-3">
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
               <select name="empresa" defaultValue="" className="input">
                 <option value="">Selecione...</option>
                 {empresas.map((e) => (

@@ -43,8 +43,8 @@ export function FormularioPrecosPosto({
 
   return (
     <form onSubmit={handleSubmit} className="card p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">Meus preços</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Meus preços</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Deixe em branco o combustível que você não vende. Os clientes com quem você negocia veem
         estes preços — ajuda a embasar as propostas sem depender só da média da ANP.
       </p>
@@ -61,7 +61,7 @@ export function FormularioPrecosPosto({
           const auditoria = mapaAuditoria.get(produto);
           return (
             <label key={produto} className="text-sm">
-              <span className="mb-1 block text-xs font-medium text-slate-500">{produto} (R$/L)</span>
+              <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{produto} (R$/L)</span>
               <input
                 type="number"
                 step="0.001"

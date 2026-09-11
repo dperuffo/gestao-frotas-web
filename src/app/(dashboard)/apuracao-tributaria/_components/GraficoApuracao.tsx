@@ -17,7 +17,7 @@ function formatarMoeda(valor: number) {
 function RankingBarras({ dados, titulo, cor }: { dados: ItemRanking[]; titulo: string; cor: string }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">{titulo}</p>
+      <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{titulo}</p>
       {dados.length === 0 ? (
         <p className="text-sm text-slate-400">Sem dados no período.</p>
       ) : (
@@ -57,7 +57,7 @@ export function GraficoApuracao({
       <RankingBarras dados={rankingPosto} titulo="Crédito por posto (top 8)" cor={CORES_GRAFICO.acento} />
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Crédito por mês (últimos 12)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Crédito por mês (últimos 12)</p>
         {creditoPorMes.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (

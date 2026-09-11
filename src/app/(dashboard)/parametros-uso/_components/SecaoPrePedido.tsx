@@ -25,17 +25,17 @@ export function SecaoPrePedido({ empresaId, habilitado }: { empresaId: string; h
 
   return (
     <div className="card p-4">
-      <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+      <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
         Pré-Pedido <AjudaIcon chave="parametros-uso.pre-pedido" />
       </h2>
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-slate-600 dark:text-slate-300">
         Quando habilitado, presume-se que uma rota inteligente foi traçada e um Plano de Viagem criado a partir dela.
         Esse Plano gera um <strong>Pré-Pedido</strong> — com número sequencial e os pontos de abastecimento
         pré-agendados — e o abastecimento passa a ser <strong>restringido</strong>: só é autorizado em um posto que
         conste como parada pré-agendada daquela placa.
       </p>
 
-      <div className="mt-4 flex items-center gap-3 rounded-lg border border-slate-200 p-3">
+      <div className="mt-4 flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
         <button
           type="button"
           onClick={handleClick}
@@ -46,12 +46,12 @@ export function SecaoPrePedido({ empresaId, habilitado }: { empresaId: string; h
           aria-pressed={habilitado}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+            className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-800 transition ${
               habilitado ? "translate-x-6" : "translate-x-1"
             }`}
           />
         </button>
-        <span className="text-sm font-medium text-slate-700">
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
           Pré-Pedido {habilitado ? "habilitado" : "desabilitado"} para este cliente
         </span>
       </div>

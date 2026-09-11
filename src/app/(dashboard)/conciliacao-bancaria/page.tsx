@@ -142,7 +142,7 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -173,17 +173,17 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
           <GraficoConciliacao percentualConciliado={percentualConciliado} fluxoPorMes={fluxoPorMes} />
 
           <div className="card mb-6 p-6">
-            <h2 className="mb-3 text-sm font-semibold text-slate-900">Importar extrato</h2>
+            <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Importar extrato</h2>
             <FormImportarExtrato empresaId={empresaSelecionada} />
           </div>
 
           <div className="card mb-6 overflow-x-auto">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
-              <h2 className="text-sm font-semibold text-slate-900">Lançamentos pendentes</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Lançamentos pendentes</h2>
               <AcaoConciliarAutomatico empresaId={empresaSelecionada} quantidade={quantidadeAltaConfianca} />
             </div>
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Descrição</th>
@@ -191,14 +191,14 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
                   <th className="px-4 py-3">Vínculo com conta a pagar/receber</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {pendentes.map((l) => {
                   const contasCandidatas = l.tipo === "debito" ? contasPagarAbertas : contasReceberAbertas;
                   const sugestoes = sugerirContas({ data: l.data, valor: Math.abs(l.valor), descricao: l.descricao }, contasCandidatas);
                   return (
                     <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
-                      <td className="px-4 py-3 text-slate-600 align-top">{formatarDataSemFuso(l.data)}</td>
-                      <td className="px-4 py-3 text-slate-700 align-top">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300 align-top">{formatarDataSemFuso(l.data)}</td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300 align-top">
                         {l.descricao}
                         {l.conta_bancaria && <span className="ml-2 text-xs text-slate-400">({l.conta_bancaria})</span>}
                       </td>
@@ -230,11 +230,11 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
           </div>
 
           <div className="card overflow-x-auto">
-            <div className="border-b border-slate-100 px-4 py-3">
-              <h2 className="text-sm font-semibold text-slate-900">Histórico (últimos {lancamentos.length})</h2>
+            <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Histórico (últimos {lancamentos.length})</h2>
             </div>
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Descrição</th>
@@ -242,19 +242,19 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
                   <th className="px-4 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {lancamentos
                   .filter((l) => l.status !== "pendente")
                   .map((l) => (
                     <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
-                      <td className="px-4 py-3 text-slate-600">{formatarDataSemFuso(l.data)}</td>
-                      <td className="px-4 py-3 text-slate-700">{l.descricao}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarDataSemFuso(l.data)}</td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{l.descricao}</td>
                       <td className={`px-4 py-3 tabular-nums font-medium ${l.tipo === "debito" ? "text-red-700" : "text-green-700"}`}>
                         {l.tipo === "debito" ? "-" : "+"}
                         {formatarMoeda(Math.abs(l.valor))}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_EXTRATO_COR[l.status] ?? "bg-slate-100 text-slate-600"}`}>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_EXTRATO_COR[l.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
                           {STATUS_EXTRATO_LABEL[l.status] ?? l.status}
                         </span>
                       </td>

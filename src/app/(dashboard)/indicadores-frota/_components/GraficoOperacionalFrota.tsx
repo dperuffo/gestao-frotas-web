@@ -54,9 +54,9 @@ export function GraficoComposicaoOtif({
   return (
     <div className="card mb-6 p-5">
       <div className="mb-2 flex items-center gap-2">
-        <p className="text-xs font-medium uppercase text-slate-500">Composição do OTIF</p>
+        <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Composição do OTIF</p>
         {otifPct !== null && (
-          <span className="text-xs font-semibold text-slate-700">
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
             {otifPct}%
             {status && (
               <span
@@ -86,8 +86,8 @@ export function GraficoComposicaoOtif({
           {dados.map((d) => (
             <li key={d.label} className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: d.cor }} aria-hidden="true" />
-              <span className="text-slate-600">{d.label}</span>
-              <span className="ml-auto font-medium text-slate-900">
+              <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+              <span className="ml-auto font-medium text-slate-900 dark:text-slate-100">
                 {d.valor} ({total > 0 ? Math.round((d.valor / total) * 100) : 0}%)
               </span>
             </li>
@@ -112,7 +112,7 @@ export function GraficoEvolucaoOperacional({ dados }: { dados: PontoEvolucaoOper
 
   return (
     <div className="card mb-6 p-5">
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">
+      <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
         Evolução mensal — OTIF, avarias, reclamações (%) e OCT (horas)
       </p>
       <ResponsiveContainer width="100%" height={260}>

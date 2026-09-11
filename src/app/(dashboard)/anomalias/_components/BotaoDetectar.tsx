@@ -34,7 +34,7 @@ export function BotaoDetectar({ empresaId, todasEmpresas }: { empresaId: string 
       <button type="button" onClick={handleClick} disabled={isPending} className="btn-primary">
         {isPending ? "Analisando..." : todasEmpresas ? "Detectar agora (todas as empresas)" : "Detectar agora"}
       </button>
-      {mensagem && <p className="text-xs text-slate-500">{mensagem}</p>}
+      {mensagem && <p className="text-xs text-slate-500 dark:text-slate-400">{mensagem}</p>}
       {erro && <p className="text-xs text-red-600">{erro}</p>}
     </div>
   );

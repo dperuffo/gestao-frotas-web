@@ -188,7 +188,7 @@ export default async function NegociacoesPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
               {souPosto ? "Empresa" : "Cliente"}
             </label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
@@ -207,7 +207,7 @@ export default async function NegociacoesPage({
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
           {empresas.length > 1 ? "Selecione uma empresa acima." : "Nenhuma empresa vinculada ao seu usuário."}
         </p>
       ) : (
@@ -238,13 +238,13 @@ export default async function NegociacoesPage({
           <div className="mb-4 flex flex-wrap gap-2">
             <Link
               href={`/negociacoes?empresa=${empresaSelecionada}`}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${!status ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${!status ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
             >
               Todos
             </Link>
             <Link
               href={`/negociacoes?empresa=${empresaSelecionada}&status=${FILTRO_VIGENTE}`}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${status === FILTRO_VIGENTE ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${status === FILTRO_VIGENTE ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
             >
               Vigentes
             </Link>
@@ -252,7 +252,7 @@ export default async function NegociacoesPage({
               <Link
                 key={s}
                 href={`/negociacoes?empresa=${empresaSelecionada}&status=${s}`}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${status === s ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${status === s ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
               >
                 {STATUS_NEGOCIACAO_LABEL[s]}
               </Link>
@@ -278,7 +278,7 @@ export default async function NegociacoesPage({
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">{souPosto ? "Cliente" : "Posto"}</th>
                   <th className="px-4 py-3">Status</th>
@@ -289,7 +289,7 @@ export default async function NegociacoesPage({
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {negociacoesFiltradas.map((n) => {
                   const hojeNaVigencia =
                     n.status === "aceita" &&
@@ -299,11 +299,11 @@ export default async function NegociacoesPage({
                     n.vigencia_fim >= hojeIso;
                   return (
                     <tr key={n.id} className="transition-colors hover:bg-frota-50/60">
-                      <td className="px-4 py-3 text-slate-700">
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                         {souPosto ? (n.cliente_nome ?? "—") : (n.posto_nome ?? n.posto_cnpj)}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                        <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300">
                           {STATUS_NEGOCIACAO_LABEL[n.status as StatusNegociacao] ?? n.status}
                         </span>
                         {hojeNaVigencia && (
@@ -312,17 +312,17 @@ export default async function NegociacoesPage({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-500">#{n.rodada_atual}</td>
-                      <td className="px-4 py-3 text-slate-500">
+                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">#{n.rodada_atual}</td>
+                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                         {n.vigencia_inicio && n.vigencia_fim
                           ? `${formatarDataBr(n.vigencia_inicio)} – ${formatarDataBr(n.vigencia_fim)}`
                           : "—"}
                       </td>
-                      <td className="px-4 py-3 text-slate-500">{formatarDataHoraBr(n.atualizado_em)}</td>
-                      <td className="px-4 py-3 text-slate-500">
+                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatarDataHoraBr(n.atualizado_em)}</td>
+                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                         {n.atualizado_por ? (
                           <>
-                            <span className="text-slate-700">{nomePorEmail[n.atualizado_por] ?? n.atualizado_por}</span>
+                            <span className="text-slate-700 dark:text-slate-300">{nomePorEmail[n.atualizado_por] ?? n.atualizado_por}</span>
                             <br />
                             <span className="text-xs text-slate-400">{n.atualizado_por}</span>
                           </>

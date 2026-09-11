@@ -29,7 +29,7 @@ export function GraficoPareto({ dados }: { dados: ItemPareto[] }) {
 
   return (
     <div className="card mb-6 p-5">
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">
+      <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
         Curva de concentração de receita (top {top.length})
       </p>
       <ResponsiveContainer width="100%" height={320}>

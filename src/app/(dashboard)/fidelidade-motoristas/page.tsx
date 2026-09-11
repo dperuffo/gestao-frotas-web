@@ -109,7 +109,7 @@ export default async function FidelidadeMotoristasPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -126,7 +126,7 @@ export default async function FidelidadeMotoristasPage({
       )}
 
       {semClienteEscolhido || !empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver os indicadores dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para ver os indicadores dele.</p>
       ) : (
         <>
           {/* Pedido do Daniel (19/07): missões (de engajamento + padrão) no topo
@@ -166,7 +166,7 @@ export default async function FidelidadeMotoristasPage({
           <div className="card overflow-x-auto">
             {erroConsulta && <p className="p-4 text-sm text-red-600">Erro ao carregar indicadores: {erroConsulta}</p>}
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Motorista</th>
                   <th className="px-4 py-3">Adesão</th>
@@ -177,20 +177,20 @@ export default async function FidelidadeMotoristasPage({
                   <th className="px-4 py-3">Resgates</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {indicadores.map((m) => (
                   <tr key={m.motorista_id} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 font-medium text-slate-900">{m.nome_completo}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{m.nome_completo}</td>
                     <td className="px-4 py-3">
                       <span className={m.aderido ? "badge-ativo" : "badge-inativo"}>
                         {m.aderido ? "Aderido" : "Não aderiu"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{m.aderido ? nivelDoSaldo(m.saldo_pontos) : "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{m.saldo_pontos.toLocaleString("pt-BR")}</td>
-                    <td className="px-4 py-3 text-slate-600">{m.abastecimentos_confirmados}</td>
-                    <td className="px-4 py-3 text-slate-600">{m.missoes_concluidas}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.aderido ? nivelDoSaldo(m.saldo_pontos) : "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.saldo_pontos.toLocaleString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.abastecimentos_confirmados}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.missoes_concluidas}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {m.resgates_concluidos}/{m.resgates_total}
                     </td>
                   </tr>

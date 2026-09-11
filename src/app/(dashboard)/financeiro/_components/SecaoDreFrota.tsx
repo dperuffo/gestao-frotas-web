@@ -28,13 +28,13 @@ export function SecaoDreFrota({ dados }: { dados: DreFrotaDados }) {
 
   return (
     <div className="card mb-6 p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">DRE gerencial — Fretes</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">DRE gerencial — Fretes</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Resultado das viagens faturadas no mês, por competência. Não inclui impostos sobre venda nem
         depreciação — é um DRE gerencial, não fiscal.
       </p>
       <table className="w-full text-left text-sm">
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           <LinhaDre label="Receita bruta de fretes" valor={dados.receita_bruta_fretes} negrito />
           <LinhaDre label="(–) Custo de combustível" valor={-dados.custo_combustivel} indent />
           <LinhaDre label="(–) Custo de manutenção" valor={-dados.custo_manutencao} indent />
@@ -44,15 +44,15 @@ export function SecaoDreFrota({ dados }: { dados: DreFrotaDados }) {
         </tbody>
       </table>
       {(margemEbitda !== null || combustivelPctReceita !== null) && (
-        <p className="mt-3 flex flex-wrap gap-x-4 text-xs text-slate-500">
+        <p className="mt-3 flex flex-wrap gap-x-4 text-xs text-slate-500 dark:text-slate-400">
           {margemEbitda !== null && (
             <span>
-              Margem EBITDA: <span className="font-medium text-slate-700">{margemEbitda.toFixed(1)}%</span>
+              Margem EBITDA: <span className="font-medium text-slate-700 dark:text-slate-300">{margemEbitda.toFixed(1)}%</span>
             </span>
           )}
           {combustivelPctReceita !== null && (
             <span>
-              Combustível sobre receita: <span className="font-medium text-slate-700">{combustivelPctReceita.toFixed(1)}%</span>
+              Combustível sobre receita: <span className="font-medium text-slate-700 dark:text-slate-300">{combustivelPctReceita.toFixed(1)}%</span>
             </span>
           )}
         </p>
@@ -76,10 +76,10 @@ function LinhaDre({
   subtotal?: boolean;
   destaque?: boolean;
 }) {
-  const cor = destaque ? (valor < 0 ? "text-red-600" : "text-green-600") : valor < 0 ? "text-slate-500" : "text-slate-700";
+  const cor = destaque ? (valor < 0 ? "text-red-600" : "text-green-600") : valor < 0 ? "text-slate-500 dark:text-slate-400" : "text-slate-700 dark:text-slate-300";
   return (
-    <tr className={subtotal ? "bg-slate-50" : ""}>
-      <td className={`py-2 pr-4 ${indent ? "pl-6 text-slate-500" : "text-slate-700"} ${negrito ? "font-semibold" : ""}`}>
+    <tr className={subtotal ? "bg-slate-50 dark:bg-slate-800/50" : ""}>
+      <td className={`py-2 pr-4 ${indent ? "pl-6 text-slate-500 dark:text-slate-400" : "text-slate-700 dark:text-slate-300"} ${negrito ? "font-semibold" : ""}`}>
         {label}
       </td>
       <td className={`py-2 text-right ${cor} ${negrito ? "font-semibold" : ""}`}>{formatarMoeda(valor)}</td>

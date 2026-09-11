@@ -48,9 +48,9 @@ export function TabelaPisoAntt({
     <>
       {Array.from(porTipo.entries()).map(([tipo, linhas]) => (
         <div key={tipo} className="card mb-6 overflow-x-auto p-6">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">{tipo}</h2>
+          <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{tipo}</h2>
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3">Nº de eixos</th>
                 <th className="px-4 py-3">Coef. deslocamento (R$/km)</th>
@@ -59,15 +59,15 @@ export function TabelaPisoAntt({
                 {acoes && <th className="px-4 py-3">Ações</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {linhas.map((p) => (
                 <tr key={p.id}>
-                  <td className="px-4 py-3 text-slate-600">{p.numero_eixos}</td>
-                  <td className="px-4 py-3 font-medium text-slate-900">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.numero_eixos}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                     {formatoMoeda.format(p.coeficiente_deslocamento)}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{formatoMoeda.format(p.coeficiente_carga_descarga)}</td>
-                  <td className="px-4 py-3 text-slate-500">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatoMoeda.format(p.coeficiente_carga_descarga)}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                     {new Date(`${p.vigencia_inicio}T00:00:00`).toLocaleDateString("pt-BR")}
                   </td>
                   {acoes && <td className="px-4 py-3">{acoes(p)}</td>}

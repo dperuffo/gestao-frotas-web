@@ -110,7 +110,7 @@ export function ScoreFrota({ desvios, servicos }: { desvios: DesvioAnpFrota[]; s
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
         <div>
-          <p className="mb-2 text-xs font-medium text-slate-600">Distribuição de graus</p>
+          <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Distribuição de graus</p>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie data={dadosDonut} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} label={(entry) => `${entry.name} ${entry.value}`}>
@@ -126,17 +126,17 @@ export function ScoreFrota({ desvios, servicos }: { desvios: DesvioAnpFrota[]; s
           {(["A", "B", "C", "D"] as const).map((g) => (
             <div key={g} className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full" style={{ backgroundColor: CORES_GRADE[g] }} />
-              <span className="font-medium text-slate-700">Grau {g}</span>
-              <span className="text-slate-500">— {contagem[g]} posto(s)</span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">Grau {g}</span>
+              <span className="text-slate-500 dark:text-slate-400">— {contagem[g]} posto(s)</span>
             </div>
           ))}
         </div>
       </div>
 
-      <p className="mb-2 text-xs font-medium text-slate-600">Score por posto (piores primeiro)</p>
+      <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Score por posto (piores primeiro)</p>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="py-2 pr-3">Posto</th>
               <th className="py-2 pr-3">Município/UF</th>
@@ -145,15 +145,15 @@ export function ScoreFrota({ desvios, servicos }: { desvios: DesvioAnpFrota[]; s
               <th className="py-2">Grau</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {scores.map((s) => (
               <tr key={s.cnpj}>
-                <td className="py-2 pr-3 text-slate-700">{s.razaoSocial ?? s.cnpj}</td>
-                <td className="py-2 pr-3 text-slate-600">
+                <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{s.razaoSocial ?? s.cnpj}</td>
+                <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">
                   {s.municipio}/{s.uf}
                 </td>
-                <td className="py-2 pr-3 text-slate-600">{s.combustivel}</td>
-                <td className="py-2 pr-3 tabular-nums font-medium text-slate-900">{s.score.toFixed(1)}</td>
+                <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{s.combustivel}</td>
+                <td className="py-2 pr-3 tabular-nums font-medium text-slate-900 dark:text-slate-100">{s.score.toFixed(1)}</td>
                 <td className="py-2" style={{ color: CORES_GRADE[s.grade] }}>
                   <strong>{s.grade}</strong>
                 </td>
@@ -170,7 +170,7 @@ function MiniKpi({ label, valor }: { label: string; valor: string }) {
   return (
     <div className="card p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{valor}</p>
     </div>
   );
 }

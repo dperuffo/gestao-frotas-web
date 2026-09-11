@@ -47,8 +47,8 @@ export function VinculoForm({
       {!vinculo && <input type="hidden" name="empresa_id" value={empresaId} />}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Vínculo Motorista ↔ Veículo</h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Vínculo Motorista ↔ Veículo</h2>
+        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
           Associa um motorista a um veículo específico. O abastecimento (feito no posto ou via solução de automação
           integrada) só é permitido quando este par estiver ativo.
         </p>
@@ -100,7 +100,7 @@ export function VinculoForm({
         </div>
 
         {vinculo && (
-          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
             <input
               type="checkbox"
               name="ativo"
@@ -124,7 +124,7 @@ export function VinculoForm({
 function Campo({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

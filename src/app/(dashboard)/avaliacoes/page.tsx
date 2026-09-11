@@ -27,8 +27,8 @@ export default async function AvaliacoesAdminPage({
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Esta tela é exclusiva do time interno (perfil administrador). Fale com um administrador se você
           precisa desses dados.
         </p>
@@ -125,7 +125,7 @@ export default async function AvaliacoesAdminPage({
           <div key={a.id} className="card p-4 transition-colors hover:border-frota-300">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   {a.empresas?.nome ?? "Sem cliente vinculado"}
                 </p>
                 <p className="text-xs text-slate-400">{a.user_email}</p>
@@ -140,12 +140,12 @@ export default async function AvaliacoesAdminPage({
                     />
                   ))}
                 </div>
-                <span className="text-xs font-medium text-slate-500">{rotuloNota(a.estrelas)}</span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{rotuloNota(a.estrelas)}</span>
                 {!a.resposta_admin && <span className="badge-atencao">Pendente</span>}
               </div>
             </div>
 
-            {a.comentario && <p className="mt-2 text-sm text-slate-600">{a.comentario}</p>}
+            {a.comentario && <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{a.comentario}</p>}
             <p className="mt-1 text-xs text-slate-400">
               {a.criado_em ? new Date(a.criado_em).toLocaleString("pt-BR") : ""}
             </p>

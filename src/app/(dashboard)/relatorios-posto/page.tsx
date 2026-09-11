@@ -30,7 +30,7 @@ export default async function RelatoriosPostoPage({ searchParams }: { searchPara
   }
 
   if (empresaSelecionada && segmentoSelecionado !== "Revenda") {
-    return <div className="card p-6 text-sm text-slate-600">Esta tela é exclusiva para postos revendedores.</div>;
+    return <div className="card p-6 text-sm text-slate-600 dark:text-slate-300">Esta tela é exclusiva para postos revendedores.</div>;
   }
 
   const {
@@ -141,7 +141,7 @@ export default async function RelatoriosPostoPage({ searchParams }: { searchPara
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione...</option>
               {empresas.map((e) => (
@@ -158,7 +158,7 @@ export default async function RelatoriosPostoPage({ searchParams }: { searchPara
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
           {empresas.length > 1 ? "Selecione uma empresa acima." : "Nenhuma empresa vinculada ao seu usuário."}
         </p>
       ) : (

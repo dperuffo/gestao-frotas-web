@@ -17,7 +17,7 @@ const TIPO_ICONE: Record<AvisoParaUsuario["tipo"], string> = {
 };
 
 const URGENCIA_BORDA: Record<AvisoParaUsuario["urgencia"], string> = {
-  informativo: "border-slate-200",
+  informativo: "border-slate-200 dark:border-slate-700",
   atencao: "border-amber-300",
   critico: "border-red-400",
 };
@@ -63,9 +63,9 @@ export function AvisosDrawer({
   return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onFechar} />
-      <div className="relative flex h-full w-full max-w-md flex-col bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="text-sm font-semibold text-slate-900">Avisos</h2>
+      <div className="relative flex h-full w-full max-w-md flex-col bg-white dark:bg-slate-800 shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 px-5 py-4">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Avisos</h2>
           <button type="button" onClick={onFechar} aria-label="Fechar" className="text-slate-400 hover:text-slate-600">
             ✕
           </button>
@@ -76,14 +76,14 @@ export function AvisosDrawer({
             const urlImagem = urlImagemAviso(a.imagem_path);
             return (
               <details key={a.id} className={`rounded-lg border p-3 ${URGENCIA_BORDA[a.urgencia]}`}>
-                <summary className="cursor-pointer text-sm font-medium text-slate-900">
+                <summary className="cursor-pointer text-sm font-medium text-slate-900 dark:text-slate-100">
                   <span className="mr-1">{TIPO_ICONE[a.tipo]}</span>
                   {a.titulo}
                   {!a.lido && <span className="ml-2 inline-block h-2 w-2 rounded-full bg-frota-500 align-middle" />}
                 </summary>
                 <p className="mt-1 text-xs text-slate-400">{formatarDataHoraBr(a.data_publicacao)}</p>
-                <p className="mt-2 text-sm text-slate-600">{a.resumo}</p>
-                <div className="mt-2 space-y-2 text-sm text-slate-700">{renderMarkdownSimples(a.corpo)}</div>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{a.resumo}</p>
+                <div className="mt-2 space-y-2 text-sm text-slate-700 dark:text-slate-300">{renderMarkdownSimples(a.corpo)}</div>
                 {urlImagem && (
                   <Image
                     src={urlImagem}
@@ -91,7 +91,7 @@ export function AvisosDrawer({
                     width={0}
                     height={0}
                     sizes="400px"
-                    className="mt-2 max-h-48 w-auto rounded-lg border border-slate-200"
+                    className="mt-2 max-h-48 w-auto rounded-lg border border-slate-200 dark:border-slate-700"
                     style={{ width: "auto", height: "auto" }}
                   />
                 )}
@@ -99,7 +99,7 @@ export function AvisosDrawer({
             );
           })}
         </div>
-        <div className="border-t border-slate-100 px-5 py-3">
+        <div className="border-t border-slate-100 dark:border-slate-700 px-5 py-3">
           <Link href="/central-avisos" onClick={onFechar} className="text-xs font-medium text-frota-600 hover:underline">
             Ver histórico completo
           </Link>

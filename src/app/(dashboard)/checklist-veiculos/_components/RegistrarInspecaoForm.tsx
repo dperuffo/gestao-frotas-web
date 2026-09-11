@@ -42,28 +42,28 @@ export function RegistrarInspecaoForm({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Data <span className="text-red-500">*</span>
           </label>
           <input type="date" name="data_inspecao" required defaultValue={new Date().toISOString().slice(0, 10)} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Hodômetro (km)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Hodômetro (km)</label>
           <input type="number" name="hodometro" min={0} defaultValue={kmAtual > 0 ? Math.round(kmAtual) : ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Responsável</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Responsável</label>
           <input name="responsavel" className="input" />
         </div>
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">Itens verificados</label>
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Itens verificados</label>
         <div className="space-y-2">
           {ITENS_INSPECAO.map((item) => (
-            <div key={item} className="rounded-lg border border-slate-200 p-3">
+            <div key={item} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   {item}
                   {ITENS_CRITICOS.includes(item) && (
                     <span className="ml-1.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">

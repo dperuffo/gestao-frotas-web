@@ -26,7 +26,7 @@ export function BotaoCancelarNegociacao({ id }: { id: string }) {
 
   return (
     <div className="flex items-center gap-2 text-xs">
-      {erro ? <span className="text-red-600">{erro}</span> : <span className="text-slate-500">Confirma?</span>}
+      {erro ? <span className="text-red-600">{erro}</span> : <span className="text-slate-500 dark:text-slate-400">Confirma?</span>}
       <button
         type="button"
         disabled={isPending}
@@ -35,7 +35,7 @@ export function BotaoCancelarNegociacao({ id }: { id: string }) {
       >
         {isPending ? "..." : "Sim"}
       </button>
-      <button type="button" onClick={() => setConfirmando(false)} className="text-slate-500 hover:underline">
+      <button type="button" onClick={() => setConfirmando(false)} className="text-slate-500 dark:text-slate-400 hover:underline">
         Voltar
       </button>
     </div>

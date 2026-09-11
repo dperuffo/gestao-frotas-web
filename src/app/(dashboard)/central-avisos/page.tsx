@@ -14,7 +14,7 @@ const TIPO_LABEL: Record<AvisoParaUsuario["tipo"], string> = {
 };
 
 const URGENCIA_BORDA: Record<AvisoParaUsuario["urgencia"], string> = {
-  informativo: "border-slate-200",
+  informativo: "border-slate-200 dark:border-slate-700",
   atencao: "border-amber-300",
   critico: "border-red-400",
 };
@@ -40,11 +40,11 @@ export default async function CentralAvisosHistoricoPage() {
           return (
             <div key={a.id} className={`card border p-5 ${URGENCIA_BORDA[a.urgencia]}`}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{TIPO_LABEL[a.tipo]}</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{TIPO_LABEL[a.tipo]}</span>
                 <span className="text-xs text-slate-400">{formatarDataHoraBr(a.data_publicacao)}</span>
               </div>
-              <h2 className="mt-2 text-base font-semibold text-slate-900">{a.titulo}</h2>
-              <p className="mt-1 text-sm text-slate-600">{a.resumo}</p>
+              <h2 className="mt-2 text-base font-semibold text-slate-900 dark:text-slate-100">{a.titulo}</h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{a.resumo}</p>
               {urlImagem && (
                 // eslint-disable-next-line @next/next/no-img-element -- imagem de storage dinâmica, sem domínio fixo pra next/image
                 <Image
@@ -53,11 +53,11 @@ export default async function CentralAvisosHistoricoPage() {
                   width={0}
                   height={0}
                   sizes="600px"
-                  className="mt-3 max-h-64 w-auto rounded-lg border border-slate-200"
+                  className="mt-3 max-h-64 w-auto rounded-lg border border-slate-200 dark:border-slate-700"
                   style={{ width: "auto", height: "auto" }}
                 />
               )}
-              <div className="mt-3 space-y-2 text-sm text-slate-700">{renderMarkdownSimples(a.corpo)}</div>
+              <div className="mt-3 space-y-2 text-sm text-slate-700 dark:text-slate-300">{renderMarkdownSimples(a.corpo)}</div>
             </div>
           );
         })}

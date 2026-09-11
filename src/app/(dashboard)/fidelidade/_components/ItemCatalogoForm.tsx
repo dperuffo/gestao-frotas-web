@@ -43,7 +43,7 @@ export function ItemCatalogoForm({ item }: { item?: ItemExistente }) {
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Dados do item</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Dados do item</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Título" required>
             <input
@@ -95,7 +95,7 @@ export function ItemCatalogoForm({ item }: { item?: ItemExistente }) {
         </div>
 
         {item && (
-          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
             <input type="checkbox" name="ativo" defaultChecked={item.ativo} className="h-4 w-4 rounded border-slate-300" />
             Item visível/resgatável no app
           </label>
@@ -114,7 +114,7 @@ export function ItemCatalogoForm({ item }: { item?: ItemExistente }) {
 function Campo({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

@@ -43,7 +43,7 @@ export function ItemParceriaForm({ empresaId, item }: { empresaId: string; item?
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Dados do benefício</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Dados do benefício</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Título" required>
             <input
@@ -105,14 +105,14 @@ export function ItemParceriaForm({ empresaId, item }: { empresaId: string; item?
 
         {preview && (
           <div className="mt-4">
-            <p className="mb-1 text-xs font-medium text-slate-500">Pré-visualização</p>
+            <p className="mb-1 text-xs font-medium text-slate-500 dark:text-slate-400">Pré-visualização</p>
             {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL local (preview do arquivo antes do upload), next/image não suporta */}
-            <img src={preview} alt="Pré-visualização" className="h-32 w-48 rounded-lg border border-slate-200 object-cover" />
+            <img src={preview} alt="Pré-visualização" className="h-32 w-48 rounded-lg border border-slate-200 dark:border-slate-700 object-cover" />
           </div>
         )}
 
         {item && (
-          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
             <input type="checkbox" name="ativo" defaultChecked={item.ativo} className="h-4 w-4 rounded border-slate-300" />
             Benefício visível/resgatável no app
           </label>
@@ -131,7 +131,7 @@ export function ItemParceriaForm({ empresaId, item }: { empresaId: string; item?
 function Campo({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

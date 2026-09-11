@@ -37,11 +37,11 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_COR: Record<string, string> = {
   aberto: "bg-blue-50 text-blue-700",
-  fechada: "bg-slate-100 text-slate-600",
+  fechada: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300",
   a_vencer: "bg-amber-100 text-amber-700",
   vencida: "bg-red-100 text-red-700",
   paga: "bg-green-100 text-green-700",
-  cancelada: "bg-slate-200 text-slate-500",
+  cancelada: "bg-slate-200 text-slate-500 dark:text-slate-400",
 };
 
 export function RecolhaPorCiclo({
@@ -58,15 +58,15 @@ export function RecolhaPorCiclo({
   if (ciclos.length === 0) {
     return (
       <div className="mb-6 card p-4">
-        <h3 className="mb-1 text-sm font-semibold text-slate-900">Recolha de notas fiscais por ciclo</h3>
-        <p className="text-sm text-slate-500">Nenhum ciclo de faturamento encontrado ainda.</p>
+        <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Recolha de notas fiscais por ciclo</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum ciclo de faturamento encontrado ainda.</p>
       </div>
     );
   }
 
   return (
     <div className="mb-6">
-      <h3 className="mb-2 text-sm font-semibold text-slate-900">Recolha de notas fiscais por ciclo</h3>
+      <h3 className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">Recolha de notas fiscais por ciclo</h3>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {ciclos.map((c) => {
           const selecionado =
@@ -84,16 +84,16 @@ export function RecolhaPorCiclo({
               }`}
             >
               <div className="mb-1 flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-slate-900">{ehPosto ? c.clienteNome : c.postoNome}</span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{ehPosto ? c.clienteNome : c.postoNome}</span>
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                    STATUS_COR[c.status] ?? "bg-slate-100 text-slate-600"
+                    STATUS_COR[c.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                   }`}
                 >
                   {STATUS_LABEL[c.status] ?? c.status}
                 </span>
               </div>
-              <p className="mb-2 text-xs text-slate-500">
+              <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
                 {formatarDataBr(c.periodoInicio)} – {formatarDataBr(c.periodoFim)} · vencimento{" "}
                 {formatarDataBr(c.vencimento)}
               </p>
@@ -102,7 +102,7 @@ export function RecolhaPorCiclo({
               ) : (
                 <>
                   <div className="mb-1 flex items-center justify-between gap-2">
-                    <span className="text-xs text-slate-600">
+                    <span className="text-xs text-slate-600 dark:text-slate-300">
                       {c.comNota} de {c.total} com NF-e
                       {c.rejeitadas > 0 && (
                         <span className="text-red-600">
@@ -115,7 +115,7 @@ export function RecolhaPorCiclo({
                       {percentual.toFixed(1)}%
                     </span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{ width: `${Math.min(100, Math.max(0, percentual))}%`, backgroundColor: cor }}

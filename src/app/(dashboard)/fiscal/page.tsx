@@ -36,7 +36,7 @@ export default async function FiscalPage({
 
       {empresas.length > 1 && (
         <div className="card mb-6 p-4">
-          <p className="mb-2 text-xs font-medium text-slate-500">Cliente</p>
+          <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</p>
           <div className="flex flex-wrap gap-2">
             {empresas.map((e) => (
               <Link
@@ -45,7 +45,7 @@ export default async function FiscalPage({
                 className={`rounded-full border px-3 py-1 text-xs ${
                   e.id === empresaSelecionada
                     ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-400"
                 }`}
               >
                 {e.nome}
@@ -56,11 +56,11 @@ export default async function FiscalPage({
       )}
 
       {semClienteEscolhido && (
-        <div className="card p-6 text-sm text-slate-500">Escolha um cliente acima para configurar o fiscal dele.</div>
+        <div className="card p-6 text-sm text-slate-500 dark:text-slate-400">Escolha um cliente acima para configurar o fiscal dele.</div>
       )}
 
       {empresas.length === 0 && (
-        <div className="card p-6 text-sm text-slate-500">
+        <div className="card p-6 text-sm text-slate-500 dark:text-slate-400">
           Nenhuma empresa vinculada ao seu usuário — fale com um administrador.
         </div>
       )}
@@ -92,18 +92,18 @@ export default async function FiscalPage({
           />
 
           <div className="card p-6">
-            <h2 className="text-sm font-semibold text-slate-900">Como testar sem certificado (provedor simulado)</h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Como testar sem certificado (provedor simulado)</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Com o provedor <span className="font-medium">Simulador</span> selecionado, qualquer arquivo .pfx
               com mais de 100 bytes é aceito e o teste de conexão passa em homologação. Para exercitar os
-              caminhos de erro no QA: use a senha <code className="rounded bg-slate-100 px-1">senha-errada</code>{" "}
+              caminhos de erro no QA: use a senha <code className="rounded bg-slate-100 dark:bg-slate-700 px-1">senha-errada</code>{" "}
               (senha inválida), um arquivo minúsculo (certificado corrompido) ou o ambiente Produção (o
               simulador nunca autoriza produção, de propósito). Os XMLs de teste de CT-e ficam em{" "}
-              <code className="rounded bg-slate-100 px-1">scripts/gerar-exemplos-cte-teste.mjs</code>.
+              <code className="rounded bg-slate-100 dark:bg-slate-700 px-1">scripts/gerar-exemplos-cte-teste.mjs</code>.
             </p>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               Fase P0.2 (emissão de CT-e pela tela do frete): use o CNPJ{" "}
-              <code className="rounded bg-slate-100 px-1">11111111111111</code> como tomador ou destinatário pra
+              <code className="rounded bg-slate-100 dark:bg-slate-700 px-1">11111111111111</code> como tomador ou destinatário pra
               simular rejeição da SEFAZ, ou valor da prestação zero/negativo. Cancelamento e carta de correção
               exigem justificativa/texto com pelo menos 15 caracteres — mesma regra real da SEFAZ.
             </p>

@@ -12,7 +12,7 @@ export default async function GerarFaturaFretePage({ searchParams }: { searchPar
   if (!empresaSelecionada) {
     return (
       <div>
-        <p className="p-4 text-sm text-slate-500">
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
           Selecione uma empresa em{" "}
           <Link href="/faturas-fretes" className="text-frota-600 hover:underline">
             Faturas de Frete

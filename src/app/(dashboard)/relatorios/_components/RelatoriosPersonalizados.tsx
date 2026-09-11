@@ -708,7 +708,7 @@ function SeletorMetricas({
         <span className="ml-2 shrink-0 text-slate-400">▾</span>
       </button>
       {aberto && (
-        <div className="absolute z-10 mt-1 w-64 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg">
+        <div className="absolute z-10 mt-1 w-64 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-lg">
           {opcoes.map((m) => (
             <label key={m.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-frota-50/60">
               <input
@@ -981,9 +981,9 @@ export function RelatoriosPersonalizados({
           antes de agrupar) + campo "Personalizado" com data de início/fim. "Últimos
           12 meses" é o padrão e mantém o comportamento de sempre (usa tudo que já
           veio do servidor, sem filtro adicional). */}
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Período dos dados</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Período dos dados</label>
           <select
             value={periodoPreset}
             onChange={(e) => setPeriodoPreset(e.target.value as PeriodoPreset)}
@@ -1000,7 +1000,7 @@ export function RelatoriosPersonalizados({
         {periodoPreset === "personalizado" && (
           <>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">De</label>
               <input
                 type="date"
                 value={dataInicioPersonalizada}
@@ -1009,7 +1009,7 @@ export function RelatoriosPersonalizados({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Até</label>
               <input
                 type="date"
                 value={dataFimPersonalizada}
@@ -1023,7 +1023,7 @@ export function RelatoriosPersonalizados({
 
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Fonte</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Fonte</label>
           <select value={fonte} onChange={(e) => trocarFonte(e.target.value as Fonte)} className="input text-sm">
             <option value="abastecimentos">⛽ Abastecimentos</option>
             <option value="manutencao">🔧 Manutenção</option>
@@ -1045,7 +1045,7 @@ export function RelatoriosPersonalizados({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Dimensão</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Dimensão</label>
           <select value={dimensaoAtual.id} onChange={(e) => setDimensaoId(e.target.value)} className="input text-sm">
             {dimensoesDisponiveis.map((d) => (
               <option key={d.id} value={d.id}>
@@ -1067,11 +1067,11 @@ export function RelatoriosPersonalizados({
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Métricas</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Métricas</label>
           <SeletorMetricas opcoes={metricasDisponiveis} selecionadas={metricaIds} onToggle={toggleMetrica} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Gráfico</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Gráfico</label>
           <select value={tipoGrafico} onChange={(e) => setTipoGrafico(e.target.value as typeof tipoGrafico)} className="input text-sm">
             <option value="bar">📊 Barras</option>
             <option value="bar_h">📉 Barras Horiz.</option>
@@ -1094,7 +1094,7 @@ export function RelatoriosPersonalizados({
       ) : (
         <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
               {metricasAtuais.map((m) => m.label).join(", ")} por {dimensaoLabelAtual.toLowerCase()} — {resultado.length} grupo(s)
               {resultado.length > 25 ? " (mostrando os 25 maiores no gráfico)" : ""}
             </p>
@@ -1248,7 +1248,7 @@ export function RelatoriosPersonalizados({
 
           <div className="mt-4 max-h-96 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-white text-xs uppercase text-slate-500">
+              <thead className="sticky top-0 bg-white dark:bg-slate-800 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">{dimensaoLabelAtual}</th>
                   {metricasAtuais.map((m) => (
@@ -1259,16 +1259,16 @@ export function RelatoriosPersonalizados({
                   <th className="py-2">Registros</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {resultado.map((r) => (
                   <tr key={r.chave} className="transition-colors hover:bg-frota-50/60">
-                    <td className="py-2 pr-3 text-slate-700">{r.chave}</td>
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{r.chave}</td>
                     {metricasAtuais.map((m) => (
-                      <td key={m.id} className="py-2 pr-3 tabular-nums font-medium text-slate-900">
+                      <td key={m.id} className="py-2 pr-3 tabular-nums font-medium text-slate-900 dark:text-slate-100">
                         {formatarValor(r.valores[m.id] ?? 0, m.formato)}
                       </td>
                     ))}
-                    <td className="py-2 tabular-nums text-slate-500">{r.qtdLinhas}</td>
+                    <td className="py-2 tabular-nums text-slate-500 dark:text-slate-400">{r.qtdLinhas}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1276,20 +1276,20 @@ export function RelatoriosPersonalizados({
                   calculado sobre todas as linhas filtradas) e média por grupo exibido,
                   fixos ao fundo da tabela mesmo com rolagem (ver Fase totalizadores acima). */}
               {totalizadores && (
-                <tfoot className="sticky bottom-0 border-t-2 border-slate-300 bg-slate-50">
+                <tfoot className="sticky bottom-0 border-t-2 border-slate-300 bg-slate-50 dark:bg-slate-800/50">
                   <tr>
-                    <td className="py-2 pr-3 font-semibold text-slate-800">Total geral</td>
+                    <td className="py-2 pr-3 font-semibold text-slate-800 dark:text-slate-100">Total geral</td>
                     {metricasAtuais.map((m) => (
-                      <td key={m.id} className="py-2 pr-3 tabular-nums font-semibold text-slate-900">
+                      <td key={m.id} className="py-2 pr-3 tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                         {formatarValor(totalizadores.totalGeral[m.id] ?? 0, m.formato)}
                       </td>
                     ))}
-                    <td className="py-2 tabular-nums font-semibold text-slate-700">{totalizadores.totalRegistros}</td>
+                    <td className="py-2 tabular-nums font-semibold text-slate-700 dark:text-slate-300">{totalizadores.totalRegistros}</td>
                   </tr>
                   <tr>
-                    <td className="py-2 pr-3 text-slate-500">Média por grupo ({resultado.length})</td>
+                    <td className="py-2 pr-3 text-slate-500 dark:text-slate-400">Média por grupo ({resultado.length})</td>
                     {metricasAtuais.map((m) => (
-                      <td key={m.id} className="py-2 pr-3 tabular-nums text-slate-600">
+                      <td key={m.id} className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">
                         {formatarValor(totalizadores.mediaPorGrupo[m.id] ?? 0, m.formato)}
                       </td>
                     ))}

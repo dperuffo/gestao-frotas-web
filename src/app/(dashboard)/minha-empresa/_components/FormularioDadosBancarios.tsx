@@ -57,15 +57,15 @@ export function FormularioDadosBancarios({ empresaId, dadosAtuais }: Props) {
 
   return (
     <div className="card mt-6 p-6">
-      <h2 className="text-sm font-semibold text-slate-900">Dados bancários</h2>
-      <p className="mt-1 text-xs text-slate-500">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Dados bancários</h2>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         Conta bancária do posto. Hoje é só cadastro — serve de base para, futuramente, ajustar o
         boleto/documento de cobrança conforme o banco do estabelecimento.
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Código do banco</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Código do banco</label>
           <input
             type="text"
             value={dados.bancoCodigo}
@@ -75,7 +75,7 @@ export function FormularioDadosBancarios({ empresaId, dadosAtuais }: Props) {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Nome do banco</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Nome do banco</label>
           <input
             type="text"
             value={dados.bancoNome}
@@ -85,7 +85,7 @@ export function FormularioDadosBancarios({ empresaId, dadosAtuais }: Props) {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Agência</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Agência</label>
           <input
             type="text"
             value={dados.agencia}
@@ -95,7 +95,7 @@ export function FormularioDadosBancarios({ empresaId, dadosAtuais }: Props) {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Dígito da agência</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Dígito da agência</label>
           <input
             type="text"
             value={dados.agenciaDigito}
@@ -105,7 +105,7 @@ export function FormularioDadosBancarios({ empresaId, dadosAtuais }: Props) {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Conta</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Conta</label>
           <input
             type="text"
             value={dados.conta}
@@ -115,7 +115,7 @@ export function FormularioDadosBancarios({ empresaId, dadosAtuais }: Props) {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Dígito da conta</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Dígito da conta</label>
           <input
             type="text"
             value={dados.contaDigito}
@@ -125,7 +125,7 @@ export function FormularioDadosBancarios({ empresaId, dadosAtuais }: Props) {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Tipo de conta</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tipo de conta</label>
           <select
             value={dados.tipoConta}
             onChange={(e) => campo("tipoConta", e.target.value as DadosBancarios["tipoConta"])}
@@ -137,7 +137,7 @@ export function FormularioDadosBancarios({ empresaId, dadosAtuais }: Props) {
           </select>
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-slate-500">
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             Nome do titular da conta
           </label>
           <input
@@ -149,7 +149,7 @@ export function FormularioDadosBancarios({ empresaId, dadosAtuais }: Props) {
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-slate-500">
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             CPF/CNPJ do titular
           </label>
           <input

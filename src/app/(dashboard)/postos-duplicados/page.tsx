@@ -16,8 +16,8 @@ export default async function PostosDuplicadosPage() {
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Esta tela é exclusiva do time interno (perfil administrador).
         </p>
       </div>
@@ -75,15 +75,15 @@ export default async function PostosDuplicadosPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Posto recém-cadastrado</p>
-                  <p className="mt-1 text-sm font-medium text-slate-900">{l.empresas?.nome ?? "—"}</p>
-                  <p className="text-xs text-slate-500">CNPJ: {l.cnpj_informado}</p>
+                  <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{l.empresas?.nome ?? "—"}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">CNPJ: {l.cnpj_informado}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                     Possível duplicata ({candidato?.fonte ?? "—"})
                   </p>
-                  <p className="mt-1 text-sm font-medium text-slate-900">{candidato?.razaoSocial ?? "—"}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{candidato?.razaoSocial ?? "—"}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     CNPJ: {candidato?.cnpj ?? "—"}
                     {candidato?.municipio ? ` — ${candidato.municipio}/${candidato.uf ?? ""}` : ""}
                   </p>

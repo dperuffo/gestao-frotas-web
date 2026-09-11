@@ -94,7 +94,7 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -106,7 +106,7 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
           <input type="search" name="q" defaultValue={q ?? ""} placeholder="Nome ou código..." className="input text-sm" />
         </div>
         <button type="submit" className="btn-secondary text-sm">
@@ -140,7 +140,7 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Peça</th>
                   <th className="px-4 py-3">Código</th>
@@ -150,7 +150,7 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
                   <th className="px-4 py-3">Situação</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {pecas.map((p) => {
                   const abaixo = p.quantidade_atual <= p.quantidade_minima;
                   return (
@@ -161,14 +161,14 @@ export default async function EstoquePecasPage({ searchParams }: { searchParams:
                         </Link>
                         {!p.ativa && <span className="ml-2 text-xs text-slate-400">(inativa)</span>}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{p.codigo ?? "—"}</td>
-                      <td className={`px-4 py-3 tabular-nums font-medium ${abaixo ? "text-red-700" : "text-slate-700"}`}>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.codigo ?? "—"}</td>
+                      <td className={`px-4 py-3 tabular-nums font-medium ${abaixo ? "text-red-700" : "text-slate-700 dark:text-slate-300"}`}>
                         {p.quantidade_atual} {p.unidade_medida}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-500">
+                      <td className="px-4 py-3 tabular-nums text-slate-500 dark:text-slate-400">
                         {p.quantidade_minima} {p.unidade_medida}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-600">{formatarMoeda(p.custo_unitario_medio)}</td>
+                      <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(p.custo_unitario_medio)}</td>
                       <td className="px-4 py-3">
                         {abaixo ? (
                           <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800">Repor</span>

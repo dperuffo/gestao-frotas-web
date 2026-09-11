@@ -122,8 +122,8 @@ export function CicloAbastecimentoPagamento({
   return (
     <div className="mt-8">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">Ciclo de abastecimento e pagamento</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Ciclo de abastecimento e pagamento</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Resumo consolidado de todas as negociações e faturas deste cliente com os postos revendedores
           (visão de rede — cruza todos os postos, não só um).
         </p>
@@ -154,11 +154,11 @@ export function CicloAbastecimentoPagamento({
           Andamento e Negociacoes" — ordem antiga era Ciclo em andamento →
           Negociações → Faturas. */}
       <div className="mb-6 card overflow-x-auto">
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h3 className="text-sm font-semibold text-slate-900">Faturas</h3>
+        <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Faturas</h3>
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Posto</th>
               <th className="px-4 py-3">Período</th>
@@ -168,17 +168,17 @@ export function CicloAbastecimentoPagamento({
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {faturas.map((f) => {
               const statusExib = statusCicloFaturaExibicao(f.status, f.vencimento, hojeIso);
               return (
                 <tr key={f.id} className="transition-colors hover:bg-frota-50/60">
-                  <td className="px-4 py-3 text-slate-700">{f.posto_nome ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-500">
+                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{f.posto_nome ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                     {formatarDataBr(f.periodo_inicio)} – {formatarDataBr(f.periodo_fim)}
                   </td>
-                  <td className="px-4 py-3 text-slate-500">{formatarDataBr(f.vencimento)}</td>
-                  <td className="px-4 py-3 font-medium text-slate-700">{formatarMoeda(f.valor_total)}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatarDataBr(f.vencimento)}</td>
+                  <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{formatarMoeda(f.valor_total)}</td>
                   <td className="px-4 py-3">
                     <BadgeStatusFatura status={statusExib} />
                   </td>
@@ -213,8 +213,8 @@ export function CicloAbastecimentoPagamento({
 
       {podeEditarCiclo && (
         <div className="mb-6 card p-4">
-          <h3 className="text-sm font-semibold text-slate-900">Ciclo de faturamento e prazo de vencimento</h3>
-          <p className="mb-4 mt-1 text-xs text-slate-500">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Ciclo de faturamento e prazo de vencimento</h3>
+          <p className="mb-4 mt-1 text-xs text-slate-500 dark:text-slate-400">
             Parâmetro administrativo (FNI) do CLIENTE: de quantos em quantos dias fecha uma fatura, e quantos
             dias depois ela vence (ex: 15+15 = 15 dias de abastecimentos + 15 dias até o vencimento). Vale pra
             qualquer posto ou rede com quem este cliente negocie — um único ritmo de cobrança, não por posto.
@@ -228,11 +228,11 @@ export function CicloAbastecimentoPagamento({
       )}
 
       <div className="card overflow-x-auto">
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h3 className="text-sm font-semibold text-slate-900">Negociações com postos</h3>
+        <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Negociações com postos</h3>
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Posto</th>
               <th className="px-4 py-3">Combustível</th>
@@ -243,26 +243,26 @@ export function CicloAbastecimentoPagamento({
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {negociacoes.map((n) => (
               <tr key={n.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-700">{n.posto_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-500">{n.combustivel ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{n.posto_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{n.combustivel ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                   {n.vigencia_inicio && n.vigencia_fim
                     ? `${formatarDataBr(n.vigencia_inicio)} – ${formatarDataBr(n.vigencia_fim)}`
                     : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                   {n.volume_minimo_mensal != null ? `${n.volume_minimo_mensal.toLocaleString("pt-BR")} L` : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                   {n.preco_unitario != null
                     ? n.preco_unitario.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                     : "—"}
                 </td>
                 <td className="px-4 py-3">
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                  <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300">
                     {STATUS_NEGOCIACAO_LABEL[n.status as StatusNegociacao] ?? n.status}
                   </span>
                 </td>
@@ -293,10 +293,10 @@ export function CicloAbastecimentoPagamento({
 function BadgeStatusFatura({ status }: { status: StatusCicloFaturaExibicao }) {
   const cores: Record<StatusCicloFaturaExibicao, string> = {
     fechada: "bg-amber-100 text-amber-700",
-    a_vencer: "bg-slate-100 text-slate-700",
+    a_vencer: "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300",
     vencida: "bg-red-100 text-red-700",
     paga: "bg-green-100 text-green-700",
-    cancelada: "bg-slate-100 text-slate-400 line-through",
+    cancelada: "bg-slate-100 dark:bg-slate-700 text-slate-400 line-through",
   };
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cores[status]}`}>

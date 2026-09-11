@@ -30,37 +30,37 @@ export function ApoliceForm({ empresaId, apolice }: { empresaId: string; apolice
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Seguradora <span className="text-red-500">*</span>
           </label>
           <input name="seguradora" required defaultValue={apolice?.seguradora ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Número da apólice <span className="text-red-500">*</span>
           </label>
           <input name="numero_apolice" required defaultValue={apolice?.numero_apolice ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Placa <span className="text-xs font-normal text-slate-400">(vazio = cobre a frota)</span>
           </label>
           <input name="placa" defaultValue={apolice?.placa ?? ""} className="input" placeholder="ABC1D23" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Vigência — início <span className="text-red-500">*</span>
           </label>
           <input type="date" name="vigencia_inicio" required defaultValue={apolice?.vigencia_inicio ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Vigência — fim <span className="text-red-500">*</span>
           </label>
           <input type="date" name="vigencia_fim" required defaultValue={apolice?.vigencia_fim ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Cobertura</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Cobertura</label>
           <input
             name="cobertura"
             defaultValue={apolice?.cobertura ?? ""}
@@ -69,7 +69,7 @@ export function ApoliceForm({ empresaId, apolice }: { empresaId: string; apolice
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Franquia (R$)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Franquia (R$)</label>
           <input
             type="number"
             name="valor_franquia"
@@ -80,7 +80,7 @@ export function ApoliceForm({ empresaId, apolice }: { empresaId: string; apolice
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Prêmio anual (R$)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Prêmio anual (R$)</label>
           <input
             type="number"
             name="valor_premio"
@@ -93,7 +93,7 @@ export function ApoliceForm({ empresaId, apolice }: { empresaId: string; apolice
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Observações</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observações</label>
         <textarea name="observacoes" rows={3} defaultValue={apolice?.observacoes ?? ""} className="input" />
       </div>
 

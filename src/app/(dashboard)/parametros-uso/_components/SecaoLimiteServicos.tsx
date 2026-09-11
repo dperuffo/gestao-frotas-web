@@ -53,7 +53,7 @@ export function SecaoLimiteServicos({
     <div>
       <div className="card mb-4 p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Quantidade (UN) e valor máximo (R$) permitidos por serviço (lavagem, restaurante etc.), filtrados por
             cliente, veículo, motorista e posto. Campos em branco = sem restrição.
           </p>
@@ -65,7 +65,7 @@ export function SecaoLimiteServicos({
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Veículo</th>
               <th className="px-4 py-3">Motorista</th>
@@ -74,12 +74,12 @@ export function SecaoLimiteServicos({
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhas.map((l) => (
               <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-600">{l.placa ?? "Todos"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.motoristas?.nome_completo ?? "Todos"}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.placa ?? "Todos"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.motoristas?.nome_completo ?? "Todos"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {l.limites
                     .map(
                       (i) =>
@@ -115,7 +115,7 @@ export function SecaoLimiteServicos({
           <input type="hidden" name="empresa_id" value={empresaId} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Veículo (placa)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
             <select name="placa" defaultValue="" className="input">
               <option value="">Todos os veículos</option>
               {veiculos.map((v) => (
@@ -127,7 +127,7 @@ export function SecaoLimiteServicos({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Motorista</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Motorista</label>
             <select name="motorista_id" defaultValue="" className="input">
               <option value="">Todos os motoristas</option>
               {motoristas.map((m) => (
@@ -140,10 +140,10 @@ export function SecaoLimiteServicos({
 
           {postos.length > 0 && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Postos aplicáveis</label>
-              <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Postos aplicáveis</label>
+              <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 p-2">
                 {postos.map((p) => (
-                  <label key={p.cnpj} className="flex items-center gap-2 text-sm text-slate-700">
+                  <label key={p.cnpj} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                     <input type="checkbox" name="postos_cnpj" value={p.cnpj} className="h-4 w-4 rounded border-slate-300" />
                     {p.nome}
                   </label>
@@ -153,11 +153,11 @@ export function SecaoLimiteServicos({
           )}
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Limites por serviço</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Limites por serviço</label>
             <div className="space-y-2">
               {SERVICOS.map((s) => (
                 <div key={s} className="grid grid-cols-3 items-center gap-2 text-sm">
-                  <span className="text-slate-600">{s}</span>
+                  <span className="text-slate-600 dark:text-slate-300">{s}</span>
                   <input type="hidden" name="servico" value={s} />
                   <input type="number" name="qtd_maxima" min={0} placeholder="Qtd. máx. (UN)" className="input" />
                   <input
@@ -171,11 +171,11 @@ export function SecaoLimiteServicos({
                 </div>
               ))}
             </div>
-            <p className="mt-1 text-xs text-slate-500">Preencha apenas os serviços que deseja limitar.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Preencha apenas os serviços que deseja limitar.</p>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Observação</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
             <textarea name="observacao" rows={2} className="input" />
           </div>
 

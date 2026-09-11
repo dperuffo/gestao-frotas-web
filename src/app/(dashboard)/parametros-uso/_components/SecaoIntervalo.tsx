@@ -49,7 +49,7 @@ export function SecaoIntervalo({
     <div>
       <div className="card mb-4 p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Intervalo mínimo obrigatório entre dois abastecimentos consecutivos, por veículo ou motorista. O
             sistema bloqueia o registro se o intervalo for menor que o definido.
           </p>
@@ -61,7 +61,7 @@ export function SecaoIntervalo({
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Tipo</th>
               <th className="px-4 py-3">Referência</th>
@@ -71,20 +71,20 @@ export function SecaoIntervalo({
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhas.map((l) => (
               <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3">{l.tipo === "Veiculo" ? "Veículo" : "Motorista"}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {l.tipo === "Veiculo" ? (l.placa ?? "Todos") : (l.motoristas?.nome_completo ?? "Todos")}
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {l.intervalo_minimo} {l.unidade === "Horas" ? "hora(s)" : "dia(s)"}
                 </td>
                 <td className="px-4 py-3">
                   <span className={l.status === "Ativo" ? "badge-ativo" : "badge-inativo"}>{l.status}</span>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{l.observacao ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.observacao ?? "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <ToggleStatusRegra id={l.id} ativo={l.status === "Ativo"} acao={alternarStatusIntervalo} />
@@ -110,7 +110,7 @@ export function SecaoIntervalo({
           <input type="hidden" name="empresa_id" value={empresaId} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Tipo de regra *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tipo de regra *</label>
             <select
               name="tipo"
               value={tipo}
@@ -124,7 +124,7 @@ export function SecaoIntervalo({
 
           {tipo === "Veiculo" ? (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Veículo (placa)</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
               <select name="placa" defaultValue="" className="input">
                 <option value="">Todos os veículos (regra geral)</option>
                 {veiculos.map((v) => (
@@ -136,7 +136,7 @@ export function SecaoIntervalo({
             </div>
           ) : (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Motorista</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Motorista</label>
               <select name="motorista_id" defaultValue="" className="input">
                 <option value="">Todos os motoristas (regra geral)</option>
                 {motoristas.map((m) => (
@@ -150,11 +150,11 @@ export function SecaoIntervalo({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Intervalo mínimo *</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Intervalo mínimo *</label>
               <input type="number" name="intervalo_minimo" min={1} required className="input" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Unidade</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Unidade</label>
               <select name="unidade" defaultValue="Horas" className="input">
                 <option value="Horas">Horas</option>
                 <option value="Dias">Dias</option>
@@ -163,7 +163,7 @@ export function SecaoIntervalo({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Observação</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
             <textarea name="observacao" rows={2} className="input" />
           </div>
 

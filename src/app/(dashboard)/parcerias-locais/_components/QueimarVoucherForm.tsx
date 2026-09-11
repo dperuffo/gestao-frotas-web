@@ -33,8 +33,8 @@ export function QueimarVoucherForm({ empresaId }: { empresaId: string }) {
 
   return (
     <div className="card mb-6 p-4">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">🔥 Queimar voucher</h2>
-      <p className="mb-3 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">🔥 Queimar voucher</h2>
+      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
         Digite o código que o motorista mostra no app pra confirmar a entrega do benefício e dar baixa.
       </p>
       <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2">

@@ -14,8 +14,8 @@ export default async function ImportarUsuariosPage() {
   if (perfilAtual !== "admin" && perfilAtual !== "analista") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Esta tela é exclusiva do time interno (perfil administrador ou analista).
         </p>
       </div>
@@ -34,8 +34,8 @@ export default async function ImportarUsuariosPage() {
         }
       />
 
-      <div className="mb-6 card p-4 text-sm text-slate-600">
-        <p className="font-medium text-slate-700">Colunas do arquivo:</p>
+      <div className="mb-6 card p-4 text-sm text-slate-600 dark:text-slate-300">
+        <p className="font-medium text-slate-700 dark:text-slate-300">Colunas do arquivo:</p>
         <p className="mt-1">
           <code>nome</code>, <code>email</code> e <code>perfil</code> ({" "}
           admin, gestor_frota, analista ou posto) e <code>cnpj_cliente</code> (CNPJ do

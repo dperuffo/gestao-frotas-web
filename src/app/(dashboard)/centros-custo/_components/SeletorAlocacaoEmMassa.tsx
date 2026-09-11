@@ -112,7 +112,7 @@ export function SeletorAlocacaoEmMassa({
         {/* Disponíveis pra alocar */}
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Disponíveis ({disponiveisFiltrados.length})
             </p>
             <button
@@ -131,9 +131,9 @@ export function SeletorAlocacaoEmMassa({
             placeholder={placeholderBusca}
             className="input mb-2 text-sm"
           />
-          <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
+          <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700">
             {disponiveisFiltrados.length > 0 && (
-              <label className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
+              <label className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300">
                 <input
                   type="checkbox"
                   checked={disponiveisFiltrados.every((i) => selecionadosDisponiveis.has(i.chave))}
@@ -143,7 +143,7 @@ export function SeletorAlocacaoEmMassa({
                 Selecionar todos os filtrados
               </label>
             )}
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {disponiveisFiltrados.map((item) => (
                 <li key={item.chave}>
                   <label className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-frota-50/60">
@@ -154,7 +154,7 @@ export function SeletorAlocacaoEmMassa({
                       className="h-4 w-4 shrink-0 rounded border-slate-300 text-frota-600 focus:ring-frota-500"
                     />
                     <span className="min-w-0 flex-1 truncate" title={item.subLabel ? `${item.label} ${item.subLabel}` : item.label}>
-                      <span className="font-medium text-slate-700">{item.label}</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
                       {item.subLabel && <span className="ml-1 text-slate-400">{item.subLabel}</span>}
                     </span>
                   </label>
@@ -172,7 +172,7 @@ export function SeletorAlocacaoEmMassa({
         {/* Já alocados */}
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Alocados ({alocadosFiltrados.length})
             </p>
             <button
@@ -191,9 +191,9 @@ export function SeletorAlocacaoEmMassa({
             placeholder={placeholderBusca}
             className="input mb-2 text-sm"
           />
-          <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
+          <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700">
             {alocadosFiltrados.length > 0 && (
-              <label className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
+              <label className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300">
                 <input
                   type="checkbox"
                   checked={alocadosFiltrados.every((i) => selecionadosAlocados.has(i.chave))}
@@ -203,7 +203,7 @@ export function SeletorAlocacaoEmMassa({
                 Selecionar todos os filtrados
               </label>
             )}
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {alocadosFiltrados.map((item) => (
                 <li key={item.chave} className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-frota-50/60">
                   <input
@@ -213,7 +213,7 @@ export function SeletorAlocacaoEmMassa({
                     className="h-4 w-4 shrink-0 rounded border-slate-300 text-frota-600 focus:ring-frota-500"
                   />
                   <span className="min-w-0 flex-1 truncate" title={item.subLabel ? `${item.label} ${item.subLabel}` : item.label}>
-                    <span className="font-medium text-slate-700">{item.label}</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
                     {item.subLabel && <span className="ml-1 text-slate-400">{item.subLabel}</span>}
                   </span>
                   <button

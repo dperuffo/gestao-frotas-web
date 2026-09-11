@@ -102,7 +102,7 @@ export default async function FaturasFretesPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -141,7 +141,7 @@ export default async function FaturasFretesPage({
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e gerar faturas de frete.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione uma empresa acima pra ver e gerar faturas de frete.</p>
       ) : faturasRaw.length === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">
           Nenhuma fatura gerada ainda. Clique em &quot;+ Gerar fatura&quot; pra começar.
@@ -151,7 +151,7 @@ export default async function FaturasFretesPage({
       ) : (
         <div className="card overflow-x-auto p-2">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3">Nº</th>
                 <th className="px-4 py-3">Tomador</th>
@@ -162,22 +162,22 @@ export default async function FaturasFretesPage({
                 <th className="px-4 py-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {faturas.map((f) => (
                 <tr key={f.id} className="transition-colors hover:bg-frota-50/60">
-                  <td className="px-4 py-3 font-mono text-xs text-slate-500">{f.numero_fatura}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">{f.numero_fatura}</td>
                   <td className="px-4 py-3">
                     <Link href={`/faturas-fretes/${f.id}?empresa=${empresaSelecionada}`} className="font-medium text-frota-600 hover:underline">
                       {f.tomador_nome ?? f.tomador_cnpj}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {new Date(`${f.periodo_inicio}T00:00:00`).toLocaleDateString("pt-BR")} –{" "}
                     {new Date(`${f.periodo_fim}T00:00:00`).toLocaleDateString("pt-BR")}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{new Date(`${f.vencimento}T00:00:00`).toLocaleDateString("pt-BR")}</td>
-                  <td className="px-4 py-3 text-slate-600">{f.quantidade_ctes}</td>
-                  <td className="px-4 py-3 font-semibold text-slate-900">{formatoMoeda.format(f.valor_total)}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{new Date(`${f.vencimento}T00:00:00`).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{f.quantidade_ctes}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">{formatoMoeda.format(f.valor_total)}</td>
                   <td className="px-4 py-3">
                     <span className={COR_STATUS[f.status] ?? "badge-inativo"}>{LABEL_STATUS[f.status] ?? f.status}</span>
                   </td>

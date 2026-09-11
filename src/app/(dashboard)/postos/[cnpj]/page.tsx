@@ -81,7 +81,7 @@ export default async function EditarPostoPage({ params }: { params: Promise<{ cn
       </div>
 
       <section className="card mb-6 p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
           Dados da importação em lote
         </h2>
         <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
@@ -114,7 +114,7 @@ export default async function EditarPostoPage({ params }: { params: Promise<{ cn
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Combustíveis e preços vigentes</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Combustíveis e preços vigentes</h2>
 
         {precosResolvidos.length > 0 && (
           <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -123,13 +123,13 @@ export default async function EditarPostoPage({ params }: { params: Promise<{ cn
                 key={`${p.categoria}__${p.combustivelGf ?? ""}`}
                 className={
                   "rounded-lg border p-3 " +
-                  (p.fonte === "gf" ? "border-slate-200" : "border-dashed border-amber-200 bg-amber-50/40")
+                  (p.fonte === "gf" ? "border-slate-200 dark:border-slate-700" : "border-dashed border-amber-200 bg-amber-50/40")
                 }
               >
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                   {p.combustivelGf ?? p.categoria}
                 </p>
-                <p className="mt-1 text-lg font-semibold text-slate-900">
+                <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
                   {p.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </p>
                 <p className="text-xs text-slate-400">
@@ -140,14 +140,14 @@ export default async function EditarPostoPage({ params }: { params: Promise<{ cn
           </div>
         )}
 
-        <div className="mb-4 border-t border-slate-100 pt-4">
+        <div className="mb-4 border-t border-slate-100 dark:border-slate-700 pt-4">
           <RegistrarPrecoForm cnpj={cnpj} empresaId={posto.empresa_id} />
         </div>
 
         {precos && precos.length > 0 ? (
-          <div className="overflow-x-auto border-t border-slate-100 pt-4">
+          <div className="overflow-x-auto border-t border-slate-100 dark:border-slate-700 pt-4">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2">Combustível</th>
                   <th className="py-2">Preço</th>
@@ -156,15 +156,15 @@ export default async function EditarPostoPage({ params }: { params: Promise<{ cn
                   <th className="py-2">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {precos.map((p) => (
                   <tr key={p.id}>
-                    <td className="py-2 text-slate-700">{p.combustivel}</td>
-                    <td className="py-2 text-slate-700">
+                    <td className="py-2 text-slate-700 dark:text-slate-300">{p.combustivel}</td>
+                    <td className="py-2 text-slate-700 dark:text-slate-300">
                       {p.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </td>
-                    <td className="py-2 text-slate-600">{formatDate(p.data_ref)}</td>
-                    <td className="py-2 text-slate-600">{p.fonte ?? "—"}</td>
+                    <td className="py-2 text-slate-600 dark:text-slate-300">{formatDate(p.data_ref)}</td>
+                    <td className="py-2 text-slate-600 dark:text-slate-300">{p.fonte ?? "—"}</td>
                     <td className="py-2">
                       <ExcluirPreco id={p.id} cnpj={cnpj} />
                     </td>
@@ -174,7 +174,7 @@ export default async function EditarPostoPage({ params }: { params: Promise<{ cn
             </table>
           </div>
         ) : (
-          <p className="border-t border-slate-100 pt-4 text-sm text-slate-400">
+          <p className="border-t border-slate-100 dark:border-slate-700 pt-4 text-sm text-slate-400">
             Nenhum preço registrado ainda para este posto.
           </p>
         )}
@@ -187,7 +187,7 @@ function Info({ label, valor }: { label: string; valor: string | null | undefine
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-0.5 text-slate-700">{valor || "—"}</p>
+      <p className="mt-0.5 text-slate-700 dark:text-slate-300">{valor || "—"}</p>
     </div>
   );
 }

@@ -57,7 +57,7 @@ export function ConvidarColegaForm({ empresaId, vagasEsgotadas }: { empresaId: s
         </Campo>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         O colega recebe um e-mail para criar a própria senha e entra com perfil &quot;Colaborador&quot; — o que
         ele pode ver e fazer é configurado em Permissões.
       </p>
@@ -74,7 +74,7 @@ export function ConvidarColegaForm({ empresaId, vagasEsgotadas }: { empresaId: s
 function Campo({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

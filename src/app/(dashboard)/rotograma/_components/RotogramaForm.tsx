@@ -130,8 +130,8 @@ export function RotogramaForm({
 
       {!rotograma && rotasSalvas.length > 0 && (
         <section className="card p-6">
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">Importar de uma rota salva (opcional)</h2>
-          <p className="mb-3 text-xs text-slate-500">
+          <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Importar de uma rota salva (opcional)</h2>
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
             Preenche origem, destino e placa a partir de uma rota já salva na Roteirização. Você pode ajustar tudo
             depois.
           </p>
@@ -152,7 +152,7 @@ export function RotogramaForm({
       )}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Dados da viagem</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Dados da viagem</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Origem" required>
             <input
@@ -248,7 +248,7 @@ export function RotogramaForm({
           </Campo>
         </div>
         {rotograma && nomeEmpresaAtual && (
-          <p className="mt-4 text-xs text-slate-500">Cliente: {nomeEmpresaAtual} (não pode ser alterado aqui).</p>
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Cliente: {nomeEmpresaAtual} (não pode ser alterado aqui).</p>
         )}
       </section>
 
@@ -275,8 +275,8 @@ function ListaRiscos({
     <section className="card p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">⚠️ Pontos de risco</h2>
-          <p className="text-xs text-slate-500">Trechos perigosos, zonas de crime, radares e lombadas na rota.</p>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">⚠️ Pontos de risco</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Trechos perigosos, zonas de crime, radares e lombadas na rota.</p>
         </div>
         <button
           type="button"
@@ -291,9 +291,9 @@ function ListaRiscos({
 
       <div className="space-y-3">
         {riscos.map((r, i) => (
-          <div key={r.chave} className="grid grid-cols-1 gap-2 rounded-lg border border-slate-100 p-3 sm:grid-cols-12 sm:items-end">
+          <div key={r.chave} className="grid grid-cols-1 gap-2 rounded-lg border border-slate-100 dark:border-slate-700 p-3 sm:grid-cols-12 sm:items-end">
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Km</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Km</label>
               <input
                 type="number"
                 step="0.1"
@@ -305,7 +305,7 @@ function ListaRiscos({
               />
             </div>
             <div className="sm:col-span-3">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Local</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Local</label>
               <input
                 name={`riscos[${i}][local]`}
                 defaultValue={r.local}
@@ -314,7 +314,7 @@ function ListaRiscos({
               />
             </div>
             <div className="sm:col-span-3">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Categoria</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Categoria</label>
               <select name={`riscos[${i}][categoria]`} defaultValue={r.categoria} className="input">
                 {CATEGORIAS_RISCO.map((c) => (
                   <option key={c.valor} value={c.valor}>
@@ -324,7 +324,7 @@ function ListaRiscos({
               </select>
             </div>
             <div className="sm:col-span-3">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Descrição</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Descrição</label>
               <input
                 name={`riscos[${i}][descricao]`}
                 defaultValue={r.descricao}
@@ -336,7 +336,7 @@ function ListaRiscos({
               <button
                 type="button"
                 onClick={() => setRiscos((atual) => atual.filter((x) => x.chave !== r.chave))}
-                className="w-full rounded-lg border border-slate-200 px-2 py-2 text-xs text-red-600 hover:bg-red-50"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-2 text-xs text-red-600 hover:bg-red-50"
               >
                 Remover
               </button>
@@ -363,8 +363,8 @@ function ListaParadas({
     <section className="card p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">📍 Pontos de parada</h2>
-          <p className="text-xs text-slate-500">Postos, restaurantes e locais seguros para pernoite na rota.</p>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">📍 Pontos de parada</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Postos, restaurantes e locais seguros para pernoite na rota.</p>
         </div>
         <button
           type="button"
@@ -381,9 +381,9 @@ function ListaParadas({
 
       <div className="space-y-3">
         {paradas.map((p, i) => (
-          <div key={p.chave} className="grid grid-cols-1 gap-2 rounded-lg border border-slate-100 p-3 sm:grid-cols-12 sm:items-end">
+          <div key={p.chave} className="grid grid-cols-1 gap-2 rounded-lg border border-slate-100 dark:border-slate-700 p-3 sm:grid-cols-12 sm:items-end">
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Km</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Km</label>
               <input
                 type="number"
                 step="0.1"
@@ -395,7 +395,7 @@ function ListaParadas({
               />
             </div>
             <div className="sm:col-span-3">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Local</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Local</label>
               <input
                 name={`paradas[${i}][local]`}
                 defaultValue={p.local}
@@ -404,7 +404,7 @@ function ListaParadas({
               />
             </div>
             <div className="sm:col-span-3">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Categoria</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Categoria</label>
               <select name={`paradas[${i}][categoria]`} defaultValue={p.categoria} className="input">
                 {CATEGORIAS_PARADA.map((c) => (
                   <option key={c.valor} value={c.valor}>
@@ -414,7 +414,7 @@ function ListaParadas({
               </select>
             </div>
             <div className="sm:col-span-3">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Descrição</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Descrição</label>
               <input
                 name={`paradas[${i}][descricao]`}
                 defaultValue={p.descricao}
@@ -426,7 +426,7 @@ function ListaParadas({
               <button
                 type="button"
                 onClick={() => setParadas((atual) => atual.filter((x) => x.chave !== p.chave))}
-                className="w-full rounded-lg border border-slate-200 px-2 py-2 text-xs text-red-600 hover:bg-red-50"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-2 text-xs text-red-600 hover:bg-red-50"
               >
                 Remover
               </button>
@@ -441,7 +441,7 @@ function ListaParadas({
 function Campo({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

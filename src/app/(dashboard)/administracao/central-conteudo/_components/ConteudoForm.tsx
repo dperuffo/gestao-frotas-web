@@ -55,7 +55,7 @@ export function ConteudoForm({ conteudo }: { conteudo?: ConteudoAjuda }) {
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Identificação</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Identificação</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Tipo" required>
             <select name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} className="input">
@@ -87,7 +87,7 @@ export function ConteudoForm({ conteudo }: { conteudo?: ConteudoAjuda }) {
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Conteúdo</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Conteúdo</h2>
         <div className="space-y-4">
           <Campo label="Título" required>
             <input name="titulo" required defaultValue={conteudo?.titulo} className="input" />
@@ -107,7 +107,7 @@ export function ConteudoForm({ conteudo }: { conteudo?: ConteudoAjuda }) {
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Imagem (opcional)</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Imagem (opcional)</h2>
         {urlAtual && (
           <div className="mb-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- imagem de storage dinâmica, sem domínio fixo pra next/image */}
@@ -117,10 +117,10 @@ export function ConteudoForm({ conteudo }: { conteudo?: ConteudoAjuda }) {
               width={0}
               height={0}
               sizes="400px"
-              className="max-h-48 w-auto rounded-lg border border-slate-200"
+              className="max-h-48 w-auto rounded-lg border border-slate-200 dark:border-slate-700"
               style={{ width: "auto", height: "auto" }}
             />
-            <label className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+            <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
               <input type="checkbox" name="remover_imagem" className="rounded border-slate-300" />
               Remover esta imagem
             </label>
@@ -133,16 +133,16 @@ export function ConteudoForm({ conteudo }: { conteudo?: ConteudoAjuda }) {
 
       {tipo === "licao" && (
         <section className="card p-6">
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">Vídeo (opcional)</h2>
-          <p className="mb-4 text-xs text-slate-500">
+          <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Vídeo (opcional)</h2>
+          <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
             Anexa uma pílula de vídeo curto à lição — aparece com um indicador &quot;🎥 Vídeo&quot; na lista e um
             player logo abaixo do texto. Só disponível pra lições da Central de Treinamento (não pra ajuda
             contextual). Tamanho máximo: 200MB.
           </p>
           {urlVideoAtual && (
             <div className="mb-3">
-              <video src={urlVideoAtual} controls className="max-h-64 rounded-lg border border-slate-200" />
-              <label className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+              <video src={urlVideoAtual} controls className="max-h-64 rounded-lg border border-slate-200 dark:border-slate-700" />
+              <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <input type="checkbox" name="remover_video" className="rounded border-slate-300" />
                 Remover este vídeo
               </label>
@@ -157,13 +157,13 @@ export function ConteudoForm({ conteudo }: { conteudo?: ConteudoAjuda }) {
       <section className="card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Visibilidade</h2>
-            <p className="mt-1 text-xs text-slate-500">Deixe todos desmarcados pra aparecer pra qualquer perfil.</p>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Visibilidade</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Deixe todos desmarcados pra aparecer pra qualquer perfil.</p>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-4">
           {PERFIS.map((p) => (
-            <label key={p} className="flex items-center gap-2 text-sm text-slate-700">
+            <label key={p} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input
                 type="checkbox"
                 name="perfis"
@@ -175,7 +175,7 @@ export function ConteudoForm({ conteudo }: { conteudo?: ConteudoAjuda }) {
             </label>
           ))}
         </div>
-        <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+        <label className="mt-4 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
           <input type="checkbox" name="ativo" defaultChecked={conteudo?.ativo ?? true} className="rounded border-slate-300" />
           Ativo (visível para os usuários)
         </label>
@@ -203,7 +203,7 @@ function Campo({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-500">
+      <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
         {label} {required && <span className="text-red-500">*</span>}
       </span>
       {children}

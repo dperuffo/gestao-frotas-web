@@ -172,7 +172,7 @@ export async function IndicadoresFinanceirosFni() {
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Cliente</th>
               <th className="px-4 py-3">Plano</th>
@@ -183,21 +183,21 @@ export async function IndicadoresFinanceirosFni() {
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {lista.map((e) => (
               <tr key={e.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 font-medium text-slate-900">{e.nome}</td>
-                <td className="px-4 py-3 text-slate-600">{PLANO_LABEL[e.plano as Plano] ?? e.plano}</td>
+                <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{e.nome}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{PLANO_LABEL[e.plano as Plano] ?? e.plano}</td>
                 <td className="px-4 py-3">
                   <span className={e.status === "ativo" ? "badge-ativo" : "badge-inativo"}>
                     {STATUS_EMPRESA_LABEL[e.status as StatusEmpresa] ?? e.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {e.trial_ends_at ? new Date(e.trial_ends_at).toLocaleDateString("pt-BR") : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{e.stripe_customer_id ? "Conectado" : "—"}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{e.stripe_customer_id ? "Conectado" : "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {e.created_at ? new Date(e.created_at).toLocaleDateString("pt-BR") : "—"}
                 </td>
                 <td className="px-4 py-3">

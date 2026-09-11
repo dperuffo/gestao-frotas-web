@@ -28,7 +28,7 @@ export function RegistrarPrecoForm({ cnpj, empresaId }: { cnpj: string; empresaI
     <form ref={formRef} onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
       {erro && <p className="w-full text-sm text-red-600">{erro}</p>}
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-700">Combustível</label>
+        <label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">Combustível</label>
         <select name="combustivel" required defaultValue="" className="input">
           <option value="" disabled>
             Selecione...
@@ -41,11 +41,11 @@ export function RegistrarPrecoForm({ cnpj, empresaId }: { cnpj: string; empresaI
         </select>
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-700">Preço (R$/L)</label>
+        <label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">Preço (R$/L)</label>
         <input type="number" name="preco" step="0.001" required className="input w-32" />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-700">Data</label>
+        <label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">Data</label>
         <input type="date" name="data_ref" defaultValue={hoje} className="input" />
       </div>
       <button type="submit" disabled={isPending} className="btn-primary">

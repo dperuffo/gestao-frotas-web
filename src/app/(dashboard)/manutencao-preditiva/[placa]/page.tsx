@@ -33,10 +33,10 @@ export default async function DetalheManutencaoPreditivaPage({
       <div>
         <BotaoVoltar href="/manutencao-preditiva" />
         <div className="card max-w-lg space-y-4 p-6">
-          <p className="text-sm text-slate-600">Selecione o cliente para ver a análise deste veículo.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">Selecione o cliente para ver a análise deste veículo.</p>
           <form className="flex items-end gap-3">
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
               <select name="empresa" defaultValue="" className="input">
                 <option value="">Selecione...</option>
                 {empresas.map((e) => (
@@ -178,9 +178,9 @@ export default async function DetalheManutencaoPreditivaPage({
 
       {recomendacoes.length > 0 && (
         <div className="mb-6 card space-y-1.5 p-4">
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">💡 Recomendações</h2>
+          <h2 className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">💡 Recomendações</h2>
           {recomendacoes.map((r, i) => (
-            <p key={i} className="text-sm text-slate-700">
+            <p key={i} className="text-sm text-slate-700 dark:text-slate-300">
               {r}
             </p>
           ))}
@@ -188,7 +188,7 @@ export default async function DetalheManutencaoPreditivaPage({
       )}
 
       <div className="mb-6 card p-4">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">Detalhamento por componente</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Detalhamento por componente</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {componentesOrdenados.map((c) => (
             <ComponenteCard key={c.componente} c={c} />
@@ -197,8 +197,8 @@ export default async function DetalheManutencaoPreditivaPage({
       </div>
 
       <div className="mb-6 card p-4">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">📝 Registrar Manutenção Realizada</h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">📝 Registrar Manutenção Realizada</h2>
+        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
           Registre manutenções realizadas para melhorar a precisão da análise preditiva.
         </p>
         <RegistrarManutencaoForm
@@ -211,7 +211,7 @@ export default async function DetalheManutencaoPreditivaPage({
       </div>
 
       <div className="card p-4">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">📋 Histórico de Manutenções</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">📋 Histórico de Manutenções</h2>
         <HistoricoManutencoes placa={placa} registros={historico ?? []} />
       </div>
     </div>

@@ -38,10 +38,10 @@ export function ListaChavesCustosFixos({ chaves }: { chaves: ChaveCustosFixos[] 
 
   return (
     <div className="card mt-4 overflow-x-auto">
-      <h2 className="px-4 pt-4 text-sm font-semibold text-slate-900">Chaves de API</h2>
+      <h2 className="px-4 pt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Chaves de API</h2>
       {erro && <p className="mx-4 mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       <table className="mt-2 w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+        <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
           <tr>
             <th className="px-4 py-3">Cliente</th>
             <th className="px-4 py-3">Nome</th>
@@ -52,23 +52,23 @@ export function ListaChavesCustosFixos({ chaves }: { chaves: ChaveCustosFixos[] 
             <th className="px-4 py-3">Ações</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {chaves.map((c) => (
             <tr key={c.id} className="transition-colors hover:bg-frota-50/60">
-              <td className="px-4 py-3 font-medium text-slate-700">{c.empresa_nome ?? "—"}</td>
-              <td className="px-4 py-3 text-slate-600">{c.nome}</td>
+              <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{c.empresa_nome ?? "—"}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.nome}</td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-1">
                   {c.escopos.map((e) => (
-                    <span key={e} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+                    <span key={e} className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[11px] text-slate-600 dark:text-slate-300">
                       {labelEscopo(e)}
                     </span>
                   ))}
                   {c.escopos.length === 0 && "—"}
                 </div>
               </td>
-              <td className="px-4 py-3 text-slate-600">{formatarDataHora(c.criada_em)}</td>
-              <td className="px-4 py-3 text-slate-600">{formatarDataHora(c.ultimo_uso)}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarDataHora(c.criada_em)}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarDataHora(c.ultimo_uso)}</td>
               <td className="px-4 py-3">
                 <span className={c.ativa ? "badge-ativo" : "badge-inativo"}>{c.ativa ? "Ativa" : "Revogada"}</span>
               </td>

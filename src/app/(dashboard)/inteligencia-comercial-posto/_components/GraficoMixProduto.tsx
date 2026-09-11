@@ -22,7 +22,7 @@ export function GraficoMixProduto({ dados, totalClientes }: { dados: ItemMixProd
 
   return (
     <div className="card mb-6 p-5">
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">Cobertura de clientes por produto</p>
+      <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Cobertura de clientes por produto</p>
       <ResponsiveContainer width="100%" height={Math.max(160, cobertura.length * 34)}>
         <BarChart data={cobertura} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />

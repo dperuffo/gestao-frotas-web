@@ -40,8 +40,8 @@ export default async function FidelidadePage({
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">Esta tela é exclusiva do time interno (perfil administrador).</p>
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Esta tela é exclusiva do time interno (perfil administrador).</p>
       </div>
     );
   }
@@ -80,10 +80,10 @@ export default async function FidelidadePage({
         }
       />
 
-      <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+      <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
         <Link
           href={linkCategoria("")}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${!categoriaParam ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+          className={`rounded-full px-3 py-1 text-xs font-medium ${!categoriaParam ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200"}`}
         >
           Todas
         </Link>
@@ -91,7 +91,7 @@ export default async function FidelidadePage({
           <Link
             key={c.valor}
             href={linkCategoria(c.valor)}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${categoriaParam === c.valor ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${categoriaParam === c.valor ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200"}`}
           >
             {c.label}
           </Link>
@@ -101,7 +101,7 @@ export default async function FidelidadePage({
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar catálogo: {error.message}</p>}
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Título</th>
               <th className="px-4 py-3">Categoria</th>
@@ -111,13 +111,13 @@ export default async function FidelidadePage({
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {itens.map((item) => (
               <tr key={item.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 font-medium text-slate-900">{item.titulo}</td>
-                <td className="px-4 py-3 text-slate-600">{LABEL_CATEGORIA[item.categoria] ?? item.categoria}</td>
-                <td className="px-4 py-3 text-slate-600">{item.parceiro_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{item.pontos_necessarios.toLocaleString("pt-BR")}</td>
+                <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{item.titulo}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{LABEL_CATEGORIA[item.categoria] ?? item.categoria}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{item.parceiro_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{item.pontos_necessarios.toLocaleString("pt-BR")}</td>
                 <td className="px-4 py-3">
                   <span className={item.ativo ? "badge-ativo" : "badge-inativo"}>{item.ativo ? "Ativo" : "Inativo"}</span>
                 </td>

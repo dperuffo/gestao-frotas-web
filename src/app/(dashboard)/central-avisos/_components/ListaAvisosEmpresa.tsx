@@ -31,13 +31,13 @@ export function ListaAvisosEmpresa({ avisos }: { avisos: AvisoDaMinhaEmpresa[] }
         <div key={a.id} className="card flex items-start justify-between gap-4 p-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{TIPO_LABEL[a.tipo] ?? a.tipo}</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{TIPO_LABEL[a.tipo] ?? a.tipo}</span>
               {!a.ativo && (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">Inativo</span>
+                <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">Inativo</span>
               )}
             </div>
-            <p className="mt-1 text-sm font-semibold text-slate-900">{a.titulo}</p>
-            <p className="mt-0.5 text-sm text-slate-600">{a.resumo}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{a.titulo}</p>
+            <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{a.resumo}</p>
             <p className="mt-1 text-xs text-slate-400">Publicado em {formatarDataHoraBr(a.data_publicacao)}</p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">

@@ -17,7 +17,7 @@ export function AlternarAtivoTabela({ id, empresaId, ativo }: { id: string; empr
       type="button"
       onClick={handleClick}
       disabled={isPending}
-      className={`text-xs font-medium hover:underline disabled:opacity-50 ${ativo ? "text-slate-500" : "text-status-ativo"}`}
+      className={`text-xs font-medium hover:underline disabled:opacity-50 ${ativo ? "text-slate-500 dark:text-slate-400" : "text-status-ativo"}`}
     >
       {isPending ? "..." : ativo ? "Desativar" : "Ativar"}
     </button>

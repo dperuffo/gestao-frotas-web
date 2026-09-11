@@ -53,8 +53,8 @@ export function FormPostoInterno({
       <form onSubmit={handleSubmitDados} className="card space-y-4 p-6">
         <input type="hidden" name="empresa_id" value={empresaId} />
         <input type="hidden" name="posto_interno_id" value={postoInternoId} />
-        <h2 className="text-sm font-semibold text-slate-900">Posto interno</h2>
-        <p className="text-xs text-slate-500">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Posto interno</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Representa a garagem/tanque próprio desta empresa. Enquanto estiver ativo, ele aparece como opção de
           empresa no app do motorista (aba Abastecimento Interno) e entra no cálculo de custo da Roteirização.
         </p>
@@ -69,7 +69,7 @@ export function FormPostoInterno({
         )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Nome (opcional)</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Nome (opcional)</label>
             <input
               type="text"
               name="nome"
@@ -78,7 +78,7 @@ export function FormPostoInterno({
               className="input"
             />
           </div>
-          <label className="mt-6 flex items-center gap-2 text-sm text-slate-700">
+          <label className="mt-6 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
             <input type="checkbox" name="ativo" defaultChecked={ativo} />
             Posto interno ativo
           </label>
@@ -91,8 +91,8 @@ export function FormPostoInterno({
       <form onSubmit={handleSubmitPrecos} className="card space-y-4 p-6">
         <input type="hidden" name="empresa_id" value={empresaId} />
         <input type="hidden" name="posto_interno_id" value={postoInternoId} />
-        <h2 className="text-sm font-semibold text-slate-900">Preços por combustível</h2>
-        <p className="text-xs text-slate-500">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Preços por combustível</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Preencha só os combustíveis realmente abastecidos aqui. O preço unitário informado é o que vale no
           abastecimento manual e no que o motorista confirma pelo app — ele nunca digita o preço.
         </p>
@@ -107,16 +107,16 @@ export function FormPostoInterno({
         )}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-3 py-2">Combustível</th>
                 <th className="px-3 py-2">Preço (R$/litro ou R$/kg)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {COMBUSTIVEIS_POSTO_INTERNO.map((c) => (
                 <tr key={c}>
-                  <td className="px-3 py-2 text-slate-700">{c}</td>
+                  <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{c}</td>
                   <td className="px-3 py-2">
                     <input
                       type="text"
@@ -130,7 +130,7 @@ export function FormPostoInterno({
                 </tr>
               ))}
               <tr className="bg-amber-50/40">
-                <td className="px-3 py-2 font-medium text-slate-700">
+                <td className="px-3 py-2 font-medium text-slate-700 dark:text-slate-300">
                   {ARLA32} <span className="text-xs font-normal text-slate-400">(aditivo, junto do Diesel)</span>
                 </td>
                 <td className="px-3 py-2">

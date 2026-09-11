@@ -90,7 +90,7 @@ export default async function CotacoesPage({
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Simule o frete com base nas suas{" "}
             <Link href="/tabelas-frete" className="text-frota-600 hover:underline">
               Tabelas de Frete
@@ -108,7 +108,7 @@ export default async function CotacoesPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -138,7 +138,7 @@ export default async function CotacoesPage({
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e simular cotações.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione uma empresa acima pra ver e simular cotações.</p>
       ) : cotacoesRaw.length === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">
           Nenhuma cotação simulada ainda. Clique em &quot;+ Nova cotação&quot; pra começar.
@@ -154,14 +154,14 @@ export default async function CotacoesPage({
               className="card flex flex-col gap-2 p-5 hover:border-frota-300"
             >
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold text-slate-900">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100">
                   {c.origem_label} → {c.destino_label}
                 </h3>
                 <span className={COR_STATUS[c.status] ?? "badge-inativo"}>{LABEL_STATUS[c.status] ?? c.status}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-slate-900">{formatoMoeda.format(c.valor_total)}</span>
-                <span className="text-slate-500">{c.peso_kg.toLocaleString("pt-BR")} kg</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100">{formatoMoeda.format(c.valor_total)}</span>
+                <span className="text-slate-500 dark:text-slate-400">{c.peso_kg.toLocaleString("pt-BR")} kg</span>
               </div>
               {c.piso_antt_alerta && (
                 <p className="text-xs font-medium text-amber-700">⚠️ Abaixo do piso mínimo ANTT</p>
@@ -176,7 +176,7 @@ export default async function CotacoesPage({
 
   const conteudoPisoAntt = (
     <div>
-      <p className="mb-4 text-sm text-slate-500">
+      <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
         Res. ANTT 5.867/2020 — piso = distância (km) × coeficiente de deslocamento + coeficiente de
         carga/descarga, por tipo de carga e nº de eixos. É o valor mínimo legal usado pra alertar quando uma
         cotação simulada fica abaixo do piso.

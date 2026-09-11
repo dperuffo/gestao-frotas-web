@@ -91,7 +91,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
 
   if (empresaSelecionada && segmentoSelecionado !== "Revenda") {
     return (
-      <div className="card p-6 text-sm text-slate-600">
+      <div className="card p-6 text-sm text-slate-600 dark:text-slate-300">
         Esta tela é exclusiva para postos revendedores. Para custos e orçamento da sua frota, use o{" "}
         <Link href="/financeiro" className="text-frota-600 hover:underline">
           Painel Financeiro
@@ -311,7 +311,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione...</option>
               {empresas.map((e) => (
@@ -328,7 +328,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
           {empresas.length > 1 ? "Selecione uma empresa acima." : "Nenhuma empresa vinculada ao seu usuário."}
         </p>
       ) : (
@@ -340,7 +340,7 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
               <Link
                 key={p}
                 href={`/financeiro-posto?empresa=${empresaSelecionada}&periodo=${p}`}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${periodo === p ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${periodo === p ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
               >
                 {PERIODO_FINANCEIRO_LABEL[p]}
               </Link>
@@ -351,11 +351,11 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
               <input type="hidden" name="empresa" value={empresaSelecionada} />
               <input type="hidden" name="periodo" value="personalizado" />
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">De</label>
                 <input type="date" name="inicio" defaultValue={inicio} className="input text-sm" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Até</label>
                 <input type="date" name="fim" defaultValue={fim} className="input text-sm" />
               </div>
               <button type="submit" className="btn-secondary text-sm">
@@ -388,15 +388,15 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
 
           {indicadoresPorProvedor.length > 0 && (
             <div className="card mb-6 overflow-x-auto p-6">
-              <h2 className="mb-4 text-sm font-semibold text-slate-900">Consolidado por meio de pagamento</h2>
-              <p className="mb-3 text-xs text-slate-500">
+              <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Consolidado por meio de pagamento</h2>
+              <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                 Abastecimentos que você forneceu no período, por meio de pagamento usado pelo cliente. Só
                 informativo — quem cobra o cliente por essas vendas é o próprio meio de pagamento (Ticket
                 Log, Edenred, Veloe...), fora do FNI. O quadro &quot;Ciclos por cliente&quot; abaixo mostra
                 só a cobrança que o FNI de fato calcula (negociação direta).
               </p>
               <table className="w-full text-left text-sm">
-                <thead className="text-xs uppercase text-slate-500">
+                <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="py-2 pr-4">Meio de pagamento</th>
                     <th className="py-2 pr-4">Abastecimentos</th>
@@ -404,15 +404,15 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
                     <th className="py-2">Valor</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {indicadoresPorProvedor.map((p) => (
                     <tr key={p.provedor}>
                       <td className="py-2.5 pr-4">
                         <LogoProvedor provedor={p.provedor} className="h-5 w-auto" />
                       </td>
-                      <td className="py-2.5 pr-4 text-slate-600">{p.qtdAbastecimentos}</td>
-                      <td className="py-2.5 pr-4 text-slate-600">{p.litros.toLocaleString("pt-BR")}</td>
-                      <td className="py-2.5 text-slate-600">{formatarMoeda(p.valorTotal)}</td>
+                      <td className="py-2.5 pr-4 text-slate-600 dark:text-slate-300">{p.qtdAbastecimentos}</td>
+                      <td className="py-2.5 pr-4 text-slate-600 dark:text-slate-300">{p.litros.toLocaleString("pt-BR")}</td>
+                      <td className="py-2.5 text-slate-600 dark:text-slate-300">{formatarMoeda(p.valorTotal)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -424,14 +424,14 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
 
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="card p-4 lg:col-span-2">
-              <h2 className="text-sm font-semibold text-slate-900">Fluxo de caixa previsto (vencimentos por dia)</h2>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Fluxo de caixa previsto (vencimentos por dia)</h2>
               <p className="mb-3 text-xs text-slate-400">
                 Previsão: {formatarDataBr(inicioPrevisto)} – {formatarDataBr(fimPrevisto)}
               </p>
               <GraficoFluxoCaixaPostoLazy dados={dadosGrafico} />
             </div>
             <div className="card p-4">
-              <h2 className="mb-3 text-sm font-semibold text-slate-900">Contas a receber vencidas, por atraso</h2>
+              <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Contas a receber vencidas, por atraso</h2>
               <table className="w-full text-left text-xs">
                 <thead className="text-slate-400">
                   <tr>
@@ -440,12 +440,12 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
                     <th className="py-1 text-right">Valor</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {agingFaturas.map((faixa) => (
                     <tr key={faixa.chave}>
-                      <td className="py-1.5 text-slate-600">{faixa.label}</td>
-                      <td className="py-1.5 text-right text-slate-500">{faixa.quantidade}</td>
-                      <td className="py-1.5 text-right font-medium text-slate-700">{formatarMoeda(faixa.valor)}</td>
+                      <td className="py-1.5 text-slate-600 dark:text-slate-300">{faixa.label}</td>
+                      <td className="py-1.5 text-right text-slate-500 dark:text-slate-400">{faixa.quantidade}</td>
+                      <td className="py-1.5 text-right font-medium text-slate-700 dark:text-slate-300">{formatarMoeda(faixa.valor)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -461,17 +461,17 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
           />
 
           <div className="mb-6 card p-6">
-            <h2 className="mb-1 text-sm font-semibold text-slate-900">Lançar despesa</h2>
-            <p className="mb-4 text-xs text-slate-500">Contas a pagar do posto — compras, salários, impostos e outras despesas.</p>
+            <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Lançar despesa</h2>
+            <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">Contas a pagar do posto — compras, salários, impostos e outras despesas.</p>
             <FormularioDespesaPosto empresaPostoId={empresaSelecionada} />
           </div>
 
           <div className="card overflow-x-auto">
-            <div className="border-b border-slate-100 px-4 py-3">
-              <h2 className="text-sm font-semibold text-slate-900">Contas a pagar (despesas do posto)</h2>
+            <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Contas a pagar (despesas do posto)</h2>
             </div>
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Tipo</th>
                   <th className="px-4 py-3">Descrição</th>
@@ -481,15 +481,15 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {despesas.map((d) => {
                   const statusExib = statusFaturaExibicao(d.status, d.vencimento, hojeIso);
                   return (
                     <tr key={d.id} className="transition-colors hover:bg-frota-50/60">
-                      <td className="px-4 py-3 text-slate-700">{TIPO_DESPESA_POSTO_LABEL[d.tipo as keyof typeof TIPO_DESPESA_POSTO_LABEL] ?? d.tipo}</td>
-                      <td className="px-4 py-3 text-slate-500">{d.descricao ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-500">{formatarDataBr(d.vencimento)}</td>
-                      <td className="px-4 py-3 font-medium text-slate-700">{formatarMoeda(d.valor)}</td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{TIPO_DESPESA_POSTO_LABEL[d.tipo as keyof typeof TIPO_DESPESA_POSTO_LABEL] ?? d.tipo}</td>
+                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{d.descricao ?? "—"}</td>
+                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatarDataBr(d.vencimento)}</td>
+                      <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{formatarMoeda(d.valor)}</td>
                       <td className="px-4 py-3">
                         <BadgeStatus status={statusExib} />
                       </td>
@@ -537,13 +537,13 @@ export default async function FinanceiroPostoPage({ searchParams }: { searchPara
 
 function BadgeStatus({ status }: { status: keyof typeof STATUS_FATURA_LABEL }) {
   const cores: Record<string, string> = {
-    aberta: "bg-slate-100 text-slate-700",
+    aberta: "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300",
     vencida: "bg-red-100 text-red-700",
     paga: "bg-green-100 text-green-700",
-    cancelada: "bg-slate-100 text-slate-400 line-through",
+    cancelada: "bg-slate-100 dark:bg-slate-700 text-slate-400 line-through",
   };
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cores[status] ?? "bg-slate-100 text-slate-700"}`}>
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cores[status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
       {STATUS_FATURA_LABEL[status]}
     </span>
   );

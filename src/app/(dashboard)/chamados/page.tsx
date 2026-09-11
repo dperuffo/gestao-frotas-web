@@ -168,7 +168,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Todos os clientes</option>
               {empresas.map((e) => (
@@ -180,7 +180,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Status</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Status</label>
           <select name="status" defaultValue={statusParam ?? ""} className="input text-sm">
             <option value="">Todos</option>
             {STATUS_TICKET.map((s) => (
@@ -191,7 +191,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Tipo</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tipo</label>
           <select name="tipo" defaultValue={tipoParam ?? ""} className="input text-sm">
             <option value="">Todos</option>
             {TIPOS_TICKET.map((t) => (
@@ -202,7 +202,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Prioridade</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Prioridade</label>
           <select name="prioridade" defaultValue={prioridadeParam ?? ""} className="input text-sm">
             <option value="">Todas</option>
             {PRIORIDADES_TICKET.map((p) => (
@@ -213,7 +213,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
           <input
             type="search"
             name="q"
@@ -239,7 +239,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar chamados: {error.message}</p>}
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">#</th>
               <th className="px-4 py-3">Título</th>
@@ -250,22 +250,22 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
               <th className="px-4 py-3">Aberto em</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {chamadosDaPagina.map((c) => {
               const naoVisto = temAtualizacaoNaoVista(c, papel);
               const corStatus = CORES_STATUS[c.status as TicketStatus] ?? CORES_STATUS.aberto;
               const corPrioridade = CORES_PRIORIDADE[(c.prioridade as TicketPrioridade) ?? "media"] ?? CORES_PRIORIDADE.media;
               return (
                 <tr key={c.id} className={`transition-colors hover:bg-frota-50/60 ${naoVisto ? "bg-red-50/40" : ""}`}>
-                  <td className="px-4 py-3 text-slate-500">#{c.numero}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">#{c.numero}</td>
                   <td className="px-4 py-3">
                     <Link href={`/chamados/${c.id}`} className="flex items-center gap-2 font-medium text-frota-600 hover:underline">
                       {naoVisto && <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" title="Atualização não vista" />}
                       {c.titulo}
                     </Link>
                   </td>
-                  {empresas.length > 1 && <td className="px-4 py-3 text-slate-600">{c.empresas?.nome ?? "—"}</td>}
-                  <td className="px-4 py-3 text-slate-600">{tipoLabel(c.tipo as TicketTipo)}</td>
+                  {empresas.length > 1 && <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.empresas?.nome ?? "—"}</td>}
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{tipoLabel(c.tipo as TicketTipo)}</td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full border px-2 py-0.5 text-xs ${corStatus.bg} ${corStatus.text} ${corStatus.border}`}>
                       {statusLabel(c.status as TicketStatus)}
@@ -276,7 +276,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
                       {prioridadeLabel((c.prioridade as TicketPrioridade) ?? "media")}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-500">{c.criado_em ? formatDate(c.criado_em) : "—"}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{c.criado_em ? formatDate(c.criado_em) : "—"}</td>
                 </tr>
               );
             })}

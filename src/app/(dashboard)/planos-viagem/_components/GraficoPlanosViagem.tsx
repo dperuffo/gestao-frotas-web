@@ -26,7 +26,7 @@ export function GraficoPlanosViagem({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Planos por status</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Planos por status</p>
         {comStatus.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
@@ -51,8 +51,8 @@ export function GraficoPlanosViagem({
                     style={{ backgroundColor: CORES_GRAFICO.serie[i % CORES_GRAFICO.serie.length] }}
                     aria-hidden="true"
                   />
-                  <span className="text-slate-600">{d.label}</span>
-                  <span className="font-medium text-slate-900">{d.total}</span>
+                  <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{d.total}</span>
                 </li>
               ))}
             </ul>
@@ -61,7 +61,7 @@ export function GraficoPlanosViagem({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Custo estimado por veículo (top 5)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Custo estimado por veículo (top 5)</p>
         {custoPorVeiculo.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (

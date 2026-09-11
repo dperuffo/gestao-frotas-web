@@ -103,7 +103,7 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -115,15 +115,15 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">De</label>
           <input type="date" name="inicio" defaultValue={dataInicio} className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Até</label>
           <input type="date" name="fim" defaultValue={dataFim} className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
           <input
             type="search"
             name="busca"
@@ -134,7 +134,7 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
         </div>
         {(centrosCusto?.length ?? 0) > 0 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Centro de custo</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Centro de custo</label>
             <select name="centroCusto" defaultValue={centroCusto ?? ""} className="input text-sm">
               <option value="">Todos</option>
               {centrosCusto!.map((c) => (
@@ -146,7 +146,7 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Ordenar por</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Ordenar por</label>
           <select name="ordenar" defaultValue={ordenar} className="input text-sm">
             <option value="custo_por_km_desc">Maior custo/km primeiro</option>
             <option value="custo_por_km_asc">Menor custo/km primeiro</option>
@@ -210,7 +210,7 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Placa</th>
                   <th className="px-4 py-3">Marca / Modelo</th>
@@ -221,7 +221,7 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
                   <th className="px-4 py-3">Origem</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {veiculos.map((v) => (
                   <tr key={v.placa} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
@@ -229,17 +229,17 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
                         {v.placa}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{v.centro_custo_nome ?? "—"}</td>
-                    <td className="px-4 py-3 tabular-nums text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.centro_custo_nome ?? "—"}</td>
+                    <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">
                       {v.km_periodo !== null ? `${Math.round(v.km_periodo).toLocaleString("pt-BR")} km` : "—"}
                     </td>
-                    <td className="px-4 py-3 tabular-nums font-medium text-slate-900">
+                    <td className="px-4 py-3 tabular-nums font-medium text-slate-900 dark:text-slate-100">
                       {formatarMoeda(v.tco_total)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-slate-600">
+                    <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">
                       {v.custo_por_km !== null ? `${formatarMoeda(v.custo_por_km)}/km` : "—"}
                     </td>
                     <td className="px-4 py-3 text-xs">
@@ -273,7 +273,7 @@ export default async function TcoPage({ searchParams }: { searchParams: Promise<
           </div>
 
           {totalPaginas > 1 && (
-            <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
+            <div className="mt-4 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
               <span>
                 Página {pagina} de {totalPaginas} · {total} veículo(s)
               </span>

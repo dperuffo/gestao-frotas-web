@@ -60,7 +60,7 @@ export default async function CadastrosPendentesPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -77,7 +77,7 @@ export default async function CadastrosPendentesPage({
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
           {empresas.length > 1 ? "Selecione um cliente acima." : "Nenhuma empresa vinculada ao seu usuário."}
         </p>
       ) : (
@@ -85,30 +85,30 @@ export default async function CadastrosPendentesPage({
           {erro && <p className="mb-4 text-sm text-red-600">Erro ao carregar: {erro}</p>}
 
           {total === 0 ? (
-            <div className="card p-6 text-sm text-slate-500">
+            <div className="card p-6 text-sm text-slate-500 dark:text-slate-400">
               Nenhum cadastro pendente — tudo o que veio de importações já foi revisado.
             </div>
           ) : (
             <div className="space-y-6">
               <div className="card overflow-x-auto">
-                <div className="border-b border-slate-100 px-4 py-3">
-                  <h2 className="text-sm font-semibold text-slate-900">
+                <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+                  <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Veículos ({veiculosPendentes.length})
                   </h2>
                 </div>
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Placa</th>
                       <th className="px-4 py-3">Marca/Modelo</th>
                       <th className="px-4 py-3" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {veiculosPendentes.map((v) => (
                       <tr key={v.id} className="transition-colors hover:bg-frota-50/60">
-                        <td className="px-4 py-3 font-medium text-slate-700">{v.placa}</td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{v.placa}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                           {[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -130,24 +130,24 @@ export default async function CadastrosPendentesPage({
               </div>
 
               <div className="card overflow-x-auto">
-                <div className="border-b border-slate-100 px-4 py-3">
-                  <h2 className="text-sm font-semibold text-slate-900">
+                <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+                  <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Motoristas ({motoristasPendentes.length})
                   </h2>
                 </div>
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Nome</th>
                       <th className="px-4 py-3">Telefone</th>
                       <th className="px-4 py-3" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {motoristasPendentes.map((m) => (
                       <tr key={m.id} className="transition-colors hover:bg-frota-50/60">
-                        <td className="px-4 py-3 font-medium text-slate-700">{m.nome_completo}</td>
-                        <td className="px-4 py-3 text-slate-500">{m.telefone ?? "—"}</td>
+                        <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{m.nome_completo}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{m.telefone ?? "—"}</td>
                         <td className="px-4 py-3 text-right">
                           <Link href={`/motoristas/${m.id}`} className="text-xs font-medium text-frota-600 hover:underline">
                             Completar cadastro

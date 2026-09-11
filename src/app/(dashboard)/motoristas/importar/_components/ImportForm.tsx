@@ -107,7 +107,7 @@ export function ImportForm() {
         className="card space-y-4 p-6"
       >
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Arquivo Excel (.xlsx)
           </label>
           <input
@@ -118,7 +118,7 @@ export function ImportForm() {
             className="input"
             disabled={isPending}
           />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Baixe o modelo acima, preencha uma linha por motorista e envie o
             arquivo aqui. Planilhas grandes (milhares de linhas) são processadas
             em lotes — acompanhe o progresso abaixo.
@@ -136,19 +136,19 @@ export function ImportForm() {
       {progresso && (
         <div className="card p-4">
           {progresso.fase === "lendo" ? (
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
               Lendo e validando a planilha...
             </p>
           ) : (
             <>
-              <div className="mb-2 flex items-center justify-between text-sm text-slate-600">
+              <div className="mb-2 flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
                 <span>
                   Gravando {progresso.processadas} de {progresso.total}{" "}
                   linhas...
                 </span>
                 <span className="font-medium">{percentual}%</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
                 <div
                   className="h-full rounded-full bg-frota-600 transition-all"
                   style={{ width: `${percentual}%` }}
@@ -167,7 +167,7 @@ export function ImportForm() {
 
       {resultado && (
         <div className="card overflow-hidden">
-          <div className="flex flex-wrap gap-4 border-b border-slate-100 p-4 text-sm">
+          <div className="flex flex-wrap gap-4 border-b border-slate-100 dark:border-slate-700 p-4 text-sm">
             <span>
               Total processado: <strong>{resultado.total}</strong>
             </span>
@@ -179,7 +179,7 @@ export function ImportForm() {
             </span>
           </div>
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3">Linha</th>
                 <th className="px-4 py-3">Motorista</th>
@@ -187,7 +187,7 @@ export function ImportForm() {
                 <th className="px-4 py-3">Detalhe</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {linhasPagina.map((l) => (
                 <tr key={l.linha}>
                   <td className="px-4 py-3">{l.linha}</td>
@@ -201,7 +201,7 @@ export function ImportForm() {
                       {l.status === "ok" ? "OK" : "Erro"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{l.mensagem}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.mensagem}</td>
                 </tr>
               ))}
             </tbody>
@@ -257,13 +257,13 @@ function PaginacaoLocal({
   ).sort((a, b) => a - b);
 
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 text-sm">
-      <p className="text-slate-500">
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-700 pt-4 text-sm">
+      <p className="text-slate-500 dark:text-slate-400">
         Mostrando{" "}
-        <span className="font-medium text-slate-700">
+        <span className="font-medium text-slate-700 dark:text-slate-300">
           {inicio}–{fim}
         </span>{" "}
-        de <span className="font-medium text-slate-700">{totalRegistros}</span>{" "}
+        de <span className="font-medium text-slate-700 dark:text-slate-300">{totalRegistros}</span>{" "}
         linhas
       </p>
       <nav className="flex items-center gap-1" aria-label="Paginação">
@@ -271,7 +271,7 @@ function PaginacaoLocal({
           type="button"
           onClick={() => aoMudarPagina(paginaAtual - 1)}
           disabled={paginaAtual === 1}
-          className="rounded-md px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 disabled:hover:bg-transparent"
+          className="rounded-md px-2.5 py-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 disabled:text-slate-300 disabled:hover:bg-transparent"
         >
           ‹ Anterior
         </button>
@@ -288,7 +288,7 @@ function PaginacaoLocal({
               <button
                 type="button"
                 onClick={() => aoMudarPagina(p)}
-                className="min-w-[2rem] rounded-md px-2.5 py-1.5 text-center text-slate-600 hover:bg-slate-100"
+                className="min-w-[2rem] rounded-md px-2.5 py-1.5 text-center text-slate-600 dark:text-slate-300 hover:bg-slate-100"
               >
                 {p}
               </button>
@@ -299,7 +299,7 @@ function PaginacaoLocal({
           type="button"
           onClick={() => aoMudarPagina(paginaAtual + 1)}
           disabled={paginaAtual === totalPaginas}
-          className="rounded-md px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 disabled:text-slate-300 disabled:hover:bg-transparent"
+          className="rounded-md px-2.5 py-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 disabled:text-slate-300 disabled:hover:bg-transparent"
         >
           Próxima ›
         </button>

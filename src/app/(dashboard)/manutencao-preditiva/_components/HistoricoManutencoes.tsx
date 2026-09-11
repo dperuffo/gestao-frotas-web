@@ -45,7 +45,7 @@ export function HistoricoManutencoes({ placa, registros }: { placa: string; regi
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
-        <thead className="text-xs uppercase text-slate-500">
+        <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
           <tr>
             <th className="py-2 pr-4">Data</th>
             <th className="py-2 pr-4">Tipo</th>
@@ -58,10 +58,10 @@ export function HistoricoManutencoes({ placa, registros }: { placa: string; regi
             <th className="py-2"></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {registros.map((r) => (
             <tr key={r.id}>
-              <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-700">{formatDate(r.data_manutencao)}</td>
+              <td className="py-2.5 pr-4 align-top whitespace-nowrap text-slate-700 dark:text-slate-300">{formatDate(r.data_manutencao)}</td>
               <td className="py-2.5 pr-4 align-top">
                 {r.tipo === "Preventiva" && (
                   <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Preventiva</span>
@@ -71,17 +71,17 @@ export function HistoricoManutencoes({ placa, registros }: { placa: string; regi
                 )}
                 {!r.tipo && <span className="text-slate-300">—</span>}
               </td>
-              <td className="py-2.5 pr-4 align-top tabular-nums text-slate-600">
+              <td className="py-2.5 pr-4 align-top tabular-nums text-slate-600 dark:text-slate-300">
                 {r.hodometro ? `${r.hodometro.toLocaleString("pt-BR")} km` : "—"}
               </td>
-              <td className="py-2.5 pr-4 align-top text-slate-600">
+              <td className="py-2.5 pr-4 align-top text-slate-600 dark:text-slate-300">
                 {(r.itens_realizados ?? []).join(", ") || "—"}
               </td>
-              <td className="py-2.5 pr-4 align-top text-slate-600">{r.oficina ?? "—"}</td>
-              <td className="py-2.5 pr-4 align-top tabular-nums text-slate-600">
+              <td className="py-2.5 pr-4 align-top text-slate-600 dark:text-slate-300">{r.oficina ?? "—"}</td>
+              <td className="py-2.5 pr-4 align-top tabular-nums text-slate-600 dark:text-slate-300">
                 {r.custo_total ? r.custo_total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
               </td>
-              <td className="py-2.5 pr-4 align-top tabular-nums text-slate-600">{r.dias_parado ?? "—"}</td>
+              <td className="py-2.5 pr-4 align-top tabular-nums text-slate-600 dark:text-slate-300">{r.dias_parado ?? "—"}</td>
               <td className="py-2.5 pr-4 align-top">
                 {r.fotosUrls && r.fotosUrls.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
@@ -92,7 +92,7 @@ export function HistoricoManutencoes({ placa, registros }: { placa: string; regi
                         target="_blank"
                         rel="noopener noreferrer"
                         title={f.nome}
-                        className="block h-10 w-10 overflow-hidden rounded border border-slate-200"
+                        className="block h-10 w-10 overflow-hidden rounded border border-slate-200 dark:border-slate-700"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element -- miniatura de arquivo no Storage, com signed URL de curta duração; next/image exigiria configurar domínio remoto pra uma URL que muda a cada load. */}
                         <img src={f.url} alt={f.nome} className="h-full w-full object-cover" />

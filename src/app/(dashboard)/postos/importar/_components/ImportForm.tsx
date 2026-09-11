@@ -27,7 +27,7 @@ export function ImportForm({ empresas }: { empresas: EmpresaOpcao[] }) {
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="card space-y-4 p-6">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Cliente</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Cliente</label>
           <select name="empresa_id" required defaultValue="" className="input">
             <option value="" disabled>
               Selecione o cliente dono desta rede...
@@ -40,7 +40,7 @@ export function ImportForm({ empresas }: { empresas: EmpresaOpcao[] }) {
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Arquivo postos_gf.xlsx
           </label>
           <input type="file" name="arquivo" accept=".xlsx" required className="input" />
@@ -78,7 +78,7 @@ export function ImportForm({ empresas }: { empresas: EmpresaOpcao[] }) {
             )}
           </div>
           {resultado.conflitantes > 0 && (
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
               Esses postos já foram ativados na rede de outro cliente e não podem ser reatribuídos por
               importação. Se isso for um engano, ajuste o dono do posto manualmente antes de reenviar a
               planilha.

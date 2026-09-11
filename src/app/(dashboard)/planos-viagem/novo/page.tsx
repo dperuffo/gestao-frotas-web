@@ -38,7 +38,7 @@ export default async function NovoPlanoViagemPage({
 
   if (!empresaSelecionada) {
     return (
-      <div className="card p-8 text-center text-sm text-slate-500">
+      <div className="card p-8 text-center text-sm text-slate-500 dark:text-slate-400">
         Selecione um cliente na tela de{" "}
         <Link href="/planos-viagem" className="text-frota-600 hover:underline">
           Planos de Viagem

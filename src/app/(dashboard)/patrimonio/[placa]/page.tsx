@@ -40,7 +40,7 @@ export default async function PatrimonioVeiculoPage({
         </p>
         <form className="mt-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -140,25 +140,25 @@ export default async function PatrimonioVeiculoPage({
       </Link>
 
       <div className="mb-6 card p-6">
-        <h2 className="mb-1 text-sm font-semibold text-slate-900">Correções do ativo</h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Correções do ativo</h2>
+        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
           Reavaliação (ajusta o valor contábil pra cima/baixo), melhoria (capitalização que aumenta a base
           depreciável, ex.: baú novo) ou baixa (venda, perda total, sinistro — encerra a depreciação na data
           informada).
         </p>
 
-        <div className="mb-4 divide-y divide-slate-100">
+        <div className="mb-4 divide-y divide-slate-100 dark:divide-slate-700">
           {(ajustes ?? []).length === 0 && <p className="py-3 text-sm text-slate-400">Nenhum ajuste registrado ainda.</p>}
           {(ajustes ?? []).map((a) => (
             <div key={a.id} className="flex items-start justify-between gap-4 py-3">
               <div>
-                <p className="text-sm text-slate-900">
+                <p className="text-sm text-slate-900 dark:text-slate-100">
                   <span className="font-medium">{TIPO_AJUSTE_LABEL[a.tipo] ?? a.tipo}</span>{" "}
-                  <span className={a.valor < 0 ? "text-red-600" : "text-slate-600"}>{formatarMoeda(a.valor)}</span>
+                  <span className={a.valor < 0 ? "text-red-600" : "text-slate-600 dark:text-slate-300"}>{formatarMoeda(a.valor)}</span>
                   {" · "}
                   {formatarData(a.data_ajuste)}
                 </p>
-                {a.motivo && <p className="mt-0.5 text-xs text-slate-500">{a.motivo}</p>}
+                {a.motivo && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{a.motivo}</p>}
               </div>
               <BotaoExcluirAjuste ajusteId={a.id} placa={placa} empresaId={empresaSelecionada} />
             </div>
@@ -175,7 +175,7 @@ function CampoResumo({ label, valor }: { label: string; valor: string }) {
   return (
     <div className="card p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{valor}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{valor}</p>
     </div>
   );
 }

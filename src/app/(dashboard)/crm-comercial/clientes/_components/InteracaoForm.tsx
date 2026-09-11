@@ -30,7 +30,7 @@ export function InteracaoForm({ clienteId, empresaId }: { clienteId: string; emp
       {erro && <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Tipo</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tipo</label>
           <select name="tipo" required defaultValue="" className="input text-sm">
             <option value="" disabled>
               Selecione...
@@ -43,12 +43,12 @@ export function InteracaoForm({ clienteId, empresaId }: { clienteId: string; emp
           </select>
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Próxima ação (opcional)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Próxima ação (opcional)</label>
           <input name="proxima_acao_data" type="date" className="input text-sm" />
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">O que foi conversado/combinado</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">O que foi conversado/combinado</label>
         <textarea name="descricao" rows={2} required className="input text-sm" />
       </div>
       <button type="submit" disabled={isPending} className="btn-primary text-sm disabled:opacity-50">

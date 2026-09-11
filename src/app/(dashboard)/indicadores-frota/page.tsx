@@ -361,7 +361,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -373,15 +373,15 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">De</label>
           <input type="date" name="inicio" defaultValue={dataInicio} className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Até</label>
           <input type="date" name="fim" defaultValue={dataFim} className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Tipo de veículo</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tipo de veículo</label>
           <select name="tipoVeiculo" defaultValue={tipoVeiculoParam ?? ""} className="input text-sm">
             <option value="">Todos</option>
             {tiposDisponiveis.map((t) => (
@@ -392,7 +392,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Modelo</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Modelo</label>
           <select name="modelo" defaultValue={modeloParam ?? ""} className="input text-sm">
             <option value="">Todos</option>
             {modelosDisponiveis.map((m) => (
@@ -403,7 +403,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Veículo</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Veículo</label>
           <select name="veiculo" defaultValue={veiculoParam ?? ""} className="input text-sm">
             <option value="">Todos (agregado)</option>
             {veiculosFiltrados.map((v) => (
@@ -442,7 +442,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                   <a
                     key={p.label}
                     href={p.ancora}
-                    className="rounded-full border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                    className="rounded-full border border-red-300 bg-white dark:bg-slate-800 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
                   >
                     {p.label}: {p.valorTexto}
                   </a>
@@ -462,15 +462,15 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
           {operacionais && (
             <>
               <div id="operacional" className="mb-3 mt-2 scroll-mt-4">
-                <h2 className="text-base font-semibold text-slate-900">Indicadores operacionais (Fretes/TMS)</h2>
-                <p className="text-xs text-slate-500">
+                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Indicadores operacionais (Fretes/TMS)</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Calculados pra empresa inteira (não filtram por veículo/tipo/modelo, já que o frete não é
                   vinculado a uma placa específica no sistema).
                 </p>
               </div>
 
               {operacionais.fretes_concluidos_total === 0 ? (
-                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <div className="mb-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
                   Nenhum frete concluído neste período — os indicadores de OTIF, OCT, avarias e reclamações aparecem
                   assim que o primeiro frete for concluído em{" "}
                   <Link href="/fretes" className="underline">
@@ -538,7 +538,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
                 </p>
               )}
 
-              <p className="mb-3 mt-5 border-t border-slate-100 pt-5 text-xs font-medium uppercase tracking-wide text-slate-400">
+              <p className="mb-3 mt-5 border-t border-slate-100 dark:border-slate-700 pt-5 text-xs font-medium uppercase tracking-wide text-slate-400">
                 Detalhamento
               </p>
 
@@ -568,8 +568,8 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
             </>
           )}
 
-          <div id="frota" className="mb-3 mt-8 scroll-mt-4 border-t border-slate-100 pt-6">
-            <h2 className="text-base font-semibold text-slate-900">Indicadores da frota (veículos)</h2>
+          <div id="frota" className="mb-3 mt-8 scroll-mt-4 border-t border-slate-100 dark:border-slate-700 pt-6">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Indicadores da frota (veículos)</h2>
           </div>
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">{contexto}</p>
 
@@ -676,7 +676,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
           )}
 
           {kpis.itensInspecionados === 0 && (
-            <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <div className="mb-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
               Nenhuma inspeção registrada neste período — a taxa de conformidade e o TMRNC aparecem assim que a
               primeira inspeção for feita em{" "}
               <Link href="/checklist-veiculos" className="underline">
@@ -686,7 +686,7 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
             </div>
           )}
 
-          <p className="mb-3 mt-5 border-t border-slate-100 pt-5 text-xs font-medium uppercase tracking-wide text-slate-400">
+          <p className="mb-3 mt-5 border-t border-slate-100 dark:border-slate-700 pt-5 text-xs font-medium uppercase tracking-wide text-slate-400">
             Detalhamento
           </p>
 
@@ -702,9 +702,9 @@ export default async function IndicadoresFrotaPage({ searchParams }: { searchPar
             composicaoManutencao={rankingsVeiculos.composicaoManutencao}
           />
 
-          <div className="mb-3 mt-8 border-t border-slate-100 pt-6">
-            <h2 className="text-base font-semibold text-slate-900">Comparação entre veículos</h2>
-            <p className="text-xs text-slate-500">
+          <div className="mb-3 mt-8 border-t border-slate-100 dark:border-slate-700 pt-6">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Comparação entre veículos</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Clique numa placa pra ver os indicadores só dela acima, ou num cabeçalho de coluna pra ordenar.
             </p>
           </div>

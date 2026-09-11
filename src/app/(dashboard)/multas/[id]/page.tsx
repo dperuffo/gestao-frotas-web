@@ -76,7 +76,7 @@ export default async function MultaDetalhePage({ params }: { params: Promise<{ i
       <CabecalhoPagina
         titulo={`Multa — ${multa.placa} ${multa.numero_ait ? `· AIT ${multa.numero_ait}` : ""}`}
         acoes={
-          <span className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_MULTA_COR[multa.status] ?? "bg-slate-100 text-slate-600"}`}>
+          <span className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_MULTA_COR[multa.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
             {STATUS_MULTA_LABEL[multa.status] ?? multa.status}
           </span>
         }
@@ -84,7 +84,7 @@ export default async function MultaDetalhePage({ params }: { params: Promise<{ i
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="card space-y-3 p-6 lg:col-span-2">
-          <h2 className="text-sm font-semibold text-slate-700">Dados da infração</h2>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Dados da infração</h2>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             <Campo label="Data da infração" valor={new Date(`${multa.data_infracao}T00:00:00`).toLocaleDateString("pt-BR")} />
             <Campo
@@ -115,21 +115,21 @@ export default async function MultaDetalhePage({ params }: { params: Promise<{ i
             </div>
           )}
 
-          <div className="border-t border-slate-100 pt-4">
+          <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
             <StatusMultaBotoes multaId={multa.id} status={multa.status} />
           </div>
 
-          <div className="border-t border-slate-100 pt-4">
+          <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
             <ExcluirMultaButton id={multa.id} empresaId={multa.empresa_id} />
           </div>
         </div>
 
         <div className="space-y-6">
           <div className="card space-y-3 p-6">
-            <h2 className="text-sm font-semibold text-slate-700">Condutor infrator</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Condutor infrator</h2>
             {motoristaVinculado ? (
               <div>
-                <p className="text-sm text-slate-700">{motoristaVinculado.nome_completo}</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{motoristaVinculado.nome_completo}</p>
                 {multa.indicado_em && (
                   <p className="mt-1 text-xs text-slate-400">
                     Indicado em {new Date(multa.indicado_em).toLocaleDateString("pt-BR")}
@@ -143,7 +143,7 @@ export default async function MultaDetalhePage({ params }: { params: Promise<{ i
           </div>
 
           <div className="card space-y-2 p-6">
-            <h2 className="text-sm font-semibold text-slate-700">Histórico do veículo ({multa.placa})</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Histórico do veículo ({multa.placa})</h2>
             {historicoVeiculo && historicoVeiculo.length > 0 ? (
               <ul className="space-y-2 text-sm">
                 {historicoVeiculo.map((h) => (
@@ -151,7 +151,7 @@ export default async function MultaDetalhePage({ params }: { params: Promise<{ i
                     <Link href={`/multas/${h.id}`} className="text-frota-600 hover:underline">
                       {new Date(`${h.data_infracao}T00:00:00`).toLocaleDateString("pt-BR")}
                     </Link>{" "}
-                    <span className="text-slate-500">— {h.descricao ?? STATUS_MULTA_LABEL[h.status] ?? h.status}</span>
+                    <span className="text-slate-500 dark:text-slate-400">— {h.descricao ?? STATUS_MULTA_LABEL[h.status] ?? h.status}</span>
                   </li>
                 ))}
               </ul>
@@ -169,7 +169,7 @@ function Campo({ label, valor }: { label: string; valor: string }) {
   return (
     <div>
       <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="mt-0.5 text-slate-700">{valor}</dd>
+      <dd className="mt-0.5 text-slate-700 dark:text-slate-300">{valor}</dd>
     </div>
   );
 }

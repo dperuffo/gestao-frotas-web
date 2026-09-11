@@ -94,7 +94,7 @@ export default async function CentrosCustoPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -175,7 +175,7 @@ export default async function CentrosCustoPage({
           <div className="card overflow-x-auto">
             {error && <p className="p-4 text-sm text-red-600">Erro ao carregar centros de custo: {error.message}</p>}
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Nome</th>
                   <th className="px-4 py-3">Código</th>
@@ -184,7 +184,7 @@ export default async function CentrosCustoPage({
                   <th className="px-4 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {centros.map((c) => (
                   <tr key={c.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
@@ -192,9 +192,9 @@ export default async function CentrosCustoPage({
                         {c.nome}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{c.codigo ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{c.responsavel ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{c.cadastro_veiculos?.[0]?.count ?? 0}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.codigo ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.responsavel ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.cadastro_veiculos?.[0]?.count ?? 0}</td>
                     <td className="px-4 py-3">
                       <span className={c.ativo ? "badge-ativo" : "badge-inativo"}>{c.ativo ? "Ativo" : "Inativo"}</span>
                     </td>

@@ -180,7 +180,7 @@ export default async function TorreDeControlePage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -206,7 +206,7 @@ export default async function TorreDeControlePage({
         <>
           {posicoes.length > 0 && (
             <div className="card mb-6 p-4">
-              <h2 className="mb-3 text-sm font-semibold text-slate-900">Mapa ao vivo ({posicoes.length} veículo{posicoes.length === 1 ? "" : "s"})</h2>
+              <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Mapa ao vivo ({posicoes.length} veículo{posicoes.length === 1 ? "" : "s"})</h2>
               <MapaVeiculos posicoes={posicoes} />
             </div>
           )}
@@ -214,30 +214,30 @@ export default async function TorreDeControlePage({
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Fretes em andamento</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{fretes.length}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{fretes.length}</p>
             </div>
             <div className={`card p-4 ${totalVencendoEmBreve > 0 ? "border-amber-200 bg-amber-50/50" : ""}`}>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Vencendo em até 6h</p>
-              <p className={`mt-1 text-2xl font-semibold ${totalVencendoEmBreve > 0 ? "text-amber-700" : "text-slate-900"}`}>
+              <p className={`mt-1 text-2xl font-semibold ${totalVencendoEmBreve > 0 ? "text-amber-700" : "text-slate-900 dark:text-slate-100"}`}>
                 {totalVencendoEmBreve}
               </p>
             </div>
             <div className={`card p-4 ${totalAtrasados > 0 ? "border-red-200 bg-red-50/50" : ""}`}>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Prazo estourado</p>
-              <p className={`mt-1 text-2xl font-semibold ${totalAtrasados > 0 ? "text-red-700" : "text-slate-900"}`}>
+              <p className={`mt-1 text-2xl font-semibold ${totalAtrasados > 0 ? "text-red-700" : "text-slate-900 dark:text-slate-100"}`}>
                 {totalAtrasados}
               </p>
             </div>
             <div className={`card p-4 ${totalPanico > 0 ? "border-red-300 bg-red-100/70" : ""}`}>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">🚨 Alerta de emergência</p>
-              <p className={`mt-1 text-2xl font-semibold ${totalPanico > 0 ? "text-red-800" : "text-slate-900"}`}>
+              <p className={`mt-1 text-2xl font-semibold ${totalPanico > 0 ? "text-red-800" : "text-slate-900 dark:text-slate-100"}`}>
                 {totalPanico}
               </p>
             </div>
           </div>
 
           {comRisco.length === 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
               Nenhum frete em andamento agora. Fretes aparecem aqui assim que forem aceitos por um motorista, em{" "}
               <Link href={`/fretes?empresa=${empresaSelecionada}`} className="underline">
                 Fretes
@@ -262,8 +262,8 @@ export default async function TorreDeControlePage({
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <p className="font-medium text-slate-900">{f.titulo}</p>
-                      <p className="text-sm text-slate-500">
+                      <p className="font-medium text-slate-900 dark:text-slate-100">{f.titulo}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         {f.origem_label} → {f.destino_label}
                       </p>
                     </div>
@@ -278,21 +278,21 @@ export default async function TorreDeControlePage({
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
-                    <span className="text-slate-600">
-                      Motorista: <span className="font-medium text-slate-800">{f.nome_motorista ?? "—"}</span>
+                    <span className="text-slate-600 dark:text-slate-300">
+                      Motorista: <span className="font-medium text-slate-800 dark:text-slate-100">{f.nome_motorista ?? "—"}</span>
                       {f.telefone_motorista ? ` (${f.telefone_motorista})` : ""}
                     </span>
 
-                    <span className="text-slate-600">
+                    <span className="text-slate-600 dark:text-slate-300">
                       Último checkpoint:{" "}
-                      <span className="font-medium text-slate-800">
+                      <span className="font-medium text-slate-800 dark:text-slate-100">
                         {f.ultimo_evento_tipo ? LABEL_EVENTO[f.ultimo_evento_tipo] ?? f.ultimo_evento_tipo : "Nenhum ainda"}
                       </span>
                       {f.ultimo_evento_em ? ` (${tempoRelativo(f.ultimo_evento_em)})` : ""}
                     </span>
 
                     {f.prazo_limite && (
-                      <span className={f.atrasado ? "font-medium text-red-700" : f.vencendoEmBreve ? "font-medium text-amber-700" : "text-slate-600"}>
+                      <span className={f.atrasado ? "font-medium text-red-700" : f.vencendoEmBreve ? "font-medium text-amber-700" : "text-slate-600 dark:text-slate-300"}>
                         {f.atrasado ? "Prazo estourado: " : "Prazo: "}
                         {formatarPrazo(f.prazo_limite)}
                       </span>

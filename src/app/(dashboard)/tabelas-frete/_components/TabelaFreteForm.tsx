@@ -68,7 +68,7 @@ export function TabelaFreteForm({
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Identificação</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Identificação</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Nome da tabela" required className="sm:col-span-2">
             <input name="nome" required defaultValue={tabela?.nome} placeholder="Ex: Tabela padrão 2026" className="input" />
@@ -84,14 +84,14 @@ export function TabelaFreteForm({
             </select>
           </Campo>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
           Deixe &quot;Geral&quot; se esta tabela vale pra qualquer cliente. Só aparecem aqui os clientes-tomadores já
           cadastrados (ver emissão de CT-e).
         </p>
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Rota (opcional)</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Rota (opcional)</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <Campo label="UF origem">
             <select name="uf_origem" defaultValue={tabela?.uf_origem ?? ""} className="input">
@@ -120,7 +120,7 @@ export function TabelaFreteForm({
             <input name="cidade_destino" defaultValue={tabela?.cidade_destino ?? ""} className="input" />
           </Campo>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
           Deixe em branco se a tabela vale pra qualquer rota — só um jeito de organizar quando você tem uma tabela por
           corredor.
         </p>
@@ -128,14 +128,14 @@ export function TabelaFreteForm({
 
       <section className="card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900">Faixas de peso (frete-peso)</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Faixas de peso (frete-peso)</h2>
           <button type="button" onClick={adicionarFaixa} className="btn-secondary text-sm">
             + Faixa
           </button>
         </div>
         <div className="space-y-2">
           {faixas.map((f, i) => (
-            <div key={i} className="grid grid-cols-2 items-end gap-2 rounded-lg bg-slate-50 p-3 sm:grid-cols-5">
+            <div key={i} className="grid grid-cols-2 items-end gap-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:grid-cols-5">
               <Campo label="Peso mín. (kg)">
                 <input
                   type="number"
@@ -183,13 +183,13 @@ export function TabelaFreteForm({
             </div>
           ))}
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
           Frete-peso = maior valor entre (peso da carga × valor/kg) e o valor mínimo da faixa que contém o peso.
         </p>
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Adicionais</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Adicionais</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <Campo label="Ad valorem (%)">
             <input type="number" step="0.01" name="percentual_ad_valorem" defaultValue={tabela?.percentual_ad_valorem ?? 0} className="input" />
@@ -235,7 +235,7 @@ function Campo({
 }) {
   return (
     <div className={className}>
-      <label className="mb-1 block text-xs font-medium text-slate-600">
+      <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

@@ -37,8 +37,8 @@ export default async function AvaliarPage({
           height={441}
           className="h-auto w-48"
         />
-        <h1 className="mt-4 text-xl font-semibold text-slate-900">Avalie a plataforma</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="mt-4 text-xl font-semibold text-slate-900 dark:text-slate-100">Avalie a plataforma</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Sua opinião ajuda a FNI a melhorar a experiência de todos os clientes.
         </p>
       </div>
@@ -47,7 +47,7 @@ export default async function AvaliarPage({
         {empresas.length > 1 && (
           <form className="mb-4 flex items-end gap-2">
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium text-slate-500">
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
                 Sobre qual cliente é esta avaliação? (opcional)
               </label>
               <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input">
@@ -69,7 +69,7 @@ export default async function AvaliarPage({
 
       {historico.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Suas avaliações anteriores</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Suas avaliações anteriores</h2>
           <div className="space-y-3">
             {historico.map((a) => (
               <div key={a.id} className="card p-4">
@@ -82,17 +82,17 @@ export default async function AvaliarPage({
                         className={n <= a.estrelas ? "fill-amber-400 text-amber-400" : "text-slate-300"}
                       />
                     ))}
-                    <span className="ml-1 text-xs font-medium text-slate-500">{rotuloNota(a.estrelas)}</span>
+                    <span className="ml-1 text-xs font-medium text-slate-500 dark:text-slate-400">{rotuloNota(a.estrelas)}</span>
                   </div>
                   <span className="text-xs text-slate-400">
                     {a.criado_em ? new Date(a.criado_em).toLocaleDateString("pt-BR") : ""}
                   </span>
                 </div>
-                {a.comentario && <p className="mt-2 text-sm text-slate-600">{a.comentario}</p>}
+                {a.comentario && <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{a.comentario}</p>}
                 {a.resposta_admin && (
                   <div className="mt-3 rounded-lg bg-frota-50 px-3 py-2">
                     <p className="text-xs font-semibold text-frota-700">Resposta da equipe FNI</p>
-                    <p className="mt-1 text-sm text-slate-700">{a.resposta_admin}</p>
+                    <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{a.resposta_admin}</p>
                   </div>
                 )}
               </div>

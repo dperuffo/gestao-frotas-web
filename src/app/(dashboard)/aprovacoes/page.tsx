@@ -139,7 +139,7 @@ export default async function AprovacoesPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -156,19 +156,19 @@ export default async function AprovacoesPage({
       )}
 
       {semClienteEscolhido ? (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Selecione um cliente acima pra ver e criar solicitações de aprovação.
         </p>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
             <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Pendentes</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{totalPendentes}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Pendentes</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{totalPendentes}</p>
             </div>
             <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Valor pendente</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{formatarMoeda(valorPendente)}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Valor pendente</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{formatarMoeda(valorPendente)}</p>
             </div>
           </div>
 
@@ -185,7 +185,7 @@ export default async function AprovacoesPage({
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Solicitação</th>
                   <th className="px-4 py-3">Categoria</th>
@@ -197,17 +197,17 @@ export default async function AprovacoesPage({
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {itens.map((s) => (
                   <tr key={s.id}>
-                    <td className="px-4 py-3 text-slate-700">
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                       <p className="font-medium">{s.titulo}</p>
                       {s.descricao && <p className="mt-0.5 max-w-xs truncate text-xs text-slate-400" title={s.descricao}>{s.descricao}</p>}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{CATEGORIA_LABEL[s.categoria] ?? s.categoria}</td>
-                    <td className="px-4 py-3 text-slate-700">{formatarMoeda(s.valor)}</td>
-                    <td className="px-4 py-3 text-slate-600">{s.solicitante_email}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{CATEGORIA_LABEL[s.categoria] ?? s.categoria}</td>
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{formatarMoeda(s.valor)}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{s.solicitante_email}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {s.nivel_atual}/{s.niveis_necessarios}
                     </td>
                     <td className="px-4 py-3">
@@ -215,7 +215,7 @@ export default async function AprovacoesPage({
                         {STATUS_LABEL[s.status] ?? s.status}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-slate-500">{formatarDataHoraBr(s.criado_em)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-500 dark:text-slate-400">{formatarDataHoraBr(s.criado_em)}</td>
                     <td className="px-4 py-3">
                       <AcoesSolicitacao id={s.id} status={s.status} />
                     </td>

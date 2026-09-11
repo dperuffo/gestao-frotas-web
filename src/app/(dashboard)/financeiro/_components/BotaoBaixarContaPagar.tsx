@@ -39,7 +39,7 @@ export function BotaoBaixarContaPagar({ id, saldoEmAberto }: { id: string; saldo
 
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="text-slate-500">Saldo: {formatoMoeda.format(saldoEmAberto)}</span>
+      <span className="text-slate-500 dark:text-slate-400">Saldo: {formatoMoeda.format(saldoEmAberto)}</span>
       <input
         type="number"
         step="0.01"
@@ -57,7 +57,7 @@ export function BotaoBaixarContaPagar({ id, saldoEmAberto }: { id: string; saldo
       >
         {isPending ? "..." : "Confirmar"}
       </button>
-      <button type="button" onClick={() => setAberto(false)} className="text-slate-500 hover:underline">
+      <button type="button" onClick={() => setAberto(false)} className="text-slate-500 dark:text-slate-400 hover:underline">
         Voltar
       </button>
     </div>
@@ -88,7 +88,7 @@ export function BotaoCancelarContaPagar({ id }: { id: string }) {
 
   return (
     <div className="flex items-center gap-2 text-xs">
-      {erro ? <span className="text-red-600">{erro}</span> : <span className="text-slate-500">Confirma?</span>}
+      {erro ? <span className="text-red-600">{erro}</span> : <span className="text-slate-500 dark:text-slate-400">Confirma?</span>}
       <button
         type="button"
         disabled={isPending}
@@ -97,7 +97,7 @@ export function BotaoCancelarContaPagar({ id }: { id: string }) {
       >
         {isPending ? "..." : "Sim"}
       </button>
-      <button type="button" onClick={() => setConfirmando(false)} className="text-slate-500 hover:underline">
+      <button type="button" onClick={() => setConfirmando(false)} className="text-slate-500 dark:text-slate-400 hover:underline">
         Voltar
       </button>
     </div>

@@ -67,10 +67,10 @@ export function CardAcaoSugerida({ acao }: { acao: AcaoSugerida }) {
           <div className="mb-1 flex flex-wrap items-center gap-2">
             <span className={SEVERIDADE_BADGE[acao.severidade] ?? "badge-atencao"}>{acao.severidade}</span>
             <span className="text-xs uppercase tracking-wide text-slate-400">{acao.alvo_tipo}</span>
-            <span className="text-sm font-semibold text-slate-900">{acao.alvo_label}</span>
+            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{acao.alvo_label}</span>
           </div>
-          <p className="text-sm font-medium text-slate-800">{acao.titulo}</p>
-          <p className="mt-1 text-sm text-slate-600">{acao.descricao}</p>
+          <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{acao.titulo}</p>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{acao.descricao}</p>
 
           {!pendente && (
             <p className="mt-2 text-xs text-slate-400">

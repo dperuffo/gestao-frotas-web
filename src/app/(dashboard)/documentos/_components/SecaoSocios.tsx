@@ -50,8 +50,8 @@ export function SecaoSocios({
 
   return (
     <div className="card mt-6 p-6">
-      <h2 className="text-sm font-semibold text-slate-900">Sócios</h2>
-      <p className="mt-1 text-xs text-slate-500">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Sócios</h2>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         Cadastre cada sócio do quadro societário — cada um precisa enviar CPF, RG ou CNH, e comprovante de
         endereço pessoal atualizado.
       </p>
@@ -60,11 +60,11 @@ export function SecaoSocios({
         {socios.map((s) => {
           const docs = documentosPorSocio.get(s.id) ?? [];
           return (
-            <div key={s.id} className="rounded-lg border border-slate-200 p-4">
+            <div key={s.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">{s.nome}</p>
-                  <p className="text-xs text-slate-500">CPF: {s.cpf}</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{s.nome}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">CPF: {s.cpf}</p>
                 </div>
                 <button
                   type="button"
@@ -96,13 +96,13 @@ export function SecaoSocios({
         {socios.length === 0 && <p className="text-sm text-slate-400">Nenhum sócio cadastrado ainda.</p>}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-slate-100 pt-4">
+      <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-slate-100 dark:border-slate-700 pt-4">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Nome do sócio</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Nome do sócio</label>
           <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">CPF</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">CPF</label>
           <input type="text" value={cpf} onChange={(e) => setCpf(e.target.value)} placeholder="Só números" className="input" />
         </div>
         <button

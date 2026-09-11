@@ -29,7 +29,7 @@ export function NovoGrupoForm({ empresasOpcoes }: { empresasOpcoes: EmpresaOpcao
       <section className="card max-w-lg p-6">
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Empresa fundadora <span className="text-red-500">*</span>
             </label>
             <select name="empresa_id" required defaultValue="" className="input">
@@ -48,13 +48,13 @@ export function NovoGrupoForm({ empresasOpcoes }: { empresasOpcoes: EmpresaOpcao
             </p>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Nome do Grupo <span className="text-red-500">*</span>
             </label>
             <input name="nome" required className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">CNPJ da Matriz (opcional)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">CNPJ da Matriz (opcional)</label>
             <input name="cnpj_matriz" className="input" />
           </div>
         </div>

@@ -43,7 +43,7 @@ function MiniRanking({
 }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">{titulo}</p>
+      <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{titulo}</p>
       {dados.length === 0 ? (
         <p className="text-sm text-slate-400">{semDadosTexto}</p>
       ) : (
@@ -156,7 +156,7 @@ export function GraficoIndicadoresVeiculos({
         ))}
 
         <div>
-          <p className="mb-2 text-xs font-medium uppercase text-slate-500">Composição do custo de manutenção</p>
+          <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Composição do custo de manutenção</p>
           {dadosManutencao.length === 0 ? (
             <p className="text-sm text-slate-400">Sem manutenções classificadas no período.</p>
           ) : (
@@ -177,8 +177,8 @@ export function GraficoIndicadoresVeiculos({
                 {dadosManutencao.map((d) => (
                   <li key={d.label} className="flex items-center gap-2">
                     <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: d.cor }} aria-hidden="true" />
-                    <span className="text-slate-600">{d.label}</span>
-                    <span className="ml-auto font-medium text-slate-900">
+                    <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+                    <span className="ml-auto font-medium text-slate-900 dark:text-slate-100">
                       {totalManutencao > 0 ? Math.round((d.valor / totalManutencao) * 100) : 0}%
                     </span>
                   </li>

@@ -72,7 +72,7 @@ export default async function BolsaFretesPage({ searchParams }: { searchParams: 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -89,14 +89,14 @@ export default async function BolsaFretesPage({ searchParams }: { searchParams: 
       )}
 
       {semClienteEscolhido || !empresaSelecionada ? (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Selecione um cliente acima pra ver a bolsa de fretes do grupo econômico dele.
         </p>
       ) : (
         <>
           <div className="mb-8">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+              <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
                 <Truck className="h-4 w-4 text-slate-400" /> Minha capacidade ociosa
               </h2>
               <NovaCapacidadeForm empresaId={empresaSelecionada} />
@@ -104,7 +104,7 @@ export default async function BolsaFretesPage({ searchParams }: { searchParams: 
 
             <div className="card overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Placa</th>
                     <th className="px-4 py-3">Origem</th>
@@ -115,18 +115,18 @@ export default async function BolsaFretesPage({ searchParams }: { searchParams: 
                     <th className="px-4 py-3">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {minhaCapacidade.map((c) => (
                     <tr key={c.id}>
-                      <td className="px-4 py-3 font-medium text-slate-900">{c.placa ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{c.placa ?? "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {c.origem_cidade}/{c.origem_uf}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{c.destino_pretendido ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.destino_pretendido ?? "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {new Date(`${c.disponivel_a_partir}T00:00:00`).toLocaleDateString("pt-BR")}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {c.capacidade_kg != null ? `${c.capacidade_kg.toLocaleString("pt-BR")} kg` : "—"}
                       </td>
                       <td className="px-4 py-3">
@@ -156,17 +156,17 @@ export default async function BolsaFretesPage({ searchParams }: { searchParams: 
           </div>
 
           <div>
-            <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+            <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
               <MapPin className="h-4 w-4 text-slate-400" /> Fretes disponíveis no grupo
             </h2>
-            <p className="mb-3 text-xs text-slate-500">
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
               Fretes com status &quot;disponível&quot; postados por outras empresas do mesmo Grupo Econômico. Linhas destacadas
               batem com a UF de origem de alguma capacidade ociosa ativa sua.
             </p>
 
             <div className="card overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Empresa</th>
                     <th className="px-4 py-3">Frete</th>
@@ -177,13 +177,13 @@ export default async function BolsaFretesPage({ searchParams }: { searchParams: 
                     <th className="px-4 py-3">Prazo</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {fretesDoGrupo.map((f) => {
                     const compativel = f.origem_uf != null && ufsComCapacidadeAtiva.has(f.origem_uf);
                     return (
                       <tr key={f.frete_id} className={compativel ? "bg-frota-50" : undefined}>
-                        <td className="px-4 py-3 text-slate-600">{f.empresa_nome}</td>
-                        <td className="px-4 py-3 font-medium text-slate-900">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{f.empresa_nome}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                           {f.titulo}
                           {compativel && (
                             <span className="ml-2 rounded-full bg-frota-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-frota-700">
@@ -191,20 +191,20 @@ export default async function BolsaFretesPage({ searchParams }: { searchParams: 
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {[f.origem_cidade, f.origem_uf].filter(Boolean).join("/") || "—"}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {[f.destino_cidade, f.destino_uf].filter(Boolean).join("/") || "—"}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {f.tipo_carga ?? "—"}
                           {f.peso_carga_kg != null ? ` · ${f.peso_carga_kg.toLocaleString("pt-BR")} kg` : ""}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {f.data_saida_prevista ? new Date(`${f.data_saida_prevista}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {f.prazo_entrega ? new Date(`${f.prazo_entrega}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
                         </td>
                       </tr>

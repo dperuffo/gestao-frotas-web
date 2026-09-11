@@ -30,7 +30,7 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Identificação</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Identificação</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Razão Social" required>
             <input name="nome" required defaultValue={cliente?.nome} className="input" />
@@ -71,7 +71,7 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Endereço</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Endereço</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Logradouro" className="sm:col-span-2">
             <input name="logradouro" defaultValue={cliente?.logradouro ?? ""} className="input" />
@@ -98,7 +98,7 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Contatos</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Contatos</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Telefone de contato">
             <input name="telefone_contato" defaultValue={cliente?.telefone_contato ?? ""} className="input" />
@@ -110,8 +110,8 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-1 text-sm font-semibold text-slate-900">Volume potencial por ciclo de combustível</h2>
-        <p className="mb-4 text-xs text-slate-500">Estimativa de litros/mês, usada como referência de potencial comercial.</p>
+        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Volume potencial por ciclo de combustível</h2>
+        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">Estimativa de litros/mês, usada como referência de potencial comercial.</p>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {CICLOS_COMBUSTIVEL.map((c) => (
             <Campo key={c.key} label={`${c.label} (Ciclo ${c.ciclo})`}>
@@ -130,11 +130,11 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
 
       {cliente && (
         <section className="card p-6">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Plano (somente leitura)</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-sm text-slate-600">
-            <div>Plano: <strong className="text-slate-900">{cliente.plano}</strong></div>
-            <div>Máx. usuários: <strong className="text-slate-900">{cliente.max_usuarios ?? "—"}</strong></div>
-            <div>Máx. veículos: <strong className="text-slate-900">{cliente.max_veiculos ?? "—"}</strong></div>
+          <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Plano (somente leitura)</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-sm text-slate-600 dark:text-slate-300">
+            <div>Plano: <strong className="text-slate-900 dark:text-slate-100">{cliente.plano}</strong></div>
+            <div>Máx. usuários: <strong className="text-slate-900 dark:text-slate-100">{cliente.max_usuarios ?? "—"}</strong></div>
+            <div>Máx. veículos: <strong className="text-slate-900 dark:text-slate-100">{cliente.max_veiculos ?? "—"}</strong></div>
           </div>
           <p className="mt-2 text-xs text-slate-400">Gerido pela assinatura (Stripe) — não editável por aqui.</p>
 
@@ -186,7 +186,7 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
               server-side de bypass_limite_frota (atualizarCliente). */}
           {souAdmin && (
             <div className="mt-4">
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Taxa de custo de capital (% ao ano)
               </label>
               <input
@@ -198,7 +198,7 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
                 className="input max-w-xs"
                 placeholder="Ex: 12.5"
               />
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Usada no TCO (custo total de propriedade) como custo de oportunidade do capital imobilizado na
                 frota. Deixe em branco pra não incluir esse componente no cálculo.
               </p>
@@ -211,7 +211,7 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
               admin-only de taxa_custo_capital/bypass_limite_frota. */}
           {souAdmin && (
             <div className="mt-4">
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Custo diário de downtime (R$/dia)
               </label>
               <input
@@ -223,7 +223,7 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
                 className="input max-w-xs"
                 placeholder="Ex: 250"
               />
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Usada no TCO como custo de veículo parado (dias parado × esse valor). Os dias parados vêm do
                 preenchimento manual em cada manutenção. Deixe em branco pra não incluir esse componente no
                 cálculo.
@@ -255,7 +255,7 @@ function Campo({
 }) {
   return (
     <div className={className}>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

@@ -118,7 +118,7 @@ export default async function SinistrosPage({ searchParams }: { searchParams: Pr
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -130,7 +130,7 @@ export default async function SinistrosPage({ searchParams }: { searchParams: Pr
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
           <input
             type="search"
             name="q"
@@ -170,7 +170,7 @@ export default async function SinistrosPage({ searchParams }: { searchParams: Pr
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Placa</th>
@@ -182,25 +182,25 @@ export default async function SinistrosPage({ searchParams }: { searchParams: Pr
                   <th className="px-4 py-3">Custo estimado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {sinistros.map((s) => (
                   <tr key={s.id} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 text-slate-600">{new Date(`${s.data_sinistro}T00:00:00`).toLocaleDateString("pt-BR")}</td>
-                    <td className="px-4 py-3 font-medium text-slate-800">{s.placa}</td>
-                    <td className="px-4 py-3 text-slate-600">{s.tipo}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{new Date(`${s.data_sinistro}T00:00:00`).toLocaleDateString("pt-BR")}</td>
+                    <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">{s.placa}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{s.tipo}</td>
                     <td className="px-4 py-3">
                       {s.gravidade ? (
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRAVIDADE_COR[s.gravidade] ?? "bg-slate-100 text-slate-600"}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRAVIDADE_COR[s.gravidade] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
                           {s.gravidade}
                         </span>
                       ) : (
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{s.motorista_nome ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{s.local_ocorrencia ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{s.motorista_nome ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{s.local_ocorrencia ?? "—"}</td>
                     <td className="px-4 py-3">{s.houve_vitima ? "Sim" : "Não"}</td>
-                    <td className="px-4 py-3 tabular-nums text-slate-600">
+                    <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">
                       {s.custo_estimado ? s.custo_estimado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
                     </td>
                   </tr>

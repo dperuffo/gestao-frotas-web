@@ -12,7 +12,7 @@ export function GraficoPegadaCarbono({ dados }: { dados: ItemCo2[] }) {
   if (dados.length === 0) return null;
   return (
     <div className="card mb-6 p-5">
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">CO2 estimado por combustível</p>
+      <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">CO2 estimado por combustível</p>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div style={{ width: 140, height: 140 }} className="mx-auto shrink-0 sm:mx-0">
           <ResponsiveContainer width="100%" height="100%">
@@ -29,7 +29,7 @@ export function GraficoPegadaCarbono({ dados }: { dados: ItemCo2[] }) {
         <ul className="flex-1 space-y-1.5 text-sm">
           {dados.map((d, i) => (
             <li key={d.label} className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2 text-slate-600">
+              <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-sm"
                   style={{ backgroundColor: CORES_GRAFICO.serie[i % CORES_GRAFICO.serie.length] }}
@@ -37,7 +37,7 @@ export function GraficoPegadaCarbono({ dados }: { dados: ItemCo2[] }) {
                 />
                 {d.label}
               </span>
-              <span className="whitespace-nowrap font-medium text-slate-900">
+              <span className="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">
                 {d.toneladas.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} t
               </span>
             </li>

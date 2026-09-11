@@ -40,7 +40,7 @@ export function MotoristaForm({
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Dados do motorista</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Dados do motorista</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Nome completo" required>
             <input name="nome_completo" required defaultValue={motorista?.nome_completo ?? ""} className="input" />
@@ -117,7 +117,7 @@ export function MotoristaForm({
         </div>
 
         {motorista && (
-          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
             <input
               type="checkbox"
               name="ativo"
@@ -129,7 +129,7 @@ export function MotoristaForm({
         )}
 
         {motorista && nomeEmpresaAtual && (
-          <p className="mt-4 text-xs text-slate-500">Cliente: {nomeEmpresaAtual} (não pode ser alterado aqui).</p>
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Cliente: {nomeEmpresaAtual} (não pode ser alterado aqui).</p>
         )}
       </section>
 
@@ -153,7 +153,7 @@ function Campo({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

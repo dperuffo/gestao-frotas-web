@@ -22,7 +22,7 @@ export function DeixarDeSerGestorButton({ empresaId }: { empresaId: string }) {
         type="button"
         onClick={handleClick}
         disabled={isPending}
-        className="text-xs font-medium text-slate-500 hover:underline disabled:opacity-50"
+        className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:underline disabled:opacity-50"
       >
         {isPending ? "..." : "Deixar de ser gestor"}
       </button>

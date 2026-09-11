@@ -82,7 +82,7 @@ export function SecaoParametrosNF({
     <div>
       <div className="card mb-4 p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Preferências de emissão de nota fiscal por CNPJ da frota. Sem uma regra específica para o CNPJ, o posto ou
             sistema de automação deve seguir a regra padrão (sem CNPJ preenchido), quando existir.
           </p>
@@ -103,7 +103,7 @@ export function SecaoParametrosNF({
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">CNPJ da Frota</th>
               <th className="px-4 py-3">Exige NF</th>
@@ -114,14 +114,14 @@ export function SecaoParametrosNF({
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhas.map((l) => (
               <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 font-medium text-slate-900">{l.cnpj_frota ?? "Todos (regra padrão)"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.exige_nota_fiscal}</td>
-                <td className="px-4 py-3 text-slate-600">{l.separar_nf_combustivel}</td>
-                <td className="px-4 py-3 text-slate-600">{l.forma_emissao}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{l.cnpj_frota ?? "Todos (regra padrão)"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.exige_nota_fiscal}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.separar_nf_combustivel}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.forma_emissao}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {l.local_destino}
                   {l.cnpj_destino_personalizado ? ` (${l.cnpj_destino_personalizado})` : ""}
                   {l.parametros_nota_fiscal_destino_uf && l.parametros_nota_fiscal_destino_uf.length > 0
@@ -156,18 +156,18 @@ export function SecaoParametrosNF({
           <input type="hidden" name="empresa_id" value={empresaId} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">CNPJ da Frota</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">CNPJ da Frota</label>
             <input name="cnpj_frota" list="cnpjs-frota" placeholder="Todos os CNPJs (regra padrão)" className="input" />
             <datalist id="cnpjs-frota">
               {cnpjsFrota.map((c) => (
                 <option key={c} value={c} />
               ))}
             </datalist>
-            <p className="mt-1 text-xs text-slate-500">Deixe em branco para uma regra padrão válida para todos os CNPJs.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Deixe em branco para uma regra padrão válida para todos os CNPJs.</p>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Exige Nota Fiscal</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Exige Nota Fiscal</label>
             <select name="exige_nota_fiscal" defaultValue={OPCOES_SIM_NAO[0]} className="input">
               {OPCOES_SIM_NAO.map((o) => (
                 <option key={o} value={o}>
@@ -178,7 +178,7 @@ export function SecaoParametrosNF({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Separar NF de combustível dos produtos e serviços
             </label>
             <select name="separar_nf_combustivel" defaultValue={OPCOES_SIM_NAO[0]} className="input">
@@ -191,7 +191,7 @@ export function SecaoParametrosNF({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Forma de emissão da nota</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Forma de emissão da nota</label>
             <select name="forma_emissao" defaultValue={OPCOES_FORMA_EMISSAO[0]} className="input">
               {OPCOES_FORMA_EMISSAO.map((o) => (
                 <option key={o} value={o}>
@@ -202,7 +202,7 @@ export function SecaoParametrosNF({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Local de destino da Nota Fiscal</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Local de destino da Nota Fiscal</label>
             <select
               name="local_destino"
               value={localDestino}
@@ -222,7 +222,7 @@ export function SecaoParametrosNF({
 
           {localDestino === "Personalizado CNPJ por Estado" && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Destino por Estado</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Destino por Estado</label>
               <button type="button" onClick={() => setModalEstadoAberto(true)} className="btn-secondary w-full">
                 {planoEstado
                   ? `Padrão: ${planoEstado.cnpjPadrao} · ${planoEstado.grupos.length} exceção(ões)`
@@ -233,18 +233,18 @@ export function SecaoParametrosNF({
 
           {localDestino !== "Personalizado CNPJ por Estado" && localDestino.startsWith("Personalizado") && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">CNPJ de destino personalizado</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">CNPJ de destino personalizado</label>
               <input name="cnpj_destino_personalizado" placeholder="00.000.000/0000-00" className="input" />
             </div>
           )}
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Dados adicionais para a nota fiscal</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Dados adicionais para a nota fiscal</label>
             <textarea name="dados_adicionais" rows={2} className="input" />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Observação</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
             <textarea name="observacao" rows={2} className="input" />
           </div>
 

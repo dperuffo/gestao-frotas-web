@@ -76,44 +76,44 @@ export default async function FaturaFreteDetalhePage({
       <div className="card mb-6 grid grid-cols-2 gap-4 p-6 sm:grid-cols-4">
         <div>
           <p className="text-[10px] uppercase text-slate-400">Vencimento</p>
-          <p className="font-semibold text-slate-900">{new Date(`${fatura.vencimento}T00:00:00`).toLocaleDateString("pt-BR")}</p>
+          <p className="font-semibold text-slate-900 dark:text-slate-100">{new Date(`${fatura.vencimento}T00:00:00`).toLocaleDateString("pt-BR")}</p>
         </div>
         <div>
           <p className="text-[10px] uppercase text-slate-400">CT-es</p>
-          <p className="font-semibold text-slate-900">{fatura.quantidade_ctes}</p>
+          <p className="font-semibold text-slate-900 dark:text-slate-100">{fatura.quantidade_ctes}</p>
         </div>
         <div>
           <p className="text-[10px] uppercase text-slate-400">Valor total</p>
-          <p className="font-semibold text-slate-900">{formatoMoeda.format(fatura.valor_total)}</p>
+          <p className="font-semibold text-slate-900 dark:text-slate-100">{formatoMoeda.format(fatura.valor_total)}</p>
         </div>
         <div>
           <p className="text-[10px] uppercase text-slate-400">Recebido</p>
-          <p className="font-semibold text-slate-900">{formatoMoeda.format(conta?.valor_pago ?? 0)}</p>
+          <p className="font-semibold text-slate-900 dark:text-slate-100">{formatoMoeda.format(conta?.valor_pago ?? 0)}</p>
         </div>
       </div>
 
       {fatura.status === "aberta" && (
         <div className="card mb-6 space-y-4 p-6">
-          <h2 className="text-sm font-semibold text-slate-900">Cobrança</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Cobrança</h2>
           {!conta?.gateway_ref ? (
             <GerarCobrancaButton faturaId={fatura.id} empresaId={empresaId} />
           ) : (
             <div className="space-y-3">
               {conta.gateway_linha_digitavel && (
                 <div>
-                  <p className="text-xs font-medium uppercase text-slate-500">Linha digitável (simulada)</p>
-                  <p className="font-mono text-sm text-slate-800">{conta.gateway_linha_digitavel}</p>
+                  <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Linha digitável (simulada)</p>
+                  <p className="font-mono text-sm text-slate-800 dark:text-slate-100">{conta.gateway_linha_digitavel}</p>
                 </div>
               )}
               {conta.gateway_pix_copia_cola && (
                 <div className="flex flex-wrap items-center gap-4">
                   {qrCodePixDataUrl && (
                     // eslint-disable-next-line @next/next/no-img-element -- data URL de QR gerado no servidor
-                    <img src={qrCodePixDataUrl} alt="QR Code PIX" className="h-32 w-32 rounded border border-slate-200" />
+                    <img src={qrCodePixDataUrl} alt="QR Code PIX" className="h-32 w-32 rounded border border-slate-200 dark:border-slate-700" />
                   )}
                   <div>
-                    <p className="text-xs font-medium uppercase text-slate-500">PIX Copia e Cola</p>
-                    <p className="max-w-md break-all font-mono text-xs text-slate-600">{conta.gateway_pix_copia_cola}</p>
+                    <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">PIX Copia e Cola</p>
+                    <p className="max-w-md break-all font-mono text-xs text-slate-600 dark:text-slate-300">{conta.gateway_pix_copia_cola}</p>
                   </div>
                 </div>
               )}
@@ -128,7 +128,7 @@ export default async function FaturaFreteDetalhePage({
 
       <div className="card mb-6 overflow-x-auto p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900">CT-es incluídos</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">CT-es incluídos</h2>
           <BotaoBaixarPdfFaturaFreteLazy
             nomeArquivo={`fatura-frete-${fatura.numero_fatura}.pdf`}
             numeroFatura={fatura.numero_fatura}
@@ -145,7 +145,7 @@ export default async function FaturaFreteDetalhePage({
           />
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Nº / Série</th>
               <th className="px-4 py-3">Emissão</th>
@@ -153,15 +153,15 @@ export default async function FaturaFreteDetalhePage({
               <th className="px-4 py-3">Valor</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {itensPdf.map((item, i) => (
               <tr key={i}>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {item.numeroCte ?? "—"} / {item.serie ?? "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{item.dataEmissao ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{item.dataEmissao ?? "—"}</td>
                 <td className="px-4 py-3 font-mono text-xs text-slate-400">{item.chaveAcesso ?? "—"}</td>
-                <td className="px-4 py-3 font-medium text-slate-900">{formatoMoeda.format(item.valor)}</td>
+                <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{formatoMoeda.format(item.valor)}</td>
               </tr>
             ))}
           </tbody>

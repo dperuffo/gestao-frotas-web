@@ -87,7 +87,7 @@ export default async function ProgramacaoFrotaPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -124,7 +124,7 @@ export default async function ProgramacaoFrotaPage({
           </div>
 
           {ativos.length === 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
               Nenhum veículo ativo cadastrado ainda. Cadastre em{" "}
               <Link href={`/veiculos?empresa=${empresaSelecionada}`} className="underline">
                 Veículos
@@ -135,7 +135,7 @@ export default async function ProgramacaoFrotaPage({
             <div className="card overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
+                  <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
                     <th className="px-4 py-3">Veículo</th>
                     <th className="px-4 py-3">Motorista</th>
                     <th className="px-4 py-3">Situação</th>
@@ -144,14 +144,14 @@ export default async function ProgramacaoFrotaPage({
                 </thead>
                 <tbody>
                   {ativos.map((v) => (
-                    <tr key={v.veiculo_id} className="border-b border-slate-100 transition-colors last:border-0 hover:bg-frota-50/60">
+                    <tr key={v.veiculo_id} className="border-b border-slate-100 dark:border-slate-700 transition-colors last:border-0 hover:bg-frota-50/60">
                       <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900">{v.placa}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="font-medium text-slate-900 dark:text-slate-100">{v.placa}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           {[v.marca, v.modelo].filter(Boolean).join(" ") || v.tipo_veiculo || "—"}
                         </p>
                       </td>
-                      <td className="px-4 py-3 text-slate-700">{v.nome_motorista ?? "—"}</td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{v.nome_motorista ?? "—"}</td>
                       <td className="px-4 py-3">
                         {v.motorista_id === null ? (
                           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
@@ -162,7 +162,7 @@ export default async function ProgramacaoFrotaPage({
                             <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
                               {LABEL_STATUS[v.frete_status ?? ""] ?? v.frete_status} — {v.frete_titulo}
                             </span>
-                            <p className="mt-0.5 text-xs text-slate-500 group-hover:underline">
+                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 group-hover:underline">
                               → {v.frete_destino_label}
                             </p>
                           </Link>
@@ -172,7 +172,7 @@ export default async function ProgramacaoFrotaPage({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {v.disponivel_a_partir ? formatarData(v.disponivel_a_partir) : "—"}
                       </td>
                     </tr>

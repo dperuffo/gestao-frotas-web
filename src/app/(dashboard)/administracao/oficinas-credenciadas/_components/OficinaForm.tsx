@@ -40,46 +40,46 @@ export function OficinaForm({ oficina }: { oficina?: Oficina }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Nome <span className="text-red-500">*</span>
           </label>
           <input name="nome" required defaultValue={oficina?.nome} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">CNPJ</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">CNPJ</label>
           <input name="cnpj" defaultValue={oficina?.cnpj ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Telefone</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Telefone</label>
           <input name="telefone" defaultValue={oficina?.telefone ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">E-mail</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">E-mail</label>
           <input type="email" name="email" defaultValue={oficina?.email ?? ""} className="input" />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-slate-700">Endereço</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Endereço</label>
           <input name="endereco" defaultValue={oficina?.endereco ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Município</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Município</label>
           <input name="municipio" defaultValue={oficina?.municipio ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">UF</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">UF</label>
           <input name="uf" maxLength={2} defaultValue={oficina?.uf ?? ""} className="input uppercase" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Avaliação média (0-5)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Avaliação média (0-5)</label>
           <input type="number" name="avaliacao_media" min={0} max={5} step="0.1" defaultValue={oficina?.avaliacao_media ?? ""} className="input" />
         </div>
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">Especialidades</label>
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Especialidades</label>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {ESPECIALIDADES_OFICINA.map((esp) => (
-            <label key={esp} className="flex items-center gap-2 text-sm text-slate-700">
+            <label key={esp} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input
                 type="checkbox"
                 name="especialidades"

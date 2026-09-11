@@ -114,7 +114,7 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
         </p>
       )}
 
-      <h2 className="mb-3 text-sm font-semibold text-slate-900">Histórico de rodadas</h2>
+      <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Histórico de rodadas</h2>
       <div className="space-y-3">
         {(rodadas ?? []).map((r) => (
           <div key={r.id} className="card p-4">
@@ -122,7 +122,7 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Rodada #{r.numero_rodada} — proposta de {r.autor === "cliente" ? "cliente" : "posto"}
               </span>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+              <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300">
                 {r.decisao === "pendente"
                   ? "Aguardando"
                   : r.decisao === "aceita"
@@ -135,19 +135,19 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               <div>
                 <p className="text-xs text-slate-400">Combustível</p>
-                <p className="text-slate-700">{r.combustivel}</p>
+                <p className="text-slate-700 dark:text-slate-300">{r.combustivel}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400">Volume mínimo</p>
-                <p className="text-slate-700">{r.volume_minimo_mensal.toLocaleString("pt-BR")} L/mês</p>
+                <p className="text-slate-700 dark:text-slate-300">{r.volume_minimo_mensal.toLocaleString("pt-BR")} L/mês</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400">Preço por litro</p>
-                <p className="text-slate-700">{formatarMoeda(r.preco_unitario)}</p>
+                <p className="text-slate-700 dark:text-slate-300">{formatarMoeda(r.preco_unitario)}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400">Vigência</p>
-                <p className="text-slate-700">
+                <p className="text-slate-700 dark:text-slate-300">
                   {formatarDataBr(r.vigencia_inicio)} – {formatarDataBr(r.vigencia_fim)}
                 </p>
               </div>

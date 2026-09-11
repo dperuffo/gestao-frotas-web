@@ -68,19 +68,19 @@ function LinhaVeiculo({ veiculo }: { veiculo: VeiculoDuplicado }) {
   }
   if (resolvido === "inativado") {
     return (
-      <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+      <p className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 text-xs text-slate-500 dark:text-slate-400">
         ✓ Cadastro inativado — histórico mantido, veículo tirado de circulação.
       </p>
     );
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 p-3">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{veiculo.empresaNome}</p>
-      <p className="mt-1 text-sm font-medium text-slate-900">
+      <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">
         {veiculo.marca ?? "—"} {veiculo.modelo ?? ""}
       </p>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         {veiculo.tipoVeiculo ?? "Tipo não informado"} · Ano {veiculo.anoFabricacao ?? "—"} ·{" "}
         {veiculo.qtdAbastecimentos} abastecimento{veiculo.qtdAbastecimentos === 1 ? "" : "s"} registrado
         {veiculo.qtdAbastecimentos === 1 ? "" : "s"}
@@ -108,7 +108,7 @@ function LinhaVeiculo({ veiculo }: { veiculo: VeiculoDuplicado }) {
               setModoEdicao(false);
               setErro(undefined);
             }}
-            className="text-xs text-slate-500 hover:underline"
+            className="text-xs text-slate-500 dark:text-slate-400 hover:underline"
           >
             Cancelar
           </button>

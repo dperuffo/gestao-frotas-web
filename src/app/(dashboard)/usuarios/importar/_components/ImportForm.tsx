@@ -21,9 +21,9 @@ export function ImportForm() {
     <div className="space-y-6">
       <form ref={formRef} onSubmit={handleSubmit} className="card space-y-4 p-6">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Arquivo Excel (.xlsx)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Arquivo Excel (.xlsx)</label>
           <input type="file" name="arquivo" accept=".xlsx" required className="input" />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Baixe o modelo acima, preencha uma linha por usuário e envie o arquivo aqui.
           </p>
         </div>
@@ -38,7 +38,7 @@ export function ImportForm() {
 
       {resultado && "linhas" in resultado && (
         <div className="card overflow-hidden">
-          <div className="flex flex-wrap gap-4 border-b border-slate-100 p-4 text-sm">
+          <div className="flex flex-wrap gap-4 border-b border-slate-100 dark:border-slate-700 p-4 text-sm">
             <span>
               Total processado: <strong>{resultado.total}</strong>
             </span>
@@ -50,7 +50,7 @@ export function ImportForm() {
             </span>
           </div>
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3">Linha</th>
                 <th className="px-4 py-3">E-mail</th>
@@ -58,7 +58,7 @@ export function ImportForm() {
                 <th className="px-4 py-3">Detalhe</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {resultado.linhas.map((l) => (
                 <tr key={l.linha}>
                   <td className="px-4 py-3">{l.linha}</td>
@@ -68,7 +68,7 @@ export function ImportForm() {
                       {l.status === "ok" ? "OK" : "Erro"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{l.mensagem}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.mensagem}</td>
                 </tr>
               ))}
             </tbody>

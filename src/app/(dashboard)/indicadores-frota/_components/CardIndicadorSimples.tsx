@@ -53,7 +53,7 @@ export function CardIndicadorSimples({
       <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
         {label} {ajudaChave && <AjudaIcon chave={ajudaChave} />}
       </p>
-      <p className="text-2xl font-bold leading-tight text-slate-900">{textoValor}</p>
+      <p className="text-2xl font-bold leading-tight text-slate-900 dark:text-slate-100">{textoValor}</p>
       <span
         className="self-start rounded-full px-2.5 py-0.5 text-[11px] font-medium"
         style={{ backgroundColor: status.corFundo, color: status.corTexto }}

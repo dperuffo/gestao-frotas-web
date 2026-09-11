@@ -29,7 +29,7 @@ export function AcaoConciliarAutomatico({ empresaId, quantidade }: { empresaId: 
 
   return (
     <div className="flex items-center gap-2">
-      {mensagem && <span className="text-xs text-slate-500">{mensagem}</span>}
+      {mensagem && <span className="text-xs text-slate-500 dark:text-slate-400">{mensagem}</span>}
       <button
         type="button"
         disabled={isPending}

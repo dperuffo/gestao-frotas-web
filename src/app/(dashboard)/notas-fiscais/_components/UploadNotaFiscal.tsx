@@ -60,7 +60,7 @@ async function lerEntradas(entradas: FileSystemEntry[]): Promise<File[]> {
 }
 
 function corLinha(resultado?: ResultadoEnvioNotaFiscal): string {
-  if (!resultado) return "bg-white";
+  if (!resultado) return "bg-white dark:bg-slate-800";
   switch (resultado.status) {
     case "sucesso":
       return "bg-green-50";
@@ -207,8 +207,8 @@ export function UploadNotaFiscal() {
 
   return (
     <div className="mb-6 card p-4">
-      <h3 className="mb-1 text-sm font-semibold text-slate-900">Enviar NF-e (XML)</h3>
-      <p className="mb-3 text-xs text-slate-500">
+      <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Enviar NF-e (XML)</h3>
+      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
         Arraste a pasta com os XMLs das NF-e (ou os arquivos individuais) pra área abaixo — o sistema processa todos e mostra,
         pra cada um, se foi vinculado com sucesso e a qual abastecimento, ou qual pendência precisa ser corrigida.
       </p>
@@ -219,10 +219,10 @@ export function UploadNotaFiscal() {
         onDragLeave={() => setArrastandoSobre(false)}
         onClick={() => arquivosInputRef.current?.click()}
         className={`cursor-pointer rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors ${
-          arrastandoSobre ? "border-frota-500 bg-frota-50" : "border-slate-200 hover:border-slate-300"
+          arrastandoSobre ? "border-frota-500 bg-frota-50" : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
         }`}
       >
-        <p className="text-sm font-medium text-slate-600">Arraste aqui a pasta (ou os arquivos) com os XMLs</p>
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Arraste aqui a pasta (ou os arquivos) com os XMLs</p>
         <p className="mt-1 text-xs text-slate-400">
           ou clique pra selecionar manualmente — dentro da pasta, use Ctrl+A (ou Cmd+A no Mac) pra marcar todos de uma vez
         </p>
@@ -266,13 +266,13 @@ export function UploadNotaFiscal() {
 
           <div className="space-y-2">
             {itens.map((item, index) => (
-              <div key={item.nome + index} className={`rounded-lg border border-slate-100 px-3 py-2 ${corLinha(item.resultado)}`}>
-                <p className="mb-1 truncate text-xs font-medium text-slate-500" title={item.nome}>
+              <div key={item.nome + index} className={`rounded-lg border border-slate-100 dark:border-slate-700 px-3 py-2 ${corLinha(item.resultado)}`}>
+                <p className="mb-1 truncate text-xs font-medium text-slate-500 dark:text-slate-400" title={item.nome}>
                   {item.nome}
                 </p>
 
                 {item.status === "aguardando" && <p className="text-xs text-slate-400">Aguardando...</p>}
-                {item.status === "processando" && <p className="text-xs text-slate-500">Validando...</p>}
+                {item.status === "processando" && <p className="text-xs text-slate-500 dark:text-slate-400">Validando...</p>}
 
                 {item.status === "concluido" && item.resultado && item.resultado.status !== "ambiguo" && (
                   <RotuloResultado resultado={item.resultado} />
@@ -290,7 +290,7 @@ export function UploadNotaFiscal() {
                           type="button"
                           disabled={processando}
                           onClick={() => processarUm(index, item.arquivo, c.abastecimentoId, c.provedor)}
-                          className="block w-full rounded border border-blue-200 bg-white px-2 py-1.5 text-left text-xs text-slate-700 hover:bg-blue-100"
+                          className="block w-full rounded border border-blue-200 bg-white dark:bg-slate-800 px-2 py-1.5 text-left text-xs text-slate-700 dark:text-slate-300 hover:bg-blue-100"
                         >
                           [{c.provedor === "profrotas" ? "PróFrotas" : c.provedor}] {formatarDataBr(c.dataAbastecimento)} ·{" "}
                           {c.itemNome ?? "—"} · {c.itemQuantidade} L · {formatarMoeda(c.itemValorTotal)}

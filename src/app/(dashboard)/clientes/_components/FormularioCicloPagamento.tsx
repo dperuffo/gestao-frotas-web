@@ -37,8 +37,8 @@ export function FormularioCicloPagamento({
   if (!aberto) {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-sm text-slate-600">
-          Ciclo atual: <strong className="text-slate-900">{cicloAtual} dias</strong> (vencimento também em{" "}
+        <span className="text-sm text-slate-600 dark:text-slate-300">
+          Ciclo atual: <strong className="text-slate-900 dark:text-slate-100">{cicloAtual} dias</strong> (vencimento também em{" "}
           {cicloAtual} dias após o fechamento)
         </span>
         <button
@@ -76,7 +76,7 @@ export function FormularioCicloPagamento({
       }}
     >
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Ciclo (dias)</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Ciclo (dias)</label>
         <input
           type="number"
           name="ciclo_faturamento_dias"

@@ -118,7 +118,7 @@ export default async function AntifraudePage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -135,13 +135,13 @@ export default async function AntifraudePage({
         </form>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+      <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
         {ABAS.map((a) => (
           <Link
             key={a.tipo}
             href={linkAba(a.tipo)}
             className={`rounded-full px-3 py-1 text-xs font-medium ${
-              tipo === a.tipo ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              tipo === a.tipo ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
             }`}
           >
             {a.label}
@@ -150,25 +150,25 @@ export default async function AntifraudePage({
       </div>
 
       {semClienteEscolhido || !empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver as regras dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para ver as regras dele.</p>
       ) : (
         <>
           <div className="mb-4 flex flex-wrap gap-2">
             <Link
               href={linkFiltroStatus("")}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${!statusParam ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${!statusParam ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
             >
               Todos ({regras.length})
             </Link>
             <Link
               href={linkFiltroStatus("Ativo")}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${statusParam === "Ativo" ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${statusParam === "Ativo" ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
             >
               Ativas
             </Link>
             <Link
               href={linkFiltroStatus("Inativo")}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${statusParam === "Inativo" ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${statusParam === "Inativo" ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
             >
               Inativas
             </Link>
@@ -177,7 +177,7 @@ export default async function AntifraudePage({
           <div className="card overflow-x-auto">
             {erroConsulta && <p className="p-4 text-sm text-red-600">Erro ao carregar regras: {erroConsulta}</p>}
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Nome</th>
                   <th className="px-4 py-3">Escopo</th>
@@ -186,15 +186,15 @@ export default async function AntifraudePage({
                   <th className="px-4 py-3">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {regras.map((r) => (
                   <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 font-medium text-slate-900">{r.nome}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{r.nome}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {LABEL_ESCOPO[r.escopo] ?? r.escopo}
                       {r.escopo_referencia ? ` — ${r.escopo_referencia}` : ""}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {formatDate(r.vigencia_inicio)} até {r.vigencia_fim ? formatDate(r.vigencia_fim) : "sem prazo"}
                     </td>
                     <td className="px-4 py-3">

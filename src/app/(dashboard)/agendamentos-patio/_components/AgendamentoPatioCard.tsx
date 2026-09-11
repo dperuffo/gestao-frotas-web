@@ -91,13 +91,13 @@ export function AgendamentoPatioCard({
   const podeEditar = agendamento && ["agendado", "confirmado"].includes(agendamento.status);
 
   return (
-    <div className="rounded-lg border border-slate-200 p-3">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
       <p className="mb-2 text-xs font-semibold uppercase text-slate-400">{TIPO_AGENDAMENTO_LABEL[tipo]}</p>
 
       {!agendamento || editando ? (
         <form action={editando ? handleReagendar : handleCriar} className="flex flex-wrap items-end gap-2">
           <div className="min-w-[160px] flex-1">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Início da janela</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Início da janela</label>
             <input
               type="datetime-local"
               name="janela_inicio"
@@ -107,7 +107,7 @@ export function AgendamentoPatioCard({
             />
           </div>
           <div className="min-w-[160px] flex-1">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Fim da janela</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Fim da janela</label>
             <input
               type="datetime-local"
               name="janela_fim"
@@ -117,7 +117,7 @@ export function AgendamentoPatioCard({
             />
           </div>
           <div className="min-w-[100px] flex-1">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Doca/vaga</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Doca/vaga</label>
             <input
               type="text"
               name="doca"
@@ -130,7 +130,7 @@ export function AgendamentoPatioCard({
             <input type="hidden" name="local_label" value={localLabelPadrao} />
           )}
           <div className="min-w-[160px] flex-1">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Observações</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Observações</label>
             <input
               type="text"
               name="observacoes"
@@ -143,7 +143,7 @@ export function AgendamentoPatioCard({
             {isPending ? "..." : editando ? "Salvar" : "Agendar"}
           </button>
           {editando && (
-            <button type="button" onClick={() => setEditando(false)} className="text-sm text-slate-500 hover:underline">
+            <button type="button" onClick={() => setEditando(false)} className="text-sm text-slate-500 dark:text-slate-400 hover:underline">
               Cancelar edição
             </button>
           )}
@@ -151,11 +151,11 @@ export function AgendamentoPatioCard({
         </form>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_AGENDAMENTO_COR[agendamento.status] ?? "bg-slate-100 text-slate-600"}`}>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_AGENDAMENTO_COR[agendamento.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
             {STATUS_AGENDAMENTO_LABEL[agendamento.status] ?? agendamento.status}
           </span>
-          <span className="text-sm text-slate-700">{formatarJanela(agendamento.janela_inicio, agendamento.janela_fim)}</span>
-          {agendamento.doca && <span className="text-sm text-slate-500">· doca {agendamento.doca}</span>}
+          <span className="text-sm text-slate-700 dark:text-slate-300">{formatarJanela(agendamento.janela_inicio, agendamento.janela_fim)}</span>
+          {agendamento.doca && <span className="text-sm text-slate-500 dark:text-slate-400">· doca {agendamento.doca}</span>}
           {agendamento.observacoes && <span className="text-xs text-slate-400">· {agendamento.observacoes}</span>}
 
           {podeEditar && (
@@ -165,7 +165,7 @@ export function AgendamentoPatioCard({
                   Confirmar
                 </button>
               )}
-              <button type="button" onClick={() => setEditando(true)} disabled={isPending} className="text-sm text-slate-600 hover:underline">
+              <button type="button" onClick={() => setEditando(true)} disabled={isPending} className="text-sm text-slate-600 dark:text-slate-300 hover:underline">
                 Reagendar
               </button>
               <button type="button" onClick={handleCancelar} disabled={isPending} className="text-sm text-red-600 hover:underline">

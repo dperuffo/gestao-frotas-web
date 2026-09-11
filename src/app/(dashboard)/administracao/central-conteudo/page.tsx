@@ -17,8 +17,8 @@ export default async function CentralConteudoPage() {
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Esta tela é exclusiva do time interno (perfil administrador).
         </p>
       </div>
@@ -69,9 +69,9 @@ function Secao({
 }) {
   return (
     <div className="card mb-6 overflow-x-auto p-6">
-      <h2 className="mb-4 text-sm font-semibold text-slate-900">{titulo}</h2>
+      <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{titulo}</h2>
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+        <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
           <tr>
             <th className="px-4 py-3">Módulo</th>
             <th className="px-4 py-3">Título</th>
@@ -80,11 +80,11 @@ function Secao({
             <th className="px-4 py-3">Ações</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {itens.map((item) => (
             <tr key={item.id}>
-              <td className="px-4 py-3 text-slate-600">{item.modulo ?? "—"}</td>
-              <td className="px-4 py-3 font-medium text-slate-900">
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{item.modulo ?? "—"}</td>
+              <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                 {item.titulo}
                 {item.video_path && (
                   <span className="ml-2 rounded-full bg-frota-50 px-2 py-0.5 text-[10px] font-semibold text-frota-700">

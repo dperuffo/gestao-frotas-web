@@ -40,7 +40,7 @@ export default async function NovaRedePage() {
     return (
       <div>
         <CabecalhoPagina titulo="Nova Rede de Postos" />
-        <div className="card p-6 text-sm text-slate-600">
+        <div className="card p-6 text-sm text-slate-600 dark:text-slate-300">
           Você precisa ter um posto cadastrado antes de criar uma Rede de Postos.{" "}
           <Link href="/meu-posto" className="font-medium text-frota-600 hover:underline">
             Cadastre seu posto em &quot;Meu Posto&quot;

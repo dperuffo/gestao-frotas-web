@@ -26,7 +26,7 @@ export function BotaoReprocessarNotas({ empresaId }: { empresaId: string }) {
         {pendente ? "Reprocessando..." : "Reprocessar notas antigas"}
       </button>
       {resultado && (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
           {resultado.processadas === 0
             ? "Nenhuma nota pendente de reprocessamento."
             : `${resultado.processadas} nota(s) revisada(s): ${resultado.atualizadas} atualizada(s), ${resultado.semDadoNoXml} sem grupo ICMS61 no XML, ${resultado.erros} com erro. ${

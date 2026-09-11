@@ -58,7 +58,7 @@ export function TabelaOrcamento({ linhas }: { linhas: LinhaOrcamento[] }) {
     <div>
       {erro && <p className="mb-2 text-sm text-red-600">{erro}</p>}
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+        <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
           <tr>
             <th className="px-4 py-3">Centro de custo</th>
             <th className="px-4 py-3">Categoria</th>
@@ -68,16 +68,16 @@ export function TabelaOrcamento({ linhas }: { linhas: LinhaOrcamento[] }) {
             <th className="px-4 py-3">Ações</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {linhas.map((l) => {
             const emEdicao = editandoId === l.id;
             const valorPlanejadoAtual = emEdicao ? Number(valorEdicao) || 0 : l.valorPlanejado;
             const saldo = valorPlanejadoAtual - l.realizado;
             return (
               <tr key={l.id}>
-                <td className="px-4 py-3 text-slate-600">{l.centroCustoNome}</td>
-                <td className="px-4 py-3 text-slate-600">{CATEGORIA_ORCAMENTO_LABEL[l.categoria] ?? l.categoria}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.centroCustoNome}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{CATEGORIA_ORCAMENTO_LABEL[l.categoria] ?? l.categoria}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {emEdicao ? (
                     <input
                       type="number"
@@ -92,7 +92,7 @@ export function TabelaOrcamento({ linhas }: { linhas: LinhaOrcamento[] }) {
                     formatarMoeda(l.valorPlanejado)
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{formatarMoeda(l.realizado)}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarMoeda(l.realizado)}</td>
                 <td className={`px-4 py-3 font-medium ${saldo < 0 ? "text-red-600" : "text-green-700"}`}>
                   {formatarMoeda(saldo)}
                 </td>
@@ -111,7 +111,7 @@ export function TabelaOrcamento({ linhas }: { linhas: LinhaOrcamento[] }) {
                         type="button"
                         onClick={() => setEditandoId(null)}
                         disabled={isPending}
-                        className="text-xs font-medium text-slate-500 hover:underline disabled:opacity-50"
+                        className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:underline disabled:opacity-50"
                       >
                         Cancelar
                       </button>

@@ -31,7 +31,7 @@ export function GraficoRotograma({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Rotogramas emitidos por mês</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Rotogramas emitidos por mês</p>
         {!comVolume ? (
           <p className="text-sm text-slate-400">Sem dados no período.</p>
         ) : (
@@ -48,7 +48,7 @@ export function GraficoRotograma({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Rotas mais frequentes (top 5)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Rotas mais frequentes (top 5)</p>
         {topRotas.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (

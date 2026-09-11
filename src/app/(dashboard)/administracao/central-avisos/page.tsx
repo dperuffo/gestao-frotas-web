@@ -13,7 +13,7 @@ const TIPO_LABEL: Record<string, string> = {
 };
 
 const URGENCIA_BADGE: Record<string, string> = {
-  informativo: "bg-slate-100 text-slate-600",
+  informativo: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300",
   atencao: "bg-amber-50 text-amber-700",
   critico: "bg-red-50 text-red-700",
 };
@@ -30,8 +30,8 @@ export default async function CentralAvisosPage() {
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">Esta tela é exclusiva do time interno (perfil administrador).</p>
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Esta tela é exclusiva do time interno (perfil administrador).</p>
       </div>
     );
   }
@@ -55,7 +55,7 @@ export default async function CentralAvisosPage() {
 
       <div className="card overflow-x-auto p-6">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Tipo</th>
               <th className="px-4 py-3">Título</th>
@@ -66,11 +66,11 @@ export default async function CentralAvisosPage() {
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {(itens ?? []).map((item) => (
               <tr key={item.id}>
-                <td className="px-4 py-3 text-slate-600">{TIPO_LABEL[item.tipo] ?? item.tipo}</td>
-                <td className="px-4 py-3 font-medium text-slate-900">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{TIPO_LABEL[item.tipo] ?? item.tipo}</td>
+                <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                   {item.titulo}
                   {item.fixado && (
                     <span className="ml-2 rounded-full bg-frota-50 px-2 py-0.5 text-[10px] font-semibold text-frota-700">
@@ -83,8 +83,8 @@ export default async function CentralAvisosPage() {
                     {item.urgencia}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-500">{formatarDataHoraBr(item.data_publicacao)}</td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatarDataHoraBr(item.data_publicacao)}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                   {item.data_expiracao ? formatarDataHoraBr(item.data_expiracao) : "—"}
                 </td>
                 <td className="px-4 py-3">

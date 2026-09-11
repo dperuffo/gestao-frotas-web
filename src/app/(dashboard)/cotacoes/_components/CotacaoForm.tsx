@@ -38,7 +38,7 @@ export function CotacaoForm({
 
   if (tabelas.length === 0) {
     return (
-      <div className="card p-6 text-sm text-slate-600">
+      <div className="card p-6 text-sm text-slate-600 dark:text-slate-300">
         Você ainda não tem nenhuma tabela de frete ativa. Cadastre uma em{" "}
         <a href={`/tabelas-frete/novo?empresa=${empresaId}`} className="font-medium text-frota-600 hover:underline">
           Tabelas de Frete
@@ -53,10 +53,10 @@ export function CotacaoForm({
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Tabela de frete</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Tabela de frete</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Tabela<span className="text-red-500"> *</span>
             </label>
             <select
@@ -74,7 +74,7 @@ export function CotacaoForm({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Cliente-tomador</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Cliente-tomador</label>
             <select name="cliente_tomador_id" defaultValue="" className="input">
               <option value="">— não informar —</option>
               {parceiros.map((p) => (
@@ -88,31 +88,31 @@ export function CotacaoForm({
       </section>
 
       <section className="card space-y-4 p-6">
-        <h2 className="text-sm font-semibold text-slate-900">Rota</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Rota</h2>
         <CampoLocalFrete label="Origem" prefixo="origem" />
         <CampoLocalFrete label="Destino" prefixo="destino" />
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Distância estimada (km)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Distância estimada (km)</label>
           <input name="km_estimado" type="number" step="0.1" className="input" placeholder="Opcional — usada no alerta de piso ANTT" />
         </div>
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Carga</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Carga</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Peso da carga (kg)<span className="text-red-500"> *</span>
             </label>
             <input name="peso_kg" type="number" step="0.01" required className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Valor da carga / NF (R$)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Valor da carga / NF (R$)</label>
             <input name="valor_carga" type="number" step="0.01" defaultValue={0} className="input" />
-            <p className="mt-1 text-xs text-slate-500">Base do ad valorem e do GRIS.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Base do ad valorem e do GRIS.</p>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Tipo de carga (piso ANTT)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tipo de carga (piso ANTT)</label>
             <select name="tipo_carga" value={tipoCarga} onChange={(e) => setTipoCarga(e.target.value)} className="input">
               <option value="">— não informar —</option>
               {tiposCarga.map((t) => (
@@ -123,7 +123,7 @@ export function CotacaoForm({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Nº de eixos (piso ANTT)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Nº de eixos (piso ANTT)</label>
             <select name="numero_eixos" defaultValue="" className="input" disabled={!tipoSelecionado}>
               <option value="">—</option>
               {(tipoSelecionado?.numerosEixos ?? []).map((n) => (
@@ -134,13 +134,13 @@ export function CotacaoForm({
             </select>
           </div>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
           Tipo de carga + nº de eixos + distância estimada juntos habilitam o alerta de piso mínimo ANTT.
         </p>
       </section>
 
       <section className="card p-6">
-        <label className="mb-1 block text-sm font-medium text-slate-700">Observações</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observações</label>
         <textarea name="observacoes" rows={2} className="input" />
       </section>
 

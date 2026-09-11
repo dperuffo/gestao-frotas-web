@@ -36,7 +36,7 @@ export function GraficoConciliacao({
       </div>
 
       <div className="lg:col-span-2">
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Fluxo mensal (crédito x débito)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Fluxo mensal (crédito x débito)</p>
         {fluxoPorMes.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (

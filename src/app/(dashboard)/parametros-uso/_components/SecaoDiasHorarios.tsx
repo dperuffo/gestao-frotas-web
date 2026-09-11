@@ -51,7 +51,7 @@ export function SecaoDiasHorarios({
     <div>
       <div className="card mb-4 p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Dias da semana e horário em que o abastecimento é permitido, por cliente, veículo, classificação e
             motorista. Fora da janela definida, o abastecimento é bloqueado.
           </p>
@@ -63,7 +63,7 @@ export function SecaoDiasHorarios({
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Classificação</th>
               <th className="px-4 py-3">Veículo</th>
@@ -74,14 +74,14 @@ export function SecaoDiasHorarios({
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhas.map((l) => (
               <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-600">{l.classificacao ?? "Todos"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.placa ?? "Todos"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.motoristas?.nome_completo ?? "Todos"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.dias_permitidos.join(", ")}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.classificacao ?? "Todos"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.placa ?? "Todos"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.motoristas?.nome_completo ?? "Todos"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.dias_permitidos.join(", ")}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {l.hora_inicio.slice(0, 5)}–{l.hora_fim.slice(0, 5)}
                 </td>
                 <td className="px-4 py-3">
@@ -112,7 +112,7 @@ export function SecaoDiasHorarios({
           <input type="hidden" name="empresa_id" value={empresaId} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Classificação</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Classificação</label>
             <select name="classificacao" defaultValue="" className="input">
               <option value="">Todos</option>
               <option value="Leve">Leve</option>
@@ -121,7 +121,7 @@ export function SecaoDiasHorarios({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Veículo (placa)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
             <select name="placa" defaultValue="" className="input">
               <option value="">Todos os veículos</option>
               {veiculos.map((v) => (
@@ -133,7 +133,7 @@ export function SecaoDiasHorarios({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Motorista</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Motorista</label>
             <select name="motorista_id" defaultValue="" className="input">
               <option value="">Todos os motoristas</option>
               {motoristas.map((m) => (
@@ -145,10 +145,10 @@ export function SecaoDiasHorarios({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Dias permitidos *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Dias permitidos *</label>
             <div className="flex flex-wrap gap-3">
               {DIAS.map((d) => (
-                <label key={d} className="flex items-center gap-1 text-sm text-slate-700">
+                <label key={d} className="flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300">
                   <input
                     type="checkbox"
                     name="dias_permitidos"
@@ -164,17 +164,17 @@ export function SecaoDiasHorarios({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Hora início *</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Hora início *</label>
               <input type="time" name="hora_inicio" required defaultValue="06:00" className="input" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Hora fim *</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Hora fim *</label>
               <input type="time" name="hora_fim" required defaultValue="20:00" className="input" />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Observação</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
             <textarea name="observacao" rows={2} className="input" />
           </div>
 

@@ -30,7 +30,7 @@ export function GraficoMultas({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-3">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Multas por status</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Multas por status</p>
         {statusOrdenado.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
@@ -57,7 +57,7 @@ export function GraficoMultas({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Valor por motorista (top 8)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Valor por motorista (top 8)</p>
         {rankingMotorista.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
@@ -86,7 +86,7 @@ export function GraficoMultas({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Valor de multas por mês</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Valor de multas por mês</p>
         {valorPorMes.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (

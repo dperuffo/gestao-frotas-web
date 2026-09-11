@@ -36,7 +36,7 @@ export function SecaoVolumeDiario({
     <div>
       <div className="card mb-4 p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Volume máximo (L) que pode ser abastecido em um veículo em um único dia. Ao atingir o limite, o
             registro é bloqueado com a mensagem &quot;Volume Diário Excedido&quot;.
           </p>
@@ -48,7 +48,7 @@ export function SecaoVolumeDiario({
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Veículo</th>
               <th className="px-4 py-3">Volume máximo diário</th>
@@ -57,15 +57,15 @@ export function SecaoVolumeDiario({
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhas.map((l) => (
               <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-600">{l.placa ?? "Todos"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.volume_maximo} L</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.placa ?? "Todos"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.volume_maximo} L</td>
                 <td className="px-4 py-3">
                   <span className={l.status === "Ativo" ? "badge-ativo" : "badge-inativo"}>{l.status}</span>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{l.observacao ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.observacao ?? "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <ToggleStatusRegra id={l.id} ativo={l.status === "Ativo"} acao={alternarStatusVolumeDiario} />
@@ -91,7 +91,7 @@ export function SecaoVolumeDiario({
           <input type="hidden" name="empresa_id" value={empresaId} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Veículo (placa)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
             <select name="placa" defaultValue="" className="input">
               <option value="">Todos os veículos (regra geral)</option>
               {veiculos.map((v) => (
@@ -103,12 +103,12 @@ export function SecaoVolumeDiario({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Volume máximo diário (L) *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Volume máximo diário (L) *</label>
             <input type="number" name="volume_maximo" min={1} step="0.01" required className="input" />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Observação</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
             <textarea name="observacao" rows={2} className="input" />
           </div>
 

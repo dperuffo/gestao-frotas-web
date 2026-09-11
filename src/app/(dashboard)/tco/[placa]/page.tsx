@@ -41,7 +41,7 @@ export default async function TcoVeiculoPage({
         </p>
         <form className="mt-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -98,11 +98,11 @@ export default async function TcoVeiculoPage({
       <form className="mb-6 flex flex-wrap items-end gap-2">
         <input type="hidden" name="empresa" value={empresaSelecionada} />
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">De</label>
           <input type="date" name="inicio" defaultValue={dataInicio} className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Até</label>
           <input type="date" name="fim" defaultValue={dataFim} className="input text-sm" />
         </div>
         <button type="submit" className="btn-secondary text-sm">
@@ -153,21 +153,21 @@ export default async function TcoVeiculoPage({
       </div>
 
       <div className="mb-6 card p-6">
-        <h2 className="text-sm font-semibold text-slate-900">Dados de aquisição</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Dados de aquisição</h2>
         <div className="mt-3 grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-400">Valor de aquisição</p>
-            <p className="mt-1 text-slate-900">{v.valor_aquisicao !== null ? formatarMoeda(v.valor_aquisicao) : "Não cadastrado"}</p>
+            <p className="mt-1 text-slate-900 dark:text-slate-100">{v.valor_aquisicao !== null ? formatarMoeda(v.valor_aquisicao) : "Não cadastrado"}</p>
           </div>
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-400">Data de aquisição</p>
-            <p className="mt-1 text-slate-900">
+            <p className="mt-1 text-slate-900 dark:text-slate-100">
               {v.data_aquisicao ? new Date(v.data_aquisicao + "T00:00:00").toLocaleDateString("pt-BR") : "Não cadastrada"}
             </p>
           </div>
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-400">Valor residual estimado</p>
-            <p className="mt-1 text-slate-900">
+            <p className="mt-1 text-slate-900 dark:text-slate-100">
               {v.valor_residual_estimado !== null
                 ? formatarMoeda(v.valor_residual_estimado)
                 : v.valor_aquisicao !== null
@@ -182,20 +182,20 @@ export default async function TcoVeiculoPage({
       </div>
 
       <div className="card p-6">
-        <h2 className="text-sm font-semibold text-slate-900">Vínculo FIPE</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Vínculo FIPE</h2>
         {v.codigo_fipe ? (
           <div className="mt-3 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
               <p className="text-xs uppercase tracking-wide text-slate-400">Código FIPE</p>
-              <p className="mt-1 text-slate-900">{v.codigo_fipe}</p>
+              <p className="mt-1 text-slate-900 dark:text-slate-100">{v.codigo_fipe}</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-slate-400">Valor FIPE atual</p>
-              <p className="mt-1 text-slate-900">{v.valor_fipe !== null ? formatarMoeda(v.valor_fipe) : "—"}</p>
+              <p className="mt-1 text-slate-900 dark:text-slate-100">{v.valor_fipe !== null ? formatarMoeda(v.valor_fipe) : "—"}</p>
             </div>
           </div>
         ) : (
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Este veículo ainda não está vinculado a um código FIPE — a depreciação acima usa a estimativa linear.
           </p>
         )}
@@ -232,7 +232,7 @@ function ComponenteCard({
         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
         {selo && <span className="whitespace-nowrap rounded-full bg-sky-50 px-2 py-0.5 text-[10px] text-sky-700">{selo}</span>}
       </div>
-      <p className={`mt-1 text-xl font-semibold ${indisponivel ? "text-slate-300" : "text-slate-900"}`}>
+      <p className={`mt-1 text-xl font-semibold ${indisponivel ? "text-slate-300" : "text-slate-900 dark:text-slate-100"}`}>
         {indisponivel || valor === null ? "—" : formatarMoeda(valor)}
       </p>
     </div>

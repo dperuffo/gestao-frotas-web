@@ -42,13 +42,13 @@ export function RegistrarMovimentoForm({ pecaId, empresaId, manutencoes }: { pec
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Tipo de movimento</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tipo de movimento</label>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setTipo("saida")}
             className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-              tipo === "saida" ? "border-red-300 bg-red-50 text-red-700" : "border-slate-200 text-slate-500"
+              tipo === "saida" ? "border-red-300 bg-red-50 text-red-700" : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
             }`}
           >
             Saída (uso)
@@ -57,7 +57,7 @@ export function RegistrarMovimentoForm({ pecaId, empresaId, manutencoes }: { pec
             type="button"
             onClick={() => setTipo("entrada")}
             className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-              tipo === "entrada" ? "border-green-300 bg-green-50 text-green-700" : "border-slate-200 text-slate-500"
+              tipo === "entrada" ? "border-green-300 bg-green-50 text-green-700" : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
             }`}
           >
             Entrada (compra)
@@ -67,13 +67,13 @@ export function RegistrarMovimentoForm({ pecaId, empresaId, manutencoes }: { pec
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Quantidade</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Quantidade</label>
         <input type="number" name="quantidade" min={0.01} step="0.01" required className="input" />
       </div>
 
       {tipo === "entrada" && (
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Custo unitário (R$)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Custo unitário (R$)</label>
           <input type="number" name="custo_unitario" min={0} step="0.01" className="input" placeholder="opcional" />
         </div>
       )}
@@ -81,11 +81,11 @@ export function RegistrarMovimentoForm({ pecaId, empresaId, manutencoes }: { pec
       {tipo === "saida" && (
         <>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Placa (veículo)</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Placa (veículo)</label>
             <input name="placa" className="input" placeholder="ABC1D23" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Vincular à OS (opcional)</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Vincular à OS (opcional)</label>
             <select name="manutencao_id" className="input" defaultValue="">
               <option value="">Nenhuma</option>
               {manutencoes.map((m) => (
@@ -103,7 +103,7 @@ export function RegistrarMovimentoForm({ pecaId, empresaId, manutencoes }: { pec
       )}
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Motivo / observação</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Motivo / observação</label>
         <input name="motivo" className="input" placeholder="Opcional" />
       </div>
 

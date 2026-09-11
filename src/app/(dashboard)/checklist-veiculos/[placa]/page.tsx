@@ -25,10 +25,10 @@ export default async function DetalheChecklistVeiculoPage({
       <div>
         <BotaoVoltar href="/checklist-veiculos" />
         <div className="card max-w-lg space-y-4 p-6">
-          <p className="text-sm text-slate-600">Selecione o cliente para ver o checklist deste veículo.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">Selecione o cliente para ver o checklist deste veículo.</p>
           <form className="flex items-end gap-3">
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
               <select name="empresa" defaultValue="" className="input">
                 <option value="">Selecione...</option>
                 {empresas.map((e) => (
@@ -96,12 +96,12 @@ export default async function DetalheChecklistVeiculoPage({
       />
 
       <div className="mb-6 card p-4">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">✅ Registrar Nova Inspeção</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">✅ Registrar Nova Inspeção</h2>
         <RegistrarInspecaoForm empresaId={empresaSelecionada} placa={placa} kmAtual={ultimoHodometro?.hodometro ?? 0} />
       </div>
 
       <div className="card p-4">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">📋 Histórico de Inspeções</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">📋 Histórico de Inspeções</h2>
         <HistoricoInspecoes placa={placa} inspecoes={inspecoes} />
       </div>
     </div>

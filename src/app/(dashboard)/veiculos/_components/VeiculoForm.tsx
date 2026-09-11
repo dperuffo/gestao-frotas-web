@@ -102,7 +102,7 @@ export function VeiculoForm({
                     ? "bg-frota-500 text-white"
                     : alcancavel
                       ? "bg-frota-50 text-frota-600 hover:bg-frota-100"
-                      : "cursor-not-allowed bg-slate-100 text-slate-400"
+                      : "cursor-not-allowed bg-slate-100 dark:bg-slate-700 text-slate-400"
                 }`}
               >
                 {concluido && !ativo ? <Check className="h-3.5 w-3.5" /> : <span>{i + 1}.</span>}
@@ -115,7 +115,7 @@ export function VeiculoForm({
       </ol>
 
       <section className={`card p-6 ${passo === 0 ? "" : "hidden"}`}>
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Identificação</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Identificação</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Placa" required>
             <input ref={placaRef} name="placa" required defaultValue={veiculo?.placa ?? ""} className="input" />
@@ -184,7 +184,7 @@ export function VeiculoForm({
       </section>
 
       <section className={`card p-6 ${passo === 1 ? "" : "hidden"}`}>
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Especificações técnicas</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Especificações técnicas</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Motor">
             <input name="motor" defaultValue={veiculo?.motor ?? ""} className="input" />
@@ -249,8 +249,8 @@ export function VeiculoForm({
       </section>
 
       <section className={`card p-6 ${passo === 2 ? "" : "hidden"}`}>
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">TCO / Aquisição / Patrimônio</h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">TCO / Aquisição / Patrimônio</h2>
+        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
           Opcional — usado pra calcular o TCO (custo total de propriedade) em{" "}
           <span className="font-medium">TCO / Custo por Veículo</span> e a depreciação contábil em{" "}
           <span className="font-medium">Patrimônio</span>. Sem esses dados, o TCO ainda é calculado (sem
@@ -301,7 +301,7 @@ export function VeiculoForm({
       </section>
 
       <section className={`card p-6 ${passo === 3 ? "" : "hidden"}`}>
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Localização e centro de custo</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Localização e centro de custo</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="Município">
             <input name="municipio" defaultValue={veiculo?.municipio ?? ""} className="input" />
@@ -322,7 +322,7 @@ export function VeiculoForm({
         </div>
 
         {veiculo && (
-          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
             <input
               type="checkbox"
               name="ativo"
@@ -334,7 +334,7 @@ export function VeiculoForm({
         )}
 
         {veiculo && nomeEmpresaAtual && (
-          <p className="mt-4 text-xs text-slate-500">Cliente: {nomeEmpresaAtual} (não pode ser alterado aqui).</p>
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Cliente: {nomeEmpresaAtual} (não pode ser alterado aqui).</p>
         )}
       </section>
 
@@ -373,7 +373,7 @@ function Campo({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

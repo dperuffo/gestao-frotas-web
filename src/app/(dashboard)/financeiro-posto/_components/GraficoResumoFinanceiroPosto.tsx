@@ -26,7 +26,7 @@ export function GraficoResumoFinanceiroPosto({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Vendas por meio de pagamento</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Vendas por meio de pagamento</p>
         {porProvedor.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados no período.</p>
         ) : (
@@ -46,7 +46,7 @@ export function GraficoResumoFinanceiroPosto({
             <ul className="flex-1 space-y-1.5 text-sm">
               {porProvedor.map((p, i) => (
                 <li key={p.provedor} className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-slate-600">
+                  <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                     <span
                       className="h-2.5 w-2.5 shrink-0 rounded-sm"
                       style={{ backgroundColor: CORES_GRAFICO.serie[i % CORES_GRAFICO.serie.length] }}
@@ -54,7 +54,7 @@ export function GraficoResumoFinanceiroPosto({
                     />
                     {p.provedor}
                   </span>
-                  <span className="whitespace-nowrap font-medium text-slate-900">{formatarMoeda(p.valor)}</span>
+                  <span className="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{formatarMoeda(p.valor)}</span>
                 </li>
               ))}
             </ul>
@@ -63,7 +63,7 @@ export function GraficoResumoFinanceiroPosto({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Contas vencidas por faixa de atraso</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Contas vencidas por faixa de atraso</p>
         {comAging.length === 0 ? (
           <p className="text-sm text-slate-400">Sem contas vencidas.</p>
         ) : (

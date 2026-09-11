@@ -36,7 +36,7 @@ export function GraficoCentrosCusto({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
           Gasto por centro de custo — últimos 90 dias {gastoPorCentro.length > 8 ? "(top 8)" : ""}
         </p>
         {rankingGasto.length === 0 ? (
@@ -67,7 +67,7 @@ export function GraficoCentrosCusto({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Status dos centros de custo</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Status dos centros de custo</p>
         {distribuicaoStatus.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
@@ -92,8 +92,8 @@ export function GraficoCentrosCusto({
                     style={{ backgroundColor: i === 0 ? CORES_GRAFICO.serie[3] : CORES_GRAFICO.neutro }}
                     aria-hidden="true"
                   />
-                  <span className="text-slate-600">{d.label}</span>
-                  <span className="font-medium text-slate-900">{d.total}</span>
+                  <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{d.total}</span>
                 </li>
               ))}
             </ul>

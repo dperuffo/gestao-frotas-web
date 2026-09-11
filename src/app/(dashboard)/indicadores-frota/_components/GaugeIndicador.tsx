@@ -124,7 +124,7 @@ export function GaugeIndicador({
           </RadialBarChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <p className="text-xl font-bold text-slate-900">{textoValor}</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{textoValor}</p>
         </div>
       </div>
 

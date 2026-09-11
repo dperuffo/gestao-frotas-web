@@ -114,7 +114,7 @@ export function TabelaCustosFixos({ linhas }: { linhas: LinhaCustoFixo[] }) {
     <div>
       {erro && <p className="mb-2 text-sm text-red-600">{erro}</p>}
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+        <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
           <tr>
             <th className="px-4 py-3">Tipo</th>
             <th className="px-4 py-3">Descrição</th>
@@ -125,7 +125,7 @@ export function TabelaCustosFixos({ linhas }: { linhas: LinhaCustoFixo[] }) {
             <th className="px-4 py-3">Ações</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {linhas.map((l) => {
             const emEdicao = editandoId === l.id && rascunho;
             const origem = badgeOrigem(l.origem);
@@ -197,7 +197,7 @@ export function TabelaCustosFixos({ linhas }: { linhas: LinhaCustoFixo[] }) {
                           type="button"
                           onClick={() => setEditandoId(null)}
                           disabled={isPending}
-                          className="text-xs font-medium text-slate-500 hover:underline disabled:opacity-50"
+                          className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:underline disabled:opacity-50"
                         >
                           Cancelar
                         </button>
@@ -206,11 +206,11 @@ export function TabelaCustosFixos({ linhas }: { linhas: LinhaCustoFixo[] }) {
                   </>
                 ) : (
                   <>
-                    <td className="px-4 py-3 text-slate-600">{TIPO_CUSTO_FIXO_LABEL[l.tipo as TipoCustoFixo] ?? l.tipo}</td>
-                    <td className="px-4 py-3 text-slate-600">{l.descricao ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{l.placa ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{formatarDataSemFuso(l.competencia)}</td>
-                    <td className="px-4 py-3 text-slate-600">{formatarMoeda(l.valor)}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{TIPO_CUSTO_FIXO_LABEL[l.tipo as TipoCustoFixo] ?? l.tipo}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.descricao ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.placa ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarDataSemFuso(l.competencia)}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarMoeda(l.valor)}</td>
                     <td className="px-4 py-3">
                       <span className={origem.classe}>{origem.label}</span>
                     </td>

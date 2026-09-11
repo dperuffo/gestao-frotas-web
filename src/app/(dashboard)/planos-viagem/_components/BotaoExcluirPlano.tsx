@@ -29,7 +29,7 @@ export function BotaoExcluirPlano({ id }: { id: string }) {
       {erro ? (
         <span className="text-red-600">{erro}</span>
       ) : (
-        <span className="text-slate-500">Confirma?</span>
+        <span className="text-slate-500 dark:text-slate-400">Confirma?</span>
       )}
       <button
         type="button"
@@ -39,7 +39,7 @@ export function BotaoExcluirPlano({ id }: { id: string }) {
       >
         {isPending ? "..." : "Sim"}
       </button>
-      <button type="button" onClick={() => setConfirmando(false)} className="text-slate-500 hover:underline">
+      <button type="button" onClick={() => setConfirmando(false)} className="text-slate-500 dark:text-slate-400 hover:underline">
         Cancelar
       </button>
     </div>

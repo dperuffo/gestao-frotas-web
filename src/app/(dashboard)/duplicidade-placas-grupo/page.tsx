@@ -44,7 +44,7 @@ export default async function DuplicidadePlacasGrupoPage({
       <form className="mb-6 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione uma empresa...</option>
               {empresas.map((e) => (

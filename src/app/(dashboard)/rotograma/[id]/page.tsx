@@ -97,12 +97,12 @@ export default async function RotogramaDetalhePage({ params }: { params: Promise
       {rotograma.observacoes && (
         <div className="mb-6 card p-4">
           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Observações</p>
-          <p className="text-sm text-slate-700">{rotograma.observacoes}</p>
+          <p className="text-sm text-slate-700 dark:text-slate-300">{rotograma.observacoes}</p>
         </div>
       )}
 
       <div className="mb-6 card p-4">
-        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
           🗺️ Linha do tempo da viagem <AjudaIcon chave="rotograma.linha_tempo_riscos" />
         </h2>
         <LinhaDoTempoRotograma
@@ -125,7 +125,7 @@ function Indicador({ label, valor }: { label: string; valor: string }) {
   return (
     <div className="card p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold text-slate-900" title={valor}>{valor}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-slate-900 dark:text-slate-100" title={valor}>{valor}</p>
     </div>
   );
 }

@@ -25,9 +25,9 @@ export function ControlesAdminChamado({
   }
 
   return (
-    <div className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+    <div className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3">
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Status</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Status</label>
         <select
           defaultValue={statusAtual}
           disabled={pending}
@@ -42,7 +42,7 @@ export function ControlesAdminChamado({
         </select>
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Prioridade</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Prioridade</label>
         <select
           defaultValue={prioridadeAtual}
           disabled={pending}

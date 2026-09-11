@@ -50,12 +50,12 @@ export function CardVoucher({
         <p className={`text-[11px] font-semibold uppercase tracking-wide ${estilo.text}`}>
           {LABEL_CATEGORIA_FIDELIDADE[categoria] ?? categoria}
         </p>
-        <h3 className="mt-0.5 text-sm font-bold text-slate-900">{titulo}</h3>
-        {parceiroNome && <p className="text-xs text-slate-500">{parceiroNome}</p>}
-        {descricao && <p className="mt-1 text-xs text-slate-600">{descricao}</p>}
+        <h3 className="mt-0.5 text-sm font-bold text-slate-900 dark:text-slate-100">{titulo}</h3>
+        {parceiroNome && <p className="text-xs text-slate-500 dark:text-slate-400">{parceiroNome}</p>}
+        {descricao && <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{descricao}</p>}
 
         {(numeroVoucher || validoAte) && (
-          <div className="mt-3 border-t border-dashed border-slate-300 pt-2 text-xs text-slate-500">
+          <div className="mt-3 border-t border-dashed border-slate-300 pt-2 text-xs text-slate-500 dark:text-slate-400">
             {numeroVoucher && <p className="font-mono">Voucher: {numeroVoucher}</p>}
             {validoAte && <p>Válido até {new Date(validoAte).toLocaleDateString("pt-BR")}</p>}
           </div>

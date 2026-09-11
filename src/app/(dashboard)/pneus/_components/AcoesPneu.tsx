@@ -52,7 +52,7 @@ export function AcoesPneu({ id, status }: { id: string; status: string }) {
             <button type="button" disabled={pendente} onClick={recapar} className="text-xs font-medium text-frota-600 hover:underline">
               Recapar
             </button>
-            <button type="button" disabled={pendente} onClick={() => remover("Removido")} className="text-xs font-medium text-slate-500 hover:underline">
+            <button type="button" disabled={pendente} onClick={() => remover("Removido")} className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:underline">
               Remover
             </button>
             <button type="button" disabled={pendente} onClick={() => remover("Descartado")} className="text-xs font-medium text-red-600 hover:underline">

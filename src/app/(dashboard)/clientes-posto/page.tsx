@@ -31,7 +31,7 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
 
   if (empresaSelecionada && segmentoSelecionado !== "Revenda") {
     return (
-      <div className="card p-6 text-sm text-slate-600">
+      <div className="card p-6 text-sm text-slate-600 dark:text-slate-300">
         Esta tela é exclusiva para postos revendedores. Para o cadastro dos seus clientes (transportadoras),
         use{" "}
         <Link href="/clientes" className="text-frota-600 hover:underline">
@@ -71,7 +71,7 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione...</option>
               {empresas.map((e) => (
@@ -88,7 +88,7 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
           {empresas.length > 1 ? "Selecione uma empresa acima." : "Nenhuma empresa vinculada ao seu usuário."}
         </p>
       ) : (
@@ -110,7 +110,7 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Cliente</th>
                   <th className="px-4 py-3">CNPJ</th>
@@ -121,22 +121,22 @@ export default async function ClientesPostoPage({ searchParams }: { searchParams
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {clientes.map((c) => (
                   <tr key={c.id} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 font-medium text-slate-900">{c.nome}</td>
-                    <td className="px-4 py-3 text-slate-600">{formatCNPJ(c.cnpj)}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{c.nome}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatCNPJ(c.cnpj)}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {c.municipio ? `${c.municipio}/${c.uf ?? ""}` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{c.segmento_transporte ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.segmento_transporte ?? "—"}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                      <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300">
                         {STATUS_NEGOCIACAO_LABEL[c.status_negociacao as StatusNegociacao] ?? c.status_negociacao}
                       </span>{" "}
                       <span className="text-xs text-slate-400">({c.negociacoes_count})</span>
                     </td>
-                    <td className="px-4 py-3 text-slate-500">
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                       {c.ultima_atualizacao ? new Date(c.ultima_atualizacao).toLocaleDateString("pt-BR") : "—"}
                     </td>
                     <td className="px-4 py-3 text-right">

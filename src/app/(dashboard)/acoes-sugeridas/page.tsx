@@ -151,7 +151,7 @@ export default async function AcoesSugeridasPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">{ehAdmin ? "Todos os clientes" : "Selecione um cliente..."}</option>
               {empresas.map((e) => (
@@ -168,7 +168,7 @@ export default async function AcoesSugeridasPage({
       )}
 
       {semClienteEscolhido && !ehAdmin && (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver as ações sugeridas dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para ver as ações sugeridas dele.</p>
       )}
 
       {!(semClienteEscolhido && !ehAdmin) && (

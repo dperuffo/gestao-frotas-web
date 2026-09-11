@@ -46,13 +46,13 @@ export function LinhaConfiguracaoRegra({
   }
 
   return (
-    <div className="flex flex-col gap-2 border-b border-slate-100 py-3 last:border-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+    <div className="flex flex-col gap-2 border-b border-slate-100 dark:border-slate-700 py-3 last:border-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-slate-900">{definicao.label}</p>
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{definicao.label}</p>
           {personalizado && <span className="badge-atencao">Personalizado</span>}
         </div>
-        <p className="mt-0.5 text-xs text-slate-500">{definicao.ajuda}</p>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{definicao.ajuda}</p>
         {erro && <p className="mt-1 text-xs text-red-600">{erro}</p>}
         {salvo && !erro && <p className="mt-1 text-xs text-status-ativo">Salvo.</p>}
       </div>

@@ -5,7 +5,7 @@ export function ComponenteCard({ c }: { c: ComponenteResultado }) {
   return (
     <div className={`rounded-lg border p-3 ${cor.borda} ${cor.fundo}`}>
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-sm font-medium text-slate-800">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-100">
           <span>{c.componente_icone}</span>
           {c.componente_label}
         </span>
@@ -19,7 +19,7 @@ export function ComponenteCard({ c }: { c: ComponenteResultado }) {
           style={{ width: `${Math.max(0, Math.min(100, c.score))}%`, background: corBarraScore(c.score) }}
         />
       </div>
-      <div className="flex items-center justify-between text-xs text-slate-600">
+      <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
         <span>
           {c.urgencia === "critico" ? "Vencido" : `~${c.km_next.toLocaleString("pt-BR")} km`}
         </span>

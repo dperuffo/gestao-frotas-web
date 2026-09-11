@@ -32,33 +32,33 @@ export function NovaCapacidadeForm({ empresaId }: { empresaId: string }) {
   return (
     <form onSubmit={handleSubmit} className="card mb-6 grid grid-cols-2 gap-3 p-4 md:grid-cols-4">
       <div className="col-span-2 md:col-span-4">
-        <h2 className="text-sm font-semibold text-slate-900">Declarar capacidade ociosa</h2>
-        <p className="mt-0.5 text-xs text-slate-500">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Declarar capacidade ociosa</h2>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
           Visível pra outras empresas do seu Grupo Econômico, pra sugerir carga de volta.
         </p>
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Placa</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Placa</label>
         <input name="placa" className="input text-sm" placeholder="ABC1D23" />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Tipo de veículo</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tipo de veículo</label>
         <input name="tipo_veiculo" className="input text-sm" placeholder="Ex.: Truck baú" />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Cidade de origem *</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cidade de origem *</label>
         <input name="origem_cidade" required className="input text-sm" />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">UF *</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">UF *</label>
         <input name="origem_uf" required maxLength={2} className="input text-sm uppercase" placeholder="SP" />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Destino pretendido</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Destino pretendido</label>
         <input name="destino_pretendido" className="input text-sm" placeholder="Opcional" />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Disponível a partir de *</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Disponível a partir de *</label>
         <input
           type="date"
           name="disponivel_a_partir"
@@ -68,11 +68,11 @@ export function NovaCapacidadeForm({ empresaId }: { empresaId: string }) {
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Capacidade (kg)</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Capacidade (kg)</label>
         <input type="number" name="capacidade_kg" min={0} className="input text-sm" />
       </div>
       <div className="col-span-2 md:col-span-4">
-        <label className="mb-1 block text-xs font-medium text-slate-500">Observações</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Observações</label>
         <input name="observacoes" className="input text-sm" />
       </div>
       {erro && <p className="col-span-2 text-xs text-red-600 md:col-span-4">{erro}</p>}

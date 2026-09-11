@@ -46,7 +46,7 @@ export function MapaVeiculos({ posicoes }: { posicoes: PosicaoVeiculo[] }) {
   return (
     <div>
       <MapaRotaLazy marcadores={marcadores} alturaClasse="h-[420px]" />
-      <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500">
+      <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: "#16a34a" }} /> Posição recente (≤15 min)
         </span>

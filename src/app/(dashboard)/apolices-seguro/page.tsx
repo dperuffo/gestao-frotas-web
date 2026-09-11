@@ -69,7 +69,7 @@ export default async function ApolicesSeguroPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -86,7 +86,7 @@ export default async function ApolicesSeguroPage({
       )}
 
       {semClienteEscolhido || !empresaSelecionada ? (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Selecione um cliente acima pra ver as apólices dele.
         </p>
       ) : (
@@ -109,7 +109,7 @@ export default async function ApolicesSeguroPage({
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Seguradora</th>
                   <th className="px-4 py-3">Nº apólice</th>
@@ -121,20 +121,20 @@ export default async function ApolicesSeguroPage({
                   <th className="px-4 py-3">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {apolices.map((a) => {
                   const vencida = a.vigencia_fim < hoje;
                   const vencendo = !vencida && a.vigencia_fim <= em30Dias;
                   return (
                     <tr key={a.id}>
-                      <td className="px-4 py-3 font-medium text-slate-900">{a.seguradora}</td>
-                      <td className="px-4 py-3 text-slate-600">{a.numero_apolice}</td>
-                      <td className="px-4 py-3 text-slate-600">{a.placa ?? "Frota toda"}</td>
-                      <td className="px-4 py-3 text-slate-600">{a.cobertura ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{a.seguradora}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.numero_apolice}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.placa ?? "Frota toda"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.cobertura ?? "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {formatDate(a.vigencia_inicio)} até {formatDate(a.vigencia_fim)}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {a.valor_franquia != null ? formatarMoeda(a.valor_franquia) : "—"}
                       </td>
                       <td className="px-4 py-3">

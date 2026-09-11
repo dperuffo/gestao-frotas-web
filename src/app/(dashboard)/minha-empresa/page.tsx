@@ -47,7 +47,7 @@ export default async function MinhaEmpresaPage({
       {opcoes.length > 1 && (
         <form className="mb-4 flex items-end gap-2 text-sm">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Posto</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Posto</label>
             <select name="empresa" defaultValue={atual?.id} className="input">
               {opcoes.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -63,21 +63,21 @@ export default async function MinhaEmpresaPage({
       )}
 
       {!atual ? (
-        <div className="card p-6 text-sm text-slate-500">
+        <div className="card p-6 text-sm text-slate-500 dark:text-slate-400">
           Nenhum posto (Revenda) vinculado a este usuário.
         </div>
       ) : (
         <>
           <div className="mb-6 card p-6">
-            <h2 className="text-sm font-semibold text-slate-900">{atual.nome}</h2>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{atual.nome}</h2>
             <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-xs uppercase text-slate-400">CNPJ</dt>
-                <dd className="text-slate-700">{atual.cnpj || "—"}</dd>
+                <dd className="text-slate-700 dark:text-slate-300">{atual.cnpj || "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase text-slate-400">Endereço</dt>
-                <dd className="text-slate-700">
+                <dd className="text-slate-700 dark:text-slate-300">
                   {[atual.logradouro, atual.numero, atual.complemento].filter(Boolean).join(", ") || "—"}
                   {atual.bairro ? ` — ${atual.bairro}` : ""}
                   {atual.municipio ? `, ${atual.municipio}/${atual.uf ?? ""}` : ""}

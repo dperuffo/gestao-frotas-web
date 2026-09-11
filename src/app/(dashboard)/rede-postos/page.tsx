@@ -54,7 +54,7 @@ export default async function RedePostosPage() {
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar redes: {error.message}</p>}
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Nome da Rede</th>
               <th className="px-4 py-3">CNPJ Matriz</th>
@@ -62,7 +62,7 @@ export default async function RedePostosPage() {
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {redes?.map((r) => (
               <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3">
@@ -70,8 +70,8 @@ export default async function RedePostosPage() {
                     {r.nome}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{r.cnpj_matriz ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.cnpj_matriz ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {(r.grupos_economicos_empresas as unknown as { count: number }[])?.[0]?.count ?? 0}
                 </td>
                 <td className="px-4 py-3">

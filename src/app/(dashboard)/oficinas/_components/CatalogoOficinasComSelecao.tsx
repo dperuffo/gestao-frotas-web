@@ -77,8 +77,8 @@ export function CatalogoOficinasComSelecao({
           >
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="font-medium text-slate-900">{o.nome}</p>
-                <p className="text-xs text-slate-500">
+                <p className="font-medium text-slate-900 dark:text-slate-100">{o.nome}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {[o.municipio, o.uf].filter(Boolean).join(" / ") || "—"}
                   {o.avaliacao_media != null && ` · ⭐ ${o.avaliacao_media.toFixed(1)}`}
                 </p>
@@ -95,13 +95,13 @@ export function CatalogoOficinasComSelecao({
             {o.especialidades.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
                 {o.especialidades.map((e) => (
-                  <span key={e} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                  <span key={e} className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">
                     {e}
                   </span>
                 ))}
               </div>
             )}
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               {o.telefone ?? ""} {o.email ? `· ${o.email}` : ""}
             </p>
           </label>
@@ -116,8 +116,8 @@ export function CatalogoOficinasComSelecao({
       )}
 
       {empresaId && selecionadas.size > 0 && (
-        <div className="sticky bottom-4 mt-4 flex items-center justify-between rounded-lg border border-frota-200 bg-white p-3 shadow-lg">
-          <p className="text-sm text-slate-700">
+        <div className="sticky bottom-4 mt-4 flex items-center justify-between rounded-lg border border-frota-200 bg-white dark:bg-slate-800 p-3 shadow-lg">
+          <p className="text-sm text-slate-700 dark:text-slate-300">
             <strong>{selecionadas.size}</strong> oficina{selecionadas.size > 1 ? "s" : ""} selecionada{selecionadas.size > 1 ? "s" : ""}
           </p>
           <button type="button" onClick={() => setModalAberto(true)} className="btn-primary text-sm">
@@ -128,13 +128,13 @@ export function CatalogoOficinasComSelecao({
 
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <form onSubmit={handleSubmit} className="w-full max-w-md space-y-3 rounded-lg bg-white p-5">
-            <p className="font-medium text-slate-900">
+          <form onSubmit={handleSubmit} className="w-full max-w-md space-y-3 rounded-lg bg-white dark:bg-slate-800 p-5">
+            <p className="font-medium text-slate-900 dark:text-slate-100">
               Pedir cotação pra {selecionadas.size} oficina{selecionadas.size > 1 ? "s" : ""}
             </p>
             <div className="flex flex-wrap gap-1">
               {oficinasSelecionadas.map((o) => (
-                <span key={o.id} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                <span key={o.id} className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">
                   {o.nome}
                 </span>
               ))}
@@ -149,7 +149,7 @@ export function CatalogoOficinasComSelecao({
             </datalist>
             <textarea name="descricao_servico" required rows={3} placeholder="Descreva o serviço desejado..." className="input text-sm" />
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setModalAberto(false)} className="text-xs text-slate-500 hover:underline">
+              <button type="button" onClick={() => setModalAberto(false)} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">
                 Cancelar
               </button>
               <button type="submit" disabled={isPending} className="btn-primary text-xs">

@@ -37,7 +37,7 @@ export function FormularioCustoFixo({
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Tipo</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tipo</label>
           <select name="tipo" required className="input" defaultValue="">
             <option value="" disabled>
               Selecione
@@ -50,22 +50,22 @@ export function FormularioCustoFixo({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Valor (R$)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Valor (R$)</label>
           <input type="number" name="valor" step="0.01" min={0} required className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Competência</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Competência</label>
           <input type="date" name="competencia" required className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Placa (opcional)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Placa (opcional)</label>
           <input type="text" name="placa" className="input" placeholder="ABC1D23" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Centro de custo (opcional)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Centro de custo (opcional)</label>
           <select name="centro_custo_id" className="input" defaultValue="">
             <option value="">Nenhum</option>
             {centrosCusto.map((cc) => (
@@ -76,12 +76,12 @@ export function FormularioCustoFixo({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Descrição (opcional)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Descrição (opcional)</label>
           <input type="text" name="descricao" className="input" />
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-600">
+      <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
         <input type="checkbox" name="recorrente" className="accent-frota-500" />
         Custo recorrente (se repete todo mês)
       </label>

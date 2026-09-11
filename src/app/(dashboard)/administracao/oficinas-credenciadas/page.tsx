@@ -14,8 +14,8 @@ export default async function OficinasCredenciadasPage() {
   if (perfil !== "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">Esta tela é exclusiva do time interno (perfil administrador).</p>
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Esta tela é exclusiva do time interno (perfil administrador).</p>
       </div>
     );
   }
@@ -39,7 +39,7 @@ export default async function OficinasCredenciadasPage() {
 
       <div className="card overflow-x-auto p-6">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Nome</th>
               <th className="px-4 py-3">Local</th>
@@ -49,13 +49,13 @@ export default async function OficinasCredenciadasPage() {
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {(itens ?? []).map((item) => (
               <tr key={item.id}>
-                <td className="px-4 py-3 font-medium text-slate-900">{item.nome}</td>
-                <td className="px-4 py-3 text-slate-500">{[item.municipio, item.uf].filter(Boolean).join(" / ") || "—"}</td>
-                <td className="px-4 py-3 text-slate-500">{(item.especialidades ?? []).join(", ") || "—"}</td>
-                <td className="px-4 py-3 text-slate-500">{item.avaliacao_media != null ? `⭐ ${item.avaliacao_media.toFixed(1)}` : "—"}</td>
+                <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{item.nome}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{[item.municipio, item.uf].filter(Boolean).join(" / ") || "—"}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{(item.especialidades ?? []).join(", ") || "—"}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{item.avaliacao_media != null ? `⭐ ${item.avaliacao_media.toFixed(1)}` : "—"}</td>
                 <td className="px-4 py-3">
                   <span className={item.ativo ? "badge-ativo" : "badge-inativo"}>{item.ativo ? "Ativo" : "Inativo"}</span>
                 </td>

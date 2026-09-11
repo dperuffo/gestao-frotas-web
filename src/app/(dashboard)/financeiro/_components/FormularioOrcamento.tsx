@@ -36,7 +36,7 @@ export function FormularioOrcamento({
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Categoria</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Categoria</label>
           <select name="categoria" className="input" defaultValue="geral">
             {CATEGORIAS_ORCAMENTO.map((c) => (
               <option key={c} value={c}>
@@ -46,7 +46,7 @@ export function FormularioOrcamento({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Centro de custo</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Centro de custo</label>
           <select name="centro_custo_id" className="input" defaultValue="">
             <option value="">Toda a empresa</option>
             {centrosCusto.map((cc) => (
@@ -57,7 +57,7 @@ export function FormularioOrcamento({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Mês</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Mês</label>
           <select name="mes" className="input" defaultValue={agora.getMonth() + 1}>
             {NOMES_MES.map((nome, i) => (
               <option key={nome} value={i + 1}>
@@ -67,18 +67,18 @@ export function FormularioOrcamento({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Ano</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Ano</label>
           <input type="number" name="ano" className="input" defaultValue={agora.getFullYear()} min={2020} />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Valor planejado (R$)</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Valor planejado (R$)</label>
         <input type="number" name="valor_planejado" step="0.01" min={0} required className="input" />
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Observações (opcional)</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Observações (opcional)</label>
         <input type="text" name="observacoes" className="input" />
       </div>
 

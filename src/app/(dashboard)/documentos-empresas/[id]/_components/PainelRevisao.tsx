@@ -31,9 +31,9 @@ export function PainelRevisao({ empresaId, status }: { empresaId: string; status
 
   return (
     <div className="card p-6">
-      <h2 className="text-sm font-semibold text-slate-900">Decisão</h2>
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Decisão</h2>
       <div className="mt-3">
-        <label className="mb-1 block text-xs font-medium text-slate-500">Motivo (obrigatório se rejeitar)</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Motivo (obrigatório se rejeitar)</label>
         <textarea
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}

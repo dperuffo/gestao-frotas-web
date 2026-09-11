@@ -112,7 +112,7 @@ export default async function PlanosViagemPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">{ehAdmin ? "Todos os clientes" : "Selecione um cliente..."}</option>
               {empresas.map((e) => (
@@ -129,7 +129,7 @@ export default async function PlanosViagemPage({
       )}
 
       {semClienteEscolhido && (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver os planos de viagem dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para ver os planos de viagem dele.</p>
       )}
 
       {!semClienteEscolhido && (
@@ -172,7 +172,7 @@ export default async function PlanosViagemPage({
           <div className="card mb-6 overflow-x-auto">
             {error && <p className="p-4 text-sm text-red-600">Erro ao carregar planos: {error.message}</p>}
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Nome</th>
                   <th className="px-4 py-3">Veículo</th>
@@ -186,7 +186,7 @@ export default async function PlanosViagemPage({
                   <th className="px-4 py-3">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {linhas.map((p) => {
                   const margem = (p.receita_viagem ?? 0) - (p.custo_total_estimado ?? 0);
                   return (
@@ -196,11 +196,11 @@ export default async function PlanosViagemPage({
                           {p.nome}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{p.placa ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-600">{p.motoristas?.nome_completo ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-600">{p.data_saida ? formatarDataSemFuso(p.data_saida) : "—"}</td>
-                      <td className="px-4 py-3 text-slate-600">{p.km_estimado ? `${p.km_estimado.toLocaleString("pt-BR")} km` : "—"}</td>
-                      <td className="px-4 py-3 text-slate-600">{formatarMoeda(p.custo_total_estimado ?? 0)}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.placa ?? "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.motoristas?.nome_completo ?? "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.data_saida ? formatarDataSemFuso(p.data_saida) : "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.km_estimado ? `${p.km_estimado.toLocaleString("pt-BR")} km` : "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarMoeda(p.custo_total_estimado ?? 0)}</td>
                       <td className={`px-4 py-3 font-medium ${margem >= 0 ? "text-green-700" : "text-red-600"}`}>
                         {formatarMoeda(margem)}
                       </td>
@@ -208,7 +208,7 @@ export default async function PlanosViagemPage({
                         <span className="badge-atencao">{STATUS_PLANO_VIAGEM_LABEL[p.status as (typeof STATUS_PLANO_VIAGEM)[number]] ?? p.status}</span>
                       </td>
                       {ehAdmin && !empresaSelecionada && (
-                        <td className="px-4 py-3 text-slate-600">{p.empresas?.nome ?? "—"}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.empresas?.nome ?? "—"}</td>
                       )}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -234,27 +234,27 @@ export default async function PlanosViagemPage({
 
           {veiculosOrdenados.length > 0 && (
             <div>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Desempenho por Veículo</h2>
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Desempenho por Veículo</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {veiculosOrdenados.map(([veiculoPlaca, dados]) => (
                   <div key={veiculoPlaca} className="card p-4 transition hover:border-frota-300">
-                    <p className="text-sm font-semibold text-slate-900">{veiculoPlaca}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{veiculoPlaca}</p>
                     <dl className="mt-2 space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <dt className="text-slate-500">Planos</dt>
-                        <dd className="font-medium text-slate-900">{dados.planos}</dd>
+                        <dt className="text-slate-500 dark:text-slate-400">Planos</dt>
+                        <dd className="font-medium text-slate-900 dark:text-slate-100">{dados.planos}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-500">KM total</dt>
-                        <dd className="font-medium text-slate-900">{dados.km.toLocaleString("pt-BR")} km</dd>
+                        <dt className="text-slate-500 dark:text-slate-400">KM total</dt>
+                        <dd className="font-medium text-slate-900 dark:text-slate-100">{dados.km.toLocaleString("pt-BR")} km</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-500">Custo estimado</dt>
-                        <dd className="font-medium text-slate-900">{formatarMoeda(dados.custo)}</dd>
+                        <dt className="text-slate-500 dark:text-slate-400">Custo estimado</dt>
+                        <dd className="font-medium text-slate-900 dark:text-slate-100">{formatarMoeda(dados.custo)}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-500">Custo/km</dt>
-                        <dd className="font-medium text-slate-900">
+                        <dt className="text-slate-500 dark:text-slate-400">Custo/km</dt>
+                        <dd className="font-medium text-slate-900 dark:text-slate-100">
                           {dados.km > 0 ? `${formatarMoeda(dados.custo / dados.km)}/km` : "—"}
                         </dd>
                       </div>

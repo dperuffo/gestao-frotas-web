@@ -25,25 +25,25 @@ export function CentroCustoForm({ centroCusto }: { centroCusto: CentroCusto }) {
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Nome <span className="text-red-500">*</span>
           </label>
           <input name="nome" required defaultValue={centroCusto.nome} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Código</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Código</label>
           <input name="codigo" defaultValue={centroCusto.codigo ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Responsável</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Responsável</label>
           <input name="responsavel" defaultValue={centroCusto.responsavel ?? ""} className="input" />
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Descrição</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Descrição</label>
         <textarea name="descricao" defaultValue={centroCusto.descricao ?? ""} className="input" rows={3} />
       </div>
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
         <input
           type="checkbox"
           name="ativo"

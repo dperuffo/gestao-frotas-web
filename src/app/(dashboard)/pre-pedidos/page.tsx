@@ -33,7 +33,7 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
 
   if (empresaSelecionada && segmentoSelecionado !== "Revenda") {
     return (
-      <div className="card p-6 text-sm text-slate-600">
+      <div className="card p-6 text-sm text-slate-600 dark:text-slate-300">
         Esta tela é exclusiva para postos revendedores conferirem Pré-Pedidos de clientes.
       </div>
     );
@@ -63,7 +63,7 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Posto</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Posto</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione...</option>
               {empresas.map((e) => (
@@ -80,13 +80,13 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione um posto acima para consultar.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um posto acima para consultar.</p>
       ) : (
         <>
           <form className="card mb-6 flex flex-wrap items-end gap-3 p-4">
             <input type="hidden" name="empresa" value={empresaSelecionada} />
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Número do Pré-Pedido</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Número do Pré-Pedido</label>
               <input
                 type="number"
                 name="numero"
@@ -105,7 +105,7 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
           {error && <p className="mb-4 text-sm text-red-600">Erro ao consultar: {error.message}</p>}
 
           {numeroValido && !error && linhas.length === 0 && (
-            <div className="card p-6 text-sm text-slate-500">
+            <div className="card p-6 text-sm text-slate-500 dark:text-slate-400">
               Nenhum Pré-Pedido nº {numero} com parada pré-agendada para este posto foi encontrado. Confira o número
               com o motorista ou se o CNPJ deste posto está na rota planejada.
             </div>
@@ -114,13 +114,13 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
           {cabecalho && (
             <div className="card p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-base font-semibold text-slate-900">Pré-Pedido nº {cabecalho.numero}</h2>
+                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pré-Pedido nº {cabecalho.numero}</h2>
                 <span
                   className={
                     cabecalho.status === "ativo"
                       ? "badge-ativo"
                       : cabecalho.status === "concluido"
-                        ? "rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+                        ? "rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300"
                         : "badge-inativo"
                   }
                 >
@@ -131,28 +131,28 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
               <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
                 <div>
                   <dt className="text-xs text-slate-400">Placa</dt>
-                  <dd className="font-medium text-slate-800">{cabecalho.placa ?? "—"}</dd>
+                  <dd className="font-medium text-slate-800 dark:text-slate-100">{cabecalho.placa ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-slate-400">Motorista</dt>
-                  <dd className="font-medium text-slate-800">{cabecalho.motorista_nome ?? "—"}</dd>
+                  <dd className="font-medium text-slate-800 dark:text-slate-100">{cabecalho.motorista_nome ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-slate-400">Data de saída</dt>
-                  <dd className="font-medium text-slate-800">
+                  <dd className="font-medium text-slate-800 dark:text-slate-100">
                     {cabecalho.data_saida ? formatDate(cabecalho.data_saida) : "—"}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-xs text-slate-400">Km estimado</dt>
-                  <dd className="font-medium text-slate-800">{cabecalho.km_estimado ?? "—"}</dd>
+                  <dd className="font-medium text-slate-800 dark:text-slate-100">{cabecalho.km_estimado ?? "—"}</dd>
                 </div>
               </dl>
 
-              <div className="mt-5 rounded-lg border border-slate-200 p-4">
+              <div className="mt-5 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
                 <p className="text-xs font-medium uppercase text-slate-400">Parada pré-agendada neste posto</p>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-sm text-slate-700">
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
                     <span className="font-medium">{cabecalho.parada_posto_nome ?? "Este posto"}</span>
                     {cabecalho.parada_litros_previstos != null && (
                       <span className="text-slate-400"> · {cabecalho.parada_litros_previstos} L previstos</span>
@@ -169,7 +169,7 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
                   </span>
                 </div>
                 {!cabecalho.parada_atendida && cabecalho.status === "ativo" && (
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                     Este veículo está autorizado a abastecer aqui. A confirmação é feita automaticamente pela
                     integração no momento do abastecimento (ver{" "}
                     <Link href="/integracoes" className="text-frota-600 hover:underline">

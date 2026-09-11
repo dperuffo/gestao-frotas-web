@@ -15,11 +15,11 @@ export function CriarGrupoFrotaForm({ empresaId }: { empresaId: string }) {
   return (
     <form action={formAction} className="mt-3 flex flex-wrap items-end gap-2">
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">Nome do grupo</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Nome do grupo</label>
         <input name="nome" required className="input text-sm" placeholder="Ex.: Grupo Transportes Sul" />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">CNPJ da matriz (opcional)</label>
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">CNPJ da matriz (opcional)</label>
         <input name="cnpj_matriz" className="input text-sm" placeholder="00.000.000/0000-00" />
       </div>
       <button type="submit" disabled={pendente} className="btn-secondary text-sm">

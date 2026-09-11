@@ -60,8 +60,8 @@ export function CobrancaEmAberto({
   return (
     <div className="mt-6">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">Cobrança em aberto</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Cobrança em aberto</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Faturas emitidas pelos postos com quem sua empresa negociou (contas a pagar).
         </p>
       </div>
@@ -107,7 +107,7 @@ function Indicador({
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
       <p
         className={`mt-1 text-lg font-semibold ${
-          destaque === "negativo" ? "text-red-600" : destaque === "positivo" ? "text-green-700" : "text-slate-900"
+          destaque === "negativo" ? "text-red-600" : destaque === "positivo" ? "text-green-700" : "text-slate-900 dark:text-slate-100"
         }`}
       >
         {valor}

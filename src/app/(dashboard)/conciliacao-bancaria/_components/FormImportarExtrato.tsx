@@ -34,11 +34,11 @@ export function FormImportarExtrato({ empresaId }: { empresaId: string }) {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end">
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-slate-700">Arquivo (.ofx ou .csv)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Arquivo (.ofx ou .csv)</label>
           <input type="file" name="arquivo" accept=".ofx,.csv,text/csv" required className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Conta bancária</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Conta bancária</label>
           <input name="conta_bancaria" placeholder="Ex.: Itaú CC 12345-6" className="input text-sm" />
         </div>
       </div>

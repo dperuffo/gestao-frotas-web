@@ -13,7 +13,7 @@ export function GraficoPrecoRegional({ dados }: { dados: ItemPrecoRegional[] }) 
 
   return (
     <div className="card mb-6 p-5">
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">Diferença vs. referência ANP</p>
+      <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Diferença vs. referência ANP</p>
       <ResponsiveContainer width="100%" height={Math.max(160, dados.length * 36)}>
         <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 32, left: 4, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={CORES_GRAFICO.grade} />

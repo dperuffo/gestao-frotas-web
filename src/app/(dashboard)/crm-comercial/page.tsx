@@ -89,7 +89,7 @@ export default async function CrmComercialPage({ searchParams }: { searchParams:
   const conteudoCarteira = (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Clientes-tomadores cadastrados{nomeEmpresaSelecionada ? ` para ${nomeEmpresaSelecionada}` : ""}. Também usados nas{" "}
           <Link href="/cotacoes" className="text-frota-600 hover:underline">
             Cotações
@@ -111,7 +111,7 @@ export default async function CrmComercialPage({ searchParams }: { searchParams:
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver a carteira de clientes.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione uma empresa acima pra ver a carteira de clientes.</p>
       ) : clientes.length === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">
           Nenhum cliente cadastrado ainda. Clique em &quot;+ Novo cliente&quot; pra começar.
@@ -126,8 +126,8 @@ export default async function CrmComercialPage({ searchParams }: { searchParams:
               href={`/crm-comercial/clientes/${c.id}?empresa=${empresaSelecionada}`}
               className="card flex flex-col gap-2 p-5 hover:border-frota-300"
             >
-              <h3 className="font-semibold text-slate-900">{c.razao_social}</h3>
-              <p className="text-xs text-slate-500">{formatarCnpjCpf(c.cnpj_cpf)}</p>
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">{c.razao_social}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{formatarCnpjCpf(c.cnpj_cpf)}</p>
               <div className="flex items-center justify-between text-xs text-slate-400">
                 <span>{c.telefone ?? c.email ?? "sem contato"}</span>
                 <span className="font-medium text-frota-600">{contarPropostas(c.id)} proposta(s)</span>
@@ -141,7 +141,7 @@ export default async function CrmComercialPage({ searchParams }: { searchParams:
 
   const conteudoFunil = (
     <div>
-      <p className="mb-4 text-sm text-slate-500">
+      <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
         Propostas geradas em{" "}
         <Link href="/cotacoes" className="text-frota-600 hover:underline">
           Cotações
@@ -149,7 +149,7 @@ export default async function CrmComercialPage({ searchParams }: { searchParams:
         , organizadas por status.
       </p>
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver o funil.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione uma empresa acima pra ver o funil.</p>
       ) : cotacoes.length === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">
           Nenhuma proposta ainda. Simule uma em{" "}
@@ -161,10 +161,10 @@ export default async function CrmComercialPage({ searchParams }: { searchParams:
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {colunas.map((coluna) => (
-            <div key={coluna.status} className="rounded-lg bg-slate-50 p-3">
+            <div key={coluna.status} className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3">
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-700">{STATUS_PROPOSTA_LABEL[coluna.status]}</h3>
-                <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-slate-500">{coluna.itens.length}</span>
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{STATUS_PROPOSTA_LABEL[coluna.status]}</h3>
+                <span className="rounded-full bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">{coluna.itens.length}</span>
               </div>
               <div className="space-y-2">
                 {coluna.itens.length === 0 && <p className="text-xs text-slate-400">Nenhuma proposta.</p>}
@@ -172,14 +172,14 @@ export default async function CrmComercialPage({ searchParams }: { searchParams:
                   <Link
                     key={c.id}
                     href={`/cotacoes/${c.id}?empresa=${empresaSelecionada}`}
-                    className="block rounded-md border border-slate-200 bg-white p-3 text-xs hover:border-frota-300"
+                    className="block rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs hover:border-frota-300"
                   >
-                    <p className="font-medium text-slate-800">
+                    <p className="font-medium text-slate-800 dark:text-slate-100">
                       {c.origem_label} → {c.destino_label}
                     </p>
-                    <p className="mt-1 text-slate-500">{nomeCliente(c.cliente_tomador_id)}</p>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400">{nomeCliente(c.cliente_tomador_id)}</p>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="font-semibold text-slate-900">{formatarMoeda(c.valor_total)}</span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">{formatarMoeda(c.valor_total)}</span>
                       <span className="text-slate-400">{formatarData(c.criado_em)}</span>
                     </div>
                   </Link>

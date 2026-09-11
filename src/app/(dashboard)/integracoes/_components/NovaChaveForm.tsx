@@ -41,8 +41,8 @@ export function NovaChaveForm() {
 
   return (
     <form onSubmit={handleSubmit} className="card space-y-4 p-6">
-      <h2 className="text-sm font-semibold text-slate-900">Cadastrar chave de acesso do cliente</h2>
-      <p className="text-xs text-slate-500">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Cadastrar chave de acesso do cliente</h2>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Informe o token JWT obtido no portal <strong>portal.profrotas.com.br</strong>. O CNPJ precisa
         corresponder a um cliente já cadastrado em{" "}
         <Link href="/clientes" className="text-frota-600 hover:underline">
@@ -56,13 +56,13 @@ export function NovaChaveForm() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             CNPJ da Frota <span className="text-red-500">*</span>
           </label>
           <input name="cnpj_frota" placeholder="00.000.000/0001-00" className="input" required />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Nome da Empresa <span className="text-red-500">*</span>
           </label>
           <input name="nome_empresa" placeholder="Ex: Lenarge Transportes Ltda" className="input" required />
@@ -70,7 +70,7 @@ export function NovaChaveForm() {
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
           Token JWT <span className="text-red-500">*</span>
         </label>
         <textarea

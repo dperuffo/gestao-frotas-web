@@ -38,7 +38,7 @@ export default async function NovoChamadoPage() {
           <p className="font-semibold">Não foi possível carregar esta tela.</p>
           <p className="mt-1">Motivo: {mensagem}</p>
           {stack && (
-            <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-white p-2 text-xs text-red-700">
+            <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-white dark:bg-slate-800 p-2 text-xs text-red-700">
               {stack}
             </pre>
           )}

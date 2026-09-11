@@ -72,7 +72,7 @@ export default async function InsightsIAPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -89,19 +89,19 @@ export default async function InsightsIAPage({
       )}
 
       {semClienteEscolhido ? (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Selecione um cliente acima pra ver os insights dele.
         </p>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
             <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Novos</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{novos.length}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Novos</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{novos.length}</p>
             </div>
             <div className="card p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Impacto estimado (novos)</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{formatarMoeda(valorTotalNovos)}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Impacto estimado (novos)</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{formatarMoeda(valorTotalNovos)}</p>
             </div>
           </div>
 

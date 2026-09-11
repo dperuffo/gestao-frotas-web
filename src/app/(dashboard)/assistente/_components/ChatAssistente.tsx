@@ -57,7 +57,7 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
   return (
     <div className="flex h-[calc(100vh-220px)] min-h-[420px] flex-col card">
       {mensagens.length > 0 && (
-        <div className="flex justify-end border-b border-slate-200 p-2">
+        <div className="flex justify-end border-b border-slate-200 dark:border-slate-700 p-2">
           <BotaoBaixarPdfAssistenteLazy
             mensagens={mensagens.map((m) => ({ role: m.role, content: m.content, consultas: m.consultas }))}
             usuarioEmail={usuarioEmail}
@@ -67,7 +67,7 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
         {mensagens.length === 0 && (
           <div>
-            <p className="mb-3 text-sm text-slate-500">
+            <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
               Pergunte sobre abastecimentos, custos, veículos, motoristas, manutenção ou centros de custo da sua
               operação — ou sobre como usar qualquer tela da plataforma (integrações, roteirização, assinatura
               etc.). Exemplos:
@@ -78,7 +78,7 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
                   key={sugestao}
                   type="button"
                   onClick={() => enviar(sugestao)}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-600 transition hover:bg-slate-100"
+                  className="rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300 transition hover:bg-slate-100"
                 >
                   {sugestao}
                 </button>
@@ -95,7 +95,7 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
                   ? "bg-frota-500 text-white"
                   : m.erro
                     ? "bg-red-50 text-red-700"
-                    : "bg-slate-100 text-slate-800"
+                    : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100"
               }`}
             >
               <p className="whitespace-pre-wrap">{m.content}</p>
@@ -119,7 +119,7 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
 
         {pending && (
           <div className="flex justify-start">
-            <div className="max-w-[80%] rounded-2xl bg-slate-100 px-4 py-2.5 text-sm text-slate-500">
+            <div className="max-w-[80%] rounded-2xl bg-slate-100 dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-500 dark:text-slate-400">
               Consultando os dados da sua operação…
             </div>
           </div>
@@ -132,7 +132,7 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
           e.preventDefault();
           enviar(pergunta);
         }}
-        className="flex gap-2 border-t border-slate-200 p-3"
+        className="flex gap-2 border-t border-slate-200 dark:border-slate-700 p-3"
       >
         <input
           value={pergunta}

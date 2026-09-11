@@ -113,7 +113,7 @@ export default async function RestricoesAbastecimentoPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -130,17 +130,17 @@ export default async function RestricoesAbastecimentoPage({
       )}
 
       {semClienteEscolhido || !empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para configurar as restrições dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para configurar as restrições dele.</p>
       ) : (
         <>
-          <div className="card mb-8 divide-y divide-slate-100">
+          <div className="card mb-8 divide-y divide-slate-100 dark:divide-slate-700">
             {TIPOS.map((t) => {
               const ativo = configPorTipo.get(t.tipo) ?? false;
               return (
                 <div key={t.tipo} className="flex items-center justify-between gap-4 p-4">
                   <div>
-                    <p className="text-sm font-medium text-slate-900">{t.label}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">{t.descricao}</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{t.label}</p>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{t.descricao}</p>
                   </div>
                   <ToggleRestricaoTipo empresaId={empresaSelecionada} tipo={t.tipo} ativo={ativo} />
                 </div>
@@ -148,12 +148,12 @@ export default async function RestricoesAbastecimentoPage({
             })}
           </div>
 
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">
+          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
             Bloqueios ativos ({bloqueiosAtivos.length})
           </h2>
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Alvo</th>
                   <th className="px-4 py-3">Origem</th>
@@ -162,7 +162,7 @@ export default async function RestricoesAbastecimentoPage({
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {bloqueiosAtivos.map((b) => (
                   <tr key={b.id} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
@@ -170,11 +170,11 @@ export default async function RestricoesAbastecimentoPage({
                         {b.alvo_tipo === "motorista" ? "Motorista" : "Veículo"}
                       </span>
                       <br />
-                      <span className="font-medium text-slate-900">{b.alvo_label ?? b.alvo_ref}</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{b.alvo_label ?? b.alvo_ref}</span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{TIPO_LABEL[b.tipo_origem] ?? b.tipo_origem}</td>
-                    <td className="px-4 py-3 max-w-md text-slate-600">{b.motivo ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{formatDate(b.criado_em)}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{TIPO_LABEL[b.tipo_origem] ?? b.tipo_origem}</td>
+                    <td className="px-4 py-3 max-w-md text-slate-600 dark:text-slate-300">{b.motivo ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatDate(b.criado_em)}</td>
                     <td className="px-4 py-3">
                       <LiberarBloqueio id={b.id} alvoLabel={b.alvo_label ?? b.alvo_ref} />
                     </td>

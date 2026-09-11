@@ -36,10 +36,10 @@ export function RespostaAvaliacao({
         {respostaAtual ? (
           <>
             <p className="text-xs font-semibold text-frota-700">Sua resposta</p>
-            <p className="mt-1 text-sm text-slate-700">{respostaAtual}</p>
+            <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{respostaAtual}</p>
           </>
         ) : (
-          <p className="text-xs text-slate-500">Ainda sem resposta.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Ainda sem resposta.</p>
         )}
         <button
           type="button"

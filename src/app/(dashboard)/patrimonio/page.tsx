@@ -93,7 +93,7 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -105,7 +105,7 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
           <input
             type="search"
             name="busca"
@@ -115,7 +115,7 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Ordenar por</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Ordenar por</label>
           <select name="ordenar" defaultValue={ordenar} className="input text-sm">
             <option value="">Placa</option>
             <option value="valor_contabil_asc">Menor valor contábil primeiro</option>
@@ -167,7 +167,7 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Placa</th>
                   <th className="px-4 py-3">Marca / Modelo</th>
@@ -177,7 +177,7 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
                   <th className="px-4 py-3">Situação</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {veiculos.map((v) => (
                   <tr key={v.placa} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
@@ -188,13 +188,13 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
                         {v.placa}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-slate-600">
+                    <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">
                       {v.valor_aquisicao !== null ? formatarMoeda(v.valor_aquisicao) : "—"}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-slate-600">
+                    <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">
                       {v.depreciacao_acumulada !== null ? (
                         <>
                           {formatarMoeda(v.depreciacao_acumulada)}
@@ -206,12 +206,12 @@ export default async function PatrimonioPage({ searchParams }: { searchParams: P
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-3 tabular-nums font-medium text-slate-900">
+                    <td className="px-4 py-3 tabular-nums font-medium text-slate-900 dark:text-slate-100">
                       {v.valor_contabil_liquido !== null ? formatarMoeda(v.valor_contabil_liquido) : "—"}
                     </td>
                     <td className="px-4 py-3 text-xs">
                       {v.baixado ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">Baixado</span>
+                        <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-slate-600 dark:text-slate-300">Baixado</span>
                       ) : !v.patrimonio_completo ? (
                         <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">Sem aquisição</span>
                       ) : (v.percentual_depreciado ?? 0) >= 100 ? (

@@ -28,12 +28,12 @@ export function SecaoCiclosAbertos({
 
   return (
     <div className="mb-6 card overflow-x-auto">
-      <div className="border-b border-slate-100 px-4 py-3">
-        <h3 className="text-sm font-semibold text-slate-900">Ciclo em andamento</h3>
-        <p className="mt-1 text-xs text-slate-500">
+      <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Ciclo em andamento</h3>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Abastecimentos já registrados no ciclo atual, ainda não fechado — período, vencimento e valor são
           PREVISTOS e podem mudar até o fechamento (o robô fecha automaticamente quando o ciclo termina).
-          {" "}Total acumulado: <strong className="text-slate-700">{formatarMoeda(totalAcumulado)}</strong>.
+          {" "}Total acumulado: <strong className="text-slate-700 dark:text-slate-300">{formatarMoeda(totalAcumulado)}</strong>.
           {totalPendenteNfe > 0 && (
             <>
               {" "}
@@ -45,7 +45,7 @@ export function SecaoCiclosAbertos({
         </p>
       </div>
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+        <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
           <tr>
             <th className="px-4 py-3">{rotulo === "posto" ? "Cliente" : "Posto"}</th>
             <th className="px-4 py-3">Período (previsto)</th>
@@ -58,19 +58,19 @@ export function SecaoCiclosAbertos({
             <th className="px-4 py-3" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {ciclos.map((c) => (
             <tr key={c.negociacao_id} className="transition-colors hover:bg-frota-50/60">
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                 {(rotulo === "posto" ? c.cliente_nome : c.posto_nome) ?? "—"}
               </td>
-              <td className="px-4 py-3 text-slate-500">
+              <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                 {formatarDataBr(c.periodo_inicio)} – {formatarDataBr(c.periodo_fim_previsto)}
               </td>
-              <td className="px-4 py-3 text-slate-500">{formatarDataBr(c.vencimento_previsto)}</td>
-              <td className="px-4 py-3 text-slate-500">{c.quantidade_abastecimentos}</td>
-              <td className="px-4 py-3 text-slate-500">{c.volume_acumulado.toLocaleString("pt-BR")} L</td>
-              <td className="px-4 py-3 font-medium text-slate-700">{formatarMoeda(c.valor_acumulado)}</td>
+              <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatarDataBr(c.vencimento_previsto)}</td>
+              <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{c.quantidade_abastecimentos}</td>
+              <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{c.volume_acumulado.toLocaleString("pt-BR")} L</td>
+              <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{formatarMoeda(c.valor_acumulado)}</td>
               <td className="px-4 py-3">
                 {c.quantidade_pendente_nfe > 0 ? (
                   <span className="text-red-600">

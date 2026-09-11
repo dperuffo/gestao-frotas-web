@@ -39,8 +39,8 @@ function Pizza({ dados, cores }: { dados: ItemDistribuicao[]; cores: (i: number)
         {dados.map((d, i) => (
           <li key={d.label} className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: cores(i) }} aria-hidden="true" />
-            <span className="text-slate-600">{d.label}</span>
-            <span className="font-medium text-slate-900">{d.total}</span>
+            <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+            <span className="font-medium text-slate-900 dark:text-slate-100">{d.total}</span>
           </li>
         ))}
       </ul>
@@ -60,17 +60,17 @@ export function GraficoSinistros({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-3">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Por tipo</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Por tipo</p>
         <Pizza dados={porTipo} cores={(i) => CORES_GRAFICO.serie[i % CORES_GRAFICO.serie.length]} />
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Por gravidade</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Por gravidade</p>
         <Pizza dados={porGravidade} cores={(i) => GRAVIDADE_CORES[porGravidade[i]?.label] ?? CORES_GRAFICO.neutro} />
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Custo estimado por mês</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Custo estimado por mês</p>
         {custoPorMes.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (

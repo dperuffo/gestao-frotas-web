@@ -36,7 +36,7 @@ export function PostoForm({
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Identificação</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Identificação</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Campo label="CNPJ" required>
             <input
@@ -89,7 +89,7 @@ export function PostoForm({
       </section>
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Estrutura</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Estrutura</h2>
         <div className="flex flex-wrap gap-6">
           <Checkbox name="funciona_24h" label="Funciona 24h" defaultChecked={posto?.funciona_24h ?? false} />
           <Checkbox name="pista_caminhao" label="Pista para caminhão" defaultChecked={posto?.pista_caminhao ?? false} />
@@ -98,7 +98,7 @@ export function PostoForm({
         </div>
 
         {posto && nomeEmpresaAtual && (
-          <p className="mt-4 text-xs text-slate-500">Cliente: {nomeEmpresaAtual} (não pode ser alterado aqui).</p>
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Cliente: {nomeEmpresaAtual} (não pode ser alterado aqui).</p>
         )}
       </section>
 
@@ -122,7 +122,7 @@ function Campo({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>
@@ -133,7 +133,7 @@ function Campo({
 
 function Checkbox({ name, label, defaultChecked }: { name: string; label: string; defaultChecked: boolean }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-slate-700">
+    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
       <input type="checkbox" name={name} defaultChecked={defaultChecked} className="h-4 w-4 rounded border-slate-300" />
       {label}
     </label>

@@ -29,8 +29,8 @@ export function IndicadorNotasFiscais({
     <div className="mb-6 card p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">Recolha de notas fiscais</h3>
-          <p className="text-xs text-slate-500">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Recolha de notas fiscais</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Últimos 90 dias · {comNota} de {total} abastecimento{total === 1 ? "" : "s"} com NF-e vinculada
             {rejeitadas > 0 && <span className="text-red-600"> · {rejeitadas} rejeitada{rejeitadas === 1 ? "" : "s"}</span>}
             {pendentes > 0 && <span className="text-amber-600"> · {pendentes} pendente{pendentes === 1 ? "" : "s"}</span>}
@@ -40,7 +40,7 @@ export function IndicadorNotasFiscais({
           {percentual.toFixed(1)}%
         </span>
       </div>
-      <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
+      <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
         <div
           className="h-full rounded-full transition-all"
           style={{ width: `${Math.min(100, Math.max(0, percentual))}%`, backgroundColor: cor }}

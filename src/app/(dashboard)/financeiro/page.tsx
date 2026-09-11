@@ -392,7 +392,7 @@ export default async function FinanceiroPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">{ehAdmin ? "Indicadores da FNI" : "Selecione um cliente..."}</option>
               {empresas.map((e) => (
@@ -493,14 +493,14 @@ export default async function FinanceiroPage({
 
           {indicadoresPorProvedor.length > 0 && (
             <div className="card mb-6 overflow-x-auto p-6">
-              <h2 className="mb-4 text-sm font-semibold text-slate-900">Consolidado por meio de pagamento</h2>
-              <p className="mb-3 text-xs text-slate-500">
+              <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Consolidado por meio de pagamento</h2>
+              <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                 Combustível abastecido no mês, por meio de pagamento. Ticket Log, Edenred, Veloe... cobram
                 você diretamente, fora do FNI — veja essas faturas em &quot;Contas a Pagar&quot; mais abaixo.
                 &quot;Cobrança em aberto&quot; (negociação direta com posto) é um quadro à parte.
               </p>
               <table className="w-full text-left text-sm">
-                <thead className="text-xs uppercase text-slate-500">
+                <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="py-2 pr-4">Meio de pagamento</th>
                     <th className="py-2 pr-4">Abastecimentos</th>
@@ -508,15 +508,15 @@ export default async function FinanceiroPage({
                     <th className="py-2">Custo de combustível</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {indicadoresPorProvedor.map((p) => (
                     <tr key={p.provedor} className="transition-colors hover:bg-frota-50/60">
                       <td className="py-2.5 pr-4">
                         <LogoProvedor provedor={p.provedor} className="h-5 w-auto" />
                       </td>
-                      <td className="py-2.5 pr-4 text-slate-600">{p.qtd_abastecimentos}</td>
-                      <td className="py-2.5 pr-4 text-slate-600">{p.litros.toLocaleString("pt-BR")}</td>
-                      <td className="py-2.5 text-slate-600">{formatarMoeda(p.custo_combustivel)}</td>
+                      <td className="py-2.5 pr-4 text-slate-600 dark:text-slate-300">{p.qtd_abastecimentos}</td>
+                      <td className="py-2.5 pr-4 text-slate-600 dark:text-slate-300">{p.litros.toLocaleString("pt-BR")}</td>
+                      <td className="py-2.5 text-slate-600 dark:text-slate-300">{formatarMoeda(p.custo_combustivel)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -528,7 +528,7 @@ export default async function FinanceiroPage({
 
           <div className="card mb-6 p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+              <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Evolução mensal (últimos 6 meses) <AjudaIcon chave="financeiro.evolucao_mensal" />
               </h2>
               <Link href={`/centros-custo?empresa=${empresaSelecionada}`} className="text-xs text-frota-600 hover:underline">
@@ -540,8 +540,8 @@ export default async function FinanceiroPage({
 
           <div className="card mb-6 flex items-center justify-between p-6">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">Receita e custo por viagem planejada</h2>
-              <p className="mt-1 text-xs text-slate-500">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Receita e custo por viagem planejada</h2>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Orçamento (combustível, pedágios, diárias, manutenção) e receita de cada viagem, com margem
                 estimada — ver em Planos de Viagem.
               </p>
@@ -553,7 +553,7 @@ export default async function FinanceiroPage({
 
           {orcamentosDoMes.length > 0 && (
             <div className="card mb-6 overflow-x-auto p-6">
-              <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+              <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Orçamento do mês por categoria <AjudaIcon chave="financeiro.orcamento_por_categoria" />
               </h2>
               <TabelaOrcamento linhas={linhasOrcamento} />
@@ -562,11 +562,11 @@ export default async function FinanceiroPage({
 
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="card p-6">
-              <h2 className="mb-4 text-sm font-semibold text-slate-900">Planejar orçamento</h2>
+              <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Planejar orçamento</h2>
               <FormularioOrcamento empresaId={empresaSelecionada} centrosCusto={centrosCusto} />
             </div>
             <div className="card p-6">
-              <h2 className="mb-4 text-sm font-semibold text-slate-900">Lançar custo fixo</h2>
+              <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Lançar custo fixo</h2>
               <FormularioCustoFixo empresaId={empresaSelecionada} centrosCusto={centrosCusto} />
               <p className="mt-3 text-xs text-slate-400">
                 Também dá pra receber esses custos automaticamente de um sistema externo (seguradora, ERP)
@@ -580,7 +580,7 @@ export default async function FinanceiroPage({
           </div>
 
           <div className="card overflow-x-auto p-6">
-            <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+            <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
               Últimos custos fixos lançados <AjudaIcon chave="financeiro.custos_fixos_lancados" />
             </h2>
             <TabelaCustosFixos linhas={linhasCustosFixos} />

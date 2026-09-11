@@ -66,22 +66,22 @@ export default async function NotaFiscalPage({ params }: { params: Promise<{ not
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Emitente (posto)</p>
-          <p className="mt-1 font-medium text-slate-900">{nota.nome_emitente}</p>
-          <p className="text-xs text-slate-500">CNPJ: {nota.cnpj_emitente}</p>
+          <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">{nota.nome_emitente}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">CNPJ: {nota.cnpj_emitente}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Destinatário (cliente)</p>
-          <p className="mt-1 font-medium text-slate-900">{nota.nome_destinatario}</p>
-          <p className="text-xs text-slate-500">CNPJ: {nota.cnpj_destinatario}</p>
+          <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">{nota.nome_destinatario}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">CNPJ: {nota.cnpj_destinatario}</p>
         </div>
       </div>
 
       <div className="card mb-6 overflow-x-auto">
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">Item de combustível</h2>
+        <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Item de combustível</h2>
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Produto</th>
               <th className="px-4 py-3">Código ANP</th>
@@ -92,13 +92,13 @@ export default async function NotaFiscalPage({ params }: { params: Promise<{ not
           </thead>
           <tbody>
             <tr>
-              <td className="px-4 py-3 text-slate-700">{nota.produto_nome_xml}</td>
-              <td className="px-4 py-3 text-slate-600">
+              <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{nota.produto_nome_xml}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                 {nota.produto_codigo_anp} — {nota.produto_descricao_anp}
               </td>
-              <td className="px-4 py-3 text-slate-600">{nota.quantidade.toLocaleString("pt-BR")}</td>
-              <td className="px-4 py-3 text-slate-600">{formatarMoeda(nota.valor_unitario)}</td>
-              <td className="px-4 py-3 font-medium text-slate-700">{formatarMoeda(nota.valor_total)}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{nota.quantidade.toLocaleString("pt-BR")}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarMoeda(nota.valor_unitario)}</td>
+              <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{formatarMoeda(nota.valor_total)}</td>
             </tr>
           </tbody>
         </table>

@@ -36,11 +36,11 @@ export default async function MeuPostoDetalhePage({
   // com 2+ empresas vinculadas, mostra seletor em vez de beco sem saída.
   if (!empresaSelecionada) {
     return (
-      <div className="card p-6 text-sm text-slate-600">
+      <div className="card p-6 text-sm text-slate-600 dark:text-slate-300">
         {empresas.length > 1 ? (
           <form className="flex items-end gap-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
               <select name="empresa" defaultValue="" className="input text-sm">
                 <option value="">Selecione...</option>
                 {empresas.map((e) => (

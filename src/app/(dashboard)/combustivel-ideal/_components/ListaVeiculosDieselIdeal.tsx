@@ -71,7 +71,7 @@ export function ListaVeiculosDieselIdeal({ itens }: { itens: ItemComparadorDiese
         <div className="card overflow-x-auto p-0">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
+              <tr className="border-b border-slate-100 dark:border-slate-700 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
                 <th className="px-4 py-3">Placa</th>
                 <th className="px-4 py-3">Veículo</th>
                 <th className="px-4 py-3">UF</th>
@@ -87,12 +87,12 @@ export function ListaVeiculosDieselIdeal({ itens }: { itens: ItemComparadorDiese
               {itensFiltrados.map((l) => (
                 <tr key={`${l.placa}-${l.familia}`} className="border-b border-slate-50 last:border-0">
                   <td className="px-4 py-3 font-mono text-xs">{l.placa}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {l.marca || l.modelo ? `${l.marca ?? ""} ${l.modelo ?? ""}`.trim() : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{l.uf ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">Diesel {l.familia}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.uf ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">Diesel {l.familia}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {l.preco_comum != null ? (
                       <>
                         R$ {l.preco_comum.toFixed(3)}
@@ -104,7 +104,7 @@ export function ListaVeiculosDieselIdeal({ itens }: { itens: ItemComparadorDiese
                       "—"
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {l.preco_aditivado != null ? (
                       <>
                         R$ {l.preco_aditivado.toFixed(3)}
@@ -116,23 +116,23 @@ export function ListaVeiculosDieselIdeal({ itens }: { itens: ItemComparadorDiese
                       "—"
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {l.custo_km_comum != null ? `R$ ${l.custo_km_comum.toFixed(4)}` : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {l.custo_km_aditivado != null ? `R$ ${l.custo_km_aditivado.toFixed(4)}` : "—"}
                   </td>
                   <td className="px-4 py-3">
                     {l.recomendacao ? (
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          l.recomendacao === "aditivado" ? "bg-sky-50 text-sky-700" : "bg-slate-100 text-slate-600"
+                          l.recomendacao === "aditivado" ? "bg-sky-50 text-sky-700" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                         }`}
                       >
                         {l.recomendacao === "aditivado" ? "✨ Aditivado" : "🛢️ Comum"} compensa
                       </span>
                     ) : l.premio_aditivado_pct != null ? (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         Aditivado {l.premio_aditivado_pct > 0 ? "+" : ""}
                         {l.premio_aditivado_pct}% no preço — sem histórico de rendimento pra comparar
                       </span>

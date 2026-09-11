@@ -177,7 +177,7 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
 
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Ano</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Ano</label>
           <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="input w-auto text-sm">
             {anos.map((a) => (
               <option key={a} value={a}>
@@ -187,7 +187,7 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Mês</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Mês</label>
           <select value={mes} onChange={(e) => setMes(Number(e.target.value))} className="input w-auto text-sm">
             {Object.entries(MESES).map(([m, nome]) => (
               <option key={m} value={m}>
@@ -197,7 +197,7 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">UF</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">UF</label>
           <select value={uf} onChange={(e) => setUf(e.target.value)} className="input w-auto text-sm">
             <option value="">Todas</option>
             {UFS.map((u) => (
@@ -208,7 +208,7 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Combustível</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Combustível</label>
           <select value={combustivel} onChange={(e) => setCombustivel(e.target.value)} className="input w-auto text-sm">
             <option value="">Todos</option>
             {combustiveisDisponiveis.map((c) => (
@@ -235,7 +235,7 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
             <IndicadorColorido cor="green" icon={MapPin} label="UFs cobertas" valor={String(kpis.nUfs)} />
           </div>
 
-          <h3 className="mb-2 text-sm font-semibold text-slate-700">📈 Evolução de preços</h3>
+          <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">📈 Evolução de preços</h3>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={evolucao} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -251,10 +251,10 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
             </LineChart>
           </ResponsiveContainer>
 
-          <h3 className="mb-2 mt-6 text-sm font-semibold text-slate-700">💰 Savings estimados vs mercado</h3>
+          <h3 className="mb-2 mt-6 text-sm font-semibold text-slate-700 dark:text-slate-300">💰 Savings estimados vs mercado</h3>
           <div className="mb-6 overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">Combustível</th>
                   <th className="py-2 pr-3">Preço GF</th>
@@ -263,42 +263,42 @@ export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: Regi
                   <th className="py-2">Postos</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {savings.map((s) => (
                   <tr key={s.combustivel} className="transition-colors hover:bg-frota-50/60">
-                    <td className="py-2 pr-3 text-slate-700">{s.combustivel}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda(s.precoGf)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(s.refMercado)}</td>
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{s.combustivel}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarMoeda(s.precoGf)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(s.refMercado)}</td>
                     <td className={`py-2 pr-3 tabular-nums font-medium ${s.savingPct >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                       {s.savingPct >= 0 ? "+" : ""}
                       {s.savingPct.toFixed(1)}%
                     </td>
-                    <td className="py-2 tabular-nums text-slate-600">{formatarInt(s.postos)}</td>
+                    <td className="py-2 tabular-nums text-slate-600 dark:text-slate-300">{formatarInt(s.postos)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          <h3 className="mb-2 text-sm font-semibold text-slate-700">🚨 Alertas de risco</h3>
+          <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">🚨 Alertas de risco</h3>
           {riscos.length === 0 ? (
             <p className="mb-6 text-sm text-emerald-700">✅ Nenhum alerta de risco identificado para o período.</p>
           ) : (
             <div className="mb-6 overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="text-xs uppercase text-slate-500">
+                <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="py-2 pr-3">Tipo</th>
                     <th className="py-2 pr-3">Qtd</th>
                     <th className="py-2">Detalhe</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {riscos.map((r, i) => (
                     <tr key={`${r.tipo}__${i}`} className="transition-colors hover:bg-frota-50/60">
-                      <td className="py-2 pr-3 text-slate-700">{r.tipo}</td>
-                      <td className="py-2 pr-3 tabular-nums text-slate-600">{r.qtd}</td>
-                      <td className="py-2 text-slate-600">{r.detalhe}</td>
+                      <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{r.tipo}</td>
+                      <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{r.qtd}</td>
+                      <td className="py-2 text-slate-600 dark:text-slate-300">{r.detalhe}</td>
                     </tr>
                   ))}
                 </tbody>

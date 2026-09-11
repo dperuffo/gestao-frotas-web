@@ -96,8 +96,8 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
   return (
     <div className="mt-6">
       <div className="mb-4">
-        <h2 className="text-sm font-semibold text-slate-900">💳 Contas a Pagar — Meios de Pagamento</h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">💳 Contas a Pagar — Meios de Pagamento</h2>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Faturas enviadas pelos meios de pagamento (Ticket Log, Edenred, Veloe, RedeFrota, Valecard...) com
           os abastecimentos atrelados, mais lançamentos avulsos. Veja{" "}
           <a href="/integracoes" className="text-frota-600 hover:underline">
@@ -121,7 +121,7 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="card p-4">
-          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Aging de vencidas</h3>
+          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Aging de vencidas</h3>
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase text-slate-400">
               <tr>
@@ -130,12 +130,12 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
                 <th className="py-1 text-right">Valor</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {aging.map((f) => (
                 <tr key={f.chave}>
-                  <td className="py-1.5 text-slate-600">{f.label}</td>
-                  <td className="py-1.5 text-right text-slate-600">{f.quantidade}</td>
-                  <td className="py-1.5 text-right font-medium text-slate-900">{formatoMoeda.format(f.valor)}</td>
+                  <td className="py-1.5 text-slate-600 dark:text-slate-300">{f.label}</td>
+                  <td className="py-1.5 text-right text-slate-600 dark:text-slate-300">{f.quantidade}</td>
+                  <td className="py-1.5 text-right font-medium text-slate-900 dark:text-slate-100">{formatoMoeda.format(f.valor)}</td>
                 </tr>
               ))}
             </tbody>
@@ -143,7 +143,7 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
         </div>
 
         <div className="card p-4">
-          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Vencidas por credor</h3>
+          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Vencidas por credor</h3>
           {inadimplenciaPorCredor.length === 0 ? (
             <p className="text-sm text-slate-400">Nenhuma conta vencida no momento.</p>
           ) : (
@@ -155,11 +155,11 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
                   <th className="py-1 text-right">Valor</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {inadimplenciaPorCredor.map((d) => (
                   <tr key={d.nome}>
-                    <td className="py-1.5 text-slate-600">{d.nome}</td>
-                    <td className="py-1.5 text-right text-slate-600">{d.quantidade}</td>
+                    <td className="py-1.5 text-slate-600 dark:text-slate-300">{d.nome}</td>
+                    <td className="py-1.5 text-right text-slate-600 dark:text-slate-300">{d.quantidade}</td>
                     <td className="py-1.5 text-right font-medium text-red-600">{formatoMoeda.format(d.valor)}</td>
                   </tr>
                 ))}
@@ -170,7 +170,7 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
       </div>
 
       <div className="card mb-4 overflow-x-auto p-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Contas a pagar em aberto</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Contas a pagar em aberto</h3>
         <table className="w-full text-left text-sm">
           <thead className="text-xs uppercase text-slate-400">
             <tr>
@@ -181,18 +181,18 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
               <th className="py-1.5 text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {abertas.map((c) => {
               const saldo = c.valor_original - c.valor_pago;
               const vencida = c.vencimento < hojeIso;
               return (
                 <tr key={c.id} className="transition-colors hover:bg-frota-50/60">
-                  <td className="py-2 pr-3 text-slate-700">{c.credor_nome ?? "—"}</td>
-                  <td className="py-2 pr-3 text-slate-500">{c.descricao ?? "—"}</td>
-                  <td className={`py-2 pr-3 ${vencida ? "font-medium text-red-600" : "text-slate-500"}`}>
+                  <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{c.credor_nome ?? "—"}</td>
+                  <td className="py-2 pr-3 text-slate-500 dark:text-slate-400">{c.descricao ?? "—"}</td>
+                  <td className={`py-2 pr-3 ${vencida ? "font-medium text-red-600" : "text-slate-500 dark:text-slate-400"}`}>
                     {formatarDataBr(c.vencimento)}
                   </td>
-                  <td className="py-2 pr-3 text-right font-medium text-slate-900">{formatoMoeda.format(saldo)}</td>
+                  <td className="py-2 pr-3 text-right font-medium text-slate-900 dark:text-slate-100">{formatoMoeda.format(saldo)}</td>
                   <td className="py-2 text-right">
                     <div className="flex justify-end gap-3">
                       <BotaoBaixarContaPagar id={c.id} saldoEmAberto={saldo} />
@@ -215,10 +215,10 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
 
       {perdas.length > 0 && (
         <div className="card mb-4 overflow-x-auto p-4">
-          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">
+          <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
             ⚠️ Perdas — valores pagos a motoristas em fretes cancelados
           </h3>
-          <p className="mb-3 text-xs text-slate-500">
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
             Fretes que já tiveram alguma parcela paga ao motorista e foram cancelados depois — o valor não é
             estornado automaticamente, fica registrado aqui como perda confirmada.
           </p>
@@ -231,12 +231,12 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
                 <th className="py-1.5 text-right">Valor</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {perdas.map((p) => (
                 <tr key={p.id}>
-                  <td className="py-2 pr-3 text-slate-700">{p.credor_nome ?? "—"}</td>
-                  <td className="py-2 pr-3 text-slate-500">{p.descricao ?? "—"}</td>
-                  <td className="py-2 pr-3 text-slate-500">{formatarDataBr(p.vencimento)}</td>
+                  <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{p.credor_nome ?? "—"}</td>
+                  <td className="py-2 pr-3 text-slate-500 dark:text-slate-400">{p.descricao ?? "—"}</td>
+                  <td className="py-2 pr-3 text-slate-500 dark:text-slate-400">{formatarDataBr(p.vencimento)}</td>
                   <td className="py-2 text-right font-medium text-red-600">{formatoMoeda.format(p.valor_original)}</td>
                 </tr>
               ))}
@@ -246,7 +246,7 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
       )}
 
       <div className="card p-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Lançar conta a pagar avulsa</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Lançar conta a pagar avulsa</h3>
         <FormularioContaPagarAvulsa empresaId={empresaId} />
       </div>
     </div>

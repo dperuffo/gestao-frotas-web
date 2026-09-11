@@ -86,7 +86,7 @@ export function EditarColegaButton({
             {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Nome completo <span className="text-red-500">*</span>
               </label>
               <input
@@ -97,12 +97,12 @@ export function EditarColegaButton({
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">CPF</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">CPF</label>
               <input name="cpf" defaultValue={dados.cpf} onBlur={handleBlurCpf} className="input" />
               {avisoCpf && <p className="mt-1 text-xs text-amber-600">{avisoCpf}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Telefone</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Telefone</label>
               <input name="telefone" defaultValue={dados.telefone} className="input" />
             </div>
 

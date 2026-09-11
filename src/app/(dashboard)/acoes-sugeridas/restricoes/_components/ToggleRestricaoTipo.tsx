@@ -35,7 +35,7 @@ export function ToggleRestricaoTipo({
       aria-pressed={ativo}
     >
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+        className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-800 transition ${
           ativo ? "translate-x-6" : "translate-x-1"
         }`}
       />

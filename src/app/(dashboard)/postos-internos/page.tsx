@@ -53,7 +53,7 @@ export default async function PostosInternosPage({
       {empresas.length > 1 && (
         <form className="mb-6 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa (matriz/filial)</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa (matriz/filial)</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione...</option>
               {empresas.map((e) => (

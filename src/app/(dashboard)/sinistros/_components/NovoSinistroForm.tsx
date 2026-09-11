@@ -37,7 +37,7 @@ export function NovoSinistroForm({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Placa <span className="text-red-500">*</span>
           </label>
           <input list="placas-sinistro" name="placa" required className="input" placeholder="ABC1D23" />
@@ -48,13 +48,13 @@ export function NovoSinistroForm({
           </datalist>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Data do sinistro <span className="text-red-500">*</span>
           </label>
           <input type="date" name="data_sinistro" required defaultValue={new Date().toISOString().slice(0, 10)} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Tipo <span className="text-red-500">*</span>
           </label>
           <select name="tipo" required defaultValue="" className="input">
@@ -69,7 +69,7 @@ export function NovoSinistroForm({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Gravidade</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Gravidade</label>
           <select name="gravidade" className="input" defaultValue="">
             <option value="">Selecione...</option>
             {GRAVIDADES_SINISTRO.map((g) => (
@@ -80,20 +80,20 @@ export function NovoSinistroForm({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Motorista</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Motorista</label>
           <input name="motorista_nome" className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Local da ocorrência</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Local da ocorrência</label>
           <input name="local_ocorrencia" className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Custo estimado (R$)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Custo estimado (R$)</label>
           <input type="number" name="custo_estimado" min={0} step="0.01" className="input" />
         </div>
         {apolices.length > 0 && (
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Apólice vinculada</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Apólice vinculada</label>
             <select name="apolice_id" defaultValue="" className="input">
               <option value="">Nenhuma</option>
               {apolices.map((a) => (
@@ -107,14 +107,14 @@ export function NovoSinistroForm({
         )}
         <div className="flex items-center gap-2 pt-6">
           <input type="checkbox" name="houve_vitima" id="houve_vitima" className="h-4 w-4 rounded border-slate-300" />
-          <label htmlFor="houve_vitima" className="text-sm font-medium text-slate-700">
+          <label htmlFor="houve_vitima" className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Houve vítima
           </label>
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Descrição</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Descrição</label>
         <textarea name="descricao" rows={3} className="input" placeholder="Circunstâncias do sinistro..." />
       </div>
 

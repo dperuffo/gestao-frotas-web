@@ -101,8 +101,8 @@ export function VincularFipe({ veiculo }: { veiculo: Veiculo }) {
 
   return (
     <section className="card p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">Vínculo FIPE</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Vínculo FIPE</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Opcional — vincula o veículo à tabela FIPE pra usar a curva de depreciação real (mês a mês) no TCO, em vez da
         estimativa linear. Salva pra editar depois se preferir.
       </p>
@@ -113,16 +113,16 @@ export function VincularFipe({ veiculo }: { veiculo: Veiculo }) {
         <div className="space-y-2 text-sm">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <div>
-              Código FIPE: <strong className="text-slate-900">{veiculo.codigo_fipe}</strong>
+              Código FIPE: <strong className="text-slate-900 dark:text-slate-100">{veiculo.codigo_fipe}</strong>
             </div>
             <div>
               Valor atual:{" "}
-              <strong className="text-slate-900">
+              <strong className="text-slate-900 dark:text-slate-100">
                 {veiculo.valor_fipe != null ? formatarMoeda(Number(veiculo.valor_fipe)) : "—"}
               </strong>
             </div>
             <div>
-              Referência: <strong className="text-slate-900">{veiculo.mes_referencia ?? "—"}</strong>
+              Referência: <strong className="text-slate-900 dark:text-slate-100">{veiculo.mes_referencia ?? "—"}</strong>
             </div>
           </div>
           <div className="flex gap-3 pt-2">
@@ -145,7 +145,7 @@ export function VincularFipe({ veiculo }: { veiculo: Veiculo }) {
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Tipo</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tipo</label>
               <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value as TipoVeiculoFipe)}
@@ -160,7 +160,7 @@ export function VincularFipe({ veiculo }: { veiculo: Veiculo }) {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Marca</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Marca</label>
               <select
                 value={marcaCode}
                 onChange={(e) => setMarcaCode(e.target.value)}
@@ -176,7 +176,7 @@ export function VincularFipe({ veiculo }: { veiculo: Veiculo }) {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Modelo</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Modelo</label>
               <select
                 value={modeloCode}
                 onChange={(e) => setModeloCode(e.target.value)}
@@ -192,7 +192,7 @@ export function VincularFipe({ veiculo }: { veiculo: Veiculo }) {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Ano/combustível</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Ano/combustível</label>
               <select
                 value={anoCode}
                 onChange={(e) => setAnoCode(e.target.value)}
@@ -222,7 +222,7 @@ export function VincularFipe({ veiculo }: { veiculo: Veiculo }) {
                 type="button"
                 onClick={() => setEditando(false)}
                 disabled={isPending}
-                className="text-xs font-medium text-slate-500 hover:underline"
+                className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:underline"
               >
                 Cancelar
               </button>

@@ -98,7 +98,7 @@ export default async function CombustivelIdealPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">{ehAdmin ? "Todos os clientes" : "Selecione um cliente..."}</option>
               {empresas.map((e) => (
@@ -115,7 +115,7 @@ export default async function CombustivelIdealPage({
       )}
 
       {semClienteEscolhido && (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver o comparador dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para ver o comparador dele.</p>
       )}
 
       {!semClienteEscolhido && (
@@ -147,8 +147,8 @@ export default async function CombustivelIdealPage({
                     tituloRanking="Maior economia (top 8)"
                   />
 
-                  <div className="card mb-6 p-4 text-xs leading-relaxed text-slate-500">
-                    <p className="mb-1 font-medium text-slate-700">Como funciona a conta:</p>
+                  <div className="card mb-6 p-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                    <p className="mb-1 font-medium text-slate-700 dark:text-slate-300">Como funciona a conta:</p>
                     <p>
                       <strong>Custo por km = preço do litro ÷ rendimento (km/l)</strong>. O rendimento real de
                       cada veículo vem do histórico de abastecimentos dele (distância percorrida entre um
@@ -182,7 +182,7 @@ export default async function CombustivelIdealPage({
               label: "🛢️✨ Diesel",
               conteudo: (
                 <>
-                  <p className="mb-3 text-xs text-slate-500">
+                  <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                     Diferente do etanol × gasolina, não existe uma razão física universal pra estimar se o
                     aditivado compensa — a recomendação só aparece quando a placa já tem histórico de rendimento
                     com os dois. Sem isso, mostramos o prêmio de preço do aditivado pra você decidir.

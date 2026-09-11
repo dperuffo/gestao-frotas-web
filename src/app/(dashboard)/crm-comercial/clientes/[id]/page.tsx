@@ -92,11 +92,11 @@ export default async function ClienteCrmDetalhePage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <div className="card space-y-3 p-6">
-            <h2 className="text-sm font-semibold text-slate-700">Funil de propostas</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Funil de propostas</h2>
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Em aberto</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-slate-800">{formatarMoeda(totalAberto)}</dd>
+                <dd className="mt-0.5 text-lg font-semibold text-slate-800 dark:text-slate-100">{formatarMoeda(totalAberto)}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Ganho (total)</dt>
@@ -104,7 +104,7 @@ export default async function ClienteCrmDetalhePage({
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Propostas</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-slate-800">{cotacoes.length}</dd>
+                <dd className="mt-0.5 text-lg font-semibold text-slate-800 dark:text-slate-100">{cotacoes.length}</dd>
               </div>
             </div>
             {cotacoes.length > 0 ? (
@@ -117,7 +117,7 @@ export default async function ClienteCrmDetalhePage({
                     <th className="py-2 pr-3">Data</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {cotacoes.map((c) => (
                     <tr key={c.id}>
                       <td className="py-2 pr-3">
@@ -125,11 +125,11 @@ export default async function ClienteCrmDetalhePage({
                           {c.origem_label} → {c.destino_label}
                         </Link>
                       </td>
-                      <td className="py-2 pr-3 font-medium text-slate-800">{formatarMoeda(c.valor_total)}</td>
+                      <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-100">{formatarMoeda(c.valor_total)}</td>
                       <td className="py-2 pr-3">
                         <span className={STATUS_PROPOSTA_COR[c.status] ?? "badge-inativo"}>{STATUS_PROPOSTA_LABEL[c.status] ?? c.status}</span>
                       </td>
-                      <td className="py-2 pr-3 text-slate-500">{formatarData(c.criado_em)}</td>
+                      <td className="py-2 pr-3 text-slate-500 dark:text-slate-400">{formatarData(c.criado_em)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -147,7 +147,7 @@ export default async function ClienteCrmDetalhePage({
 
           {fretes.length > 0 && (
             <div className="card space-y-2 p-6">
-              <h2 className="text-sm font-semibold text-slate-700">Fretes realizados</h2>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Fretes realizados</h2>
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase text-slate-400">
                   <tr>
@@ -157,7 +157,7 @@ export default async function ClienteCrmDetalhePage({
                     <th className="py-2 pr-3">Data</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {fretes.map((f) => (
                     <tr key={f.id}>
                       <td className="py-2 pr-3">
@@ -165,9 +165,9 @@ export default async function ClienteCrmDetalhePage({
                           {f.titulo}
                         </Link>
                       </td>
-                      <td className="py-2 pr-3 font-medium text-slate-800">{formatarMoeda(f.valor_oferecido)}</td>
-                      <td className="py-2 pr-3 text-slate-600">{f.status}</td>
-                      <td className="py-2 pr-3 text-slate-500">{formatarData(f.criado_em)}</td>
+                      <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-100">{formatarMoeda(f.valor_oferecido)}</td>
+                      <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{f.status}</td>
+                      <td className="py-2 pr-3 text-slate-500 dark:text-slate-400">{formatarData(f.criado_em)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -176,17 +176,17 @@ export default async function ClienteCrmDetalhePage({
           )}
 
           <div className="card space-y-4 p-6">
-            <h2 className="text-sm font-semibold text-slate-700">Histórico de relacionamento</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Histórico de relacionamento</h2>
             <InteracaoForm clienteId={cliente.id} empresaId={empresaId} />
-            <div className="space-y-3 border-t border-slate-100 pt-4">
+            <div className="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4">
               {interacoes.length === 0 && <p className="text-sm text-slate-400">Nenhuma interação registrada ainda.</p>}
               {interacoes.map((i) => (
-                <div key={i.id} className="rounded-lg border border-slate-200 p-3 text-sm">
+                <div key={i.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-800">{TIPO_INTERACAO_LABEL[i.tipo] ?? i.tipo}</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-100">{TIPO_INTERACAO_LABEL[i.tipo] ?? i.tipo}</span>
                     <span className="text-xs text-slate-400">{formatarDataHora(i.criado_em)}</span>
                   </div>
-                  <p className="mt-1 text-slate-600">{i.descricao}</p>
+                  <p className="mt-1 text-slate-600 dark:text-slate-300">{i.descricao}</p>
                   <div className="mt-2 flex items-center justify-between text-xs">
                     <span className="text-slate-400">
                       {i.criado_por ?? "—"}
@@ -202,7 +202,7 @@ export default async function ClienteCrmDetalhePage({
 
         <div className="space-y-6">
           <div className="card space-y-3 p-6">
-            <h2 className="text-sm font-semibold text-slate-700">Dados cadastrais</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Dados cadastrais</h2>
             <ClienteForm empresaId={empresaId} modo="editar" clienteId={cliente.id} valoresIniciais={valoresIniciais} />
           </div>
         </div>

@@ -56,7 +56,7 @@ export function SecaoCota({
     <div>
       <div className="card mb-4 p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Limite de consumo por veículo (R$ ou litros), com periodicidade. O abastecimento é bloqueado quando a
             cota é excedida e renovada automaticamente no início de cada período.
           </p>
@@ -68,7 +68,7 @@ export function SecaoCota({
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Veículo</th>
               <th className="px-4 py-3">Tipo</th>
@@ -79,19 +79,19 @@ export function SecaoCota({
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhas.map((l) => (
               <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 font-medium text-slate-900">{l.placa}</td>
-                <td className="px-4 py-3 text-slate-600">{l.tipo === "Valor" ? "Valor (R$)" : "Volume (L)"}</td>
-                <td className="px-4 py-3 text-slate-600">{formatarValor(l.tipo, l.limite)}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{l.placa}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.tipo === "Valor" ? "Valor (R$)" : "Volume (L)"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarValor(l.tipo, l.limite)}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {formatarValor(l.tipo, l.consumido)}{" "}
                   <span className={l.consumido >= l.limite ? "text-red-600" : "text-slate-400"}>
                     ({Math.min(100, Math.round((l.consumido / l.limite) * 100))}%)
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{PERIODICIDADE_LABEL[l.periodicidade] ?? l.periodicidade}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{PERIODICIDADE_LABEL[l.periodicidade] ?? l.periodicidade}</td>
                 <td className="px-4 py-3">
                   <span className={l.status === "Ativo" ? "badge-ativo" : "badge-inativo"}>{l.status}</span>
                 </td>
@@ -120,7 +120,7 @@ export function SecaoCota({
           <input type="hidden" name="empresa_id" value={empresaId} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Veículo (placa) *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa) *</label>
             <select name="placa" required defaultValue="" className="input">
               <option value="" disabled>
                 Selecione um veículo...
@@ -135,20 +135,20 @@ export function SecaoCota({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Tipo de cota</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tipo de cota</label>
               <select name="tipo" defaultValue="Valor" className="input">
                 <option value="Valor">Valor (R$)</option>
                 <option value="Volume">Volume (L)</option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Limite *</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Limite *</label>
               <input type="number" name="limite" min={0.01} step="0.01" required className="input" />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Periodicidade</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Periodicidade</label>
             <select name="periodicidade" defaultValue="Mes" className="input">
               <option value="Abastecimento">Por abastecimento (limite por evento)</option>
               <option value="Semana">Por semana (7 dias)</option>
@@ -158,7 +158,7 @@ export function SecaoCota({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Observação</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
             <textarea name="observacao" rows={2} className="input" />
           </div>
 

@@ -52,9 +52,9 @@ export function GraficoKmVazioRoi({
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
         <div className="mb-2 flex items-center gap-2">
-          <p className="text-xs font-medium uppercase text-slate-500">Km rodado — com carga vs vazio (estimado)</p>
+          <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Km rodado — com carga vs vazio (estimado)</p>
           {kmVazioPct !== null && (
-            <span className="text-xs font-semibold text-slate-700">
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               {kmVazioPct}%
               {statusKmVazio && (
                 <span
@@ -87,8 +87,8 @@ export function GraficoKmVazioRoi({
               {dadosKm.map((d) => (
                 <li key={d.label} className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: d.cor }} aria-hidden="true" />
-                  <span className="text-slate-600">{d.label}</span>
-                  <span className="font-medium text-slate-900">{d.valor.toLocaleString("pt-BR")} km</span>
+                  <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{d.valor.toLocaleString("pt-BR")} km</span>
                 </li>
               ))}
             </ul>
@@ -98,9 +98,9 @@ export function GraficoKmVazioRoi({
 
       <div>
         <div className="mb-2 flex items-center gap-2">
-          <p className="text-xs font-medium uppercase text-slate-500">Receita, custo e investimento</p>
+          <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Receita, custo e investimento</p>
           {roiPct !== null && (
-            <span className="text-xs font-semibold text-slate-700">
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               ROI {roiPct}%
               {statusRoi && (
                 <span

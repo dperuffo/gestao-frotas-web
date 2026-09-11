@@ -196,15 +196,15 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Cedente (posto)</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">{cedente.nome}</p>
-          <p className="text-xs text-slate-500">CNPJ: {cedente.cnpj || "—"}</p>
-          <p className="text-xs text-slate-500">{cedente.endereco || "—"}</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{cedente.nome}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">CNPJ: {cedente.cnpj || "—"}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{cedente.endereco || "—"}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Sacado (cliente)</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">{sacado.nome}</p>
-          <p className="text-xs text-slate-500">CNPJ: {sacado.cnpj || "—"}</p>
-          <p className="text-xs text-slate-500">{sacado.endereco || "—"}</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{sacado.nome}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">CNPJ: {sacado.cnpj || "—"}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{sacado.endereco || "—"}</p>
         </div>
       </div>
 
@@ -247,14 +247,14 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
 
       {boletoJaGerado && (
       <div className="card overflow-x-auto">
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
+        <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Detalhamento do abastecimento ({fatura.quantidade_abastecimentos})
           </h2>
-          <p className="mt-1 text-xs text-slate-500">Abastecimentos que justificam o valor total cobrado.</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Abastecimentos que justificam o valor total cobrado.</p>
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Data</th>
               <th className="px-4 py-3">Motorista</th>
@@ -265,22 +265,22 @@ export default async function DetalheFaturaPostoPage({ params }: { params: Promi
               <th className="px-4 py-3">Valor</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {abastecimentos.map((a) => (
               <tr key={a.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-700">
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                   {a.data_abastecimento ? formatarDataBr(a.data_abastecimento) : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{a.motorista_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{a.veiculo_placa ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{a.item_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.motorista_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.veiculo_placa ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.item_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {a.item_quantidade != null ? a.item_quantidade.toLocaleString("pt-BR") : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {a.item_valor_unitario != null ? formatarMoeda(a.item_valor_unitario) : "—"}
                 </td>
-                <td className="px-4 py-3 font-medium text-slate-700">
+                <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">
                   {a.item_valor_total != null ? formatarMoeda(a.item_valor_total) : "—"}
                 </td>
               </tr>

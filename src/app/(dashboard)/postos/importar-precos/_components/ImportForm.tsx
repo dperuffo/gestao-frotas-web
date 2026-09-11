@@ -25,11 +25,11 @@ export function ImportForm() {
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="card space-y-4 p-6">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Arquivo preco_posto.xlsx
           </label>
           <input type="file" name="arquivo" accept=".xlsx" required className="input" />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Planilha grande (~14 mil linhas) — a importação pode levar alguns instantes.
           </p>
         </div>

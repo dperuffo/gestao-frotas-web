@@ -117,7 +117,7 @@ function Campo({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-500">
+      <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
         {label} {required && <span className="text-red-500">*</span>}
       </span>
       {children}

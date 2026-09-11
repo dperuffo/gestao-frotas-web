@@ -41,7 +41,7 @@ export default async function NovoGrupoPage() {
     return (
       <div>
         <CabecalhoPagina titulo="Novo Grupo Econômico" />
-        <div className="card p-6 text-sm text-slate-600">
+        <div className="card p-6 text-sm text-slate-600 dark:text-slate-300">
           Você precisa ter uma empresa cadastrada antes de criar um Grupo Econômico.{" "}
           <Link href="/minha-empresa" className="font-medium text-frota-600 hover:underline">
             Cadastre sua empresa em &quot;Minha Empresa&quot;

@@ -48,7 +48,7 @@ export function PneuForm({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Placa <span className="text-red-500">*</span>
           </label>
           <input list="placas-pneu" name="placa" required defaultValue={pneu?.placa ?? ""} className="input" />
@@ -59,7 +59,7 @@ export function PneuForm({
           </datalist>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Posição no veículo <span className="text-red-500">*</span>
           </label>
           <input list="posicoes-pneu" name="posicao" required defaultValue={pneu?.posicao ?? ""} className="input" />
@@ -70,23 +70,23 @@ export function PneuForm({
           </datalist>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Número de fogo</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Número de fogo</label>
           <input name="numero_fogo" defaultValue={pneu?.numero_fogo ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Marca</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Marca</label>
           <input name="marca" defaultValue={pneu?.marca ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Modelo</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Modelo</label>
           <input name="modelo" defaultValue={pneu?.modelo ?? ""} className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Medida</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Medida</label>
           <input name="medida" defaultValue={pneu?.medida ?? ""} className="input" placeholder="295/80R22.5" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Data de instalação <span className="text-red-500">*</span>
           </label>
           <input
@@ -98,7 +98,7 @@ export function PneuForm({
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Hodômetro na instalação (km)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Hodômetro na instalação (km)</label>
           <input
             type="number"
             name="hodometro_instalacao"
@@ -109,7 +109,7 @@ export function PneuForm({
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Valor de aquisição (R$)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Valor de aquisição (R$)</label>
           <input
             type="number"
             name="valor_aquisicao"
@@ -122,7 +122,7 @@ export function PneuForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Observações</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observações</label>
         <textarea name="observacoes" rows={3} defaultValue={pneu?.observacoes ?? ""} className="input" />
       </div>
 

@@ -44,7 +44,7 @@ export function VincularEmpresaForm({
 
   return (
     <div className="card p-6">
-      <h2 className="mb-4 text-sm font-semibold text-slate-900">Clientes vinculados a este grupo</h2>
+      <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Clientes vinculados a este grupo</h2>
       {erro && <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <div className="mb-4 flex gap-2">
@@ -66,7 +66,7 @@ export function VincularEmpresaForm({
         </button>
       </div>
 
-      <ul className="divide-y divide-slate-100">
+      <ul className="divide-y divide-slate-100 dark:divide-slate-700">
         {vinculos.map((v) => (
           <li key={v.id} className="flex items-center justify-between py-2 text-sm">
             <span>{v.empresa?.nome ?? "(cliente removido)"}</span>

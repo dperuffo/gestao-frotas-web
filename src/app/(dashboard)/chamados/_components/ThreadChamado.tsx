@@ -91,7 +91,7 @@ export function ThreadChamado({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">💬 Mensagens</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">💬 Mensagens</h2>
         <div className="card space-y-3 p-4">
           {comentarios.length === 0 && <p className="text-sm text-slate-400">Nenhuma mensagem ainda.</p>}
           {comentarios.map((c) => {
@@ -100,10 +100,10 @@ export function ThreadChamado({
               <div key={c.id} className={`flex ${proprio ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
-                    proprio ? "bg-frota-500 text-white" : "bg-slate-100 text-slate-800"
+                    proprio ? "bg-frota-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100"
                   }`}
                 >
-                  <p className={`mb-1 text-xs font-medium ${proprio ? "text-white/80" : "text-slate-500"}`}>
+                  <p className={`mb-1 text-xs font-medium ${proprio ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>
                     {c.autor_tipo === "admin" ? "Equipe FNI" : c.autor_email}
                   </p>
                   <p className="whitespace-pre-wrap">{c.texto}</p>
@@ -132,12 +132,12 @@ export function ThreadChamado({
       </div>
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">📎 Anexos</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">📎 Anexos</h2>
         <div className="card p-4">
           {anexos.length === 0 ? (
             <p className="text-sm text-slate-400">Nenhum anexo.</p>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {anexos.map((a) => (
                 <li key={a.id} className="flex items-center justify-between py-2 text-sm">
                   <div>
@@ -146,7 +146,7 @@ export function ThreadChamado({
                         {a.nome}
                       </a>
                     ) : (
-                      <span className="text-slate-500">
+                      <span className="text-slate-500 dark:text-slate-400">
                         {a.nome} <span className="text-xs italic text-slate-400">(anexo legado, indisponível para download)</span>
                       </span>
                     )}
@@ -160,7 +160,7 @@ export function ThreadChamado({
             </ul>
           )}
 
-          <form ref={formAnexoRef} onSubmit={enviarAnexo} className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
+          <form ref={formAnexoRef} onSubmit={enviarAnexo} className="mt-3 flex items-center gap-2 border-t border-slate-100 dark:border-slate-700 pt-3">
             <input type="hidden" name="ticket_id" value={ticketId} />
             <input type="file" name="arquivo" required className="input text-sm" disabled={pendingAnexo} />
             <button type="submit" className="btn-secondary shrink-0 text-sm" disabled={pendingAnexo}>

@@ -131,7 +131,7 @@ export default async function ParametrosUsoPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -148,13 +148,13 @@ export default async function ParametrosUsoPage({
         </form>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+      <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
         {ABAS.map((a) => (
           <Link
             key={a.tipo}
             href={linkAba(a.tipo)}
             className={`rounded-full px-3 py-1 text-xs font-medium ${
-              tipo === a.tipo ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              tipo === a.tipo ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
             }`}
           >
             {a.label}
@@ -173,7 +173,7 @@ export default async function ParametrosUsoPage({
       )}
 
       {semClienteEscolhido || !empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver os parâmetros dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para ver os parâmetros dele.</p>
       ) : (
         <ConteudoAba
           tipo={tipo}
@@ -220,7 +220,7 @@ async function ConteudoAba({
     return (
       <>
         <div className="card mb-4 p-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Associa um motorista a um veículo específico. Abastecimentos feitos em postos ou soluções de automação
             integradas via API podem ser autorizados apenas quando o par motorista/veículo estiver{" "}
             <strong>ativo</strong> neste cadastro.
@@ -230,19 +230,19 @@ async function ConteudoAba({
         <div className="mb-4 flex flex-wrap gap-2">
           <Link
             href={linkFiltroStatus("")}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${!statusParam ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${!statusParam ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
           >
             Todos ({vinculos.length})
           </Link>
           <Link
             href={linkFiltroStatus("Ativo")}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${statusParam === "Ativo" ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${statusParam === "Ativo" ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
           >
             Ativos
           </Link>
           <Link
             href={linkFiltroStatus("Inativo")}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${statusParam === "Inativo" ? "bg-frota-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${statusParam === "Inativo" ? "bg-frota-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
           >
             Inativos
           </Link>
@@ -251,7 +251,7 @@ async function ConteudoAba({
         <div className="card overflow-x-auto">
           {error && <p className="p-4 text-sm text-red-600">Erro ao carregar vínculos: {error.message}</p>}
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3">Placa</th>
                 <th className="px-4 py-3">Motorista</th>
@@ -263,18 +263,18 @@ async function ConteudoAba({
                 <th className="px-4 py-3">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {vinculos.map((v) => (
                 <tr key={v.id} className="transition-colors hover:bg-frota-50/60">
-                  <td className="px-4 py-3 font-medium text-slate-900">{v.placa}</td>
-                  <td className="px-4 py-3 text-slate-600">{v.motoristas?.nome_completo ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{v.motoristas?.cpf ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{formatDate(v.data_inicio)}</td>
-                  <td className="px-4 py-3 text-slate-600">{v.data_fim ? formatDate(v.data_fim) : "—"}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{v.placa}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.motoristas?.nome_completo ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.motoristas?.cpf ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatDate(v.data_inicio)}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.data_fim ? formatDate(v.data_fim) : "—"}</td>
                   <td className="px-4 py-3">
                     <span className={v.status === "Ativo" ? "badge-ativo" : "badge-inativo"}>{v.status}</span>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{v.observacao ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.observacao ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <Link href={`/parametros-uso/${v.id}/editar`} className="text-xs font-medium text-frota-600 hover:underline">

@@ -39,7 +39,7 @@ export function PedidoOrcamentoCard({
     <div className="card p-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-medium text-slate-900">
+          <p className="font-medium text-slate-900 dark:text-slate-100">
             {descricaoServico} {placa ? `· ${placa}` : ""}
           </p>
           <p className="text-xs text-slate-400">
@@ -58,24 +58,24 @@ export function PedidoOrcamentoCard({
 
       <div className="mt-3 space-y-2">
         {propostas.map((p) => (
-          <div key={p.id} className="rounded-lg border border-slate-200 p-3">
+          <div key={p.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-medium text-slate-800">{p.oficinas_credenciadas?.nome ?? "Oficina"}</p>
+              <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{p.oficinas_credenciadas?.nome ?? "Oficina"}</p>
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                  STATUS_ORCAMENTO_COR[p.status] ?? "bg-slate-100 text-slate-600"
+                  STATUS_ORCAMENTO_COR[p.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                 }`}
               >
                 {STATUS_ORCAMENTO_LABEL[p.status] ?? p.status}
               </span>
             </div>
             {p.valor_orcado != null && (
-              <p className="mt-1 text-sm text-slate-700">
+              <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
                 <strong>{p.valor_orcado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
                 {p.prazo_execucao ? ` · Prazo: ${p.prazo_execucao}` : ""}
               </p>
             )}
-            {p.observacoes_oficina && <p className="mt-1 text-xs text-slate-500">{p.observacoes_oficina}</p>}
+            {p.observacoes_oficina && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{p.observacoes_oficina}</p>}
             <div className="mt-2 flex items-center gap-3">
               {p.status === "solicitado" && <RespostaOrcamentoForm id={p.id} />}
               {p.status === "respondido" && <DecisaoOrcamentoBotoes id={p.id} />}
@@ -109,14 +109,14 @@ export function RespostaOrcamentoForm({ id }: { id: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+    <form onSubmit={handleSubmit} className="mt-2 space-y-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3">
       <div className="grid grid-cols-2 gap-2">
         <input type="number" name="valor_orcado" step="0.01" min={0} placeholder="Valor orçado (R$)" className="input text-sm" />
         <input name="prazo_execucao" placeholder="Prazo (ex.: 2 dias úteis)" className="input text-sm" />
       </div>
       <textarea name="observacoes_oficina" rows={2} placeholder="Observações da oficina..." className="input text-sm" />
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setAberto(false)} className="text-xs text-slate-500 hover:underline">
+        <button type="button" onClick={() => setAberto(false)} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">
           Cancelar
         </button>
         <button type="submit" disabled={isPending} className="btn-primary text-xs">

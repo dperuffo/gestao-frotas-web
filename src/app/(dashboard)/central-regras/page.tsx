@@ -112,7 +112,7 @@ export default async function CentralRegrasPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -129,7 +129,7 @@ export default async function CentralRegrasPage({
       )}
 
       {semClienteEscolhido ? (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Selecione um cliente acima pra ver o resumo de regras e alertas dele.
         </p>
       ) : (
@@ -139,20 +139,20 @@ export default async function CentralRegrasPage({
           <Link href="/acoes-sugeridas" className="card block p-5 transition hover:border-frota-200 hover:shadow-md">
             <div className="mb-3 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-frota-500" />
-              <h2 className="text-sm font-semibold text-slate-900">Ações Sugeridas</h2>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Ações Sugeridas</h2>
             </div>
-            <p className="mb-3 text-xs text-slate-500">
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
               Oportunidades detectadas automaticamente (CNH vencida, posto acima da média, hodômetro fora do padrão
               e outras) que ainda esperam sua decisão.
             </p>
             <div className="flex gap-4">
               <div>
-                <p className="text-2xl font-semibold text-slate-900">{acoesPendentes}</p>
-                <p className="text-xs text-slate-500">Pendentes</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{acoesPendentes}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Pendentes</p>
               </div>
               <div>
                 <p className="text-2xl font-semibold text-red-600">{acoesCriticas}</p>
-                <p className="text-xs text-slate-500">Críticas</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Críticas</p>
               </div>
             </div>
           </Link>
@@ -160,20 +160,20 @@ export default async function CentralRegrasPage({
           <Link href="/antifraude" className="card block p-5 transition hover:border-frota-200 hover:shadow-md">
             <div className="mb-3 flex items-center gap-2">
               <ShieldAlert className="h-5 w-5 text-amber-600" />
-              <h2 className="text-sm font-semibold text-slate-900">Antifraude</h2>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Antifraude</h2>
             </div>
-            <p className="mb-3 text-xs text-slate-500">
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
               Regras de limite de valor/quantidade e janela de tempo que você configura pra bloquear abastecimento
               suspeito antes de autorizar.
             </p>
             <div className="flex gap-4">
               <div>
-                <p className="text-2xl font-semibold text-slate-900">{regrasAntifraudeAtivas}</p>
-                <p className="text-xs text-slate-500">Regras ativas</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{regrasAntifraudeAtivas}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Regras ativas</p>
               </div>
               <div>
                 <p className="text-2xl font-semibold text-amber-600">{falhasAntifraudeNaoLidas}</p>
-                <p className="text-xs text-slate-500">Falhas não lidas</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Falhas não lidas</p>
               </div>
             </div>
           </Link>
@@ -181,15 +181,15 @@ export default async function CentralRegrasPage({
           <Link href="/central-avisos" className="card block p-5 transition hover:border-frota-200 hover:shadow-md">
             <div className="mb-3 flex items-center gap-2">
               <Bell className="h-5 w-5 text-sky-600" />
-              <h2 className="text-sm font-semibold text-slate-900">Central de Avisos</h2>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Central de Avisos</h2>
             </div>
-            <p className="mb-3 text-xs text-slate-500">
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
               Novidades, correções e manutenções publicadas pela plataforma — canal oficial, sem depender de
               e-mail ou WhatsApp.
             </p>
             <div>
-              <p className="text-2xl font-semibold text-slate-900">{avisosAtivos}</p>
-              <p className="text-xs text-slate-500">Ativos agora</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{avisosAtivos}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Ativos agora</p>
             </div>
           </Link>
 
@@ -197,15 +197,15 @@ export default async function CentralRegrasPage({
             <Link href="/insights-ia" className="card block p-5 transition hover:border-frota-200 hover:shadow-md">
               <div className="mb-3 flex items-center gap-2">
                 <Brain className="h-5 w-5 text-violet-600" />
-                <h2 className="text-sm font-semibold text-slate-900">Insights de IA</h2>
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Insights de IA</h2>
               </div>
-              <p className="mb-3 text-xs text-slate-500">
+              <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                 Sinais cruzados entre combustível, manutenção, pneus, sinistros, multas, aprovações, seguro e
                 motoristas — gerados 1x/dia, sem precisar perguntar.
               </p>
               <div>
-                <p className="text-2xl font-semibold text-slate-900">{insightsNovos}</p>
-                <p className="text-xs text-slate-500">Novos</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{insightsNovos}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Novos</p>
               </div>
             </Link>
           )}
@@ -216,9 +216,9 @@ export default async function CentralRegrasPage({
       <div className="mt-6 card p-4">
         <div className="mb-1 flex items-center gap-1.5">
           <SlidersHorizontal className="h-4 w-4 text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-900">Quer configurar um limite?</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Quer configurar um limite?</h2>
         </div>
-        <p className="mb-3 text-xs text-slate-500">
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
           Os limites que a detecção de anomalias e ações sugeridas usa (% acima do tanque, distância entre postos,
           dias com hodômetro parado, e outros) ficam em{" "}
           <Link

@@ -96,7 +96,7 @@ export function PerformancePorPosto({ historico }: { historico: RegistroHistoric
     <div>
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Posto</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Posto</label>
           <select value={cnpjAtual} onChange={(e) => setCnpjSelecionado(e.target.value)} className="input w-72 text-sm">
             {postos.map((p) => (
               <option key={p.cnpj} value={p.cnpj}>
@@ -108,7 +108,7 @@ export function PerformancePorPosto({ historico }: { historico: RegistroHistoric
       </div>
 
       <div className="mb-6">
-        <h3 className="mb-2 text-sm font-semibold text-slate-700">📈 Evolução do score (aproximado por preço vs média histórica do posto)</h3>
+        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">📈 Evolução do score (aproximado por preço vs média histórica do posto)</h3>
         {serieScore.length < 2 ? (
           <p className="text-sm text-slate-400">Histórico insuficiente pra traçar evolução (mínimo 2 registros).</p>
         ) : (
@@ -129,7 +129,7 @@ export function PerformancePorPosto({ historico }: { historico: RegistroHistoric
 
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-700">⚡ Competitividade vs média da rede</h3>
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">⚡ Competitividade vs média da rede</h3>
           {combustiveisPosto.length > 1 && (
             <select value={combustivelAtual} onChange={(e) => setCombustivelSelecionado(e.target.value)} className="input w-auto text-sm">
               {combustiveisPosto.map((c) => (
@@ -159,7 +159,7 @@ export function PerformancePorPosto({ historico }: { historico: RegistroHistoric
                 <Line type="monotone" dataKey="preco" name="Preço do posto" stroke="#1565C0" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               Preço médio do posto: <strong>{formatarMoeda(comparativoCombustivel.mediaPosto)}</strong> · Média da rede:{" "}
               <strong>{formatarMoeda(comparativoCombustivel.mediaRede)}</strong> · Posição:{" "}
               <span className={comparativoCombustivel.deltaPct < 0 ? "font-medium text-emerald-600" : "font-medium text-red-600"}>
@@ -171,7 +171,7 @@ export function PerformancePorPosto({ historico }: { historico: RegistroHistoric
       </div>
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-700">🎯 Consistência de preço por combustível</h3>
+        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">🎯 Consistência de preço por combustível</h3>
         <p className="mb-3 text-xs text-slate-400">
           Postos com CV baixo são mais previsíveis pra planejamento de custo. 🟢 CV &lt; 2% · 🟡 CV 2-5% · 🔴 CV &gt; 5%.
         </p>
@@ -180,7 +180,7 @@ export function PerformancePorPosto({ historico }: { historico: RegistroHistoric
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">Combustível</th>
                   <th className="py-2 pr-3">Registros</th>
@@ -191,15 +191,15 @@ export function PerformancePorPosto({ historico }: { historico: RegistroHistoric
                   <th className="py-2">Consistência</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {consistencia.map((c) => (
                   <tr key={c.combustivel} className="transition-colors hover:bg-frota-50/60">
-                    <td className="py-2 pr-3 text-slate-700">{c.combustivel}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{c.registros}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(c.min)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-700">{formatarMoeda(c.media)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{formatarMoeda(c.max)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{c.cv.toFixed(2)}%</td>
+                    <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{c.combustivel}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{c.registros}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(c.min)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{formatarMoeda(c.media)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(c.max)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{c.cv.toFixed(2)}%</td>
                     <td className="py-2">{c.cv < 2 ? "🟢 Alta" : c.cv < 5 ? "🟡 Média" : "🔴 Baixa"}</td>
                   </tr>
                 ))}

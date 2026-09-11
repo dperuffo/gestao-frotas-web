@@ -27,7 +27,7 @@ export function FormularioNovaNegociacao({ empresaAtualId, souPosto }: { empresa
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-500">
+        <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
           {souPosto ? "CNPJ do cliente" : "CNPJ do posto"}
         </label>
         <input
@@ -46,7 +46,7 @@ export function FormularioNovaNegociacao({ empresaAtualId, souPosto }: { empresa
           fica esperando o posto aparecer por conta própria. */}
       {!souPosto && (
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             E-mail do posto (opcional — se ele ainda não usa a FNI)
           </label>
           <input type="email" name="email_posto" className="input" placeholder="contato@posto.com.br" />
@@ -59,7 +59,7 @@ export function FormularioNovaNegociacao({ empresaAtualId, souPosto }: { empresa
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Combustível</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Combustível</label>
           <select name="combustivel" required className="input" defaultValue="">
             <option value="" disabled>
               Selecione
@@ -72,19 +72,19 @@ export function FormularioNovaNegociacao({ empresaAtualId, souPosto }: { empresa
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Volume mínimo mensal (L)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Volume mínimo mensal (L)</label>
           <input type="number" name="volume_minimo_mensal" required min="1" step="1" className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Preço por litro (R$)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Preço por litro (R$)</label>
           <input type="number" name="preco_unitario" required min="0.01" step="0.01" className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Vigência — início</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Vigência — início</label>
           <input type="date" name="vigencia_inicio" required className="input" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Vigência — fim</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Vigência — fim</label>
           <input type="date" name="vigencia_fim" required className="input" />
         </div>
       </div>

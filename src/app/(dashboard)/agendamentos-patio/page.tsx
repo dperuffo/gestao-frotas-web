@@ -74,7 +74,7 @@ export default async function AgendamentosPatioPage({
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -86,7 +86,7 @@ export default async function AgendamentosPatioPage({
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Dia</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Dia</label>
           <input type="date" name="data" defaultValue={dataSelecionada} className="input text-sm" />
         </div>
         <button type="submit" className="btn-secondary text-sm">
@@ -103,7 +103,7 @@ export default async function AgendamentosPatioPage({
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Agendamentos no dia</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">{agendamentos.length}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{agendamentos.length}</p>
             </div>
             <div className="card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Confirmados</p>
@@ -115,14 +115,14 @@ export default async function AgendamentosPatioPage({
             </div>
             <div className={`card p-4 ${atrasados.length > 0 ? "border-red-200 bg-red-50/50" : ""}`}>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Atrasados</p>
-              <p className={`mt-1 text-2xl font-semibold ${atrasados.length > 0 ? "text-red-700" : "text-slate-900"}`}>
+              <p className={`mt-1 text-2xl font-semibold ${atrasados.length > 0 ? "text-red-700" : "text-slate-900 dark:text-slate-100"}`}>
                 {atrasados.length}
               </p>
             </div>
           </div>
 
           {agendamentos.length === 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
               Nenhum agendamento pra este dia. Agende uma janela de carga/descarga dentro da tela de um{" "}
               <Link href={`/fretes?empresa=${empresaSelecionada}`} className="underline">
                 frete
@@ -133,7 +133,7 @@ export default async function AgendamentosPatioPage({
             <div className="card overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
+                  <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
                     <th className="px-4 py-3">Horário</th>
                     <th className="px-4 py-3">Tipo</th>
                     <th className="px-4 py-3">Frete</th>
@@ -146,20 +146,20 @@ export default async function AgendamentosPatioPage({
                   {agendamentos.map((a) => {
                     const atrasado = ["agendado", "confirmado"].includes(a.status) && new Date(a.janela_fim) < agora;
                     return (
-                      <tr key={a.id} className="border-b border-slate-100 last:border-0">
-                        <td className="px-4 py-3 text-slate-700">
+                      <tr key={a.id} className="border-b border-slate-100 dark:border-slate-700 last:border-0">
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                           {formatarHora(a.janela_inicio)}–{formatarHora(a.janela_fim)}
                           {atrasado && <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700">Atrasado</span>}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{TIPO_AGENDAMENTO_LABEL[a.tipo] ?? a.tipo}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{TIPO_AGENDAMENTO_LABEL[a.tipo] ?? a.tipo}</td>
                         <td className="px-4 py-3">
                           <Link href={`/fretes/${a.frete_id}?empresa=${empresaSelecionada}`} className="text-frota-700 hover:underline">
                             {a.fretes?.titulo ?? "—"}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{a.doca ?? "—"}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{a.doca ?? "—"}</td>
                         <td className="px-4 py-3">
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_AGENDAMENTO_COR[a.status] ?? "bg-slate-100 text-slate-600"}`}>
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_AGENDAMENTO_COR[a.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
                             {STATUS_AGENDAMENTO_LABEL[a.status] ?? a.status}
                           </span>
                         </td>

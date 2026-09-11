@@ -65,7 +65,7 @@ export function ListaVeiculosCombustivelIdeal({ itens }: { itens: ItemComparador
         <div className="card overflow-x-auto p-0">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
+              <tr className="border-b border-slate-100 dark:border-slate-700 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
                 <th className="px-4 py-3">Placa</th>
                 <th className="px-4 py-3">Veículo</th>
                 <th className="px-4 py-3">UF</th>
@@ -80,11 +80,11 @@ export function ListaVeiculosCombustivelIdeal({ itens }: { itens: ItemComparador
               {itensFiltrados.map((l) => (
                 <tr key={l.placa} className="border-b border-slate-50 last:border-0">
                   <td className="px-4 py-3 font-mono text-xs">{l.placa}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {l.marca || l.modelo ? `${l.marca ?? ""} ${l.modelo ?? ""}`.trim() : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{l.uf ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.uf ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {l.preco_gasolina != null ? (
                       <>
                         R$ {l.preco_gasolina.toFixed(3)}
@@ -96,7 +96,7 @@ export function ListaVeiculosCombustivelIdeal({ itens }: { itens: ItemComparador
                       "—"
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {l.preco_etanol != null ? (
                       <>
                         R$ {l.preco_etanol.toFixed(3)}
@@ -108,10 +108,10 @@ export function ListaVeiculosCombustivelIdeal({ itens }: { itens: ItemComparador
                       "—"
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {l.custo_km_gasolina != null ? `R$ ${l.custo_km_gasolina.toFixed(3)}` : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {l.custo_km_etanol != null ? `R$ ${l.custo_km_etanol.toFixed(3)}` : "—"}
                   </td>
                   <td className="px-4 py-3">

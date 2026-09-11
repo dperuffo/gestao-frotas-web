@@ -30,7 +30,7 @@ export function GraficoPatrimonio({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Situação da frota</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Situação da frota</p>
         {porSituacao.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (
@@ -55,8 +55,8 @@ export function GraficoPatrimonio({
                     style={{ backgroundColor: CORES_SITUACAO[d.label] ?? CORES_GRAFICO.neutro }}
                     aria-hidden="true"
                   />
-                  <span className="text-slate-600">{d.label}</span>
-                  <span className="font-medium text-slate-900">{d.total}</span>
+                  <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{d.total}</span>
                 </li>
               ))}
             </ul>
@@ -65,7 +65,7 @@ export function GraficoPatrimonio({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Maior depreciação acumulada (top 8)</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Maior depreciação acumulada (top 8)</p>
         {rankingDepreciacao.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados.</p>
         ) : (

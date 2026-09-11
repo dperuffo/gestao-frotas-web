@@ -51,11 +51,11 @@ export default async function ApuracaoTributariaPage({
       <div>
         <CabecalhoPagina titulo="Apuração de Crédito Tributário" />
         {empresas.length === 0 ? (
-          <p className="text-sm text-slate-500">Nenhuma empresa disponível.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma empresa disponível.</p>
         ) : (
           <form className="mb-4 flex items-end gap-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
               <select name="empresa" defaultValue="" className="input text-sm">
                 <option value="" disabled>
                   Selecione...
@@ -86,7 +86,7 @@ export default async function ApuracaoTributariaPage({
     return (
       <div>
         <CabecalhoPagina titulo="Apuração de Crédito Tributário" />
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Esta apuração é do lado do cliente (transportadora) — quem toma o crédito de ICMS pelo combustível consumido, não
           o posto que vende.
         </p>
@@ -176,7 +176,7 @@ export default async function ApuracaoTributariaPage({
         <form className="mb-4 flex items-end gap-2">
           <input type="hidden" name="periodo" value={periodo} />
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada} className="input text-sm">
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -197,7 +197,7 @@ export default async function ApuracaoTributariaPage({
 
       <div className="mb-4 flex items-end gap-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Mês de referência</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Mês de referência</label>
           <input type="month" name="periodo" defaultValue={periodo} form="form-periodo" className="input text-sm" />
         </div>
         <form id="form-periodo" action="/apuracao-tributaria">
@@ -252,11 +252,11 @@ export default async function ApuracaoTributariaPage({
       )}
 
       <div className="card overflow-x-auto">
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">Notas fiscais do período</h2>
+        <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notas fiscais do período</h2>
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Data</th>
               <th className="px-4 py-3">Nº NF</th>
@@ -268,16 +268,16 @@ export default async function ApuracaoTributariaPage({
               <th className="px-4 py-3">Crédito (vICMSMonoRet)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {todasNotas.map((n) => (
               <tr key={n.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 whitespace-nowrap text-slate-500">{formatarDataBr(n.data_emissao)}</td>
-                <td className="px-4 py-3 text-slate-600">{n.numero_nf}</td>
-                <td className="px-4 py-3 text-slate-600">{n.nome_emitente}</td>
-                <td className="px-4 py-3 text-slate-600">{n.produto_descricao_anp ?? n.produto_nome_xml}</td>
-                <td className="px-4 py-3 text-slate-600">{Number(n.quantidade).toLocaleString("pt-BR")} L</td>
-                <td className="px-4 py-3 text-slate-600">{formatarMoeda(Number(n.valor_total))}</td>
-                <td className="px-4 py-3 text-slate-600">{n.cst_icms ?? "—"}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{formatarDataBr(n.data_emissao)}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{n.numero_nf}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{n.nome_emitente}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{n.produto_descricao_anp ?? n.produto_nome_xml}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{Number(n.quantidade).toLocaleString("pt-BR")} L</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarMoeda(Number(n.valor_total))}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{n.cst_icms ?? "—"}</td>
                 <td className="px-4 py-3 font-medium">
                   {n.v_icms_mono_ret !== null ? (
                     <span className="text-status-ativo">{formatarMoeda(Number(n.v_icms_mono_ret))}</span>

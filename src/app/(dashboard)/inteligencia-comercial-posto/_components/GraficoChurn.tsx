@@ -32,7 +32,7 @@ export function GraficoChurn({ dados }: { dados: ItemStatusChurn[] }) {
 
   return (
     <div className="card mb-6 p-5">
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">Clientes por status</p>
+      <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Clientes por status</p>
       <div className="flex items-center gap-4">
         <div style={{ width: 120, height: 120 }} className="shrink-0">
           <ResponsiveContainer width="100%" height="100%">
@@ -50,8 +50,8 @@ export function GraficoChurn({ dados }: { dados: ItemStatusChurn[] }) {
           {distribuicao.map((d) => (
             <li key={d.status} className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: CORES[d.status] }} aria-hidden="true" />
-              <span className="text-slate-600">{d.label}</span>
-              <span className="font-medium text-slate-900">{d.total}</span>
+              <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100">{d.total}</span>
             </li>
           ))}
         </ul>

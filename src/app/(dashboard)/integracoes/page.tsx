@@ -143,7 +143,7 @@ export default async function IntegracoesPage() {
       label: <LogoProvedor provedor="profrotas" className="h-5 w-auto" />,
       conteudo: (
         <div>
-          <p className="mb-4 text-sm text-slate-500">
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
             Conecte a frota de um cliente à API da PróFrotas para que os abastecimentos cheguem
             automaticamente, sem lançamento manual.
           </p>
@@ -215,8 +215,8 @@ export default async function IntegracoesPage() {
 function SecaoProvedorGenerico({ nome, slug }: { nome: string; slug: string }) {
   return (
     <div className="card p-6">
-      <h2 className="text-sm font-semibold text-slate-900">Integração com {nome}</h2>
-      <p className="mt-2 text-sm text-slate-500">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Integração com {nome}</h2>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
         Ainda não existe uma sincronização automática nativa com a {nome} (como a que já existe com a
         Pró-Frotas) — está no roadmap. Por enquanto, a integração acontece pelo Hub de Integrações
         genérico: gere uma chave na aba <strong>Outros Sistemas / Hub</strong> marcando o escopo{" "}
@@ -273,8 +273,8 @@ function SecaoHub({
     <div>
       {!ehPosto && (
         <div className="mb-6">
-          <h2 className="flex items-center gap-1.5 text-lg font-semibold text-slate-900">Hub de Integrações</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <h2 className="flex items-center gap-1.5 text-lg font-semibold text-slate-900 dark:text-slate-100">Hub de Integrações</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Gere uma chave de API pra um sistema externo do cliente (cartão combustível/pedágio, ERP
             financeiro, oficina, corretora de seguro, rastreador) enviar dados pra dentro da FNI, ou pra
             consultar os cadastros do cliente (veículos, motoristas, centros de custo, postos, usuários).
@@ -295,8 +295,8 @@ function SecaoHub({
       <ListaChavesCustosFixos chaves={chaves} />
 
       <div className="card mt-6 p-6">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">Como usar as APIs do Hub</h2>
-        <p className="mb-3 text-sm text-slate-500">
+        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Como usar as APIs do Hub</h2>
+        <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
           Toda chamada leva <code>Authorization: Bearer &lt;chave&gt;</code>. A chave só funciona pros
           escopos marcados na hora que ela foi gerada.
         </p>
@@ -643,7 +643,7 @@ function SecaoHub({
 # resposta (reprovado):    { "autorizado": false, "motivo": "...", "regra_id": "..." }
 # resposta (falha nossa):  { "autorizado": true, "aviso": "..." }  — nunca bloqueia por erro nosso`}
             </pre>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               Se o cliente tiver o parâmetro de uso &quot;Pré-Pedido&quot; habilitado (ver /parametros-uso), esta
               mesma verificação passa a exigir <code>placa</code> e <code>posto_cnpj</code> no corpo: o abastecimento
               só é autorizado se houver um Pré-Pedido ativo daquela placa com parada pré-agendada para o

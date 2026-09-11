@@ -29,7 +29,7 @@ export function BotaoExcluirRotograma({ id }: { id: string }) {
       {erro ? (
         <span className="text-red-600">{erro}</span>
       ) : (
-        <span className="text-slate-600">Confirma excluir este Rotograma?</span>
+        <span className="text-slate-600 dark:text-slate-300">Confirma excluir este Rotograma?</span>
       )}
       <button
         type="button"
@@ -39,7 +39,7 @@ export function BotaoExcluirRotograma({ id }: { id: string }) {
       >
         {isPending ? "Excluindo..." : "Sim, excluir"}
       </button>
-      <button type="button" onClick={() => setConfirmando(false)} className="text-xs text-slate-500 hover:underline">
+      <button type="button" onClick={() => setConfirmando(false)} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">
         Cancelar
       </button>
     </div>

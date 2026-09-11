@@ -25,8 +25,8 @@ export default async function EditarUsuarioPage({
   if (perfilAtual !== "admin" && perfilAtual !== "analista") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Esta tela é exclusiva do time interno (perfil administrador ou analista).
         </p>
       </div>

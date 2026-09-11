@@ -22,9 +22,9 @@ export function ImportForm() {
     <div className="space-y-4">
       <form ref={formRef} onSubmit={handleSubmit} className="card space-y-4 p-6">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Planilha modelo_piso_antt.xlsx</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Planilha modelo_piso_antt.xlsx</label>
           <input type="file" name="arquivo" accept=".xlsx" required className="input" />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Upsert por tipo de carga + nº de eixos — reenviar a planilha inteira a cada atualização da ANTT é seguro.
           </p>
         </div>

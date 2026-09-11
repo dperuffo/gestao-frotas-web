@@ -17,7 +17,7 @@ import { BotaoEnviarParaAnalise } from "./_components/BotaoEnviarParaAnalise";
 type SearchParams = { empresa?: string };
 
 const COR_STATUS: Record<StatusDocumentacao, string> = {
-  nao_iniciada: "bg-slate-100 text-slate-600",
+  nao_iniciada: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300",
   pendente: "bg-amber-100 text-amber-700",
   aprovada: "bg-green-100 text-green-700",
   rejeitada: "bg-red-100 text-red-700",
@@ -45,7 +45,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
         {semEmpresaEscolhida ? (
           <form className="mb-4 flex items-end gap-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
               <select name="empresa" className="input text-sm">
                 <option value="">Selecione...</option>
                 {empresas.map((e) => (
@@ -60,7 +60,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
             </button>
           </form>
         ) : (
-          <p className="text-sm text-slate-500">Nenhuma empresa vinculada a este usuário.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma empresa vinculada a este usuário.</p>
         )}
       </div>
     );
@@ -98,7 +98,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada} className="input text-sm">
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -130,7 +130,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
       )}
 
       <div className="card p-6">
-        <h2 className="text-sm font-semibold text-slate-900">Documentos da empresa</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Documentos da empresa</h2>
         <div className="mt-3 space-y-2">
           {TIPOS_DOCUMENTO_EMPRESA.map((tipo) => {
             const doc = documentosEmpresa.get(tipo);

@@ -35,7 +35,7 @@ export function TreinamentoExplorer({ modulos }: { modulos: Modulo[] }) {
 
   if (modulos.length === 0) {
     return (
-      <div className="card p-6 text-sm text-slate-500">
+      <div className="card p-6 text-sm text-slate-500 dark:text-slate-400">
         Nenhuma lição publicada ainda. Volte em breve — o conteúdo é atualizado periodicamente.
       </div>
     );
@@ -50,20 +50,20 @@ export function TreinamentoExplorer({ modulos }: { modulos: Modulo[] }) {
               type="button"
               onClick={() => selecionarModulo(m.nome)}
               className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
-                m.nome === moduloAtivo ? "bg-frota-50 text-frota-700" : "text-slate-600 hover:bg-slate-50"
+                m.nome === moduloAtivo ? "bg-frota-50 text-frota-700" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50"
               }`}
             >
               {m.nome}
             </button>
             {m.nome === moduloAtivo && (
-              <div className="ml-2 mt-1 space-y-0.5 border-l border-slate-100 pl-3">
+              <div className="ml-2 mt-1 space-y-0.5 border-l border-slate-100 dark:border-slate-700 pl-3">
                 {m.licoes.map((l) => (
                   <button
                     key={l.id}
                     type="button"
                     onClick={() => setLicaoAtivaId(l.id)}
                     className={`flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-xs transition ${
-                      l.id === licaoAtivaId ? "font-semibold text-frota-700" : "text-slate-500 hover:text-slate-800"
+                      l.id === licaoAtivaId ? "font-semibold text-frota-700" : "text-slate-500 dark:text-slate-400 hover:text-slate-800"
                     }`}
                   >
                     <span>{l.titulo}</span>
@@ -83,7 +83,7 @@ export function TreinamentoExplorer({ modulos }: { modulos: Modulo[] }) {
       <article className="card p-6">
         {licao ? (
           <>
-            <h2 className="text-lg font-semibold text-slate-900">{licao.titulo}</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{licao.titulo}</h2>
             <TextoFormatado texto={licao.texto} />
             {urlVideo && (
               // eslint-disable-next-line jsx-a11y/media-has-caption -- vídeo curto ilustrativo de treinamento, sem legendas geradas
@@ -91,7 +91,7 @@ export function TreinamentoExplorer({ modulos }: { modulos: Modulo[] }) {
                 src={urlVideo}
                 controls
                 preload="metadata"
-                className="mt-4 w-full rounded-lg border border-slate-200"
+                className="mt-4 w-full rounded-lg border border-slate-200 dark:border-slate-700"
               />
             )}
             {urlImagem && (
@@ -102,13 +102,13 @@ export function TreinamentoExplorer({ modulos }: { modulos: Modulo[] }) {
                 width={0}
                 height={0}
                 sizes="100vw"
-                className="mt-4 w-full rounded-lg border border-slate-200"
+                className="mt-4 w-full rounded-lg border border-slate-200 dark:border-slate-700"
                 style={{ width: "100%", height: "auto" }}
               />
             )}
           </>
         ) : (
-          <p className="text-sm text-slate-500">Selecione uma lição ao lado.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Selecione uma lição ao lado.</p>
         )}
       </article>
     </div>

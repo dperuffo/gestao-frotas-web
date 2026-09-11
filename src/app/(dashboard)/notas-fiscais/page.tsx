@@ -57,11 +57,11 @@ export default async function NotasFiscaisPage({
       <div>
         <CabecalhoPagina titulo="Notas Fiscais" />
         {empresas.length === 0 ? (
-          <p className="text-sm text-slate-500">Nenhuma empresa disponível.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma empresa disponível.</p>
         ) : (
           <form className="mb-4 flex items-end gap-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
               <select name="empresa" defaultValue="" className="input text-sm">
                 <option value="" disabled>
                   Selecione...
@@ -196,7 +196,7 @@ export default async function NotasFiscaisPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada} className="input text-sm">
               {empresas.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -234,7 +234,7 @@ export default async function NotasFiscaisPage({
         <input type="hidden" name="ciclo" value={cicloParamAtivo} />
         <input type="hidden" name="status" value={status ?? ""} />
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar por ID, placa, posto ou cliente</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar por ID, placa, posto ou cliente</label>
           <input
             type="search"
             name="busca"
@@ -249,38 +249,38 @@ export default async function NotasFiscaisPage({
       </form>
 
       <div className="card overflow-x-auto">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             {cicloAtivo
               ? `Abastecimentos do ciclo (${formatarDataBr(cicloAtivo.periodoInicio)} – ${formatarDataBr(cicloAtivo.periodoFim)})`
               : "Abastecimentos"}
           </h2>
           <div className="flex flex-wrap gap-3 text-xs">
-            <Link href={qs({ status: "", pagina: "1" })} className={!status ? "font-semibold text-frota-600" : "text-slate-500"}>
+            <Link href={qs({ status: "", pagina: "1" })} className={!status ? "font-semibold text-frota-600" : "text-slate-500 dark:text-slate-400"}>
               Todos ({contagem.total})
             </Link>
             <Link
               href={qs({ status: "emitida", pagina: "1" })}
-              className={status === "emitida" ? "font-semibold text-green-700" : "text-slate-500"}
+              className={status === "emitida" ? "font-semibold text-green-700" : "text-slate-500 dark:text-slate-400"}
             >
               Emitida ({contagem.comNota})
             </Link>
             <Link
               href={qs({ status: "rejeitada", pagina: "1" })}
-              className={status === "rejeitada" ? "font-semibold text-red-700" : "text-slate-500"}
+              className={status === "rejeitada" ? "font-semibold text-red-700" : "text-slate-500 dark:text-slate-400"}
             >
               Rejeitada ({contagem.rejeitadas})
             </Link>
             <Link
               href={qs({ status: "pendente", pagina: "1" })}
-              className={status === "pendente" ? "font-semibold text-amber-700" : "text-slate-500"}
+              className={status === "pendente" ? "font-semibold text-amber-700" : "text-slate-500 dark:text-slate-400"}
             >
               Pendente ({contagem.pendentes})
             </Link>
           </div>
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">Data</th>
@@ -294,7 +294,7 @@ export default async function NotasFiscaisPage({
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {/* Fase 27.143 — abastecimento_id só é único DENTRO de cada
                 provedor (bigint de sequências independentes por
                 tabela-fonte) — a chave da linha precisa incluir o
@@ -303,17 +303,17 @@ export default async function NotasFiscaisPage({
             {(linhas ?? []).map((l) => (
               <tr key={`${l.provedor}-${l.abastecimento_id}`} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">{l.codigo_abastecimento ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-700">{formatarDataBr(l.data_abastecimento)}</td>
-                <td className="px-4 py-3 text-slate-600">{l.cliente_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.posto_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.veiculo_placa ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{l.item_nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{formatarMoeda(l.item_valor_total)}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{formatarDataBr(l.data_abastecimento)}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.cliente_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.posto_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.veiculo_placa ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.item_nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatarMoeda(l.item_valor_total)}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   {l.provedor === "profrotas" ? (
                     <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">PróFrotas</span>
                   ) : (
-                    <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+                    <span className="rounded-md bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300">
                       {l.provedor}
                     </span>
                   )}
@@ -338,7 +338,7 @@ export default async function NotasFiscaisPage({
                           correspondente", agora também aqui na própria
                           linha. */}
                       {(l.pendencia_nome_arquivo || l.pendencia_cnpj_emitente || l.pendencia_produto_nome_xml) && (
-                        <p className="mt-1 max-w-xs text-xs text-slate-500">
+                        <p className="mt-1 max-w-xs text-xs text-slate-500 dark:text-slate-400">
                           {l.pendencia_nome_arquivo ? `Arquivo: ${l.pendencia_nome_arquivo}` : ""}
                           {l.pendencia_cnpj_emitente ? `${l.pendencia_nome_arquivo ? " · " : ""}CNPJ emitente ${l.pendencia_cnpj_emitente}` : ""}
                           {l.pendencia_produto_nome_xml ? `, ${l.pendencia_produto_nome_xml}` : ""}
@@ -371,7 +371,7 @@ export default async function NotasFiscaisPage({
         </table>
 
         {totalPaginas > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
+          <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
             <span>
               Página {pagina} de {totalPaginas} · {totalLinhas} abastecimento{Number(totalLinhas) === 1 ? "" : "s"}
             </span>
@@ -393,17 +393,17 @@ export default async function NotasFiscaisPage({
 
       {ehPosto && pendenciasSemAbastecimento && pendenciasSemAbastecimento.length > 0 && (
         <div className="card mt-6 overflow-x-auto">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">
+          <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Uploads sem abastecimento correspondente ({pendenciasSemAbastecimento.length})
             </h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Estes XMLs foram rejeitados antes de encontrar um abastecimento pra vincular — confira os dados abaixo, corrija o
               que estiver errado (CNPJ, quantidade, valor) e envie o XML de novo.
             </p>
           </div>
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3">Quando</th>
                 <th className="px-4 py-3">Arquivo</th>
@@ -411,15 +411,15 @@ export default async function NotasFiscaisPage({
                 <th className="px-4 py-3">Dados extraídos do XML</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {pendenciasSemAbastecimento.map((p) => (
                 <tr key={p.id} className="transition-colors hover:bg-frota-50/60">
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-500">{formatarDataBr(p.criado_em)}</td>
-                  <td className="px-4 py-3 text-slate-600">{p.nome_arquivo ?? "—"}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{formatarDataBr(p.criado_em)}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.nome_arquivo ?? "—"}</td>
                   <td className="px-4 py-3 text-red-700">
                     {p.motivo === "erro_leitura_xml" && p.detalhe_texto ? p.detalhe_texto : mensagemMotivoPendencia(p.motivo)}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
+                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
                     {p.cnpj_emitente || p.cnpj_destinatario ? (
                       <>
                         CNPJ emitente {p.cnpj_emitente ?? "—"}, CNPJ destinatário {p.cnpj_destinatario ?? "—"}

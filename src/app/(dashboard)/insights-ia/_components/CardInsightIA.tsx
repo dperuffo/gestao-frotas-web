@@ -67,10 +67,10 @@ export function CardInsightIA({ insight }: { insight: InsightIA }) {
             </span>
             {insight.status === "novo" && <span className="badge-ativo">Novo</span>}
           </div>
-          <p className="text-sm font-semibold text-slate-900">{insight.titulo}</p>
-          <p className="mt-1 text-sm text-slate-600">{insight.descricao}</p>
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{insight.titulo}</p>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{insight.descricao}</p>
           {insight.recomendacao && (
-            <p className="mt-2 text-sm text-slate-700">
+            <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
               <span className="font-medium">Recomendação: </span>
               {insight.recomendacao}
             </p>
@@ -94,7 +94,7 @@ export function CardInsightIA({ insight }: { insight: InsightIA }) {
             type="button"
             onClick={dispensar}
             disabled={isPending}
-            className="text-xs font-medium text-slate-500 hover:underline"
+            className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:underline"
           >
             Dispensar
           </button>

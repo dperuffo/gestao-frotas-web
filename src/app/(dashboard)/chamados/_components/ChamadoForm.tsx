@@ -53,7 +53,7 @@ export function ChamadoForm({
       <section className="card max-w-lg space-y-4 p-6">
         {empresas.length > 1 ? (
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Cliente <span className="text-red-500">*</span>
             </label>
             <select name="empresa_id" required defaultValue={empresaSelecionadaInicial ?? ""} className="input">
@@ -70,7 +70,7 @@ export function ChamadoForm({
         )}
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Tipo <span className="text-red-500">*</span>
           </label>
           <div className="flex gap-3">
@@ -84,21 +84,21 @@ export function ChamadoForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Título <span className="text-red-500">*</span>
           </label>
           <input name="titulo" required maxLength={150} className="input" placeholder="Resuma o problema/sugestão em poucas palavras" />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Descrição <span className="text-red-500">*</span>
           </label>
           <textarea name="descricao" required rows={5} className="input" placeholder="Descreva com o máximo de detalhes possível" />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Prioridade</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Prioridade</label>
           <select name="prioridade" defaultValue="media" className="input">
             {PRIORIDADES_TICKET.map((p) => (
               <option key={p.valor} value={p.valor}>
@@ -109,7 +109,7 @@ export function ChamadoForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Anexo (opcional)</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Anexo (opcional)</label>
           <input type="file" name="arquivo" className="input" />
         </div>
       </section>

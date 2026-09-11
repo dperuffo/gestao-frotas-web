@@ -123,7 +123,7 @@ export default async function ParceriasLocaisPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione...</option>
               {empresas.map((e) => (
@@ -140,7 +140,7 @@ export default async function ParceriasLocaisPage({
       )}
 
       {semClienteEscolhido || !empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">Selecione uma empresa acima pra ver e criar benefícios.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione uma empresa acima pra ver e criar benefícios.</p>
       ) : (
         <>
           {perfil === "posto" && <MissoesGlobaisGestao empresaId={empresaSelecionada} missoesIniciais={missoesGlobais} />}
@@ -163,7 +163,7 @@ export default async function ParceriasLocaisPage({
                   pontos={item.pontos_necessarios}
                   imagemUrl={item.imagem_url}
                   rodape={
-                    <div className="flex items-center justify-between text-xs text-slate-500">
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                       <span className={item.ativo ? "badge-ativo" : "badge-inativo"}>
                         {item.ativo ? "Ativo" : "Inativo"}
                       </span>
@@ -201,10 +201,10 @@ export default async function ParceriasLocaisPage({
             <IndicadorColorido cor="red" icon={XCircle} label="Cancelados" valor={String(cancelados.length)} />
           </div>
 
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Pendentes de atendimento</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Pendentes de atendimento</h2>
           <div className="mb-8 card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Voucher</th>
                   <th className="px-4 py-3">Benefício</th>
@@ -214,19 +214,19 @@ export default async function ParceriasLocaisPage({
                   <th className="px-4 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {pendentes.map((r) => (
                   <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-600">{r.numero_voucher ?? "—"}</td>
-                    <td className="px-4 py-3 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-600 dark:text-slate-300">{r.numero_voucher ?? "—"}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                       {r.titulo}
                       <span className="ml-1 text-xs font-normal text-slate-400">
                         ({LABEL_CATEGORIA_FIDELIDADE[r.categoria] ?? r.categoria})
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{r.nome_motorista}</td>
-                    <td className="px-4 py-3 text-slate-600">{r.pontos_gastos.toLocaleString("pt-BR")}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.nome_motorista}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.pontos_gastos.toLocaleString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {r.valido_ate ? new Date(r.valido_ate).toLocaleDateString("pt-BR") : "Sem validade"}
                     </td>
                     <td className="px-4 py-3">
@@ -245,13 +245,13 @@ export default async function ParceriasLocaisPage({
             </table>
           </div>
 
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">🔥 Vouchers queimados</h2>
-          <p className="mb-3 text-xs text-slate-500">
+          <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">🔥 Vouchers queimados</h2>
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
             Histórico de benefícios já entregues aos motoristas — pra controle e conferência.
           </p>
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Voucher</th>
                   <th className="px-4 py-3">Benefício</th>
@@ -260,19 +260,19 @@ export default async function ParceriasLocaisPage({
                   <th className="px-4 py-3">Queimado em</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {queimados.map((r) => (
                   <tr key={r.id} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-600">{r.numero_voucher ?? "—"}</td>
-                    <td className="px-4 py-3 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-600 dark:text-slate-300">{r.numero_voucher ?? "—"}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                       {r.titulo}
                       <span className="ml-1 text-xs font-normal text-slate-400">
                         ({LABEL_CATEGORIA_FIDELIDADE[r.categoria] ?? r.categoria})
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{r.nome_motorista}</td>
-                    <td className="px-4 py-3 text-slate-600">{r.pontos_gastos.toLocaleString("pt-BR")}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.nome_motorista}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.pontos_gastos.toLocaleString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {new Date(r.atualizado_em).toLocaleString("pt-BR")}
                     </td>
                   </tr>

@@ -39,7 +39,7 @@ export default async function ConfiguracoesRegrasPage({
 
   return (
     <div>
-      <Link href="/central-regras" className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700">
+      <Link href="/central-regras" className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700">
         <ArrowLeft className="h-3.5 w-3.5" /> Central de Regras & Alertas
       </Link>
       <CabecalhoPagina
@@ -50,7 +50,7 @@ export default async function ConfiguracoesRegrasPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -67,14 +67,14 @@ export default async function ConfiguracoesRegrasPage({
       )}
 
       {semClienteEscolhido || !empresaSelecionada ? (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        <p className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
           Selecione um cliente no seletor acima pra configurar os limites dele.
         </p>
       ) : (
         <div className="space-y-6">
           {grupos.map((grupo) => (
             <div key={grupo} className="card p-4">
-              <h2 className="mb-1 text-sm font-semibold text-slate-900">{grupo}</h2>
+              <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{grupo}</h2>
               <div>
                 {CATALOGO_REGRAS_CONFIGURAVEIS.filter((d) => d.grupo === grupo).map((definicao) => (
                   <LinhaConfiguracaoRegra

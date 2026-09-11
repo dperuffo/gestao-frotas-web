@@ -77,7 +77,7 @@ export function AcoesSolicitacao({ id, status }: { id: string; status: string })
             type="button"
             disabled={pendente}
             onClick={cancelar}
-            className="text-xs font-medium text-slate-500 hover:underline"
+            className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:underline"
           >
             Cancelar
           </button>

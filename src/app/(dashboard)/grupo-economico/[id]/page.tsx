@@ -87,8 +87,8 @@ export default async function EditarGrupoPage({
 
       {painel && (
         <div className="card p-4">
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">Painel executivo</h2>
-          <p className="mb-3 text-xs text-slate-500">
+          <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Painel executivo</h2>
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
             Soma das {painel.resumo.totalEmpresas} empresas vinculadas — gasto e litros dos últimos 6 meses.
           </p>
           <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -109,7 +109,7 @@ export default async function EditarGrupoPage({
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-2">Empresa</th>
                   <th className="py-2">Gasto (6m)</th>
@@ -118,16 +118,16 @@ export default async function EditarGrupoPage({
                   <th className="py-2">Sinistros</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {painel.porEmpresa.map((e) => (
                   <tr key={e.empresaId}>
-                    <td className="py-2 text-slate-700">{e.empresaNome}</td>
-                    <td className="py-2 text-slate-700">{formatarMoeda(e.gasto6m)}</td>
-                    <td className="py-2 text-slate-700">
+                    <td className="py-2 text-slate-700 dark:text-slate-300">{e.empresaNome}</td>
+                    <td className="py-2 text-slate-700 dark:text-slate-300">{formatarMoeda(e.gasto6m)}</td>
+                    <td className="py-2 text-slate-700 dark:text-slate-300">
                       {e.litros6m.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
                     </td>
-                    <td className="py-2 text-slate-700">{e.veiculos}</td>
-                    <td className="py-2 text-slate-700">{e.sinistros}</td>
+                    <td className="py-2 text-slate-700 dark:text-slate-300">{e.veiculos}</td>
+                    <td className="py-2 text-slate-700 dark:text-slate-300">{e.sinistros}</td>
                   </tr>
                 ))}
               </tbody>

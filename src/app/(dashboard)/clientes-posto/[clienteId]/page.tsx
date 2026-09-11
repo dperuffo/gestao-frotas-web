@@ -40,11 +40,11 @@ export default async function ClientePostoDetalhePage({
   // seletor aqui como rede de segurança pra qualquer acesso direto/sem param.
   if (!empresaSelecionada) {
     return (
-      <div className="card p-6 text-sm text-slate-600">
+      <div className="card p-6 text-sm text-slate-600 dark:text-slate-300">
         {empresas.length > 1 ? (
           <form className="flex items-end gap-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
               <select name="empresa" defaultValue="" className="input text-sm">
                 <option value="">Selecione...</option>
                 {empresas.map((e) => (
@@ -115,8 +115,8 @@ export default async function ClientePostoDetalhePage({
       <BotaoVoltar href="/clientes-posto" label="Voltar para Clientes" />
 
       <div className="mt-3 mb-6 card p-6">
-        <h1 className="text-xl font-semibold text-slate-900">{cliente.nome}</h1>
-        <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-slate-600 sm:grid-cols-4">
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{cliente.nome}</h1>
+        <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-4">
           <p>CNPJ: {formatCNPJ(cliente.cnpj)}</p>
           <p>Cidade/UF: {cliente.municipio ? `${cliente.municipio}/${cliente.uf ?? ""}` : "—"}</p>
           <p>Segmento: {cliente.segmento_transporte ?? "—"}</p>

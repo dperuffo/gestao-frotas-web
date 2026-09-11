@@ -39,7 +39,7 @@ export function IndicarCondutorForm({
     <form onSubmit={handleSubmit} className="space-y-3">
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
       {motoristaSugeridoId && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Sugestão pré-selecionada com base no vínculo Motorista ↔ Veículo ativo na data da infração.
         </p>
       )}

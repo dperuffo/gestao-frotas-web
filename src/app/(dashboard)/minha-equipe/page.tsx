@@ -34,8 +34,8 @@ export default async function MinhaEquipePage({ searchParams }: { searchParams: 
   if (perfilAtual !== "gestor_frota" && perfilAtual !== "posto") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Esta tela é para o gestor da frota ou o responsável pelo posto convidar colegas para a própria
           equipe.
         </p>
@@ -63,7 +63,7 @@ export default async function MinhaEquipePage({ searchParams }: { searchParams: 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Empresa</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Empresa</label>
             <select name="empresa" defaultValue={empresaSelecionada?.id ?? ""} className="input text-sm">
               <option value="">Selecione...</option>
               {empresas.map((e) => (
@@ -80,7 +80,7 @@ export default async function MinhaEquipePage({ searchParams }: { searchParams: 
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
           {empresas.length > 1 ? "Selecione uma empresa acima." : "Nenhuma empresa vinculada diretamente ao seu usuário."}
         </p>
       ) : (
@@ -135,7 +135,7 @@ async function ConteudoEquipe({
     <>
       <div className="mb-6 card p-4">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Vagas de usuário do plano</p>
-        <p className="mt-1 text-xl font-semibold text-slate-900">
+        <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
           {limite.quantidade} {limite.limite < 0 ? "" : `/ ${limite.limite}`}
         </p>
         {vagasEsgotadas && (
@@ -150,19 +150,19 @@ async function ConteudoEquipe({
       </div>
 
       <div className="mb-6 card p-6">
-        <h2 className="mb-1 text-sm font-semibold text-slate-900">Convidar colega</h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Convidar colega</h2>
+        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
           O convite vai por e-mail. O colega entra com perfil &quot;Colaborador&quot;.
         </p>
         <ConvidarColegaForm empresaId={empresaId} vagasEsgotadas={vagasEsgotadas} />
       </div>
 
       <div className="card overflow-x-auto">
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">Equipe</h2>
+        <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Equipe</h2>
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Nome</th>
               <th className="px-4 py-3">E-mail</th>
@@ -171,15 +171,15 @@ async function ConteudoEquipe({
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {membros.map((m) => (
               <tr key={m.user_email} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-700">{m.nome ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-500">{m.user_email}</td>
-                <td className="px-4 py-3 text-slate-500">{PERFIL_LABEL[m.perfil as Perfil] ?? m.perfil}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{m.nome ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{m.user_email}</td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{PERFIL_LABEL[m.perfil as Perfil] ?? m.perfil}</td>
                 <td className="px-4 py-3">
                   <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${m.ativo ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-400"}`}
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${m.ativo ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-700 text-slate-400"}`}
                   >
                     {m.ativo ? "Ativo" : "Inativo"}
                   </span>

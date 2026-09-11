@@ -31,7 +31,7 @@ export function BotaoEnviarParaAnalise({ empresaId, status }: { empresaId: strin
 
   return (
     <div>
-      <p className="mb-3 text-sm text-slate-600">
+      <p className="mb-3 text-sm text-slate-600 dark:text-slate-300">
         Depois de enviar todos os documentos acima (empresa + cada sócio), mande pra análise do admin.
       </p>
       <button type="button" onClick={enviar} disabled={isPending} className="btn-primary">

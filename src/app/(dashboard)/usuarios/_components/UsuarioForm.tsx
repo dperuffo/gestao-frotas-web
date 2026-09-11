@@ -50,7 +50,7 @@ export function UsuarioForm({
       {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
 
       <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Dados do usuário</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Dados do usuário</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo label="Nome completo" required>
             <input name="nome" required defaultValue={usuario?.nome ?? ""} className="input" />
@@ -108,14 +108,14 @@ export function UsuarioForm({
         </div>
 
         {usuario && (
-          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+          <label className="mt-4 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
             <input type="checkbox" name="ativo" defaultChecked={usuario.ativo} className="h-4 w-4 rounded border-slate-300" />
             Usuário ativo
           </label>
         )}
 
         {!usuario && (
-          <p className="mt-4 text-xs text-slate-500">
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
             Ao salvar, um e-mail de convite é enviado automaticamente pelo Supabase Auth para o
             usuário definir sua própria senha. A ativação do segundo fator (MFA) é feita pelo
             próprio usuário no primeiro acesso.
@@ -123,7 +123,7 @@ export function UsuarioForm({
         )}
 
         {usuario && empresaAtualId && (
-          <p className="mt-4 text-xs text-slate-500">
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
             Vínculo de cliente é gerenciado na tela de Grupo Econômico / Clientes — este formulário
             atualiza apenas os dados de perfil do usuário.
           </p>
@@ -150,7 +150,7 @@ function Campo({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>

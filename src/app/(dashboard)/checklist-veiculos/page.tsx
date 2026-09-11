@@ -85,7 +85,7 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -97,7 +97,7 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
           <input
             type="search"
             name="busca"
@@ -136,7 +136,7 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Placa</th>
                   <th className="px-4 py-3">Marca / Modelo</th>
@@ -145,7 +145,7 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
                   <th className="px-4 py-3">Pendências</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {lista.map((v) => (
                   <tr key={v.placa} className="transition-colors hover:bg-frota-50/60">
                     <td className="px-4 py-3">
@@ -154,9 +154,9 @@ export default async function ChecklistVeiculosPage({ searchParams }: { searchPa
                       </Link>
                       {v.empresaNome && <span className="ml-2 text-xs text-slate-400">({v.empresaNome})</span>}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{v.centro_custo_nome ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{v.centro_custo_nome ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {v.ultima_inspecao ? formatDate(v.ultima_inspecao) : "Nunca inspecionado"}
                     </td>
                     <td className="px-4 py-3">

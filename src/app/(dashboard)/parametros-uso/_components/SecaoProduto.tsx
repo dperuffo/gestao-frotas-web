@@ -44,7 +44,7 @@ export function SecaoProduto({
     <div>
       <div className="card mb-4 p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Combustíveis permitidos por veículo. Se nenhum for marcado na regra, o sistema usa o combustível
             especificado no cadastro do veículo.
           </p>
@@ -56,7 +56,7 @@ export function SecaoProduto({
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Veículo</th>
               <th className="px-4 py-3">Combustíveis permitidos</th>
@@ -65,17 +65,17 @@ export function SecaoProduto({
               <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {linhas.map((l) => (
               <tr key={l.id} className="transition-colors hover:bg-frota-50/60">
-                <td className="px-4 py-3 text-slate-600">{l.placa ?? "Todos"}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.placa ?? "Todos"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {l.combustiveis_permitidos.length > 0 ? l.combustiveis_permitidos.join(", ") : "Do cadastro"}
                 </td>
                 <td className="px-4 py-3">
                   <span className={l.status === "Ativo" ? "badge-ativo" : "badge-inativo"}>{l.status}</span>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{l.observacao ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.observacao ?? "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <ToggleStatusRegra id={l.id} ativo={l.status === "Ativo"} acao={alternarStatusProduto} />
@@ -101,7 +101,7 @@ export function SecaoProduto({
           <input type="hidden" name="empresa_id" value={empresaId} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Veículo (placa)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
             <select name="placa" defaultValue="" className="input">
               <option value="">Todos os veículos (regra geral)</option>
               {veiculos.map((v) => (
@@ -113,20 +113,20 @@ export function SecaoProduto({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Combustíveis permitidos</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Combustíveis permitidos</label>
             <div className="grid grid-cols-2 gap-2">
               {COMBUSTIVEIS.map((c) => (
-                <label key={c} className="flex items-center gap-2 text-sm text-slate-700">
+                <label key={c} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                   <input type="checkbox" name="combustiveis_permitidos" value={c} className="h-4 w-4 rounded border-slate-300" />
                   {c}
                 </label>
               ))}
             </div>
-            <p className="mt-1 text-xs text-slate-500">Nenhum marcado = usa o combustível do cadastro do veículo.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Nenhum marcado = usa o combustível do cadastro do veículo.</p>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Observação</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
             <textarea name="observacao" rows={2} className="input" />
           </div>
 

@@ -88,7 +88,7 @@ export default async function PegadaCarbonoPage({
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">{ehAdmin ? "Todos os clientes" : "Selecione um cliente..."}</option>
               {empresas.map((e) => (
@@ -100,11 +100,11 @@ export default async function PegadaCarbonoPage({
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">De</label>
           <input type="date" name="inicio" defaultValue={dataInicio} className="input text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Até</label>
           <input type="date" name="fim" defaultValue={dataFim} className="input text-sm" />
         </div>
         <button type="submit" className="btn-secondary text-sm">
@@ -113,7 +113,7 @@ export default async function PegadaCarbonoPage({
       </form>
 
       {semClienteEscolhido && (
-        <p className="p-4 text-sm text-slate-500">Selecione um cliente acima para ver a pegada de carbono dele.</p>
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Selecione um cliente acima para ver a pegada de carbono dele.</p>
       )}
 
       {!semClienteEscolhido && (
@@ -129,7 +129,7 @@ export default async function PegadaCarbonoPage({
 
           <GraficoPegadaCarbono dados={co2PorCategoria} />
 
-          <div className="card mb-6 p-4 text-xs leading-relaxed text-slate-500">
+          <div className="card mb-6 p-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
             <p>
               O cálculo multiplica os litros abastecidos de cada combustível por um fator médio de emissão (kg
               de CO2 por litro), publicado pelo Programa Brasileiro GHG Protocol. A equivalência em árvores usa
@@ -154,7 +154,7 @@ export default async function PegadaCarbonoPage({
             <div className="card overflow-x-auto p-0">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
+                  <tr className="border-b border-slate-100 dark:border-slate-700 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
                     <th className="px-4 py-3">Combustível</th>
                     <th className="px-4 py-3">Litros</th>
                     <th className="px-4 py-3">Fator (kg CO2/L)</th>
@@ -166,18 +166,18 @@ export default async function PegadaCarbonoPage({
                   {linhas.map((l) => (
                     <tr key={l.categoria} className="border-b border-slate-50 last:border-0">
                       <td className="px-4 py-3">{LABEL_CATEGORIA[l.categoria] ?? l.categoria}</td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {l.litros_total.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {l.fator_kg_co2_por_litro != null ? l.fator_kg_co2_por_litro : "—"}
                       </td>
-                      <td className="px-4 py-3 font-medium text-slate-900">
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                         {l.co2_estimado_kg != null
                           ? `${(l.co2_estimado_kg / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} t`
                           : "não estimado"}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {l.co2_estimado_kg != null && totalKg > 0
                           ? `${((l.co2_estimado_kg / totalKg) * 100).toFixed(1)}%`
                           : "—"}
@@ -205,7 +205,7 @@ function Indicador({ label, valor }: { label: string; valor: string }) {
   return (
     <div className="card p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{valor}</p>
+      <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{valor}</p>
     </div>
   );
 }

@@ -37,10 +37,10 @@ export function NovaSolicitacaoForm({
   return (
     <form ref={formRef} action={formAction} className="card space-y-3 p-4">
       <input type="hidden" name="empresa_id" value={empresaId} />
-      <h2 className="text-sm font-semibold text-slate-900">Nova solicitação</h2>
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Nova solicitação</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Categoria</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Categoria</label>
           <select name="categoria" defaultValue={categoriaInicial ?? "manutencao"} className="input text-sm">
             {CATEGORIAS.map((c) => (
               <option key={c.valor} value={c.valor}>
@@ -50,7 +50,7 @@ export function NovaSolicitacaoForm({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Valor (R$)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Valor (R$)</label>
           <input
             name="valor"
             type="text"
@@ -62,7 +62,7 @@ export function NovaSolicitacaoForm({
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Título</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Título</label>
           <input
             name="titulo"
             type="text"
@@ -73,7 +73,7 @@ export function NovaSolicitacaoForm({
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Descrição (opcional)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Descrição (opcional)</label>
           <textarea name="descricao" rows={2} className="input text-sm" />
         </div>
       </div>

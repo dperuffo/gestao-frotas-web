@@ -22,7 +22,7 @@ function Pizza({ dados, titulo }: { dados: ItemDistribuicao[]; titulo: string })
   }
   return (
     <div>
-      <p className="mb-2 text-xs font-medium uppercase text-slate-500">{titulo}</p>
+      <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{titulo}</p>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div style={{ width: 120, height: 120 }} className="mx-auto shrink-0 sm:mx-0">
           <ResponsiveContainer width="100%" height="100%">
@@ -39,7 +39,7 @@ function Pizza({ dados, titulo }: { dados: ItemDistribuicao[]; titulo: string })
         <ul className="flex-1 space-y-1.5 text-sm">
           {dados.map((d, i) => (
             <li key={d.label} className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2 text-slate-600">
+              <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-sm"
                   style={{ backgroundColor: CORES[i % CORES.length] }}
@@ -47,7 +47,7 @@ function Pizza({ dados, titulo }: { dados: ItemDistribuicao[]; titulo: string })
                 />
                 {d.label}
               </span>
-              <span className="whitespace-nowrap font-medium text-slate-900">{d.total}</span>
+              <span className="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{d.total}</span>
             </li>
           ))}
         </ul>
@@ -72,7 +72,7 @@ export function GraficoDistribuicaoVeiculos({
       <Pizza dados={porTipo} titulo="Por tipo de veículo" />
       <Pizza dados={porStatus} titulo="Por status" />
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
           Veículos por centro de custo {porCentroCusto.length > 8 ? "(top 8)" : ""}
         </p>
         {rankingCentroCusto.length === 0 ? (

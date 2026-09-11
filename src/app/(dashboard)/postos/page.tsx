@@ -107,7 +107,7 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
         <input type="hidden" name="visao" value={visao} />
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -119,7 +119,7 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">UF</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">UF</label>
           <select name="uf" defaultValue={uf ?? ""} className="input text-sm">
             <option value="">Todas</option>
             {UFS.map((sigla) => (
@@ -130,7 +130,7 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
           </select>
         </div>
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
           <input
             type="search"
             name="q"
@@ -140,7 +140,7 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
           />
         </div>
         {visao === "universo" && (
-          <label className="mb-2 flex items-center gap-2 text-sm text-slate-600">
+          <label className="mb-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
             <input type="checkbox" name="somenteAtivos" value="1" defaultChecked={somenteAtivos === "1"} />
             Só &quot;Gestão de Frotas&quot;
           </label>
@@ -160,7 +160,7 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
       )}
 
       {empresaSelecionada && (
-        <div className="mb-4 flex gap-2 border-b border-slate-200">
+        <div className="mb-4 flex gap-2 border-b border-slate-200 dark:border-slate-700">
           <AbaLink params={paramsBase} visao="rede" ativo={visao === "rede"}>
             Rede do cliente
           </AbaLink>
@@ -313,7 +313,7 @@ async function ViewRede({
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar postos: {error.message}</p>}
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Razão Social</th>
               <th className="px-4 py-3">CNPJ</th>
@@ -322,7 +322,7 @@ async function ViewRede({
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {postos?.map((p) => (
               <tr key={p.cnpj} className="transition-colors hover:bg-frota-50/60">
                 <td className="px-4 py-3">
@@ -330,9 +330,9 @@ async function ViewRede({
                     {p.razao_social ?? p.cnpj}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{p.cnpj}</td>
-                <td className="px-4 py-3 text-slate-600">{[p.municipio, p.uf].filter(Boolean).join("/") || "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{p.bandeira ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.cnpj}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{[p.municipio, p.uf].filter(Boolean).join("/") || "—"}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.bandeira ?? "—"}</td>
                 <td className="px-4 py-3">
                   {p.ativo ? (
                     <span className="badge-ativo">Ativo</span>
@@ -486,7 +486,7 @@ async function ViewInteligencia({ empresaId }: { empresaId: string }) {
           conteudo: (
             <>
               <div className="mb-6 card p-4">
-                <h2 className="mb-1 text-sm font-semibold text-slate-900">Preço médio da sua rede vs referência ANP</h2>
+                <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Preço médio da sua rede vs referência ANP</h2>
                 <p className="mb-3 text-xs text-slate-400">
                   {semanaMaisRecente
                     ? "Referência oficial ANP da semana mais recente importada. Combustíveis sem categoria oficial mapeada usam uma estimativa fixa."
@@ -495,7 +495,7 @@ async function ViewInteligencia({ empresaId }: { empresaId: string }) {
                 <GraficoCustoAnpLazy dados={precoPorCombustivel} />
               </div>
               <div className="card p-4">
-                <h2 className="mb-1 text-sm font-semibold text-slate-900">📅 Tendência de preço e sazonalidade por UF</h2>
+                <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">📅 Tendência de preço e sazonalidade por UF</h2>
                 <p className="mb-3 text-xs text-slate-400">Calculado só sobre o histórico de preços da sua própria rede.</p>
                 <TendenciaSazonalidade serie={serieTendencia} volatilidade={volatilidadeMensal} />
               </div>
@@ -507,31 +507,31 @@ async function ViewInteligencia({ empresaId }: { empresaId: string }) {
           label: "⚠️ Alertas de Preço",
           conteudo: (
             <div className="card p-4">
-              <h2 className="mb-1 text-sm font-semibold text-slate-900">Postos da sua rede com preço acima do ANP</h2>
+              <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Postos da sua rede com preço acima do ANP</h2>
               <p className="mb-4 text-xs text-slate-400">
                 Postos com preço mais de 5% acima da referência ANP (município → estado → Brasil).
               </p>
               {alertasPorEstado.length > 0 ? (
                 <div className="mb-6 grid gap-4 lg:grid-cols-2">
                   <div>
-                    <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Postos em alerta por estado</h3>
+                    <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Postos em alerta por estado</h3>
                     <GraficoAlertasPorEstadoLazy dados={alertasPorEstado} />
                   </div>
                   <div className="overflow-x-auto">
-                    <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500">Top 20 com maior desvio</h3>
+                    <h3 className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Top 20 com maior desvio</h3>
                     <table className="w-full text-left text-sm">
-                      <thead className="text-xs uppercase text-slate-500">
+                      <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                         <tr>
                           <th className="py-2 pr-3">Posto</th>
                           <th className="py-2 pr-3">Combustível</th>
                           <th className="py-2">Desvio</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                         {top20Alertas.map((a, i) => (
                           <tr key={`${a.cnpj}__${a.combustivel}__${i}`}>
-                            <td className="py-2 pr-3 text-slate-700">{a.razao_social ?? "—"}</td>
-                            <td className="py-2 pr-3 text-slate-600">{a.combustivel}</td>
+                            <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{a.razao_social ?? "—"}</td>
+                            <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{a.combustivel}</td>
                             <td className="py-2 font-medium text-red-600">+{a.diff_pct.toFixed(1)}%</td>
                           </tr>
                         ))}
@@ -550,7 +550,7 @@ async function ViewInteligencia({ empresaId }: { empresaId: string }) {
           label: "🗺️ Mapa dos Meus Postos",
           conteudo: (
             <div className="card p-4">
-              <h2 className="mb-1 text-sm font-semibold text-slate-900">Distribuição geográfica da sua rede</h2>
+              <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Distribuição geográfica da sua rede</h2>
               <p className="mb-3 text-xs text-slate-400">Só os postos vinculados à sua empresa.</p>
               <MapaDensidadeLazy pontos={pontosMapa} />
             </div>
@@ -561,7 +561,7 @@ async function ViewInteligencia({ empresaId }: { empresaId: string }) {
           label: "🏅 Score Operacional",
           conteudo: (
             <div className="card p-4">
-              <h2 className="mb-1 text-sm font-semibold text-slate-900">Score composto por posto</h2>
+              <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Score composto por posto</h2>
               <p className="mb-4 text-xs text-slate-400">
                 Preço vs ANP (50%) + cobertura de serviços/infraestrutura (30%) + distância neutra (20%). Graus:
                 A≥75, B≥55, C≥35, D&lt;35.
@@ -637,7 +637,7 @@ async function ViewUniverso({
       <div className="card overflow-x-auto">
         {error && <p className="p-4 text-sm text-red-600">Erro ao carregar postos: {error.message}</p>}
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Razão Social</th>
               <th className="px-4 py-3">CNPJ</th>
@@ -647,7 +647,7 @@ async function ViewUniverso({
               <th className="px-4 py-3">Ação</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {postosAnp?.map((p) => {
               const cnpjNormalizado = normalizarCNPJ(p.cnpj ?? "");
               const estaNaRede = statusPorCnpj.has(cnpjNormalizado);
@@ -663,11 +663,11 @@ async function ViewUniverso({
                         {p.razao_social ?? p.cnpj}
                       </Link>
                     ) : (
-                      <span className="font-medium text-slate-700">{p.razao_social ?? p.cnpj}</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{p.razao_social ?? p.cnpj}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{p.cnpj}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{p.cnpj}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {[p.municipio, p.uf].filter(Boolean).join("/") || "—"}
                   </td>
                   <td className="px-4 py-3">
@@ -735,7 +735,7 @@ function AbaLink({
       href={`/postos?${usp.toString()}`}
       className={
         "border-b-2 px-3 py-2 text-sm font-medium " +
-        (ativo ? "border-frota-600 text-frota-600" : "border-transparent text-slate-500 hover:text-slate-700")
+        (ativo ? "border-frota-600 text-frota-600" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700")
       }
     >
       {children}
@@ -755,7 +755,7 @@ function Paginacao({
   paramsBase: Record<string, string | undefined>;
 }) {
   return (
-    <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
+    <div className="mt-4 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
       <span>
         Página {pagina} de {totalPaginas} — {total} posto(s)
       </span>

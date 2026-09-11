@@ -25,7 +25,7 @@ export function FormSolicitarExclusao({ empresas }: { empresas: { id: string; no
     <form ref={formRef} onSubmit={handleSubmit} className="flex flex-wrap items-end gap-2">
       {empresas.length > 1 && (
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
           <select name="empresa_id" required className="input text-sm" defaultValue="">
             <option value="" disabled>
               Selecione...

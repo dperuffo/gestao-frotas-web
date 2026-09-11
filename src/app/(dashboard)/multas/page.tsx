@@ -137,7 +137,7 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
       <form className="mb-4 flex flex-wrap items-end gap-2">
         {empresas.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cliente</label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
               <option value="">Selecione um cliente...</option>
               {empresas.map((e) => (
@@ -149,7 +149,7 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
           <input
             type="search"
             name="q"
@@ -159,7 +159,7 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Status</label>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Status</label>
           <select name="status" defaultValue={status ?? ""} className="input text-sm">
             <option value="">Todos</option>
             {Object.entries(STATUS_MULTA_LABEL).map(([id, label]) => (
@@ -200,7 +200,7 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Placa</th>
@@ -212,31 +212,31 @@ export default async function MultasPage({ searchParams }: { searchParams: Promi
                   <th className="px-4 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {multas.map((m) => (
                   <tr key={m.id} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 text-slate-600">{new Date(`${m.data_infracao}T00:00:00`).toLocaleDateString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{new Date(`${m.data_infracao}T00:00:00`).toLocaleDateString("pt-BR")}</td>
                     <td className="px-4 py-3">
                       <Link href={`/multas/${m.id}`} className="font-medium text-frota-600 hover:underline">
                         {m.placa}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{m.numero_ait ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.numero_ait ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {m.descricao ?? "—"}
                       {m.gravidade && (
                         <span className="ml-2 text-xs text-slate-400">({GRAVIDADE_MULTA_LABEL[m.gravidade] ?? m.gravidade})</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{m.motoristas?.nome_completo ?? "—"}</td>
-                    <td className="px-4 py-3 tabular-nums text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.motoristas?.nome_completo ?? "—"}</td>
+                    <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">
                       {(m.valor_desconto ?? m.valor_original)?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {m.data_limite_indicacao ? new Date(`${m.data_limite_indicacao}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_MULTA_COR[m.status] ?? "bg-slate-100 text-slate-600"}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_MULTA_COR[m.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
                         {STATUS_MULTA_LABEL[m.status] ?? m.status}
                       </span>
                     </td>

@@ -39,8 +39,8 @@ export function AlocarMotoristaForm({
 
   return (
     <div className="card p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-900">Motoristas alocados a este centro de custo</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Motoristas alocados a este centro de custo</h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
         Busque e marque quantos motoristas precisar — dá pra alocar ou remover vários de uma vez.
       </p>
 

@@ -30,7 +30,7 @@ export function GraficoDivergencias({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Divergências por meio de pagamento</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Divergências por meio de pagamento</p>
         {porProvedor.length === 0 ? (
           <p className="text-sm text-slate-400">Sem divergências no período.</p>
         ) : (
@@ -51,7 +51,7 @@ export function GraficoDivergencias({
               {porProvedor.map((p) => (
                 <li key={p.provedor} className="flex items-center justify-between gap-3">
                   <LogoProvedor provedor={p.provedor} className="h-4 w-auto" />
-                  <span className="whitespace-nowrap font-medium text-slate-900">{p.total}</span>
+                  <span className="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{p.total}</span>
                 </li>
               ))}
             </ul>
@@ -60,7 +60,7 @@ export function GraficoDivergencias({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">{tituloRanking}</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{tituloRanking}</p>
         {topImpacto.length === 0 ? (
           <p className="text-sm text-slate-400">Sem divergências no período.</p>
         ) : (
@@ -106,7 +106,7 @@ export function GraficoExtratoDiario({
   return (
     <div className="card mb-6 grid gap-6 p-5 lg:grid-cols-2">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Valor movimentado por dia</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Valor movimentado por dia</p>
         {!comValor ? (
           <p className="text-sm text-slate-400">Sem dados no período.</p>
         ) : (
@@ -123,7 +123,7 @@ export function GraficoExtratoDiario({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase text-slate-500">Valor por meio de pagamento</p>
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">Valor por meio de pagamento</p>
         {porProvedor.length === 0 ? (
           <p className="text-sm text-slate-400">Sem dados no período.</p>
         ) : (
@@ -144,7 +144,7 @@ export function GraficoExtratoDiario({
               {porProvedor.map((p) => (
                 <li key={p.provedor} className="flex items-center justify-between gap-3">
                   <LogoProvedor provedor={p.provedor} className="h-4 w-auto" />
-                  <span className="whitespace-nowrap font-medium text-slate-900">{formatarMoeda(p.total)}</span>
+                  <span className="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{formatarMoeda(p.total)}</span>
                 </li>
               ))}
             </ul>

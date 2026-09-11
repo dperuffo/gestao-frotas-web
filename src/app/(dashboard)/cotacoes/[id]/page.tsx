@@ -60,25 +60,25 @@ export default async function CotacaoDetalhePage({
       )}
 
       <div className="card mb-6 overflow-x-auto p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Composição do frete</h2>
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Composição do frete</h2>
         <table className="w-full text-left text-sm">
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {itens.map((item) => (
               <tr key={item.label}>
-                <td className="py-2 text-slate-600">{item.label}</td>
-                <td className="py-2 text-right font-medium text-slate-900">{formatoMoeda.format(item.valor)}</td>
+                <td className="py-2 text-slate-600 dark:text-slate-300">{item.label}</td>
+                <td className="py-2 text-right font-medium text-slate-900 dark:text-slate-100">{formatoMoeda.format(item.valor)}</td>
               </tr>
             ))}
             <tr>
-              <td className="py-3 text-sm font-semibold text-slate-900">Valor total</td>
+              <td className="py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Valor total</td>
               <td className="py-3 text-right text-lg font-bold text-frota-700">{formatoMoeda.format(cotacao.valor_total)}</td>
             </tr>
           </tbody>
         </table>
         {cotacao.valor_carga > 0 && (
-          <p className="mt-2 text-xs text-slate-500">Valor da carga (base ad valorem/GRIS): {formatoMoeda.format(cotacao.valor_carga)}</p>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Valor da carga (base ad valorem/GRIS): {formatoMoeda.format(cotacao.valor_carga)}</p>
         )}
-        {cotacao.observacoes && <p className="mt-2 text-xs text-slate-500">Obs.: {cotacao.observacoes}</p>}
+        {cotacao.observacoes && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Obs.: {cotacao.observacoes}</p>}
       </div>
 
       {cotacao.status === "simulada" && (

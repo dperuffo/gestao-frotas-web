@@ -23,8 +23,8 @@ export default async function GerenciarAvisosEmpresaPage() {
   if (perfil === "admin") {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Use o painel de Administração</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Use o painel de Administração</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Como admin, você cria avisos oficiais da plataforma em Administração → Central de Avisos.
         </p>
       </div>
@@ -35,8 +35,8 @@ export default async function GerenciarAvisosEmpresaPage() {
   if (!temAcesso(mapaPermissoes, "aba_central_avisos")) {
     return (
       <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Seu perfil não tem permissão para criar avisos. Fale com o administrador da sua conta.
         </p>
       </div>
@@ -55,7 +55,7 @@ export default async function GerenciarAvisosEmpresaPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <AvisoEmpresaForm />
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Publicados pela sua empresa</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Publicados pela sua empresa</h2>
           <ListaAvisosEmpresa avisos={avisos} />
         </div>
       </div>

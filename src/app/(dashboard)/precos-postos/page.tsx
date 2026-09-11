@@ -60,7 +60,7 @@ export default async function PrecosPostosPage({
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
               {souPosto ? "Empresa" : "Cliente"}
             </label>
             <select name="empresa" defaultValue={empresaSelecionada ?? ""} className="input text-sm">
@@ -79,7 +79,7 @@ export default async function PrecosPostosPage({
       )}
 
       {!empresaSelecionada ? (
-        <p className="p-4 text-sm text-slate-500">
+        <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
           {empresas.length > 1 ? "Selecione uma empresa acima." : "Nenhuma empresa vinculada ao seu usuário."}
         </p>
       ) : souPosto ? (
@@ -153,7 +153,7 @@ async function PainelCliente({
 
   if (idsPostos.length === 0) {
     return (
-      <p className="p-4 text-sm text-slate-500">
+      <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
         Você ainda não tem negociação com nenhum posto — os preços aparecem aqui assim que houver
         pelo menos uma negociação{nomeEmpresaSelecionada ? ` para ${nomeEmpresaSelecionada}` : ""}.
       </p>
@@ -219,11 +219,11 @@ async function PainelCliente({
         const lista = porPosto.get(idPosto) ?? [];
         return (
           <div key={idPosto} className="card overflow-x-auto">
-            <div className="border-b border-slate-100 px-4 py-3">
-              <h2 className="text-sm font-semibold text-slate-900">{postosMap.get(idPosto)}</h2>
+            <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{postosMap.get(idPosto)}</h2>
             </div>
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Combustível</th>
                   <th className="px-4 py-3">Preço/L</th>
@@ -231,18 +231,18 @@ async function PainelCliente({
                   <th className="px-4 py-3">Atualizado por</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {lista.map((p) => (
                   <tr key={p.combustivel} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 text-slate-700">{p.combustivel}</td>
-                    <td className="px-4 py-3 text-slate-700">
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{p.combustivel}</td>
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                       {p.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </td>
-                    <td className="px-4 py-3 text-slate-500">{formatarDataHoraBr(p.atualizado_em)}</td>
-                    <td className="px-4 py-3 text-slate-500">
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatarDataHoraBr(p.atualizado_em)}</td>
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                       {p.atualizado_por ? (
                         <>
-                          <span className="text-slate-700">{nomePorEmail[p.atualizado_por] ?? p.atualizado_por}</span>
+                          <span className="text-slate-700 dark:text-slate-300">{nomePorEmail[p.atualizado_por] ?? p.atualizado_por}</span>
                           <br />
                           <span className="text-xs text-slate-400">{p.atualizado_por}</span>
                         </>
