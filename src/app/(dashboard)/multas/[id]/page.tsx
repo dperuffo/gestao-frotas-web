@@ -4,6 +4,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_MULTA_LABEL, STATUS_MULTA_COR, GRAVIDADE_MULTA_LABEL } from "@/lib/multas";
 import { empresasIrmasAcao } from "@/lib/empresasGrupo";
+import { candidatosCondutorPorVinculoAcao } from "@/lib/indicacaoCondutor";
 import { IndicarCondutorForm, StatusMultaBotoes, ExcluirMultaButton } from "../_components/MultaAcoes";
 
 export default async function MultaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,7 +14,7 @@ export default async function MultaDetalhePage({ params }: { params: Promise<{ i
   const { data: multa } = await supabase
     .from("multas")
     .select(
-      "id, empresa_id, placa, motorista_id, numero_ait, orgao_autuador, local_infracao, data_infracao, data_limite_indicacao, descricao, gravidade, pontos, valor_original, valor_desconto, status, anexo_path, observacoes, indicado_em, indicado_por, pago_em, criado_em, motoristas(id, nome_completo)"
+      "id, empresa_id, placa, motorista_id, numero_ait, orgao_autuador, local_infracao, data_infracao, data_limite_indicacao, descricao, gravidade, pontos, valor_original, valor_desconto, status, anexo_path, observacoes, indicado_em, indicado_por, indicado_automaticamente, pago_em, criado_em, motoristas(id, nome_completo)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -23,15 +24,12 @@ export default async function MultaDetalhePage({ params }: { params: Promise<{ i
   // Fase Onda-2 (benchmark TicketLog, item #4) — sugestão de condutor:
   // reaproveita o vínculo Motorista<->Veículo já existente em Parâmetros de
   // Uso (parametros_vinculo_motorista_veiculo), resolvendo qual vínculo
-  // estava ATIVO na data da infração (não necessariamente hoje).
-  const { data: vinculoAtivo } = await supabase
-    .from("parametros_vinculo_motorista_veiculo")
-    .select("motorista_id")
-    .eq("placa", multa.placa)
-    .eq("status", "Ativo")
-    .lte("data_inicio", multa.data_infracao)
-    .or(`data_fim.is.null,data_fim.gte.${multa.data_infracao}`)
-    .maybeSingle();
+  // estava ATIVO na data da infração (não necessariamente hoje). Mesma
+  // função usada pelo cron de auto-indicação (candidatosCondutorPorVinculoAcao,
+  // src/lib/indicacaoCondutor.ts) — só pré-seleciona quando existe EXATAMENTE
+  // 1 candidato; 0 ou 2+ deixa o campo em branco pro gestor escolher.
+  const candidatosCondutor = await candidatosCondutorPorVinculoAcao(supabase, multa.placa, multa.data_infracao);
+  const motoristaSugeridoId = candidatosCondutor.length === 1 ? candidatosCondutor[0] : null;
 
   // Fase Reuso-Operacional-Grupo (Fase 2) — motorista de empresa irmã do
   // grupo também entra como opção de condutor, rotulado com a empresa dona
@@ -134,11 +132,12 @@ export default async function MultaDetalhePage({ params }: { params: Promise<{ i
                   <p className="mt-1 text-xs text-slate-400">
                     Indicado em {new Date(multa.indicado_em).toLocaleDateString("pt-BR")}
                     {multa.indicado_por ? ` por ${multa.indicado_por}` : ""}
+                    {multa.indicado_automaticamente ? " · indicação automática (candidato único por vínculo)" : ""}
                   </p>
                 )}
               </div>
             ) : (
-              <IndicarCondutorForm multaId={multa.id} motoristas={motoristas ?? []} motoristaSugeridoId={vinculoAtivo?.motorista_id ?? null} />
+              <IndicarCondutorForm multaId={multa.id} motoristas={motoristas ?? []} motoristaSugeridoId={motoristaSugeridoId} />
             )}
           </div>
 

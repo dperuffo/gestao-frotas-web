@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { calcularHashDedupe, parseExtrato, sugerirContas, type ContaEmAberto } from "@/lib/conciliacaoBancaria";
+import { calcularHashDedupe, parseExtrato } from "@/lib/conciliacaoBancaria";
+import { conciliarAutomaticoParaEmpresa } from "@/lib/conciliacaoAutomatica";
 
 export type ConciliacaoFormState = { erro?: string; sucesso?: string } | undefined;
 
@@ -135,86 +136,26 @@ export async function conciliarLancamentoAcao(
 // mesmas RPCs de baixa que o vínculo manual usa — não duplica lógica de
 // baixa nem pula validação nenhuma, só decide sozinho QUAL conta vincular
 // quando a confiança já é alta o bastante.
+//
+// A lógica de matching/baixa em si foi extraída pra
+// conciliarAutomaticoParaEmpresa (src/lib/conciliacaoAutomatica.ts) na
+// auditoria de automação (13/09/2026) — esta Server Action agora é só o
+// "clique manual" (usa a sessão do usuário via createClient()); o mesmo
+// código roda sozinho todo dia às 07:00 UTC via /api/cron/conciliacao-
+// automatica (client admin, todas as empresas com pendentes), então o botão
+// "Conciliar automático" na tela virou principalmente uma forma de
+// adiantar/reprocessar na hora, não a única via de baixa automática.
 export async function conciliarAutomaticoAcao(empresaId: string): Promise<{ erro?: string; sucesso?: string }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: pendentesData }, { data: pagarData }, { data: receberData }] = await Promise.all([
-    supabase
-      .from("extrato_bancario_lancamentos")
-      .select("id, data, descricao, valor, tipo")
-      .eq("empresa_id", empresaId)
-      .eq("status", "pendente"),
-    supabase
-      .from("contas_pagar")
-      .select("id, credor_nome, descricao, valor_original, valor_pago, vencimento")
-      .eq("empresa_id", empresaId)
-      .in("status", ["aberto", "baixado_parcial"]),
-    supabase
-      .from("contas_receber")
-      .select("id, devedor_nome, descricao, valor_original, valor_pago, vencimento")
-      .eq("empresa_id", empresaId)
-      .in("status", ["aberto", "baixado_parcial"]),
-  ]);
-
-  const contasPagar: ContaEmAberto[] = (pagarData ?? []).map((c) => ({
-    id: c.id,
-    nome: c.credor_nome ?? "Credor não identificado",
-    descricao: c.descricao,
-    saldoEmAberto: c.valor_original - c.valor_pago,
-    vencimento: c.vencimento,
-  }));
-  const contasReceber: ContaEmAberto[] = (receberData ?? []).map((c) => ({
-    id: c.id,
-    nome: c.devedor_nome ?? "Devedor não identificado",
-    descricao: c.descricao,
-    saldoEmAberto: c.valor_original - c.valor_pago,
-    vencimento: c.vencimento,
-  }));
-
-  let conciliados = 0;
-  for (const l of pendentesData ?? []) {
-    const contaTipo: "contas_pagar" | "contas_receber" = l.tipo === "debito" ? "contas_pagar" : "contas_receber";
-    const candidatas = l.tipo === "debito" ? contasPagar : contasReceber;
-    const sugestoes = sugerirContas({ data: l.data, valor: Math.abs(l.valor), descricao: l.descricao }, candidatas);
-    const altaConfianca = sugestoes.filter((s) => s.confianca === "alta");
-    if (altaConfianca.length !== 1) continue;
-
-    const conta = altaConfianca[0];
-    const valorBaixa = Math.min(Math.abs(l.valor), conta.saldoEmAberto);
-    if (valorBaixa <= 0) continue;
-
-    const { error: erroBaixa } =
-      contaTipo === "contas_pagar"
-        ? await supabase.rpc("baixar_conta_pagar", {
-            p_conta_id: conta.id,
-            p_valor: valorBaixa,
-            p_forma: "conciliacao_bancaria",
-            p_observacao: "Conciliado automaticamente (alta confiança: valor + data + fornecedor).",
-          })
-        : await supabase.rpc("baixar_conta_receber", {
-            p_conta_id: conta.id,
-            p_valor: valorBaixa,
-            p_forma: "conciliacao_bancaria",
-            p_gateway_ref: null,
-            p_observacao: "Conciliado automaticamente (alta confiança: valor + data + fornecedor).",
-          });
-    if (erroBaixa) continue;
-
-    const { error: erroLancamento } = await supabase
-      .from("extrato_bancario_lancamentos")
-      .update({
-        status: "conciliado",
-        conciliado_com_tipo: contaTipo,
-        conciliado_com_id: conta.id,
-        conciliado_em: new Date().toISOString(),
-        conciliado_por: user?.email ? `${user.email} (automático)` : "automático",
-      })
-      .eq("id", l.id);
-    if (!erroLancamento) conciliados++;
-  }
+  const { conciliados } = await conciliarAutomaticoParaEmpresa(
+    supabase,
+    empresaId,
+    user?.email ? `${user.email} (automático)` : "automático"
+  );
 
   revalidatePath("/conciliacao-bancaria");
   revalidatePath("/financeiro");

@@ -4982,6 +4982,7 @@ export interface Database {
           observacoes: string | null;
           indicado_em: string | null;
           indicado_por: string | null;
+          indicado_automaticamente: boolean;
           pago_em: string | null;
           criado_em: string;
           criado_por: string | null;

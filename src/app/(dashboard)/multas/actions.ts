@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { empresaDonaDoVeiculoAcao, empresaOuIrmaDoGrupo } from "@/lib/empresasGrupo";
+import { indicarCondutorLogica } from "@/lib/indicacaoCondutor";
 import type { Database } from "@/types/database.types";
 import { logger } from "@/lib/logger";
 
@@ -146,30 +147,10 @@ export async function indicarCondutorAcao(multaId: string, motoristaId: string) 
   // Fase Reuso-Operacional-Grupo (Fase 2) — fecha o mesmo tipo de brecha já
   // corrigida em Fretes/Planos de Viagem/MDF-e: antes, qualquer motorista_id
   // era aceito sem checar se ele pertence à empresa da multa (ou a uma
-  // irmã do grupo).
-  const [{ data: multa }, { data: motorista }] = await Promise.all([
-    supabase.from("multas").select("empresa_id").eq("id", multaId).maybeSingle(),
-    supabase.from("motoristas").select("empresa_id").eq("id", motoristaId).maybeSingle(),
-  ]);
-  if (!multa) throw new Error("Multa não encontrada.");
-  if (!motorista) throw new Error("Motorista não encontrado.");
-  const pertenceAoGrupo = await empresaOuIrmaDoGrupo(supabase, multa.empresa_id, motorista.empresa_id);
-  if (!pertenceAoGrupo) {
-    throw new Error("Esse motorista não pertence à empresa da multa nem a uma empresa do mesmo grupo econômico.");
-  }
-
-  const { error } = await supabase
-    .from("multas")
-    .update({
-      motorista_id: motoristaId,
-      status: "indicada",
-      indicado_em: new Date().toISOString(),
-      indicado_por: user?.email ?? null,
-      atualizado_em: new Date().toISOString(),
-    })
-    .eq("id", multaId);
-
-  if (error) throw new Error(error.message);
+  // irmã do grupo). Checagem + update agora moram em indicarCondutorLogica
+  // (src/lib/indicacaoCondutor.ts) — reaproveitado pelo cron de
+  // auto-indicação (candidato único, sem ambiguidade).
+  await indicarCondutorLogica(supabase, multaId, motoristaId, { autorLabel: user?.email ?? null, automatico: false });
   revalidatePath("/multas");
   revalidatePath(`/multas/${multaId}`);
 }

@@ -55,7 +55,11 @@ export async function executarDeteccaoAcoesSugeridasAcao(empresaId: string | nul
     }),
     supabase.rpc("detectar_acoes_posto_caro", {
       p_empresa_id: empresaId,
-      p_threshold: config.get("posto_acima_media_percentual_max") ?? 0.15,
+      // Fase implementar-sugestoes-automacao (13/09/2026) — subimos de 0.15
+      // para 0.30: com 15% o tipo 'posto_acima_media' tinha 99,8% de
+      // rejeição (1.760 de 1.763), sinal de threshold mal calibrado gerando
+      // ruído. Ajustado antes de automatizar a detecção via cron.
+      p_threshold: config.get("posto_acima_media_percentual_max") ?? 0.3,
     }),
     supabase.rpc("detectar_acoes_hodometro", {
       p_empresa_id: empresaId,
