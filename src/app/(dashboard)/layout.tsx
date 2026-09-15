@@ -108,6 +108,7 @@ import { RastreadorAcessoMenu } from "./_components/RastreadorAcessoMenu";
 import { BuscaGlobal, type ItemBusca } from "./_components/BuscaGlobal";
 import { PainelMobile } from "./_components/PainelMobile";
 import { ThemeToggle } from "@/components/tema/ThemeToggle";
+import { SincronizadorTema } from "@/components/tema/SincronizadorTema";
 
 // Fase 27.15 (histórico) — a "Assistente FNI" chegou a usar a logo da marca
 // como ícone no menu, tratamento especial só dela (`item.logo`). Substituído
@@ -801,17 +802,28 @@ export default async function DashboardLayout({
   // padrão usado em /usuarios), já que usuarios_app não tem FK pro auth.users.
   // Fase 27.29 — também protegido: sem perfil, cai no e-mail puro (só perde
   // o cargo/rótulo exibido, não derruba a tela).
-  let perfilUsuario: { nome: string | null; perfil: string | null; tour_onboarding_visto: boolean | null } | null = null;
+  let perfilUsuario: {
+    nome: string | null;
+    perfil: string | null;
+    tour_onboarding_visto: boolean | null;
+    // Fase Dark-Mode-Por-Conta (15/09/2026) — buscado junto (mesma linha,
+    // sem chamada extra) pra sincronizar o tema salvo na conta assim que a
+    // sessão carrega, ver <SincronizadorTema> mais abaixo.
+    tema_preferido: string | null;
+  } | null = null;
   try {
     const { data } = await supabase
       .from("usuarios_app")
-      .select("nome, perfil, tour_onboarding_visto")
+      .select("nome, perfil, tour_onboarding_visto, tema_preferido")
       .eq("email", user.email ?? "")
       .maybeSingle();
     perfilUsuario = data;
   } catch (e) {
     void logger.error("dashboard/layout", "Falha ao buscar perfil do usuário (ignorado)", e);
   }
+  // tema_preferido é validado por CHECK no banco (light/dark/system ou
+  // NULL) — o cast aqui só descreve pro TS o que a coluna já garante.
+  const temaPreferidoBanco = perfilUsuario?.tema_preferido as "light" | "dark" | "system" | null | undefined;
   const nomeExibido = perfilUsuario?.nome || user.email;
   const cargoExibido = perfilUsuario?.perfil
     ? PERFIL_LABEL[perfilUsuario.perfil as Perfil] ?? perfilUsuario.perfil
@@ -1029,6 +1041,7 @@ export default async function DashboardLayout({
       tourJaVisto={perfilUsuario?.tour_onboarding_visto ?? false}
       passos={ehPosto ? PASSOS_TOUR_POSTO : passosTourFrota}
     >
+    <SincronizadorTema temaPreferidoBanco={temaPreferidoBanco ?? null} />
     <RastreadorAcessoMenu hrefsRastreaveis={HREFS_RASTREAVEIS} />
     <div className="flex min-h-screen flex-col lg:flex-row">
       {/* Pedido do Daniel: "desacoplar o menu da tela de informações" — em

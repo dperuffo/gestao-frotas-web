@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Sun, Moon, MonitorSmartphone } from "lucide-react";
+import { definirTemaPreferidoAcao } from "@/app/(dashboard)/_components/temaActions";
 
 // Fase Dark-Mode (11/09/2026) — botão de alternância manual, no rodapé do
 // menu lateral junto de CentralAjuda/BotaoSair (mesmo padrão visual:
@@ -46,6 +47,16 @@ export function ThemeToggle() {
     const indiceAtual = CICLO.indexOf(atual);
     const proximo = CICLO[(indiceAtual + 1) % CICLO.length];
     setTheme(proximo);
+    // Fase Dark-Mode-Por-Conta (15/09/2026) — além do que o next-themes já
+    // faz sozinho (classe no <html> + localStorage), persiste a escolha na
+    // conta do usuário (usuarios_app.tema_preferido via RPC), pra seguir
+    // ele entre dispositivos/navegadores e não vazar pro próximo usuário
+    // que logar no mesmo computador. Fire-and-forget: falha de rede aqui
+    // não deve travar a troca visual, que já aconteceu via setTheme acima.
+    definirTemaPreferidoAcao(proximo).catch(() => {
+      // Silencioso, mesmo espírito de marcarTourVistoAcao em
+      // ajudaActions.ts — pior caso é não persistir dessa vez.
+    });
   }
 
   return (

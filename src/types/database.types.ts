@@ -649,6 +649,10 @@ export interface Database {
           mfa_habilitado: boolean;
           tour_onboarding_visto: boolean;
           tour_onboarding_visto_em: string | null;
+          // Fase Dark-Mode-Por-Conta (15/09/2026) — preferência de tema
+          // (light/dark/system) vinculada à conta, não só ao localStorage do
+          // navegador. NULL = nunca configurou explicitamente.
+          tema_preferido: string | null;
           created_at: string | null;
           updated_at: string | null;
         };
@@ -5156,6 +5160,13 @@ export interface Database {
       // policy de UPDATE pro usuário comum em usuarios_app.
       marcar_tour_onboarding_visto: {
         Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      // Fase Dark-Mode-Por-Conta (15/09/2026) — grava tema_preferido só na
+      // própria linha do usuário (pelo e-mail do JWT), mesmo motivo de
+      // SECURITY DEFINER que marcar_tour_onboarding_visto acima.
+      definir_tema_preferido: {
+        Args: { p_tema: string | null };
         Returns: undefined;
       };
       empresas_do_usuario: {
