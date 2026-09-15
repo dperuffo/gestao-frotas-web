@@ -282,8 +282,8 @@ export async function IndicadoresFinanceirosFni() {
             {trialsMortos.length} trial(s) morto(s) — vencido(s) e nunca convertido(s)
           </p>
           <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-            Status ainda "trial", trial já venceu e não há login registrado depois do vencimento. Provável
-            abandono — status nunca foi atualizado pra cancelado.
+            Status ainda &quot;trial&quot;, trial já venceu e não há login registrado depois do vencimento.
+            Provável abandono — status nunca foi atualizado pra cancelado.
           </p>
           <ul className="space-y-1.5">
             {trialsMortos.map((e) => (
