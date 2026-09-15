@@ -11,6 +11,7 @@ import { formatarDataBr, formatarDataHoraBr } from "@/lib/utils";
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Handshake, Clock, CheckCircle2, Calendar } from "lucide-react";
 import { GraficoNegociacoes } from "./_components/GraficoNegociacoes";
+import { AderenciaRede, type AderenciaRedeData } from "./_components/AderenciaRede";
 
 type SearchParams = { empresa?: string; status?: string; q?: string };
 
@@ -133,6 +134,32 @@ export default async function NegociacoesPage({
     totalVigentes = count ?? 0;
   }
 
+  // Fase Plano-Metricas-Fidelidade (15/09/2026) — aderência à rede negociada
+  // só faz sentido do lado do CLIENTE (é ele quem "vaza" consumo pra fora da
+  // rede parceira; o posto não tem essa métrica). RPC SECURITY DEFINER com a
+  // mesma checagem de autorização das demais desta tela (empresas_do_usuario
+  // + admin), roda em paralelo ao carregamento das negociações não é
+  // necessário aqui pois já esperamos a lista acima antes.
+  let aderenciaRede: AderenciaRedeData | null = null;
+  if (empresaSelecionada && !souPosto) {
+    const { data } = await supabase.rpc("aderencia_rede_negociada", {
+      p_empresa_cliente_id: empresaSelecionada,
+      p_dias: 90,
+    });
+    const linha = data?.[0];
+    if (linha) {
+      aderenciaRede = {
+        litros_dentro: Number(linha.litros_dentro),
+        litros_fora: Number(linha.litros_fora),
+        valor_dentro: Number(linha.valor_dentro),
+        valor_fora: Number(linha.valor_fora),
+        percentual_dentro: Number(linha.percentual_dentro),
+        percentual_dentro_periodo_anterior: Number(linha.percentual_dentro_periodo_anterior),
+        top_postos_externos: (linha.top_postos_externos ?? []) as unknown as AderenciaRedeData["top_postos_externos"],
+      };
+    }
+  }
+
   const pendentesDoMeuLado = negociacoes.filter(
     (n) => n.status === (souPosto ? "pendente_posto" : "pendente_cliente")
   ).length;
@@ -228,6 +255,8 @@ export default async function NegociacoesPage({
             />
             <IndicadorColorido cor="violet" icon={Calendar} label="Vigentes agora" valor={String(totalVigentes)} />
           </div>
+
+          {aderenciaRede && <AderenciaRede dados={aderenciaRede} empresaId={empresaSelecionada} />}
 
           <GraficoNegociacoes
             porStatus={porStatus}

@@ -6,7 +6,7 @@ import { listarMissoes } from "./missoesActions";
 // Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
 // toque visual já aplicado nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
-import { Users, Droplet, Award, Gift } from "lucide-react";
+import { Users, Droplet, Award, Gift, Percent, Lock, TrendingDown } from "lucide-react";
 import { GraficoFidelidade, type ItemDistribuicao, type ItemRankingPontos } from "./_components/GraficoFidelidade";
 
 // Painel de indicadores do programa "Estrada que Cuida" (app do motorista)
@@ -47,7 +47,28 @@ type IndicadorRow = {
   missoes_concluidas: number;
   resgates_total: number;
   resgates_concluidos: number;
+  pontos_ganhos: number;
+  pontos_resgatados: number;
+  pontos_parados: boolean;
+  risco_desengajamento: boolean;
 };
+
+// Fase Plano-Metricas-Fidelidade (15/09/2026) — taxa de resgate = pontos
+// resgatados (fidelidade_resgates concluídos) ÷ pontos ganhos (eventos de
+// pontos positivo no ledger), agregada a partir das linhas da RPC (mesmo
+// padrão já usado pros outros KPIs desta tela). Limiares do semáforo:
+// benchmark comum de programas de fidelidade maduros gira em torno de
+// 20-30% de resgate, mas o parâmetro real que interessa aqui é "tá parado
+// ou não" — por isso o corte foi calibrado pelos dados atuais do produto
+// (recém-lançado, taxa geral ~0,4%): abaixo de 2% é sinal vermelho (quase
+// ninguém troca pontos por prêmio, risco de o motorista achar o programa
+// "só decoração"), 2-8% é zona de atenção (começando a girar mas ainda
+// baixo), acima de 8% é verde (uso saudável do catálogo de resgate).
+function corTaxaResgate(taxaPct: number): "red" | "amber" | "green" {
+  if (taxaPct < 2) return "red";
+  if (taxaPct < 8) return "amber";
+  return "green";
+}
 
 export default async function FidelidadeMotoristasPage({
   searchParams,
@@ -72,6 +93,10 @@ export default async function FidelidadeMotoristasPage({
   }
 
   const aderidos = indicadores.filter((i) => i.aderido);
+
+  const totalPontosGanhos = indicadores.reduce((soma, i) => soma + i.pontos_ganhos, 0);
+  const totalPontosResgatados = indicadores.reduce((soma, i) => soma + i.pontos_resgatados, 0);
+  const taxaResgatePct = totalPontosGanhos > 0 ? (100 * totalPontosResgatados) / totalPontosGanhos : 0;
 
   // Fase Plano-Graficos Onda 1 (04/09/2026) — agregações do gráfico, todas
   // a partir do indicadores já carregado (sem query nova).
@@ -134,7 +159,7 @@ export default async function FidelidadeMotoristasPage({
               missão), não faz sentido rolar a página toda pra achar. */}
           <MissoesGestao empresaId={empresaSelecionada} missoesIniciais={missoes} />
 
-          <div className="mb-4 mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mb-4 mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <IndicadorColorido
               cor="sky"
               icon={Users}
@@ -159,6 +184,13 @@ export default async function FidelidadeMotoristasPage({
               label="Resgates (concluídos / total)"
               valor={`${indicadores.reduce((soma, i) => soma + i.resgates_concluidos, 0)} / ${indicadores.reduce((soma, i) => soma + i.resgates_total, 0)}`}
             />
+            <IndicadorColorido
+              cor={corTaxaResgate(taxaResgatePct)}
+              icon={Percent}
+              label="Taxa de resgate"
+              valor={`${taxaResgatePct.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
+              sub={`${totalPontosResgatados.toLocaleString("pt-BR")} de ${totalPontosGanhos.toLocaleString("pt-BR")} pts ganhos`}
+            />
           </div>
 
           <GraficoFidelidade porNivel={porNivel} porAdesao={porAdesao} rankingPontos={rankingPontos} />
@@ -179,15 +211,44 @@ export default async function FidelidadeMotoristasPage({
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {indicadores.map((m) => (
-                  <tr key={m.motorista_id} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{m.nome_completo}</td>
+                  <tr
+                    key={m.motorista_id}
+                    className={`transition-colors hover:bg-frota-50/60 ${m.risco_desengajamento ? "bg-red-50/40 dark:bg-red-950/20" : ""}`}
+                  >
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
+                      <div className="flex items-center gap-2">
+                        {m.nome_completo}
+                        {m.risco_desengajamento && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                            title="Adesão ativa, sem nenhum evento de pontos nos últimos 21 dias — risco de desengajamento."
+                          >
+                            <TrendingDown className="h-3 w-3" aria-hidden="true" />
+                            Risco
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <span className={m.aderido ? "badge-ativo" : "badge-inativo"}>
                         {m.aderido ? "Aderido" : "Não aderiu"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.aderido ? nivelDoSaldo(m.saldo_pontos) : "—"}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.saldo_pontos.toLocaleString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      <div className="flex items-center gap-2">
+                        {m.saldo_pontos.toLocaleString("pt-BR")}
+                        {m.pontos_parados && (
+                          <span
+                            className="badge-atencao inline-flex items-center gap-1"
+                            title="Nível Ouro ou superior sem nenhum resgate desde a adesão — pontos parados."
+                          >
+                            <Lock className="h-3 w-3" aria-hidden="true" />
+                            Parado
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.abastecimentos_confirmados}</td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.missoes_concluidas}</td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">

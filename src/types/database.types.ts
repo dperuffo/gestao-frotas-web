@@ -6201,6 +6201,23 @@ export interface Database {
         Args: Record<PropertyKey, never>;
         Returns: { uf: string; total: number }[];
       };
+      ultimo_login_por_empresa: {
+        Args: Record<PropertyKey, never>;
+        Returns: { empresa_id: string; ultimo_login: string | null }[];
+      };
+      adocao_funcionalidades_por_empresa: {
+        Args: { p_dias?: number };
+        Returns: {
+          empresa_id: string;
+          roteirizacao: boolean;
+          inteligencia_rede: boolean;
+          notas_fiscais: boolean;
+          fretes: boolean;
+          acoes_sugeridas: boolean;
+          detalhe: Json;
+          percentual_adocao: number;
+        }[];
+      };
       anp_postos_por_uf: {
         Args: Record<PropertyKey, never>;
         Returns: { uf: string; total: number }[];
@@ -6808,6 +6825,24 @@ export interface Database {
           missoes_concluidas: number;
           resgates_total: number;
           resgates_concluidos: number;
+        }[];
+      };
+      // Fase Plano-Metricas-Fidelidade (15/09/2026) — % de litros abastecidos
+      // dentro da rede negociada (postos com negociação status='aceita' com
+      // o cliente) vs fora, últimos p_dias (default 90), + período anterior
+      // (tendência) + top 10 postos externos recorrentes (CTA "Negociar com
+      // este posto" em /negociacoes). Ver src/app/(dashboard)/negociacoes/
+      // _components/AderenciaRede.tsx.
+      aderencia_rede_negociada: {
+        Args: { p_empresa_cliente_id: string; p_dias?: number };
+        Returns: {
+          litros_dentro: number;
+          litros_fora: number;
+          valor_dentro: number;
+          valor_fora: number;
+          percentual_dentro: number;
+          percentual_dentro_periodo_anterior: number;
+          top_postos_externos: Json;
         }[];
       };
       // Fase Fretes — rede de parceiros.

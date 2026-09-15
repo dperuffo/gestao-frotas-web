@@ -7,7 +7,15 @@ import { PRODUTOS_POSTO } from "@/lib/constants";
 // Fase 27.50 — cria a rodada 1 de uma negociação. O mesmo formulário serve
 // pro cliente (informa o CNPJ do posto-alvo) e pro posto (informa o CNPJ do
 // cliente-alvo, caso ele prefira criar pela tela em vez de usar a API).
-export function FormularioNovaNegociacao({ empresaAtualId, souPosto }: { empresaAtualId: string; souPosto: boolean }) {
+export function FormularioNovaNegociacao({
+  empresaAtualId,
+  souPosto,
+  cnpjInicial,
+}: {
+  empresaAtualId: string;
+  souPosto: boolean;
+  cnpjInicial?: string;
+}) {
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
@@ -34,6 +42,7 @@ export function FormularioNovaNegociacao({ empresaAtualId, souPosto }: { empresa
           type="text"
           name={souPosto ? "cliente_cnpj" : "posto_cnpj"}
           required
+          defaultValue={cnpjInicial ?? ""}
           className="input"
           placeholder="00.000.000/0000-00"
         />
