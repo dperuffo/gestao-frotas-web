@@ -90,6 +90,7 @@ import { contarAjustesAbastecimentosPendentesAcao } from "./abastecimentos/actio
 import { contarAcoesSugeridasPendentesAcao } from "./acoes-sugeridas/actions";
 import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
 import { contarCadastrosPendentesAcao } from "./cadastros-pendentes/actions";
+import { contarAbastecimentosSemMotoristaAcao } from "./abastecimentos-sem-motorista/actions";
 import { contarMultasPendentesAcao } from "./multas/actions";
 import { contarDuplicidadesPlacaGrupoAcao } from "./duplicidade-placas-grupo/actions";
 import { contarDivergenciasPrecoPostoAcao, contarDivergenciasPrecoClienteAcao } from "./conferencia-precos/actions";
@@ -214,6 +215,12 @@ const menuRoteirizacaoAbastecimento: ItemMenuLateral[] = [
   { href: "/rotograma", label: "Rotograma", icon: Shield }, // PWA: Icons.shield_outlined
   { href: "/planos-viagem", label: "Planos de Viagem", icon: Luggage }, // PWA: Icons.card_travel
   { href: "/abastecimentos", label: "Abastecimentos", icon: Fuel }, // PWA: Icons.local_gas_station
+  // Fase Fila-Motorista-Abastecimento-Externo (16/09/2026, pedido do Daniel:
+  // nome+CPF do motorista é obrigatório em todo abastecimento) — fila de
+  // revisão só do que veio sem motorista pelos dois canais de integração
+  // externos (Hub de cartão de combustível / ERP de posto), que a FNI aceita
+  // mesmo incompleto em vez de rejeitar a transação do integrador.
+  { href: "/abastecimentos-sem-motorista", label: "Abastecimentos Sem Motorista", icon: ClipboardCheck },
   // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
   // soluções de automação/meios de pagamento integrados via API (Hub de
   // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
@@ -687,6 +694,7 @@ export default async function DashboardLayout({
     documentosPendentes,
     acoesSugeridasPendentes,
     cadastrosPendentes,
+    abastecimentosSemMotorista,
     multasPendentes,
     duplicidadesPlacaGrupo,
     divergenciasPrecoPosto,
@@ -737,6 +745,14 @@ export default async function DashboardLayout({
       // o resto do cadastro (mesma blindagem "falha vira 0" das demais).
       contarCadastrosPendentesAcao().catch((e) => {
         void logger.error("dashboard/layout", "Falha ao contar cadastros pendentes (ignorado)", e);
+        return 0;
+      }),
+      // Fase Fila-Motorista-Abastecimento-Externo (16/09/2026) — bolinha de
+      // abastecimentos aceitos via integração externa (Hub de cartão de
+      // combustível / ERP de posto) ainda sem motorista, mesma blindagem
+      // "falha vira 0" das demais contagens.
+      contarAbastecimentosSemMotoristaAcao().catch((e) => {
+        void logger.error("dashboard/layout", "Falha ao contar abastecimentos sem motorista (ignorado)", e);
         return 0;
       }),
       // Fase Onda-2 (benchmark TicketLog, item #4) — bolinha de multas
@@ -913,6 +929,7 @@ export default async function DashboardLayout({
   const badgesMenu: Record<string, number> = {
     "/clientes": acessosClientesNaoVistos,
     "/cadastros-pendentes": cadastrosPendentes,
+    "/abastecimentos-sem-motorista": abastecimentosSemMotorista,
     "/duplicidade-placas-grupo": duplicidadesPlacaGrupo,
     "/negociacoes": negociacoesPendentes,
     "/abastecimentos": ajustesAbastecimentosPendentes,

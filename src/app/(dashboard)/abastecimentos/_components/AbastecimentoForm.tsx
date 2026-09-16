@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import { criarAbastecimento, atualizarAbastecimento } from "../actions";
 import { PRODUTOS_POSTO } from "@/lib/constants";
+import { normalizarCPF } from "@/lib/utils";
 import type { Database } from "@/types/database.types";
 
 type Abastecimento = Database["public"]["Tables"]["profrotas_abastecimentos"]["Row"];
@@ -33,6 +34,22 @@ export function AbastecimentoForm({
     e.preventDefault();
     setErro(undefined);
     const formData = new FormData(e.currentTarget);
+
+    // Nome completo + CPF do motorista são obrigatórios em todo
+    // abastecimento (regra confirmada pelo dono do produto) — validação
+    // client-side espelha a validação server-side em criarAbastecimento
+    // (actions.ts), que é a que realmente protege contra bypass.
+    const motoristaNome = String(formData.get("motorista_nome") ?? "").trim();
+    const motoristaCpf = String(formData.get("motorista_cpf") ?? "").trim();
+    if (!motoristaNome || !motoristaCpf) {
+      setErro("Nome e CPF do motorista são obrigatórios.");
+      return;
+    }
+    if (!normalizarCPF(motoristaCpf)) {
+      setErro("CPF do motorista inválido. Informe os 11 dígitos.");
+      return;
+    }
+
     startTransition(async () => {
       const resultado = abastecimento
         ? await atualizarAbastecimento(abastecimento.id, undefined, formData)
@@ -67,12 +84,18 @@ export function AbastecimentoForm({
           <Campo label="Placa do veículo">
             <input name="veiculo_placa" defaultValue={abastecimento?.veiculo_placa ?? ""} className="input" />
           </Campo>
-          <Campo label="Motorista">
-            <input name="motorista_nome" defaultValue={abastecimento?.motorista_nome ?? ""} className="input" />
+          <Campo label="Motorista" required>
+            <input
+              name="motorista_nome"
+              required
+              defaultValue={abastecimento?.motorista_nome ?? ""}
+              className="input"
+            />
           </Campo>
-          <Campo label="CPF do motorista">
+          <Campo label="CPF do motorista" required>
             <input
               name="motorista_cpf"
+              required
               inputMode="numeric"
               maxLength={14}
               placeholder="000.000.000-00"

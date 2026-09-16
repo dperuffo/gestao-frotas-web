@@ -18,9 +18,10 @@ export default function ImportarAbastecimentosPage() {
       <div className="mb-6 card p-4 text-sm text-slate-600 dark:text-slate-300">
         <p className="font-medium text-slate-700 dark:text-slate-300">Colunas do arquivo:</p>
         <p className="mt-1">
-          <code>cnpj_cliente</code> (CNPJ do cliente já cadastrado) é obrigatória. Todas as
-          demais (<code>data_abastecimento</code> — formato AAAA-MM-DD HH:MM,{" "}
-          <code>veiculo_placa</code>, <code>motorista_nome</code>, <code>hodometro</code>,{" "}
+          <code>cnpj_cliente</code> (CNPJ do cliente já cadastrado), <code>motorista_nome</code>{" "}
+          (nome completo) e <code>motorista_cpf</code> (11 dígitos, com ou sem pontuação) são
+          obrigatórias em toda linha. Todas as demais (<code>data_abastecimento</code> — formato
+          AAAA-MM-DD HH:MM, <code>veiculo_placa</code>, <code>hodometro</code>,{" "}
           <code>produto</code>, <code>litros</code>, <code>preco_litro</code>,{" "}
           <code>valor_total</code>, <code>posto_nome</code>, <code>posto_municipio</code> e{" "}
           <code>posto_uf</code>) são opcionais.

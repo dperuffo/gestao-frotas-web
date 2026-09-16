@@ -61,6 +61,16 @@ export async function criarAbastecimento(
     return { erro: "Cliente é obrigatório." };
   }
 
+  // Fase CPF-obrigatorio-fonte (28/08/2026) — nome completo + CPF do
+  // motorista são obrigatórios em todo abastecimento (regra confirmada pelo
+  // dono do produto). Num canal totalmente sob controle da plataforma como
+  // este (lançamento manual via tela), a submissão é bloqueada se faltar
+  // essa informação — nunca confiar só na validação client-side do
+  // formulário (AbastecimentoForm.tsx).
+  if (!payload.motorista_nome || !payload.motorista_cpf) {
+    return { erro: "Nome e CPF do motorista são obrigatórios." };
+  }
+
   const { data: empresa, error: empresaError } = await supabase
     .from("empresas")
     .select("cnpj, nome")

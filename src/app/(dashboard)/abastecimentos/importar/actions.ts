@@ -18,7 +18,15 @@ export type ResultadoImportacao =
   | { erro: string }
   | { total: number; sucesso: number; erros: number; linhas: LinhaResultado[] };
 
-const COLUNAS_OBRIGATORIAS = ["cnpj_cliente"];
+// Fase CPF-obrigatorio-fonte (28/08/2026) — nome completo + CPF do
+// motorista são obrigatórios em todo abastecimento (regra confirmada pelo
+// dono do produto). A importação por planilha é um canal totalmente sob
+// controle da plataforma, então essas colunas entram na lista de
+// obrigatórias junto com cnpj_cliente (bloqueia o arquivo inteiro se a
+// coluna nem existir) — e cada LINHA também é validada individualmente
+// mais abaixo (célula vazia numa linha específica só rejeita aquela
+// linha, mesmo padrão já usado para cnpj_cliente por linha).
+const COLUNAS_OBRIGATORIAS = ["cnpj_cliente", "motorista_nome", "motorista_cpf"];
 
 function numeroOuNull(valor: string) {
   const texto = valor.trim();
@@ -104,6 +112,16 @@ export async function importarAbastecimentos(
       const empresa = empresaPorCnpj.get(cnpjNormalizado);
       if (!empresa) throw new Error(`Nenhum cliente cadastrado com o CNPJ ${cnpjBruto}.`);
 
+      // Fase CPF-obrigatorio-fonte (28/08/2026) — nome completo + CPF do
+      // motorista são obrigatórios em todo abastecimento. Validação por
+      // LINHA: uma célula vazia ou um CPF em formato inválido rejeita só
+      // esta linha (cai no catch abaixo e vira um erro reportado com o
+      // número da linha), sem invalidar o resto da planilha.
+      const nomeMotoristaLinha = pegar(colunas, "motorista_nome");
+      if (!nomeMotoristaLinha) throw new Error("Informe o nome completo do motorista (coluna motorista_nome).");
+      const cpfMotoristaLinha = normalizarCPF(pegar(colunas, "motorista_cpf"));
+      if (!cpfMotoristaLinha) throw new Error("Informe um CPF válido do motorista (coluna motorista_cpf).");
+
       const { data: seq, error: seqError } = await supabase.rpc("nextval_identificador_manual");
       if (seqError || seq == null) throw new Error("Não foi possível gerar o identificador do lançamento.");
       const identificador = seq as number;
@@ -127,8 +145,8 @@ export async function importarAbastecimentos(
         item_tipo: 1,
         data_abastecimento: dataOuNull(pegar(colunas, "data_abastecimento")),
         veiculo_placa: placa || null,
-        motorista_nome: pegar(colunas, "motorista_nome") || null,
-        motorista_cpf: normalizarCPF(pegar(colunas, "motorista_cpf")),
+        motorista_nome: nomeMotoristaLinha,
+        motorista_cpf: cpfMotoristaLinha,
         hodometro: numeroOuNull(pegar(colunas, "hodometro")),
         item_nome: pegar(colunas, "produto") || null,
         item_quantidade: numeroOuNull(pegar(colunas, "litros")),
@@ -146,12 +164,11 @@ export async function importarAbastecimentos(
       // — agora a planilha tem coluna motorista_cpf; quando vier, usa o
       // caminho com dedupe por CPF (mais preciso); sem CPF, cai no match
       // por nome (mesmo caminho da sincronização PróFrotas).
-      const nomeMotorista = pegar(colunas, "motorista_nome");
-      const cpfMotorista = normalizarCPF(pegar(colunas, "motorista_cpf"));
       if (placa) await garantirVeiculoCadastrado(supabase, empresa.cnpj, placa);
-      if (nomeMotorista) {
-        await garantirMotoristaCadastrado(supabase, empresa.id, { nomeCompleto: nomeMotorista, cpf: cpfMotorista });
-      }
+      await garantirMotoristaCadastrado(supabase, empresa.id, {
+        nomeCompleto: nomeMotoristaLinha,
+        cpf: cpfMotoristaLinha,
+      });
 
       resultado.push({
         linha: numeroLinha,
