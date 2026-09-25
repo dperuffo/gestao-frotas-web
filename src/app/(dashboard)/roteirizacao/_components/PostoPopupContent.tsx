@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { buscarDetalhePostoParaMapaAcao, type DetalhePostoMapa } from "../actions";
-import { formatCNPJ } from "@/lib/utils";
+import { formatCNPJ, formatarDataBr } from "@/lib/utils";
 
 const FONTE_LABEL: Record<string, string> = {
+  meios_pagamento: "meios de pagamento",
+  meus_precos: "Meus Preços",
   gf: "próprio",
   anp_municipio: "ANP município",
   anp_estado: "ANP estado",
@@ -12,6 +14,8 @@ const FONTE_LABEL: Record<string, string> = {
 };
 
 const FONTE_COR: Record<string, string> = {
+  meios_pagamento: "text-status-ativo",
+  meus_precos: "text-status-ativo",
   gf: "text-status-ativo",
   anp_municipio: "text-slate-400",
   anp_estado: "text-slate-400",
@@ -85,17 +89,19 @@ export function PostoPopupContent({ cnpj, lat, lon }: { cnpj: string; lat: numbe
           // com o nome real do produto (não o nome da categoria ANP, que
           // agrupa as duas variações só pra fins de referência).
           detalhe.precos.map((p) => (
-            <div
-              key={`${p.categoria}__${p.combustivelGf ?? ""}`}
-              className="flex items-baseline justify-between gap-2 text-xs"
-            >
-              <span className="truncate text-slate-600 dark:text-slate-300" title={p.combustivelGf ?? p.categoria}>{p.combustivelGf ?? p.categoria}</span>
-              <span className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-                <span className="font-medium text-slate-900 dark:text-slate-100">R$ {p.preco.toFixed(3)}</span>
-                <span className={`text-[10px] ${FONTE_COR[p.fonte] ?? "text-slate-400"}`}>
-                  {FONTE_LABEL[p.fonte] ?? p.fonte}
-                </span>
-              </span>
+            <div key={`${p.categoria}__${p.combustivelGf ?? ""}`} className="text-xs">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="truncate text-slate-600 dark:text-slate-300" title={p.combustivelGf ?? p.categoria}>{p.combustivelGf ?? p.categoria}</span>
+                <span className="shrink-0 whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">R$ {p.preco.toFixed(3)}</span>
+              </div>
+              {/* Data de referência do preço (fase pedido-Daniel 25/09/2026):
+                  dataRef já existia em PrecoResolvido pra toda fonte (própria
+                  ou ANP), só faltava mostrar — em linha separada pra não
+                  estourar a largura fixa de 220px do card. */}
+              <div className="flex items-baseline justify-end gap-1 text-[10px]">
+                <span className={FONTE_COR[p.fonte] ?? "text-slate-400"}>{FONTE_LABEL[p.fonte] ?? p.fonte}</span>
+                <span className="text-slate-400">· atualizado em {formatarDataBr(p.dataRef)}</span>
+              </div>
             </div>
           ))
         )}
