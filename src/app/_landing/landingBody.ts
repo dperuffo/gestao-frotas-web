@@ -217,6 +217,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     <div class="actions">
       <a href="/cadastro" class="btn-p" data-i18n="hero_btn_p">Teste grátis por 14 dias →</a>
       <a href="#func" class="btn-s" data-i18n="hero_btn_s">Ver funcionalidades</a>
+      <a href="/demo?tour=1" class="btn-s">▶ Explorar demo interativa</a>
     </div>
     <div class="stats">
       <div><div class="sn">2.9<span>k+</span></div><div class="sl" data-i18n="stat1_l">Postos monitorados</div></div>
@@ -673,6 +674,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
   </div>
 </div>
 <div id="demo-cap2" style="text-align:center;color:#a0aec0;font-size:14px;margin-top:20px;padding:0 20px;line-height:1.7"><strong style="color:#fff">Dashboard Analitico</strong> — Visao consolidada de abastecimentos reais, cobertura por UF e comparativo ANP em tempo real.</div>
+<div style="text-align:center;margin-top:28px"><a href="/demo?tour=1" class="btn-p">Abrir a demo interativa completa →</a><div style="color:#a9b4c0;font-size:13px;margin-top:10px">Navegue pela plataforma com dados fictícios, simule a economia da sua frota e gere um resumo para a diretoria.</div></div>
 </div>
 </section>
 <style>

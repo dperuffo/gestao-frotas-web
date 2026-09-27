@@ -110,6 +110,10 @@ const nextConfig = {
       },
     ],
   },
+  // Demo interativa (public/demo.html) acessível pelo endereço curto /demo.
+  async rewrites() {
+    return [{ source: "/demo", destination: "/demo.html" }];
+  },
   async headers() {
     return [
       {

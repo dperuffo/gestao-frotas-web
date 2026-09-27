@@ -76,6 +76,11 @@ export async function updateSession(request: NextRequest) {
     // (item de alta prioridade do benchmark TicketLog), dados agregados e
     // anônimos, sem necessidade de login.
     "/indice-precos",
+    // Demo interativa com dados fictícios (public/demo.html), usada pelo
+    // time comercial na prospecção e linkada na landing. /demo é reescrita
+    // para /demo.html em next.config.mjs.
+    "/demo",
+    "/demo.html",
   ]);
   const isRotaPublica =
     path.startsWith("/login") ||
