@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Fuel, X } from "lucide-react";
 import { useBadgesMenu } from "./ProvedorBadgesMenu";
 import { novosAbastecimentosAcao, type NovoAbastecimento } from "./novosAbastecimentosActions";
@@ -10,8 +11,11 @@ import { novosAbastecimentosAcao, type NovoAbastecimento } from "./novosAbasteci
 // do sistema) quando entra um abastecimento novo da frota, no mesmo estilo
 // do demo interativo da landing. Não tem ciclo próprio de consulta: pega
 // carona no <ProvedorBadgesMenu>, que já consulta o servidor ao trocar de
-// tela, ao voltar para a aba e a cada 60s. Ver novosAbastecimentosActions.ts
-// para o critério de "novo" e o escopo por perfil.
+// tela, ao voltar para a aba, a cada 60s e na hora via Supabase Realtime.
+// Ver novosAbastecimentosActions.ts para o critério de "novo" (janela de
+// 15 min) e o escopo por perfil. Aqui guardamos as chaves já vistas: na
+// primeira consulta (ou ao trocar de cliente) tudo que está na janela é
+// marcado como visto sem aviso, pra não disparar uma rajada ao abrir.
 
 const DURACAO_MS = 8000;
 const MAX_VISIVEIS = 3;
@@ -28,7 +32,7 @@ function montarAviso(a: NovoAbastecimento): Aviso {
   const local = [a.postoNome, a.municipio && a.uf ? `${a.municipio}/${a.uf}` : a.municipio].filter(Boolean).join(" · ");
   const partes = [litros && a.produto ? `${litros} de ${a.produto.toLowerCase()}` : litros ?? a.produto, formatarReais(a.valorTotal)].filter(Boolean);
   return {
-    chave: `${a.id}-${a.data}`,
+    chave: a.chave,
     titulo: a.placa ? `Novo abastecimento · ${a.placa}` : "Novo abastecimento",
     texto: [partes.join(" · "), local, a.motoristaNome ? `Motorista: ${a.motoristaNome}` : null].filter(Boolean).join("\n"),
   };
@@ -46,8 +50,11 @@ export function AvisoNovoAbastecimento() {
   const ctx = useBadgesMenu();
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [silenciado, setSilenciado] = useState(false);
-  const marcador = useRef<string | null>(null);
+  const empresaAtual = useSearchParams().get("empresa");
+  const vistos = useRef<Set<string> | null>(null); // null = ainda sem linha de base
   const buscando = useRef(false);
+  const empresaRef = useRef(empresaAtual);
+  empresaRef.current = empresaAtual;
 
   useEffect(() => setSilenciado(lerSilencio()), []);
 
@@ -57,10 +64,17 @@ export function AvisoNovoAbastecimento() {
     if (buscando.current) return;
     buscando.current = true;
     try {
-      const r = await novosAbastecimentosAcao(marcador.current);
-      marcador.current = r.marcador;
-      if (!r.itens.length || lerSilencio()) return;
-      const novos = r.itens.map(montarAviso);
+      const empresa = empresaRef.current;
+      const r = await novosAbastecimentosAcao(empresa);
+      if (empresa !== empresaRef.current) return; // trocou de cliente no meio
+      if (!vistos.current) {
+        vistos.current = new Set(r.itens.map((i) => i.chave));
+        return;
+      }
+      const ineditos = r.itens.filter((i) => !vistos.current!.has(i.chave));
+      ineditos.forEach((i) => vistos.current!.add(i.chave));
+      if (!ineditos.length || lerSilencio()) return;
+      const novos = ineditos.map(montarAviso);
       if (novos.length > MAX_VISIVEIS) {
         const extras = novos.length - (MAX_VISIVEIS - 1);
         novos.splice(MAX_VISIVEIS - 1, novos.length, {
@@ -78,13 +92,20 @@ export function AvisoNovoAbastecimento() {
     }
   }, [fechar]);
 
-  // Linha de base ao abrir o sistema + nova verificação a cada atualização
-  // das bolinhas.
+  // Linha de base ao abrir o sistema (e a cada troca de cliente atual).
   useEffect(() => {
+    vistos.current = null;
+    setAvisos([]);
     void verificar();
-    if (!ctx) return;
-    return ctx.assinar(() => void verificar());
-  }, [ctx, verificar]);
+  }, [empresaAtual, verificar]);
+
+  // Nova verificação a cada atualização das bolinhas (navegação, foco,
+  // intervalo ou evento em tempo real). `assinar` é estável (useCallback).
+  const assinar = ctx?.assinar;
+  useEffect(() => {
+    if (!assinar) return;
+    return assinar(() => void verificar());
+  }, [assinar, verificar]);
 
   const silenciar = () => {
     try {

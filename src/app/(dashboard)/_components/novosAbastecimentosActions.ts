@@ -8,24 +8,27 @@ import { logger } from "@/lib/logger";
 // legal a notificação de novo abastecimento que aparece como um push no demo
 // interativo. Podemos implementar na solução").
 //
-// O navegador guarda um "marcador" (data do abastecimento mais recente que
-// já conhece) e pergunta periodicamente se chegou algo mais novo. Na
-// primeira chamada (marcador nulo) só devolve o marcador atual, sem avisos:
-// quem acabou de abrir o sistema não recebe uma rajada do histórico.
+// Critério de "novo" (v2, mesmo dia): devolve os abastecimentos com data
+// dentro de uma JANELA recente (últimos 15 min até agora + 5 min de
+// tolerância de relógio) e o navegador mostra só os que ainda não viu.
 //
-// Por que a data do abastecimento e não uma data de inserção: a view
-// abastecimentos_unificado (ProFrotas + externos + internos) não expõe
-// quando o registro entrou no banco. Usar a data do abastecimento tem um
-// efeito colateral desejável — importação em lote de registros antigos não
-// dispara avisos, só o que acontece "agora" na operação.
+// Por que janela e não "maior data já vista" (v1): achado real no teste do
+// Daniel — a Frotas & Frotas tinha um abastecimento ProFrotas datado ~2h no
+// futuro, o que empurrava o marcador pra frente e escondia todo abastecimento
+// real feito antes daquele horário. A janela:
+//   - ignora datas no futuro (limite superior = agora + 5 min);
+//   - aceita integrações que chegam alguns minutos atrasadas (15 min);
+//   - não dispara avisos em importação em lote de registros antigos.
+// A view abastecimentos_unificado não expõe data de inserção, por isso a
+// data do próprio abastecimento.
 //
-// Escopo: empresas do usuário (mesma regra de resolverEmpresaAtual). Admin/
-// analista enxergam todos os clientes e ficariam soterrados de avisos, então
-// ficam de fora nesta primeira versão; perfil posto também (os
-// abastecimentos são vinculados à empresa cliente, não ao posto).
+// Escopo: empresas do usuário (resolverEmpresaAtual). Admin/analista
+// enxergam todos os clientes: só recebem avisos do CLIENTE ATUAL selecionado
+// (?empresa= na URL, o mesmo do indicador fixo do menu). Perfil posto fica
+// de fora (os abastecimentos são vinculados à empresa cliente).
 
 export type NovoAbastecimento = {
-  id: string;
+  chave: string;
   placa: string | null;
   motoristaNome: string | null;
   postoNome: string | null;
@@ -37,36 +40,29 @@ export type NovoAbastecimento = {
   data: string;
 };
 
-const LIMITE = 6;
+const JANELA_PASSADO_MS = 15 * 60_000;
+const TOLERANCIA_FUTURO_MS = 5 * 60_000;
+const LIMITE = 20;
 
 export async function novosAbastecimentosAcao(
-  marcador: string | null
-): Promise<{ marcador: string | null; itens: NovoAbastecimento[] }> {
+  empresaParam: string | null
+): Promise<{ ativo: boolean; itens: NovoAbastecimento[] }> {
   try {
     const supabase = await createClient();
-    const { perfil, empresas } = await resolverEmpresaAtual(supabase);
-    if (!perfil || perfil === "admin" || perfil === "analista" || perfil === "posto") {
-      return { marcador: null, itens: [] };
-    }
-    const ids = empresas.map((e) => e.id);
-    if (ids.length === 0) return { marcador: null, itens: [] };
+    const { perfil, empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam ?? undefined);
+    if (!perfil || perfil === "posto") return { ativo: false, itens: [] };
 
-    if (!marcador) {
-      const { data } = await supabase
-        .from("abastecimentos_unificado")
-        .select("data_abastecimento")
-        .in("empresa_id", ids)
-        .not("data_abastecimento", "is", null)
-        .order("data_abastecimento", { ascending: false })
-        .limit(1);
-      return { marcador: data?.[0]?.data_abastecimento ?? new Date(0).toISOString(), itens: [] };
-    }
+    const visaoGlobal = perfil === "admin" || perfil === "analista";
+    const ids = empresaSelecionada ? [empresaSelecionada] : visaoGlobal ? [] : empresas.map((e) => e.id);
+    if (ids.length === 0) return { ativo: false, itens: [] };
 
+    const agora = Date.now();
     const { data, error } = await supabase
       .from("abastecimentos_unificado")
-      .select("id, placa, motorista_nome, posto_nome, municipio, uf, produto, litros, valor_total, data_abastecimento")
+      .select("id, provedor, placa, motorista_nome, posto_nome, municipio, uf, produto, litros, valor_total, data_abastecimento")
       .in("empresa_id", ids)
-      .gt("data_abastecimento", marcador)
+      .gte("data_abastecimento", new Date(agora - JANELA_PASSADO_MS).toISOString())
+      .lte("data_abastecimento", new Date(agora + TOLERANCIA_FUTURO_MS).toISOString())
       .order("data_abastecimento", { ascending: true })
       .limit(LIMITE);
     if (error) throw error;
@@ -74,7 +70,9 @@ export async function novosAbastecimentosAcao(
     const itens: NovoAbastecimento[] = (data ?? [])
       .filter((r) => r.data_abastecimento)
       .map((r) => ({
-        id: r.id ?? `${r.placa}-${r.data_abastecimento}`,
+        // id é único só dentro de cada fonte (ProFrotas/externo/interno):
+        // a chave junta provedor + id.
+        chave: `${r.provedor ?? "?"}:${r.id ?? `${r.placa}-${r.data_abastecimento}`}`,
         placa: r.placa,
         motoristaNome: r.motorista_nome,
         postoNome: r.posto_nome,
@@ -86,9 +84,9 @@ export async function novosAbastecimentosAcao(
         data: r.data_abastecimento as string,
       }));
 
-    return { marcador: itens.length ? itens[itens.length - 1].data : marcador, itens };
+    return { ativo: true, itens };
   } catch (e) {
     void logger.error("dashboard/novos-abastecimentos", "Falha ao buscar novos abastecimentos (ignorado)", e);
-    return { marcador, itens: [] };
+    return { ativo: true, itens: [] };
   }
 }

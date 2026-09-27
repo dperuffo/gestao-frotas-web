@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
-import { marcarAvisoLidoAcao, type AvisoParaUsuario } from "../administracao/central-avisos/actions";
+import { listarAvisosAcao, marcarAvisoLidoAcao, type AvisoParaUsuario } from "../administracao/central-avisos/actions";
+import { useBadgesMenu } from "./ProvedorBadgesMenu";
 import { AvisosDrawer } from "./AvisosDrawer";
 
 // Fase Central-Avisos (28/07/2026) — sino no rodapé do menu lateral, ao lado
@@ -14,6 +15,21 @@ import { AvisosDrawer } from "./AvisosDrawer";
 export function AvisosSino({ avisosIniciais }: { avisosIniciais: AvisoParaUsuario[] }) {
   const [avisos, setAvisos] = useState(avisosIniciais);
   const [aberto, setAberto] = useState(false);
+
+  // Fase Bolinhas-Automáticas (27/09/2026) — antes o sino só mudava com F5
+  // (a lista vinha do layout, que não re-renderiza em navegação). Agora
+  // relista a cada atualização das bolinhas do menu (troca de tela, volta à
+  // aba, a cada 60s). Avisos publicados pelo admin na Central aparecem sem
+  // recarregar a página.
+  const assinar = useBadgesMenu()?.assinar;
+  useEffect(() => {
+    if (!assinar) return;
+    return assinar(() => {
+      listarAvisosAcao()
+        .then((lista) => setAvisos(lista))
+        .catch(() => {});
+    });
+  }, [assinar]);
   const naoLidos = avisos.filter((a) => !a.lido).length;
 
   function marcarLido(id: string) {

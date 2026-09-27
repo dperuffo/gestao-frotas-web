@@ -1017,7 +1017,7 @@ export default async function DashboardLayout({
         <div className="menu-busca px-3 pt-3">
           <BuscaGlobal itens={itensBuscaGlobal} ehPosto={ehPosto} />
         </div>
-        <ProvedorBadgesMenu inicial={badgesContagem}>
+        <ProvedorBadgesMenu inicial={badgesContagem} visaoGlobal={ehAdmin || perfilUsuario?.perfil === "analista"}>
         {/* Fase Aviso-Novo-Abastecimento — aviso flutuante de abastecimento
             novo, só pra quem pode ver a tela de abastecimentos. */}
         {podeAcessarItem({ href: "/abastecimentos" }) && <AvisoNovoAbastecimento />}
@@ -1089,7 +1089,6 @@ export default async function DashboardLayout({
           </>
           )}
         </nav>
-        </ProvedorBadgesMenu>
         <div className="border-t border-slate-200 px-3 py-3 space-y-1 dark:border-slate-700">
           <AvisosSino avisosIniciais={avisos} />
           <CentralAjuda />
@@ -1099,6 +1098,7 @@ export default async function DashboardLayout({
           <ThemeToggle />
           <BotaoSair />
         </div>
+        </ProvedorBadgesMenu>
           </>
         }
       >
