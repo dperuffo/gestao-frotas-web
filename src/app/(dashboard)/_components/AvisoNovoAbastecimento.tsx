@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Fuel, X } from "lucide-react";
 import { useBadgesMenu } from "./ProvedorBadgesMenu";
 import { novosAbastecimentosAcao, type NovoAbastecimento } from "./novosAbastecimentosActions";
@@ -51,6 +52,18 @@ export function AvisoNovoAbastecimento() {
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [silenciado, setSilenciado] = useState(false);
   const empresaAtual = useSearchParams().get("empresa");
+  const pathname = usePathname();
+  const router = useRouter();
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
+  // Portal: o componente mora dentro do <aside> do menu, que tem transform
+  // (deslize no mobile) + overflow-y-auto. Pela regra de CSS, isso vira o
+  // "containing block" de qualquer position:fixed filho: o cartão era
+  // desenhado dentro da faixa do menu e cortado pela rolagem (achado no
+  // teste real do Daniel, 27/09 — a consulta rodava, o aviso existia, mas
+  // não aparecia). Renderizando no <body>, o fixed volta a ser da tela.
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
   const vistos = useRef<Set<string> | null>(null); // null = ainda sem linha de base
   const buscando = useRef(false);
   const empresaRef = useRef(empresaAtual);
@@ -73,7 +86,11 @@ export function AvisoNovoAbastecimento() {
       }
       const ineditos = r.itens.filter((i) => !vistos.current!.has(i.chave));
       ineditos.forEach((i) => vistos.current!.add(i.chave));
-      if (!ineditos.length || lerSilencio()) return;
+      if (!ineditos.length) return;
+      // Tela de abastecimentos aberta: recarrega a lista (server component)
+      // pra o registro novo aparecer sem F5 — mesmo com avisos silenciados.
+      if (pathnameRef.current.startsWith("/abastecimentos")) router.refresh();
+      if (lerSilencio()) return;
       const novos = ineditos.map(montarAviso);
       if (novos.length > MAX_VISIVEIS) {
         const extras = novos.length - (MAX_VISIVEIS - 1);
@@ -90,7 +107,7 @@ export function AvisoNovoAbastecimento() {
     } finally {
       buscando.current = false;
     }
-  }, [fechar]);
+  }, [fechar, router]);
 
   // Linha de base ao abrir o sistema (e a cada troca de cliente atual).
   useEffect(() => {
@@ -117,9 +134,9 @@ export function AvisoNovoAbastecimento() {
     setAvisos([]);
   };
 
-  if (silenciado || avisos.length === 0) return null;
+  if (!montado || silenciado || avisos.length === 0) return null;
 
-  return (
+  return createPortal(
     <>
     <style>{`@keyframes fni-aviso-entrada{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}@media (prefers-reduced-motion: reduce){[role=status]{animation:none!important}}`}</style>
     <div
@@ -161,6 +178,7 @@ export function AvisoNovoAbastecimento() {
         </div>
       ))}
     </div>
-    </>
+    </>,
+    document.body
   );
 }
