@@ -113,6 +113,17 @@ h1{font-family:'Inter',sans-serif;font-size:clamp(2.4rem,4.5vw,3.6rem);font-weig
 h1 em{font-style:normal;background:linear-gradient(135deg,var(--cyan),#a8def0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .sub{font-size:1.08rem;color:var(--gray);line-height:1.75;margin-bottom:44px;font-weight:300;animation:fadeUp 0.7s 0.2s ease both;}
 .actions{display:flex;gap:14px;flex-wrap:wrap;animation:fadeUp 0.7s 0.3s ease both;}
+.btn-demo{display:inline-flex;align-items:center;gap:14px;padding:10px 26px 10px 12px;border-radius:10px;text-decoration:none;color:var(--white);background:linear-gradient(135deg,rgba(144,238,144,0.16),rgba(135,206,235,0.10));border:1.5px solid rgba(144,238,144,0.75);box-shadow:0 0 0 0 rgba(144,238,144,0.45),0 8px 28px rgba(144,238,144,0.14);animation:demoGlow 2.8s ease-in-out infinite;transition:transform 0.2s,background 0.2s;}
+.btn-demo:hover{transform:translateY(-2px);background:linear-gradient(135deg,rgba(144,238,144,0.26),rgba(135,206,235,0.14));}
+.btn-demo-play{width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--navy);display:grid;place-items:center;flex:none;}
+.btn-demo-play svg{width:14px;height:14px;margin-left:2px;fill:currentColor;}
+.btn-demo-txt{display:flex;flex-direction:column;line-height:1.2;text-align:left;}
+.btn-demo-txt b{font-size:0.95rem;font-weight:600;}
+.btn-demo-txt small{font-size:0.75rem;color:var(--gold);font-weight:500;margin-top:3px;}
+@keyframes demoGlow{0%,100%{box-shadow:0 0 0 0 rgba(144,238,144,0.40),0 8px 28px rgba(144,238,144,0.14);}50%{box-shadow:0 0 0 7px rgba(144,238,144,0),0 8px 28px rgba(144,238,144,0.22);}}
+@media (prefers-reduced-motion: reduce){.btn-demo{animation:none;}}
+.link-func{display:inline-block;margin-top:18px;color:var(--gray);font-size:0.9rem;text-decoration:none;border-bottom:1px solid rgba(169,180,192,0.35);animation:fadeUp 0.7s 0.35s ease both;}
+.link-func:hover{color:var(--white);border-color:var(--white);}
 .btn-p{display:inline-flex;align-items:center;gap:8px;background:var(--cyan);color:var(--navy);text-decoration:none;padding:15px 32px;border-radius:10px;font-size:0.95rem;font-weight:600;transition:all 0.2s;box-shadow:0 8px 32px rgba(135,206,235,0.3);}
 .btn-p:hover{background:var(--cyan2);transform:translateY(-2px);}
 .btn-s{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);color:var(--white);text-decoration:none;padding:15px 32px;border-radius:10px;font-size:0.95rem;font-weight:400;border:1px solid rgba(255,255,255,0.12);transition:all 0.2s;}
@@ -216,9 +227,9 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     <p class="sub" data-i18n="hero_sub">Compare preços ANP em tempo real, monitore o consumo da sua frota e identifique os melhores postos credenciados — tudo em uma plataforma integrada e segura.</p>
     <div class="actions">
       <a href="/cadastro" class="btn-p" data-i18n="hero_btn_p">Teste grátis por 14 dias →</a>
-      <a href="#func" class="btn-s" data-i18n="hero_btn_s">Ver funcionalidades</a>
-      <a href="/demo?tour=1" class="btn-s">▶ Explorar demo interativa</a>
+      <a href="/demo?tour=1" class="btn-demo"><span class="btn-demo-play"><svg viewBox="0 0 12 14" aria-hidden="true"><path d="M0 0l12 7-12 7z"/></svg></span><span class="btn-demo-txt"><b>Explorar demo interativa</b><small>2 min · sem cadastro</small></span></a>
     </div>
+    <a href="#func" class="link-func" data-i18n="hero_btn_s">Ver funcionalidades ↓</a>
     <div class="stats">
       <div><div class="sn">2.9<span>k+</span></div><div class="sl" data-i18n="stat1_l">Postos monitorados</div></div>
       <div><div class="sn">14<span>dias</span></div><div class="sl" data-i18n="stat2_l">Trial gratuito</div></div>
@@ -674,7 +685,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
   </div>
 </div>
 <div id="demo-cap2" style="text-align:center;color:#a0aec0;font-size:14px;margin-top:20px;padding:0 20px;line-height:1.7"><strong style="color:#fff">Dashboard Analitico</strong> — Visao consolidada de abastecimentos reais, cobertura por UF e comparativo ANP em tempo real.</div>
-<div style="text-align:center;margin-top:28px"><a href="/demo?tour=1" class="btn-p">Abrir a demo interativa completa →</a><div style="color:#a9b4c0;font-size:13px;margin-top:10px">Navegue pela plataforma com dados fictícios, simule a economia da sua frota e gere um resumo para a diretoria.</div></div>
+<div style="text-align:center;margin-top:28px"><a href="/demo?tour=1" class="btn-demo"><span class="btn-demo-play"><svg viewBox="0 0 12 14" aria-hidden="true"><path d="M0 0l12 7-12 7z"/></svg></span><span class="btn-demo-txt"><b>Abrir a demo interativa completa</b><small>Dados fictícios · 2 min · sem cadastro</small></span></a><div style="color:#a9b4c0;font-size:13px;margin-top:10px">Navegue pela plataforma com dados fictícios, simule a economia da sua frota e gere um resumo para a diretoria.</div></div>
 </div>
 </section>
 <style>
