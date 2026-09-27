@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -21,6 +21,16 @@ import { novosAbastecimentosAcao, type NovoAbastecimento } from "./novosAbasteci
 const DURACAO_MS = 8000;
 const MAX_VISIVEIS = 3;
 const CHAVE_SILENCIO = "fni-avisos-abastecimento-silenciados";
+const CONFERIR_LISTA_MS = 10_000;
+
+function versaoLista() {
+  return document.getElementById("abastecimentos-versao-lista")?.dataset.versao ?? null;
+}
+
+function usuarioDigitando() {
+  const el = document.activeElement;
+  return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || (el as HTMLElement).isContentEditable);
+}
 
 type Aviso = { chave: string; titulo: string; texto: string };
 
@@ -73,6 +83,27 @@ export function AvisoNovoAbastecimento() {
 
   const fechar = useCallback((chave: string) => setAvisos((l) => l.filter((a) => a.chave !== chave)), []);
 
+  // Tela de abastecimentos aberta: atualiza a lista (server component) pra o
+  // registro novo aparecer sem F5. Achado no teste real do Daniel (27/09):
+  // o router.refresh() chegou a remontar a página no servidor (com o
+  // registro novo), mas a lista na tela não foi trocada — ele concorre com
+  // as outras Server Actions do mesmo ciclo (bolinhas, sino). Por isso:
+  // 1) espera o ciclo assentar antes de pedir o refresh;
+  // 2) confere o marcador da lista depois de alguns segundos e, se nada
+  //    mudou, recarrega a página — só se o usuário não estiver digitando.
+  const atualizarLista = useCallback(() => {
+    const antes = versaoLista();
+    if (antes === null) return; // tela sem o marcador: não arrisca recarregar
+    window.setTimeout(() => {
+      startTransition(() => router.refresh());
+      window.setTimeout(() => {
+        if (pathnameRef.current !== "/abastecimentos" || document.visibilityState !== "visible") return;
+        if (versaoLista() !== antes || usuarioDigitando()) return;
+        window.location.reload();
+      }, CONFERIR_LISTA_MS);
+    }, 1_000);
+  }, [router]);
+
   const verificar = useCallback(async () => {
     if (buscando.current) return;
     buscando.current = true;
@@ -89,7 +120,10 @@ export function AvisoNovoAbastecimento() {
       if (!ineditos.length) return;
       // Tela de abastecimentos aberta: recarrega a lista (server component)
       // pra o registro novo aparecer sem F5 — mesmo com avisos silenciados.
-      if (pathnameRef.current.startsWith("/abastecimentos")) router.refresh();
+      // Só se algum dos novos pertence à empresa filtrada na tela (ou não há
+      // filtro): abastecimento de outra empresa do grupo não muda a lista.
+      const empresaTela = empresaRef.current;
+      if (pathnameRef.current === "/abastecimentos" && ineditos.some((i) => !empresaTela || i.empresaId === empresaTela)) atualizarLista();
       if (lerSilencio()) return;
       const novos = ineditos.map(montarAviso);
       if (novos.length > MAX_VISIVEIS) {
@@ -107,7 +141,7 @@ export function AvisoNovoAbastecimento() {
     } finally {
       buscando.current = false;
     }
-  }, [fechar, router]);
+  }, [fechar, atualizarLista]);
 
   // Linha de base ao abrir o sistema (e a cada troca de cliente atual).
   useEffect(() => {

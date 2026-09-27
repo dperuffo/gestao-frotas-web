@@ -348,6 +348,15 @@ export default async function AbastecimentosPage({
 
   return (
     <div>
+      {/* Fase Aviso-Novo-Abastecimento (27/09/2026) — "versão" da lista
+          lida pelo <AvisoNovoAbastecimento>: depois de pedir a atualização
+          automática, ele confere se este marcador mudou e, se não mudou,
+          recarrega a página (ver comentário lá). */}
+      <span
+        id="abastecimentos-versao-lista"
+        hidden
+        data-versao={`${totalRegistros}|${linhas[0] ? `${linhas[0].provedor}:${linhas[0].id}` : ""}`}
+      />
       <CabecalhoPagina
         titulo="Abastecimentos"
         descricao={

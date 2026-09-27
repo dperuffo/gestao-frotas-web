@@ -29,6 +29,7 @@ import { logger } from "@/lib/logger";
 
 export type NovoAbastecimento = {
   chave: string;
+  empresaId: string | null;
   placa: string | null;
   motoristaNome: string | null;
   postoNome: string | null;
@@ -59,7 +60,7 @@ export async function novosAbastecimentosAcao(
     const agora = Date.now();
     const { data, error } = await supabase
       .from("abastecimentos_unificado")
-      .select("id, provedor, placa, motorista_nome, posto_nome, municipio, uf, produto, litros, valor_total, data_abastecimento")
+      .select("id, provedor, empresa_id, placa, motorista_nome, posto_nome, municipio, uf, produto, litros, valor_total, data_abastecimento")
       .in("empresa_id", ids)
       .gte("data_abastecimento", new Date(agora - JANELA_PASSADO_MS).toISOString())
       .lte("data_abastecimento", new Date(agora + TOLERANCIA_FUTURO_MS).toISOString())
@@ -73,6 +74,7 @@ export async function novosAbastecimentosAcao(
         // id é único só dentro de cada fonte (ProFrotas/externo/interno):
         // a chave junta provedor + id.
         chave: `${r.provedor ?? "?"}:${r.id ?? `${r.placa}-${r.data_abastecimento}`}`,
+        empresaId: r.empresa_id,
         placa: r.placa,
         motoristaNome: r.motorista_nome,
         postoNome: r.posto_nome,
