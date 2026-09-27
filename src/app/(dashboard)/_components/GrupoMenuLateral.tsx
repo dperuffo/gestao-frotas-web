@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { BotaoFavoritoMenu } from "./BotaoFavoritoMenu";
 import { ItemMenuAtivo } from "./ItemMenuAtivo";
+import { BadgeMenu } from "./ProvedorBadgesMenu";
 
 // Fase reorganizacao-menu (04/08/2026, pedido do Daniel: "Fazer uma sugestao
 // de reorganizacao do menu" / "Organizacao de temas iguais" — a seção
@@ -77,7 +78,9 @@ export function GrupoMenuLateral({
       </p>
       <ul className="space-y-1">
         {itens.map((item) => {
-          const badge = badges?.[item.href] ?? 0;
+          // Só itens que o grupo recebeu no mapa de badges têm bolinha; o
+          // número em si é atualizado no navegador (<ProvedorBadgesMenu>).
+          const temBadge = !!badges && item.href in badges;
           return (
             <li key={item.href} className="group flex items-center gap-1">
               <ItemMenuAtivo
@@ -91,11 +94,7 @@ export function GrupoMenuLateral({
                   {item.icon && <item.icon className="glass-nav-icone h-4 w-4 shrink-0" />}
                   <span className="menu-item-label">{item.label}</span>
                 </span>
-                {badge > 0 && (
-                  <span className="menu-item-extra flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                    {badge}
-                  </span>
-                )}
+                {temBadge && <BadgeMenu href={item.href} inicial={badges![item.href] ?? 0} />}
               </ItemMenuAtivo>
               {favoritos && (
                 <span className="menu-item-extra">

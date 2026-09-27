@@ -72,6 +72,9 @@ import {
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
+import { contarBadgesMenuAcao } from "./_components/badgesMenuActions";
+import { ProvedorBadgesMenu } from "./_components/ProvedorBadgesMenu";
+import { AvisoNovoAbastecimento } from "./_components/AvisoNovoAbastecimento";
 import {
   HREF_FUNCIONALIDADE,
   carregarMapaPermissoes,
@@ -82,18 +85,6 @@ import {
 import { usuarioTemAcessoInsightsIA } from "@/lib/acessoInsightsIA";
 import { BotaoSair } from "./_components/BotaoSair";
 import { GrupoMenuLateral, type ItemMenuLateral } from "./_components/GrupoMenuLateral";
-import { contarChamadosNaoVistosAcao } from "./chamados/actions";
-import { contarAvaliacoesPendentesAcao } from "./avaliacoes/actions";
-import { contarAcessosClientesNaoVistosAcao } from "./clientes/actions";
-import { contarNegociacoesPendentesAcao } from "./negociacoes/actions";
-import { contarAjustesAbastecimentosPendentesAcao } from "./abastecimentos/actions";
-import { contarAcoesSugeridasPendentesAcao } from "./acoes-sugeridas/actions";
-import { contarDocumentosPendentesAcao } from "./documentos-empresas/actions";
-import { contarCadastrosPendentesAcao } from "./cadastros-pendentes/actions";
-import { contarAbastecimentosSemMotoristaAcao } from "./abastecimentos-sem-motorista/actions";
-import { contarMultasPendentesAcao } from "./multas/actions";
-import { contarDuplicidadesPlacaGrupoAcao } from "./duplicidade-placas-grupo/actions";
-import { contarDivergenciasPrecoPostoAcao, contarDivergenciasPrecoClienteAcao } from "./conferencia-precos/actions";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { TourProvider } from "@/components/ajuda/TourProvider";
 import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
@@ -687,101 +678,18 @@ export default async function DashboardLayout({
   // Cada contagem agora é best-effort: uma falha vira 0 (badge escondido) em
   // vez de derrubar a aplicação inteira.
   const [
-    chamadosNaoVistos,
-    avaliacoesPendentes,
-    acessosClientesNaoVistos,
-    negociacoesPendentes,
-    ajustesAbastecimentosPendentes,
-    documentosPendentes,
-    acoesSugeridasPendentes,
-    cadastrosPendentes,
-    abastecimentosSemMotorista,
-    multasPendentes,
-    duplicidadesPlacaGrupo,
-    divergenciasPrecoPosto,
-    divergenciasPrecoCliente,
+    badgesContagem,
     logoutInatividadeMinutos,
     avisos,
     favoritosBrutos,
   ] = await Promise.all([
-      contarChamadosNaoVistosAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar chamados não vistos (ignorado)", e);
-        return 0;
-      }),
-      contarAvaliacoesPendentesAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar avaliações pendentes (ignorado)", e);
-        return 0;
-      }),
-      contarAcessosClientesNaoVistosAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar acessos de clientes não vistos (ignorado)", e);
-        return 0;
-      }),
-      contarNegociacoesPendentesAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar negociações pendentes (ignorado)", e);
-        return 0;
-      }),
-      // Fase 27.65 — bolinha de ajustes de abastecimento aguardando resposta
-      // deste usuário (cliente ou posto); mesma blindagem "falha vira 0" das
-      // demais contagens.
-      contarAjustesAbastecimentosPendentesAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar ajustes de abastecimento pendentes (ignorado)", e);
-        return 0;
-      }),
-      // Fase 27.150 — bolinha de notificação na chegada de documentos
-      // societários/cadastrais (empresas com documentacao_status=pendente),
-      // mesma blindagem "falha vira 0" das demais contagens.
-      contarDocumentosPendentesAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar documentos pendentes (ignorado)", e);
-        return 0;
-      }),
-      // Fase Motor-de-Ação-Automática — bolinha de ações sugeridas pendentes
-      // (CNH vencida, posto acima da média, hodômetro fora do padrão),
-      // mesma blindagem "falha vira 0" das demais contagens.
-      contarAcoesSugeridasPendentesAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar ações sugeridas pendentes (ignorado)", e);
-        return 0;
-      }),
-      // Fase auto-cadastro-abastecimento — bolinha de veículos/motoristas
-      // criados automaticamente por integração de abastecimento, ainda sem
-      // o resto do cadastro (mesma blindagem "falha vira 0" das demais).
-      contarCadastrosPendentesAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar cadastros pendentes (ignorado)", e);
-        return 0;
-      }),
-      // Fase Fila-Motorista-Abastecimento-Externo (16/09/2026) — bolinha de
-      // abastecimentos aceitos via integração externa (Hub de cartão de
-      // combustível / ERP de posto) ainda sem motorista, mesma blindagem
-      // "falha vira 0" das demais contagens.
-      contarAbastecimentosSemMotoristaAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar abastecimentos sem motorista (ignorado)", e);
-        return 0;
-      }),
-      // Fase Onda-2 (benchmark TicketLog, item #4) — bolinha de multas
-      // pendentes de indicação com prazo vencendo em até 7 dias, mesma
-      // blindagem "falha vira 0" das demais contagens.
-      contarMultasPendentesAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar multas pendentes (ignorado)", e);
-        return 0;
-      }),
-      // Fase Duplicidade-Placas-Grupo (05/08/2026) — bolinha de placas
-      // duplicadas entre empresas do mesmo grupo econômico/rede de postos,
-      // mesma blindagem "falha vira 0" das demais contagens.
-      contarDuplicidadesPlacaGrupoAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar duplicidades de placa (ignorado)", e);
-        return 0;
-      }),
-      // Fase Conferência-de-Preços-Posto (09/08/2026) — bolinha de
-      // divergências de preço de HOJE ainda sem ajuste em andamento, mesma
-      // blindagem "falha vira 0" das demais contagens.
-      contarDivergenciasPrecoPostoAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar divergências de preço (ignorado)", e);
-        return 0;
-      }),
-      // Fase Conferencia-Precos-Cliente (12/08/2026) — mesma bolinha, lado
-      // cliente (ver comentário na Server Action).
-      contarDivergenciasPrecoClienteAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar divergências de preço (cliente, ignorado)", e);
-        return 0;
+      // Fase Bolinhas-Automáticas (27/09/2026) — as 13 contagens das
+      // bolinhas do menu moraram aqui até esta fase; agora vivem em
+      // contarBadgesMenuAcao (mesma blindagem "falha vira 0" por contagem),
+      // que o navegador também chama pra manter as bolinhas atualizadas.
+      contarBadgesMenuAcao().catch((e) => {
+        void logger.error("dashboard/layout", "Falha ao contar badges do menu (ignorado)", e);
+        return {} as Record<string, number>;
       }),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
       // aqui (não só no filho /configuracoes) porque o MonitorInatividade
@@ -949,20 +857,7 @@ export default async function DashboardLayout({
   // revisar o arquivo antes desta fase, o badge de "/antifraude" no
   // antigo menuOperacao já era código morto (a rota saiu do menu faz
   // tempo e ninguém tinha limpado a condicional).
-  const badgesMenu: Record<string, number> = {
-    "/clientes": acessosClientesNaoVistos,
-    "/cadastros-pendentes": cadastrosPendentes,
-    "/abastecimentos-sem-motorista": abastecimentosSemMotorista,
-    "/duplicidade-placas-grupo": duplicidadesPlacaGrupo,
-    "/negociacoes": negociacoesPendentes,
-    "/abastecimentos": ajustesAbastecimentosPendentes,
-    "/acoes-sugeridas": acoesSugeridasPendentes,
-    "/multas": multasPendentes,
-    "/chamados": chamadosNaoVistos,
-    // Soma os dois lados: pra qualquer usuário, só um dos dois vem
-    // diferente de zero (posto vs. cliente, ver as duas Server Actions).
-    "/conferencia-precos": divergenciasPrecoPosto + divergenciasPrecoCliente,
-  };
+  const { "/avaliacoes": _avaliacoes, "/documentos-empresas": _documentos, ...badgesMenu } = badgesContagem;
 
   const itensVisaoGeral = menuVisaoGeral.filter(podeAcessarItem);
 
@@ -1122,6 +1017,10 @@ export default async function DashboardLayout({
         <div className="menu-busca px-3 pt-3">
           <BuscaGlobal itens={itensBuscaGlobal} ehPosto={ehPosto} />
         </div>
+        <ProvedorBadgesMenu inicial={badgesContagem}>
+        {/* Fase Aviso-Novo-Abastecimento — aviso flutuante de abastecimento
+            novo, só pra quem pode ver a tela de abastecimentos. */}
+        {podeAcessarItem({ href: "/abastecimentos" }) && <AvisoNovoAbastecimento />}
         <nav className="flex-1 px-3 py-4">
           {ehPosto ? (
             <>
@@ -1183,13 +1082,14 @@ export default async function DashboardLayout({
             <GrupoMenuLateral
               titulo="Administração"
               itens={menuAdministracao}
-              badges={{ "/avaliacoes": avaliacoesPendentes, "/documentos-empresas": documentosPendentes }}
+              badges={{ "/avaliacoes": _avaliacoes ?? 0, "/documentos-empresas": _documentos ?? 0 }}
               dataTourTitulo="menu-administracao"
             />
           )}
           </>
           )}
         </nav>
+        </ProvedorBadgesMenu>
         <div className="border-t border-slate-200 px-3 py-3 space-y-1 dark:border-slate-700">
           <AvisosSino avisosIniciais={avisos} />
           <CentralAjuda />
