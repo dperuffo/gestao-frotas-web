@@ -107,6 +107,7 @@ import { listarAvisosAcao } from "./administracao/central-avisos/actions";
 import { BarraAtalhosFavoritos, type ItemAtalho } from "./_components/BarraAtalhosFavoritos";
 import { RastreadorAcessoMenu } from "./_components/RastreadorAcessoMenu";
 import { BuscaGlobal, type ItemBusca } from "./_components/BuscaGlobal";
+import { IndicadorClienteAtual } from "./_components/IndicadorClienteAtual";
 import { PainelMobile } from "./_components/PainelMobile";
 import { ThemeToggle } from "@/components/tema/ThemeToggle";
 import { SincronizadorTema } from "@/components/tema/SincronizadorTema";
@@ -845,6 +846,28 @@ export default async function DashboardLayout({
     ? PERFIL_LABEL[perfilUsuario.perfil as Perfil] ?? perfilUsuario.perfil
     : null;
 
+  // Fase Indicador-Cliente-Atual (27/09/2026, pedido do Daniel: usuário de
+  // grupo econômico ficou confuso sobre qual cliente estava vendo) — só
+  // precisamos saber SE existe mais de uma empresa acessível, pra decidir
+  // se mostra o badge fixo do menu (<IndicadorClienteAtual>, mais abaixo);
+  // quem só enxerga uma não tem ambiguidade nenhuma pra resolver. O NOME
+  // da empresa selecionada é resolvido no cliente a partir do ?empresa= da
+  // URL atual — layout.tsx não recebe `searchParams` (só `page.tsx`
+  // recebe, por design do Next.js, pra não re-renderizar o layout a cada
+  // troca de query string), então não dá pra ler o parâmetro aqui.
+  let temMultiplasEmpresas = false;
+  try {
+    if (perfilUsuario?.perfil === "admin") {
+      const { count } = await supabase.from("empresas").select("id", { count: "exact", head: true });
+      temMultiplasEmpresas = (count ?? 0) > 1;
+    } else {
+      const { data: idsEmpresas } = await supabase.rpc("empresas_do_usuario", { p_email: user.email ?? "" });
+      temMultiplasEmpresas = (idsEmpresas?.length ?? 0) > 1;
+    }
+  } catch (e) {
+    void logger.error("dashboard/layout", "Falha ao verificar múltiplas empresas (ignorado)", e);
+  }
+
   // Fase enforcement-permissoes (04/08/2026, pedido do Daniel: "as
   // permissoes deveriam travar se estiverem desligadas, tanto na web quanto
   // no PWA") — até aqui, a matriz de /permissoes só editava a tabela, nada
@@ -1095,6 +1118,7 @@ export default async function DashboardLayout({
             </p>
           )}
         </div>
+        <IndicadorClienteAtual temMultiplasEmpresas={temMultiplasEmpresas} />
         <div className="menu-busca px-3 pt-3">
           <BuscaGlobal itens={itensBuscaGlobal} ehPosto={ehPosto} />
         </div>
