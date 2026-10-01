@@ -105,7 +105,7 @@ export default async function EditarGrupoPage({
               valor={painel.resumo.totalLitros6m.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
             />
             <IndicadorColorido cor="violet" icon={Truck} label="Veículos ativos" valor={String(painel.resumo.totalVeiculos)} />
-            <IndicadorColorido cor="amber" icon={ShieldAlert} label="Sinistros" valor={String(painel.resumo.totalSinistros)} />
+            <IndicadorColorido cor="amber" icon={ShieldAlert} label="Sinistros (6 meses)" valor={String(painel.resumo.totalSinistros)} />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">

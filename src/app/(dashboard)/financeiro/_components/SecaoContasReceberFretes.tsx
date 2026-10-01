@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { hojeBrasilIso, mesAtualBrasil } from "@/lib/utils";
 import { FAIXAS_AGING, diasEmAtraso } from "@/lib/financeiroPostos";
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -12,8 +13,9 @@ const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currenc
 // já usado em /financeiro-posto — só trocando a fonte de dados.
 export async function SecaoContasReceberFretes({ empresaId }: { empresaId: string }) {
   const supabase = await createClient();
-  const hojeIso = new Date().toISOString().slice(0, 10);
-  const inicioMesIso = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+  // 01/10/2026 — "hoje" e "mês atual" no calendário de Brasília (ver mesAtualBrasil).
+  const hojeIso = hojeBrasilIso();
+  const { inicioInstante: inicioMesIso } = mesAtualBrasil();
 
   const { data: contas } = await supabase
     .from("contas_receber")

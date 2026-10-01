@@ -52,6 +52,35 @@ export function formatarDataHoraBr(value: string | null | undefined): string {
   }).format(new Date(value));
 }
 
+// 01/10/2026 (pedido do Daniel: "este lançamento aconteceu em um mês
+// anterior ao mês vigente... não faz mais sentido ser apresentado no mês
+// corrente") — "mês atual" e "hoje" sempre no calendário de Brasília. O
+// container do servidor roda em UTC: `new Date(ano, mes, 1)` lá vira
+// 00:00 UTC (21:00 do último dia do mês anterior em Brasília), e
+// `toISOString().slice(0, 10)` muda de dia às 21:00. Offset fixo -03:00
+// (sem horário de verão desde 2019), mesmo critério de dataHoraBrParaIso.
+export function hojeBrasilIso(agora: Date = new Date()): string {
+  return new Date(agora.getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+export function mesAtualBrasil(agora: Date = new Date()): {
+  inicioData: string;
+  inicioInstante: string;
+  fimInstante: string;
+} {
+  const hoje = hojeBrasilIso(agora);
+  const [ano, mes] = hoje.split("-").map(Number);
+  const inicioData = `${ano}-${String(mes).padStart(2, "0")}-01`;
+  const proxAno = mes === 12 ? ano + 1 : ano;
+  const proxMes = mes === 12 ? 1 : mes + 1;
+  const proximoInicio = `${proxAno}-${String(proxMes).padStart(2, "0")}-01`;
+  return {
+    inicioData,
+    inicioInstante: new Date(`${inicioData}T00:00:00-03:00`).toISOString(),
+    fimInstante: new Date(new Date(`${proximoInicio}T00:00:00-03:00`).getTime() - 1).toISOString(),
+  };
+}
+
 export function formatCNPJ(value: string | null | undefined): string {
   return value && value.trim().length > 0 ? value : "—";
 }

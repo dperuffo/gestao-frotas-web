@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { mesAtualBrasil } from "@/lib/utils";
 import { PLANO_LABEL, STATUS_EMPRESA_LABEL, type Plano, type StatusEmpresa } from "@/lib/constants";
 import { buscarPrecosPlanos } from "@/lib/planosPrecos";
 // Fase Redesign-Telas-Densas / Backlog-Visao-Admin (13/08/2026) — mesmo
@@ -40,10 +41,10 @@ export async function IndicadoresFinanceirosFni() {
   const supabase = await createClient();
 
   const agora = new Date();
-  const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-  const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59);
-  const inicioMesIso = inicioMes.toISOString();
-  const fimMesIso = fimMes.toISOString();
+  // 01/10/2026 — mês atual no calendário de Brasília (o servidor roda em UTC).
+  const mesBr = mesAtualBrasil(agora);
+  const inicioMesIso = mesBr.inicioInstante;
+  const fimMesIso = mesBr.fimInstante;
 
   const [{ data: empresas, error }, precos, { data: invoicesDoMes }, { data: ultimosLogins }, { data: adocaoFuncionalidades }] =
     await Promise.all([

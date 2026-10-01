@@ -1,3 +1,4 @@
+import { mesAtualBrasil } from "@/lib/utils";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
@@ -107,9 +108,10 @@ export default async function ConciliacaoBancariaPage({ searchParams }: { search
     const sugestoes = sugerirContas({ data: l.data, valor: Math.abs(l.valor), descricao: l.descricao }, contasCandidatas);
     return sugestoes.filter((s) => s.confianca === "alta").length === 1;
   }).length;
-  const hojeIso = new Date().toISOString().slice(0, 10);
-  const inicioMesIso = hojeIso.slice(0, 7) + "-01";
-  const conciliadosNoMes = conciliados.filter((l) => (l.conciliado_em ?? "") >= inicioMesIso);
+  // 01/10/2026 — mês atual no calendário de Brasília; conciliado_em é um
+  // instante (timestamptz), então compara com o início do mês em -03:00.
+  const { inicioInstante } = mesAtualBrasil();
+  const conciliadosNoMes = conciliados.filter((l) => l.conciliado_em != null && new Date(l.conciliado_em) >= new Date(inicioInstante));
   const valorPendente = pendentes.reduce((s, l) => s + Math.abs(l.valor), 0);
 
   // Fase Plano-Graficos Onda 1 (04/09/2026) — % conciliado (gauge) e fluxo

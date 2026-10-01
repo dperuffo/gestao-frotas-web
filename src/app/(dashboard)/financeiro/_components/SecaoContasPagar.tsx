@@ -6,6 +6,7 @@ import { BotaoBaixarContaPagar, BotaoCancelarContaPagar } from "./BotaoBaixarCon
 // toque visual já aplicado nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Wallet, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { hojeBrasilIso, mesAtualBrasil } from "@/lib/utils";
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -26,8 +27,8 @@ function formatarDataBr(dataIso: string): string {
 // webhook do gateway de cobrança, contas_pagar não tem gateway próprio).
 export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
   const supabase = await createClient();
-  const hojeIso = new Date().toISOString().slice(0, 10);
-  const inicioMesIso = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+  const hojeIso = hojeBrasilIso();
+  const { inicioInstante: inicioMesIso } = mesAtualBrasil();
 
   const { data: contas } = await supabase
     .from("contas_pagar")
@@ -46,15 +47,33 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
   // tabela com o sentido OPOSTO — dívida cancelada ANTES de ser paga): aqui
   // o dinheiro já saiu e não tem mais volta, por isso seção própria, fora do
   // fluxo normal de "a pagar em aberto".
-  const { data: perdasRaw } = await supabase
-    .from("contas_pagar")
-    .select("id, credor_nome, descricao, valor_original, vencimento")
-    .eq("empresa_id", empresaId)
-    .eq("status", "perda")
-    .order("vencimento", { ascending: false })
-    .limit(200);
+  //
+  // 01/10/2026 (pedido do Daniel) — o card e a lista mostram só as perdas
+  // registradas no mês corrente (calendário de Brasília). Antes somavam o
+  // histórico inteiro, e uma perda de agosto aparecia ao lado de "Pago no
+  // mês" de outubro. As anteriores continuam gravadas e contabilizadas;
+  // aqui viram só uma linha de resumo abaixo da lista.
+  const [{ data: perdasRaw }, { data: perdasAnterioresRaw }] = await Promise.all([
+    supabase
+      .from("contas_pagar")
+      .select("id, credor_nome, descricao, valor_original, vencimento")
+      .eq("empresa_id", empresaId)
+      .eq("status", "perda")
+      .gte("criado_em", inicioMesIso)
+      .order("vencimento", { ascending: false })
+      .limit(200),
+    supabase
+      .from("contas_pagar")
+      .select("valor_original")
+      .eq("empresa_id", empresaId)
+      .eq("status", "perda")
+      .lt("criado_em", inicioMesIso)
+      .limit(1000),
+  ]);
   const perdas = perdasRaw ?? [];
   const totalPerdas = perdas.reduce((s, p) => s + p.valor_original, 0);
+  const perdasAnteriores = perdasAnterioresRaw ?? [];
+  const totalPerdasAnteriores = perdasAnteriores.reduce((s, p) => s + p.valor_original, 0);
 
   const { data: contasDaEmpresa } = await supabase.from("contas_pagar").select("id").eq("empresa_id", empresaId);
   const idsContas = (contasDaEmpresa ?? []).map((c) => c.id);
@@ -116,7 +135,7 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
           valor={formatoMoeda.format(totalVencido)}
         />
         <IndicadorColorido cor="green" icon={CheckCircle2} label="Pago no mês" valor={formatoMoeda.format(pagoNoMes)} />
-        <IndicadorColorido cor="red" icon={XCircle} label="Perdas (fretes cancelados)" valor={formatoMoeda.format(totalPerdas)} />
+        <IndicadorColorido cor="red" icon={XCircle} label="Perdas no mês (fretes cancelados)" valor={formatoMoeda.format(totalPerdas)} />
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -213,10 +232,10 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
         </table>
       </div>
 
-      {perdas.length > 0 && (
+      {(perdas.length > 0 || perdasAnteriores.length > 0) && (
         <div className="card mb-4 overflow-x-auto p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
-            ⚠️ Perdas — valores pagos a motoristas em fretes cancelados
+            ⚠️ Perdas do mês — valores pagos a motoristas em fretes cancelados
           </h3>
           <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
             Fretes que já tiveram alguma parcela paga ao motorista e foram cancelados depois — o valor não é
@@ -240,8 +259,21 @@ export async function SecaoContasPagar({ empresaId }: { empresaId: string }) {
                   <td className="py-2 text-right font-medium text-red-600">{formatoMoeda.format(p.valor_original)}</td>
                 </tr>
               ))}
+              {perdas.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-3 text-center text-xs text-slate-400">
+                    Nenhuma perda registrada neste mês.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+          {perdasAnteriores.length > 0 && (
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+              Meses anteriores: {perdasAnteriores.length} {perdasAnteriores.length === 1 ? "perda" : "perdas"} somando{" "}
+              {formatoMoeda.format(totalPerdasAnteriores)}, que seguem contabilizadas no histórico.
+            </p>
+          )}
         </div>
       )}
 
