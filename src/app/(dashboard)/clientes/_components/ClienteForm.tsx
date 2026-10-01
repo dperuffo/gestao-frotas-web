@@ -38,15 +38,18 @@ export function ClienteForm({ cliente, souAdmin }: { cliente?: Empresa; souAdmin
           <Campo label="CNPJ (alfanumérico)">
             <input name="cnpj" defaultValue={cliente?.cnpj ?? ""} className="input" placeholder="00.000.000/0001-00" />
           </Campo>
-          <Campo label="Status">
-            <select name="status" defaultValue={cliente?.status ?? "trial"} className="input">
-              {STATUS_EMPRESA.map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_EMPRESA_LABEL[s]}
-                </option>
-              ))}
-            </select>
-          </Campo>
+          {/* Na criação por gestor de frota o status fica no padrão (só admin define). */}
+          {(cliente || souAdmin) && (
+            <Campo label="Status">
+              <select name="status" defaultValue={cliente?.status ?? "trial"} className="input">
+                {STATUS_EMPRESA.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_EMPRESA_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+          )}
           <Campo label="Porte da empresa">
             <select name="porte" defaultValue={cliente?.porte ?? ""} className="input">
               <option value="">Selecione...</option>

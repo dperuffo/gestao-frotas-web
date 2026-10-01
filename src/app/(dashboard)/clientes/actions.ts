@@ -48,14 +48,31 @@ export async function criarCliente(_prev: ClienteFormState, formData: FormData):
     return { erro: "Razão Social é obrigatória." };
   }
 
-  const { data, error } = await supabase.from("empresas").insert(payload).select("id").single();
-
-  if (error) {
-    return { erro: `Não foi possível salvar: ${error.message}` };
+  // 01/10/2026 — achado do Daniel ("new row violates row-level security
+  // policy for table empresas" ao criar cliente no grupo de teste): a
+  // política de INSERT em empresas é só de admin. Gestor de frota cria a
+  // empresa pelo RPC criar_empresa_no_grupo, que insere, vincula ao Grupo
+  // Econômico dele e vincula o próprio gestor numa transação só (sem o
+  // vínculo, o .select() logo após o insert também seria barrado pela RLS).
+  // Status/plano ficam no padrão — só o admin define.
+  const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
+  let novoId: string;
+  if (perfilAtual === "admin") {
+    const { data, error } = await supabase.from("empresas").insert(payload).select("id").single();
+    if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+    novoId = data.id;
+  } else {
+    const { status: _status, ...dados } = payload;
+    void _status;
+    const { data, error } = await supabase.rpc("criar_empresa_no_grupo", { p_dados: dados });
+    if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+    const r = data as { ok: boolean; id?: string; erro?: string } | null;
+    if (!r?.ok || !r.id) return { erro: r?.erro ?? "Não foi possível salvar a empresa." };
+    novoId = r.id;
   }
 
   revalidatePath("/clientes");
-  redirect(`/clientes/${data.id}`);
+  redirect(`/clientes/${novoId}`);
 }
 
 export async function atualizarCliente(

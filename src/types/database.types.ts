@@ -5335,6 +5335,12 @@ export interface Database {
         Args: { p_nome: string; p_cnpj_matriz: string | null; p_empresa_id: string };
         Returns: Json;
       };
+      // 01/10/2026 — gestor de frota cadastra empresa no próprio Grupo
+      // Econômico (insert + vínculos numa transação). Ver clientes/actions.ts.
+      criar_empresa_no_grupo: {
+        Args: { p_dados: Json };
+        Returns: Json;
+      };
       // Fase 27.138 — 1º nível da cascata de preço "vigente" (ver
       // resolverPrecosVigentes em src/lib/precoVigente.ts): última
       // transação real de qualquer provedor naquele posto, últimos 60 dias.
