@@ -6975,6 +6975,14 @@ export interface Database {
           qtd_parcelas_pagas: number;
         }[];
       };
+      // Fase 4 PDV (02/10/2026, piloto controlado) — dashboard admin-only de
+      // acompanhamento de uso do PDV (/pdv-metricas). Entrada adicionada
+      // manualmente (sem rodar `npm run gen:types`); mesmo shape do jsonb
+      // retornado pela função em migrations/pdv_fase4_metricas_dashboard_admin.
+      metricas_pdv_dashboard: {
+        Args: { p_dias?: number };
+        Returns: Json;
+      };
       abrir_negociacao_frete: {
         Args: { p_frete_id: string; p_valor_proposto: number; p_mensagem?: string | null };
         Returns: string;

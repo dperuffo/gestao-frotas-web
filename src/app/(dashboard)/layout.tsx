@@ -569,6 +569,10 @@ const menuAdministracao = [
   // quem mudou o quê, quando, pras ações mais sensíveis (permissão, preço,
   // exclusão de cadastro).
   { href: "/log-auditoria", label: "Log de Auditoria", icon: History },
+  // Fase 4 PDV (02/10/2026, piloto controlado — ver Arquitetura_Solucao_PDV.docx)
+  // Acompanhamento de volume/confirmação/tempo de resposta do canal PDV
+  // durante o piloto com revendas reais.
+  { href: "/pdv-metricas", label: "Dashboard PDV (Piloto)", icon: Fuel },
 ];
 
 // Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel) — mapa
