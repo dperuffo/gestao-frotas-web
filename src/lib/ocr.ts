@@ -1,4 +1,5 @@
-import { createWorker } from "tesseract.js";
+import { createWorker, PSM } from "tesseract.js";
+import sharp from "sharp";
 
 // Fase ocr-documentos (04/08/2026, item 8 do benchmark FNI vs KMM, Grupo 2)
 // — "ler CT-e/canhoto automaticamente em vez de só foto". Decisão do
@@ -209,9 +210,20 @@ export async function extrairDadosCupomAbastecimento(imagem: Buffer): Promise<Re
 // com "B", "0" com "O", "1" com "I") e melhora MUITO a taxa de acerto
 // nesse caso específico, comparado ao texto livre usado nos outros OCRs
 // desta tela.
+//
+// Retrabalho (02/10/2026, Daniel reportou acurácia ruim na leitura real):
+// a primeira versão mandava a foto crua pro tesseract, sem nenhum
+// pré-processamento e sem fixar o Page Segmentation Mode — o tesseract
+// assumia um "bloco de texto genérico" (PSM padrão), o que é ruim pra uma
+// foto de painel com pouquíssimo texto (só os dígitos do hodômetro, cercados
+// de ícones/ponteiros que o OCR tentava "ler" como texto). Também devolvemos
+// agora o `confianca` (0-100, direto do tesseract) pro cliente poder avisar
+// o motorista quando a leitura foi incerta, em vez de preencher calado um
+// valor errado.
 export type ResultadoOcrHodometro = {
   texto: string;
   hodometro: number | null;
+  confianca: number | null;
 };
 
 // Pega o maior bloco contíguo de 4 a 7 dígitos no texto reconhecido —
@@ -229,14 +241,61 @@ function extrairHodometroDoTexto(texto: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+// Gera duas variantes pré-processadas da mesma foto pro tesseract tentar:
+// uma "normal" (dígito escuro em fundo claro) e uma invertida (dígito claro
+// em fundo escuro — comum em painel digital/LCD iluminado, onde a foto crua
+// sai com o mostrador mais claro que a moldura). As duas passam por:
+// corrigir rotação EXIF (foto de celular em pé vem com metadado de rotação,
+// não com os pixels já rotacionados — sem isso o sharp processa "de lado"),
+// upscale quando a foto é pequena (tesseract lê fonte grande muito melhor),
+// cinza + normalize (estica o contraste) + sharpen (realça borda do dígito)
+// + threshold (binariza em preto/branco puro, removendo ruído/reflexo do
+// vidro do painel). Deixamos as duas disputarem no `extrairHodometro` e
+// fica a que o tesseract leu com mais confiança.
+async function prepararVariantesImagem(imagem: Buffer): Promise<Buffer[]> {
+  const base = sharp(imagem).rotate();
+  const metadata = await base.metadata();
+  const largura = metadata.width ?? 1200;
+  const larguraAlvo = largura < 1200 ? Math.round(largura * Math.min(3, 1200 / largura)) : largura;
+
+  const preparar = (negativo: boolean) => {
+    let pipeline = base.clone().resize({ width: larguraAlvo }).grayscale().normalize().sharpen();
+    if (negativo) pipeline = pipeline.negate();
+    return pipeline.threshold(140).toBuffer();
+  };
+
+  return Promise.all([preparar(false), preparar(true)]);
+}
+
 export async function extrairHodometro(imagem: Buffer): Promise<ResultadoOcrHodometro> {
   const worker = await createWorker("por");
   try {
-    await worker.setParameters({ tessedit_char_whitelist: "0123456789" });
-    const {
-      data: { text },
-    } = await worker.recognize(imagem);
-    return { texto: text, hodometro: extrairHodometroDoTexto(text) };
+    await worker.setParameters({
+      tessedit_char_whitelist: "0123456789",
+      tessedit_pageseg_mode: PSM.SINGLE_LINE,
+    });
+
+    const variantes = await prepararVariantesImagem(imagem);
+    let melhor: ResultadoOcrHodometro | null = null;
+
+    for (const variante of variantes) {
+      const { data } = await worker.recognize(variante);
+      const hodometro = extrairHodometroDoTexto(data.text);
+      const confianca = data.confidence ?? 0;
+      const candidato: ResultadoOcrHodometro = { texto: data.text, hodometro, confianca };
+
+      // Prioriza quem achou um número plausível; entre dois que acharam
+      // (ou dois que não acharam), fica o de maior confiança do tesseract.
+      const substituiMelhor =
+        !melhor ||
+        (hodometro !== null && melhor.hodometro === null) ||
+        (hodometro !== null && melhor.hodometro !== null && confianca > (melhor.confianca ?? 0)) ||
+        (hodometro === null && melhor.hodometro === null && confianca > (melhor.confianca ?? 0));
+
+      if (substituiMelhor) melhor = candidato;
+    }
+
+    return melhor ?? { texto: "", hodometro: null, confianca: null };
   } finally {
     await worker.terminate();
   }
