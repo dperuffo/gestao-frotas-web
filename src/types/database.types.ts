@@ -2526,6 +2526,45 @@ export interface Database {
         ];
       };
       // Fase 4 PDV (02/10/2026) — entrada adicionada manualmente (tabela
+      // criada na migration pdv_fase4_catalogo_bicos_fixo, sem rodar
+      // `npm run gen:types` depois). Shape confirmado via
+      // information_schema.columns.
+      pdv_bicos_catalogo: {
+        Row: {
+          id: string;
+          revenda_empresa_id: string;
+          bomba: number;
+          lado: string;
+          posicao: number;
+          numero_bico: number;
+          codigo_combustivel: string;
+          combustivel: string;
+          preco_litro_base: number;
+          ativo: boolean;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pdv_bicos_catalogo"]["Row"]> & {
+          revenda_empresa_id: string;
+          bomba: number;
+          lado: string;
+          posicao: number;
+          numero_bico: number;
+          codigo_combustivel: string;
+          combustivel: string;
+          preco_litro_base: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["pdv_bicos_catalogo"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "pdv_bicos_catalogo_revenda_empresa_id_fkey";
+            columns: ["revenda_empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Fase 4 PDV (02/10/2026) — entrada adicionada manualmente (tabela
       // criada na migration pdv_fase1_tabelas, sem rodar `npm run gen:types`
       // depois). Shape confirmado via information_schema.columns.
       pdv_formas_pagamento_permitidas: {

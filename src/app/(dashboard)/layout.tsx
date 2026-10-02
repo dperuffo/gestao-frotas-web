@@ -577,6 +577,10 @@ const menuAdministracao = [
   // Acompanhamento de volume/confirmação/tempo de resposta do canal PDV
   // durante o piloto com revendas reais.
   { href: "/pdv-metricas", label: "Dashboard PDV (Piloto)", icon: Fuel },
+  // Fase 4 PDV (02/10/2026, pedido do Daniel) — catálogo fixo de bombas/
+  // bicos/combustíveis por revenda (pdv_bicos_catalogo), que alimenta a
+  // seleção de leitura no pdv-fni e o robô de teste.
+  { href: "/pdv-bicos", label: "Bicos e Combustíveis (PDV)", icon: Gauge },
 ];
 
 // Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel) — mapa
