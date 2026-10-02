@@ -57,3 +57,22 @@ export async function atualizarPrecoBicoCatalogoAcao(bicoId: string, precoLitroB
   revalidatePath("/pdv-bicos");
   return {};
 }
+
+// Remanejamento de bico pra outro combustível é comum na operação real de
+// um posto (ex.: converter um bico de Gasolina Aditivada pra Diesel S10) —
+// por isso o combustível é editável, não só o preço.
+export async function atualizarCombustivelBicoCatalogoAcao(
+  bicoId: string,
+  codigoCombustivel: string,
+  combustivel: string,
+  precoLitroBase: number
+): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("pdv_bicos_catalogo")
+    .update({ codigo_combustivel: codigoCombustivel, combustivel, preco_litro_base: precoLitroBase })
+    .eq("id", bicoId);
+  if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+  revalidatePath("/pdv-bicos");
+  return {};
+}

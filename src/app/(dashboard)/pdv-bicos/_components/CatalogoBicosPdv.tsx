@@ -3,7 +3,11 @@
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { Fuel, Plus, Loader2, Pencil, Check, X } from "lucide-react";
 import { COMBUSTIVEIS_PDV } from "@/lib/combustiveisPdv";
-import { criarBicoCatalogoAcao, alternarAtivoBicoCatalogoAcao, atualizarPrecoBicoCatalogoAcao } from "../actions";
+import {
+  criarBicoCatalogoAcao,
+  alternarAtivoBicoCatalogoAcao,
+  atualizarCombustivelBicoCatalogoAcao,
+} from "../actions";
 
 type Bico = {
   id: string;
@@ -36,6 +40,7 @@ export function CatalogoBicosPdv({ revendaEmpresaId, bicosIniciais }: { revendaE
   const [codigoCombustivel, setCodigoCombustivel] = useState<string>(COMBUSTIVEIS_PDV[0].codigo);
 
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [combustivelEditado, setCombustivelEditado] = useState<string>(COMBUSTIVEIS_PDV[0].codigo);
   const [precoEditado, setPrecoEditado] = useState("");
 
   function adicionar(e: FormEvent) {
@@ -86,20 +91,42 @@ export function CatalogoBicosPdv({ revendaEmpresaId, bicosIniciais }: { revendaE
     });
   }
 
-  function salvarPreco(b: Bico) {
+  function iniciarEdicao(b: Bico) {
+    setErro(null);
+    setEditandoId(b.id);
+    setCombustivelEditado(b.codigo_combustivel);
+    setPrecoEditado(String(b.preco_litro_base));
+  }
+
+  // Trocar o combustível no select já sugere o preço base dele — ainda dá
+  // pra ajustar o valor antes de salvar.
+  function alterarCombustivelEditado(codigo: string) {
+    setCombustivelEditado(codigo);
+    const combustivel = COMBUSTIVEIS_PDV.find((c) => c.codigo === codigo);
+    if (combustivel) setPrecoEditado(String(combustivel.precoBase));
+  }
+
+  function salvarEdicao(b: Bico) {
     const novoPreco = Number(precoEditado.replace(",", "."));
     if (!Number.isFinite(novoPreco) || novoPreco <= 0) {
       setErro("Preço inválido.");
       return;
     }
+    const combustivel = COMBUSTIVEIS_PDV.find((c) => c.codigo === combustivelEditado)!;
     setEditandoId(null);
     startTransition(async () => {
-      const resultado = await atualizarPrecoBicoCatalogoAcao(b.id, novoPreco);
+      const resultado = await atualizarCombustivelBicoCatalogoAcao(b.id, combustivel.codigo, combustivel.nome, novoPreco);
       if (resultado?.erro) {
         setErro(resultado.erro);
         return;
       }
-      setBicos((atual) => atual.map((x) => (x.id === b.id ? { ...x, preco_litro_base: novoPreco } : x)));
+      setBicos((atual) =>
+        atual.map((x) =>
+          x.id === b.id
+            ? { ...x, codigo_combustivel: combustivel.codigo, combustivel: combustivel.nome, preco_litro_base: novoPreco }
+            : x
+        )
+      );
     });
   }
 
@@ -183,30 +210,49 @@ export function CatalogoBicosPdv({ revendaEmpresaId, bicosIniciais }: { revendaE
                         <span>{String(b.numero_bico).padStart(2, "0")}</span>
                         <span className="text-[10px] font-semibold">{b.codigo_combustivel}</span>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                          <Fuel className="mr-1 inline h-3.5 w-3.5 text-slate-400" />
-                          {b.combustivel}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Lado {b.lado} · Posição {b.posicao}
-                        </p>
-                      </div>
+                      {editandoId === b.id ? (
+                        <div>
+                          <select
+                            autoFocus
+                            className="input py-1 text-sm"
+                            value={combustivelEditado}
+                            onChange={(e) => alterarCombustivelEditado(e.target.value)}
+                          >
+                            {COMBUSTIVEIS_PDV.map((c) => (
+                              <option key={c.codigo} value={c.codigo}>
+                                {c.codigo} — {c.nome}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                            Lado {b.lado} · Posição {b.posicao}
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                            <Fuel className="mr-1 inline h-3.5 w-3.5 text-slate-400" />
+                            {b.combustivel}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Lado {b.lado} · Posição {b.posicao}
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {editandoId === b.id ? (
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-slate-500">R$</span>
                           <input
-                            autoFocus
                             className="input w-20 py-1 text-sm"
                             value={precoEditado}
                             onChange={(e) => setPrecoEditado(e.target.value)}
                           />
                           <button
-                            onClick={() => salvarPreco(b)}
+                            onClick={() => salvarEdicao(b)}
                             className="rounded-lg p-1.5 text-status-ativo hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                            aria-label="Salvar preço"
+                            aria-label="Salvar"
                           >
                             <Check className="h-4 w-4" />
                           </button>
@@ -220,10 +266,7 @@ export function CatalogoBicosPdv({ revendaEmpresaId, bicosIniciais }: { revendaE
                         </div>
                       ) : (
                         <button
-                          onClick={() => {
-                            setEditandoId(b.id);
-                            setPrecoEditado(String(b.preco_litro_base));
-                          }}
+                          onClick={() => iniciarEdicao(b)}
                           className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-frota-600 dark:text-slate-300"
                         >
                           R$ {b.preco_litro_base.toFixed(3)}
