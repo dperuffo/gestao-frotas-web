@@ -194,3 +194,50 @@ export async function extrairDadosCupomAbastecimento(imagem: Buffer): Promise<Re
     await worker.terminate();
   }
 }
+
+// Fase 5 PDV (02/10/2026, pedido do Daniel: "tela de captura de hodômetro
+// por foto com OCR, com preenchimento automático e ajuste manual") — mesma
+// filosofia best-effort das outras extrações desta tela: o valor lido é só
+// uma SUGESTÃO pra pré-preencher o campo, o motorista sempre pode corrigir
+// antes de confirmar, e a regra de negócio real (hodômetro tem que ser
+// maior que o último registrado do veículo) é validada no banco
+// (iniciar_abastecimento_pdv), nunca só aqui.
+//
+// Painel de hodômetro é só dígitos (às vezes com um dígito menor de
+// décimos, que a gente ignora) — reconhecer com tessedit_char_whitelist
+// restrito a 0-9 evita o OCR confundir dígito com letra parecida (ex.: "8"
+// com "B", "0" com "O", "1" com "I") e melhora MUITO a taxa de acerto
+// nesse caso específico, comparado ao texto livre usado nos outros OCRs
+// desta tela.
+export type ResultadoOcrHodometro = {
+  texto: string;
+  hodometro: number | null;
+};
+
+// Pega o maior bloco contíguo de 4 a 7 dígitos no texto reconhecido —
+// hodômetro de veículo fica tipicamente nessa faixa (999 a 9.999.999 km).
+// Com o whitelist de dígitos, "blocos" são só os trechos separados por
+// espaço/quebra de linha que o OCR não conseguiu emendar; escolhe o maior
+// porque o verdadeiro hodômetro costuma ser a sequência mais longa visível
+// no painel (outros números do quadro — ex.: velocímetro, RPM — tendem a
+// ter menos dígitos ou aparecer picotados).
+function extrairHodometroDoTexto(texto: string): number | null {
+  const blocos = texto.match(/\d{4,7}/g);
+  if (!blocos || blocos.length === 0) return null;
+  const maior = blocos.reduce((a, b) => (b.length > a.length ? b : a));
+  const n = Number(maior);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+export async function extrairHodometro(imagem: Buffer): Promise<ResultadoOcrHodometro> {
+  const worker = await createWorker("por");
+  try {
+    await worker.setParameters({ tessedit_char_whitelist: "0123456789" });
+    const {
+      data: { text },
+    } = await worker.recognize(imagem);
+    return { texto: text, hodometro: extrairHodometroDoTexto(text) };
+  } finally {
+    await worker.terminate();
+  }
+}
