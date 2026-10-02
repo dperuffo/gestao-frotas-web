@@ -47,12 +47,16 @@ const CORES_PROVEDOR: Record<string, string> = {
   // Fase OCR-Abastecimento-Externo (27/08/2026) — lançamento manual do
   // motorista via foto do cupom, ainda pendente de aprovação do gestor.
   manual: "bg-amber-100 text-amber-800",
+  // Fase 4 PDV (02/10/2026) — abastecido com o frentista usando o PDV FNI
+  // no próprio posto (ver abastecimentos_pdv / view abastecimentos_unificado).
+  pdv: "bg-frota-100 text-frota-700",
 };
 
 function nomeProvedor(provedor: string) {
   if (provedor === "profrotas") return "PróFrotas";
   if (provedor === "interno") return "Abastecimento Interno";
   if (provedor === "manual") return "Lançamento manual";
+  if (provedor === "pdv") return "PDV";
   return provedor;
 }
 
@@ -572,7 +576,9 @@ export default async function AbastecimentosPage({
                           ? `/abastecimentos/${r.id}`
                           : r.provedor === "interno"
                             ? `/abastecimentos/interno/${r.id}`
-                            : `/abastecimentos/externo/${r.id}`
+                            : r.provedor === "pdv"
+                              ? `/abastecimentos/pdv/${r.id}`
+                              : `/abastecimentos/externo/${r.id}`
                       }
                       className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline"
                     >

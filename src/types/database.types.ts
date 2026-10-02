@@ -2525,6 +2525,156 @@ export interface Database {
           },
         ];
       };
+      // Fase 4 PDV (02/10/2026) — entradas adicionadas manualmente (tabelas
+      // criadas na Fase 1 PDV, sem rodar `npm run gen:types` depois). Shape
+      // confirmado via information_schema.columns. Necessárias pra
+      // /abastecimentos/pdv/[id] (detalhe de abastecimento PDV na lista
+      // /abastecimentos — ver comentário na própria página sobre o bug do
+      // link que mostrava dados de abastecimentos_externos por engano).
+      abastecimentos_pdv: {
+        Row: {
+          id: number;
+          codigo_abastecimento: string | null;
+          status: string;
+          empresa_id: string | null;
+          revenda_empresa_id: string | null;
+          terminal_pdv_id: string | null;
+          placa: string | null;
+          motorista_id: string | null;
+          motorista_nome: string | null;
+          motorista_cpf: string | null;
+          otp_seed: string | null;
+          otp_expira_em: string | null;
+          geo_lat_motorista: number | null;
+          geo_lon_motorista: number | null;
+          geo_distancia_m: number | null;
+          geo_aprovado: boolean | null;
+          posto_cnpj: string | null;
+          bomba: string | null;
+          bico: string | null;
+          combustivel: string | null;
+          litros: number | null;
+          preco_litro: number | null;
+          valor_total_combustivel: number | null;
+          forma_pagamento: string | null;
+          valor_total_itens_extra: number;
+          valor_total_transacao: number | null;
+          hodometro: number | null;
+          motivo_negacao: string | null;
+          data_abastecimento: string | null;
+          criado_em: string;
+          confirmado_em: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["abastecimentos_pdv"]["Row"]> & { status: string };
+        Update: Partial<Database["public"]["Tables"]["abastecimentos_pdv"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "abastecimentos_pdv_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "abastecimentos_pdv_revenda_empresa_id_fkey";
+            columns: ["revenda_empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "abastecimentos_pdv_terminal_pdv_id_fkey";
+            columns: ["terminal_pdv_id"];
+            isOneToOne: false;
+            referencedRelation: "pdv_terminais";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      abastecimentos_pdv_itens: {
+        Row: {
+          id: string;
+          abastecimento_pdv_id: number;
+          produto_servico_id: string;
+          quantidade: number;
+          valor_unitario: number;
+          valor_total: number;
+        };
+        Insert: Partial<Database["public"]["Tables"]["abastecimentos_pdv_itens"]["Row"]> & {
+          abastecimento_pdv_id: number;
+          produto_servico_id: string;
+          quantidade: number;
+          valor_unitario: number;
+          valor_total: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["abastecimentos_pdv_itens"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "abastecimentos_pdv_itens_abastecimento_pdv_id_fkey";
+            columns: ["abastecimento_pdv_id"];
+            isOneToOne: false;
+            referencedRelation: "abastecimentos_pdv";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "abastecimentos_pdv_itens_produto_servico_id_fkey";
+            columns: ["produto_servico_id"];
+            isOneToOne: false;
+            referencedRelation: "produtos_servicos_pdv";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      produtos_servicos_pdv: {
+        Row: {
+          id: string;
+          revenda_empresa_id: string;
+          categoria: string;
+          nome: string;
+          preco_padrao: number | null;
+          ativo: boolean;
+          criado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["produtos_servicos_pdv"]["Row"]> & {
+          revenda_empresa_id: string;
+          categoria: string;
+          nome: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["produtos_servicos_pdv"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "produtos_servicos_pdv_revenda_empresa_id_fkey";
+            columns: ["revenda_empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pdv_terminais: {
+        Row: {
+          id: string;
+          revenda_empresa_id: string;
+          identificacao: string;
+          ativo: boolean;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pdv_terminais"]["Row"]> & {
+          revenda_empresa_id: string;
+          identificacao: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["pdv_terminais"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "pdv_terminais_revenda_empresa_id_fkey";
+            columns: ["revenda_empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       // Fase 4 PDV (02/10/2026) — entrada adicionada manualmente (tabela
       // criada na migration pdv_fase4_catalogo_bicos_fixo, sem rodar
       // `npm run gen:types` depois). Shape confirmado via
