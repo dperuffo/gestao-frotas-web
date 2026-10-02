@@ -403,6 +403,10 @@ const menuSistema: ItemMenuLateral[] = [
   { href: "/lgpd", label: "Privacidade (LGPD)", icon: Lock }, // PWA: Icons.lock
   { href: "/integracoes", label: "Integrações", icon: Plug },
   { href: "/permissoes", label: "Permissões", icon: KeyRound },
+  // Fase 4 PDV (02/10/2026, pré-requisito pro piloto) — o cliente escolhe
+  // quais meios de pagamento o PDV aceita cobrar do motorista (ver
+  // pdv_formas_pagamento_permitidas, Fase 1).
+  { href: "/pdv-formas-pagamento", label: "Formas de Pagamento (PDV)", icon: CreditCard },
 ];
 
 // Fase 27.50 — menu do posto revendedor (perfil "posto", tenant segmento

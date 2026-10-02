@@ -112,6 +112,7 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/multas": "aba_multas",
   "/oficinas": "aba_oficinas",
   "/parametros-uso": "aba_parametros_uso",
+  "/pdv-formas-pagamento": "aba_pdv_formas_pagamento",
   "/parametros-nf": "aba_parametros_nf",
   "/relatorios": "aba_relatorios",
   "/pegada-carbono": "aba_pegada_carbono",

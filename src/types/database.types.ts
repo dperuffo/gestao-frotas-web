@@ -2525,6 +2525,53 @@ export interface Database {
           },
         ];
       };
+      // Fase 4 PDV (02/10/2026) — entrada adicionada manualmente (tabela
+      // criada na migration pdv_fase1_tabelas, sem rodar `npm run gen:types`
+      // depois). Shape confirmado via information_schema.columns.
+      pdv_formas_pagamento_permitidas: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          forma_pagamento:
+            | "pix"
+            | "cartao_credito"
+            | "cartao_debito"
+            | "dinheiro"
+            | "profrotas"
+            | "valecard"
+            | "ticket_log"
+            | "rede_frota"
+            | "veloe"
+            | "outro";
+          ativo: boolean;
+          atualizado_em: string;
+          atualizado_por: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["pdv_formas_pagamento_permitidas"]["Row"]> & {
+          empresa_id: string;
+          forma_pagamento:
+            | "pix"
+            | "cartao_credito"
+            | "cartao_debito"
+            | "dinheiro"
+            | "profrotas"
+            | "valecard"
+            | "ticket_log"
+            | "rede_frota"
+            | "veloe"
+            | "outro";
+        };
+        Update: Partial<Database["public"]["Tables"]["pdv_formas_pagamento_permitidas"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "pdv_formas_pagamento_permitidas_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       parametros_variacao_hodometro: {
         Row: {
           id: string;
