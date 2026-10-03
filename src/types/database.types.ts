@@ -5084,6 +5084,7 @@ export interface Database {
           posto_nome: string | null;
           km_previsto: number | null;
           litros_previstos: number | null;
+          valor_previsto: number | null;
           lat: number | null;
           lon: number | null;
           atendido: boolean;
@@ -7916,7 +7917,16 @@ export interface Database {
           parada_posto_nome: string | null;
           parada_litros_previstos: number | null;
           parada_atendida: boolean;
+          parada_valor_previsto: number | null;
         }[];
+      };
+      criar_pre_pedido: {
+        Args: { p_empresa_id: string; p_placa: string; p_motorista_id?: string; p_paradas: Json };
+        Returns: Json;
+      };
+      cancelar_pre_pedido: {
+        Args: { p_id: string };
+        Returns: Json;
       };
       dados_colega_para_edicao: {
         Args: { p_empresa_id: string; p_email: string };

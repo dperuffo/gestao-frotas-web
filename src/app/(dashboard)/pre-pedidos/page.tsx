@@ -155,7 +155,13 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
                   <div className="text-sm text-slate-700 dark:text-slate-300">
                     <span className="font-medium">{cabecalho.parada_posto_nome ?? "Este posto"}</span>
                     {cabecalho.parada_litros_previstos != null && (
-                      <span className="text-slate-400"> · {cabecalho.parada_litros_previstos} L previstos</span>
+                      <span className="text-slate-400"> · até {cabecalho.parada_litros_previstos} L</span>
+                    )}
+                    {cabecalho.parada_valor_previsto != null && (
+                      <span className="text-slate-400">
+                        {" "}
+                        · até {Number(cabecalho.parada_valor_previsto).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </span>
                     )}
                   </div>
                   <span

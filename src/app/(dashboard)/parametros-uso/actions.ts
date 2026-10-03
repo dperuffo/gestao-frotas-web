@@ -564,6 +564,47 @@ export async function excluirCota(id: string) {
   revalidatePath("/parametros-uso");
 }
 
+export type ParadaPrePedidoForm = { posto_cnpj: string; posto_nome: string; tipo: "litros" | "valor"; quantidade: number };
+
+// Pré-Pedido manual (03/10/2026, pedido do Daniel): o gestor informa placa,
+// postos de parada e o limite de cada uma (litros ou R$); o banco gera o nº
+// (sequência) que o motorista apresenta no posto e o caixa digita no PDV.
+export async function criarPrePedidoAcao(
+  empresaId: string,
+  placa: string,
+  motoristaId: string | null,
+  paradas: ParadaPrePedidoForm[]
+): Promise<{ erro?: string; numero?: number }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("criar_pre_pedido", {
+    p_empresa_id: empresaId,
+    p_placa: placa,
+    p_motorista_id: motoristaId ?? undefined,
+    p_paradas: paradas.map((p) => ({
+      posto_cnpj: p.posto_cnpj,
+      posto_nome: p.posto_nome,
+      litros: p.tipo === "litros" ? p.quantidade : null,
+      valor: p.tipo === "valor" ? p.quantidade : null,
+    })),
+  });
+  if (error) return { erro: `Não foi possível criar: ${error.message}` };
+  const r = data as { status: string; numero?: number; ordem?: number };
+  if (r.status === "placa_obrigatoria") return { erro: "Informe a placa." };
+  if (r.status === "sem_paradas") return { erro: "Inclua ao menos um posto de parada." };
+  if (r.status === "parada_invalida") return { erro: `Parada ${r.ordem}: informe o posto e uma quantidade maior que zero.` };
+  if (r.status !== "ok") return { erro: "Sem permissão para criar Pré-Pedido." };
+  revalidatePath("/parametros-uso");
+  return { numero: r.numero };
+}
+
+export async function cancelarPrePedidoAcao(id: string): Promise<{ erro?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancelar_pre_pedido", { p_id: id });
+  if (error) return { erro: error.message };
+  revalidatePath("/parametros-uso");
+  return {};
+}
+
 // Pré-Pedido — 1 linha por empresa (upsert por empresa_id), diferente dos
 // outros tipos que são listas de regras escopadas. Ver SecaoPrePedido.tsx.
 export async function salvarParametroPrePedidoAcao(empresaId: string, habilitado: boolean): Promise<{ erro?: string }> {

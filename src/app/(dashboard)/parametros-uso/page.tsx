@@ -300,15 +300,6 @@ async function ConteudoAba({
     );
   }
 
-  if (tipo === "pre-pedido") {
-    const { data: parametro } = await supabase
-      .from("parametros_pre_pedido")
-      .select("habilitado")
-      .eq("empresa_id", empresaId)
-      .maybeSingle();
-    return <SecaoPrePedido empresaId={empresaId} habilitado={parametro?.habilitado === true} />;
-  }
-
   // Fase 27.121 — os outros 9 tipos: opções compartilhadas (veículos,
   // motoristas, postos negociados) carregadas uma vez, e cada aba busca só
   // a própria tabela.
@@ -353,6 +344,39 @@ async function ConteudoAba({
     if (p.posto_cnpj) postosMap.set(p.posto_cnpj, p.posto_nome ?? p.posto_cnpj);
   });
   const postos = Array.from(postosMap, ([cnpj, nome]) => ({ cnpj, nome }));
+
+  if (tipo === "pre-pedido") {
+    const [{ data: parametro }, { data: pps }] = await Promise.all([
+      supabase.from("parametros_pre_pedido").select("habilitado").eq("empresa_id", empresaId).maybeSingle(),
+      supabase
+        .from("pre_pedidos")
+        .select(
+          "id, numero, placa, status, criado_em, motoristas(nome_completo), pre_pedidos_paradas(ordem, posto_nome, posto_cnpj, litros_previstos, valor_previsto, atendido)"
+        )
+        .eq("empresa_id", empresaId)
+        .order("numero", { ascending: false })
+        .limit(100),
+    ]);
+    const prePedidos = ((pps ?? []) as any[]).map((p) => ({
+      id: p.id as string,
+      numero: p.numero as number,
+      placa: p.placa as string | null,
+      status: p.status as string,
+      criado_em: p.criado_em as string,
+      motorista_nome: (p.motoristas?.nome_completo ?? null) as string | null,
+      paradas: ((p.pre_pedidos_paradas ?? []) as any[]).sort((a, b) => a.ordem - b.ordem),
+    }));
+    return (
+      <SecaoPrePedido
+        empresaId={empresaId}
+        habilitado={parametro?.habilitado === true}
+        veiculos={veiculos}
+        motoristas={motoristas.map((m) => ({ id: m.id, nome_completo: m.nome_completo, empresaNome: (m as { empresaNome?: string }).empresaNome }))}
+        postos={postos}
+        prePedidos={prePedidos}
+      />
+    );
+  }
 
   if (tipo === "intervalo") {
     const { data } = await supabase
