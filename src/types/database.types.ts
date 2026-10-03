@@ -1058,6 +1058,8 @@ export interface Database {
           criador_empresa_id: string | null;
           imagem_url: string | null;
           validade_dias: number | null;
+          // R$ que o dono recebe ao honrar o voucher (nulo = pontos x 0,10).
+          valor_reembolso: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["fidelidade_catalogo_itens"]["Row"]> & {
           categoria:
@@ -1110,6 +1112,13 @@ export interface Database {
           valido_ate: string | null;
           parceiro_nome: string | null;
           imagem_url: string | null;
+          // Queima do voucher (PDV FNI ou web) — 03/10/2026.
+          queimado_em: string | null;
+          queimado_por_empresa_id: string | null;
+          queimado_origem: "pdv" | "web" | null;
+          queimado_terminal_id: string | null;
+          valor_a_receber: number | null;
+          acerto_status: "pendente" | "liquidado";
         };
         Insert: Partial<Database["public"]["Tables"]["fidelidade_resgates"]["Row"]> & {
           motorista_id: string;
@@ -7355,6 +7364,14 @@ export interface Database {
           atualizado_em: string;
           nome_motorista: string;
         }[];
+      };
+      queimar_voucher_fidelidade: {
+        Args: { p_empresa_id: string; p_codigo: string; p_origem?: string; p_terminal_id?: string };
+        Returns: Json;
+      };
+      buscar_voucher_pdv: {
+        Args: { p_empresa_id: string; p_codigo: string };
+        Returns: Json;
       };
       indicadores_financeiros: {
         Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };

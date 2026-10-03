@@ -37,6 +37,14 @@ async function empresaPertenceAoUsuario(
   return (minhas ?? []).includes(empresaId);
 }
 
+// R$ que o posto/cliente recebe ao honrar o voucher (vazio = pontos x 0,10).
+function valorReembolsoDe(formData: FormData): number | null {
+  const bruto = String(formData.get("valor_reembolso") ?? "").trim().replace(",", ".");
+  if (!bruto) return null;
+  const n = Number(bruto);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
 export async function criarItemParceria(
   empresaId: string,
   _prev: ItemParceriaFormState,
@@ -81,6 +89,7 @@ export async function criarItemParceria(
     criador_empresa_id: empresaId,
     imagem_url: imagemUrl,
     validade_dias: validadeDias,
+    valor_reembolso: valorReembolsoDe(formData),
   });
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
 
@@ -125,6 +134,7 @@ export async function atualizarItemParceria(
     parceiro_nome: string | null;
     pontos_necessarios: number;
     validade_dias: number | null;
+    valor_reembolso: number | null;
     ativo: boolean;
     atualizado_em: string;
     imagem_url?: string;
@@ -135,6 +145,7 @@ export async function atualizarItemParceria(
     parceiro_nome: parceiroNome,
     pontos_necessarios: pontosNecessarios,
     validade_dias: validadeDias,
+    valor_reembolso: valorReembolsoDe(formData),
     ativo,
     atualizado_em: new Date().toISOString(),
   };
@@ -210,47 +221,28 @@ export async function queimarVoucher(
     .toUpperCase();
   if (!codigo) return { erro: "Digite o código do voucher." };
 
-  const { data: resgate, error: erroBusca } = await supabase
-    .from("fidelidade_resgates")
-    .select("id, titulo, status, valido_ate, item_id, motoristas(nome_completo)")
-    .eq("numero_voucher", codigo)
-    .maybeSingle();
+  // 03/10/2026 — a validação e a baixa agora vivem na RPC
+  // queimar_voucher_fidelidade (mesma usada pelo PDV FNI): confere empresa,
+  // item próprio/global, status e validade, e grava queima, origem e valor a
+  // receber. Aqui só traduzimos o status em mensagem.
+  const { data, error } = await supabase.rpc("queimar_voucher_fidelidade", {
+    p_empresa_id: empresaId,
+    p_codigo: codigo,
+    p_origem: "web",
+  });
+  const r = data as { status: string; titulo?: string; motorista?: string } | null;
+  if (error || !r) return { erro: `Não foi possível queimar o voucher${error ? `: ${error.message}` : "."}` };
 
-  if (erroBusca || !resgate) {
-    return { erro: "Voucher não encontrado. Confira o código com o motorista." };
-  }
-
-  const { data: item } = await supabase
-    .from("fidelidade_catalogo_itens")
-    .select("criador_empresa_id")
-    .eq("id", resgate.item_id)
-    .maybeSingle();
-
-  // Item global do catálogo do admin (criador_empresa_id null) — benefício de
-  // rede, não de uma empresa específica. Decisão do Daniel (18/07): qualquer
-  // posto/cliente autenticado pode queimar (RLS fidelidade_resgates_leitura_
-  // global / _atualiza_global libera a leitura/gravação desses casos).
-  const ehItemGlobal = item?.criador_empresa_id === null;
-  if (!ehItemGlobal && item?.criador_empresa_id !== empresaId) {
-    return { erro: "Esse voucher não pertence a um benefício desta empresa." };
-  }
-  if (resgate.status === "concluido") return { erro: "Esse voucher já foi queimado antes." };
-  if (resgate.status === "cancelado") return { erro: "Esse voucher foi cancelado — não pode ser queimado." };
-  if (resgate.valido_ate && new Date(resgate.valido_ate) < new Date()) {
-    return { erro: `Esse voucher venceu em ${new Date(resgate.valido_ate).toLocaleDateString("pt-BR")}.` };
-  }
-
-  const { error } = await supabase
-    .from("fidelidade_resgates")
-    .update({ status: "concluido", atualizado_em: new Date().toISOString() })
-    .eq("id", resgate.id);
-  if (error) return { erro: `Não foi possível queimar o voucher: ${error.message}` };
+  const mensagens: Record<string, string> = {
+    nao_autorizado: "Você não tem permissão para queimar vouchers desta empresa.",
+    nao_encontrado: "Voucher não encontrado. Confira o código com o motorista.",
+    outro_beneficiario: "Esse voucher não pertence a um benefício desta empresa.",
+    ja_queimado: "Esse voucher já foi queimado antes.",
+    cancelado: "Esse voucher foi cancelado — não pode ser queimado.",
+    vencido: "Esse voucher está vencido.",
+  };
+  if (r.status !== "ok") return { erro: mensagens[r.status] ?? "Voucher inválido." };
 
   revalidatePath("/parcerias-locais");
-  return {
-    sucesso: {
-      titulo: resgate.titulo,
-      motorista: (resgate.motoristas as { nome_completo: string } | null)?.nome_completo ?? "motorista",
-    },
-  };
+  return { sucesso: { titulo: r.titulo ?? "Benefício", motorista: r.motorista ?? "motorista" } };
 }

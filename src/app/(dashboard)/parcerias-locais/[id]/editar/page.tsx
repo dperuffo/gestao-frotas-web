@@ -31,7 +31,7 @@ export default async function EditarItemParceriaPage({
 
   const { data: item } = await supabase
     .from("fidelidade_catalogo_itens")
-    .select("id, categoria, titulo, descricao, parceiro_nome, pontos_necessarios, ativo, imagem_url, validade_dias")
+    .select("id, categoria, titulo, descricao, parceiro_nome, pontos_necessarios, ativo, imagem_url, validade_dias, valor_reembolso")
     .eq("id", id)
     .eq("criador_empresa_id", empresaSelecionada)
     .maybeSingle();

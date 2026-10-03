@@ -14,6 +14,7 @@ type ItemExistente = {
   ativo: boolean;
   imagem_url: string | null;
   validade_dias: number | null;
+  valor_reembolso: number | null;
 };
 
 export function ItemParceriaForm({ empresaId, item }: { empresaId: string; item?: ItemExistente }) {
@@ -81,6 +82,17 @@ export function ItemParceriaForm({ empresaId, item }: { empresaId: string; item?
               name="pontos_necessarios"
               required
               defaultValue={item?.pontos_necessarios ?? ""}
+              className="input"
+            />
+          </Campo>
+          <Campo label="Valor a receber por resgate (R$)">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              name="valor_reembolso"
+              defaultValue={item?.valor_reembolso ?? ""}
+              placeholder="Em branco = pontos x R$ 0,10"
               className="input"
             />
           </Campo>
