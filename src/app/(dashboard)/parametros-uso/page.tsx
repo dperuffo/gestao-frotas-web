@@ -357,7 +357,7 @@ async function ConteudoAba({
   if (tipo === "intervalo") {
     const { data } = await supabase
       .from("parametros_intervalo_abastecimento")
-      .select("id, tipo, placa, intervalo_minimo, unidade, status, observacao, motoristas(nome_completo)")
+      .select("id, motorista_id, tipo, placa, intervalo_minimo, unidade, status, observacao, motoristas(nome_completo)")
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
     return (
@@ -373,7 +373,7 @@ async function ConteudoAba({
   if (tipo === "valor-diario") {
     const { data } = await supabase
       .from("parametros_valor_diario_motorista")
-      .select("id, valor_maximo, status, observacao, motoristas(nome_completo)")
+      .select("id, motorista_id, valor_maximo, status, observacao, motoristas(nome_completo)")
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
     return <SecaoValorDiario linhas={(data ?? []) as any} empresaId={empresaId} motoristas={motoristas} />;
@@ -418,7 +418,7 @@ async function ConteudoAba({
   if (tipo === "dias-horarios") {
     const { data } = await supabase
       .from("parametros_dias_horarios")
-      .select("id, classificacao, placa, dias_permitidos, hora_inicio, hora_fim, status, observacao, motoristas(nome_completo)")
+      .select("id, motorista_id, classificacao, placa, dias_permitidos, hora_inicio, hora_fim, status, observacao, motoristas(nome_completo)")
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
     return (
@@ -434,7 +434,7 @@ async function ConteudoAba({
   if (tipo === "postos") {
     const { data } = await supabase
       .from("parametros_postos_permitidos")
-      .select("id, classificacao, placa, postos_cnpj, tipo_limite, valor_maximo, status, observacao, motoristas(nome_completo)")
+      .select("id, motorista_id, classificacao, placa, postos_cnpj, tipo_limite, valor_maximo, status, observacao, motoristas(nome_completo)")
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
     return (
@@ -451,7 +451,7 @@ async function ConteudoAba({
   if (tipo === "servicos") {
     const { data } = await supabase
       .from("parametros_limite_servicos")
-      .select("id, placa, postos_cnpj, limites, status, observacao, motoristas(nome_completo)")
+      .select("id, motorista_id, placa, postos_cnpj, limites, status, observacao, motoristas(nome_completo)")
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
     return (

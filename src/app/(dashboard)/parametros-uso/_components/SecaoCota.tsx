@@ -38,6 +38,7 @@ export function SecaoCota({
   veiculos: VeiculoOpcao[];
 }) {
   const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState<Linha | null>(null);
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
@@ -60,7 +61,7 @@ export function SecaoCota({
             Limite de consumo por veículo (R$ ou litros), com periodicidade. O abastecimento é bloqueado quando a
             cota é excedida e renovada automaticamente no início de cada período.
           </p>
-          <button type="button" onClick={() => setModalAberto(true)} className="btn-primary shrink-0">
+          <button type="button" onClick={() => { setEditando(null); setModalAberto(true); }} className="btn-primary shrink-0">
             + Nova Cota
           </button>
         </div>
@@ -97,6 +98,13 @@ export function SecaoCota({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setEditando(l); setModalAberto(true); }}
+                      className="text-xs font-medium text-frota-600 hover:underline"
+                    >
+                      Editar
+                    </button>
                     <ToggleStatusRegra id={l.id} ativo={l.status === "Ativo"} acao={alternarStatusCota} />
                     <ExcluirRegra id={l.id} acao={excluirCota} />
                   </div>
@@ -114,14 +122,15 @@ export function SecaoCota({
         </table>
       </div>
 
-      <ModalRegra titulo="Nova Cota por Veículo" aberto={modalAberto} onFechar={() => setModalAberto(false)}>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <ModalRegra titulo={editando ? "Editar Cota por Veículo" : "Nova Cota por Veículo"} aberto={modalAberto} onFechar={() => setModalAberto(false)}>
+        <form key={editando?.id ?? "novo"} onSubmit={handleSubmit} className="space-y-4">
           {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
           <input type="hidden" name="empresa_id" value={empresaId} />
+          {editando && <input type="hidden" name="id" value={editando.id} />}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa) *</label>
-            <select name="placa" required defaultValue="" className="input">
+            <select name="placa" required defaultValue={editando?.placa ?? ""} className="input">
               <option value="" disabled>
                 Selecione um veículo...
               </option>
@@ -136,20 +145,20 @@ export function SecaoCota({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tipo de cota</label>
-              <select name="tipo" defaultValue="Valor" className="input">
+              <select name="tipo" defaultValue={editando?.tipo ?? "Valor"} className="input">
                 <option value="Valor">Valor (R$)</option>
                 <option value="Volume">Volume (L)</option>
               </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Limite *</label>
-              <input type="number" name="limite" min={0.01} step="0.01" required className="input" />
+              <input type="number" name="limite" min={0.01} step="0.01" required defaultValue={editando?.limite ?? undefined} className="input" />
             </div>
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Periodicidade</label>
-            <select name="periodicidade" defaultValue="Mes" className="input">
+            <select name="periodicidade" defaultValue={editando?.periodicidade ?? "Mes"} className="input">
               <option value="Abastecimento">Por abastecimento (limite por evento)</option>
               <option value="Semana">Por semana (7 dias)</option>
               <option value="Quinzena">Por quinzena (15 dias)</option>
@@ -159,7 +168,7 @@ export function SecaoCota({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
-            <textarea name="observacao" rows={2} className="input" />
+            <textarea name="observacao" rows={2} defaultValue={editando?.observacao ?? ""} className="input" />
           </div>
 
           <div className="flex justify-end">

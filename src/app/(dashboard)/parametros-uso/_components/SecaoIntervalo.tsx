@@ -13,6 +13,7 @@ type Linha = {
   unidade: string;
   status: string;
   observacao: string | null;
+  motorista_id: string | null;
   motoristas: { nome_completo: string } | null;
 };
 type VeiculoOpcao = { placa: string; marca: string | null; modelo: string | null };
@@ -30,6 +31,7 @@ export function SecaoIntervalo({
   motoristas: MotoristaOpcao[];
 }) {
   const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState<Linha | null>(null);
   const [tipo, setTipo] = useState<"Veiculo" | "Motorista">("Veiculo");
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -53,7 +55,7 @@ export function SecaoIntervalo({
             Intervalo mínimo obrigatório entre dois abastecimentos consecutivos, por veículo ou motorista. O
             sistema bloqueia o registro se o intervalo for menor que o definido.
           </p>
-          <button type="button" onClick={() => setModalAberto(true)} className="btn-primary shrink-0">
+          <button type="button" onClick={() => { setEditando(null); setTipo("Veiculo"); setModalAberto(true); }} className="btn-primary shrink-0">
             + Nova Regra
           </button>
         </div>
@@ -87,6 +89,13 @@ export function SecaoIntervalo({
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.observacao ?? "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setEditando(l); setTipo(l.tipo === "Motorista" ? "Motorista" : "Veiculo"); setModalAberto(true); }}
+                      className="text-xs font-medium text-frota-600 hover:underline"
+                    >
+                      Editar
+                    </button>
                     <ToggleStatusRegra id={l.id} ativo={l.status === "Ativo"} acao={alternarStatusIntervalo} />
                     <ExcluirRegra id={l.id} acao={excluirIntervalo} />
                   </div>
@@ -104,10 +113,11 @@ export function SecaoIntervalo({
         </table>
       </div>
 
-      <ModalRegra titulo="Nova Regra de Intervalo" aberto={modalAberto} onFechar={() => setModalAberto(false)}>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <ModalRegra titulo={editando ? "Editar Regra de Intervalo" : "Nova Regra de Intervalo"} aberto={modalAberto} onFechar={() => setModalAberto(false)}>
+        <form key={editando?.id ?? "novo"} onSubmit={handleSubmit} className="space-y-4">
           {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
           <input type="hidden" name="empresa_id" value={empresaId} />
+          {editando && <input type="hidden" name="id" value={editando.id} />}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tipo de regra *</label>
@@ -125,7 +135,7 @@ export function SecaoIntervalo({
           {tipo === "Veiculo" ? (
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
-              <select name="placa" defaultValue="" className="input">
+              <select name="placa" defaultValue={editando?.placa ?? ""} className="input">
                 <option value="">Todos os veículos (regra geral)</option>
                 {veiculos.map((v) => (
                   <option key={v.placa} value={v.placa}>
@@ -137,7 +147,7 @@ export function SecaoIntervalo({
           ) : (
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Motorista</label>
-              <select name="motorista_id" defaultValue="" className="input">
+              <select name="motorista_id" defaultValue={editando?.motorista_id ?? ""} className="input">
                 <option value="">Todos os motoristas (regra geral)</option>
                 {motoristas.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -151,11 +161,11 @@ export function SecaoIntervalo({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Intervalo mínimo *</label>
-              <input type="number" name="intervalo_minimo" min={1} required className="input" />
+              <input type="number" name="intervalo_minimo" min={1} required defaultValue={editando?.intervalo_minimo ?? undefined} className="input" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Unidade</label>
-              <select name="unidade" defaultValue="Horas" className="input">
+              <select name="unidade" defaultValue={editando?.unidade ?? "Horas"} className="input">
                 <option value="Horas">Horas</option>
                 <option value="Dias">Dias</option>
               </select>
@@ -164,7 +174,7 @@ export function SecaoIntervalo({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
-            <textarea name="observacao" rows={2} className="input" />
+            <textarea name="observacao" rows={2} defaultValue={editando?.observacao ?? ""} className="input" />
           </div>
 
           <div className="flex justify-end">

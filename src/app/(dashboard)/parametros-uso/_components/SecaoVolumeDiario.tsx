@@ -18,6 +18,7 @@ export function SecaoVolumeDiario({
   veiculos: VeiculoOpcao[];
 }) {
   const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState<Linha | null>(null);
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
@@ -40,7 +41,7 @@ export function SecaoVolumeDiario({
             Volume máximo (L) que pode ser abastecido em um veículo em um único dia. Ao atingir o limite, o
             registro é bloqueado com a mensagem &quot;Volume Diário Excedido&quot;.
           </p>
-          <button type="button" onClick={() => setModalAberto(true)} className="btn-primary shrink-0">
+          <button type="button" onClick={() => { setEditando(null); setModalAberto(true); }} className="btn-primary shrink-0">
             + Nova Regra
           </button>
         </div>
@@ -68,6 +69,13 @@ export function SecaoVolumeDiario({
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.observacao ?? "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setEditando(l); setModalAberto(true); }}
+                      className="text-xs font-medium text-frota-600 hover:underline"
+                    >
+                      Editar
+                    </button>
                     <ToggleStatusRegra id={l.id} ativo={l.status === "Ativo"} acao={alternarStatusVolumeDiario} />
                     <ExcluirRegra id={l.id} acao={excluirVolumeDiario} />
                   </div>
@@ -85,14 +93,15 @@ export function SecaoVolumeDiario({
         </table>
       </div>
 
-      <ModalRegra titulo="Nova Regra — Volume Diário" aberto={modalAberto} onFechar={() => setModalAberto(false)}>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <ModalRegra titulo={editando ? "Editar Regra — Volume Diário" : "Nova Regra — Volume Diário"} aberto={modalAberto} onFechar={() => setModalAberto(false)}>
+        <form key={editando?.id ?? "novo"} onSubmit={handleSubmit} className="space-y-4">
           {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
           <input type="hidden" name="empresa_id" value={empresaId} />
+          {editando && <input type="hidden" name="id" value={editando.id} />}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
-            <select name="placa" defaultValue="" className="input">
+            <select name="placa" defaultValue={editando?.placa ?? ""} className="input">
               <option value="">Todos os veículos (regra geral)</option>
               {veiculos.map((v) => (
                 <option key={v.placa} value={v.placa}>
@@ -104,12 +113,12 @@ export function SecaoVolumeDiario({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Volume máximo diário (L) *</label>
-            <input type="number" name="volume_maximo" min={1} step="0.01" required className="input" />
+            <input type="number" name="volume_maximo" min={1} step="0.01" required defaultValue={editando?.volume_maximo ?? undefined} className="input" />
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
-            <textarea name="observacao" rows={2} className="input" />
+            <textarea name="observacao" rows={2} defaultValue={editando?.observacao ?? ""} className="input" />
           </div>
 
           <div className="flex justify-end">

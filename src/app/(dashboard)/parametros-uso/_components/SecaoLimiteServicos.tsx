@@ -15,6 +15,7 @@ type Linha = {
   limites: LimiteItem[];
   status: string;
   observacao: string | null;
+  motorista_id: string | null;
   motoristas: { nome_completo: string } | null;
 };
 type VeiculoOpcao = { placa: string; marca: string | null; modelo: string | null };
@@ -35,6 +36,7 @@ export function SecaoLimiteServicos({
   postos: PostoOpcao[];
 }) {
   const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState<Linha | null>(null);
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
@@ -57,7 +59,7 @@ export function SecaoLimiteServicos({
             Quantidade (UN) e valor máximo (R$) permitidos por serviço (lavagem, restaurante etc.), filtrados por
             cliente, veículo, motorista e posto. Campos em branco = sem restrição.
           </p>
-          <button type="button" onClick={() => setModalAberto(true)} className="btn-primary shrink-0">
+          <button type="button" onClick={() => { setEditando(null); setModalAberto(true); }} className="btn-primary shrink-0">
             + Nova Regra
           </button>
         </div>
@@ -92,6 +94,13 @@ export function SecaoLimiteServicos({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setEditando(l); setModalAberto(true); }}
+                      className="text-xs font-medium text-frota-600 hover:underline"
+                    >
+                      Editar
+                    </button>
                     <ToggleStatusRegra id={l.id} ativo={l.status === "Ativo"} acao={alternarStatusLimiteServicos} />
                     <ExcluirRegra id={l.id} acao={excluirLimiteServicos} />
                   </div>
@@ -109,14 +118,15 @@ export function SecaoLimiteServicos({
         </table>
       </div>
 
-      <ModalRegra titulo="Nova Regra — Limite de Serviços" aberto={modalAberto} onFechar={() => setModalAberto(false)}>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <ModalRegra titulo={editando ? "Editar Regra — Limite de Serviços" : "Nova Regra — Limite de Serviços"} aberto={modalAberto} onFechar={() => setModalAberto(false)}>
+        <form key={editando?.id ?? "novo"} onSubmit={handleSubmit} className="space-y-4">
           {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
           <input type="hidden" name="empresa_id" value={empresaId} />
+          {editando && <input type="hidden" name="id" value={editando.id} />}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
-            <select name="placa" defaultValue="" className="input">
+            <select name="placa" defaultValue={editando?.placa ?? ""} className="input">
               <option value="">Todos os veículos</option>
               {veiculos.map((v) => (
                 <option key={v.placa} value={v.placa}>
@@ -128,7 +138,7 @@ export function SecaoLimiteServicos({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Motorista</label>
-            <select name="motorista_id" defaultValue="" className="input">
+            <select name="motorista_id" defaultValue={editando?.motorista_id ?? ""} className="input">
               <option value="">Todos os motoristas</option>
               {motoristas.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -144,7 +154,12 @@ export function SecaoLimiteServicos({
               <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 p-2">
                 {postos.map((p) => (
                   <label key={p.cnpj} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                    <input type="checkbox" name="postos_cnpj" value={p.cnpj} className="h-4 w-4 rounded border-slate-300" />
+                    <input
+                      type="checkbox"
+                      name="postos_cnpj"
+                      value={p.cnpj}
+                      defaultChecked={editando?.postos_cnpj?.includes(p.cnpj) ?? false}
+                      className="h-4 w-4 rounded border-slate-300" />
                     {p.nome}
                   </label>
                 ))}
@@ -159,10 +174,16 @@ export function SecaoLimiteServicos({
                 <div key={s} className="grid grid-cols-3 items-center gap-2 text-sm">
                   <span className="text-slate-600 dark:text-slate-300">{s}</span>
                   <input type="hidden" name="servico" value={s} />
-                  <input type="number" name="qtd_maxima" min={0} placeholder="Qtd. máx. (UN)" className="input" />
+                  <input
+                    type="number"
+                    name="qtd_maxima"
+                    min={0}
+                    defaultValue={editando?.limites?.find((x) => x.servico === s)?.qtd_maxima ?? undefined}
+                    placeholder="Qtd. máx. (UN)" className="input" />
                   <input
                     type="number"
                     name="valor_maximo_servico"
+                    defaultValue={editando?.limites?.find((x) => x.servico === s)?.valor_maximo ?? undefined}
                     min={0}
                     step="0.01"
                     placeholder="Valor máx. (R$)"
@@ -176,7 +197,7 @@ export function SecaoLimiteServicos({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
-            <textarea name="observacao" rows={2} className="input" />
+            <textarea name="observacao" rows={2} defaultValue={editando?.observacao ?? ""} className="input" />
           </div>
 
           <div className="flex justify-end">

@@ -30,6 +30,7 @@ export function SecaoVariacaoHodometro({
   veiculos: VeiculoOpcao[];
 }) {
   const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState<Linha | null>(null);
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
@@ -53,7 +54,7 @@ export function SecaoVariacaoHodometro({
             <strong>{classificacao === "Leve" ? "Leves" : "Pesados"}</strong>. Registros com variação acima do
             limite geram alerta.
           </p>
-          <button type="button" onClick={() => setModalAberto(true)} className="btn-primary shrink-0">
+          <button type="button" onClick={() => { setEditando(null); setModalAberto(true); }} className="btn-primary shrink-0">
             + Nova Regra
           </button>
         </div>
@@ -81,6 +82,13 @@ export function SecaoVariacaoHodometro({
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.observacao ?? "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setEditando(l); setModalAberto(true); }}
+                      className="text-xs font-medium text-frota-600 hover:underline"
+                    >
+                      Editar
+                    </button>
                     <ToggleStatusRegra id={l.id} ativo={l.status === "Ativo"} acao={alternarStatusVariacaoHodometro} />
                     <ExcluirRegra id={l.id} acao={excluirVariacaoHodometro} />
                   </div>
@@ -99,18 +107,19 @@ export function SecaoVariacaoHodometro({
       </div>
 
       <ModalRegra
-        titulo={`Nova Regra — Hodômetro (${classificacao === "Leve" ? "Leves" : "Pesados"})`}
+        titulo={`${editando ? "Editar" : "Nova"} Regra — Hodômetro (${classificacao === "Leve" ? "Leves" : "Pesados"})`}
         aberto={modalAberto}
         onFechar={() => setModalAberto(false)}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form key={editando?.id ?? "novo"} onSubmit={handleSubmit} className="space-y-4">
           {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
           <input type="hidden" name="empresa_id" value={empresaId} />
+          {editando && <input type="hidden" name="id" value={editando.id} />}
           <input type="hidden" name="classificacao" value={classificacao} />
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
-            <select name="placa" defaultValue="" className="input">
+            <select name="placa" defaultValue={editando?.placa ?? ""} className="input">
               <option value="">Todos os veículos do tipo</option>
               {veiculos.map((v) => (
                 <option key={v.placa} value={v.placa}>
@@ -122,12 +131,12 @@ export function SecaoVariacaoHodometro({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Variação máxima (km) *</label>
-            <input type="number" name="variacao_maxima_km" min={1} required className="input" />
+            <input type="number" name="variacao_maxima_km" min={1} required defaultValue={editando?.variacao_maxima_km ?? undefined} className="input" />
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
-            <textarea name="observacao" rows={2} className="input" />
+            <textarea name="observacao" rows={2} defaultValue={editando?.observacao ?? ""} className="input" />
           </div>
 
           <div className="flex justify-end">

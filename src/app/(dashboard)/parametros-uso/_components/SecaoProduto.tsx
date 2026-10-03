@@ -26,6 +26,7 @@ export function SecaoProduto({
   veiculos: VeiculoOpcao[];
 }) {
   const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState<Linha | null>(null);
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
@@ -48,7 +49,7 @@ export function SecaoProduto({
             Combustíveis permitidos por veículo. Se nenhum for marcado na regra, o sistema usa o combustível
             especificado no cadastro do veículo.
           </p>
-          <button type="button" onClick={() => setModalAberto(true)} className="btn-primary shrink-0">
+          <button type="button" onClick={() => { setEditando(null); setModalAberto(true); }} className="btn-primary shrink-0">
             + Nova Regra
           </button>
         </div>
@@ -78,6 +79,13 @@ export function SecaoProduto({
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{l.observacao ?? "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setEditando(l); setModalAberto(true); }}
+                      className="text-xs font-medium text-frota-600 hover:underline"
+                    >
+                      Editar
+                    </button>
                     <ToggleStatusRegra id={l.id} ativo={l.status === "Ativo"} acao={alternarStatusProduto} />
                     <ExcluirRegra id={l.id} acao={excluirProduto} />
                   </div>
@@ -95,14 +103,15 @@ export function SecaoProduto({
         </table>
       </div>
 
-      <ModalRegra titulo="Nova Regra — Produto Abastecido" aberto={modalAberto} onFechar={() => setModalAberto(false)}>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <ModalRegra titulo={editando ? "Editar Regra — Produto Abastecido" : "Nova Regra — Produto Abastecido"} aberto={modalAberto} onFechar={() => setModalAberto(false)}>
+        <form key={editando?.id ?? "novo"} onSubmit={handleSubmit} className="space-y-4">
           {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
           <input type="hidden" name="empresa_id" value={empresaId} />
+          {editando && <input type="hidden" name="id" value={editando.id} />}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
-            <select name="placa" defaultValue="" className="input">
+            <select name="placa" defaultValue={editando?.placa ?? ""} className="input">
               <option value="">Todos os veículos (regra geral)</option>
               {veiculos.map((v) => (
                 <option key={v.placa} value={v.placa}>
@@ -117,7 +126,12 @@ export function SecaoProduto({
             <div className="grid grid-cols-2 gap-2">
               {COMBUSTIVEIS.map((c) => (
                 <label key={c} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                  <input type="checkbox" name="combustiveis_permitidos" value={c} className="h-4 w-4 rounded border-slate-300" />
+                  <input
+                    type="checkbox"
+                    name="combustiveis_permitidos"
+                    value={c}
+                    defaultChecked={editando?.combustiveis_permitidos?.includes(c) ?? false}
+                    className="h-4 w-4 rounded border-slate-300" />
                   {c}
                 </label>
               ))}
@@ -127,7 +141,7 @@ export function SecaoProduto({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
-            <textarea name="observacao" rows={2} className="input" />
+            <textarea name="observacao" rows={2} defaultValue={editando?.observacao ?? ""} className="input" />
           </div>
 
           <div className="flex justify-end">

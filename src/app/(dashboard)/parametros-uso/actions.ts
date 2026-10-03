@@ -183,16 +183,18 @@ export async function criarIntervalo(_prev: RegraFormState, formData: FormData):
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { error } = await supabase.from("parametros_intervalo_abastecimento").insert({
-    empresa_id: empresaId,
-    tipo,
+  const idEdicao = textoOuNull(formData, "id");
+  const campos = {
+    tipo: tipo as "Veiculo" | "Motorista",
     placa: tipo === "Veiculo" ? textoOuNull(formData, "placa")?.toUpperCase() ?? null : null,
     motorista_id: tipo === "Motorista" ? textoOuNull(formData, "motorista_id") : null,
     intervalo_minimo: intervaloMinimo,
     unidade: (String(formData.get("unidade") ?? "Horas") === "Dias" ? "Dias" : "Horas") as "Horas" | "Dias",
     observacao: textoOuNull(formData, "observacao"),
-    criado_por: user?.email ?? null,
-  });
+  };
+  const { error } = idEdicao
+    ? await supabase.from("parametros_intervalo_abastecimento").update({ ...campos, atualizado_em: new Date().toISOString() }).eq("id", idEdicao)
+    : await supabase.from("parametros_intervalo_abastecimento").insert({ empresa_id: empresaId, ...campos, criado_por: user?.email ?? null });
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
 }
@@ -223,13 +225,15 @@ export async function criarValorDiario(_prev: RegraFormState, formData: FormData
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { error } = await supabase.from("parametros_valor_diario_motorista").insert({
-    empresa_id: empresaId,
+  const idEdicao = textoOuNull(formData, "id");
+  const campos = {
     motorista_id: textoOuNull(formData, "motorista_id"),
     valor_maximo: valorMaximo,
     observacao: textoOuNull(formData, "observacao"),
-    criado_por: user?.email ?? null,
-  });
+  };
+  const { error } = idEdicao
+    ? await supabase.from("parametros_valor_diario_motorista").update({ ...campos, atualizado_em: new Date().toISOString() }).eq("id", idEdicao)
+    : await supabase.from("parametros_valor_diario_motorista").insert({ empresa_id: empresaId, ...campos, criado_por: user?.email ?? null });
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
 }
@@ -260,13 +264,15 @@ export async function criarVolumeDiario(_prev: RegraFormState, formData: FormDat
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { error } = await supabase.from("parametros_volume_diario_veiculo").insert({
-    empresa_id: empresaId,
+  const idEdicao = textoOuNull(formData, "id");
+  const campos = {
     placa: textoOuNull(formData, "placa")?.toUpperCase() ?? null,
     volume_maximo: volumeMaximo,
     observacao: textoOuNull(formData, "observacao"),
-    criado_por: user?.email ?? null,
-  });
+  };
+  const { error } = idEdicao
+    ? await supabase.from("parametros_volume_diario_veiculo").update({ ...campos, atualizado_em: new Date().toISOString() }).eq("id", idEdicao)
+    : await supabase.from("parametros_volume_diario_veiculo").insert({ empresa_id: empresaId, ...campos, criado_por: user?.email ?? null });
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
 }
@@ -295,13 +301,15 @@ export async function criarProduto(_prev: RegraFormState, formData: FormData): P
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { error } = await supabase.from("parametros_produto_abastecido").insert({
-    empresa_id: empresaId,
+  const idEdicao = textoOuNull(formData, "id");
+  const campos = {
     placa: textoOuNull(formData, "placa")?.toUpperCase() ?? null,
     combustiveis_permitidos: combustiveis,
     observacao: textoOuNull(formData, "observacao"),
-    criado_por: user?.email ?? null,
-  });
+  };
+  const { error } = idEdicao
+    ? await supabase.from("parametros_produto_abastecido").update({ ...campos, atualizado_em: new Date().toISOString() }).eq("id", idEdicao)
+    : await supabase.from("parametros_produto_abastecido").insert({ empresa_id: empresaId, ...campos, criado_por: user?.email ?? null });
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
 }
@@ -333,14 +341,16 @@ export async function criarVariacaoHodometro(_prev: RegraFormState, formData: Fo
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { error } = await supabase.from("parametros_variacao_hodometro").insert({
-    empresa_id: empresaId,
-    classificacao,
+  const idEdicao = textoOuNull(formData, "id");
+  const campos = {
+    classificacao: classificacao as "Leve" | "Pesado",
     placa: textoOuNull(formData, "placa")?.toUpperCase() ?? null,
     variacao_maxima_km: variacaoMaxima,
     observacao: textoOuNull(formData, "observacao"),
-    criado_por: user?.email ?? null,
-  });
+  };
+  const { error } = idEdicao
+    ? await supabase.from("parametros_variacao_hodometro").update({ ...campos, atualizado_em: new Date().toISOString() }).eq("id", idEdicao)
+    : await supabase.from("parametros_variacao_hodometro").insert({ empresa_id: empresaId, ...campos, criado_por: user?.email ?? null });
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
 }
@@ -373,8 +383,8 @@ export async function criarDiasHorarios(_prev: RegraFormState, formData: FormDat
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { error } = await supabase.from("parametros_dias_horarios").insert({
-    empresa_id: empresaId,
+  const idEdicao = textoOuNull(formData, "id");
+  const campos = {
     classificacao: classificacaoOuNull(formData, "classificacao"),
     placa: textoOuNull(formData, "placa")?.toUpperCase() ?? null,
     motorista_id: textoOuNull(formData, "motorista_id"),
@@ -382,8 +392,10 @@ export async function criarDiasHorarios(_prev: RegraFormState, formData: FormDat
     hora_inicio: horaInicio,
     hora_fim: horaFim,
     observacao: textoOuNull(formData, "observacao"),
-    criado_por: user?.email ?? null,
-  });
+  };
+  const { error } = idEdicao
+    ? await supabase.from("parametros_dias_horarios").update({ ...campos, atualizado_em: new Date().toISOString() }).eq("id", idEdicao)
+    : await supabase.from("parametros_dias_horarios").insert({ empresa_id: empresaId, ...campos, criado_por: user?.email ?? null });
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
 }
@@ -417,8 +429,8 @@ export async function criarPostosPermitidos(_prev: RegraFormState, formData: For
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { error } = await supabase.from("parametros_postos_permitidos").insert({
-    empresa_id: empresaId,
+  const idEdicao = textoOuNull(formData, "id");
+  const campos = {
     classificacao: classificacaoOuNull(formData, "classificacao"),
     placa: textoOuNull(formData, "placa")?.toUpperCase() ?? null,
     motorista_id: textoOuNull(formData, "motorista_id"),
@@ -426,8 +438,10 @@ export async function criarPostosPermitidos(_prev: RegraFormState, formData: For
     tipo_limite: tipoLimite,
     valor_maximo: tipoLimite === "Sem limite" ? null : numeroOuNull(formData, "valor_maximo"),
     observacao: textoOuNull(formData, "observacao"),
-    criado_por: user?.email ?? null,
-  });
+  };
+  const { error } = idEdicao
+    ? await supabase.from("parametros_postos_permitidos").update({ ...campos, atualizado_em: new Date().toISOString() }).eq("id", idEdicao)
+    : await supabase.from("parametros_postos_permitidos").insert({ empresa_id: empresaId, ...campos, criado_por: user?.email ?? null });
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
 }
@@ -471,15 +485,17 @@ export async function criarLimiteServicos(_prev: RegraFormState, formData: FormD
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { error } = await supabase.from("parametros_limite_servicos").insert({
-    empresa_id: empresaId,
+  const idEdicao = textoOuNull(formData, "id");
+  const campos = {
     placa: textoOuNull(formData, "placa")?.toUpperCase() ?? null,
     motorista_id: textoOuNull(formData, "motorista_id"),
     postos_cnpj: formData.getAll("postos_cnpj").map(String),
     limites,
     observacao: textoOuNull(formData, "observacao"),
-    criado_por: user?.email ?? null,
-  });
+  };
+  const { error } = idEdicao
+    ? await supabase.from("parametros_limite_servicos").update({ ...campos, atualizado_em: new Date().toISOString() }).eq("id", idEdicao)
+    : await supabase.from("parametros_limite_servicos").insert({ empresa_id: empresaId, ...campos, criado_por: user?.email ?? null });
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
 }
@@ -518,15 +534,17 @@ export async function criarCota(_prev: RegraFormState, formData: FormData): Prom
   ).includes(periodicidadeBruta as "Abastecimento" | "Semana" | "Quinzena" | "Mes")
     ? (periodicidadeBruta as "Abastecimento" | "Semana" | "Quinzena" | "Mes")
     : "Mes";
-  const { error } = await supabase.from("parametros_cota_veiculo").insert({
-    empresa_id: empresaId,
+  const idEdicao = textoOuNull(formData, "id");
+  const campos = {
     placa,
-    tipo,
+    tipo: tipo as "Valor" | "Volume",
     limite,
     periodicidade,
     observacao: textoOuNull(formData, "observacao"),
-    criado_por: user?.email ?? null,
-  });
+  };
+  const { error } = idEdicao
+    ? await supabase.from("parametros_cota_veiculo").update({ ...campos, atualizado_em: new Date().toISOString() }).eq("id", idEdicao)
+    : await supabase.from("parametros_cota_veiculo").insert({ empresa_id: empresaId, ...campos, criado_por: user?.email ?? null });
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
 }

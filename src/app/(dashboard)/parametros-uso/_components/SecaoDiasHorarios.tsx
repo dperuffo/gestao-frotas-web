@@ -16,6 +16,7 @@ type Linha = {
   hora_fim: string;
   status: string;
   observacao: string | null;
+  motorista_id: string | null;
   motoristas: { nome_completo: string } | null;
 };
 type VeiculoOpcao = { placa: string; marca: string | null; modelo: string | null };
@@ -33,6 +34,7 @@ export function SecaoDiasHorarios({
   motoristas: MotoristaOpcao[];
 }) {
   const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState<Linha | null>(null);
   const [erro, setErro] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
@@ -55,7 +57,7 @@ export function SecaoDiasHorarios({
             Dias da semana e horário em que o abastecimento é permitido, por cliente, veículo, classificação e
             motorista. Fora da janela definida, o abastecimento é bloqueado.
           </p>
-          <button type="button" onClick={() => setModalAberto(true)} className="btn-primary shrink-0">
+          <button type="button" onClick={() => { setEditando(null); setModalAberto(true); }} className="btn-primary shrink-0">
             + Nova Restrição
           </button>
         </div>
@@ -89,6 +91,13 @@ export function SecaoDiasHorarios({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setEditando(l); setModalAberto(true); }}
+                      className="text-xs font-medium text-frota-600 hover:underline"
+                    >
+                      Editar
+                    </button>
                     <ToggleStatusRegra id={l.id} ativo={l.status === "Ativo"} acao={alternarStatusDiasHorarios} />
                     <ExcluirRegra id={l.id} acao={excluirDiasHorarios} />
                   </div>
@@ -106,14 +115,15 @@ export function SecaoDiasHorarios({
         </table>
       </div>
 
-      <ModalRegra titulo="Nova Restrição de Horário" aberto={modalAberto} onFechar={() => setModalAberto(false)}>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <ModalRegra titulo={editando ? "Editar Restrição de Horário" : "Nova Restrição de Horário"} aberto={modalAberto} onFechar={() => setModalAberto(false)}>
+        <form key={editando?.id ?? "novo"} onSubmit={handleSubmit} className="space-y-4">
           {erro && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</div>}
           <input type="hidden" name="empresa_id" value={empresaId} />
+          {editando && <input type="hidden" name="id" value={editando.id} />}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Classificação</label>
-            <select name="classificacao" defaultValue="" className="input">
+            <select name="classificacao" defaultValue={editando?.classificacao ?? ""} className="input">
               <option value="">Todos</option>
               <option value="Leve">Leve</option>
               <option value="Pesado">Pesado</option>
@@ -122,7 +132,7 @@ export function SecaoDiasHorarios({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Veículo (placa)</label>
-            <select name="placa" defaultValue="" className="input">
+            <select name="placa" defaultValue={editando?.placa ?? ""} className="input">
               <option value="">Todos os veículos</option>
               {veiculos.map((v) => (
                 <option key={v.placa} value={v.placa}>
@@ -134,7 +144,7 @@ export function SecaoDiasHorarios({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Motorista</label>
-            <select name="motorista_id" defaultValue="" className="input">
+            <select name="motorista_id" defaultValue={editando?.motorista_id ?? ""} className="input">
               <option value="">Todos os motoristas</option>
               {motoristas.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -153,7 +163,7 @@ export function SecaoDiasHorarios({
                     type="checkbox"
                     name="dias_permitidos"
                     value={d}
-                    defaultChecked={["Seg", "Ter", "Qua", "Qui", "Sex"].includes(d)}
+                    defaultChecked={editando ? editando.dias_permitidos.includes(d) : ["Seg", "Ter", "Qua", "Qui", "Sex"].includes(d)}
                     className="h-4 w-4 rounded border-slate-300"
                   />
                   {d}
@@ -165,17 +175,17 @@ export function SecaoDiasHorarios({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Hora início *</label>
-              <input type="time" name="hora_inicio" required defaultValue="06:00" className="input" />
+              <input type="time" name="hora_inicio" required defaultValue={editando?.hora_inicio?.slice(0, 5) ?? "06:00"} className="input" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Hora fim *</label>
-              <input type="time" name="hora_fim" required defaultValue="20:00" className="input" />
+              <input type="time" name="hora_fim" required defaultValue={editando?.hora_fim?.slice(0, 5) ?? "20:00"} className="input" />
             </div>
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Observação</label>
-            <textarea name="observacao" rows={2} className="input" />
+            <textarea name="observacao" rows={2} defaultValue={editando?.observacao ?? ""} className="input" />
           </div>
 
           <div className="flex justify-end">
