@@ -27,7 +27,12 @@ explícita avisando disso.
   `PainelAjusteAbastecimento` pra aceitar `"pdv"` como provedor.
 - Ligar o painel na tela `/abastecimentos/pdv/[id]` (Gestão de Frotas).
 
-## Crop manual na tela de captura do hodômetro (PWA Motorista)
+## ~~Crop manual na tela de captura do hodômetro (PWA Motorista)~~ — FEITO em 03/10/2026
+
+Resolvido de outra forma, por sugestão do Daniel: em vez de recorte manual
+depois da foto, a câmera ao vivo (pacote `camera`) já mostra um quadro de
+enquadramento; a foto vai ao OCR junto com o retângulo do quadro e o
+servidor recorta nessa região. Texto original abaixo, só pra histórico.
 
 **Adiado em:** 02/10/2026, depois de melhorar a acurácia do OCR
 (pré-processamento com `sharp` — grayscale/normalize/sharpen/threshold +

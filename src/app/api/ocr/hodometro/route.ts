@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient as criarClienteSupabase } from "@supabase/supabase-js";
-import { extrairHodometro } from "@/lib/ocr";
+import { extrairHodometro, type RecorteFracao } from "@/lib/ocr";
 import type { Database } from "@/types/database.types";
 import { resolverCorsHeaders } from "@/lib/corsOrigens";
 import { verificarLimite } from "@/lib/rateLimit";
@@ -48,10 +48,19 @@ export async function POST(request: Request) {
   }
 
   let arquivo: File | null = null;
+  let recorte: RecorteFracao | undefined;
   try {
     const formData = await request.formData();
     const valor = formData.get("arquivo");
     if (valor instanceof File) arquivo = valor;
+
+    // Quadro de enquadramento da câmera (frações 0-1 da foto), opcional —
+    // sem ele (ou inválido) o OCR lê a foto inteira como antes.
+    const campos = ["recorte_x", "recorte_y", "recorte_w", "recorte_h"].map((c) => formData.get(c));
+    if (campos.every((c) => typeof c === "string" && c.trim() !== "")) {
+      const [x, y, w, h] = campos.map((c) => Number(c));
+      recorte = { x, y, w, h };
+    }
   } catch {
     return NextResponse.json({ erro: "Envie a foto como multipart/form-data no campo 'arquivo'." }, { status: 400, headers: CORS_HEADERS });
   }
@@ -65,7 +74,7 @@ export async function POST(request: Request) {
 
   try {
     const bytes = Buffer.from(await arquivo.arrayBuffer());
-    const resultado = await extrairHodometro(bytes);
+    const resultado = await extrairHodometro(bytes, recorte);
     return NextResponse.json(resultado, { headers: CORS_HEADERS });
   } catch (e) {
     const mensagem = e instanceof Error ? e.message : "Erro inesperado ao ler o hodômetro.";

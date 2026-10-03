@@ -252,6 +252,43 @@ function extrairHodometroDoTexto(texto: string): number | null {
 // + threshold (binariza em preto/branco puro, removendo ruído/reflexo do
 // vidro do painel). Deixamos as duas disputarem no `extrairHodometro` e
 // fica a que o tesseract leu com mais confiança.
+//
+// Backlog #103 (03/10/2026): o app agora mostra um quadro de enquadramento
+// sobre a câmera ao vivo, e manda junto o retângulo desse quadro como
+// frações (0 a 1) da foto. Quando vem `recorte`, recortamos a foto nessa
+// região (com uma folga em volta, porque o motorista nunca alinha
+// perfeitamente) ANTES do pré-processamento — o OCR passa a ver só os
+// dígitos, sem ponteiros/ícones/reflexo do resto do painel.
+export type RecorteFracao = { x: number; y: number; w: number; h: number };
+
+const FOLGA_RECORTE = 0.08; // 8% da própria largura/altura do quadro, de cada lado
+
+async function recortarSeNecessario(imagem: Buffer, recorte?: RecorteFracao): Promise<Buffer> {
+  if (!recorte) return imagem;
+  const valido =
+    [recorte.x, recorte.y, recorte.w, recorte.h].every((n) => Number.isFinite(n)) &&
+    recorte.w > 0.02 &&
+    recorte.h > 0.02 &&
+    recorte.x >= 0 &&
+    recorte.y >= 0 &&
+    recorte.x + recorte.w <= 1.001 &&
+    recorte.y + recorte.h <= 1.001;
+  if (!valido) return imagem;
+
+  // Aplica a rotação EXIF primeiro: as frações são relativas à imagem como
+  // o motorista a vê (já em pé), não aos pixels crus do arquivo.
+  const { data, info } = await sharp(imagem).rotate().toBuffer({ resolveWithObject: true });
+  const folgaX = recorte.w * FOLGA_RECORTE;
+  const folgaY = recorte.h * FOLGA_RECORTE;
+  const esquerda = Math.max(0, Math.floor((recorte.x - folgaX) * info.width));
+  const topo = Math.max(0, Math.floor((recorte.y - folgaY) * info.height));
+  const largura = Math.min(info.width - esquerda, Math.ceil((recorte.w + 2 * folgaX) * info.width));
+  const altura = Math.min(info.height - topo, Math.ceil((recorte.h + 2 * folgaY) * info.height));
+  if (largura < 20 || altura < 10) return imagem;
+
+  return sharp(data).extract({ left: esquerda, top: topo, width: largura, height: altura }).toBuffer();
+}
+
 async function prepararVariantesImagem(imagem: Buffer): Promise<Buffer[]> {
   const base = sharp(imagem).rotate();
   const metadata = await base.metadata();
@@ -267,7 +304,7 @@ async function prepararVariantesImagem(imagem: Buffer): Promise<Buffer[]> {
   return Promise.all([preparar(false), preparar(true)]);
 }
 
-export async function extrairHodometro(imagem: Buffer): Promise<ResultadoOcrHodometro> {
+export async function extrairHodometro(imagem: Buffer, recorte?: RecorteFracao): Promise<ResultadoOcrHodometro> {
   const worker = await createWorker("por");
   try {
     await worker.setParameters({
@@ -275,7 +312,7 @@ export async function extrairHodometro(imagem: Buffer): Promise<ResultadoOcrHodo
       tessedit_pageseg_mode: PSM.SINGLE_LINE,
     });
 
-    const variantes = await prepararVariantesImagem(imagem);
+    const variantes = await prepararVariantesImagem(await recortarSeNecessario(imagem, recorte));
     let melhor: ResultadoOcrHodometro | null = null;
 
     for (const variante of variantes) {
