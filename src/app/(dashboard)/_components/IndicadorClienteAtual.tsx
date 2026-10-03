@@ -17,10 +17,37 @@ import { buscarNomeEmpresaAtualAcao } from "./clienteAtualActions";
 // as páginas já usam (resolverEmpresaAtual/empresaParam, ~150 arquivos),
 // então funciona em qualquer tela sem precisar tocar nelas uma por uma.
 // useSearchParams() reage sozinho a cada navegação/troca de cliente.
+// 03/10/2026 — achado do Daniel: ao fazer drill down (cartões, gráficos e
+// linhas que abrem uma tela de detalhe) o indicador voltava pra "Nenhum
+// cliente selecionado", porque nem todo link de detalhe repete ?empresa= na
+// URL. Agora o último cliente escolhido fica guardado na sessão da aba e é
+// usado como reserva quando a URL não traz o parâmetro — mostrado como
+// "Último cliente" pra deixar claro que não veio da tela atual. Se a URL
+// trouxer ?empresa=, ela sempre prevalece (e atualiza o guardado).
+const CHAVE_SESSAO = "fni:cliente-atual";
+
 export function IndicadorClienteAtual({ temMultiplasEmpresas }: { temMultiplasEmpresas: boolean }) {
   const searchParams = useSearchParams();
-  const empresaId = searchParams.get("empresa");
+  const empresaDaUrl = searchParams.get("empresa");
+  const [empresaGuardada, setEmpresaGuardada] = useState<string | null>(null);
   const [nome, setNome] = useState<string | null>(null);
+
+  // Guarda/recupera a seleção (sessionStorage pode falhar em modo restrito).
+  useEffect(() => {
+    try {
+      if (empresaDaUrl) {
+        window.sessionStorage.setItem(CHAVE_SESSAO, empresaDaUrl);
+        setEmpresaGuardada(empresaDaUrl);
+      } else {
+        setEmpresaGuardada(window.sessionStorage.getItem(CHAVE_SESSAO));
+      }
+    } catch {
+      setEmpresaGuardada(empresaDaUrl);
+    }
+  }, [empresaDaUrl]);
+
+  const empresaId = empresaDaUrl ?? empresaGuardada;
+  const ehReserva = !empresaDaUrl && !!empresaGuardada;
 
   useEffect(() => {
     if (!empresaId) {
@@ -54,10 +81,13 @@ export function IndicadorClienteAtual({ temMultiplasEmpresas }: { temMultiplasEm
   return (
     <div
       className="menu-item-extra mx-5 mb-3 flex items-center gap-1.5 rounded-lg border border-accento/30 bg-white px-2.5 py-1.5 text-[11px] font-medium text-frota-800 shadow-sm dark:border-accento/40 dark:bg-slate-800 dark:text-slate-100"
-      title={nome ?? undefined}
+      title={ehReserva ? `Último cliente selecionado: ${nome ?? ""}` : (nome ?? undefined)}
     >
       <Building2 className="h-3.5 w-3.5 shrink-0 text-accento" />
-      <span className="truncate">{nome ?? "Carregando..."}</span>
+      <span className="truncate">
+        {ehReserva && <span className="mr-1 font-normal text-slate-400">Último:</span>}
+        {nome ?? "Carregando..."}
+      </span>
     </div>
   );
 }
