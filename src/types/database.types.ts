@@ -2564,6 +2564,13 @@ export interface Database {
           data_abastecimento: string | null;
           criado_em: string;
           confirmado_em: string | null;
+          // Fase 5 PDV (03/10/2026) — regras do cliente violadas e decisão de
+          // liberação do gestor (ver decidir_abastecimento_negado_pdv).
+          regras_violadas: Json | null;
+          liberacao_decisao: "liberado" | "recusado" | null;
+          liberacao_decidida_em: string | null;
+          liberacao_decidida_por: string | null;
+          liberacao_justificativa: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["abastecimentos_pdv"]["Row"]> & { status: string };
         Update: Partial<Database["public"]["Tables"]["abastecimentos_pdv"]["Row"]>;
@@ -5590,6 +5597,19 @@ export interface Database {
       // Fase 27.51 — devolve só o nome de uma empresa, sem checar RLS
       // (SECURITY DEFINER) — usada só pra "fotografar" o nome da contraparte
       // ao criar uma negociação (negociacoes_postos.cliente_nome/posto_nome).
+      // Fase 5 PDV (03/10/2026) — visão "Abastecimentos negados" do cliente.
+      listar_abastecimentos_negados_pdv: {
+        Args: { p_empresa_id?: string };
+        Returns: Json;
+      };
+      contar_abastecimentos_negados_pendentes_pdv: {
+        Args: { p_empresa_id?: string };
+        Returns: number;
+      };
+      decidir_abastecimento_negado_pdv: {
+        Args: { p_abastecimento_pdv_id: number; p_decisao: string; p_justificativa?: string };
+        Returns: Json;
+      };
       nome_empresa_publico: {
         Args: { p_empresa_id: string };
         Returns: string | null;

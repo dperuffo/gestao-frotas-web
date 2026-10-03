@@ -30,6 +30,9 @@ const TABELAS_TEMPO_REAL = [
   "abastecimentos_internos",
   "tickets",
   "acoes_sugeridas",
+  // Fase 5 PDV (03/10/2026) — abastecimento negado por regra do cliente
+  // aguardando liberação do gestor.
+  "abastecimentos_pdv",
 ] as const;
 
 type Assinante = (badges: Record<string, number>) => void;

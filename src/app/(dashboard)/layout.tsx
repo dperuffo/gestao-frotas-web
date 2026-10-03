@@ -75,6 +75,7 @@ import { logger } from "@/lib/logger";
 import { contarBadgesMenuAcao } from "./_components/badgesMenuActions";
 import { ProvedorBadgesMenu } from "./_components/ProvedorBadgesMenu";
 import { AvisoNovoAbastecimento } from "./_components/AvisoNovoAbastecimento";
+import { AvisoAbastecimentoNegado } from "./_components/AvisoAbastecimentoNegado";
 import {
   HREF_FUNCIONALIDADE,
   carregarMapaPermissoes,
@@ -213,6 +214,9 @@ const menuRoteirizacaoAbastecimento: ItemMenuLateral[] = [
   // externos (Hub de cartão de combustível / ERP de posto), que a FNI aceita
   // mesmo incompleto em vez de rejeitar a transação do integrador.
   { href: "/abastecimentos-sem-motorista", label: "Abastecimentos Sem Motorista", icon: ClipboardCheck },
+  // Fase 5 PDV (03/10/2026, pedido do Daniel) — abastecimentos do PDV negados
+  // por regras do cliente; o gestor libera dentro da validade do pedido.
+  { href: "/abastecimentos-negados", label: "Abastecimentos Negados (PDV)", icon: ShieldAlert },
   // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
   // soluções de automação/meios de pagamento integrados via API (Hub de
   // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.
@@ -1033,6 +1037,7 @@ export default async function DashboardLayout({
         {/* Fase Aviso-Novo-Abastecimento — aviso flutuante de abastecimento
             novo, só pra quem pode ver a tela de abastecimentos. */}
         {podeAcessarItem({ href: "/abastecimentos" }) && <AvisoNovoAbastecimento />}
+        {podeAcessarItem({ href: "/abastecimentos-negados" }) && <AvisoAbastecimentoNegado />}
         <nav className="flex-1 px-3 py-4">
           {ehPosto ? (
             <>

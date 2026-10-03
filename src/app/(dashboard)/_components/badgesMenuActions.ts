@@ -11,6 +11,7 @@ import { contarDocumentosPendentesAcao } from "../documentos-empresas/actions";
 import { contarCadastrosPendentesAcao } from "../cadastros-pendentes/actions";
 import { contarAbastecimentosSemMotoristaAcao } from "../abastecimentos-sem-motorista/actions";
 import { contarMultasPendentesAcao } from "../multas/actions";
+import { contarAbastecimentosNegadosAcao } from "../abastecimentos-negados/actions";
 import { contarDuplicidadesPlacaGrupoAcao } from "../duplicidade-placas-grupo/actions";
 import { contarDivergenciasPrecoPostoAcao, contarDivergenciasPrecoClienteAcao } from "../conferencia-precos/actions";
 
@@ -47,6 +48,7 @@ export async function contarBadgesMenuAcao(): Promise<Record<string, number>> {
     acoesSugeridasPendentes,
     cadastrosPendentes,
     abastecimentosSemMotorista,
+    abastecimentosNegados,
     multasPendentes,
     duplicidadesPlacaGrupo,
     divergenciasPrecoPosto,
@@ -61,6 +63,7 @@ export async function contarBadgesMenuAcao(): Promise<Record<string, number>> {
     seguro("ações sugeridas pendentes", contarAcoesSugeridasPendentesAcao()),
     seguro("cadastros pendentes", contarCadastrosPendentesAcao()),
     seguro("abastecimentos sem motorista", contarAbastecimentosSemMotoristaAcao()),
+    seguro("abastecimentos negados (PDV)", contarAbastecimentosNegadosAcao()),
     seguro("multas pendentes", contarMultasPendentesAcao()),
     seguro("duplicidades de placa", contarDuplicidadesPlacaGrupoAcao()),
     seguro("divergências de preço (posto)", contarDivergenciasPrecoPostoAcao()),
@@ -71,6 +74,7 @@ export async function contarBadgesMenuAcao(): Promise<Record<string, number>> {
     "/clientes": acessosClientesNaoVistos,
     "/cadastros-pendentes": cadastrosPendentes,
     "/abastecimentos-sem-motorista": abastecimentosSemMotorista,
+    "/abastecimentos-negados": abastecimentosNegados,
     "/duplicidade-placas-grupo": duplicidadesPlacaGrupo,
     "/negociacoes": negociacoesPendentes,
     "/abastecimentos": ajustesAbastecimentosPendentes,
