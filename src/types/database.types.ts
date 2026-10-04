@@ -8177,6 +8177,14 @@ export interface Database {
         Args: { p_empresa_id?: string | null };
         Returns: number;
       };
+      detectar_acoes_pre_pedido_excedido: {
+        Args: { p_empresa_id?: string | null; p_dias?: number };
+        Returns: number;
+      };
+      executar_acao_pre_pedido_excedido: {
+        Args: { p_acao_id: number };
+        Returns: undefined;
+      };
       executar_acao_posto_nao_autorizado: {
         Args: { p_acao_id: number };
         Returns: undefined;

@@ -41,7 +41,7 @@ export async function executarDeteccaoAcoesSugeridasAcao(empresaId: string | nul
     : { data: null };
   const config = new Map((configuracoes.data ?? []).map((r) => [r.chave, r.valor]));
 
-  const [cnh, toxicologico, aso, posto, hodometro, volumeTanque, geoDistancia, precoRegiao, postoNaoAutorizado] = await Promise.all([
+  const [cnh, toxicologico, aso, posto, hodometro, volumeTanque, geoDistancia, precoRegiao, postoNaoAutorizado, preds] = await Promise.all([
     supabase.rpc("detectar_acoes_cnh_vencida", { p_empresa_id: empresaId }),
     // Fase Exame-Toxicologico-ASO — mesmo motor, 2 tipos novos, com alerta
     // antecipado configurável (ver regrasConfiguraveis.ts).
@@ -81,6 +81,9 @@ export async function executarDeteccaoAcoesSugeridasAcao(empresaId: string | nul
     // de Antifraude: varre abastecimentos_unificado contra as listas de
     // postos autorizados em parametros_postos_permitidos.
     supabase.rpc("detectar_acoes_posto_nao_autorizado", { p_empresa_id: empresaId }),
+    // Pré-Pedido fora do PDV: integração/planilha/manual sem Pré-Pedido ou
+    // acima do limite da parada. Só avisa (não bloqueia).
+    supabase.rpc("detectar_acoes_pre_pedido_excedido", { p_empresa_id: empresaId }),
   ]);
 
   const erro =
@@ -92,7 +95,8 @@ export async function executarDeteccaoAcoesSugeridasAcao(empresaId: string | nul
     volumeTanque.error ??
     geoDistancia.error ??
     precoRegiao.error ??
-    postoNaoAutorizado.error;
+    postoNaoAutorizado.error ??
+    preds.error;
   if (erro) {
     return { erro: `Não foi possível rodar a detecção: ${erro.message}` };
   }
@@ -106,7 +110,8 @@ export async function executarDeteccaoAcoesSugeridasAcao(empresaId: string | nul
     (volumeTanque.data ?? 0) +
     (geoDistancia.data ?? 0) +
     (precoRegiao.data ?? 0) +
-    (postoNaoAutorizado.data ?? 0);
+    (postoNaoAutorizado.data ?? 0) +
+    (preds.data ?? 0);
   revalidatePath("/acoes-sugeridas");
   return { inseridas };
 }
@@ -128,6 +133,7 @@ const RPC_EXECUCAO: Record<string, string> = {
   preco_regiao: "executar_acao_revisar_preco_regiao",
   // Fase Antifraude→Ações-Sugeridas
   posto_nao_autorizado: "executar_acao_posto_nao_autorizado",
+  pre_pedido_excedido: "executar_acao_pre_pedido_excedido",
 };
 
 export async function aprovarEExecutarAcaoAcao(id: number, tipo: string): Promise<{ erro?: string }> {

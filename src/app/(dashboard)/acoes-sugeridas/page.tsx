@@ -26,6 +26,7 @@ const TIPO_LABEL: Record<string, string> = {
   // Fase Antifraude→Ações-Sugeridas — migrado do tipo "localizacao_posto"
   // de Antifraude.
   posto_nao_autorizado: "Posto não autorizado",
+  pre_pedido_excedido: "Sem Pré-Pedido / acima do limite",
 };
 
 // Fase Motor-de-Ação-Automática — pedido do Daniel após o benchmark com a
