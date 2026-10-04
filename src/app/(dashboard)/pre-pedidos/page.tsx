@@ -39,13 +39,13 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
     );
   }
 
-  const numero = numeroParam?.trim() ? Number(numeroParam.trim()) : null;
-  const numeroValido = numero !== null && Number.isFinite(numero) && numero > 0;
+  const numero = numeroParam?.trim() ?? "";
+  const numeroValido = /^\d{6}$/.test(numero);
 
   const { data: resultado, error } =
     empresaSelecionada && numeroValido
       ? await supabase.rpc("consultar_pre_pedido_para_posto", {
-          p_numero: numero,
+          p_otp: numero,
           p_empresa_posto_id: empresaSelecionada,
         })
       : { data: null, error: null };
@@ -86,14 +86,12 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
           <form className="card mb-6 flex flex-wrap items-end gap-3 p-4">
             <input type="hidden" name="empresa" value={empresaSelecionada} />
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Código do Pré-Pedido (6 dígitos)</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">OTP do motorista (6 dígitos)</label>
               <input
-                type="number"
+                type="text" inputMode="numeric" maxLength={6}
                 name="numero"
-                min={100000}
-                max={999999}
-                defaultValue={numeroParam ?? ""}
-                placeholder="Ex.: 482913"
+                                defaultValue={numeroParam ?? ""}
+                placeholder="000000"
                 className="input text-sm"
                 autoFocus
               />
@@ -107,15 +105,15 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
 
           {numeroValido && !error && linhas.length === 0 && (
             <div className="card p-6 text-sm text-slate-500 dark:text-slate-400">
-              Nenhum Pré-Pedido nº {numero} com parada pré-agendada para este posto foi encontrado. Confira o número
-              com o motorista ou se o CNPJ deste posto está na rota planejada.
+              Nenhum Pré-Pedido pendente com esse OTP foi encontrado para este posto. O OTP muda a cada 30 segundos:
+              peça ao motorista o código atual do app.
             </div>
           )}
 
           {cabecalho && (
             <div className="card p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pré-Pedido · código {cabecalho.numero}</h2>
+                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pré-Pedido</h2>
                 <span
                   className={
                     cabecalho.status === "ativo"

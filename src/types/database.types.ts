@@ -7904,10 +7904,9 @@ export interface Database {
       // a parada do PRÓPRIO posto chamador (nunca o itinerário completo do
       // cliente), autorização checada internamente via empresas_do_usuario.
       consultar_pre_pedido_para_posto: {
-        Args: { p_numero: number; p_empresa_posto_id: string };
+        Args: { p_otp: string; p_empresa_posto_id: string };
         Returns: {
           pre_pedido_id: string;
-          numero: number;
           status: string;
           placa: string | null;
           motorista_nome: string | null;

@@ -574,7 +574,7 @@ export async function criarPrePedidoAcao(
   placa: string,
   motoristaId: string | null,
   paradas: ParadaPrePedidoForm[]
-): Promise<{ erro?: string; numero?: number }> {
+): Promise<{ erro?: string; ok?: boolean }> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("criar_pre_pedido", {
     p_empresa_id: empresaId,
@@ -588,13 +588,13 @@ export async function criarPrePedidoAcao(
     })),
   });
   if (error) return { erro: `Não foi possível criar: ${error.message}` };
-  const r = data as { status: string; numero?: number; ordem?: number };
+  const r = data as { status: string; ordem?: number };
   if (r.status === "placa_obrigatoria") return { erro: "Informe a placa." };
   if (r.status === "sem_paradas") return { erro: "Inclua ao menos um posto de parada." };
   if (r.status === "parada_invalida") return { erro: `Parada ${r.ordem}: informe o posto e uma quantidade maior que zero.` };
   if (r.status !== "ok") return { erro: "Sem permissão para criar Pré-Pedido." };
   revalidatePath("/parametros-uso");
-  return { numero: r.numero };
+  return { ok: true };
 }
 
 export async function cancelarPrePedidoAcao(id: string): Promise<{ erro?: string }> {
