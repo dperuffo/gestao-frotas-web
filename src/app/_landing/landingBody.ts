@@ -208,7 +208,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     <li><a href="#func" data-i18n="nav_func">Funcionalidades</a></li>
     <li><a href="#integracoes" data-i18n="nav_integracoes">Integrações</a></li>
     <li><a href="#postos" data-i18n="nav_postos">Para Postos</a></li>
-    <li><a href="#pdv" style="color:var(--cyan);font-weight:600;white-space:nowrap;">⛽ PDV FNI</a></li>
+    <li><a href="https://pdv.fxgestaodefrotasonline.com" target="_blank" rel="noopener" style="color:var(--cyan);font-weight:600;white-space:nowrap;">⛽ Acessar o PDV FNI</a></li>
     <li><a href="#como" data-i18n="nav_como">Como funciona</a></li>
     <li><a href="#precos" data-i18n="nav_precos">Preços</a></li>
     <li><a href="/indice-precos" style="color:var(--cyan);font-weight:600;white-space:nowrap;">💹 Índice GF de Preços</a></li>
