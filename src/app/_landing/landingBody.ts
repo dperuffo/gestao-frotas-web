@@ -208,6 +208,7 @@ footer{padding:36px 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;
     <li><a href="#func" data-i18n="nav_func">Funcionalidades</a></li>
     <li><a href="#integracoes" data-i18n="nav_integracoes">Integrações</a></li>
     <li><a href="#postos" data-i18n="nav_postos">Para Postos</a></li>
+    <li><a href="#pdv" style="color:var(--cyan);font-weight:600;white-space:nowrap;">⛽ PDV FNI</a></li>
     <li><a href="#como" data-i18n="nav_como">Como funciona</a></li>
     <li><a href="#precos" data-i18n="nav_precos">Preços</a></li>
     <li><a href="/indice-precos" style="color:var(--cyan);font-weight:600;white-space:nowrap;">💹 Índice GF de Preços</a></li>
@@ -803,6 +804,24 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   <div style="text-align:center;margin-top:40px">
     <a href="#precos-postos" class="btn-p" data-i18n="postos_cta_precos">Ver planos para postos →</a>
     <a href="mailto:contato@fxgestaodefrotasonline.com" class="btn-s" data-i18n="postos_cta">💬 Falar com um especialista</a>
+  </div>
+</section>
+
+<section class="section" id="pdv">
+  <div class="sec-lbl">PDV FNI</div>
+  <div class="sec-title">O caixa do seu posto conectado à frota</div>
+  <p class="sec-sub">O PDV FNI é o ponto de venda para postos revendedores: o motorista autoriza o abastecimento pelo celular, o caixa valida na hora e as regras de cada cliente são conferidas antes de liberar a bomba.</p>
+  <div class="grid">
+    <div class="card"><div class="icon">🔐</div><div class="ct">Autorização segura por OTP</div><div class="cd">O motorista informa um código que muda a cada 30 segundos. Sem código válido, sem abastecimento.</div></div>
+    <div class="card"><div class="icon">📋</div><div class="ct">Regras do cliente na hora</div><div class="cd">Limites, postos permitidos, produtos e demais regras da frota são conferidas antes de liberar. Se algo foge, o gestor decide sem travar o caixa.</div></div>
+    <div class="card"><div class="icon">📦</div><div class="ct">Pré-Pedido</div><div class="cd">O motorista chega com o limite de litros ou valor já definido pela frota. O PDV não aceita abastecimento acima disso.</div></div>
+    <div class="card"><div class="icon">🎁</div><div class="ct">Resgate de pontos</div><div class="cd">Baixe vouchers de fidelidade dos motoristas direto no caixa e acompanhe o valor a receber.</div></div>
+    <div class="card"><div class="icon">🧾</div><div class="ct">NF-e orientada</div><div class="cd">Cada abastecimento confirmado já mostra os parâmetros de nota fiscal do cliente, prontos para emitir.</div></div>
+    <div class="card"><div class="icon">✏️</div><div class="ct">Extrato, caixa e ajustes</div><div class="cd">Fechamento de caixa por turno e pedido de correção com aprovação da outra parte, com tudo registrado.</div></div>
+  </div>
+  <div style="text-align:center;margin-top:40px">
+    <a href="mailto:contato@fxgestaodefrotasonline.com?subject=PDV%20FNI" class="btn-p">Quero o PDV FNI no meu posto →</a>
+    <a href="#postos" class="btn-s">Ver tudo para postos</a>
   </div>
 </section>
 
