@@ -217,6 +217,8 @@ const menuRoteirizacaoAbastecimento: ItemMenuLateral[] = [
   // Fase 5 PDV (03/10/2026, pedido do Daniel) — abastecimentos do PDV negados
   // por regras do cliente; o gestor libera dentro da validade do pedido.
   { href: "/abastecimentos-negados", label: "Abastecimentos Negados (PDV)", icon: ShieldAlert },
+  // #100 (04/10/2026) — pedidos de ajuste de abastecimentos PDV, aprovados pela contraparte.
+  { href: "/ajustes-pdv", label: "Pedidos de Ajuste (PDV)", icon: ClipboardCheck },
   // Fase 27.120 — regras que balizam abastecimentos feitos em postos ou
   // soluções de automação/meios de pagamento integrados via API (Hub de
   // Integrações). Primeiro tipo implementado: Vínculo Motorista ↔ Veículo.

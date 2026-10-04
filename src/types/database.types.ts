@@ -5608,6 +5608,22 @@ export interface Database {
       // (SECURITY DEFINER) — usada só pra "fotografar" o nome da contraparte
       // ao criar uma negociação (negociacoes_postos.cliente_nome/posto_nome).
       // Fase 5 PDV (03/10/2026) — visão "Abastecimentos negados" do cliente.
+      solicitar_ajuste_pdv: {
+        Args: { p_abastecimento_id: number; p_alteracoes: Json; p_motivo: string; p_lado?: string };
+        Returns: Json;
+      };
+      decidir_ajuste_pdv: {
+        Args: { p_ajuste_id: string; p_aprovar: boolean; p_motivo?: string };
+        Returns: Json;
+      };
+      cancelar_ajuste_pdv: {
+        Args: { p_ajuste_id: string };
+        Returns: Json;
+      };
+      meus_ajustes_pdv: {
+        Args: { p_status?: string; p_empresa_id?: string };
+        Returns: Json;
+      };
       listar_abastecimentos_negados_pdv: {
         Args: { p_empresa_id?: string };
         Returns: Json;

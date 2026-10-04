@@ -75,6 +75,7 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   "/postos-internos": "aba_postos",
   "/abastecimentos": "aba_abastecimentos",
   "/abastecimentos-negados": "aba_abastecimentos",
+  "/ajustes-pdv": "aba_abastecimentos",
   "/notas-fiscais": "aba_notas_fiscais",
   // Fase Central-Avisos-Por-Empresa (04/08/2026) — reaproveita a MESMA
   // funcionalidade já existente em permissoes_perfil (usada pra travar
