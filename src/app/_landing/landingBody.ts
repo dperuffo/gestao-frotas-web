@@ -821,7 +821,7 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
   </div>
   <div style="text-align:center;margin-top:40px">
     <a href="mailto:contato@fxgestaodefrotasonline.com?subject=PDV%20FNI" class="btn-p">Quero o PDV FNI no meu posto →</a>
-    <a href="#postos" class="btn-s">Ver tudo para postos</a>
+    <a href="https://pdv.fxgestaodefrotasonline.com" target="_blank" rel="noopener" class="btn-s">🔐 Acessar o PDV FNI</a>
   </div>
 </section>
 
