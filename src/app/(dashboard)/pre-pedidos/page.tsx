@@ -86,13 +86,14 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
           <form className="card mb-6 flex flex-wrap items-end gap-3 p-4">
             <input type="hidden" name="empresa" value={empresaSelecionada} />
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Número do Pré-Pedido</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Código do Pré-Pedido (6 dígitos)</label>
               <input
                 type="number"
                 name="numero"
-                min={1}
+                min={100000}
+                max={999999}
                 defaultValue={numeroParam ?? ""}
-                placeholder="Ex.: 1024"
+                placeholder="Ex.: 482913"
                 className="input text-sm"
                 autoFocus
               />
@@ -114,7 +115,7 @@ export default async function PrePedidosPage({ searchParams }: { searchParams: P
           {cabecalho && (
             <div className="card p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pré-Pedido nº {cabecalho.numero}</h2>
+                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pré-Pedido · código {cabecalho.numero}</h2>
                 <span
                   className={
                     cabecalho.status === "ativo"

@@ -351,7 +351,7 @@ async function ConteudoAba({
       supabase
         .from("pre_pedidos")
         .select(
-          "id, numero, placa, status, criado_em, motoristas(nome_completo), pre_pedidos_paradas(ordem, posto_nome, posto_cnpj, litros_previstos, valor_previsto, atendido)"
+          "id, numero, placa, status, criado_em, motoristas(nome_completo), pre_pedidos_paradas(ordem, codigo, posto_nome, posto_cnpj, litros_previstos, valor_previsto, atendido)"
         )
         .eq("empresa_id", empresaId)
         .order("numero", { ascending: false })

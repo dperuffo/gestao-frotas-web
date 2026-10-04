@@ -14,7 +14,7 @@ export type PrePedidoLinha = {
   status: string;
   criado_em: string;
   motorista_nome: string | null;
-  paradas: { ordem: number; posto_nome: string | null; posto_cnpj: string; litros_previstos: number | null; valor_previsto: number | null; atendido: boolean }[];
+  paradas: { ordem: number; codigo: number | null; posto_nome: string | null; posto_cnpj: string; litros_previstos: number | null; valor_previsto: number | null; atendido: boolean }[];
 };
 
 type ParadaForm = { posto: string; tipo: "litros" | "valor"; quantidade: string };
@@ -51,8 +51,8 @@ export function SecaoPrePedido({
 
   function alternarParametro() {
     const pergunta = habilitado
-      ? "Desativar o Pré-Pedido? O PDV deixará de exigir o número do Pré-Pedido nos abastecimentos deste cliente."
-      : "Ativar o Pré-Pedido? A partir de agora, todo abastecimento deste cliente no PDV só é autorizado com o número de um Pré-Pedido válido para a placa e o posto, dentro do limite de litros/valor da parada.";
+      ? "Desativar o Pré-Pedido? O PDV deixará de exigir o código do Pré-Pedido nos abastecimentos deste cliente."
+      : "Ativar o Pré-Pedido? A partir de agora, todo abastecimento deste cliente no PDV só é autorizado com o código de 6 dígitos de um Pré-Pedido válido para a placa e o posto, dentro do limite de litros/valor da parada.";
     if (!window.confirm(pergunta)) return;
     startTransition(async () => {
       await salvarParametroPrePedidoAcao(empresaId, !habilitado);
@@ -113,9 +113,9 @@ export function SecaoPrePedido({
           Pré-Pedido <AjudaIcon chave="parametros-uso.pre-pedido" />
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-300">
-          Com o parâmetro <strong>habilitado</strong>, o abastecimento só é autorizado no PDV com o <strong>número de
-          um Pré-Pedido</strong> válido para a placa e o posto, dentro do limite (litros ou R$) da parada. Crie os
-          Pré-Pedidos abaixo e passe o número ao motorista.
+          Com o parâmetro <strong>habilitado</strong>, o abastecimento só é autorizado no PDV com o <strong>código de 6 dígitos
+          de um Pré-Pedido</strong> válido para a placa e o posto, dentro do limite (litros ou R$) da parada. Crie os
+          Pré-Pedidos abaixo; o código aparece no app do motorista.
         </p>
 
         <div className="mt-4 flex items-center gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
@@ -142,8 +142,9 @@ export function SecaoPrePedido({
 
       {gerado !== null && (
         <div className="card border-l-4 border-status-ativo p-4">
-          <p className="text-sm text-slate-600 dark:text-slate-300">Pré-Pedido gerado. Informe este número ao motorista:</p>
-          <p className="mt-1 text-3xl font-bold tracking-wide text-slate-900 dark:text-slate-100">nº {gerado}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">Pré-Pedido gerado. Código de 6 dígitos da 1ª parada (o motorista também o vê no app):</p>
+          <p className="mt-1 font-mono text-3xl font-bold tracking-widest text-slate-900 dark:text-slate-100">{gerado}</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Cada parada tem seu código: ao ser atendida no PDV, a próxima parada da rota recebe um novo código aleatório.</p>
         </div>
       )}
 
@@ -245,7 +246,7 @@ export function SecaoPrePedido({
 
             <div className="flex gap-2">
               <button type="button" onClick={gerar} disabled={isPending} className="btn-primary text-sm">
-                {isPending ? "Gerando..." : "Gerar nº do Pré-Pedido"}
+                {isPending ? "Gerando..." : "Gerar Pré-Pedido"}
               </button>
               <button type="button" onClick={() => { limparFormulario(); setCriando(false); }} className="btn-secondary text-sm">
                 Cancelar
@@ -258,7 +259,7 @@ export function SecaoPrePedido({
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
               <tr>
-                <th className="px-4 py-3">Nº</th>
+                <th className="px-4 py-3">Código atual</th>
                 <th className="px-4 py-3">Placa</th>
                 <th className="px-4 py-3">Motorista</th>
                 <th className="px-4 py-3">Paradas</th>
@@ -269,7 +270,9 @@ export function SecaoPrePedido({
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {prePedidos.map((pp) => (
                 <tr key={pp.id}>
-                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">{pp.numero}</td>
+                  <td className="px-4 py-3 font-mono text-base font-semibold tracking-widest text-slate-900 dark:text-slate-100">
+                    {pp.paradas.find((pa) => !pa.atendido && pa.codigo)?.codigo ?? "—"}
+                  </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{pp.placa ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{pp.motorista_nome ?? "Qualquer"}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
