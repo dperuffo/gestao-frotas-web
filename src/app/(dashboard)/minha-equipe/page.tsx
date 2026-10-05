@@ -152,9 +152,9 @@ async function ConteudoEquipe({
       <div className="mb-6 card p-6">
         <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Convidar colega</h2>
         <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-          O convite vai por e-mail. O colega entra com perfil &quot;{segmento === "Revenda" ? "Colaborador" : "Analista"}&quot;.
+          O convite vai por e-mail. {segmento === "Revenda" ? "No posto, escolha Colaborador ou Caixa (operador do PDV FNI)." : "O colega entra com perfil \"Analista\"."}
         </p>
-        <ConvidarColegaForm empresaId={empresaId} vagasEsgotadas={vagasEsgotadas} perfilEntrada={segmento === "Revenda" ? "Colaborador" : "Analista"} />
+        <ConvidarColegaForm empresaId={empresaId} vagasEsgotadas={vagasEsgotadas} perfilEntrada={segmento === "Revenda" ? "Colaborador ou Caixa" : "Analista"} permiteEscolherPerfil={segmento === "Revenda"} />
       </div>
 
       <div className="card overflow-x-auto">
@@ -185,7 +185,7 @@ async function ConteudoEquipe({
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  {(m.perfil === "colaborador" || m.perfil === "analista") && (
+                  {(m.perfil === "colaborador" || m.perfil === "analista" || m.perfil === "caixa") && (
                     <div className="flex flex-col items-end gap-1.5">
                       <div className="flex flex-wrap items-center justify-end gap-x-3">
                         <EditarColegaButton empresaId={empresaId} email={m.user_email} nomeAtual={m.nome} />

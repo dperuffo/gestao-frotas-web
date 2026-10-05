@@ -293,7 +293,7 @@ export const CICLOS_COMBUSTIVEL = [
 // registrada na migração usuarios_app_perfil_colaborador — não reaproveita
 // 'analista' porque esse perfil hoje também destrava a tela interna
 // /usuarios de gerenciar usuários de QUALQUER cliente do sistema.
-export const PERFIS = ["admin", "gestor_frota", "analista", "posto", "colaborador"] as const;
+export const PERFIS = ["admin", "gestor_frota", "analista", "posto", "colaborador", "caixa"] as const;
 export type Perfil = (typeof PERFIS)[number];
 
 // Sentinela usado em permissoes_perfil.empresa_id pra representar "padrão
@@ -306,6 +306,7 @@ export const PERFIL_LABEL: Record<Perfil, string> = {
   analista: "Analista",
   posto: "Posto",
   colaborador: "Colaborador",
+  caixa: "Caixa",
 };
 
 export const SEGMENTO_USUARIO = ["Frota", "Revenda"] as const;

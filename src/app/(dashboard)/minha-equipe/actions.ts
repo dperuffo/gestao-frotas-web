@@ -49,10 +49,12 @@ async function buscarMembro(
 // "analista"; quem entra pela equipe do POSTO (Revenda) entra como "colaborador".
 // Ambos são "perfis de equipe" — os únicos que o dono edita por esta tela.
 function ehPerfilDeEquipe(perfil: string | null | undefined) {
-  return perfil === "colaborador" || perfil === "analista";
+  return perfil === "colaborador" || perfil === "analista" || perfil === "caixa";
 }
-function perfilDeEntrada(segmento: string | null | undefined): Perfil {
-  return segmento === "Revenda" ? "colaborador" : "analista";
+function perfilDeEntrada(segmento: string | null | undefined, escolhido?: string | null): Perfil {
+  // Posto escolhe entre Colaborador e Caixa (operador do PDV FNI); cliente (Frota) é sempre Analista.
+  if (segmento === "Revenda") return escolhido === "caixa" ? "caixa" : "colaborador";
+  return "analista";
 }
 
 async function exigirDonoDeEquipe(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | null> {
@@ -94,6 +96,7 @@ export async function convidarColega(
   const nome = String(formData.get("nome") ?? "").trim();
   const cpf = String(formData.get("cpf") ?? "").trim() || null;
   const telefone = String(formData.get("telefone") ?? "").trim() || null;
+  const perfilEscolhido = String(formData.get("perfil") ?? "") || null;
 
   if (!email || !nome) {
     return { erro: "E-mail e nome são obrigatórios." };
@@ -136,7 +139,7 @@ export async function convidarColega(
       nome,
       cpf,
       telefone,
-      perfil: perfilDeEntrada(empresaInfo?.segmento),
+      perfil: perfilDeEntrada(empresaInfo?.segmento, perfilEscolhido),
       segmento: empresaInfo?.segmento ?? null,
       ativo: true,
     });
@@ -147,7 +150,7 @@ export async function convidarColega(
 
   const { error: vinculoError } = await admin
     .from("usuarios_empresas")
-    .upsert({ user_email: email, empresa_id: empresaId, role: usuarioExistente?.perfil ?? perfilDeEntrada(empresaSegmento), ativo: true });
+    .upsert({ user_email: email, empresa_id: empresaId, role: usuarioExistente?.perfil ?? perfilDeEntrada(empresaSegmento, perfilEscolhido), ativo: true });
   if (vinculoError) {
     return { erro: `Perfil salvo, mas houve erro ao vincular à empresa: ${vinculoError.message}` };
   }
@@ -430,7 +433,7 @@ export async function autoRebaixarParaColaborador(empresaId: string): Promise<Pr
   }
 
   const { data: empresaInfo } = await supabase.from("empresas").select("segmento").eq("id", empresaId).maybeSingle();
-  const perfilRebaixado = perfilDeEntrada(empresaInfo?.segmento);
+  const perfilRebaixado = perfilDeEntrada(empresaInfo?.segmento, "colaborador");
   const { error } = await admin.from("usuarios_app").update({ perfil: perfilRebaixado }).eq("email", meuEmail);
   if (error) return { erro: `Não foi possível concluir: ${error.message}` };
   await admin.from("usuarios_empresas").update({ role: perfilRebaixado }).eq("user_email", meuEmail).eq("empresa_id", empresaId);

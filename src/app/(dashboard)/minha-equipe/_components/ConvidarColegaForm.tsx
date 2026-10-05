@@ -3,7 +3,7 @@
 import { useState, useTransition, type FormEvent, type FocusEvent } from "react";
 import { convidarColega, verificarCpfDuplicadoColega } from "../actions";
 
-export function ConvidarColegaForm({ empresaId, vagasEsgotadas, perfilEntrada }: { empresaId: string; vagasEsgotadas: boolean; perfilEntrada: string }) {
+export function ConvidarColegaForm({ empresaId, vagasEsgotadas, perfilEntrada, permiteEscolherPerfil }: { empresaId: string; vagasEsgotadas: boolean; perfilEntrada: string; permiteEscolherPerfil: boolean }) {
   const [erro, setErro] = useState<string | undefined>();
   const [sucesso, setSucesso] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -52,6 +52,14 @@ export function ConvidarColegaForm({ empresaId, vagasEsgotadas, perfilEntrada }:
           <input name="cpf" disabled={vagasEsgotadas} onBlur={handleBlurCpf} className="input disabled:bg-slate-100" />
           {avisoCpf && <p className="mt-1 text-xs text-amber-600">{avisoCpf}</p>}
         </Campo>
+        {permiteEscolherPerfil && (
+          <Campo label="Perfil">
+            <select name="perfil" defaultValue="colaborador" disabled={vagasEsgotadas} className="input disabled:bg-slate-100">
+              <option value="colaborador">Colaborador</option>
+              <option value="caixa">Caixa (acesso às telas do PDV FNI)</option>
+            </select>
+          </Campo>
+        )}
         <Campo label="Telefone">
           <input name="telefone" disabled={vagasEsgotadas} className="input disabled:bg-slate-100" />
         </Campo>
