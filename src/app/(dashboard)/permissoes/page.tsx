@@ -5,6 +5,7 @@ import { PERFIS, PERFIL_LABEL, EMPRESA_ID_GLOBAL, type Perfil } from "@/lib/cons
 import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
 import { TogglePermissao } from "./_components/TogglePermissao";
 import { FUNCIONALIDADES_SO_ADMIN } from "@/lib/permissoes";
+import { CATALOGO_PERMISSOES, ORDEM_GRUPOS } from "@/lib/permissoesCatalogo";
 
 // Deixa "aba_dashboard" -> "Aba: Dashboard" e "func_exportar" -> "Função: Exportar",
 // só para ficar mais legível na tela. Não muda nada no banco.
@@ -164,6 +165,23 @@ export default async function PermissoesPage({
     .filter((f) => souAdmin || (!FUNCIONALIDADES_SO_ADMIN.has(f) && (matriz.get(f)?.get(meuPerfil ?? "")?.permitido ?? true)))
     .sort();
 
+  // Agrupa por área (catálogo com nome + descrição detalhada). Funcionalidade
+  // sem entrada no catálogo cai em "Outras", com o rótulo humanizado antigo.
+  const itensPorGrupo = new Map<string, string[]>();
+  for (const f of funcionalidades) {
+    const grupo = CATALOGO_PERMISSOES[f]?.grupo ?? "Outras";
+    itensPorGrupo.set(grupo, [...(itensPorGrupo.get(grupo) ?? []), f]);
+  }
+  const gruposOrdenados = [...ORDEM_GRUPOS, "Outras" as const].filter((g) => itensPorGrupo.has(g));
+  for (const g of gruposOrdenados) {
+    itensPorGrupo.get(g)!.sort((a, b) =>
+      (CATALOGO_PERMISSOES[a]?.nome ?? formatarFuncionalidade(a)).localeCompare(
+        CATALOGO_PERMISSOES[b]?.nome ?? formatarFuncionalidade(b),
+        "pt-BR",
+      ),
+    );
+  }
+
   return (
     <div>
       <CabecalhoPagina
@@ -249,11 +267,35 @@ export default async function PermissoesPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {funcionalidades.map((funcionalidade) => {
+              {gruposOrdenados.flatMap((grupo) => [
+                <tr key={`grupo-${grupo}`} className="bg-slate-100 dark:bg-slate-800">
+                  <td
+                    colSpan={perfisVisiveis.length + 1}
+                    className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300"
+                  >
+                    {grupo}
+                  </td>
+                </tr>,
+                ...itensPorGrupo.get(grupo)!.map((funcionalidade) => {
                 const porPerfil = matriz.get(funcionalidade)!;
+                const item = CATALOGO_PERMISSOES[funcionalidade];
                 return (
                   <tr key={funcionalidade} className="transition-colors hover:bg-frota-50/60">
-                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{formatarFuncionalidade(funcionalidade)}</td>
+                    <td className="max-w-xl px-4 py-3 text-slate-700 dark:text-slate-300">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-slate-900 dark:text-slate-100">
+                          {item?.nome ?? formatarFuncionalidade(funcionalidade)}
+                        </span>
+                        {item?.sensivel && (
+                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                            Atenção
+                          </span>
+                        )}
+                      </div>
+                      {item && (
+                        <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{item.descricao}</p>
+                      )}
+                    </td>
                     {perfisVisiveis.map((perfil) => {
                       const valor = porPerfil.get(perfil);
                       return (
@@ -285,7 +327,8 @@ export default async function PermissoesPage({
                     })}
                   </tr>
                 );
-              })}
+                }),
+              ])}
               {funcionalidades.length === 0 && (
                 <tr>
                   <td colSpan={perfisVisiveis.length + 1} className="px-4 py-8 text-center text-slate-400">
