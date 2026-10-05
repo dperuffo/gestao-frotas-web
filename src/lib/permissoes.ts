@@ -74,8 +74,15 @@ export const HREF_FUNCIONALIDADE: Record<string, string> = {
   // nova em permissoes_perfil pra cada empresa existente.
   "/postos-internos": "aba_postos",
   "/abastecimentos": "aba_abastecimentos",
-  "/abastecimentos-negados": "aba_abastecimentos",
-  "/ajustes-pdv": "aba_abastecimentos",
+  // 05/10/2026 — revisão geral da matriz: as telas do PDV ganharam
+  // funcionalidade própria (antes dividiam "aba_abastecimentos" ou nem tinham
+  // linha na matriz). Seed na migration permissoes_funcionalidades_pdv_ajustes_negados_e_outras.
+  "/abastecimentos-negados": "aba_abastecimentos_negados",
+  "/ajustes-pdv": "aba_ajustes_pdv",
+  "/abastecimentos-sem-motorista": "aba_abastecimentos_sem_motorista",
+  "/jornada-motoristas": "aba_jornada_motoristas",
+  "/pdv-metricas": "aba_pdv_metricas",
+  "/pdv-bicos": "aba_pdv_bicos",
   "/notas-fiscais": "aba_notas_fiscais",
   // Fase Central-Avisos-Por-Empresa (04/08/2026) — reaproveita a MESMA
   // funcionalidade já existente em permissoes_perfil (usada pra travar

@@ -19,6 +19,20 @@ import { TogglePermissao } from "./_components/TogglePermissao";
 const RÓTULOS_ESPECIAIS: Record<string, string> = {
   aba_parcerias_locais: "Aba: Parcerias Locais (Programa de Fidelidade)",
   aba_fidelidade_motoristas: "Aba: Fidelidade dos Motoristas (Programa de Fidelidade)",
+  // PDV FNI e abastecimentos via PDV (revisão de 05/10/2026).
+  aba_abastecimentos_negados: "Aba: Abastecimentos Negados (PDV)",
+  aba_ajustes_pdv: "Aba: Pedidos de Ajuste de Abastecimento (PDV)",
+  aba_abastecimentos_sem_motorista: "Aba: Abastecimentos Sem Motorista",
+  aba_jornada_motoristas: "Aba: Jornada dos Motoristas",
+  aba_pdv_formas_pagamento: "Aba: Formas de Pagamento aceitas no PDV",
+  aba_pdv_metricas: "Aba: Dashboard do PDV (Piloto, só time interno)",
+  aba_pdv_bicos: "Aba: Bicos e Combustíveis do PDV",
+  aba_pdv_pre_pedido: "PDV FNI: Pré-Pedido (digitar o OTP do motorista)",
+  aba_pdv_resgates: "PDV FNI: Resgate de pontos",
+  aba_pdv_extrato: "PDV FNI: Extrato e pedido de ajuste",
+  aba_pdv_dashboard: "PDV FNI: Dashboard e caixa",
+  aba_pdv_produtos: "PDV FNI: Produtos e serviços",
+  aba_pdv_terminais: "PDV FNI: Terminais (caixas)",
 };
 
 function formatarFuncionalidade(nome: string) {
