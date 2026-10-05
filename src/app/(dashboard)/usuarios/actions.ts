@@ -20,8 +20,8 @@ export type UsuarioFormState = { erro?: string } | undefined;
 // /administracao/pisos-antt (perfil_usuario_atual()).
 async function exigirGerenciadorDeUsuarios(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | null> {
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
-  if (perfil !== "admin" && perfil !== "analista") {
-    return "Esta ação é exclusiva do time interno (perfil administrador ou analista).";
+  if (perfil !== "admin") {
+    return "Esta ação é exclusiva do time interno (perfil administrador).";
   }
   return null;
 }

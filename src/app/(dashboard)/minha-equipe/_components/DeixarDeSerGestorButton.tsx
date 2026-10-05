@@ -8,7 +8,7 @@ export function DeixarDeSerGestorButton({ empresaId }: { empresaId: string }) {
   const [isPending, startTransition] = useTransition();
 
   function handleClick() {
-    if (!confirm("Deixar de ser gestor desta empresa? Você passa a ter acesso de colaborador, definido em Permissões.")) return;
+    if (!confirm("Deixar de ser gestor desta empresa? Você passa a ter acesso de nível inferior, definido em Permissões.")) return;
     setErro(undefined);
     startTransition(async () => {
       const resultado = await autoRebaixarParaColaborador(empresaId);

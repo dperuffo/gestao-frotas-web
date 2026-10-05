@@ -53,7 +53,7 @@ export async function novosAbastecimentosAcao(
     const { perfil, empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam ?? undefined);
     if (!perfil || perfil === "posto") return { ativo: false, itens: [] };
 
-    const visaoGlobal = perfil === "admin" || perfil === "analista";
+    const visaoGlobal = perfil === "admin";
     const ids = empresaSelecionada ? [empresaSelecionada] : visaoGlobal ? [] : empresas.map((e) => e.id);
     if (ids.length === 0) return { ativo: false, itens: [] };
 

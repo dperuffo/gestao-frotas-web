@@ -3,7 +3,7 @@
 import { useState, useTransition, type FormEvent, type FocusEvent } from "react";
 import { convidarColega, verificarCpfDuplicadoColega } from "../actions";
 
-export function ConvidarColegaForm({ empresaId, vagasEsgotadas }: { empresaId: string; vagasEsgotadas: boolean }) {
+export function ConvidarColegaForm({ empresaId, vagasEsgotadas, perfilEntrada }: { empresaId: string; vagasEsgotadas: boolean; perfilEntrada: string }) {
   const [erro, setErro] = useState<string | undefined>();
   const [sucesso, setSucesso] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -58,7 +58,7 @@ export function ConvidarColegaForm({ empresaId, vagasEsgotadas }: { empresaId: s
       </div>
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        O colega recebe um e-mail para criar a própria senha e entra com perfil &quot;Colaborador&quot; — o que
+        O colega recebe um e-mail para criar a própria senha e entra com perfil &quot;{perfilEntrada}&quot; — o que
         ele pode ver e fazer é configurado em Permissões.
       </p>
 

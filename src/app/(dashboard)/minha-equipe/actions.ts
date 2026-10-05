@@ -45,6 +45,16 @@ async function buscarMembro(
 // AskUserQuestion — ver comentário na migração usuarios_app_perfil_
 // colaborador pro raciocínio completo de por que não reaproveitar
 // 'analista'/'gestor_frota'/'posto').
+// 05/10/2026 (Daniel): quem entra pela equipe do CLIENTE (Frota) já entra como
+// "analista"; quem entra pela equipe do POSTO (Revenda) entra como "colaborador".
+// Ambos são "perfis de equipe" — os únicos que o dono edita por esta tela.
+function ehPerfilDeEquipe(perfil: string | null | undefined) {
+  return perfil === "colaborador" || perfil === "analista";
+}
+function perfilDeEntrada(segmento: string | null | undefined): Perfil {
+  return segmento === "Revenda" ? "colaborador" : "analista";
+}
+
 async function exigirDonoDeEquipe(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | null> {
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   if (perfil !== "gestor_frota" && perfil !== "posto") {
@@ -111,8 +121,10 @@ export async function convidarColega(
     .eq("email", email)
     .maybeSingle();
 
+  const { data: empresaInfo } = await admin.from("empresas").select("segmento").eq("id", empresaId).maybeSingle();
+  const empresaSegmento = empresaInfo?.segmento;
+
   if (!usuarioExistente) {
-    const { data: empresaInfo } = await admin.from("empresas").select("segmento").eq("id", empresaId).maybeSingle();
 
     const { error: authError } = await admin.auth.admin.inviteUserByEmail(email);
     if (authError && !authError.message.toLowerCase().includes("already been registered")) {
@@ -124,7 +136,7 @@ export async function convidarColega(
       nome,
       cpf,
       telefone,
-      perfil: "colaborador",
+      perfil: perfilDeEntrada(empresaInfo?.segmento),
       segmento: empresaInfo?.segmento ?? null,
       ativo: true,
     });
@@ -135,7 +147,7 @@ export async function convidarColega(
 
   const { error: vinculoError } = await admin
     .from("usuarios_empresas")
-    .upsert({ user_email: email, empresa_id: empresaId, role: usuarioExistente?.perfil ?? "colaborador", ativo: true });
+    .upsert({ user_email: email, empresa_id: empresaId, role: usuarioExistente?.perfil ?? perfilDeEntrada(empresaSegmento), ativo: true });
   if (vinculoError) {
     return { erro: `Perfil salvo, mas houve erro ao vincular à empresa: ${vinculoError.message}` };
   }
@@ -190,7 +202,7 @@ export async function editarColegaAcao(
   // Só mexe em "colaborador" — mesma restrição das outras ações desta
   // tela (promover/ativar-inativar).
   const alvo = await buscarMembro(supabase, empresaId, email);
-  if (alvo?.perfil !== "colaborador") {
+  if (!ehPerfilDeEquipe(alvo?.perfil)) {
     return { erro: "Só é possível editar colaboradores da sua equipe." };
   }
 
@@ -229,7 +241,7 @@ export async function removerColegaAcao(empresaId: string, email: string): Promi
   if (erroPermissao) return { erro: erroPermissao };
 
   const alvo = await buscarMembro(supabase, empresaId, email);
-  if (alvo?.perfil !== "colaborador") {
+  if (!ehPerfilDeEquipe(alvo?.perfil)) {
     return { erro: "Só é possível excluir colaboradores da sua equipe." };
   }
 
@@ -267,7 +279,7 @@ export async function reenviarConviteColegaAcao(empresaId: string, email: string
   if (erroPermissao) return { erro: erroPermissao };
 
   const alvo = await buscarMembro(supabase, empresaId, email);
-  if (alvo?.perfil !== "colaborador") {
+  if (!ehPerfilDeEquipe(alvo?.perfil)) {
     return { erro: "Só é possível reenviar convite para colaboradores da sua equipe." };
   }
 
@@ -306,7 +318,7 @@ export async function alternarAtivoColega(empresaId: string, email: string, ativ
   // posto por esta tela, mesmo que por algum motivo apareçam vinculados
   // (ex.: o próprio dono, listado só pra contexto).
   const alvo = await buscarMembro(supabase, empresaId, email);
-  if (alvo?.perfil !== "colaborador") {
+  if (!ehPerfilDeEquipe(alvo?.perfil)) {
     return { erro: "Só é possível ativar/inativar colaboradores por aqui." };
   }
 
@@ -344,7 +356,7 @@ export async function promoverColega(empresaId: string, email: string): Promise<
   if (!vinculo) return { erro: "Empresa inválida para o seu usuário." };
 
   const alvo = await buscarMembro(supabase, empresaId, email);
-  if (alvo?.perfil !== "colaborador") {
+  if (!ehPerfilDeEquipe(alvo?.perfil)) {
     return { erro: "Só é possível promover colaboradores da sua equipe." };
   }
 
@@ -417,10 +429,12 @@ export async function autoRebaixarParaColaborador(empresaId: string): Promise<Pr
     return { erro: e instanceof Error ? e.message : "Erro ao inicializar cliente administrativo." };
   }
 
-  const { error } = await admin.from("usuarios_app").update({ perfil: "colaborador" }).eq("email", meuEmail);
+  const { data: empresaInfo } = await supabase.from("empresas").select("segmento").eq("id", empresaId).maybeSingle();
+  const perfilRebaixado = perfilDeEntrada(empresaInfo?.segmento);
+  const { error } = await admin.from("usuarios_app").update({ perfil: perfilRebaixado }).eq("email", meuEmail);
   if (error) return { erro: `Não foi possível concluir: ${error.message}` };
-  await admin.from("usuarios_empresas").update({ role: "colaborador" }).eq("user_email", meuEmail).eq("empresa_id", empresaId);
+  await admin.from("usuarios_empresas").update({ role: perfilRebaixado }).eq("user_email", meuEmail).eq("empresa_id", empresaId);
 
   revalidatePath("/minha-equipe");
-  return { sucesso: "Você agora é colaborador nesta empresa." };
+  return { sucesso: `Você agora é ${PERFIL_LABEL[perfilRebaixado]} nesta empresa.` };
 }

@@ -69,9 +69,9 @@ export async function POST(request: Request) {
   // DeUsuarios em usuarios/actions.ts, achado real corrigido lá em
   // 26/07/2026) — só não tinha sido replicada pra esta rota mobile gêmea.
   const { data: perfilChamador } = await supabaseDoUsuario.rpc("perfil_usuario_atual");
-  if (perfilChamador !== "admin" && perfilChamador !== "analista") {
+  if (perfilChamador !== "admin") {
     return NextResponse.json(
-      { erro: "Esta ação é exclusiva do time interno (perfil administrador ou analista)." },
+      { erro: "Esta ação é exclusiva do time interno (perfil administrador)." },
       { status: 403, headers: CORS_HEADERS }
     );
   }

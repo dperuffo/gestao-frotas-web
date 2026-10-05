@@ -31,8 +31,8 @@ export async function importarUsuarios(
   // qualquer cliente.
   const supabaseSessao = await createClient();
   const { data: perfilChamador } = await supabaseSessao.rpc("perfil_usuario_atual");
-  if (perfilChamador !== "admin" && perfilChamador !== "analista") {
-    return { erro: "Esta ação é exclusiva do time interno (perfil administrador ou analista)." };
+  if (perfilChamador !== "admin") {
+    return { erro: "Esta ação é exclusiva do time interno (perfil administrador)." };
   }
 
   const arquivo = formData.get("arquivo");

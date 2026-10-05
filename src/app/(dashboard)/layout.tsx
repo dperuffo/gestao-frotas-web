@@ -903,7 +903,7 @@ export default async function DashboardLayout({
   // que conseguia até criar convites (a Server Action usava o cliente
   // admin sem checar quem chamava, já corrigido em usuarios/actions.ts).
   // Tira o item do menu pra quem não pode mesmo usar a tela.
-  const podeGerenciarUsuarios = ehAdmin || perfilUsuario?.perfil === "analista";
+  const podeGerenciarUsuarios = ehAdmin;
   // Fase Convite-Self-Service (26/07/2026) — "Minha Equipe" é exclusivo de
   // quem é DONO de uma empresa própria (gestor_frota ou posto); admin/
   // analista já têm "Usuários" (visão global) e colaborador não convida
@@ -1047,7 +1047,7 @@ export default async function DashboardLayout({
         <div className="menu-busca px-3 pt-3">
           <BuscaGlobal itens={itensBuscaGlobal} ehPosto={ehPosto} />
         </div>
-        <ProvedorBadgesMenu inicial={badgesContagem} visaoGlobal={ehAdmin || perfilUsuario?.perfil === "analista"}>
+        <ProvedorBadgesMenu inicial={badgesContagem} visaoGlobal={ehAdmin}>
         {/* Fase Aviso-Novo-Abastecimento — aviso flutuante de abastecimento
             novo, só pra quem pode ver a tela de abastecimentos. */}
         {podeAcessarItem({ href: "/abastecimentos" }) && <AvisoNovoAbastecimento />}

@@ -11,12 +11,12 @@ export default async function ImportarUsuariosPage() {
   // escrita; isto aqui só evita mostrar o formulário de importação em
   // lote pra quem nem deveria estar nesta tela).
   const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
-  if (perfilAtual !== "admin" && perfilAtual !== "analista") {
+  if (perfilAtual !== "admin") {
     return (
       <div className="card p-6">
         <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Acesso restrito</h1>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Esta tela é exclusiva do time interno (perfil administrador ou analista).
+          Esta tela é exclusiva do time interno (perfil administrador).
         </p>
       </div>
     );

@@ -117,7 +117,9 @@ export default async function PermissoesPage({
     ? (["admin", "gestor_frota", "posto"] as Perfil[])
     : meuPerfil === "posto"
       ? ["colaborador"]
-      : HIERARQUIA_FROTA.slice(HIERARQUIA_FROTA.indexOf(meuPerfil ?? "colaborador") + 1);
+      : // 05/10/2026 (Daniel): "colaborador" só aparece na visão do posto; na visão
+        // do cliente (Frota) o gestor decide apenas o Analista.
+        HIERARQUIA_FROTA.slice(HIERARQUIA_FROTA.indexOf(meuPerfil ?? "colaborador") + 1).filter((p) => p !== "colaborador");
 
   // Admin gerencia o padrão global; os demais perfis customizam a própria
   // empresa (com seletor de cliente só quando o usuário está vinculado a
