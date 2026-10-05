@@ -18,6 +18,7 @@ import { SecaoPostosPermitidos } from "./_components/SecaoPostosPermitidos";
 import { SecaoLimiteServicos } from "./_components/SecaoLimiteServicos";
 import { SecaoCota } from "./_components/SecaoCota";
 import { SecaoPrePedido } from "./_components/SecaoPrePedido";
+import { FiltrosParametros } from "./_components/FiltrosParametros";
 
 // Fase 27.120/27.121 — tela de "Parâmetros de Uso" (pedido do Daniel, com
 // base num anexo de referência com 10 tipos de regra pra balizar
@@ -69,6 +70,31 @@ type VinculoRow = {
   motoristas: { nome_completo: string; cpf: string } | null;
 };
 
+type FiltrosUso = { placa?: string; motorista?: string; status?: string };
+
+// Quais filtros fazem sentido em cada aba (colunas que a tabela da regra tem).
+const SEM_PLACA = new Set(["valor-diario", "pre-pedido"]);
+const COM_MOTORISTA = new Set(["vinculo", "intervalo", "valor-diario", "dias-horarios", "postos", "servicos", "pre-pedido"]);
+
+function normalizarPlaca(v?: string | null) {
+  return (v ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+// Filtra as linhas (qualquer aba) por placa (contém), motorista (id ou nome) e status.
+function filtrarLinhas<T extends Record<string, any>>(linhas: T[], f: FiltrosUso, nomeMotorista?: string): T[] {
+  const placa = normalizarPlaca(f.placa);
+  return linhas.filter((l) => {
+    if (placa && !normalizarPlaca(l.placa).includes(placa)) return false;
+    if (f.motorista) {
+      const porId = l.motorista_id === f.motorista;
+      const porNome = nomeMotorista && (l.motorista_nome ?? l.motoristas?.nome_completo) === nomeMotorista;
+      if (!porId && !porNome) return false;
+    }
+    if (f.status && l.status !== f.status) return false;
+    return true;
+  });
+}
+
 function inicioDoPeriodo(periodicidade: string, hoje: Date): string {
   const ano = hoje.getUTCFullYear();
   const mes = hoje.getUTCMonth();
@@ -93,9 +119,14 @@ function inicioDoPeriodo(periodicidade: string, hoje: Date): string {
 export default async function ParametrosUsoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ empresa?: string; status?: string; tipo?: string }>;
+  searchParams: Promise<{ empresa?: string; status?: string; tipo?: string; placa?: string; motorista?: string }>;
 }) {
-  const { empresa: empresaParam, status: statusParam, tipo: tipoParam } = await searchParams;
+  const { empresa: empresaParam, status: statusParam, tipo: tipoParam, placa: placaParam, motorista: motoristaParam } = await searchParams;
+  const filtros: FiltrosUso = {
+    placa: placaParam?.trim() || undefined,
+    motorista: motoristaParam || undefined,
+    status: statusParam === "Ativo" || statusParam === "Inativo" ? statusParam : undefined,
+  };
   const tipo = ABAS.some((a) => a.tipo === tipoParam) ? (tipoParam as string) : "vinculo";
   const supabase = await createClient();
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
@@ -180,6 +211,7 @@ export default async function ParametrosUsoPage({
           empresaId={empresaSelecionada}
           statusParam={statusParam}
           empresaParam={empresaParam}
+          filtros={filtros}
         />
       )}
     </div>
@@ -191,11 +223,13 @@ async function ConteudoAba({
   empresaId,
   statusParam,
   empresaParam,
+  filtros,
 }: {
   tipo: string;
   empresaId: string;
   statusParam?: string;
   empresaParam?: string;
+  filtros: FiltrosUso;
 }) {
   const supabase = await createClient();
 
@@ -206,12 +240,22 @@ async function ConteudoAba({
       .eq("empresa_id", empresaId)
       .order("placa");
     if (statusParam === "Ativo" || statusParam === "Inativo") query = query.eq("status", statusParam);
+    if (filtros.placa) query = query.ilike("placa", `%${filtros.placa.replace(/[%_,]/g, "")}%`);
+    if (filtros.motorista) query = query.eq("motorista_id", filtros.motorista);
     const { data, error } = await query;
     const vinculos = (data ?? []) as unknown as VinculoRow[];
+
+    const { data: motoristasFiltro } = await supabase
+      .from("motoristas")
+      .select("id, nome_completo")
+      .eq("empresa_id", empresaId)
+      .order("nome_completo");
 
     function linkFiltroStatus(valor: string) {
       const params = new URLSearchParams();
       if (empresaParam) params.set("empresa", empresaParam);
+      if (filtros.placa) params.set("placa", filtros.placa);
+      if (filtros.motorista) params.set("motorista", filtros.motorista);
       if (valor) params.set("status", valor);
       const qs = params.toString();
       return qs ? `?${qs}` : "?";
@@ -219,6 +263,17 @@ async function ConteudoAba({
 
     return (
       <>
+        <FiltrosParametros
+          empresaParam={empresaParam}
+          tipo="vinculo"
+          placa={filtros.placa}
+          motorista={filtros.motorista}
+          status={filtros.status}
+          motoristas={motoristasFiltro ?? []}
+          mostrarPlaca
+          mostrarMotorista
+          mostrarStatus
+        />
         <div className="card mb-4 p-4">
           <p className="text-sm text-slate-600 dark:text-slate-300">
             Associa um motorista a um veículo específico. Abastecimentos feitos em postos ou soluções de automação
@@ -345,6 +400,22 @@ async function ConteudoAba({
   });
   const postos = Array.from(postosMap, ([cnpj, nome]) => ({ cnpj, nome }));
 
+  // Barra de filtros (placa / motorista / status) comum às abas de regra.
+  const nomeMotoristaFiltro = motoristas.find((m) => m.id === filtros.motorista)?.nome_completo;
+  const barraFiltros = (
+    <FiltrosParametros
+      empresaParam={empresaParam}
+      tipo={tipo}
+      placa={filtros.placa}
+      motorista={filtros.motorista}
+      status={tipo === "pre-pedido" ? undefined : filtros.status}
+      motoristas={motoristas.map((m) => ({ id: m.id, nome_completo: m.nome_completo }))}
+      mostrarPlaca={!SEM_PLACA.has(tipo) || tipo === "pre-pedido"}
+      mostrarMotorista={COM_MOTORISTA.has(tipo)}
+      mostrarStatus={tipo !== "pre-pedido"}
+    />
+  );
+
   if (tipo === "pre-pedido") {
     const [{ data: parametro }, { data: pps }] = await Promise.all([
       supabase.from("parametros_pre_pedido").select("habilitado").eq("empresa_id", empresaId).maybeSingle(),
@@ -366,15 +437,23 @@ async function ConteudoAba({
       motorista_nome: (p.motoristas?.nome_completo ?? null) as string | null,
       paradas: ((p.pre_pedidos_paradas ?? []) as any[]).sort((a, b) => a.ordem - b.ordem),
     }));
+    const prePedidosFiltrados = prePedidos.filter(
+      (p) =>
+        (!filtros.placa || normalizarPlaca(p.placa).includes(normalizarPlaca(filtros.placa))) &&
+        (!filtros.motorista || (nomeMotoristaFiltro && p.motorista_nome === nomeMotoristaFiltro))
+    );
     return (
-      <SecaoPrePedido
-        empresaId={empresaId}
-        habilitado={parametro?.habilitado === true}
-        veiculos={veiculos}
-        motoristas={motoristas.map((m) => ({ id: m.id, nome_completo: m.nome_completo, empresaNome: (m as { empresaNome?: string }).empresaNome }))}
-        postos={postos}
-        prePedidos={prePedidos}
-      />
+      <>
+        {barraFiltros}
+        <SecaoPrePedido
+          empresaId={empresaId}
+          habilitado={parametro?.habilitado === true}
+          veiculos={veiculos}
+          motoristas={motoristas.map((m) => ({ id: m.id, nome_completo: m.nome_completo, empresaNome: (m as { empresaNome?: string }).empresaNome }))}
+          postos={postos}
+          prePedidos={prePedidosFiltrados}
+        />
+      </>
     );
   }
 
@@ -385,12 +464,15 @@ async function ConteudoAba({
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
     return (
-      <SecaoIntervalo
-        linhas={(data ?? []) as any}
-        empresaId={empresaId}
-        veiculos={veiculos}
-        motoristas={motoristas}
-      />
+      <>
+        {barraFiltros}
+        <SecaoIntervalo
+          linhas={filtrarLinhas((data ?? []) as any[], filtros, nomeMotoristaFiltro) as any}
+          empresaId={empresaId}
+          veiculos={veiculos}
+          motoristas={motoristas}
+        />
+      </>
     );
   }
 
@@ -400,7 +482,12 @@ async function ConteudoAba({
       .select("id, motorista_id, valor_maximo, status, observacao, motoristas(nome_completo)")
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
-    return <SecaoValorDiario linhas={(data ?? []) as any} empresaId={empresaId} motoristas={motoristas} />;
+    return (
+      <>
+        {barraFiltros}
+        <SecaoValorDiario linhas={filtrarLinhas((data ?? []) as any[], filtros, nomeMotoristaFiltro) as any} empresaId={empresaId} motoristas={motoristas} />
+      </>
+    );
   }
 
   if (tipo === "volume-diario") {
@@ -409,7 +496,12 @@ async function ConteudoAba({
       .select("id, placa, volume_maximo, status, observacao")
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
-    return <SecaoVolumeDiario linhas={data ?? []} empresaId={empresaId} veiculos={veiculos} />;
+    return (
+      <>
+        {barraFiltros}
+        <SecaoVolumeDiario linhas={filtrarLinhas(data ?? [], filtros)} empresaId={empresaId} veiculos={veiculos} />
+      </>
+    );
   }
 
   if (tipo === "produto") {
@@ -418,7 +510,12 @@ async function ConteudoAba({
       .select("id, placa, combustiveis_permitidos, status, observacao")
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
-    return <SecaoProduto linhas={data ?? []} empresaId={empresaId} veiculos={veiculos} />;
+    return (
+      <>
+        {barraFiltros}
+        <SecaoProduto linhas={filtrarLinhas(data ?? [], filtros)} empresaId={empresaId} veiculos={veiculos} />
+      </>
+    );
   }
 
   if (tipo === "hodometro-leve" || tipo === "hodometro-pesado") {
@@ -430,12 +527,15 @@ async function ConteudoAba({
       .eq("classificacao", classificacao)
       .order("criado_em", { ascending: false });
     return (
-      <SecaoVariacaoHodometro
-        linhas={data ?? []}
-        empresaId={empresaId}
-        classificacao={classificacao}
-        veiculos={veiculos}
-      />
+      <>
+        {barraFiltros}
+        <SecaoVariacaoHodometro
+          linhas={filtrarLinhas(data ?? [], filtros)}
+          empresaId={empresaId}
+          classificacao={classificacao}
+          veiculos={veiculos}
+        />
+      </>
     );
   }
 
@@ -446,12 +546,15 @@ async function ConteudoAba({
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
     return (
-      <SecaoDiasHorarios
-        linhas={(data ?? []) as any}
-        empresaId={empresaId}
-        veiculos={veiculos}
-        motoristas={motoristas}
-      />
+      <>
+        {barraFiltros}
+        <SecaoDiasHorarios
+          linhas={filtrarLinhas((data ?? []) as any[], filtros, nomeMotoristaFiltro) as any}
+          empresaId={empresaId}
+          veiculos={veiculos}
+          motoristas={motoristas}
+        />
+      </>
     );
   }
 
@@ -462,13 +565,16 @@ async function ConteudoAba({
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
     return (
-      <SecaoPostosPermitidos
-        linhas={(data ?? []) as any}
-        empresaId={empresaId}
-        veiculos={veiculos}
-        motoristas={motoristas}
-        postos={postos}
-      />
+      <>
+        {barraFiltros}
+        <SecaoPostosPermitidos
+          linhas={filtrarLinhas((data ?? []) as any[], filtros, nomeMotoristaFiltro) as any}
+          empresaId={empresaId}
+          veiculos={veiculos}
+          motoristas={motoristas}
+          postos={postos}
+        />
+      </>
     );
   }
 
@@ -479,13 +585,16 @@ async function ConteudoAba({
       .eq("empresa_id", empresaId)
       .order("criado_em", { ascending: false });
     return (
-      <SecaoLimiteServicos
-        linhas={(data ?? []) as any}
-        empresaId={empresaId}
-        veiculos={veiculos}
-        motoristas={motoristas}
-        postos={postos}
-      />
+      <>
+        {barraFiltros}
+        <SecaoLimiteServicos
+          linhas={filtrarLinhas((data ?? []) as any[], filtros, nomeMotoristaFiltro) as any}
+          empresaId={empresaId}
+          veiculos={veiculos}
+          motoristas={motoristas}
+          postos={postos}
+        />
+      </>
     );
   }
 
@@ -521,5 +630,10 @@ async function ConteudoAba({
     })
   );
 
-  return <SecaoCota linhas={linhasCotas} empresaId={empresaId} veiculos={veiculos} />;
+  return (
+    <>
+      {barraFiltros}
+      <SecaoCota linhas={filtrarLinhas(linhasCotas, filtros)} empresaId={empresaId} veiculos={veiculos} />
+    </>
+  );
 }
