@@ -518,6 +518,9 @@ const menuPostoSistema: ItemMenuLateral[] = [
   { href: "/documentos", label: "Documentos", icon: Folder },
   { href: "/lgpd", label: "Privacidade (LGPD)", icon: Lock },
   { href: "/integracoes", label: "Integrações", icon: Plug },
+  // 05/10/2026 (pedido do Daniel): o gestor do posto decide o que o colaborador
+  // do posto pode usar — a tela de permissões precisa estar no menu do posto.
+  { href: "/permissoes", label: "Permissões", icon: KeyRound },
 ];
 
 const menuAdministracao = [
