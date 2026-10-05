@@ -12,6 +12,7 @@ import { contarCadastrosPendentesAcao } from "../cadastros-pendentes/actions";
 import { contarAbastecimentosSemMotoristaAcao } from "../abastecimentos-sem-motorista/actions";
 import { contarMultasPendentesAcao } from "../multas/actions";
 import { contarAbastecimentosNegadosAcao } from "../abastecimentos-negados/actions";
+import { contarAjustesPdvPendentesAcao } from "../ajustes-pdv/actions";
 import { contarDuplicidadesPlacaGrupoAcao } from "../duplicidade-placas-grupo/actions";
 import { contarDivergenciasPrecoPostoAcao, contarDivergenciasPrecoClienteAcao } from "../conferencia-precos/actions";
 
@@ -53,6 +54,7 @@ export async function contarBadgesMenuAcao(): Promise<Record<string, number>> {
     duplicidadesPlacaGrupo,
     divergenciasPrecoPosto,
     divergenciasPrecoCliente,
+    ajustesPdvPendentes,
   ] = await Promise.all([
     seguro("chamados não vistos", contarChamadosNaoVistosAcao()),
     seguro("avaliações pendentes", contarAvaliacoesPendentesAcao()),
@@ -68,6 +70,7 @@ export async function contarBadgesMenuAcao(): Promise<Record<string, number>> {
     seguro("duplicidades de placa", contarDuplicidadesPlacaGrupoAcao()),
     seguro("divergências de preço (posto)", contarDivergenciasPrecoPostoAcao()),
     seguro("divergências de preço (cliente)", contarDivergenciasPrecoClienteAcao()),
+    seguro("pedidos de ajuste (PDV)", contarAjustesPdvPendentesAcao()),
   ]);
 
   return {
@@ -75,6 +78,7 @@ export async function contarBadgesMenuAcao(): Promise<Record<string, number>> {
     "/cadastros-pendentes": cadastrosPendentes,
     "/abastecimentos-sem-motorista": abastecimentosSemMotorista,
     "/abastecimentos-negados": abastecimentosNegados,
+    "/ajustes-pdv": ajustesPdvPendentes,
     "/duplicidade-placas-grupo": duplicidadesPlacaGrupo,
     "/negociacoes": negociacoesPendentes,
     "/abastecimentos": ajustesAbastecimentosPendentes,

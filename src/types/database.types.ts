@@ -5620,6 +5620,10 @@ export interface Database {
         Args: { p_ajuste_id: string };
         Returns: Json;
       };
+      contar_ajustes_pdv_pendentes_para_mim: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
       meus_ajustes_pdv: {
         Args: { p_status?: string; p_empresa_id?: string };
         Returns: Json;

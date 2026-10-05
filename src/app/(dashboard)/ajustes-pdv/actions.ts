@@ -44,6 +44,14 @@ function mensagem(status?: string) {
   return MENSAGENS[status ?? ""] ?? "Não foi possível concluir agora.";
 }
 
+// Pedidos pendentes que aguardam a decisão do usuário (ele é a contraparte de quem pediu).
+// Alimenta a bolinha do menu e o aviso flutuante.
+export async function contarAjustesPdvPendentesAcao(): Promise<number> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("contar_ajustes_pdv_pendentes_para_mim");
+  return (data as number | null) ?? 0;
+}
+
 export async function solicitarAjustePdvAcao(
   codigoAbastecimento: string,
   alteracoes: Record<string, string | number | null>,

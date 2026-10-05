@@ -76,6 +76,7 @@ import { contarBadgesMenuAcao } from "./_components/badgesMenuActions";
 import { ProvedorBadgesMenu } from "./_components/ProvedorBadgesMenu";
 import { AvisoNovoAbastecimento } from "./_components/AvisoNovoAbastecimento";
 import { AvisoAbastecimentoNegado } from "./_components/AvisoAbastecimentoNegado";
+import { AvisoAjustePdv } from "./_components/AvisoAjustePdv";
 import {
   HREF_FUNCIONALIDADE,
   carregarMapaPermissoes,
@@ -1052,6 +1053,7 @@ export default async function DashboardLayout({
             novo, só pra quem pode ver a tela de abastecimentos. */}
         {podeAcessarItem({ href: "/abastecimentos" }) && <AvisoNovoAbastecimento />}
         {podeAcessarItem({ href: "/abastecimentos-negados" }) && <AvisoAbastecimentoNegado />}
+        {podeAcessarItem({ href: "/ajustes-pdv" }) && <AvisoAjustePdv />}
         <nav className="flex-1 px-3 py-4">
           {ehPosto ? (
             <>

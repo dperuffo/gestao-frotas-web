@@ -35,6 +35,10 @@ const TABELAS_TEMPO_REAL = [
   "abastecimentos_pdv",
 ] as const;
 
+// Tabelas sem coluna empresa_id (o filtro por empresa não se aplica); a RLS
+// já restringe os eventos às empresas do usuário.
+const TABELAS_TEMPO_REAL_SEM_FILTRO = ["pdv_ajustes"] as const;
+
 type Assinante = (badges: Record<string, number>) => void;
 
 const BadgesMenuContext = createContext<{
@@ -140,6 +144,11 @@ export function ProvedorBadgesMenu({
           { event: evento, schema: "public", table: tabela, ...(filtro ? { filter: filtro } : {}) },
           cutucar
         );
+      }
+    }
+    for (const tabela of TABELAS_TEMPO_REAL_SEM_FILTRO) {
+      for (const evento of ["INSERT", "UPDATE"] as const) {
+        canal = canal.on("postgres_changes", { event: evento, schema: "public", table: tabela }, cutucar);
       }
     }
     canal.subscribe();
