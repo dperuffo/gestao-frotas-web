@@ -4,6 +4,7 @@ import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { PERFIS, PERFIL_LABEL, EMPRESA_ID_GLOBAL, type Perfil } from "@/lib/constants";
 import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
 import { TogglePermissao } from "./_components/TogglePermissao";
+import { FUNCIONALIDADES_SO_ADMIN } from "@/lib/permissoes";
 
 // Deixa "aba_dashboard" -> "Aba: Dashboard" e "func_exportar" -> "Função: Exportar",
 // só para ficar mais legível na tela. Não muda nada no banco.
@@ -26,7 +27,8 @@ const RÓTULOS_ESPECIAIS: Record<string, string> = {
   aba_jornada_motoristas: "Aba: Jornada dos Motoristas",
   aba_pdv_formas_pagamento: "Aba: Formas de Pagamento aceitas no PDV",
   aba_pdv_metricas: "Aba: Dashboard do PDV (Piloto, só time interno)",
-  aba_pdv_bicos: "Aba: Bicos e Combustíveis do PDV",
+  aba_pdv_bicos: "Aba: Bicos e Combustíveis do PDV (painel web, só time interno)",
+  aba_pdv_bicos_posto: "PDV FNI: Bombas e bicos",
   aba_pdv_pre_pedido: "PDV FNI: Pré-Pedido (digitar o OTP do motorista)",
   aba_pdv_resgates: "PDV FNI: Resgate de pontos",
   aba_pdv_extrato: "PDV FNI: Extrato e pedido de ajuste",
@@ -103,11 +105,18 @@ export default async function PermissoesPage({
   // quanto pro posto — nunca pro colaborador em si (ele não convida nem
   // configura permissão de ninguém).
   const HIERARQUIA_FROTA: Perfil[] = ["gestor_frota", "analista", "colaborador"];
+  // 05/10/2026 (pedido do Daniel): o gestor tem acesso total à sua visão e decide
+  // o que os níveis ABAIXO dele podem usar — por isso a matriz mostra só os
+  // perfis estritamente abaixo do dele (nunca o próprio nível). Posto →
+  // colaborador; gestor_frota → analista e colaborador; analista → colaborador.
+  // Admin NÃO controla o que os gestores liberam para os níveis abaixo deles
+  // (decisão do Daniel, 05/10/2026): ele só governa o padrão dos níveis de
+  // gestão — Administrador, Gestor de Frota e Posto.
   const perfisVisiveis: Perfil[] = souAdmin
-    ? [...PERFIS]
+    ? (["admin", "gestor_frota", "posto"] as Perfil[])
     : meuPerfil === "posto"
-      ? ["posto", "colaborador"]
-      : HIERARQUIA_FROTA.slice(Math.max(0, HIERARQUIA_FROTA.indexOf(meuPerfil ?? "analista")));
+      ? ["colaborador"]
+      : HIERARQUIA_FROTA.slice(HIERARQUIA_FROTA.indexOf(meuPerfil ?? "colaborador") + 1);
 
   // Admin gerencia o padrão global; os demais perfis customizam a própria
   // empresa (com seletor de cliente só quando o usuário está vinculado a
@@ -149,15 +158,26 @@ export default async function PermissoesPage({
     porPerfil.set(linha.perfil, { permitido: linha.permitido ?? false, customizado: true });
     matriz.set(linha.funcionalidade, porPerfil);
   }
-  const funcionalidades = Array.from(matriz.keys()).sort();
+  // O gestor só delega o que a visão dele tem (ex.: gestor de frota não vê telas
+  // exclusivas de posto ou do time interno). Admin vê tudo.
+  const funcionalidades = Array.from(matriz.keys())
+    .filter((f) => souAdmin || (!FUNCIONALIDADES_SO_ADMIN.has(f) && (matriz.get(f)?.get(meuPerfil ?? "")?.permitido ?? true)))
+    .sort();
 
   return (
     <div>
       <CabecalhoPagina
         titulo="Permissões por Perfil"
-        descricao="Controla o que cada perfil de usuário pode ver e fazer no sistema. Clique no interruptor para permitir ou negar o acesso de um perfil a uma funcionalidade."
+        descricao="Controla o que cada nível abaixo do seu pode ver e fazer no sistema. Clique no interruptor para permitir ou bloquear o acesso a cada funcionalidade; vale na hora, inclusive para quem tentar abrir a tela pela URL. Você mantém acesso total à sua visão."
       />
       <div className="mb-6">
+        {souAdmin && (
+          <p className="mt-2 text-sm text-frota-700">
+            Aqui você define o padrão dos níveis de gestão (Administrador, Gestor de Frota e Posto). O que
+            Analista e Colaborador podem usar em cada empresa é decisão do gestor daquela empresa — você não
+            controla essa parte.
+          </p>
+        )}
         {!souAdmin && (
           <p className="mt-2 text-sm text-frota-700">
             Você está vendo apenas os perfis do seu nível de gestão ou abaixo, para{" "}
@@ -189,19 +209,11 @@ export default async function PermissoesPage({
 
       {!souAdmin && empresaEdicao && (
         <>
-          {/* Achado real (13/08/2026, auditoria da tela) — a personalização
-              por empresa feita aqui embaixo NÃO bloqueia a URL de verdade
-              pra ninguém (isso só o padrão global do Administrador faz); ela
-              só decide o que fica liberado automaticamente quando alguém da
-              sua empresa pede acesso a um colega. Antes esse comportamento
-              só estava documentado em comentário no código — deixando
-              parecer, na própria tela, que desligar um interruptor aqui
-              bloqueia o colega de acessar a tela, quando na prática não
-              bloqueia. */}
-          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Estes interruptores personalizam só o que fica liberado por padrão quando alguém da sua empresa pede
-            acesso a um colega — eles não bloqueiam, por si só, o acesso de ninguém à tela. O bloqueio de verdade
-            (impedir o acesso direto pela URL) é definido só pelo Administrador, no padrão global do sistema.
+          {/* Desde 05/10/2026 a personalização por empresa bloqueia de verdade os níveis abaixo do gestor. */}
+          <div className="mb-4 rounded-lg border border-frota-200 bg-frota-50 px-4 py-3 text-sm text-frota-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+            Os interruptores abaixo valem para a sua empresa e bloqueiam de verdade o acesso dos níveis abaixo do seu,
+            no painel web e nos apps (menu e URL direta). Você, como gestor, mantém acesso total à sua visão. O padrão
+            que vale quando nada foi personalizado é definido pelo Administrador.
           </div>
           <div className="mb-4 flex justify-end">
             <ReplicarParaGrupoButton

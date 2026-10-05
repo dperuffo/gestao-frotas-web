@@ -13,16 +13,9 @@ import { obterOuDefinir, invalidarPrefixo } from "@/lib/cache";
 // `(dashboard)/layout.tsx` tanto pra filtrar os itens de menu quanto pra
 // redirecionar quem tenta acessar a URL direta de uma tela sem permissão.
 //
-// Limitação conhecida, deixada de propósito: o bloqueio de ROTA usa só o
-// padrão GLOBAL (empresa_id = EMPRESA_ID_GLOBAL) — a customização POR
-// EMPRESA que gestor_frota/analista/posto podem fazer em /permissoes
-// continua funcionando (grava normalmente, aparece como "Personalizado"),
-// mas só afeta o que ELES enxergam de novo pedido de permissão pros
-// próprios colegas — não o bloqueio automático de rota, que fica só no
-// padrão global definido pelo admin. Resolver isso exigiria saber qual
-// empresa está "ativa" em toda navegação, dentro de um layout que não
-// recebe searchParams — complexidade deixada pra uma fase futura, se algum
-// dia for pedida.
+// ATUALIZAÇÃO 05/10/2026: a limitação antiga (bloqueio só pelo padrão global)
+// foi removida. Agora a personalização por empresa feita em /permissoes
+// BLOQUEIA de verdade quem está abaixo do gestor — ver carregarMapaPermissoes.
 //
 // "colaborador" não tem NENHUMA linha nesta tabela (só admin/gestor_frota/
 // analista/posto têm as 64 linhas cada — confirmado por SQL antes desta
@@ -34,6 +27,20 @@ import { obterOuDefinir, invalidarPrefixo } from "@/lib/cache";
 // inventar restrição nova).
 
 export type MapaPermissoes = Map<string, boolean>;
+
+// Funcionalidades EXCLUSIVAS do time interno (admin): nunca aparecem nas matrizes
+// de permissão dos gestores (frota/posto) — não fazem parte da visão deles.
+export const FUNCIONALIDADES_SO_ADMIN = new Set([
+  "aba_admin",
+  "aba_assinaturas_clientes",
+  "aba_avaliacoes_clientes",
+  "aba_configuracoes_sistema",
+  "aba_log_auditoria",
+  "aba_pdv_metricas",
+  "aba_pdv_bicos",
+  "aba_pisos_antt",
+  "aba_oficinas_credenciadas",
+]);
 
 // Cada chave é o href EXATO de um item de menu (web) — o match em
 // `resolverFuncionalidadeDaRota` trata "/x" como cobrindo também
@@ -225,26 +232,54 @@ export function invalidarCachePermissoes(): void {
   invalidarPrefixo(PREFIXO_CACHE_PERMISSOES);
 }
 
+// 05/10/2026 (pedido do Daniel: "gestor de frota e gestor de posto têm acesso
+// total na sua visão e decidem o que os níveis abaixo podem usar, funcionalidade
+// por funcionalidade"): o bloqueio agora respeita a personalização POR EMPRESA
+// feita em /permissoes — valor da empresa prevalece sobre o padrão global.
+//  - gestor_frota e posto (nível de gestão) e admin: SEMPRE o padrão global
+//    (acesso total à sua visão; a personalização da empresa só vale para quem
+//    está abaixo deles, nunca os trava);
+//  - analista e colaborador: padrão global + linhas da(s) empresa(s) do usuário.
+//    Com mais de uma empresa (grupo), libera se QUALQUER uma liberar (evita
+//    travar quem trabalha em várias).
+const PERFIS_GESTAO = new Set(["admin", "gestor_frota", "posto"]);
+
 export async function carregarMapaPermissoes(
   supabase: SupabaseClient<Database>,
-  perfil: string
+  perfil: string,
+  empresaIds: string[] = []
 ): Promise<MapaPermissoes> {
-  return obterOuDefinir(`${PREFIXO_CACHE_PERMISSOES}${perfil}`, 30_000, async () => {
-    const mapa: MapaPermissoes = new Map();
+  const empresas = PERFIS_GESTAO.has(perfil) ? [] : Array.from(new Set(empresaIds)).sort();
+  return obterOuDefinir(`${PREFIXO_CACHE_PERMISSOES}${perfil}:${empresas.join(",")}`, 30_000, async () => {
+    const global: MapaPermissoes = new Map();
     const { data, error } = await supabase
       .from("permissoes_perfil")
-      .select("funcionalidade, permitido")
-      .eq("empresa_id", EMPRESA_ID_GLOBAL)
-      .eq("perfil", perfil);
+      .select("funcionalidade, permitido, empresa_id")
+      .eq("perfil", perfil)
+      .in("empresa_id", [EMPRESA_ID_GLOBAL, ...empresas]);
 
     if (error) {
-      // Fase Observabilidade-Fundacao (14/08/2026) — migrado pro logger
-      // estruturado como demonstração do padrão novo (ver src/lib/logger.ts).
+      // Fail-open (mesmo espírito de sempre): falha de leitura não derruba o dashboard.
       await logger.error("permissoes", "Falha ao carregar permissões (fail-open, ignorado)", error);
-      return mapa;
+      return global;
     }
-    for (const linha of data ?? []) mapa.set(linha.funcionalidade, linha.permitido ?? false);
-    return mapa;
+    const linhas = data ?? [];
+    for (const l of linhas) if (l.empresa_id === EMPRESA_ID_GLOBAL) global.set(l.funcionalidade, l.permitido ?? false);
+    if (empresas.length === 0) return global;
+
+    // valor efetivo por empresa = linha da empresa ?? padrão global; resultado = OR entre as empresas
+    const resultado: MapaPermissoes = new Map();
+    const funcionalidades = new Set(linhas.map((l) => l.funcionalidade));
+    for (const f of funcionalidades) {
+      let liberado = false;
+      for (const e of empresas) {
+        const propria = linhas.find((l) => l.empresa_id === e && l.funcionalidade === f);
+        const efetivo = propria ? (propria.permitido ?? false) : (global.get(f) ?? true);
+        if (efetivo) liberado = true;
+      }
+      resultado.set(f, liberado);
+    }
+    return resultado;
   });
 }
 

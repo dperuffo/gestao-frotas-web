@@ -800,13 +800,22 @@ export default async function DashboardLayout({
   // no app lia essas linhas de verdade (achado registrado na fase anterior).
   // Daqui pra baixo: filtra os itens de menu pelo que o perfil atual NÃO tem
   // acesso, e bloqueia (redirect) quem tenta acessar a URL direta de uma
-  // tela sem permissão — ver src/lib/permissoes.ts pro mapa de rotas e as
-  // limitações conhecidas (só o padrão global é aplicado no bloqueio, não a
-  // customização por empresa).
+  // tela sem permissão — ver src/lib/permissoes.ts (padrão global + personalização
+  // por empresa feita pelo gestor para os níveis abaixo dele).
   const bypassPermissao = ehBypassPermissao(perfilUsuario?.perfil, user.email);
+  // Vínculos diretos do usuário: a personalização por empresa (feita pelo
+  // gestor em /permissoes) vale para quem está abaixo dele.
+  const { data: vinculosPermissao } =
+    !bypassPermissao && perfilUsuario?.perfil
+      ? await supabase.from("usuarios_empresas").select("empresa_id").eq("user_email", user.email ?? "").eq("ativo", true)
+      : { data: null };
   const mapaPermissoes =
     !bypassPermissao && perfilUsuario?.perfil
-      ? await carregarMapaPermissoes(supabase, perfilUsuario.perfil)
+      ? await carregarMapaPermissoes(
+          supabase,
+          perfilUsuario.perfil,
+          (vinculosPermissao ?? []).map((v) => v.empresa_id as string)
+        )
       : new Map<string, boolean>();
 
   // Fase IA-e-Automacao (27/08/2026, pedido do Daniel: "esta funcionalidade
