@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatarDataHoraBr } from "@/lib/utils";
@@ -32,7 +32,18 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
     .select("*")
     .eq("id", Number(id))
     .maybeSingle();
-  if (!abastecimento) notFound();
+  if (!abastecimento) {
+    // Rede de segurança: links antigos mandavam abastecimentos do PDV pra cá.
+    // Se o id existe (e é visível pra este usuário) em abastecimentos_pdv,
+    // leva pra página certa em vez de dar 404.
+    const { data: doPdv } = await supabase
+      .from("abastecimentos_pdv")
+      .select("id")
+      .eq("id", Number(id))
+      .maybeSingle();
+    if (doPdv) redirect(`/abastecimentos/pdv/${doPdv.id}`);
+    notFound();
+  }
 
   const { data: nomeCliente } = await supabase.rpc("nome_empresa_publico", {
     p_empresa_id: abastecimento.empresa_id,
