@@ -32,7 +32,11 @@ import { BadgeMenu } from "./ProvedorBadgesMenu";
 // componente-folha que recebe apenas primitivos + o ícone/label já
 // renderizados (children), nunca a função do ícone em si. Ver o comentário
 // em ItemMenuAtivo.tsx pra o bug de produção que essa separação corrige.
-export type ItemMenuLateral = { href: string; label: string; icon?: LucideIcon };
+// `externo`: rota que NÃO é uma página do dashboard (ex.: /documentacao, um Route
+// Handler que devolve HTML próprio, fora do layout). Renderiza <a> comum numa
+// nova aba, em vez de <Link>, para o Next não tentar navegação/prefetch de
+// Server Component nessa rota.
+export type ItemMenuLateral = { href: string; label: string; icon?: LucideIcon; externo?: boolean };
 
 export function GrupoMenuLateral({
   titulo,
@@ -83,6 +87,20 @@ export function GrupoMenuLateral({
           const temBadge = !!badges && item.href in badges;
           return (
             <li key={item.href} className="group flex items-center gap-1">
+              {item.externo ? (
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={item.label}
+                  className="menu-item-link glass-nav-texto flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-slate-900/5 dark:hover:bg-white/10"
+                >
+                  <span className="flex items-center gap-2">
+                    {item.icon && <item.icon className="glass-nav-icone h-4 w-4 shrink-0" />}
+                    <span className="menu-item-label">{item.label}</span>
+                  </span>
+                </a>
+              ) : (
               <ItemMenuAtivo
                 href={item.href}
                 dataTour={tourPorHref?.[item.href]}
@@ -96,6 +114,7 @@ export function GrupoMenuLateral({
                 </span>
                 {temBadge && <BadgeMenu href={item.href} inicial={badges![item.href] ?? 0} />}
               </ItemMenuAtivo>
+              )}
               {favoritos && (
                 <span className="menu-item-extra">
                   <BotaoFavoritoMenu href={item.href} favoritadoInicial={favoritos.has(item.href)} />

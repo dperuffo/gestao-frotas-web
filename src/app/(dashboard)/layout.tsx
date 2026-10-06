@@ -51,6 +51,7 @@ import {
   Coins,
   Copy,
   Gauge,
+  BookOpen,
   ShieldCheck,
   AlertTriangle,
   Radar,
@@ -591,6 +592,11 @@ const menuAdministracao = [
   // bicos/combustíveis por revenda (pdv_bicos_catalogo), que alimenta a
   // seleção de leitura no pdv-fni e o robô de teste.
   { href: "/pdv-bicos", label: "Bicos e Combustíveis (PDV)", icon: Gauge },
+  // 06/10/2026 (pedido do Daniel) — documentação técnica (Arquitetura FNI e
+  // Documentação funcional/APIs). Só admin vê este menu; a rota exige login +
+  // MFA + perfil admin de novo (src/lib/acessoDocumentacao.ts). Não é página do
+  // dashboard (Route Handler com HTML próprio), então abre em nova aba.
+  { href: "/documentacao", label: "Documentação Técnica", icon: BookOpen, externo: true },
 ];
 
 // Fase Acesso-Rápido-Favoritos (04/08/2026, pedido do Daniel) — mapa
