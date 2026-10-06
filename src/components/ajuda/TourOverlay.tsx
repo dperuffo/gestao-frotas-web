@@ -46,7 +46,9 @@ export function TourOverlay({
       setRect(el!.getBoundingClientRect());
     }
 
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    // O logo é o topo do menu: não dá pra centralizá-lo (não há o que rolar acima
+    // dele), então alinha no início em vez de deixar a rolagem pela metade.
+    el.scrollIntoView({ block: passo.alvo === "logo" ? "start" : "center", behavior: "smooth" });
     recalcular();
 
     window.addEventListener("scroll", recalcular, true);

@@ -17,6 +17,10 @@ import { useTour } from "./TourProvider";
 // do texto). Não usamos GraduationCap aqui porque esse ícone já identifica
 // "Central de Treinamento" no menu principal — usar o mesmo pros dois
 // confundiria mais do que ajudaria.
+// 06/10/2026 (achado do Daniel): no modo claro o botão ficava quase invisível
+// (text-slate-200 / ícone text-slate-300 eram cores do tema escuro antigo).
+// Agora usa as mesmas cores do vizinho AvisosSino: slate-700/slate-500 no claro
+// e slate-300/slate-400 no escuro.
 export function CentralAjuda() {
   const [aberto, setAberto] = useState(false);
   const { iniciar } = useTour();
@@ -28,9 +32,9 @@ export function CentralAjuda() {
         data-tour="central-ajuda"
         onClick={() => setAberto(true)}
         title="Central de Ajuda"
-        className="menu-item-link flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 dark:text-slate-300"
+        className="menu-item-link flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/10"
       >
-        <LifeBuoy className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-400" />
+        <LifeBuoy className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
         <span className="menu-item-label">Central de Ajuda</span>
       </button>
 

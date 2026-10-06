@@ -39,6 +39,12 @@ export function TourProvider({
   }, []);
 
   const iniciar = useCallback(() => {
+    // 06/10/2026 (achado do Daniel) — "Rever o tour" é aberto pela Central de
+    // Ajuda, no RODAPÉ do menu; o 1º passo aponta pro logo, no TOPO. Com o menu
+    // rolado até o fim, o tour começava com o alvo fora da vista. Volta o menu
+    // lateral (que tem rolagem própria) e a página ao início antes de começar.
+    document.querySelector('[data-tour="logo"]')?.closest("aside")?.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
     setPassoIndice(0);
     setAtivo(true);
   }, []);
