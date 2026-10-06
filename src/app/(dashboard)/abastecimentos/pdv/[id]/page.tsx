@@ -27,7 +27,7 @@ export default async function DetalheAbastecimentoPdvPage({ params }: { params: 
   const { data: abastecimento } = await supabase
     .from("abastecimentos_pdv")
     .select(
-      "id, codigo_abastecimento, status, empresa_id, revenda_empresa_id, placa, motorista_nome, motorista_cpf, bomba, bico, combustivel, litros, preco_litro, valor_total_combustivel, forma_pagamento, valor_total_itens_extra, valor_total_transacao, hodometro, motivo_negacao, data_abastecimento, confirmado_em, pdv_terminais(identificacao)"
+      "id, codigo_abastecimento, status, empresa_id, revenda_empresa_id, placa, motorista_nome, motorista_cpf, bomba, bico, combustivel, litros, preco_litro, valor_total_combustivel, forma_pagamento, valor_total_itens_extra, valor_total_transacao, hodometro, motivo_negacao, data_abastecimento, confirmado_em, ajuste_status, ajuste_motivo, ajuste_lado_solicitante, ajuste_decidido_por, ajuste_decidido_em, pdv_terminais(identificacao)"
     )
     .eq("id", Number(id))
     .maybeSingle();
@@ -82,10 +82,45 @@ export default async function DetalheAbastecimentoPdvPage({ params }: { params: 
         </p>
       )}
 
-      <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
-        Abastecimentos feitos pelo PDV ainda não têm pedido de ajuste com aprovação da contraparte — qualquer
-        correção precisa ser feita diretamente com o posto.
-      </p>
+      {abastecimento.ajuste_status ? (
+        <div
+          className={`mt-4 rounded-lg px-4 py-3 text-sm ${
+            abastecimento.ajuste_status === "recusado"
+              ? "bg-red-50 text-status-inativo dark:bg-red-950/40"
+              : abastecimento.ajuste_status === "pendente"
+                ? "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                : "bg-slate-50 text-slate-600 dark:bg-slate-800/50 dark:text-slate-300"
+          }`}
+        >
+          <p className="font-semibold">
+            {abastecimento.ajuste_status === "pendente"
+              ? "Em ajuste — pedido aguardando decisão"
+              : abastecimento.ajuste_status === "aprovado"
+                ? "Ajuste aprovado"
+                : abastecimento.ajuste_status === "recusado"
+                  ? "Ajuste recusado"
+                  : "Pedido de ajuste cancelado"}
+          </p>
+          {abastecimento.ajuste_status !== "pendente" && (
+            <p className="mt-1">
+              {abastecimento.ajuste_decidido_por ? `Por ${abastecimento.ajuste_decidido_por}` : ""}
+              {abastecimento.ajuste_decidido_em ? ` em ${formatarDataHoraBr(abastecimento.ajuste_decidido_em)}` : ""}
+              {abastecimento.ajuste_motivo ? ` — Motivo: ${abastecimento.ajuste_motivo}` : ""}
+            </p>
+          )}
+          <p className="mt-1 text-xs">
+            Pedido feito pelo {abastecimento.ajuste_lado_solicitante === "posto" ? "posto" : "cliente"}. Histórico completo em{" "}
+            <a href="/ajustes-pdv" className="underline">
+              Pedidos de Ajuste (PDV)
+            </a>
+            .
+          </p>
+        </div>
+      ) : (
+        <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+          Nenhum pedido de ajuste neste abastecimento. Para corrigir algo, peça o ajuste em Pedidos de Ajuste (PDV).
+        </p>
+      )}
     </div>
   );
 }
@@ -107,6 +142,7 @@ type AbastecimentoPdv = {
   forma_pagamento: string | null;
   valor_total_itens_extra: number;
   valor_total_transacao: number | null;
+  ajuste_status?: string | null;
   pdv_terminais: { identificacao: string } | null;
 };
 

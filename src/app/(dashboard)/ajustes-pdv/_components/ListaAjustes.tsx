@@ -166,8 +166,13 @@ export function ListaAjustes({ itens }: { itens: AjustePdv[] }) {
                     <button
                       disabled={pendente}
                       onClick={() => {
-                        const motivoRecusa = window.prompt("Motivo da recusa (opcional):") ?? undefined;
-                        rodar(() => decidirAjustePdvAcao(a.id, false, motivoRecusa));
+                        const motivoRecusa = window.prompt("Motivo da recusa (obrigatório — fica registrado no abastecimento):");
+                        if (motivoRecusa === null) return; // cancelou
+                        if (!motivoRecusa.trim()) {
+                          window.alert("Informe o motivo da recusa.");
+                          return;
+                        }
+                        rodar(() => decidirAjustePdvAcao(a.id, false, motivoRecusa.trim()));
                       }}
                       className="btn-secondary flex items-center gap-1.5 text-sm"
                     >

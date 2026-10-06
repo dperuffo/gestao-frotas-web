@@ -2543,6 +2543,12 @@ export interface Database {
       abastecimentos_pdv: {
         Row: {
           id: number;
+          ajuste_status: string | null;
+          ajuste_motivo: string | null;
+          ajuste_lado_solicitante: string | null;
+          ajuste_decidido_por: string | null;
+          ajuste_decidido_em: string | null;
+          ajuste_atualizado_em: string | null;
           codigo_abastecimento: string | null;
           status: string;
           empresa_id: string | null;

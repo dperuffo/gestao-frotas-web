@@ -38,6 +38,7 @@ const MENSAGENS: Record<string, string> = {
   sem_permissao: "Você não tem permissão para esta ação.",
   campo_invalido: "Campo inválido.",
   ja_decidido: "Este pedido já foi decidido.",
+  motivo_recusa_obrigatorio: "Informe o motivo da recusa.",
 };
 
 function mensagem(status?: string) {
