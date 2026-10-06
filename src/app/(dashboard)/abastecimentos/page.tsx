@@ -9,6 +9,7 @@ import { LogoProvedor } from "@/components/LogoProvedor";
 import { contarAbastecimentosManuaisPendentesAcao } from "./actions-pendentes-manual";
 import { formatarMesAnoSemFuso } from "@/lib/financeiro";
 import { GraficoAbastecimentos } from "./_components/GraficoAbastecimentos";
+import { PainelAjustesPendentes } from "./_components/PainelAjustesPendentes";
 // Fase Redesign-Telas-Densas (12/08/2026) — pedido do Daniel: mesmo toque
 // visual do Dashboard/Veículos/Financeiro (cor + ícone por indicador).
 import { IndicadorColorido } from "@/components/IndicadorColorido";
@@ -390,6 +391,8 @@ export default async function AbastecimentosPage({
           </>
         }
       />
+
+      <PainelAjustesPendentes />
 
       {empresas.length > 1 && (
         <form className="mb-4 flex items-end gap-2">

@@ -8,6 +8,7 @@ import { LogoProvedor } from "@/components/LogoProvedor";
 // Fase Redesign-Telas-Densas / Backlog-Visao-Posto (13/08/2026) — mesmo
 // toque visual já aplicado nas telas do lado cliente.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { PainelAjustesPendentes } from "./PainelAjustesPendentes";
 import { ClipboardList, Droplet, Wallet, Tag } from "lucide-react";
 
 const POR_PAGINA = 30;
@@ -445,6 +446,8 @@ export async function AbastecimentosPosto({
         </p>
       </div>
 
+      <PainelAjustesPendentes />
+
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <IndicadorColorido cor="sky" icon={ClipboardList} label="Abastecimentos" valor={totalRegistros.toLocaleString("pt-BR")} />
         <IndicadorColorido
@@ -603,7 +606,9 @@ export async function AbastecimentosPosto({
                 : pendenciaPorAbastecimentoExterno.get(idNum);
               const temAjustePendente = ehProfrotas
                 ? idsComAjusteAbertoProfrotas.has(idNum)
-                : idsComAjusteAbertoExterno.has(idNum);
+                : r.provedor === "pdv" || r.provedor === "interno"
+                  ? false // ids próprios (não colidem com abastecimentos_externos)
+                  : idsComAjusteAbertoExterno.has(idNum);
               return (
                 <tr key={`${r.provedor}-${r.id}`} className="transition-colors hover:bg-frota-50/60">
                   <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">
@@ -615,7 +620,15 @@ export async function AbastecimentosPosto({
                         Fase 27.142). `r.id` já é o id real da tabela-fonte (a
                         view abastecimentos_unificado não gera id sintético). */}
                     <Link
-                      href={ehProfrotas ? `/abastecimentos/${r.id}` : `/abastecimentos/externo/${r.id}`}
+                      href={
+                        ehProfrotas
+                          ? `/abastecimentos/${r.id}`
+                          : r.provedor === "pdv"
+                            ? `/abastecimentos/pdv/${r.id}`
+                            : r.provedor === "interno"
+                              ? `/abastecimentos/interno/${r.id}`
+                              : `/abastecimentos/externo/${r.id}`
+                      }
                       className="inline-flex items-center gap-1.5 font-medium text-frota-600 hover:underline"
                     >
                       {temAjustePendente && (
