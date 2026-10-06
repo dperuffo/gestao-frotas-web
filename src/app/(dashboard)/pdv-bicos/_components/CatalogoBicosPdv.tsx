@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, useTransition, type FormEvent } from "react";
-import { Fuel, Plus, Loader2, Pencil, Check, X } from "lucide-react";
-import { COMBUSTIVEIS_PDV } from "@/lib/combustiveisPdv";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { Check, Loader2, Pencil, Plus, Power, X } from "lucide-react";
+import { COMBUSTIVEIS_PDV, temaCombustivelPdv } from "@/lib/combustiveisPdv";
+import { BombaIcone } from "@/components/pdv/BombaIcone";
 import {
   criarBicoCatalogoAcao,
   alternarAtivoBicoCatalogoAcao,
@@ -21,38 +22,45 @@ type Bico = {
   ativo: boolean;
 };
 
-// Fase 4 PDV (02/10/2026, pedido do Daniel: "montar tela de configuração
-// de bombas, bicos e combustíveis na visão do posto e admin") — mesma
-// UI/lógica da tela equivalente em pdv-fni (src/app/(pdv)/bicos/page.tsx),
-// adaptada pra Server Actions em vez de supabase-js direto no client (
-// convenção deste painel, ver ListaFormasPagamentoPdv.tsx). Quem acessa
-// aqui é o admin (perfil "admin", bypass de RLS já coberto pela policy de
-// pdv_bicos_catalogo); o posto gerencia o próprio catálogo direto no
-// pdv-fni.
+type NovoBico = { bomba: number; lado: string };
+
+// Fase 4 PDV (02/10/2026) — catálogo fixo de bombas/bicos/combustíveis.
+// 06/10/2026 (pedido do Daniel: "esta tela na visão do admin igual à do PDV") —
+// redesenhada no mesmo formato da tela /bicos do pdv-fni: cada bomba é um
+// painel com os lados A e B, cada bico um cartão com ícone, combustível e
+// preço. A lógica é a mesma; só muda o acesso aos dados (Server Actions em vez
+// de supabase-js direto no navegador, convenção deste painel). O posto gerencia
+// o próprio catálogo no PDV; aqui o admin configura em nome de qualquer revenda.
 export function CatalogoBicosPdv({ revendaEmpresaId, bicosIniciais }: { revendaEmpresaId: string; bicosIniciais: Bico[] }) {
   const [bicos, setBicos] = useState(bicosIniciais);
   const [erro, setErro] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const [bomba, setBomba] = useState("1");
-  const [lado, setLado] = useState("A");
-  const [posicao, setPosicao] = useState("1");
-  const [codigoCombustivel, setCodigoCombustivel] = useState<string>(COMBUSTIVEIS_PDV[0].codigo);
+  const [novo, setNovo] = useState<NovoBico | null>(null);
+  const [codigoNovo, setCodigoNovo] = useState<string>(COMBUSTIVEIS_PDV[0].codigo);
 
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [combustivelEditado, setCombustivelEditado] = useState<string>(COMBUSTIVEIS_PDV[0].codigo);
   const [precoEditado, setPrecoEditado] = useState("");
 
-  function adicionar(e: FormEvent) {
-    e.preventDefault();
+  // As Server Actions revalidam a rota: a lista nova chega por prop.
+  useEffect(() => {
+    setBicos(bicosIniciais);
+  }, [bicosIniciais]);
+
+  function adicionar() {
+    if (!novo) return;
     setErro(null);
-    const combustivel = COMBUSTIVEIS_PDV.find((c) => c.codigo === codigoCombustivel)!;
+    const combustivel = COMBUSTIVEIS_PDV.find((c) => c.codigo === codigoNovo)!;
     const proximoNumero = (bicos.reduce((max, b) => Math.max(max, b.numero_bico), 0) || 0) + 1;
+    const proximaPosicao =
+      bicos.filter((b) => b.bomba === novo.bomba && b.lado === novo.lado).reduce((max, b) => Math.max(max, b.posicao), 0) + 1;
+    const alvo = novo;
     startTransition(async () => {
       const resultado = await criarBicoCatalogoAcao(revendaEmpresaId, {
-        bomba: Number(bomba),
-        lado,
-        posicao: Number(posicao),
+        bomba: alvo.bomba,
+        lado: alvo.lado,
+        posicao: proximaPosicao,
         numeroBico: proximoNumero,
         codigoCombustivel: combustivel.codigo,
         combustivel: combustivel.nome,
@@ -62,21 +70,7 @@ export function CatalogoBicosPdv({ revendaEmpresaId, bicosIniciais }: { revendaE
         setErro(resultado.erro);
         return;
       }
-      setBicos((atual) => [
-        ...atual,
-        {
-          id: `temp-${Date.now()}`,
-          bomba: Number(bomba),
-          lado,
-          posicao: Number(posicao),
-          numero_bico: proximoNumero,
-          codigo_combustivel: combustivel.codigo,
-          combustivel: combustivel.nome,
-          preco_litro_base: combustivel.precoBase,
-          ativo: true,
-        },
-      ]);
-      setPosicao((p) => String(Number(p) + 1));
+      setNovo(null);
     });
   }
 
@@ -98,8 +92,7 @@ export function CatalogoBicosPdv({ revendaEmpresaId, bicosIniciais }: { revendaE
     setPrecoEditado(String(b.preco_litro_base));
   }
 
-  // Trocar o combustível no select já sugere o preço base dele — ainda dá
-  // pra ajustar o valor antes de salvar.
+  // Trocar o combustível já sugere o preço base dele — dá pra ajustar antes de salvar.
   function alterarCombustivelEditado(codigo: string) {
     setCombustivelEditado(codigo);
     const combustivel = COMBUSTIVEIS_PDV.find((c) => c.codigo === codigo);
@@ -130,160 +123,215 @@ export function CatalogoBicosPdv({ revendaEmpresaId, bicosIniciais }: { revendaE
     });
   }
 
-  const grupos = useMemo(() => {
-    const porBomba = new Map<number, Bico[]>();
+  // bomba -> lado -> bicos
+  const bombas = useMemo(() => {
+    const mapa = new Map<number, { A: Bico[]; B: Bico[]; outros: Bico[] }>();
     for (const b of bicos) {
-      if (!porBomba.has(b.bomba)) porBomba.set(b.bomba, []);
-      porBomba.get(b.bomba)!.push(b);
+      if (!mapa.has(b.bomba)) mapa.set(b.bomba, { A: [], B: [], outros: [] });
+      const grupo = mapa.get(b.bomba)!;
+      if (b.lado === "A") grupo.A.push(b);
+      else if (b.lado === "B") grupo.B.push(b);
+      else grupo.outros.push(b);
     }
-    return Array.from(porBomba.entries())
-      .map(([numBomba, lista]) => [numBomba, lista.sort((a, c) => a.numero_bico - c.numero_bico)] as const)
-      .sort((a, b) => a[0] - b[0]);
+    for (const g of mapa.values()) {
+      g.A.sort((x, y) => x.numero_bico - y.numero_bico);
+      g.B.sort((x, y) => x.numero_bico - y.numero_bico);
+    }
+    return Array.from(mapa.entries()).sort((a, b) => a[0] - b[0]);
   }, [bicos]);
 
-  return (
-    <div className="space-y-4">
-      <form onSubmit={adicionar} className="card grid grid-cols-2 gap-3 p-4 sm:grid-cols-5">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Bomba</label>
-          <input
-            type="number"
-            min={1}
-            className="input"
-            value={bomba}
-            onChange={(e) => setBomba(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Lado</label>
-          <select className="input" value={lado} onChange={(e) => setLado(e.target.value)}>
-            <option value="A">A</option>
-            <option value="B">B</option>
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Posição</label>
-          <input
-            type="number"
-            min={1}
-            className="input"
-            value={posicao}
-            onChange={(e) => setPosicao(e.target.value)}
-            required
-          />
-        </div>
-        <div className="col-span-2 sm:col-span-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Combustível</label>
-          <select className="input" value={codigoCombustivel} onChange={(e) => setCodigoCombustivel(e.target.value)}>
-            {COMBUSTIVEIS_PDV.map((c) => (
-              <option key={c.codigo} value={c.codigo}>
-                {c.codigo} — {c.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="col-span-2 flex items-end sm:col-span-1">
-          <button type="submit" disabled={isPending} className="btn-primary flex w-full items-center justify-center gap-1.5">
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+  const proximaBomba = (bicos.reduce((max, b) => Math.max(max, b.bomba), 0) || 0) + 1;
+
+  function abrirNovo(alvo: NovoBico) {
+    setErro(null);
+    setCodigoNovo(COMBUSTIVEIS_PDV[0].codigo);
+    setNovo(alvo);
+  }
+
+  // FormularioNovo/CartaoBico/Lado são chamados como funções (não <X />) de
+  // propósito: definidos dentro do componente, virariam um tipo novo a cada
+  // render e os campos perderiam o foco a cada tecla (mesmo cuidado do PDV).
+  function FormularioNovo({ alvo }: { alvo: NovoBico }) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-accento/60 bg-accento/5 p-3">
+        <p className="mb-2 text-xs font-semibold text-accento">
+          Novo bico — Bomba {String(alvo.bomba).padStart(2, "0")} · Lado {alvo.lado}
+        </p>
+        <select className="input mb-2 text-sm" value={codigoNovo} onChange={(e) => setCodigoNovo(e.target.value)}>
+          {COMBUSTIVEIS_PDV.map((c) => (
+            <option key={c.codigo} value={c.codigo}>
+              {c.codigo} — {c.nome}
+            </option>
+          ))}
+        </select>
+        <div className="flex gap-2">
+          <button type="button" onClick={adicionar} disabled={isPending} className="btn-primary flex flex-1 items-center justify-center gap-1">
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             Adicionar
           </button>
+          <button type="button" onClick={() => setNovo(null)} className="btn-secondary px-3" aria-label="Cancelar">
+            <X className="h-4 w-4" />
+          </button>
         </div>
-      </form>
+      </div>
+    );
+  }
 
-      {erro && <p className="text-sm text-status-inativo">{erro}</p>}
+  function CartaoBico({ b }: { b: Bico }) {
+    const tema = temaCombustivelPdv(b.codigo_combustivel);
+    const editando = editandoId === b.id;
+    return (
+      <div
+        className={`relative overflow-hidden rounded-2xl border-2 bg-white p-3 pt-4 text-center dark:bg-slate-800 ${
+          b.ativo ? tema.borda : "border-slate-200 opacity-60 dark:border-slate-700"
+        }`}
+      >
+        <span className={`absolute inset-x-0 top-0 h-1.5 ${b.ativo ? tema.faixa : "bg-slate-300 dark:bg-slate-600"}`} />
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Posição {b.posicao}</p>
+        <BombaIcone
+          numero={String(b.numero_bico).padStart(2, "0")}
+          className={`mx-auto my-1 h-14 w-14 ${b.ativo ? tema.icone : "text-slate-400"}`}
+        />
 
-      {grupos.length === 0 ? (
-        <p className="card p-6 text-center text-sm text-slate-500 dark:text-slate-400">Nenhum bico cadastrado ainda.</p>
-      ) : (
-        <div className="space-y-4">
-          {grupos.map(([numBomba, bicosDaBomba]) => (
-            <div key={numBomba}>
-              <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                Bomba {numBomba}
-              </p>
-              <div className="card divide-y divide-slate-200 dark:divide-slate-700">
-                {bicosDaBomba.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between gap-3 p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-frota-100 text-[11px] font-bold leading-tight text-frota-700 dark:bg-slate-700 dark:text-slate-200">
-                        <span>{String(b.numero_bico).padStart(2, "0")}</span>
-                        <span className="text-[10px] font-semibold">{b.codigo_combustivel}</span>
-                      </div>
-                      {editandoId === b.id ? (
-                        <div>
-                          <select
-                            autoFocus
-                            className="input py-1 text-sm"
-                            value={combustivelEditado}
-                            onChange={(e) => alterarCombustivelEditado(e.target.value)}
-                          >
-                            {COMBUSTIVEIS_PDV.map((c) => (
-                              <option key={c.codigo} value={c.codigo}>
-                                {c.codigo} — {c.nome}
-                              </option>
-                            ))}
-                          </select>
-                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                            Lado {b.lado} · Posição {b.posicao}
-                          </p>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                            <Fuel className="mr-1 inline h-3.5 w-3.5 text-slate-400" />
-                            {b.combustivel}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Lado {b.lado} · Posição {b.posicao}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {editandoId === b.id ? (
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-slate-500">R$</span>
-                          <input
-                            className="input w-20 py-1 text-sm"
-                            value={precoEditado}
-                            onChange={(e) => setPrecoEditado(e.target.value)}
-                          />
-                          <button
-                            onClick={() => salvarEdicao(b)}
-                            className="rounded-lg p-1.5 text-status-ativo hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                            aria-label="Salvar"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => setEditandoId(null)}
-                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
-                            aria-label="Cancelar"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => iniciarEdicao(b)}
-                          className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-frota-600 dark:text-slate-300"
-                        >
-                          R$ {b.preco_litro_base.toFixed(3)}
-                          <Pencil className="h-3 w-3" />
-                        </button>
-                      )}
-                      <button onClick={() => alternarAtivo(b)} className={b.ativo ? "badge-ativo" : "badge-inativo"}>
-                        {b.ativo ? "Ativo" : "Inativo"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {editando ? (
+          <div className="space-y-2 text-left">
+            <select
+              autoFocus
+              className="input py-1 text-sm"
+              value={combustivelEditado}
+              onChange={(e) => alterarCombustivelEditado(e.target.value)}
+            >
+              {COMBUSTIVEIS_PDV.map((c) => (
+                <option key={c.codigo} value={c.codigo}>
+                  {c.codigo} — {c.nome}
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-slate-500">R$</span>
+              <input className="input py-1 text-sm" value={precoEditado} onChange={(e) => setPrecoEditado(e.target.value)} />
             </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => salvarEdicao(b)} className="btn-primary flex flex-1 items-center justify-center py-1.5" aria-label="Salvar">
+                <Check className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditandoId(null)}
+                className="btn-secondary flex flex-1 items-center justify-center py-1.5"
+                aria-label="Cancelar"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm font-semibold leading-tight text-slate-800 dark:text-slate-100">{b.combustivel}</p>
+            <p className="mt-1 text-base font-extrabold text-frota-900 dark:text-white">
+              R$ {b.preco_litro_base.toFixed(3)}
+              <span className="text-[11px] font-medium text-slate-400">/L</span>
+            </p>
+            <div className="mt-2 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => iniciarEdicao(b)}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-accento dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                <Pencil className="h-3 w-3" />
+                Editar
+              </button>
+              <button
+                type="button"
+                onClick={() => alternarAtivo(b)}
+                className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium ${
+                  b.ativo
+                    ? "text-status-ativo hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                    : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                }`}
+                title={b.ativo ? "Desativar bico" : "Ativar bico"}
+              >
+                <Power className="h-3 w-3" />
+                {b.ativo ? "Ativo" : "Inativo"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  function Lado({ numBomba, lado, lista }: { numBomba: number; lado: string; lista: Bico[] }) {
+    const adicionando = novo?.bomba === numBomba && novo.lado === lado;
+    return (
+      <div>
+        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Lado {lado}</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {lista.map((b) => (
+            <div key={b.id}>{CartaoBico({ b })}</div>
           ))}
+          {adicionando ? (
+            FormularioNovo({ alvo: { bomba: numBomba, lado } })
+          ) : (
+            <button
+              type="button"
+              onClick={() => abrirNovo({ bomba: numBomba, lado })}
+              className="flex min-h-[10rem] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-slate-300 text-sm font-medium text-slate-400 transition hover:border-accento hover:bg-accento/5 hover:text-accento dark:border-slate-600"
+            >
+              <Plus className="h-5 w-5" />
+              Adicionar bico
+            </button>
+          )}
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Cada bico fica fixo num combustível — é esse catálogo que alimenta a seleção da pista.
+        </p>
+        <button type="button" onClick={() => abrirNovo({ bomba: proximaBomba, lado: "A" })} className="btn-primary flex items-center gap-1.5">
+          <Plus className="h-4 w-4" />
+          Nova bomba
+        </button>
+      </div>
+
+      {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-status-inativo dark:bg-red-950/40">{erro}</p>}
+
+      <div className="space-y-6">
+        {/* Nova bomba ainda sem bicos */}
+        {novo && novo.bomba === proximaBomba && (
+          <div className="card p-4">
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-frota-700 dark:text-slate-300">
+              Bomba {String(novo.bomba).padStart(2, "0")} (nova)
+            </h2>
+            <div className="max-w-xs">{FormularioNovo({ alvo: novo })}</div>
+          </div>
+        )}
+
+        {bombas.length === 0 && !novo && (
+          <p className="card p-8 text-center text-sm text-slate-400">Nenhum bico cadastrado ainda. Clique em &quot;Nova bomba&quot;.</p>
+        )}
+
+        {bombas.map(([numBomba, grupo]) => (
+          <section key={numBomba} className="card p-4">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-frota-700 dark:text-slate-300">
+              Bomba {String(numBomba).padStart(2, "0")}
+              <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+              <span className="text-xs font-medium normal-case tracking-normal text-slate-400">
+                {grupo.A.length + grupo.B.length + grupo.outros.length} bicos
+              </span>
+            </h2>
+            <div className="grid gap-5 lg:grid-cols-2">
+              {Lado({ numBomba, lado: "A", lista: grupo.A })}
+              {Lado({ numBomba, lado: "B", lista: grupo.B })}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
