@@ -768,6 +768,13 @@ export default async function DashboardLayout({
   } catch (e) {
     void logger.error("dashboard/layout", "Falha ao buscar perfil do usuário (ignorado)", e);
   }
+  // Perfil Caixa (operador do PDV): o painel web não é o ambiente dele (o
+  // padrão global só libera as telas do PDV, e o resto cai em "acesso
+  // negado"). Vai direto para o PDV FNI em vez de aterrissar em tela
+  // bloqueada. URL configurável por env, com o domínio de produção como padrão.
+  if (perfilUsuario?.perfil === "caixa") {
+    redirect(process.env.NEXT_PUBLIC_PDV_URL ?? "https://pdv.fxgestaodefrotasonline.com");
+  }
   // tema_preferido é validado por CHECK no banco (light/dark/system ou
   // NULL) — o cast aqui só descreve pro TS o que a coluna já garante.
   const temaPreferidoBanco = perfilUsuario?.tema_preferido as "light" | "dark" | "system" | null | undefined;
