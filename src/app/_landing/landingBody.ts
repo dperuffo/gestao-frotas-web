@@ -953,6 +953,7 @@ document.addEventListener("DOMContentLoaded",function(){sd(0);});
     <a id="lnk_priv" href="/privacidade" data-i18n="footer_priv">Privacidade</a>
     <a id="lnk_sobre" href="/sobre" data-i18n="footer_sobre">Sobre nós</a>
     <a href="/indice-precos">Índice de Preços</a>
+    <a href="/documentacao">Documentação técnica</a>
     <a href="mailto:contato@fxgestaodefrotasonline.com" data-i18n="footer_contato">Contato</a>
   </div>
   <div class="fcopy" style="line-height:1.9">
