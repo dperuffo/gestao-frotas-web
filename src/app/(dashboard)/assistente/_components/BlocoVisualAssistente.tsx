@@ -15,26 +15,14 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { BlocoVisual, FormatoValor } from "@/lib/assistenteIA";
+import type { BlocoVisual } from "@/lib/assistenteIA";
+import { formatarValor } from "@/lib/assistenteFormato";
+
+export { formatarValor };
 
 // Desenha o gráfico/tabela que o Assistente FNI pediu (ferramenta
 // exibir_grafico). Os dados já vêm validados do servidor.
 const CORES = ["#0ea5e9", "#22c55e", "#f59e0b", "#8b5cf6", "#ef4444", "#14b8a6", "#ec4899", "#64748b"];
-
-export function formatarValor(v: number, formato: FormatoValor): string {
-  switch (formato) {
-    case "moeda":
-      return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-    case "litros":
-      return `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} L`;
-    case "km":
-      return `${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} km`;
-    case "percentual":
-      return `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
-    default:
-      return v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
-  }
-}
 
 export function BlocoVisualAssistente({ bloco }: { bloco: BlocoVisual }) {
   const dados = bloco.categorias.map((cat, i) => {

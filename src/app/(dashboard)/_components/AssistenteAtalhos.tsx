@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Sparkles, ArrowUp, X } from "lucide-react";
+import { BotaoVoz } from "./BotaoVoz";
 import { caminhoAssistenteComPergunta, sugestaoParaTela, TEMAS_ASSISTENTE } from "@/lib/assistenteTemas";
 
 // Acesso rápido ao Assistente FNI em qualquer tela: botão flutuante + atalho
@@ -92,7 +93,7 @@ export function AssistenteAtalhos() {
                 e.preventDefault();
                 perguntar(texto);
               }}
-              className="flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 focus-within:border-frota-500 dark:border-slate-600"
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 focus-within:border-frota-500 dark:border-slate-600"
             >
               <input
                 ref={inputRef}
@@ -102,6 +103,7 @@ export function AssistenteAtalhos() {
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
                 aria-label="Pergunta para o Assistente FNI"
               />
+              <BotaoVoz textoAtual={texto} onTexto={setTexto} />
               <button type="submit" disabled={!texto.trim()} aria-label="Enviar" className="flex h-7 w-7 items-center justify-center rounded-full bg-accento text-white disabled:opacity-40">
                 <ArrowUp className="h-4 w-4" />
               </button>

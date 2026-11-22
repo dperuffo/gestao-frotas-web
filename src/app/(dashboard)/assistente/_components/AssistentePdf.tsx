@@ -1,12 +1,14 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { Style } from "@react-pdf/types";
 import type { ReactNode } from "react";
-import type { ConsultaExecutada } from "@/lib/assistenteIA";
+import type { BlocoVisual, ConsultaExecutada } from "@/lib/assistenteIA";
+import { GraficoPdf } from "./GraficoPdf";
 
 export type MensagemPdf = {
   role: "user" | "assistant";
   content: string;
   consultas?: ConsultaExecutada[];
+  blocos?: BlocoVisual[];
 };
 
 const styles = StyleSheet.create({
@@ -133,6 +135,12 @@ function ConteudoMensagem({ texto }: { texto: string }) {
     flushTabela();
     if (!linha.trim()) {
       blocos.push(<View key={`vazio-${chave++}`} style={styles.linhaVazia} />);
+    } else if (/^#{1,6}\s/.test(linha)) {
+      blocos.push(
+        <TextoComNegrito key={`linha-${chave++}`} linha={`**${linha.replace(/^#{1,6}\s+/, "").replace(/\*\*/g, "")}**`} style={{ ...styles.paragrafo, fontSize: 11, marginTop: 4 }} />
+      );
+    } else if (/^\s*[-*]\s+/.test(linha)) {
+      blocos.push(<TextoComNegrito key={`linha-${chave++}`} linha={`•  ${linha.replace(/^\s*[-*]\s+/, "")}`} style={{ ...styles.paragrafo, paddingLeft: 8 }} />);
     } else {
       blocos.push(<TextoComNegrito key={`linha-${chave++}`} linha={linha} style={styles.paragrafo} />);
     }
@@ -157,7 +165,7 @@ export function AssistentePdf({
   return (
     <Document>
       <Page size="A4" style={styles.page} wrap>
-        <Text style={styles.tituloPrincipal}>Assistente FNI — Histórico da conversa</Text>
+        <Text style={styles.tituloPrincipal}>Assistente FNI — Consulta</Text>
         <Text style={styles.subtitulo}>
           Fleet Network Intelligence — Gestão de Frotas{usuarioEmail ? ` · ${usuarioEmail}` : ""}
         </Text>
@@ -169,6 +177,9 @@ export function AssistentePdf({
             <View key={i} style={[styles.bloco, m.role === "user" ? styles.blocoUsuario : styles.blocoAssistente]}>
               <Text style={styles.autor}>{m.role === "user" ? "Você" : "Assistente FNI"}</Text>
               <ConteudoMensagem texto={m.content} />
+              {m.blocos?.map((b, k) => (
+                <GraficoPdf key={k} bloco={b} />
+              ))}
               {m.consultas && m.consultas.length > 0 && (
                 <View style={styles.consultasBox}>
                   <Text style={styles.consultasTitulo}>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, ArrowUp } from "lucide-react";
 import { caminhoAssistenteComPergunta } from "@/lib/assistenteTemas";
+import { BotaoVoz } from "./BotaoVoz";
 
 // Cartão de destaque no Dashboard: o usuário pergunta direto e cai no Assistente
 // FNI com a resposta já a caminho.
@@ -28,7 +29,7 @@ export function CampoPerguntaFni({ sugestoes, empresaId }: { sugestoes: string[]
           e.preventDefault();
           perguntar(texto);
         }}
-        className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 focus-within:border-accento dark:border-slate-600 dark:bg-slate-900"
+        className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 focus-within:border-accento dark:border-slate-600 dark:bg-slate-900"
       >
         <input
           value={texto}
@@ -37,6 +38,7 @@ export function CampoPerguntaFni({ sugestoes, empresaId }: { sugestoes: string[]
           className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
           aria-label="Pergunta para o Assistente FNI"
         />
+        <BotaoVoz textoAtual={texto} onTexto={setTexto} />
         <button type="submit" disabled={!texto.trim()} aria-label="Enviar pergunta" className="flex h-8 w-8 items-center justify-center rounded-full bg-accento text-white disabled:opacity-40">
           <ArrowUp className="h-4 w-4" />
         </button>

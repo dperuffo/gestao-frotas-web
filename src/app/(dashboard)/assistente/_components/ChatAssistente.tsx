@@ -34,6 +34,7 @@ import BotaoBaixarPdfAssistenteLazy from "./BotaoBaixarPdfAssistenteLazy";
 import { BlocoVisualAssistente } from "./BlocoVisualAssistente";
 import { TextoMarkdown } from "./TextoMarkdown";
 import { SeletorClienteAssistente } from "./SeletorClienteAssistente";
+import { BotaoVoz } from "../../_components/BotaoVoz";
 
 type MensagemExibida = MensagemChat & { consultas?: ConsultaExecutada[]; blocos?: BlocoVisual[]; propostas?: PropostaAcao[]; erro?: boolean };
 type EstadoProposta = { estado: "pendente" | "salvando" | "confirmada" | "cancelada"; mensagem?: string };
@@ -188,7 +189,7 @@ export function ChatAssistente({
         e.preventDefault();
         enviar(pergunta);
       }}
-      className="flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-3 py-2 shadow-sm focus-within:border-accento dark:border-slate-600 dark:bg-slate-800"
+      className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-300 bg-white px-3 py-2 shadow-sm focus-within:border-accento dark:border-slate-600 dark:bg-slate-800"
     >
       <Sparkles className="h-5 w-5 shrink-0 text-accento" aria-hidden />
       <input
@@ -199,6 +200,7 @@ export function ChatAssistente({
         disabled={pending}
         aria-label="Pergunta para o Assistente FNI"
       />
+      <BotaoVoz textoAtual={pergunta} onTexto={setPergunta} disabled={pending} />
       <button
         type="submit"
         disabled={pending || !pergunta.trim()}
@@ -221,7 +223,7 @@ export function ChatAssistente({
         <span className="flex-1" />
         {mensagens.length > 0 && (
           <BotaoBaixarPdfAssistenteLazy
-            mensagens={mensagens.map((m) => ({ role: m.role, content: m.content, consultas: m.consultas }))}
+            mensagens={mensagens.map((m) => ({ role: m.role, content: m.content, consultas: m.consultas, blocos: m.blocos }))}
             usuarioEmail={usuarioEmail}
           />
         )}
