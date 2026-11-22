@@ -19,10 +19,13 @@ export default async function AssistenteFniPage({
   // Usuário com acesso a várias empresas (grupo econômico) escolhe o cliente na barra
   // do chat; as ferramentas que dependem da empresa (preços negociados na rota,
   // cadastro de regra) usam a escolhida. resolverEmpresaAtual só aceita empresas do usuário.
-  const { empresas, empresaSelecionada, perfil } = await resolverEmpresaAtual(supabase, empresaParam);
-  const { data: perfilApp } = user?.email
-    ? await supabase.from("usuarios_app").select("nome").ilike("email", user.email).maybeSingle()
-    : { data: null };
+  // Perf: empresa atual e nome do usuário são independentes, então rodam juntos.
+  const [{ empresas, empresaSelecionada, perfil }, { data: perfilApp }] = await Promise.all([
+    resolverEmpresaAtual(supabase, empresaParam),
+    user?.email
+      ? supabase.from("usuarios_app").select("nome").ilike("email", user.email).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
   const primeiroNome = perfilApp?.nome ? String(perfilApp.nome).trim().split(" ")[0] : undefined;
 
   return (

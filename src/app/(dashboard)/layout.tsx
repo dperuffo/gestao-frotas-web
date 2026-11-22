@@ -708,11 +708,18 @@ export default async function DashboardLayout({
   // redirect(), navegação nova, sem precisar re-renderizar a tela atual).
   // Cada contagem agora é best-effort: uma falha vira 0 (badge escondido) em
   // vez de derrubar a aplicação inteira.
+  type PerfilUsuarioLayout = {
+    nome: string | null;
+    perfil: string | null;
+    tour_onboarding_visto: boolean | null;
+    tema_preferido: string | null;
+  };
   const [
     badgesContagem,
     logoutInatividadeMinutos,
     avisos,
     favoritosBrutos,
+    perfilUsuarioBruto,
   ] = await Promise.all([
       // Fase Bolinhas-Automáticas (27/09/2026) — as 13 contagens das
       // bolinhas do menu moraram aqui até esta fase; agora vivem em
@@ -751,6 +758,21 @@ export default async function DashboardLayout({
           return [];
         }
       })(),
+      // Perfil do usuário (nome/cargo/tema): não depende das consultas acima,
+      // então roda junto com elas em vez de esperar em fila (Perf, 22/11/2026).
+      (async (): Promise<PerfilUsuarioLayout | null> => {
+        try {
+          const { data } = await supabase
+            .from("usuarios_app")
+            .select("nome, perfil, tour_onboarding_visto, tema_preferido")
+            .eq("email", user.email ?? "")
+            .maybeSingle();
+          return data;
+        } catch (e) {
+          void logger.error("dashboard/layout", "Falha ao buscar perfil do usuário (ignorado)", e);
+          return null;
+        }
+      })(),
     ]);
 
   // Nome e cargo/função do usuário logado, pra mostrar no lugar do texto
@@ -758,25 +780,7 @@ export default async function DashboardLayout({
   // padrão usado em /usuarios), já que usuarios_app não tem FK pro auth.users.
   // Fase 27.29 — também protegido: sem perfil, cai no e-mail puro (só perde
   // o cargo/rótulo exibido, não derruba a tela).
-  let perfilUsuario: {
-    nome: string | null;
-    perfil: string | null;
-    tour_onboarding_visto: boolean | null;
-    // Fase Dark-Mode-Por-Conta (15/09/2026) — buscado junto (mesma linha,
-    // sem chamada extra) pra sincronizar o tema salvo na conta assim que a
-    // sessão carrega, ver <SincronizadorTema> mais abaixo.
-    tema_preferido: string | null;
-  } | null = null;
-  try {
-    const { data } = await supabase
-      .from("usuarios_app")
-      .select("nome, perfil, tour_onboarding_visto, tema_preferido")
-      .eq("email", user.email ?? "")
-      .maybeSingle();
-    perfilUsuario = data;
-  } catch (e) {
-    void logger.error("dashboard/layout", "Falha ao buscar perfil do usuário (ignorado)", e);
-  }
+  const perfilUsuario = perfilUsuarioBruto;
   // Perfil Caixa (operador do PDV): o painel web não é o ambiente dele (o
   // padrão global só libera as telas do PDV, e o resto cai em "acesso
   // negado"). Vai direto para o PDV FNI em vez de aterrissar em tela
@@ -801,54 +805,43 @@ export default async function DashboardLayout({
   // URL atual — layout.tsx não recebe `searchParams` (só `page.tsx`
   // recebe, por design do Next.js, pra não re-renderizar o layout a cada
   // troca de query string), então não dá pra ler o parâmetro aqui.
-  let temMultiplasEmpresas = false;
-  try {
-    if (perfilUsuario?.perfil === "admin") {
-      const { count } = await supabase.from("empresas").select("id", { count: "exact", head: true });
-      temMultiplasEmpresas = (count ?? 0) > 1;
-    } else {
-      const { data: idsEmpresas } = await supabase.rpc("empresas_do_usuario", { p_email: user.email ?? "" });
-      temMultiplasEmpresas = (idsEmpresas?.length ?? 0) > 1;
-    }
-  } catch (e) {
-    void logger.error("dashboard/layout", "Falha ao verificar múltiplas empresas (ignorado)", e);
-  }
-
-  // Fase enforcement-permissoes (04/08/2026, pedido do Daniel: "as
-  // permissoes deveriam travar se estiverem desligadas, tanto na web quanto
-  // no PWA") — até aqui, a matriz de /permissoes só editava a tabela, nada
-  // no app lia essas linhas de verdade (achado registrado na fase anterior).
-  // Daqui pra baixo: filtra os itens de menu pelo que o perfil atual NÃO tem
-  // acesso, e bloqueia (redirect) quem tenta acessar a URL direta de uma
-  // tela sem permissão — ver src/lib/permissoes.ts (padrão global + personalização
-  // por empresa feita pelo gestor para os níveis abaixo dele).
   const bypassPermissao = ehBypassPermissao(perfilUsuario?.perfil, user.email);
-  // Vínculos diretos do usuário: a personalização por empresa (feita pelo
-  // gestor em /permissoes) vale para quem está abaixo dele.
-  const { data: vinculosPermissao } =
-    !bypassPermissao && perfilUsuario?.perfil
-      ? await supabase.from("usuarios_empresas").select("empresa_id").eq("user_email", user.email ?? "").eq("ativo", true)
-      : { data: null };
-  const mapaPermissoes =
-    !bypassPermissao && perfilUsuario?.perfil
-      ? await carregarMapaPermissoes(
-          supabase,
-          perfilUsuario.perfil,
-          (vinculosPermissao ?? []).map((v) => v.empresa_id as string)
-        )
-      : new Map<string, boolean>();
-
-  // Fase IA-e-Automacao (27/08/2026, pedido do Daniel: "esta funcionalidade
-  // só pode ser apresentada para os clientes com plano enterprise") —
-  // Insights de IA é a única tela gateada por PLANO da empresa (não por
-  // perfil do usuário) — checagem à parte da matriz de permissões acima,
-  // mas dobrada no mesmo `podeAcessar` pra reaproveitar o mesmo funil de
-  // filtro de menu + bloqueio de rota direta. Ver src/lib/acessoInsightsIA.ts.
-  const acessoInsightsIA = await usuarioTemAcessoInsightsIA(
-    supabase,
-    user.email ?? "",
-    perfilUsuario?.perfil === "admin"
-  );
+  // Perf (22/11/2026): estas quatro leituras não dependem uma da outra (só do
+  // perfil, já carregado), então rodam em paralelo em vez de uma atrás da outra.
+  // Cada uma segue best-effort: falha vira o valor neutro, nunca derruba o layout.
+  const [temMultiplasEmpresas, mapaPermissoes, acessoInsightsIA] = await Promise.all([
+    (async (): Promise<boolean> => {
+      try {
+        if (perfilUsuario?.perfil === "admin") {
+          const { count } = await supabase.from("empresas").select("id", { count: "exact", head: true });
+          return (count ?? 0) > 1;
+        }
+        const { data: idsEmpresas } = await supabase.rpc("empresas_do_usuario", { p_email: user.email ?? "" });
+        return (idsEmpresas?.length ?? 0) > 1;
+      } catch (e) {
+        void logger.error("dashboard/layout", "Falha ao verificar múltiplas empresas (ignorado)", e);
+        return false;
+      }
+    })(),
+    (async (): Promise<Map<string, boolean>> => {
+      if (bypassPermissao || !perfilUsuario?.perfil) return new Map<string, boolean>();
+      // Vínculos diretos do usuário: a personalização por empresa (feita pelo
+      // gestor em /permissoes) vale para quem está abaixo dele.
+      const { data: vinculosPermissao } = await supabase
+        .from("usuarios_empresas")
+        .select("empresa_id")
+        .eq("user_email", user.email ?? "")
+        .eq("ativo", true);
+      return carregarMapaPermissoes(
+        supabase,
+        perfilUsuario.perfil,
+        (vinculosPermissao ?? []).map((v) => v.empresa_id as string)
+      );
+    })(),
+    // Insights de IA é a única tela gateada por PLANO da empresa (não por perfil):
+    // ver src/lib/acessoInsightsIA.ts.
+    usuarioTemAcessoInsightsIA(supabase, user.email ?? "", perfilUsuario?.perfil === "admin"),
+  ]);
   const podeAcessar = (funcionalidade: string | null) => {
     if (funcionalidade === "aba_insights_ia" && !acessoInsightsIA) return false;
     return bypassPermissao || temAcesso(mapaPermissoes, funcionalidade);

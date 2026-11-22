@@ -205,6 +205,73 @@ export default async function AbastecimentosPage({
     return query;
   }
 
+  type PendenteManual = {
+    id: number;
+    empresa_id: string;
+    codigo_abastecimento: string | null;
+    data_abastecimento: string;
+    placa: string;
+    motorista_nome: string | null;
+    combustivel: string | null;
+    quantidade: number;
+    valor_total: number;
+    posto_nome: string | null;
+  };
+
+  // Perf (22/11/2026, pedido do Daniel: "Abastecimentos está lenta"): as consultas de
+  // apoio abaixo (resumo por meio de pagamento, evolução, opções do filtro, pendentes
+  // manuais) não dependem umas das outras nem da lista principal, mas rodavam em fila
+  // (~8 idas ao banco seguidas). Agora disparam juntas, com a contagem/totais/página.
+  const hojeIso = new Date().toISOString().slice(0, 10);
+  const seisMesesAtrasIso = new Date(Date.now() - 183 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const apoioVazio = { data: [] as unknown[] | null };
+  const promessaResumo = empresaSelecionada
+    ? Promise.resolve(
+        supabase.rpc("indicadores_financeiros_por_provedor", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: seisMesesAtrasIso,
+          p_data_fim: hojeIso,
+        })
+      )
+    : Promise.resolve(apoioVazio);
+  const promessaEvolucao = empresaSelecionada
+    ? Promise.resolve(
+        supabase.rpc("indicadores_financeiros_evolucao", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: seisMesesAtrasIso,
+          p_data_fim: hojeIso,
+        })
+      )
+    : Promise.resolve(apoioVazio);
+  // Opções do filtro de meio de pagamento: todo o histórico do cliente (sem limite de data).
+  const promessaProvedores = empresaSelecionada
+    ? Promise.resolve(
+        supabase.rpc("indicadores_financeiros_por_provedor", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: "2000-01-01",
+          p_data_fim: hojeIso,
+        })
+      )
+    : Promise.resolve(apoioVazio);
+  const promessaPendentes = semClienteEscolhido
+    ? Promise.resolve({ data: [] as PendenteManual[] | null })
+    : Promise.resolve(
+        (() => {
+          let q2 = supabase
+            .from("abastecimentos_externos")
+            .select("id, empresa_id, codigo_abastecimento, data_abastecimento, placa, motorista_nome, combustivel, quantidade, valor_total, posto_nome")
+            .eq("provedor", "manual")
+            .eq("status", "pendente")
+            .order("criado_em", { ascending: false })
+            .limit(20);
+          if (empresaSelecionada) q2 = q2.eq("empresa_id", empresaSelecionada);
+          return q2;
+        })()
+      );
+  const promessaPendentesCount = semClienteEscolhido
+    ? Promise.resolve(0)
+    : contarAbastecimentosManuaisPendentesAcao(empresaSelecionada ?? null);
+
   const offset = offsetDaPagina(POR_PAGINA, pageParam);
 
   const queryContagem = comFiltros(
@@ -259,15 +326,7 @@ export default async function AbastecimentosPage({
   // problema do limite de 1.000 linhas do PostgREST) pela RPC
   // indicadores_financeiros_por_provedor, já usada em /financeiro — agrega
   // no banco, então não perde nenhum provedor por causa do corte de linhas.
-  const hojeIso = new Date().toISOString().slice(0, 10);
-  const seisMesesAtrasIso = new Date(Date.now() - 183 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const { data: resumoRaw } = empresaSelecionada
-    ? await supabase.rpc("indicadores_financeiros_por_provedor", {
-        p_empresa_id: empresaSelecionada,
-        p_data_inicio: seisMesesAtrasIso,
-        p_data_fim: hojeIso,
-      })
-    : { data: [] };
+  const { data: resumoRaw } = await promessaResumo;
   const listaResumoProvedores = ((resumoRaw ?? []) as { provedor: string; custo_combustivel: number }[])
     .map((r) => [r.provedor, Number(r.custo_combustivel)] as [string, number])
     .sort((a, b) => b[1] - a[1]);
@@ -275,13 +334,7 @@ export default async function AbastecimentosPage({
   // Fase Plano-Graficos Onda 6 (04/09/2026, pedido do Daniel) — evolução
   // mensal do gasto com combustível, últimos 6 meses (mesma RPC e mesmo
   // período já usados acima e em /financeiro).
-  const { data: evolucaoRaw } = empresaSelecionada
-    ? await supabase.rpc("indicadores_financeiros_evolucao", {
-        p_empresa_id: empresaSelecionada,
-        p_data_inicio: seisMesesAtrasIso,
-        p_data_fim: hojeIso,
-      })
-    : { data: [] };
+  const { data: evolucaoRaw } = await promessaEvolucao;
   const evolucaoMensal = ((evolucaoRaw ?? []) as { mes: string; custo_combustivel: number }[]).map((p) => ({
     mes: formatarMesAnoSemFuso(p.mes),
     valor: Number(p.custo_combustivel),
@@ -291,15 +344,9 @@ export default async function AbastecimentosPage({
   // abastecimentos, igual ao filtro de combustível. Opções vêm de todo o
   // histórico do cliente (mesma RPC agregada, sem limite de data), não só
   // os últimos 6 meses do resumo acima.
-  const { data: provedoresRaw } = empresaSelecionada
-    ? await supabase.rpc("indicadores_financeiros_por_provedor", {
-        p_empresa_id: empresaSelecionada,
-        p_data_inicio: "2000-01-01",
-        p_data_fim: hojeIso,
-      })
-    : { data: [] };
+  const { data: provedoresRaw } = await promessaProvedores;
   const provedoresOpcoes = Array.from(
-    new Set((provedoresRaw ?? []).map((r: { provedor: string | null }) => r.provedor).filter((p): p is string => !!p))
+    new Set(((provedoresRaw ?? []) as { provedor: string | null }[]).map((r: { provedor: string | null }) => r.provedor).filter((p): p is string => !!p))
   ).sort((a, b) => nomeProvedor(a).localeCompare(nomeProvedor(b)));
 
   // Fase 27.147 — mesma lógica de link já usada no filtro de ajuste
@@ -324,32 +371,8 @@ export default async function AbastecimentosPage({
   // destacadas em âmbar no topo — impossível de não ver ao abrir a tela —
   // e continuam de fora da view abastecimentos_unificado (não contam nos
   // indicadores acima) até serem aprovadas.
-  type PendenteManual = {
-    id: number;
-    empresa_id: string;
-    codigo_abastecimento: string | null;
-    data_abastecimento: string;
-    placa: string;
-    motorista_nome: string | null;
-    combustivel: string | null;
-    quantidade: number;
-    valor_total: number;
-    posto_nome: string | null;
-  };
-  let pendentesManuais: PendenteManual[] = [];
-  if (!semClienteEscolhido) {
-    let queryPendentesManuais = supabase
-      .from("abastecimentos_externos")
-      .select("id, empresa_id, codigo_abastecimento, data_abastecimento, placa, motorista_nome, combustivel, quantidade, valor_total, posto_nome")
-      .eq("provedor", "manual")
-      .eq("status", "pendente")
-      .order("criado_em", { ascending: false })
-      .limit(20);
-    if (empresaSelecionada) queryPendentesManuais = queryPendentesManuais.eq("empresa_id", empresaSelecionada);
-    const { data: pendentesData } = await queryPendentesManuais;
-    pendentesManuais = pendentesData ?? [];
-  }
-  const pendentesManuaisCount = semClienteEscolhido ? 0 : await contarAbastecimentosManuaisPendentesAcao(empresaSelecionada ?? null);
+  const pendentesManuais: PendenteManual[] = ((await promessaPendentes).data ?? []) as PendenteManual[];
+  const pendentesManuaisCount = await promessaPendentesCount;
 
   return (
     <div>

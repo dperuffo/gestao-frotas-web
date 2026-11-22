@@ -76,3 +76,7 @@ continua ruim depois do ajuste já aplicado.
 - Cliente pode cadastrar a própria chave Anthropic (Vault, validada antes de salvar); com chave própria não há limite da FNI. Franquia esgotada bloqueia com convite para a chave própria.
 - Pendente: tela de admin para editar franquia/limites por plano e por cliente (hoje via SQL); mostrar custo estimado em R$.
 - Requer `SUPABASE_SERVICE_ROLE_KEY` no Railway (já usada nos convites); `ANTHROPIC_API_KEY` continua sendo a chave da FNI.
+
+## Desempenho (22/11/2026)
+- FEITO: índice por expressão em `anp_postos` (CNPJ normalizado) — a view `abastecimentos_unificado` varria ~47 mil postos a cada consulta (Dashboard/Abastecimentos/Assistente: ~3,6 s → ~0,17 s). Layout do dashboard e página de Abastecimentos agora fazem as leituras independentes em paralelo.
+- PENDENTE (banco): `postos_gf_alertas_preco` (~4 s), `postos_gf_desvio_anp` (~2 s), `historico_precos_detalhado` (~1,2 s), `cliente_divergencias_preco` (~1 s) e `atualizar_cache_precos_postos` (6 s, roda a cada 6 h). Candidatas: usar `mv_precos_recentes_por_posto` em vez de `distinct on` sobre `historico_precos`, e paginar `historico_precos_detalhado` (65 mil linhas).
