@@ -2,6 +2,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { buscarLogoutInatividadeMinutos } from "@/lib/configuracoesSistema";
 import { FormularioLogoutInatividade } from "./_components/FormularioLogoutInatividade";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Fase 27.86 — pedido do Daniel: "Implementar logout automatico por um
 // período de inatividade do usuario no sistema. Parametrizavel em tela de
@@ -15,7 +16,7 @@ import { FormularioLogoutInatividade } from "./_components/FormularioLogoutInati
 // seletor de cliente/posto nesta tela.
 export default async function ConfiguracoesPage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

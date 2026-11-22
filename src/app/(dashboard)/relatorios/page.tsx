@@ -9,6 +9,7 @@ import ScorePerformanceLazy from "./_components/ScorePerformanceLazy";
 import RelatorioExecutivoLazy from "./_components/RelatorioExecutivoLazy";
 import RelatoriosPersonalizadosLazy from "./_components/RelatoriosPersonalizadosLazy";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
+import { perfilDoUsuarioAtual, empresasDoUsuarioCacheado } from "@/lib/dadosUsuarioCache";
 
 type SearchParams = { empresa?: string };
 
@@ -24,8 +25,8 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
-  const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+  const perfil = await perfilDoUsuarioAtual(supabase);
+  const minhasEmpresasIds = await empresasDoUsuarioCacheado(supabase, user?.email ?? "");
 
   // Fase 27.2 — achado real: um usuário vinculado a mais de uma empresa (ex.:
   // grupo econômico) caía na MESMA condição do admin e recebia a base de

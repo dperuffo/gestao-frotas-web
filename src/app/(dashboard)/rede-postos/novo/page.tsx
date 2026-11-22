@@ -3,6 +3,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { NovaRedeForm } from "../_components/NovaRedeForm";
+import { perfilDoUsuarioAtual, empresasDoUsuarioCacheado } from "@/lib/dadosUsuarioCache";
 
 // Fase 27.139 — pedido do Daniel: "Rede de Posto tem que estar na visão do
 // posto para criação e gestão". Antes esta tela só existia pra admin criar
@@ -17,7 +18,7 @@ export default async function NovaRedePage() {
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
   const ehAdmin = perfil === "admin" || user?.email === "d.peruffo@gmail.com";
 
   let postosOpcoes: { id: string; nome: string }[] = [];
@@ -25,7 +26,7 @@ export default async function NovaRedePage() {
     const { data } = await supabase.from("empresas").select("id, nome").eq("segmento", "Revenda").order("nome");
     postosOpcoes = data ?? [];
   } else {
-    const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+    const minhasEmpresasIds = await empresasDoUsuarioCacheado(supabase, user?.email ?? "");
     if (minhasEmpresasIds && minhasEmpresasIds.length > 0) {
       const { data } = await supabase
         .from("empresas")

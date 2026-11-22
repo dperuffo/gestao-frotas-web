@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ImportForm } from "./_components/ImportForm";
 import { BotaoExcluirPiso } from "./_components/BotaoExcluirPiso";
 import { TabelaPisoAntt } from "../../_components/TabelaPisoAntt";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Fase P0.5 (plano FNI_Plano_Implementacao_P0.md) — piso mínimo de frete
 // (Res. ANTT 5.867/2020). Tabela NACIONAL (não é por tenant, ver migração
@@ -12,7 +13,7 @@ import { TabelaPisoAntt } from "../../_components/TabelaPisoAntt";
 // usa esses valores pra alertar quando o frete proposto fica abaixo do piso.
 export default async function PisosAnttPage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

@@ -5,6 +5,7 @@ import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { RedeForm } from "../_components/RedeForm";
 import { VincularPostoForm } from "../_components/VincularPostoForm";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
+import { perfilDoUsuarioAtual, empresasDoUsuarioCacheado } from "@/lib/dadosUsuarioCache";
 
 // Fase 27.87 — espelha /grupo-economico/[id]/page.tsx, filtrado a
 // segmento='Revenda' (postos revendedores).
@@ -47,7 +48,7 @@ export default async function EditarRedePage({
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
   const ehAdmin = perfil === "admin" || user?.email === "d.peruffo@gmail.com";
 
   let todosPostos: { id: string; nome: string }[] = [];
@@ -55,7 +56,7 @@ export default async function EditarRedePage({
     const { data } = await supabase.from("empresas").select("id, nome").eq("segmento", "Revenda").order("nome");
     todosPostos = data ?? [];
   } else {
-    const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+    const minhasEmpresasIds = await empresasDoUsuarioCacheado(supabase, user?.email ?? "");
     if (minhasEmpresasIds && minhasEmpresasIds.length > 0) {
       const { data } = await supabase
         .from("empresas")

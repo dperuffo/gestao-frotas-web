@@ -36,9 +36,18 @@ type ArquivoAnp = { nome: string; inicio: string; fim: string; sufixo: number };
 // quanto "resumo_semanal_lpc_2026-04-05-2026-04-11.xlsx" (traço, achado
 // real em 2026) e sufixos de reemissão tipo "...-2026-03-14-1.xlsx".
 function parseNomeArquivo(nome: string): ArquivoAnp | null {
-  const m = nome.match(/resumo_semanal_lpc_(\d{4}-\d{2}-\d{2})[_-](\d{4}-\d{2}-\d{2})(?:-(\d+))?\.xlsx$/);
+  // 22/11/2026: a ANP passou a publicar "resumo_semanal_lpc_2026_10_11-2026_10_17.xlsx"
+  // (datas com underscore) a partir da semana 11-17/10 — aceita os dois formatos.
+  const m = nome.match(
+    /resumo_semanal_lpc_(\d{4})[-_](\d{2})[-_](\d{2})[_-](\d{4})[-_](\d{2})[-_](\d{2})(?:-(\d+))?\.xlsx$/
+  );
   if (!m) return null;
-  return { nome, inicio: m[1], fim: m[2], sufixo: m[3] ? Number(m[3]) : 0 };
+  return {
+    nome,
+    inicio: `${m[1]}-${m[2]}-${m[3]}`,
+    fim: `${m[4]}-${m[5]}-${m[6]}`,
+    sufixo: m[7] ? Number(m[7]) : 0,
+  };
 }
 
 async function listarArquivosAno(ano: number): Promise<ArquivoAnp[]> {

@@ -26,6 +26,7 @@ import { Paginacao, calcularPaginacao } from "@/components/Paginacao";
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Inbox, Search, CheckCircle2, Bell } from "lucide-react";
 import { GraficoChamados, type ItemDistribuicao } from "./_components/GraficoChamados";
+import { perfilDoUsuarioAtual, empresasDoUsuarioCacheado } from "@/lib/dadosUsuarioCache";
 
 const POR_PAGINA = 30;
 
@@ -42,11 +43,11 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
 
   const { papel } = await resolverPapelAtual(supabase);
 
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+  const minhasEmpresasIds = await empresasDoUsuarioCacheado(supabase, user?.email ?? "");
 
   // Fase 27.2 — achado real: um usuário vinculado a mais de uma empresa (ex.:
   // grupo econômico) caía na MESMA condição do admin e recebia a base de

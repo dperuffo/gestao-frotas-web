@@ -9,6 +9,7 @@ import {
   type FaturaDoCliente,
 } from "../_components/CicloAbastecimentoPagamento";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 export default async function EditarClientePage({
   params,
@@ -24,7 +25,7 @@ export default async function EditarClientePage({
   // Fase 27.42 — o checkbox de bypass de limite de frota só aparece pro
   // admin (mesma checagem que já protege o gravado no servidor, em
   // atualizarCliente).
-  const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
+  const perfilAtual = await perfilDoUsuarioAtual(supabase);
   const souAdmin = perfilAtual === "admin";
 
   // Fase 27.71 — pedido do Daniel: resumo consolidado do ciclo de

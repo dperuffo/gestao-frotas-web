@@ -6,6 +6,7 @@ import { formatarDataHoraBr } from "@/lib/utils";
 import type { AutorAjuste } from "@/lib/ajustesAbastecimentos";
 import { PainelAjusteAbastecimento } from "../../_components/PainelAjusteAbastecimento";
 import { BotaoVoltar } from "../../../_components/BotaoVoltar";
+import { empresasDoUsuarioCacheado } from "@/lib/dadosUsuarioCache";
 
 // Fase 27.142 — pedido do Daniel, sinalizado como "próximo passo" desde a
 // Fase 27.136 ("O posto cobra do cliente sobre abastecimentos de outras
@@ -84,7 +85,7 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const { data: minhasEmpresas } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+  const minhasEmpresas = await empresasDoUsuarioCacheado(supabase, user?.email ?? "");
   const souPostoLado = empresaPostoId && (minhasEmpresas ?? []).includes(empresaPostoId);
   const meuLado: AutorAjuste = souPostoLado ? "posto" : "cliente";
 

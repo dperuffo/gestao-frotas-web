@@ -6,6 +6,7 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { BotaoRevogarConsentimento } from "./_components/BotaoRevogarConsentimento";
 import { FormSolicitarExclusao } from "./_components/FormSolicitarExclusao";
 import { BotaoMarcarExecutada } from "./_components/BotaoMarcarExecutada";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 function formatarDataHora(value: string | null) {
   if (!value) return "—";
@@ -34,7 +35,7 @@ export default async function LgpdPage() {
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
   const ehAdmin = perfil === "admin";
 
   const { data: meuUsuario } = await supabase

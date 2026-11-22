@@ -3,11 +3,12 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ConteudoForm } from "../_components/ConteudoForm";
 import { BotaoVoltar } from "../../../_components/BotaoVoltar";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 export default async function EditarConteudoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

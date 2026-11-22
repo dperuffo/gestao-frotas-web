@@ -2,6 +2,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatarDataHoraBr } from "@/lib/utils";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 import {
   GraficoAuditoria,
   type ItemEventosDia,
@@ -26,7 +27,7 @@ export default async function LogAuditoriaPage({
 }) {
   const sp = await searchParams;
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

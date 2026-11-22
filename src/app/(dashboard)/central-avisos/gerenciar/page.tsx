@@ -4,6 +4,7 @@ import { carregarMapaPermissoes, temAcesso } from "@/lib/permissoes";
 import { listarAvisosDaMinhaEmpresaAcao } from "../actions";
 import { AvisoEmpresaForm } from "../_components/AvisoEmpresaForm";
 import { ListaAvisosEmpresa } from "../_components/ListaAvisosEmpresa";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Fase Central-Avisos-Por-Empresa (04/08/2026, pedido do Daniel) — ele
 // liberou, como admin, a permissão "aba_central_avisos" pro perfil
@@ -18,7 +19,7 @@ import { ListaAvisosEmpresa } from "../_components/ListaAvisosEmpresa";
 // /administracao/central-avisos (avisos oficiais, sem esse limite).
 export default async function GerenciarAvisosEmpresaPage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil === "admin") {
     return (

@@ -8,6 +8,7 @@ import { AbastecimentoForm } from "../_components/AbastecimentoForm";
 import { ExcluirAbastecimento } from "../_components/ExcluirAbastecimento";
 import { PainelAjusteAbastecimento } from "../_components/PainelAjusteAbastecimento";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
+import { empresasDoUsuarioCacheado } from "@/lib/dadosUsuarioCache";
 
 // Fase 27.65 — solicitação de ajuste em abastecimentos, com aprovação da
 // contraparte. Só entra nesse fluxo quando o registro tem uma contraparte de
@@ -74,7 +75,7 @@ export default async function EditarAbastecimentoPage({ params }: { params: Prom
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const { data: minhasEmpresas } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+  const minhasEmpresas = await empresasDoUsuarioCacheado(supabase, user?.email ?? "");
   const souPostoLado = empresaPostoId && (minhasEmpresas ?? []).includes(empresaPostoId);
   const meuLado: AutorAjuste = souPostoLado ? "posto" : "cliente";
 

@@ -11,6 +11,7 @@ import { DeixarDeSerGestorButton } from "./_components/DeixarDeSerGestorButton";
 import { EditarColegaButton } from "./_components/EditarColegaButton";
 import { ExcluirColegaButton } from "./_components/ExcluirColegaButton";
 import { ReenviarConviteButton } from "./_components/ReenviarConviteButton";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 type SearchParams = { empresa?: string };
 
@@ -30,7 +31,7 @@ export default async function MinhaEquipePage({ searchParams }: { searchParams: 
   const { empresa: empresaParam } = await searchParams;
   const supabase = await createClient();
 
-  const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
+  const perfilAtual = await perfilDoUsuarioAtual(supabase);
   if (perfilAtual !== "gestor_frota" && perfilAtual !== "posto") {
     return (
       <div className="card p-6">

@@ -3,6 +3,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ToggleAtivoItemCatalogo } from "./_components/ToggleAtivoItemCatalogo";
 import { ExcluirItemCatalogo } from "./_components/ExcluirItemCatalogo";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 const CATEGORIAS = [
   { valor: "economia_imediata", label: "Economia Imediata" },
@@ -36,7 +37,7 @@ export default async function FidelidadePage({
   const { categoria: categoriaParam } = await searchParams;
   const supabase = await createClient();
 
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
   if (perfil !== "admin") {
     return (
       <div className="card p-6">

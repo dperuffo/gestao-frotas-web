@@ -17,6 +17,7 @@ import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 // toque visual já aplicado nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Fuel, CheckCircle2, Lock, Globe, Tag } from "lucide-react";
+import { perfilDoUsuarioAtual, empresasDoUsuarioCacheado } from "@/lib/dadosUsuarioCache";
 
 const TAMANHO_PAGINA = 50;
 
@@ -36,8 +37,8 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
-  const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+  const perfil = await perfilDoUsuarioAtual(supabase);
+  const minhasEmpresasIds = await empresasDoUsuarioCacheado(supabase, user?.email ?? "");
 
   // Quem pode ver mais de um cliente (admin, ou usuário vinculado a várias
   // empresas) escolhe o cliente pelo seletor; quem só tem um, usa direto.

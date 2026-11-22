@@ -2,10 +2,11 @@ import Link from "next/link";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ImportForm } from "./_components/ImportForm";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 export default async function ImportarPostosAnpPage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

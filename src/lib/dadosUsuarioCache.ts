@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { invalidarPrefixo, obterOuDefinir } from "@/lib/cache";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 
 // Leituras por usuário que o layout e as páginas repetem a CADA abertura de tela e que quase
 // nunca mudam (quem é o perfil, a quais empresas ele tem acesso). Ficam em memória por 30 s,
@@ -62,4 +63,12 @@ export function segmentoEmpresaCacheado(supabase: Supabase, empresaId: string): 
     const { data } = await supabase.from("empresas").select("segmento").eq("id", empresaId).maybeSingle();
     return (data?.segmento as string | null | undefined) ?? null;
   });
+}
+
+// Atalho para as páginas: perfil do usuário logado (usa o usuário compartilhado da requisição + cache).
+export async function perfilDoUsuarioAtual(supabase: Supabase): Promise<string | null> {
+  const {
+    data: { user },
+  } = await obterUsuarioAtual();
+  return perfilAtualCacheado(supabase, user?.email ?? "");
 }

@@ -4,6 +4,7 @@ import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { obterOuCriarPostoInternoAcao } from "./actions";
 import { FormPostoInterno } from "./_components/FormPostoInterno";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
+import { perfilDoUsuarioAtual, empresasDoUsuarioCacheado } from "@/lib/dadosUsuarioCache";
 
 // Fase Abastecimento-Interno (21/08/2026, pedido do Daniel) — tela
 // self-service (mesmo padrão de /postos) pro cliente configurar o posto
@@ -23,8 +24,8 @@ export default async function PostosInternosPage({
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
-  const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+  const perfil = await perfilDoUsuarioAtual(supabase);
+  const minhasEmpresasIds = await empresasDoUsuarioCacheado(supabase, user?.email ?? "");
 
   let empresas: { id: string; nome: string }[] = [];
   if (perfil === "admin") {

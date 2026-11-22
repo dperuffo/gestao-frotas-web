@@ -11,6 +11,7 @@ import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 // toque visual já aplicado nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Building2, CheckCircle2, AlertCircle } from "lucide-react";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 function badgeClasse(status: string) {
   if (status === "ativo" || status === "trial") return "badge-ativo";
@@ -32,7 +33,7 @@ export default async function ClientesPage({
 }) {
   const { q } = await searchParams;
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
   const ehAdmin = perfil === "admin";
 
   let query = supabase

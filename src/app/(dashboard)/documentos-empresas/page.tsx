@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { LABEL_STATUS_DOCUMENTACAO, STATUS_DOCUMENTACAO, type StatusDocumentacao } from "@/lib/empresasDocumentos";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 type SearchParams = { status?: string; q?: string };
 
@@ -18,7 +19,7 @@ const COR_STATUS: Record<StatusDocumentacao, string> = {
 // fica em /documentos-empresas/[id].
 export default async function DocumentosEmpresasPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

@@ -5,6 +5,7 @@ import { carregarMapaPermissoes, temAcesso } from "@/lib/permissoes";
 import { listarAvisosDaMinhaEmpresaAcao } from "../../actions";
 import { AvisoEmpresaForm } from "../../_components/AvisoEmpresaForm";
 import { BotaoVoltar } from "../../../_components/BotaoVoltar";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Fase edição (04/08/2026) — pedido do Daniel: "Usuario poder editar um
 // aviso criado no painel". Mesmo padrão de administracao/central-avisos/[id]
@@ -16,7 +17,7 @@ import { BotaoVoltar } from "../../../_components/BotaoVoltar";
 export default async function EditarAvisoEmpresaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil === "admin") {
     return (

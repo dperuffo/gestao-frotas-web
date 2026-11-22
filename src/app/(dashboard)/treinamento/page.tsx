@@ -2,6 +2,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { TreinamentoExplorer } from "./_components/TreinamentoExplorer";
 import type { Perfil } from "@/lib/constants";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Fase Central-Treinamento (20/07/2026) — pedido do Daniel: "criar um
 // treinamento interativo para o usuário, com imagens de telas e
@@ -15,7 +16,7 @@ import type { Perfil } from "@/lib/constants";
 // tour de boas-vindas (tourPassos.ts).
 export default async function TreinamentoPage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   const { data: licoes } = await supabase
     .from("conteudo_ajuda")

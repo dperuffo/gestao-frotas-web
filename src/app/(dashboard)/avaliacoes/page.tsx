@@ -9,6 +9,7 @@ import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { ClipboardList, Clock } from "lucide-react";
 import { GraficoAvaliacoes, type ItemDistribuicaoEstrelas, type ItemNotaMediaCliente } from "./_components/GraficoAvaliacoes";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Painel interno de Avaliações — exclusivo do time FNI (perfil admin), pra
 // acompanhar o feedback dos clientes e responder. Mesmo padrão de guarda de
@@ -22,7 +23,7 @@ export default async function AvaliacoesAdminPage({
 }) {
   const { q } = await searchParams;
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

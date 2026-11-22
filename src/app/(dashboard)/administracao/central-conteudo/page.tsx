@@ -3,6 +3,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ToggleAtivoConteudo } from "./_components/ToggleAtivoConteudo";
 import { BotaoExcluirConteudo } from "./_components/BotaoExcluirConteudo";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Fase Central-Treinamento (20/07/2026) — pedido do Daniel: treinamento
 // interativo pro usuário final, com conteúdo editável sem depender de
@@ -12,7 +13,7 @@ import { BotaoExcluirConteudo } from "./_components/BotaoExcluirConteudo";
 // Central de Treinamento (tipo='licao', ver /treinamento).
 export default async function CentralConteudoPage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

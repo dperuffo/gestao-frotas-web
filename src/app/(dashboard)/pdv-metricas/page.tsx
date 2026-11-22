@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Fuel, CheckCircle2, XCircle, Timer, Store } from "lucide-react";
 import { GraficoPdvMetricas, type ItemRevenda, type ItemSerieDiaria } from "./_components/GraficoPdvMetricas";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 type SearchParams = { dias?: string };
 
@@ -47,7 +48,7 @@ export default async function PdvMetricasPage({
   const dias = Number(diasParam) || 30;
 
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

@@ -1,6 +1,7 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { IndicadoresFinanceirosFni } from "../_components/IndicadoresFinanceirosFni";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Painel interno de Assinaturas — exclusivo do time FNI (perfil admin), pra
 // acompanhar a base de clientes por plano/status, MRR estimado, faturamento
@@ -16,7 +17,7 @@ import { IndicadoresFinanceirosFni } from "../_components/IndicadoresFinanceiros
 // direto (e pra quem já tem o hábito de acessar por aqui).
 export default async function AssinaturasAdminPage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

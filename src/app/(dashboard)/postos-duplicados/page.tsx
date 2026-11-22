@@ -1,6 +1,7 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { BotoesDuplicata } from "./_components/BotoesDuplicata";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Fase 27.137 — fila de revisão (admin) dos possíveis duplicados
 // sinalizados pela RPC verificar_e_registrar_posto_anp (aba "Meu Posto" do
@@ -11,7 +12,7 @@ import { BotoesDuplicata } from "./_components/BotoesDuplicata";
 // /inteligencia-rede (perfil_usuario_atual() === "admin").
 export default async function PostosDuplicadosPage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

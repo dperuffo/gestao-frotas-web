@@ -1,6 +1,7 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { UsuarioForm } from "../_components/UsuarioForm";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 export default async function NovoUsuarioPage() {
   const supabase = await createClient();
@@ -9,7 +10,7 @@ export default async function NovoUsuarioPage() {
   // ../page.tsx e em ../actions.ts (criarUsuario já rejeita a escrita;
   // isto aqui só evita mostrar o formulário de convite pra quem nem
   // deveria estar nesta tela).
-  const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
+  const perfilAtual = await perfilDoUsuarioAtual(supabase);
   if (perfilAtual !== "admin") {
     return (
       <div className="card p-6">

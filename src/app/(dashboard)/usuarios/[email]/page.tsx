@@ -3,6 +3,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { UsuarioForm } from "../_components/UsuarioForm";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 export default async function EditarUsuarioPage({
   params,
@@ -21,7 +22,7 @@ export default async function EditarUsuarioPage({
   // caía aqui, a query abaixo voltava vazia, e `notFound()` virava uma
   // página 404 sem explicação nenhuma. Guarda explícita aqui pra mostrar o
   // motivo de verdade em vez de um 404 misterioso.
-  const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
+  const perfilAtual = await perfilDoUsuarioAtual(supabase);
   if (perfilAtual !== "admin") {
     return (
       <div className="card p-6">

@@ -3,6 +3,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import { AtualizarStatusResgate } from "./_components/AtualizarStatusResgate";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 const LABEL_CATEGORIA: Record<string, string> = {
   economia_imediata: "Economia Imediata",
@@ -38,7 +39,7 @@ export default async function ResgatesFidelidadePage({
   const { status: statusParam } = await searchParams;
   const supabase = await createClient();
 
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
   if (perfil !== "admin") {
     return (
       <div className="card p-6">

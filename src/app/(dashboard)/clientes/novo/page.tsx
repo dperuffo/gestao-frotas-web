@@ -1,13 +1,14 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ClienteForm } from "../_components/ClienteForm";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // 01/10/2026 — gestor de frota também cadastra empresas aqui: elas entram
 // direto no Grupo Econômico dele (RPC criar_empresa_no_grupo, ver
 // clientes/actions.ts). O aviso abaixo deixa claro em qual grupo.
 export default async function NovoClientePage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
   const souAdmin = perfil === "admin";
 
   let grupoNome: string | null = null;

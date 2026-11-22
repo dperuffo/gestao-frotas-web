@@ -9,6 +9,7 @@ import { BotaoExportarTabela } from "@/components/exportar/BotaoExportarTabela";
 // toque visual já aplicado nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { Users, CheckCircle2, ShieldCheck } from "lucide-react";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 export default async function UsuariosPage({
   searchParams,
@@ -25,7 +26,7 @@ export default async function UsuariosPage({
   // escrita usam o cliente admin sem checar quem chama (ver actions.ts) —
   // esta guarda evita a tela quebrada (via RLS) pra quem nem deveria estar
   // aqui. Mesmo padrão de /administracao/pisos-antt.
-  const { data: perfilAtual } = await supabase.rpc("perfil_usuario_atual");
+  const perfilAtual = await perfilDoUsuarioAtual(supabase);
   if (perfilAtual !== "admin") {
     return (
       <div className="card p-6">

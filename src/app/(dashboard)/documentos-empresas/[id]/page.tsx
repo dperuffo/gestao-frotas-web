@@ -12,6 +12,7 @@ import {
 } from "@/lib/empresasDocumentos";
 import { PainelRevisao } from "./_components/PainelRevisao";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Fase 27.149 — detalhe da documentação de uma empresa, pra revisão do
 // admin: todos os documentos (empresa + cada sócio) com link assinado pra
@@ -20,7 +21,7 @@ import { BotaoVoltar } from "../../_components/BotaoVoltar";
 export default async function DocumentosEmpresaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

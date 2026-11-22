@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatarDataHoraBr } from "@/lib/utils";
 import { ToggleAtivoAviso } from "./_components/ToggleAtivoAviso";
 import { BotaoExcluirAviso } from "./_components/BotaoExcluirAviso";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 const TIPO_LABEL: Record<string, string> = {
   novidade: "🆕 Novidade",
@@ -25,7 +26,7 @@ const URGENCIA_BADGE: Record<string, string> = {
 // `comunicados` — mesmo padrão de /administracao/central-conteudo.
 export default async function CentralAvisosPage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

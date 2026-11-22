@@ -3,13 +3,14 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { ToggleAtivoOficina } from "./_components/ToggleAtivoOficina";
 import { BotaoExcluirOficina } from "./_components/BotaoExcluirOficina";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Fase Onda-2 (benchmark TicketLog, item #5) — CRUD do catálogo nacional de
 // oficinas credenciadas. Exclusiva do time FNI (perfil admin), mesmo padrão
 // de /administracao/central-avisos e /administracao/postos-revendedores.
 export default async function OficinasCredenciadasPage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
 
   if (perfil !== "admin") {
     return (

@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatarTokens } from "@/lib/assistenteConsumo";
 import { LinhaLimite } from "./_components/LinhaLimite";
 import { salvarLimiteClienteAcao, salvarLimitePlanoAcao } from "./actions";
+import { perfilDoUsuarioAtual } from "@/lib/dadosUsuarioCache";
 
 // Limites de tokens do Assistente FNI por plano e por cliente — tela exclusiva do time
 // interno (perfil admin), mesmo padrão de /administracao/pisos-antt.
@@ -21,7 +22,7 @@ const ORDEM = Object.keys(ROTULO_PLANO);
 
 export default async function LimitesAssistentePage() {
   const supabase = await createClient();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
   if (perfil !== "admin") {
     return (
       <div className="card p-6">

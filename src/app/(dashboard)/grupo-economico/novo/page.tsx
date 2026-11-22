@@ -3,6 +3,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { NovoGrupoForm } from "../_components/NovoGrupoForm";
+import { perfilDoUsuarioAtual, empresasDoUsuarioCacheado } from "@/lib/dadosUsuarioCache";
 
 // Fase Grupo-Economico-Frota-Billing (09/08/2026) — pedido do Daniel: "Grupo
 // Econômico deveria ser permitido pela aplicação para cadastro e
@@ -18,7 +19,7 @@ export default async function NovoGrupoPage() {
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const perfil = await perfilDoUsuarioAtual(supabase);
   const ehAdmin = perfil === "admin" || user?.email === "d.peruffo@gmail.com";
 
   let empresasOpcoes: { id: string; nome: string }[] = [];
@@ -26,7 +27,7 @@ export default async function NovoGrupoPage() {
     const { data } = await supabase.from("empresas").select("id, nome").eq("segmento", "Frota").order("nome");
     empresasOpcoes = data ?? [];
   } else {
-    const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+    const minhasEmpresasIds = await empresasDoUsuarioCacheado(supabase, user?.email ?? "");
     if (minhasEmpresasIds && minhasEmpresasIds.length > 0) {
       const { data } = await supabase
         .from("empresas")
