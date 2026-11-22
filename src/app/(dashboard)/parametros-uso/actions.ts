@@ -627,3 +627,53 @@ export async function salvarParametroPrePedidoAcao(empresaId: string, habilitado
   revalidatePath("/parametros-uso");
   return {};
 }
+
+// --- Consumo (km/l) por marca/modelo ou placa ----------------------------
+// Abastecimento cujo consumo estimado (km rodados desde o último abastecimento
+// ÷ litros) fique fora da faixa é bloqueado na autorização (PDV). Ver
+// _pdv_checar_consumo no banco.
+export async function criarRegraConsumo(_prev: RegraFormState, formData: FormData): Promise<RegraFormState> {
+  const supabase = await createClient();
+  const empresaId = String(formData.get("empresa_id") ?? "");
+  const marca = textoOuNull(formData, "marca_contem");
+  const placa = textoOuNull(formData, "placa")?.toUpperCase().replace(/[^A-Z0-9]/g, "") ?? null;
+  const minimo = numeroOuNull(formData, "consumo_minimo");
+  const maximo = numeroOuNull(formData, "consumo_maximo");
+  const pctTanque = numeroOuNull(formData, "percentual_tanque_minimo") ?? 50;
+  if (!empresaId || minimo == null || maximo == null) return { erro: "Informe o consumo mínimo e máximo (km/l)." };
+  if (Boolean(marca) === Boolean(placa)) return { erro: "Informe a marca/modelo OU a placa (apenas um dos dois)." };
+  if (minimo < 0 || maximo < minimo) return { erro: "O consumo máximo deve ser maior ou igual ao mínimo." };
+  if (pctTanque < 0 || pctTanque > 100) return { erro: "O percentual mínimo do tanque deve ficar entre 0 e 100." };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const idEdicao = textoOuNull(formData, "id");
+  const campos = {
+    marca_contem: marca,
+    placa,
+    consumo_minimo: minimo,
+    consumo_maximo: maximo,
+    percentual_tanque_minimo: pctTanque,
+    observacao: textoOuNull(formData, "observacao"),
+  };
+  const { error } = idEdicao
+    ? await supabase.from("parametros_consumo_veiculo").update({ ...campos, atualizado_em: new Date().toISOString() }).eq("id", idEdicao)
+    : await supabase.from("parametros_consumo_veiculo").insert({ empresa_id: empresaId, ...campos, criado_por: user?.email ?? null });
+  if (error) return { erro: `Não foi possível salvar: ${error.message}` };
+  revalidatePath("/parametros-uso");
+}
+
+export async function alternarStatusRegraConsumo(id: string, ativo: boolean) {
+  const supabase = await createClient();
+  await supabase
+    .from("parametros_consumo_veiculo")
+    .update({ status: ativo ? "Ativo" : "Inativo", atualizado_em: new Date().toISOString() })
+    .eq("id", id);
+  revalidatePath("/parametros-uso");
+}
+
+export async function excluirRegraConsumo(id: string) {
+  const supabase = await createClient();
+  await supabase.from("parametros_consumo_veiculo").delete().eq("id", id);
+  revalidatePath("/parametros-uso");
+}

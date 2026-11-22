@@ -5,6 +5,34 @@ depois (não é lista de ideias — só o que foi decidido fazer, mas ainda não
 entrou). Cada item tem contexto suficiente pra retomar sem precisar
 reconstruir o raciocínio do zero.
 
+## Assistente FNI: visualização, usabilidade e destaque na aplicação
+
+**Adiado em:** 22/11/2026, pedido do Daniel (com print da tela atual do
+Assistente). A segunda parte do pedido veio cortada ("o assistente precisa de
+destaque dentro da aplica…") — interpretada como destaque do Assistente dentro
+da aplicação; confirmar com o Daniel antes de começar.
+
+**Contexto:** a tela `/assistente` hoje é um chat simples: 13 chips de
+sugestão em fila, sem agrupamento, e muito espaço vazio. O Assistente virou o
+principal diferencial do produto (responde com gráficos/tabelas, compara
+preços numa rota, projeta custo), mas está só como um item do menu lateral.
+
+**Ideias levantadas (a priorizar):**
+- Tela: agrupar sugestões por tema (Custos, Rotas e preços, Veículos e
+  motoristas, Multas e fretes, Como usar), com ícones e cartões; mostrar
+  poucas por vez ("ver mais").
+- Tela: renderizar markdown nas respostas (negrito, listas); botão de
+  copiar/baixar PDF mais visível; indicar a empresa em uso e permitir
+  trocar o cliente ali mesmo (hoje, usuário com várias empresas precisa
+  escolher no seletor de outra tela para a ferramenta de rota funcionar).
+- Tela: histórico de conversas (hoje some ao atualizar) e botão
+  "nova conversa"; fixar um gráfico no Dashboard.
+- Destaque na aplicação: campo "Pergunte à FNI…" no topo/Dashboard, botão
+  flutuante em todas as telas (abre o chat em painel lateral), e perguntas
+  sugeridas conforme a tela em que o usuário está.
+- Mobile (PWA do posto): o Flutter ainda não desenha os gráficos que a rota
+  `/api/assistente` já devolve em `blocos`.
+
 ## Pedido de ajuste (aprovação da contraparte) para abastecimentos PDV
 
 **Adiado em:** 02/10/2026, pedido do Daniel ("coloca no backlog para

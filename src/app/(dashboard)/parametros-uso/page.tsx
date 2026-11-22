@@ -13,6 +13,7 @@ import { SecaoValorDiario } from "./_components/SecaoValorDiario";
 import { SecaoVolumeDiario } from "./_components/SecaoVolumeDiario";
 import { SecaoProduto } from "./_components/SecaoProduto";
 import { SecaoVariacaoHodometro } from "./_components/SecaoVariacaoHodometro";
+import { SecaoConsumo } from "./_components/SecaoConsumo";
 import { SecaoDiasHorarios } from "./_components/SecaoDiasHorarios";
 import { SecaoPostosPermitidos } from "./_components/SecaoPostosPermitidos";
 import { SecaoLimiteServicos } from "./_components/SecaoLimiteServicos";
@@ -35,6 +36,7 @@ const ABAS: { tipo: string; label: string }[] = [
   { tipo: "produto", label: "Produto" },
   { tipo: "hodometro-leve", label: "Hodôm. Leve" },
   { tipo: "hodometro-pesado", label: "Hodôm. Pesado" },
+  { tipo: "consumo", label: "Consumo (km/l)" },
   { tipo: "dias-horarios", label: "Dias/Horários" },
   { tipo: "postos", label: "Postos" },
   { tipo: "servicos", label: "Serviços" },
@@ -535,6 +537,20 @@ async function ConteudoAba({
           classificacao={classificacao}
           veiculos={veiculos}
         />
+      </>
+    );
+  }
+
+  if (tipo === "consumo") {
+    const { data } = await supabase
+      .from("parametros_consumo_veiculo")
+      .select("id, marca_contem, placa, consumo_minimo, consumo_maximo, percentual_tanque_minimo, status, observacao")
+      .eq("empresa_id", empresaId)
+      .order("criado_em", { ascending: false });
+    return (
+      <>
+        {barraFiltros}
+        <SecaoConsumo linhas={filtrarLinhas(data ?? [], filtros)} empresaId={empresaId} veiculos={veiculos} />
       </>
     );
   }

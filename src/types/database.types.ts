@@ -2812,6 +2812,37 @@ export interface Database {
           },
         ];
       };
+      parametros_consumo_veiculo: {
+        Row: {
+          id: string;
+          empresa_id: string;
+          marca_contem: string | null;
+          placa: string | null;
+          consumo_minimo: number;
+          consumo_maximo: number;
+          percentual_tanque_minimo: number;
+          status: "Ativo" | "Inativo";
+          observacao: string | null;
+          criado_por: string | null;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["parametros_consumo_veiculo"]["Row"]> & {
+          empresa_id: string;
+          consumo_minimo: number;
+          consumo_maximo: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["parametros_consumo_veiculo"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "parametros_consumo_veiculo_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       parametros_cota_veiculo: {
         Row: {
           id: string;

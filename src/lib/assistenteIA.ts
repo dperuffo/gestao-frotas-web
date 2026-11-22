@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { createClient } from "@/lib/supabase/server";
 import { geocodificar } from "@/lib/geo";
 import { PRODUTOS_POSTO } from "@/lib/constants";
+import { validarRegraConsumo, descreverRegraConsumo } from "@/lib/regraConsumo";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -20,7 +21,27 @@ export type BlocoVisual = {
   series: { nome: string; valores: number[] }[];
 };
 
-export type RespostaAssistente = { resposta: string; consultas: ConsultaExecutada[]; blocos: BlocoVisual[] };
+// Proposta de AÇÃO (escrita) montada pelo assistente. Nada é gravado até o usuário
+// clicar em "Confirmar" na tela — a confirmação re-valida tudo no servidor.
+export type PropostaAcao = {
+  tipo: "regra_consumo";
+  empresaId: string;
+  empresaNome: string;
+  marcaContem: string | null;
+  placa: string | null;
+  consumoMinimo: number;
+  consumoMaximo: number;
+  percentualTanqueMinimo: number;
+  veiculosAfetados: number | null;
+  resumo: string;
+};
+
+export type RespostaAssistente = {
+  resposta: string;
+  consultas: ConsultaExecutada[];
+  blocos: BlocoVisual[];
+  propostas: PropostaAcao[];
+};
 
 const FORMATOS_VALIDOS: FormatoValor[] = ["numero", "moeda", "litros", "km", "percentual"];
 const TIPOS_VALIDOS = ["barras", "linhas", "pizza", "tabela"] as const;
@@ -208,6 +229,17 @@ mostrar a variação, ou "barras" com os 8 mais baratos; (2) escreva as recomend
 posto mais barato, o quanto economiza vs. a média do trecho (R$/L e para um tanque de
 referência de 100 L) e se o desvio da rota compensa. Deixe claro quando o preço é estimativa
 ANP. Nunca recomende posto sem preço.
+
+## Cadastrar regra de consumo (km/l) — AÇÃO que grava dados, sempre com confirmação
+
+Quando o usuário pedir para "parametrizar/cadastrar/criar" uma regra de consumo (ex.: "veículos da
+Fiat com média de 9 a 12 km/l para autorizar o abastecimento"), use a ferramenta
+"propor_regra_consumo". Ela NÃO grava: mostra ao usuário um cartão com o resumo e botões
+Confirmar/Cancelar. Depois de chamar, diga apenas que a proposta está na tela aguardando a confirmação
+e explique em 1 frase o efeito: o abastecimento fora da faixa será BLOQUEADO na autorização (PDV),
+avaliado só quando há hodômetro atual e anterior e o abastecimento enche ao menos 50% do tanque. Nunca
+afirme que a regra foi criada. Se faltar o mínimo, o máximo ou a marca/placa, pergunte antes.
+Use "marca_contem" para marca/modelo (ex.: "Fiat") OU "placa" para um veículo — nunca os dois.
 
 ## Previsão de custo (projeção até o fim do mês)
 
@@ -400,6 +432,68 @@ async function executarPrecosNaRota(entrada: unknown, empresaId: string | null |
   };
 }
 
+const FERRAMENTA_PROPOR_REGRA_CONSUMO: Anthropic.Tool = {
+  name: "propor_regra_consumo",
+  description:
+    "Prepara (SEM gravar) uma regra de consumo em km/l que bloqueia abastecimentos fora da faixa. O usuário confirma na tela. Informe marca_contem (ex.: 'Fiat') OU placa.",
+  input_schema: {
+    type: "object",
+    properties: {
+      marca_contem: { type: "string", description: "Trecho da marca/modelo, ex.: 'Fiat' ou 'Argo'." },
+      placa: { type: "string", description: "Placa de um veículo específico (alternativa à marca)." },
+      consumo_minimo: { type: "number", description: "Consumo mínimo aceito, em km/l." },
+      consumo_maximo: { type: "number", description: "Consumo máximo aceito, em km/l." },
+      percentual_tanque_minimo: { type: "number", description: "Só avaliar se encher ao menos este % do tanque (padrão 50)." },
+    },
+    required: ["consumo_minimo", "consumo_maximo"],
+  },
+};
+
+async function executarProporRegraConsumo(
+  entrada: unknown,
+  supabase: Supabase,
+  contexto: { empresaId?: string | null; empresaNome?: string | null } | undefined,
+  propostas: PropostaAcao[]
+): Promise<{ conteudo: string; erro?: boolean }> {
+  if (!contexto?.empresaId) {
+    return {
+      erro: true,
+      conteudo: "Selecione um cliente no seletor do topo do Assistente antes de cadastrar uma regra (a regra vale para uma empresa).",
+    };
+  }
+  const e = (entrada ?? {}) as Record<string, unknown>;
+  const v = validarRegraConsumo({
+    marcaContem: typeof e.marca_contem === "string" ? e.marca_contem : null,
+    placa: typeof e.placa === "string" ? e.placa : null,
+    consumoMinimo: Number(e.consumo_minimo),
+    consumoMaximo: Number(e.consumo_maximo),
+    percentualTanqueMinimo: e.percentual_tanque_minimo == null ? null : Number(e.percentual_tanque_minimo),
+  });
+  if (typeof v === "string") return { erro: true, conteudo: v };
+
+  // Quantos veículos do cadastro a regra alcança (informativo, só leitura, com RLS).
+  let afetados: number | null = null;
+  try {
+    const base = supabase.rpc("veiculos_da_empresa", { p_empresa_id: contexto.empresaId }, { count: "exact", head: true });
+    const { count } = v.placa ? await base.ilike("placa", `%${v.placa}%`) : await base.ilike("marca", `%${v.marcaContem}%`);
+    afetados = count ?? null;
+  } catch {
+    afetados = null;
+  }
+
+  propostas.push({
+    tipo: "regra_consumo",
+    empresaId: contexto.empresaId,
+    empresaNome: contexto.empresaNome ?? "",
+    ...v,
+    veiculosAfetados: afetados,
+    resumo: descreverRegraConsumo(v),
+  });
+  return {
+    conteudo: `Proposta exibida ao usuário com botões Confirmar/Cancelar (alcança ${afetados ?? "?"} veículo(s) cadastrado(s)). NADA foi gravado ainda — aguarde a confirmação do usuário.`,
+  };
+}
+
 function escaparTermoIlike(termo: string): string {
   return termo.replace(/[%_]/g, (c) => `\\${c}`);
 }
@@ -424,11 +518,12 @@ export async function perguntarAssistente(
   pergunta: string,
   historico: MensagemChat[],
   supabase: Supabase,
-  contexto?: { empresaId?: string | null }
+  contexto?: { empresaId?: string | null; empresaNome?: string | null }
 ): Promise<RespostaAssistente> {
   const anthropic = clienteAnthropic();
   const consultas: ConsultaExecutada[] = [];
   const blocos: BlocoVisual[] = [];
+  const propostas: PropostaAcao[] = [];
 
   const mensagens: Anthropic.MessageParam[] = [
     ...historico.map((m) => ({ role: m.role, content: m.content })),
@@ -439,8 +534,10 @@ export async function perguntarAssistente(
     const resposta = await anthropic.messages.create({
       model: MODELO,
       max_tokens: 2000,
-      system: SYSTEM_PROMPT,
-      tools: [FERRAMENTA_SQL, FERRAMENTA_AJUDA, FERRAMENTA_GRAFICO, FERRAMENTA_ROTA],
+      system: contexto?.empresaId
+        ? `${SYSTEM_PROMPT}\n\n## Cliente selecionado pelo usuário\nO usuário está trabalhando com a empresa "${contexto.empresaNome ?? ""}" (empresa_id = '${contexto.empresaId}'). Nas consultas de dados, FILTRE por esse empresa_id (nas tabelas que têm a coluna; em cadastro_veiculos use public.empresa_id_do_cnpj(cnpj_frota) = '${contexto.empresaId}') e diga na resposta que os números são dessa empresa.`
+        : SYSTEM_PROMPT,
+      tools: [FERRAMENTA_SQL, FERRAMENTA_AJUDA, FERRAMENTA_GRAFICO, FERRAMENTA_ROTA, FERRAMENTA_PROPOR_REGRA_CONSUMO],
       messages: mensagens,
     });
 
@@ -453,7 +550,7 @@ export async function perguntarAssistente(
 
     if (blocosFerramenta.length === 0) {
       const texto = blocosTexto.map((b) => b.text).join("\n").trim();
-      return { resposta: texto || (blocos.length > 0 ? "" : "Não consegui gerar uma resposta para essa pergunta."), consultas, blocos };
+      return { resposta: texto || (blocos.length > 0 || propostas.length > 0 ? "" : "Não consegui gerar uma resposta para essa pergunta."), consultas, blocos, propostas };
     }
 
     mensagens.push({ role: "assistant", content: resposta.content });
@@ -477,6 +574,11 @@ export async function perguntarAssistente(
             content: "Exibido ao usuário. Agora escreva só a conclusão em 1 a 3 frases.",
           });
         }
+        continue;
+      }
+      if (bloco.name === "propor_regra_consumo") {
+        const r = await executarProporRegraConsumo(bloco.input, supabase, contexto, propostas);
+        resultadosFerramenta.push({ type: "tool_result", tool_use_id: bloco.id, content: r.conteudo, is_error: r.erro });
         continue;
       }
       if (bloco.name === "precos_na_rota") {
@@ -579,5 +681,6 @@ export async function perguntarAssistente(
       "Não consegui concluir a análise dentro do limite de consultas para essa pergunta. Tente reformular de forma mais específica (ex.: informando o período ou o veículo).",
     consultas,
     blocos,
+    propostas,
   };
 }

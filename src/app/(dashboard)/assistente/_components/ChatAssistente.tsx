@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useTransition, useEffect } from "react";
-import { perguntarAssistenteAcao } from "../actions";
+import { perguntarAssistenteAcao, confirmarRegraConsumoAcao } from "../actions";
 import type { MensagemChat } from "@/lib/assistenteIA";
-import type { ConsultaExecutada, BlocoVisual } from "@/lib/assistenteIA";
+import type { ConsultaExecutada, BlocoVisual, PropostaAcao } from "@/lib/assistenteIA";
 import { BlocoVisualAssistente } from "./BlocoVisualAssistente";
 import BotaoBaixarPdfAssistenteLazy from "./BotaoBaixarPdfAssistenteLazy";
 
-type MensagemExibida = MensagemChat & { consultas?: ConsultaExecutada[]; blocos?: BlocoVisual[]; erro?: boolean };
+type MensagemExibida = MensagemChat & { consultas?: ConsultaExecutada[]; blocos?: BlocoVisual[]; propostas?: PropostaAcao[]; erro?: boolean };
+type EstadoProposta = { estado: "pendente" | "salvando" | "confirmada" | "cancelada"; mensagem?: string };
 
 const PERGUNTAS_SUGERIDAS = [
   "Qual o melhor posto para abastecer Diesel S-10 entre Curitiba e São Paulo?",
@@ -20,6 +21,7 @@ const PERGUNTAS_SUGERIDAS = [
   "Quais os 5 veículos com maior custo de manutenção este ano?",
   "Quantos motoristas ativos temos por centro de custo?",
   "Quais multas estão em aberto e quanto somam? Mostre por motorista",
+  "Parametrize os veículos da Fiat com consumo médio entre 9 e 12 km/l para autorizar o abastecimento",
   "Fretes por status neste ano, em gráfico",
   "Quais peças estão com estoque abaixo do mínimo?",
   "Qual veículo está sem manutenção registrada há mais tempo?",
@@ -32,11 +34,25 @@ const PERGUNTAS_SUGERIDAS = [
 // Cada pergunta chama a server action perguntarAssistenteAcao, que por trás
 // aciona o Claude com a ferramenta de SQL somente leitura (ia_executar_select),
 // sempre executando com a permissão do usuário logado (RLS).
-export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
+export function ChatAssistente({ usuarioEmail, empresaId }: { usuarioEmail?: string; empresaId?: string | null }) {
   const [mensagens, setMensagens] = useState<MensagemExibida[]>([]);
   const [pergunta, setPergunta] = useState("");
   const [pending, startTransition] = useTransition();
   const fimRef = useRef<HTMLDivElement>(null);
+  const [estadoPropostas, setEstadoPropostas] = useState<Record<string, EstadoProposta>>({});
+
+  async function decidirProposta(chave: string, p: PropostaAcao, confirmar: boolean) {
+    if (!confirmar) {
+      setEstadoPropostas((prev) => ({ ...prev, [chave]: { estado: "cancelada" } }));
+      return;
+    }
+    setEstadoPropostas((prev) => ({ ...prev, [chave]: { estado: "salvando" } }));
+    const r = await confirmarRegraConsumoAcao(p);
+    setEstadoPropostas((prev) => ({
+      ...prev,
+      [chave]: r.ok ? { estado: "confirmada", mensagem: r.mensagem } : { estado: "pendente", mensagem: r.erro },
+    }));
+  }
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,13 +68,13 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
     setPergunta("");
 
     startTransition(async () => {
-      const resultado = await perguntarAssistenteAcao(perguntaLimpa, historicoParaEnvio);
+      const resultado = await perguntarAssistenteAcao(perguntaLimpa, historicoParaEnvio, empresaId ?? undefined);
       if ("erro" in resultado) {
         setMensagens((prev) => [...prev, { role: "assistant", content: resultado.erro, erro: true }]);
       } else {
         setMensagens((prev) => [
           ...prev,
-          { role: "assistant", content: resultado.resposta, consultas: resultado.consultas, blocos: resultado.blocos },
+          { role: "assistant", content: resultado.resposta, consultas: resultado.consultas, blocos: resultado.blocos, propostas: resultado.propostas },
         ]);
       }
     });
@@ -100,7 +116,7 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
         {mensagens.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`${m.blocos && m.blocos.length > 0 ? "w-full max-w-[92%]" : "max-w-[80%]"} rounded-2xl px-4 py-2.5 text-sm ${
+              className={`${(m.blocos && m.blocos.length > 0) || (m.propostas && m.propostas.length > 0) ? "w-full max-w-[92%]" : "max-w-[80%]"} rounded-2xl px-4 py-2.5 text-sm ${
                 m.role === "user"
                   ? "bg-frota-500 text-white"
                   : m.erro
@@ -112,6 +128,37 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
               {m.blocos?.map((b, k) => (
                 <BlocoVisualAssistente key={k} bloco={b} />
               ))}
+              {m.propostas?.map((p, k) => {
+                const chave = `${i}-${k}`;
+                const est = estadoPropostas[chave] ?? { estado: "pendente" as const };
+                return (
+                  <div key={chave} className="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-slate-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-slate-100">
+                    <p className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-300">Confirmação necessária</p>
+                    <p className="mt-1 text-sm">{p.resumo}</p>
+                    <p className="mt-1 text-xs opacity-80">
+                      Empresa: {p.empresaNome || "—"}
+                      {p.veiculosAfetados != null ? ` · alcança ${p.veiculosAfetados} veículo(s) cadastrado(s)` : ""}
+                    </p>
+                    {est.estado === "confirmada" ? (
+                      <p className="mt-2 text-sm font-medium text-green-700 dark:text-green-300">✓ {est.mensagem}</p>
+                    ) : est.estado === "cancelada" ? (
+                      <p className="mt-2 text-sm text-slate-500">Cancelada — nada foi gravado.</p>
+                    ) : (
+                      <>
+                        {est.mensagem && <p className="mt-2 text-xs text-red-600">{est.mensagem}</p>}
+                        <div className="mt-2 flex gap-2">
+                          <button type="button" className="btn-primary" disabled={est.estado === "salvando"} onClick={() => decidirProposta(chave, p, true)}>
+                            {est.estado === "salvando" ? "Salvando…" : "Confirmar e criar regra"}
+                          </button>
+                          <button type="button" className="btn-secondary" disabled={est.estado === "salvando"} onClick={() => decidirProposta(chave, p, false)}>
+                            Cancelar
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
               {m.consultas && m.consultas.length > 0 && (
                 <details className="mt-2 text-xs opacity-70">
                   <summary className="cursor-pointer select-none">
