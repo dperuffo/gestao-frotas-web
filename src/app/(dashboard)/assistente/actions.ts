@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import type { Json } from "@/types/database.types";
 import { revalidatePath } from "next/cache";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { validarRegraConsumo } from "@/lib/regraConsumo";
@@ -72,4 +73,82 @@ export async function confirmarRegraConsumoAcao(
   if (error) return { ok: false, erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
   return { ok: true, mensagem: "Regra criada. Você pode ajustá-la em Parâmetros de uso → Consumo (km/l)." };
+}
+
+// --- Histórico de conversas -------------------------------------------------
+// Cada usuário só enxerga as próprias conversas (RLS por e-mail). Propostas de
+// ação (confirmações) NÃO são salvas: ao reabrir uma conversa antiga, ninguém
+// confirma por engano uma regra proposta dias atrás.
+export type MensagemSalva = {
+  role: "user" | "assistant";
+  content: string;
+  consultas?: ConsultaExecutada[];
+  blocos?: BlocoVisual[];
+  erro?: boolean;
+};
+export type ResumoConversa = { id: string; titulo: string; atualizadoEm: string };
+
+function tituloDaConversa(mensagens: MensagemSalva[]): string {
+  const primeira = mensagens.find((m) => m.role === "user")?.content.trim() ?? "Nova conversa";
+  return primeira.length > 70 ? `${primeira.slice(0, 67)}…` : primeira;
+}
+
+export async function listarConversasAcao(): Promise<ResumoConversa[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("assistente_conversas")
+    .select("id, titulo, atualizado_em")
+    .order("atualizado_em", { ascending: false })
+    .limit(30);
+  return (data ?? []).map((c) => ({ id: c.id, titulo: c.titulo, atualizadoEm: c.atualizado_em }));
+}
+
+export async function abrirConversaAcao(id: string): Promise<{ mensagens: MensagemSalva[] } | { erro: string }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("assistente_conversas").select("mensagens").eq("id", id).maybeSingle();
+  if (error || !data) return { erro: "Conversa não encontrada." };
+  return { mensagens: (Array.isArray(data.mensagens) ? data.mensagens : []) as unknown as MensagemSalva[] };
+}
+
+export async function salvarConversaAcao(params: {
+  id?: string | null;
+  empresaId?: string | null;
+  mensagens: MensagemSalva[];
+}): Promise<{ id: string } | { erro: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) return { erro: "Sessão expirada." };
+  const mensagens = params.mensagens.slice(-60).map((m) => ({
+    role: m.role,
+    content: String(m.content ?? "").slice(0, 8000),
+    consultas: m.consultas?.slice(0, 10),
+    blocos: m.blocos?.slice(0, 6),
+    erro: m.erro,
+  }));
+  if (mensagens.length === 0) return { erro: "Nada para salvar." };
+  const campos = {
+    titulo: tituloDaConversa(mensagens),
+    mensagens: mensagens as unknown as Json,
+    empresa_id: params.empresaId ?? null,
+    atualizado_em: new Date().toISOString(),
+  };
+  if (params.id) {
+    const { error } = await supabase.from("assistente_conversas").update(campos).eq("id", params.id);
+    if (error) return { erro: error.message };
+    return { id: params.id };
+  }
+  const { data, error } = await supabase
+    .from("assistente_conversas")
+    .insert({ ...campos, usuario_email: user.email })
+    .select("id")
+    .single();
+  if (error || !data) return { erro: error?.message ?? "Não foi possível salvar." };
+  return { id: data.id };
+}
+
+export async function excluirConversaAcao(id: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase.from("assistente_conversas").delete().eq("id", id);
 }

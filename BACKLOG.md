@@ -5,33 +5,22 @@ depois (não é lista de ideias — só o que foi decidido fazer, mas ainda não
 entrou). Cada item tem contexto suficiente pra retomar sem precisar
 reconstruir o raciocínio do zero.
 
-## Assistente FNI: visualização, usabilidade e destaque na aplicação
+## Assistente FNI: visualização, usabilidade e destaque na aplicação — FEITO em 22/11/2026 (exceto "Fixar no painel")
 
-**Adiado em:** 22/11/2026, pedido do Daniel (com print da tela atual do
-Assistente). A segunda parte do pedido veio cortada ("o assistente precisa de
-destaque dentro da aplica…") — interpretada como destaque do Assistente dentro
-da aplicação; confirmar com o Daniel antes de começar.
+**Feito:** tela inicial com saudação, caixa em destaque e cartões por tema; conversa com
+markdown, copiar, sugestões de continuação, histórico de conversas por usuário (tabela
+`assistente_conversas`, RLS por e-mail) e "Nova conversa"; seletor de cliente compacto na
+barra; destaque no menu lateral (cartão laranja no topo), cartão "Pergunte à FNI" no
+Dashboard (cliente e posto), botão flutuante "Pergunte à FNI" em todas as telas e atalho
+Ctrl/Cmd+K, com sugestão conforme a tela.
 
-**Contexto:** a tela `/assistente` hoje é um chat simples: 13 chips de
-sugestão em fila, sem agrupamento, e muito espaço vazio. O Assistente virou o
-principal diferencial do produto (responde com gráficos/tabelas, compara
-preços numa rota, projeta custo), mas está só como um item do menu lateral.
-
-**Ideias levantadas (a priorizar):**
-- Tela: agrupar sugestões por tema (Custos, Rotas e preços, Veículos e
-  motoristas, Multas e fretes, Como usar), com ícones e cartões; mostrar
-  poucas por vez ("ver mais").
-- Tela: renderizar markdown nas respostas (negrito, listas); botão de
-  copiar/baixar PDF mais visível; indicar a empresa em uso e permitir
-  trocar o cliente ali mesmo (hoje, usuário com várias empresas precisa
-  escolher no seletor de outra tela para a ferramenta de rota funcionar).
-- Tela: histórico de conversas (hoje some ao atualizar) e botão
-  "nova conversa"; fixar um gráfico no Dashboard.
-- Destaque na aplicação: campo "Pergunte à FNI…" no topo/Dashboard, botão
-  flutuante em todas as telas (abre o chat em painel lateral), e perguntas
-  sugeridas conforme a tela em que o usuário está.
-- Mobile (PWA do posto): o Flutter ainda não desenha os gráficos que a rota
-  `/api/assistente` já devolve em `blocos`.
+**Ainda em aberto:**
+- "Fixar no painel": guardar um gráfico/resposta do assistente como cartão do Dashboard
+  (precisa de tabela de cartões fixados + re-execução da consulta ao abrir).
+- Mobile (PWA do posto): o Flutter ainda não desenha os gráficos que `/api/assistente`
+  devolve em `blocos`.
+- Dashboard: o cartão "Pergunte à FNI" aparece mesmo para perfil sem permissão ao
+  Assistente (o clique cai no aviso de acesso negado) — esconder conforme a permissão.
 
 ## Pedido de ajuste (aprovação da contraparte) para abastecimentos PDV
 

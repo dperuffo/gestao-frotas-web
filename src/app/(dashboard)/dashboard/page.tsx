@@ -25,6 +25,7 @@ import { PRODUTOS_POSTO } from "@/lib/constants";
 import { Users, Truck, Droplet, Wallet, AlertTriangle, Building2, Trophy } from "lucide-react";
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
+import { CampoPerguntaFni } from "../_components/CampoPerguntaFni";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -688,6 +689,15 @@ export default async function DashboardPage({
       <CabecalhoPagina
         titulo={`${saudacao}${primeiroNome ? `, ${primeiroNome}` : ""}`}
         descricao="Aqui está o resumo da sua frota hoje."
+      />
+
+      <CampoPerguntaFni
+        empresaId={empresaSelecionada}
+        sugestoes={[
+          "Qual a previsão de custo com combustível até o fim do mês?",
+          "Quais veículos gastam acima da média este mês?",
+          "Quais multas estão em aberto?",
+        ]}
       />
 
       <div className="mb-6 card p-4">

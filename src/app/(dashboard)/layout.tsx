@@ -76,6 +76,8 @@ import { logger } from "@/lib/logger";
 import { contarBadgesMenuAcao } from "./_components/badgesMenuActions";
 import { ProvedorBadgesMenu } from "./_components/ProvedorBadgesMenu";
 import { AvisoNovoAbastecimento } from "./_components/AvisoNovoAbastecimento";
+import { BotaoAssistenteMenu } from "./_components/BotaoAssistenteMenu";
+import { AssistenteAtalhos } from "./_components/AssistenteAtalhos";
 import { AvisoAbastecimentoNegado } from "./_components/AvisoAbastecimentoNegado";
 import { AvisoAjustePdv } from "./_components/AvisoAjustePdv";
 import {
@@ -1067,6 +1069,7 @@ export default async function DashboardLayout({
         {podeAcessarItem({ href: "/abastecimentos" }) && <AvisoNovoAbastecimento />}
         {podeAcessarItem({ href: "/abastecimentos-negados" }) && <AvisoAbastecimentoNegado />}
         {podeAcessarItem({ href: "/ajustes-pdv" }) && <AvisoAjustePdv />}
+        {podeAcessarItem({ href: "/assistente" }) && <BotaoAssistenteMenu />}
         <nav className="flex-1 px-3 py-4">
           {ehPosto ? (
             <>
@@ -1179,6 +1182,7 @@ export default async function DashboardLayout({
       </main>
       </PainelMobile>
     </div>
+    {podeAcessarItem({ href: "/assistente" }) && <AssistenteAtalhos />}
     <MonitorInatividade minutos={logoutInatividadeMinutos} />
     </TourProvider>
   );

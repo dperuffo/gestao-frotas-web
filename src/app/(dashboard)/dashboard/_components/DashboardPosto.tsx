@@ -9,6 +9,7 @@ import GraficoEvolutivoPostosLazy, { type PontoEvolutivoPostos } from "./Grafico
 // toque visual já aplicado nas telas do lado cliente (ver
 // @/components/IndicadorColorido), agora chegando na visão posto.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
+import { CampoPerguntaFni } from "../../_components/CampoPerguntaFni";
 import { ClipboardList, Droplet, Wallet, Tag, Receipt, Clock, Calendar, Users } from "lucide-react";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -205,6 +206,14 @@ export async function DashboardPosto({
           </Link>
         </div>
       </div>
+
+      <CampoPerguntaFni
+        sugestoes={[
+          "Como funciona a integração com o Pró-Frotas?",
+          "Como funciona o Pré-Pedido?",
+          "O que preciso configurar pra abastecimentos aparecerem certo nos indicadores?",
+        ]}
+      />
 
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Desempenho de vendas — últimos {JANELA_DESEMPENHO_DIAS} dias

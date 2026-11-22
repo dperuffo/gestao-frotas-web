@@ -2812,6 +2812,30 @@ export interface Database {
           },
         ];
       };
+      assistente_conversas: {
+        Row: {
+          id: string;
+          usuario_email: string;
+          empresa_id: string | null;
+          titulo: string;
+          mensagens: Json;
+          criado_em: string;
+          atualizado_em: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["assistente_conversas"]["Row"]> & {
+          usuario_email: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["assistente_conversas"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "assistente_conversas_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       parametros_consumo_veiculo: {
         Row: {
           id: string;

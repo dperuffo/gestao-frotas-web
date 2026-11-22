@@ -3,23 +3,26 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ChatAssistente } from "./_components/ChatAssistente";
-import { SeletorClienteAssistente } from "./_components/SeletorClienteAssistente";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 export default async function AssistenteFniPage({
   searchParams,
 }: {
-  searchParams: Promise<{ empresa?: string }>;
+  searchParams: Promise<{ empresa?: string; pergunta?: string }>;
 }) {
-  const { empresa: empresaParam } = await searchParams;
+  const { empresa: empresaParam, pergunta } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  // Usuário com acesso a várias empresas (grupo econômico) escolhe o cliente aqui
-  // mesmo; as ferramentas que dependem da empresa (ex.: preços negociados na
-  // rota) usam a escolhida. resolverEmpresaAtual só aceita empresas do usuário.
+  // Usuário com acesso a várias empresas (grupo econômico) escolhe o cliente na barra
+  // do chat; as ferramentas que dependem da empresa (preços negociados na rota,
+  // cadastro de regra) usam a escolhida. resolverEmpresaAtual só aceita empresas do usuário.
   const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+  const { data: perfilApp } = user?.email
+    ? await supabase.from("usuarios_app").select("nome").ilike("email", user.email).maybeSingle()
+    : { data: null };
+  const primeiroNome = perfilApp?.nome ? String(perfilApp.nome).trim().split(" ")[0] : undefined;
 
   return (
     <div>
@@ -30,12 +33,16 @@ export default async function AssistenteFniPage({
             Assistente FNI <AjudaIcon chave="assistente.pergunta" />
           </>
         }
-        descricao="Converse em linguagem natural sobre a sua operação de frota, ou tire dúvidas de como usar a plataforma. O assistente consulta os dados em tempo real (só enxerga as empresas às quais você tem acesso) e o conteúdo oficial de treinamento — sem inventar respostas."
+        descricao="Pergunte em linguagem natural: o assistente consulta os dados em tempo real (só das empresas às quais você tem acesso), desenha gráficos, compara preços na rota e ajuda a cadastrar regras."
       />
-      {empresas.length > 1 && (
-        <SeletorClienteAssistente empresas={empresas} empresaSelecionadaId={empresaSelecionada} />
-      )}
-      <ChatAssistente key={empresaSelecionada ?? "todas"} usuarioEmail={user?.email} empresaId={empresaSelecionada} />
+      <ChatAssistente
+        key={empresaSelecionada ?? "todas"}
+        usuarioEmail={user?.email}
+        primeiroNome={primeiroNome}
+        empresaId={empresaSelecionada}
+        empresas={empresas}
+        perguntaInicial={pergunta?.slice(0, 2000)}
+      />
     </div>
   );
 }
