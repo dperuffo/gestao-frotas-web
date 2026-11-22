@@ -12,9 +12,9 @@ const TIPO_ICONE: Record<AvisoParaUsuario["tipo"], string> = {
 };
 
 const URGENCIA_ESTILO: Record<AvisoParaUsuario["urgencia"], string> = {
-  informativo: "border-frota-100 from-frota-50",
-  atencao: "border-amber-200 from-amber-50",
-  critico: "border-red-300 from-red-50",
+  informativo: "border-frota-100 from-frota-50 dark:border-frota-800 dark:from-frota-900/60",
+  atencao: "border-amber-200 from-amber-50 dark:border-amber-500/40 dark:from-amber-950/60",
+  critico: "border-red-300 from-red-50 dark:border-red-500/40 dark:from-red-950/60",
 };
 
 // Fase Central-Avisos (28/07/2026) — banner fixo no topo do <main>, só pros
@@ -44,7 +44,7 @@ export function AvisoBannerFixo({ avisos }: { avisos: AvisoParaUsuario[] }) {
       {visiveis.map((a) => (
         <div
           key={a.id}
-          className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-gradient-to-r to-white px-5 py-3.5 ${URGENCIA_ESTILO[a.urgencia]}`}
+          className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-gradient-to-r to-white px-5 py-3.5 dark:to-slate-900 ${URGENCIA_ESTILO[a.urgencia]}`}
         >
           <div className="flex items-center gap-3">
             <span className="text-2xl">{TIPO_ICONE[a.tipo]}</span>
@@ -56,7 +56,7 @@ export function AvisoBannerFixo({ avisos }: { avisos: AvisoParaUsuario[] }) {
             type="button"
             onClick={() => setDispensados(dispensarAviso(a.id))}
             aria-label="Fechar aviso"
-            className="text-slate-400 hover:text-slate-600"
+            className="text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200"
           >
             ✕
           </button>
