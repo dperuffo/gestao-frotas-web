@@ -7,7 +7,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { validarRegraConsumo } from "@/lib/regraConsumo";
 import { prepararAssistente, registrarConsumoAssistente, mensagemErroChaveCliente, type OrigemChave } from "@/lib/assistenteConsumo";
-import { perguntarAssistente, type MensagemChat, type ConsultaExecutada, type BlocoVisual, type PropostaAcao } from "@/lib/assistenteIA";
+import { perguntarAssistente, type MensagemChat, type ConsultaExecutada, type BlocoVisual, type PropostaAcao, type PropostaRegraConsumo, type PropostaCadastro } from "@/lib/assistenteIA";
+import { validarCadastro } from "@/lib/cadastroAssistente";
+import { conferirPermissaoCadastro, gravarCadastro, prepararCadastro } from "@/lib/cadastroAssistenteServidor";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 export type RespostaChatAssistente = { resposta: string; consultas: ConsultaExecutada[]; blocos: BlocoVisual[]; propostas: PropostaAcao[] } | { erro: string };
 
@@ -65,7 +68,7 @@ export async function perguntarAssistenteAcao(
 // do cliente: re-valida os campos, confere que a empresa é uma das do usuário
 // (resolverEmpresaAtual + RLS da tabela) e só então grava.
 export async function confirmarRegraConsumoAcao(
-  proposta: Pick<PropostaAcao, "empresaId" | "marcaContem" | "placa" | "consumoMinimo" | "consumoMaximo" | "percentualTanqueMinimo">
+  proposta: Pick<PropostaRegraConsumo, "empresaId" | "marcaContem" | "placa" | "consumoMinimo" | "consumoMaximo" | "percentualTanqueMinimo">
 ): Promise<{ ok: true; mensagem: string } | { ok: false; erro: string }> {
   const supabase = await createClient();
   const {
@@ -93,6 +96,52 @@ export async function confirmarRegraConsumoAcao(
   if (error) return { ok: false, erro: `Não foi possível salvar: ${error.message}` };
   revalidatePath("/parametros-uso");
   return { ok: true, mensagem: "Regra criada. Você pode ajustá-la em Parâmetros de uso → Consumo (km/l)." };
+}
+
+// Confirmação de cadastro de veículo/motorista (criar, alterar, inativar, reativar). Nada vem
+// "pronto" do cliente: re-valida os campos, confere empresa e permissão, resolve de novo o
+// cadastro existente (duplicidade, "já está inativo" etc.) e só então grava com a sessão do
+// usuário (RLS). Não existe exclusão definitiva.
+const ROTULO_ACAO = { criar: "cadastrado", alterar: "atualizado", inativar: "inativado", reativar: "reativado" } as const;
+
+export async function confirmarCadastroAcao(
+  proposta: Pick<PropostaCadastro, "entidade" | "acao" | "empresaId" | "identificador" | "campos">
+): Promise<{ ok: true; mensagem: string } | { ok: false; erro: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, erro: "Sessão expirada, faça login novamente." };
+
+  const { empresaSelecionada, perfil } = await resolverEmpresaAtual(supabase, proposta.empresaId);
+  if (!empresaSelecionada || empresaSelecionada !== proposta.empresaId) {
+    return { ok: false, erro: "Você não tem acesso a essa empresa." };
+  }
+
+  const v = validarCadastro(proposta);
+  if (typeof v === "string") return { ok: false, erro: v };
+
+  const semPermissao = await conferirPermissaoCadastro(supabase, v.entidade, perfil, user.email, empresaSelecionada);
+  if (semPermissao) return { ok: false, erro: semPermissao };
+
+  const prep = await prepararCadastro(supabase, empresaSelecionada, v);
+  if ("erro" in prep) return { ok: false, erro: prep.erro };
+
+  const r = await gravarCadastro(supabase, empresaSelecionada, v, prep, user.email);
+  if ("erro" in r) return { ok: false, erro: r.erro };
+
+  await registrarAuditoria({
+    acao: `${v.entidade}.${v.acao}`,
+    entidade: v.entidade === "veiculo" ? "cadastro_veiculos" : "motoristas",
+    entidadeId: r.id,
+    empresaId: empresaSelecionada,
+    detalhes: { origem: "assistente_fni", alvo: prep.alvo, mudancas: prep.mudancas },
+  });
+
+  revalidatePath(v.entidade === "veiculo" ? "/veiculos" : "/motoristas");
+  revalidatePath(`/${v.entidade === "veiculo" ? "veiculos" : "motoristas"}/${r.id}`);
+  const nome = v.entidade === "veiculo" ? "Veículo" : "Motorista";
+  return { ok: true, mensagem: `${nome} ${prep.alvo} ${ROTULO_ACAO[v.acao]}. Você pode ver e ajustar em ${v.entidade === "veiculo" ? "Veículos" : "Motoristas"}.` };
 }
 
 // --- Histórico de conversas -------------------------------------------------

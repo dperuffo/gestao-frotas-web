@@ -104,6 +104,7 @@ export async function POST(request: Request) {
       empresaId: empresaConsumo,
       chaveApi: preparo.chaveApi,
       medidor,
+      semAcoes: true, // o app não exibe cartões de confirmação: nada de ferramentas que gravam
     });
     return NextResponse.json({ resposta, consultas, blocos }, { headers: CORS_HEADERS });
   } catch (e) {

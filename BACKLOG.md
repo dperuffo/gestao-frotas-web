@@ -98,3 +98,13 @@ continua ruim depois do ajuste já aplicado.
 - Próximo: funções RPC que juntam as consultas do Dashboard/Abastecimentos/Veículos em 1 ida ao banco; cache de avisos e favoritos do menu (hoje 2 idas por layout).
 - FEITO (22/11/2026, 5ª rodada): Dashboard dispara o 2º grupo de indicadores junto com o 1º (antes 3 etapas em fila); Abastecimentos busca ajustes abertos em paralelo (só espera antes quando o filtro "ajuste pendente" está ligado); segmento da empresa em cache (30 s); avisos do sino (listarAvisosAcao, ~5 idas por layout) usam o usuário compartilhado e cache de 30 s, limpo ao marcar como lido e ao publicar/editar/excluir aviso.
 - Próximo: página de Veículos e demais telas mais usadas (mesmo método: achatar etapas em fila); funções RPC únicas só onde ainda restar mais de 2 etapas em fila; favoritos do menu (1 ida por layout, já em paralelo).
+
+## Assistente FNI: cadastro de veículo e motorista — FEITO em 22/11/2026
+
+- **Feito:** o Assistente cadastra, altera, inativa e reativa veículo e motorista (ferramenta `propor_cadastro`), sempre com cartão de confirmação (antes → depois nas alterações). Sem exclusão definitiva: "excluir" vira inativar (mantém o histórico). Confirmação refaz validação, empresa, perfil e permissão (`aba_veiculos`/`aba_motoristas`), duplicidade e grava com a sessão do usuário (RLS), com log de auditoria (`assistente_fni`). O canal do app do motorista (`/api/assistente`) ficou somente leitura (`semAcoes`). 12 testes novos em `cadastroAssistente.test.ts`.
+- **Pendente:** centro de custo, FIPE e demais campos do formulário completo (só os principais entram pelo Assistente); veículo de empresa irmã do grupo; cadastro em lote por planilha pelo chat; teste de ponta a ponta no navegador com cada perfil (gestor, analista, posto).
+
+## Auditoria e sincronização ProFrotas (22/11/2026)
+
+- **Feito:** `fn_audit_log` ignora UPDATE sem mudança e grava só os campos alterados; trigger `aaa_suprime_update_sem_mudanca` descarta UPDATE sem mudança em `profrotas_abastecimentos` (a sync horária reescrevia a janela inteira); 111 mil linhas idênticas removidas de `audit_logs`.
+- **Pendente:** `VACUUM FULL audit_logs` fora do horário de uso (devolve cerca de 360 MB ao disco); política de retenção da auditoria (ex.: 90 dias quentes + arquivo); a sync ainda envia toda a janela de datas (poderia pedir só o que mudou desde `dataAtualizacao`).

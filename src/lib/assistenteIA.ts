@@ -3,6 +3,14 @@ import type { createClient } from "@/lib/supabase/server";
 import { geocodificar } from "@/lib/geo";
 import { PRODUTOS_POSTO } from "@/lib/constants";
 import { validarRegraConsumo, descreverRegraConsumo } from "@/lib/regraConsumo";
+import {
+  validarCadastro,
+  type AcaoCadastro,
+  type CamposCadastro,
+  type EntidadeCadastro,
+  type MudancaCadastro,
+} from "@/lib/cadastroAssistente";
+import { conferirPermissaoCadastro, prepararCadastro } from "@/lib/cadastroAssistenteServidor";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -23,7 +31,7 @@ export type BlocoVisual = {
 
 // Proposta de AÇÃO (escrita) montada pelo assistente. Nada é gravado até o usuário
 // clicar em "Confirmar" na tela — a confirmação re-valida tudo no servidor.
-export type PropostaAcao = {
+export type PropostaRegraConsumo = {
   tipo: "regra_consumo";
   empresaId: string;
   empresaNome: string;
@@ -35,6 +43,25 @@ export type PropostaAcao = {
   veiculosAfetados: number | null;
   resumo: string;
 };
+
+// Cadastro de veículo/motorista: criar, alterar, inativar ou reativar. Não existe
+// exclusão definitiva — inativar mantém o cadastro e o histórico.
+export type PropostaCadastro = {
+  tipo: "cadastro";
+  entidade: EntidadeCadastro;
+  acao: AcaoCadastro;
+  empresaId: string;
+  empresaNome: string;
+  // Placa (veículo) ou CPF/nome (motorista) como o usuário informou, já normalizado.
+  identificador: string;
+  campos: CamposCadastro;
+  alvo: string;
+  mudancas: MudancaCadastro[];
+  aviso: string | null;
+  resumo: string;
+};
+
+export type PropostaAcao = PropostaRegraConsumo | PropostaCadastro;
 
 export type RespostaAssistente = {
   resposta: string;
@@ -241,6 +268,25 @@ e explique em 1 frase o efeito: o abastecimento fora da faixa será BLOQUEADO na
 avaliado só quando há hodômetro atual e anterior e o abastecimento enche ao menos 50% do tanque. Nunca
 afirme que a regra foi criada. Se faltar o mínimo, o máximo ou a marca/placa, pergunte antes.
 Use "marca_contem" para marca/modelo (ex.: "Fiat") OU "placa" para um veículo — nunca os dois.
+
+## Cadastro de veículo e motorista — AÇÃO que grava dados, sempre com confirmação
+
+Quando o usuário pedir para cadastrar, alterar, inativar ou reativar um veículo ou motorista, use a
+ferramenta "propor_cadastro". Ela NÃO grava: mostra um cartão com o resumo e botões Confirmar/Cancelar.
+Depois de chamar, diga só que a proposta está na tela aguardando a confirmação. Nunca afirme que o
+cadastro foi feito.
+- Não existe exclusão definitiva. Se pedirem "excluir/apagar/remover", explique em 1 frase que o sistema
+  inativa (mantém o cadastro e o histórico de abastecimentos, multas e fretes) e proponha "inativar".
+- Veículo: para criar, a placa é obrigatória (marca, modelo, ano etc. são opcionais). Para alterar,
+  inativar ou reativar, informe a placa atual em "identificador".
+- Motorista: para criar, nome completo e CPF são obrigatórios. Para alterar, inativar ou reativar,
+  "identificador" é o CPF ou o nome do motorista (prefira o CPF; se houver nomes parecidos a ferramenta
+  avisa e você pede o CPF).
+- Preencha em "campos" só o que o usuário disse; nunca invente dados (CPF, placa, datas). Se faltar um
+  campo obrigatório, pergunte antes de chamar a ferramenta.
+- Se a ferramenta devolver erro (já existe, não encontrado, sem permissão), explique ao usuário em
+  linguagem simples e diga o que ele pode fazer.
+- Vale para um cliente por vez: exige o cliente selecionado.
 
 ## Previsão de custo (projeção até o fim do mês)
 
@@ -495,6 +541,76 @@ async function executarProporRegraConsumo(
   };
 }
 
+const FERRAMENTA_PROPOR_CADASTRO: Anthropic.Tool = {
+  name: "propor_cadastro",
+  description:
+    "Prepara (SEM gravar) o cadastro, alteração, inativação ou reativação de um veículo ou motorista. O usuário confirma na tela. Não existe exclusão definitiva: para 'excluir' use acao 'inativar'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      entidade: { type: "string", enum: ["veiculo", "motorista"] },
+      acao: { type: "string", enum: ["criar", "alterar", "inativar", "reativar"] },
+      identificador: {
+        type: "string",
+        description: "Quem será alterado/inativado/reativado: placa (veículo) ou CPF/nome (motorista). Não usar em 'criar'.",
+      },
+      campos: {
+        type: "object",
+        description:
+          "Dados a gravar. Veículo: placa, marca, modelo, ano_modelo, ano_fabricacao, hodometro_atual, combustivel, tanque, autonomia, cor, chassi, renavam, uf_veiculo, municipio, numero_eixos, classificacao (Próprio|Agregado), tipo (Leve|Pesado). Motorista: nome_completo, cpf, telefone, email, cnh, cnh_vencimento (DD/MM/AAAA), exame_toxicologico_vencimento, aso_vencimento, classificacao (Próprio|Agregado). Em 'alterar', só os campos que mudam. Vazio em inativar/reativar.",
+        additionalProperties: true,
+      },
+    },
+    required: ["entidade", "acao"],
+  },
+};
+
+async function executarProporCadastro(
+  entrada: unknown,
+  supabase: Supabase,
+  contexto: { empresaId?: string | null; empresaNome?: string | null } | undefined,
+  propostas: PropostaAcao[]
+): Promise<{ conteudo: string; erro?: boolean }> {
+  if (!contexto?.empresaId) {
+    return {
+      erro: true,
+      conteudo: "Selecione um cliente no seletor do topo do Assistente antes de mexer em cadastros (o cadastro pertence a uma empresa).",
+    };
+  }
+  const e = (entrada ?? {}) as Record<string, unknown>;
+  const v = validarCadastro({ entidade: e.entidade, acao: e.acao, identificador: e.identificador, campos: e.campos });
+  if (typeof v === "string") return { erro: true, conteudo: v };
+
+  // A empresa já foi validada por quem chamou (perguntarAssistenteAcao) e a RLS esconde o que o
+  // usuário não pode ver; aqui só conferimos perfil e permissão da funcionalidade.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
+  const semPermissao = await conferirPermissaoCadastro(supabase, v.entidade, perfil ?? null, user?.email, contexto.empresaId);
+  if (semPermissao) return { erro: true, conteudo: semPermissao };
+
+  const prep = await prepararCadastro(supabase, contexto.empresaId, v);
+  if ("erro" in prep) return { erro: true, conteudo: prep.erro };
+
+  propostas.push({
+    tipo: "cadastro",
+    entidade: v.entidade,
+    acao: v.acao,
+    empresaId: contexto.empresaId,
+    empresaNome: contexto.empresaNome ?? "",
+    identificador: v.identificador,
+    campos: v.campos,
+    alvo: prep.alvo,
+    mudancas: prep.mudancas,
+    aviso: prep.aviso,
+    resumo: prep.resumo,
+  });
+  return {
+    conteudo: `Proposta exibida ao usuário com botões Confirmar/Cancelar: ${prep.resumo} NADA foi gravado ainda — aguarde a confirmação do usuário.`,
+  };
+}
+
 function escaparTermoIlike(termo: string): string {
   return termo.replace(/[%_]/g, (c) => `\\${c}`);
 }
@@ -525,6 +641,8 @@ export async function perguntarAssistente(
     empresaId?: string | null;
     empresaNome?: string | null;
     chaveApi?: string | null;
+    // Canal que não mostra cartões de confirmação (ex.: app do motorista): sem ferramentas que gravam.
+    semAcoes?: boolean;
     // Acumula os tokens gastos (entrada/saída) — o chamador registra o consumo por cliente,
     // mesmo se a execução falhar no meio (por isso é um objeto compartilhado, não o retorno).
     medidor?: { entrada: number; saida: number };
@@ -545,10 +663,16 @@ export async function perguntarAssistente(
     const resposta = await anthropic.messages.create({
       model: MODELO,
       max_tokens: 4096,
-      system: contexto?.empresaId
-        ? `${SYSTEM_PROMPT}\n\n## Cliente selecionado pelo usuário\nO usuário está trabalhando com a empresa "${contexto.empresaNome ?? ""}" (empresa_id = '${contexto.empresaId}'). Nas consultas de dados, FILTRE por esse empresa_id (nas tabelas que têm a coluna; em cadastro_veiculos use public.empresa_id_do_cnpj(cnpj_frota) = '${contexto.empresaId}') e diga na resposta que os números são dessa empresa.`
-        : SYSTEM_PROMPT,
-      tools: [FERRAMENTA_SQL, FERRAMENTA_AJUDA, FERRAMENTA_GRAFICO, FERRAMENTA_ROTA, FERRAMENTA_PROPOR_REGRA_CONSUMO],
+      system:
+        (contexto?.empresaId
+          ? `${SYSTEM_PROMPT}\n\n## Cliente selecionado pelo usuário\nO usuário está trabalhando com a empresa "${contexto.empresaNome ?? ""}" (empresa_id = '${contexto.empresaId}'). Nas consultas de dados, FILTRE por esse empresa_id (nas tabelas que têm a coluna; em cadastro_veiculos use public.empresa_id_do_cnpj(cnpj_frota) = '${contexto.empresaId}') e diga na resposta que os números são dessa empresa.`
+          : SYSTEM_PROMPT) +
+        (contexto?.semAcoes
+          ? "\n\n## Canal somente leitura\nNeste canal você NÃO grava dados: não há ferramenta para cadastrar, alterar ou inativar veículo/motorista nem criar regras. Se o usuário pedir isso, diga em 1 frase que ele deve fazer pelo painel web (Veículos, Motoristas ou Parâmetros de uso) ou pelo Assistente do painel web."
+          : ""),
+      tools: contexto?.semAcoes
+        ? [FERRAMENTA_SQL, FERRAMENTA_AJUDA, FERRAMENTA_GRAFICO, FERRAMENTA_ROTA]
+        : [FERRAMENTA_SQL, FERRAMENTA_AJUDA, FERRAMENTA_GRAFICO, FERRAMENTA_ROTA, FERRAMENTA_PROPOR_REGRA_CONSUMO, FERRAMENTA_PROPOR_CADASTRO],
       messages: mensagens,
     });
     if (contexto?.medidor) {
@@ -607,6 +731,20 @@ export async function perguntarAssistente(
       if (bloco.name === "propor_regra_consumo") {
         const r = await executarProporRegraConsumo(bloco.input, supabase, contexto, propostas);
         resultadosFerramenta.push({ type: "tool_result", tool_use_id: bloco.id, content: r.conteudo, is_error: r.erro });
+        continue;
+      }
+      if (bloco.name === "propor_cadastro") {
+        try {
+          const r = await executarProporCadastro(bloco.input, supabase, contexto, propostas);
+          resultadosFerramenta.push({ type: "tool_result", tool_use_id: bloco.id, content: r.conteudo, is_error: r.erro });
+        } catch (err) {
+          resultadosFerramenta.push({
+            type: "tool_result",
+            tool_use_id: bloco.id,
+            content: `Não consegui preparar o cadastro: ${err instanceof Error ? err.message : "falha desconhecida"}`,
+            is_error: true,
+          });
+        }
         continue;
       }
       if (bloco.name === "precos_na_rota") {

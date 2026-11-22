@@ -21,6 +21,7 @@ import {
 import {
   perguntarAssistenteAcao,
   confirmarRegraConsumoAcao,
+  confirmarCadastroAcao,
   salvarConversaAcao,
   listarConversasAcao,
   abrirConversaAcao,
@@ -176,7 +177,7 @@ export function ChatAssistente({
       return;
     }
     setEstadoPropostas((prev) => ({ ...prev, [chave]: { estado: "salvando" } }));
-    const r = await confirmarRegraConsumoAcao(p);
+    const r = p.tipo === "cadastro" ? await confirmarCadastroAcao(p) : await confirmarRegraConsumoAcao(p);
     setEstadoPropostas((prev) => ({
       ...prev,
       [chave]: r.ok ? { estado: "confirmada", mensagem: r.mensagem } : { estado: "pendente", mensagem: r.erro },
@@ -324,8 +325,31 @@ export function ChatAssistente({
                         <p className="mt-1 text-sm">{p.resumo}</p>
                         <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
                           Empresa: {p.empresaNome || "—"}
-                          {p.veiculosAfetados != null ? ` · alcança ${p.veiculosAfetados} veículo(s) cadastrado(s)` : ""}
+                          {p.tipo === "regra_consumo" && p.veiculosAfetados != null
+                            ? ` · alcança ${p.veiculosAfetados} veículo(s) cadastrado(s)`
+                            : ""}
                         </p>
+                        {p.tipo === "cadastro" && p.acao === "criar" && p.mudancas.length > 0 && (
+                          <ul className="mt-2 grid gap-x-4 gap-y-0.5 text-xs sm:grid-cols-2">
+                            {p.mudancas.map((mu) => (
+                              <li key={mu.campo}>
+                                <span className="text-slate-500 dark:text-slate-400">{mu.rotulo}:</span> {mu.para}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {p.tipo === "cadastro" && p.acao === "alterar" && p.mudancas.length > 0 && (
+                          <ul className="mt-2 space-y-0.5 text-xs">
+                            {p.mudancas.map((mu) => (
+                              <li key={mu.campo}>
+                                <span className="text-slate-500 dark:text-slate-400">{mu.rotulo}:</span> {mu.de} → <strong>{mu.para}</strong>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {p.tipo === "cadastro" && p.aviso && (
+                          <p className="mt-2 text-xs font-medium text-amber-800 dark:text-amber-300">⚠ {p.aviso}</p>
+                        )}
                         {est.estado === "confirmada" ? (
                           <p className="mt-2 text-sm font-medium text-green-700 dark:text-green-300">✓ {est.mensagem}</p>
                         ) : est.estado === "cancelada" ? (
@@ -335,7 +359,11 @@ export function ChatAssistente({
                             {est.mensagem && <p className="mt-2 text-xs text-red-600">{est.mensagem}</p>}
                             <div className="mt-2 flex gap-2">
                               <button type="button" className="btn-primary" disabled={est.estado === "salvando"} onClick={() => decidirProposta(chave, p, true)}>
-                                {est.estado === "salvando" ? "Salvando…" : "Confirmar e criar regra"}
+                                {est.estado === "salvando"
+                                  ? "Salvando…"
+                                  : p.tipo === "cadastro"
+                                    ? { criar: "Confirmar e cadastrar", alterar: "Confirmar alteração", inativar: "Confirmar e inativar", reativar: "Confirmar e reativar" }[p.acao]
+                                    : "Confirmar e criar regra"}
                               </button>
                               <button type="button" className="btn-secondary" disabled={est.estado === "salvando"} onClick={() => decidirProposta(chave, p, false)}>
                                 Cancelar
