@@ -30,7 +30,7 @@ export async function PainelUsoAssistente({ empresaId, perfil }: { empresaId: st
           <div className="min-w-[14rem] flex-1">
             {uso.chave_propria ? (
               <p className="text-sm text-slate-700 dark:text-slate-200">
-                Usando a <strong>chave de IA da sua empresa</strong>. Consumo do mês: {formatarTokens(uso.usado)} tokens (cobrados na sua conta da
+                Usando a <strong>chave de IA da sua empresa</strong>. Consumo do mês: {formatarTokens(uso.usado_chave_propria ?? 0)} tokens (cobrados na sua conta da
                 Anthropic, sem limite da FNI).
               </p>
             ) : (
@@ -57,7 +57,7 @@ export async function PainelUsoAssistente({ empresaId, perfil }: { empresaId: st
       {perfil === "admin" && porCliente.length > 0 && (
         <details className="card p-3">
           <summary className="cursor-pointer select-none text-sm font-medium text-slate-800 dark:text-slate-100">
-            Consumo de IA por cliente neste mês (admin FNI)
+            Consumo de IA por cliente neste mês, só chave da FNI (admin)
           </summary>
           <div className="mt-2 overflow-x-auto">
             <table className="w-full text-left text-xs">

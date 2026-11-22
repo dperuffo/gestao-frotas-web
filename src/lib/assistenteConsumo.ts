@@ -13,7 +13,10 @@ export type PreparoAssistente =
   | { ok: false; mensagem: string };
 
 export type UsoMes = {
+  /** Tokens do mês que contam na franquia do plano (feitos com a chave da FNI). */
   usado: number;
+  /** Tokens do mês feitos com a chave própria do cliente (não contam na franquia). */
+  usado_chave_propria?: number;
   franquia: number;
   plano: string | null;
   chave_propria: boolean;
