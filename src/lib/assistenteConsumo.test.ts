@@ -10,6 +10,14 @@ describe("assistenteConsumo", () => {
     expect(decidirAcesso({ usado: 99, franquia: 100, chave_propria: false })).toBe("franquia_ok");
     expect(decidirAcesso({ usado: 100, franquia: 100, chave_propria: false })).toBe("franquia_esgotada");
   });
+  it("cliente com chave escolhe: franquia (se houver saldo) ou chave; sem saldo vai para a chave", () => {
+    const base = { franquia: 100, chave_propria: true };
+    expect(decidirAcesso({ ...base, usado: 10, preferencia: "franquia" })).toBe("franquia_ok");
+    expect(decidirAcesso({ ...base, usado: 10 })).toBe("franquia_ok"); // padrão: franquia
+    expect(decidirAcesso({ ...base, usado: 10, preferencia: "chave" })).toBe("chave_cliente");
+    expect(decidirAcesso({ ...base, usado: 100, preferencia: "franquia" })).toBe("chave_cliente");
+    expect(decidirAcesso({ ...base, usado: 9_999, franquia: -1, preferencia: "franquia" })).toBe("franquia_ok");
+  });
   it("formata tokens e traduz erro de chave", () => {
     expect(formatarTokens(1500)).toBe("1,5 mil");
     expect(formatarTokens(2_000_000)).toBe("2 mi");

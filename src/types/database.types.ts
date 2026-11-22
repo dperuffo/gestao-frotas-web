@@ -6510,6 +6510,10 @@ export interface Database {
           franquia: number;
         }[];
       };
+      definir_preferencia_assistente: {
+        Args: { p_empresa_id: string; p_origem: string };
+        Returns: undefined;
+      };
       definir_chave_assistente: {
         Args: { p_empresa_id: string; p_chave: string };
         Returns: void;

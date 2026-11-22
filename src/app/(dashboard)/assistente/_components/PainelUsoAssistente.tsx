@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatarTokens, type UsoMes } from "@/lib/assistenteConsumo";
+import { decidirAcesso, formatarTokens, type UsoMes } from "@/lib/assistenteConsumo";
 import { ChaveAssistenteModal } from "./ChaveAssistenteModal";
 
 // Faixa de uso do Assistente acima do chat: franquia do mês da empresa (ou chave própria) e,
@@ -21,6 +21,7 @@ export async function PainelUsoAssistente({ empresaId, perfil }: { empresaId: st
 
   const ilimitado = uso ? uso.franquia < 0 : false;
   const pct = uso && !ilimitado && uso.franquia > 0 ? Math.min(100, Math.round((uso.usado / uso.franquia) * 100)) : 0;
+  const usandoChave = !!uso && decidirAcesso(uso) === "chave_cliente";
   const cor = pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-accento";
 
   return (
@@ -28,29 +29,30 @@ export async function PainelUsoAssistente({ empresaId, perfil }: { empresaId: st
       {uso && empresaId && (
         <div className="card flex flex-wrap items-center gap-4 p-3">
           <div className="min-w-[14rem] flex-1">
+            <p className="mb-1 text-sm text-slate-700 dark:text-slate-200">
+              Franquia do plano neste mês: <strong>{formatarTokens(uso.usado)}</strong>
+              {ilimitado ? " tokens (ilimitada)" : ` de ${formatarTokens(uso.franquia)} tokens (${pct}%)`}
+              {uso.plano ? <span className="text-slate-500 dark:text-slate-400"> · plano {uso.plano}</span> : null}
+            </p>
+            {!ilimitado && (
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Uso da franquia do mês">
+                <div className={`h-full ${cor}`} style={{ width: `${pct}%` }} />
+              </div>
+            )}
             {uso.chave_propria ? (
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                Usando a <strong>chave de IA da sua empresa</strong>. Consumo do mês: {formatarTokens(uso.usado_chave_propria ?? 0)} tokens (cobrados na sua conta da
-                Anthropic, sem limite da FNI).
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                Usando agora: <strong>{usandoChave ? "sua chave de IA" : "a franquia do plano"}</strong>
+                {usandoChave && uso.preferencia !== "chave" ? " (a franquia do mês acabou)" : ""}. Consumo com a sua chave neste mês:{" "}
+                {formatarTokens(uso.usado_chave_propria ?? 0)} tokens (cobrados na sua conta da Anthropic). A franquia renova todo mês.
               </p>
             ) : (
               <>
-                <p className="mb-1 text-sm text-slate-700 dark:text-slate-200">
-                  Uso do Assistente neste mês: <strong>{formatarTokens(uso.usado)}</strong>
-                  {ilimitado ? " tokens (franquia ilimitada)" : ` de ${formatarTokens(uso.franquia)} tokens (${pct}%)`}
-                  {uso.plano ? <span className="text-slate-500 dark:text-slate-400"> · plano {uso.plano}</span> : null}
-                </p>
-                {!ilimitado && (
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Uso da franquia do mês">
-                    <div className={`h-full ${cor}`} style={{ width: `${pct}%` }} />
-                  </div>
-                )}
                 {pct >= 80 && pct < 100 && <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">A franquia do mês está acabando. A chave própria remove o limite.</p>}
                 {pct >= 100 && <p className="mt-1 text-xs text-red-600">Franquia do mês esgotada. Cadastre a chave de IA da empresa para continuar.</p>}
               </>
             )}
           </div>
-          {podeGerenciarChave && <ChaveAssistenteModal empresaId={empresaId} chavePropria={uso.chave_propria} ultimos4={uso.chave_ultimos4} />}
+          {podeGerenciarChave && <ChaveAssistenteModal empresaId={empresaId} chavePropria={uso.chave_propria} ultimos4={uso.chave_ultimos4} preferencia={uso.preferencia} />}
         </div>
       )}
 

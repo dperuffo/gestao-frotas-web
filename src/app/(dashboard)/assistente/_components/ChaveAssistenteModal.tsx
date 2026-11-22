@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { KeyRound, X } from "lucide-react";
-import { salvarChaveAssistenteAcao, removerChaveAssistenteAcao } from "../actions";
+import { salvarChaveAssistenteAcao, removerChaveAssistenteAcao, definirPreferenciaAssistenteAcao } from "../actions";
 
 // Cadastro da chave de IA (Anthropic) da própria empresa: o consumo passa a ser dela
 // e não usa a franquia do plano. A chave não volta ao navegador (só os 4 últimos dígitos).
@@ -10,10 +10,12 @@ export function ChaveAssistenteModal({
   empresaId,
   chavePropria,
   ultimos4,
+  preferencia = "franquia",
 }: {
   empresaId: string;
   chavePropria: boolean;
   ultimos4: string | null;
+  preferencia?: "franquia" | "chave";
 }) {
   const [aberto, setAberto] = useState(false);
   const [chave, setChave] = useState("");
@@ -28,6 +30,15 @@ export function ChaveAssistenteModal({
         setChave("");
         setAberto(false);
       } else setErro(r.erro);
+    });
+  }
+
+  function escolher(origem: "franquia" | "chave") {
+    if (origem === preferencia) return;
+    setErro(null);
+    startTransition(async () => {
+      const r = await definirPreferenciaAssistenteAcao(empresaId, origem);
+      if (!r.ok) setErro(r.erro);
     });
   }
 
@@ -61,9 +72,27 @@ export function ChaveAssistenteModal({
               Crie uma chave no console da Anthropic e cole abaixo.
             </p>
             {chavePropria && (
-              <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700">
-                Chave atual terminada em <code>…{ultimos4}</code>. Cole outra para substituir ou remova para voltar à franquia do plano.
-              </p>
+              <>
+                <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700">
+                  Chave atual terminada em <code>…{ultimos4}</code>. Cole outra para substituir ou remova para usar só a franquia do plano.
+                </p>
+                <fieldset className="mt-3 space-y-2" disabled={pending}>
+                  <legend className="text-sm font-medium text-slate-700 dark:text-slate-300">Qual usar nas suas perguntas?</legend>
+                  <label className="flex cursor-pointer items-start gap-2 text-sm">
+                    <input type="radio" name="origem-ia" checked={preferencia === "franquia"} onChange={() => escolher("franquia")} className="mt-1" />
+                    <span>
+                      <strong>Franquia do plano</strong> — enquanto houver saldo no mês (renova todo mês). Quando acabar, passa para a sua chave
+                      automaticamente.
+                    </span>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2 text-sm">
+                    <input type="radio" name="origem-ia" checked={preferencia === "chave"} onChange={() => escolher("chave")} className="mt-1" />
+                    <span>
+                      <strong>Minha chave</strong> — todas as perguntas são cobradas na sua conta da Anthropic; a franquia do plano fica guardada.
+                    </span>
+                  </label>
+                </fieldset>
+              </>
             )}
             <label className="mt-3 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="chave-ia">
               Chave da Anthropic

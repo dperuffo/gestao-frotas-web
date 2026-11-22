@@ -4,8 +4,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { MODELO_ASSISTENTE } from "@/lib/assistenteIA";
 
 // Consumo de IA por cliente: cada empresa usa a franquia mensal de tokens do seu plano
-// (chave da FNI) OU a própria chave Anthropic (guardada no Vault; consumo é dela e a
-// franquia não se aplica). Sem empresa (admin FNI), é uso interno, sem franquia.
+// (chave da FNI) OU a própria chave Anthropic (guardada no Vault; consumo é dela e não
+// reduz a franquia). Com chave cadastrada, o cliente escolhe qual usar; se a franquia do mês
+// acabar, passa à chave dele automaticamente. Sem empresa (admin FNI), é uso interno, sem franquia.
 export type OrigemChave = "fni" | "cliente" | "interno";
 
 export type PreparoAssistente =
@@ -20,6 +21,8 @@ export type UsoMes = {
   franquia: number;
   plano: string | null;
   chave_propria: boolean;
+  /** Escolha do cliente que tem chave própria: gastar a franquia do plano (enquanto houver saldo) ou a chave. */
+  preferencia?: "franquia" | "chave";
   chave_ultimos4: string | null;
   chave_atualizada_em: string | null;
 };
@@ -31,10 +34,15 @@ export function formatarTokens(n: number): string {
 }
 
 // Decisão pura (testável): dado o uso do mês, pode perguntar?
-export function decidirAcesso(uso: Pick<UsoMes, "usado" | "franquia" | "chave_propria">): "chave_cliente" | "franquia_ok" | "franquia_esgotada" {
-  if (uso.chave_propria) return "chave_cliente";
-  if (uso.franquia < 0) return "franquia_ok"; // ilimitado
-  return uso.usado >= uso.franquia ? "franquia_esgotada" : "franquia_ok";
+export function decidirAcesso(
+  uso: Pick<UsoMes, "usado" | "franquia" | "chave_propria"> & { preferencia?: "franquia" | "chave" }
+): "chave_cliente" | "franquia_ok" | "franquia_esgotada" {
+  const franquiaComSaldo = uso.franquia < 0 || uso.usado < uso.franquia; // -1 = ilimitada
+  if (uso.chave_propria) {
+    // Cliente com chave: usa a que escolheu; se escolheu a franquia e ela acabou, passa à chave sozinho.
+    return uso.preferencia === "chave" || !franquiaComSaldo ? "chave_cliente" : "franquia_ok";
+  }
+  return franquiaComSaldo ? "franquia_ok" : "franquia_esgotada";
 }
 
 export async function prepararAssistente(

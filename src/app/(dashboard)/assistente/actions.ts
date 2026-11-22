@@ -215,3 +215,16 @@ export async function removerChaveAssistenteAcao(empresaId: string): Promise<{ o
   revalidatePath("/assistente");
   return { ok: true };
 }
+
+// Cliente com chave própria escolhe de onde sai o consumo: franquia do plano ou a própria chave.
+export async function definirPreferenciaAssistenteAcao(
+  empresaId: string,
+  origem: "franquia" | "chave"
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  if (origem !== "franquia" && origem !== "chave") return { ok: false, erro: "Opção inválida." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("definir_preferencia_assistente", { p_empresa_id: empresaId, p_origem: origem });
+  if (error) return { ok: false, erro: "Não foi possível salvar sua escolha." };
+  revalidatePath("/assistente");
+  return { ok: true };
+}
