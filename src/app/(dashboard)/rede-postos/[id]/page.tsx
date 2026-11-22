@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { RedeForm } from "../_components/RedeForm";
 import { VincularPostoForm } from "../_components/VincularPostoForm";
 import { BotaoVoltar } from "../../_components/BotaoVoltar";
@@ -45,7 +46,7 @@ export default async function EditarRedePage({
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   const ehAdmin = perfil === "admin" || user?.email === "d.peruffo@gmail.com";
 

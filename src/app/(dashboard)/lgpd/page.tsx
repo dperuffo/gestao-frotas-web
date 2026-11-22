@@ -1,5 +1,6 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 import { BotaoRevogarConsentimento } from "./_components/BotaoRevogarConsentimento";
@@ -32,7 +33,7 @@ export default async function LgpdPage() {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   const ehAdmin = perfil === "admin";
 

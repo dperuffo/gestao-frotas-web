@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { STATUS_NEGOCIACAO_LABEL, type StatusNegociacao } from "@/lib/negociacoesPostos";
 import { formatarDataBr, formatarDataHoraBr } from "@/lib/utils";
 import { formatarMoeda } from "@/lib/financeiro";
@@ -53,7 +54,7 @@ export default async function DetalheNegociacaoPage({ params }: { params: Promis
     // Confere qual das duas empresas (cliente/posto) o usuário atual enxerga
     // via RLS — a que aparecer é o "lado" dele.
     const { data: minhasEmpresas } = await supabase.rpc("empresas_do_usuario", {
-      p_email: (await supabase.auth.getUser()).data.user?.email ?? "",
+      p_email: (await obterUsuarioAtual()).data.user?.email ?? "",
     });
     const souPostoLado = negociacao.empresa_posto_id && (minhasEmpresas ?? []).includes(negociacao.empresa_posto_id);
     empresaSegmento = souPostoLado ? "Revenda" : "Frota";

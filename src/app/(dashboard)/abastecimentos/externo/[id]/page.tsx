@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { formatarDataHoraBr } from "@/lib/utils";
 import type { AutorAjuste } from "@/lib/ajustesAbastecimentos";
 import { PainelAjusteAbastecimento } from "../../_components/PainelAjusteAbastecimento";
@@ -82,7 +83,7 @@ export default async function EditarAbastecimentoExternoPage({ params }: { param
   // bater com o posto é tratado como cliente.
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: minhasEmpresas } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
   const souPostoLado = empresaPostoId && (minhasEmpresas ?? []).includes(empresaPostoId);
   const meuLado: AutorAjuste = souPostoLado ? "posto" : "cliente";

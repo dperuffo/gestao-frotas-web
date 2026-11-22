@@ -88,3 +88,9 @@ continua ruim depois do ajuste já aplicado.
 - Microfone ao lado do campo de pergunta (Assistente, card do Dashboard e botão flutuante/Ctrl+K): o usuário digita ou fala (pt-BR, reconhecimento do próprio navegador). O texto falado entra no campo para conferência; não envia sozinho.
 - Envio automático da pergunta falada após 3 s de silêncio (parar no botão cancela o envio).
 - Pendente: PDF individual por resposta; resposta falada (síntese de voz).
+
+## Desempenho: abertura de telas (22/11/2026, 3ª rodada)
+- Achado: o app roda no Railway em Virginia (us-east4) e o Supabase está em São Paulo (sa-east-1) — cada ida ao banco/Auth custa ~130 ms. O Railway não tem região no Brasil. Opções: (a) manter e reduzir idas ao banco (feito abaixo); (b) hospedar o app em São Paulo (outro provedor); (c) migrar o Supabase para us-east (novo projeto + restauração).
+- FEITO: middleware usa `getClaims()` (JWT validado localmente) em vez de `getUser()` e guarda 60 s a checagem de empresa suspensa (antes eram ~4 idas seguidas ao banco em TODA navegação); layout não consulta mais `listFactors` (fatores vêm no usuário) e usa `obterUsuarioAtual()` (1 chamada por requisição, também em 18 páginas e `resolverEmpresaAtual`, que agora busca perfil e empresas em paralelo); bolinhas do menu deixaram de bloquear a abertura (carregam logo após a tela aparecer).
+- Atenção: o cache de suspensão fica na memória do servidor (hoje 1 réplica no Railway); com mais réplicas cada uma teria o seu (até 60 s de atraso na suspensão).
+- Pendente: ~65 páginas ainda chamam `auth.getUser()` direto (cada uma 1 ida ao Auth); `historico_precos_detalhado`, `cliente_divergencias_preco` (ver rodada anterior).

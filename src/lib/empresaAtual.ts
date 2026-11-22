@@ -1,4 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -9,11 +10,15 @@ export type EmpresaOpcao = { id: string; nome: string };
 // empresa nem precisa escolher; quem tem acesso a várias (ou é admin) vê um
 // seletor. `empresaParam` normalmente vem de searchParams (?empresa=...).
 export async function resolverEmpresaAtual(supabase: Supabase, empresaParam?: string) {
+  // Usuário (compartilhado com o layout via cache), perfil e empresas: 3 consultas independentes
+  // do ponto de vista do banco (as RPCs leem o e-mail do próprio JWT), então saem juntas.
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
-  const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
+  } = await obterUsuarioAtual();
+  const [{ data: perfil }, { data: minhasEmpresasIds }] = await Promise.all([
+    supabase.rpc("perfil_usuario_atual"),
+    supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" }),
+  ]);
 
   // Fase 27.2 — achado real: um usuário vinculado a mais de uma empresa (ex.:
   // grupo econômico) caía na MESMA condição do admin e recebia a base de

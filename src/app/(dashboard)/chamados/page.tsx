@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { formatDate } from "@/lib/utils";
 import { resolverPapelAtual } from "./actions";
 import {
@@ -44,7 +45,7 @@ export default async function ChamadosPage({ searchParams }: { searchParams: Pro
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
 
   // Fase 27.2 — achado real: um usuário vinculado a mais de uma empresa (ex.:

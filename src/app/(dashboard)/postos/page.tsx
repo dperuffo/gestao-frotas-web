@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { normalizarCNPJ } from "@/lib/utils";
 import { UFS, ANP_PRECO_REFERENCIA_FALLBACK, PRODUTO_PARA_CATEGORIA_ANP } from "@/lib/constants";
 import { AcaoPosto } from "./_components/AcaoPosto";
@@ -34,7 +35,7 @@ export default async function PostosPage({ searchParams }: { searchParams: Promi
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
 

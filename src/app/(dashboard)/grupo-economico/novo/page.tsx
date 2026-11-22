@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { NovoGrupoForm } from "../_components/NovoGrupoForm";
 
 // Fase Grupo-Economico-Frota-Billing (09/08/2026) — pedido do Daniel: "Grupo
@@ -16,7 +17,7 @@ export default async function NovoGrupoPage() {
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   const ehAdmin = perfil === "admin" || user?.email === "d.peruffo@gmail.com";
 

@@ -1,5 +1,6 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { PERFIS, PERFIL_LABEL, EMPRESA_ID_GLOBAL, type Perfil } from "@/lib/constants";
 import { ReplicarParaGrupoButton } from "@/components/replicacao/ReplicarParaGrupoButton";
@@ -79,7 +80,7 @@ export default async function PermissoesPage({
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
 
   const { data: perfilUsuario } = await supabase
     .from("usuarios_app")

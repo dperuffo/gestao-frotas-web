@@ -1,5 +1,6 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { PainelPropostas, type Proposta } from "../_components/PainelPropostas";
 import { FormPostoRecomendado } from "../_components/FormPostoRecomendado";
 import { RemoverPostoRecomendadoButton } from "../_components/RemoverPostoRecomendadoButton";
@@ -91,7 +92,7 @@ export default async function FreteDetalhePage({
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
 
   const { data: frete } = await supabase
     .from("fretes")

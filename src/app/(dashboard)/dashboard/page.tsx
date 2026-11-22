@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { formatDate } from "@/lib/utils";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { calcularPrevisaoConsumo } from "@/lib/previsaoConsumo";
@@ -280,7 +281,7 @@ export default async function DashboardPage({
     (async () => {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await obterUsuarioAtual();
       if (!user?.email) return null;
       const { data } = await supabase.from("usuarios_app").select("nome").eq("email", user.email).maybeSingle();
       return data?.nome ?? null;

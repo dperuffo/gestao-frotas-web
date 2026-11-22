@@ -1,5 +1,6 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { rpcComRetry } from "@/lib/supabaseRpcComRetry";
 import { AbasPainel } from "../inteligencia-rede/_components/AbasPainel";
 import { Anomalias } from "./_components/Anomalias";
@@ -22,7 +23,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
 

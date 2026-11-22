@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { NovaRedeForm } from "../_components/NovaRedeForm";
 
 // Fase 27.139 — pedido do Daniel: "Rede de Posto tem que estar na visão do
@@ -15,7 +16,7 @@ export default async function NovaRedePage() {
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   const ehAdmin = perfil === "admin" || user?.email === "d.peruffo@gmail.com";
 

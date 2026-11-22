@@ -1,5 +1,6 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { AbasRoteirizacao } from "../_components/AbasRoteirizacao";
 import { ExcluirRotaButton } from "../_components/ExcluirRotaButton";
 
@@ -41,7 +42,7 @@ export default async function RoteirizacaoSalvasPage() {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
 
   const { data: rotas } = await supabase
     .from("rotas_salvas")

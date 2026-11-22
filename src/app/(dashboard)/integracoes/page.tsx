@@ -1,5 +1,6 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { verificarLimiteFrota, mensagemLimiteExcedido } from "@/lib/limitePlano";
 import { NovaChaveForm } from "./_components/NovaChaveForm";
@@ -34,7 +35,7 @@ export default async function IntegracoesPage() {
   // etc.) são específicos do lado Frota e ficam escondidos pra esse perfil.
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: perfilUsuario } = await supabase
     .from("usuarios_app")
     .select("perfil")

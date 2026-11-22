@@ -73,8 +73,8 @@ import {
 } from "lucide-react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { logger } from "@/lib/logger";
-import { contarBadgesMenuAcao } from "./_components/badgesMenuActions";
 import { ProvedorBadgesMenu } from "./_components/ProvedorBadgesMenu";
 import { AvisoNovoAbastecimento } from "./_components/AvisoNovoAbastecimento";
 import { BotaoAssistenteMenu } from "./_components/BotaoAssistenteMenu";
@@ -672,7 +672,7 @@ export default async function DashboardLayout({
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
 
   if (!user) {
     redirect("/login");
@@ -685,11 +685,11 @@ export default async function DashboardLayout({
   // Fase Perf-19-07 (achado do Daniel: "lentidão excessiva em muitos
   // pontos") — este layout envolve TODA página do dashboard. As duas
   // chamadas não dependem uma da outra, mas rodavam em sequência.
-  const [{ data: aal }, { data: factors }] = await Promise.all([
-    supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
-    supabase.auth.mfa.listFactors(),
-  ]);
-  const temFatorVerificado = factors?.totp?.some((f) => f.status === "verified") ?? false;
+  // Perf: os fatores já vêm no objeto do usuário (getUser) — o listFactors() fazia OUTRA ida
+  // ao servidor de autenticação só para ler a mesma informação.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  const temFatorVerificado =
+    (user.factors ?? []).some((f) => f.factor_type === "totp" && f.status === "verified");
   const precisaSubirNivel = aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2";
 
   if (!temFatorVerificado || precisaSubirNivel) {
@@ -727,10 +727,10 @@ export default async function DashboardLayout({
       // bolinhas do menu moraram aqui até esta fase; agora vivem em
       // contarBadgesMenuAcao (mesma blindagem "falha vira 0" por contagem),
       // que o navegador também chama pra manter as bolinhas atualizadas.
-      contarBadgesMenuAcao().catch((e) => {
-        void logger.error("dashboard/layout", "Falha ao contar badges do menu (ignorado)", e);
-        return {} as Record<string, number>;
-      }),
+      // Perf (22/11/2026): as bolinhas NÃO bloqueiam mais a abertura da tela. Eram 15 contagens
+      // (inclusive RPCs pesadas) antes de qualquer HTML sair; agora o layout entrega {} e o
+      // <ProvedorBadgesMenu> busca os números logo após montar (ver primeira montagem lá).
+      Promise.resolve({} as Record<string, number>),
       // Fase 27.86 — timeout do logout automático por inatividade, lido
       // aqui (não só no filho /configuracoes) porque o MonitorInatividade
       // roda em TODA tela do dashboard; buscarLogoutInatividadeMinutos já

@@ -100,9 +100,11 @@ export function ProvedorBadgesMenu({
   const primeiraMontagem = useRef(true);
   useEffect(() => {
     if (primeiraMontagem.current) {
+      // O layout não conta mais as bolinhas no servidor (deixava a abertura das telas lenta):
+      // a 1ª busca acontece aqui, logo depois de a tela aparecer.
       primeiraMontagem.current = false;
-      ultimaBusca.current = Date.now();
-      return;
+      const t0 = window.setTimeout(() => void atualizar(true), 150);
+      return () => window.clearTimeout(t0);
     }
     const t = window.setTimeout(() => void atualizar(true), 400);
     return () => window.clearTimeout(t);

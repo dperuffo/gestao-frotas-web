@@ -1,5 +1,6 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { obterOuCriarPostoInternoAcao } from "./actions";
 import { FormPostoInterno } from "./_components/FormPostoInterno";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
@@ -21,7 +22,7 @@ export default async function PostosInternosPage({
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: perfil } = await supabase.rpc("perfil_usuario_atual");
   const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" });
 

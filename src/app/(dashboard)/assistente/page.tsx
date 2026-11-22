@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ChatAssistente } from "./_components/ChatAssistente";
 import { PainelUsoAssistente } from "./_components/PainelUsoAssistente";
@@ -14,7 +15,7 @@ export default async function AssistenteFniPage({
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   // Usuário com acesso a várias empresas (grupo econômico) escolhe o cliente na barra
   // do chat; as ferramentas que dependem da empresa (preços negociados na rota,
   // cadastro de regra) usam a escolhida. resolverEmpresaAtual só aceita empresas do usuário.

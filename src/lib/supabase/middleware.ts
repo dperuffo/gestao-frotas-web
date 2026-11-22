@@ -6,6 +6,19 @@ import { CABECALHO_REQUEST_ID } from "@/lib/request-id";
 // só quem tem sessão válida chegue às rotas do dashboard. A exigência de MFA
 // (subir de aal1 para aal2) é verificada no layout do dashboard, não aqui,
 // para evitar chamadas extras à API em toda requisição (inclusive assets).
+// Cache em memória (por instância do servidor) do "esta pessoa está numa empresa suspensa?".
+const TTL_BLOQUEIO_MS = 60_000;
+const cacheBloqueio = new Map<string, { bloqueado: boolean; ate: number }>();
+function lerCacheBloqueio(userId: string): boolean | null {
+  const e = cacheBloqueio.get(userId);
+  if (!e || e.ate < Date.now()) return null;
+  return e.bloqueado;
+}
+function gravarCacheBloqueio(userId: string, bloqueado: boolean) {
+  if (cacheBloqueio.size > 5000) cacheBloqueio.clear();
+  cacheBloqueio.set(userId, { bloqueado, ate: Date.now() + TTL_BLOQUEIO_MS });
+}
+
 export async function updateSession(request: NextRequest) {
   // Fase enforcement-permissoes (04/08/2026) — propaga a rota atual (e a
   // query string) pro layout do dashboard via header de REQUEST (não de
@@ -55,9 +68,13 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims valida a assinatura do JWT LOCALMENTE (chaves públicas ES256 do projeto, em cache)
+  // e renova a sessão se preciso: sem a ida ao servidor de autenticação que getUser() fazia em
+  // TODA requisição (~130 ms). A checagem "forte" do usuário (getUser) continua no layout do
+  // dashboard e nas Server Actions.
+  const { data: dadosClaims } = await supabase.auth.getClaims();
+  const claims = dadosClaims?.claims as { sub?: string; email?: string } | undefined;
+  const user = claims?.sub ? { id: claims.sub, email: claims.email ?? null } : null;
 
   const path = request.nextUrl.pathname;
   // Fase 26 — landing pública + páginas legais (termos/privacidade/sobre,
@@ -134,26 +151,30 @@ export async function updateSession(request: NextRequest) {
       // mesmo da página começar a carregar. Agora rodam em paralelo; o
       // pequeno custo de sempre buscar `empresaIds` mesmo pro raro caso de
       // time interno é insignificante perto do ganho pra todo mundo mais.
-      const [{ data: perfil }, { data: empresaIds }] = await Promise.all([
-        supabase.rpc("perfil_usuario_atual"),
-        supabase.rpc("empresas_do_usuario", { p_email: user.email ?? "" }),
-      ]);
-      const ehTimeInterno = perfil === "admin" || user.email === "d.peruffo@gmail.com";
-
-      if (!ehTimeInterno) {
-        if (empresaIds && empresaIds.length > 0) {
+      // Resultado em cache por 60 s (memória do servidor): a suspensão de empresa é rara e o
+      // custo antes era de 3 idas seguidas ao banco em TODA navegação.
+      let bloqueado = lerCacheBloqueio(user.id);
+      if (bloqueado === null) {
+        const [{ data: perfil }, { data: empresaIds }] = await Promise.all([
+          supabase.rpc("perfil_usuario_atual"),
+          supabase.rpc("empresas_do_usuario", { p_email: user.email ?? "" }),
+        ]);
+        const ehTimeInterno = perfil === "admin" || user.email === "d.peruffo@gmail.com";
+        bloqueado = false;
+        if (!ehTimeInterno && empresaIds && empresaIds.length > 0) {
           const { data: empresas } = await supabase.from("empresas").select("status").in("id", empresaIds);
-          const todasSuspensas = (empresas?.length ?? 0) > 0 && empresas!.every((e) => e.status === "suspenso");
-
-          if (todasSuspensas) {
-            const url = request.nextUrl.clone();
-            url.pathname = "/assinatura";
-            url.searchParams.set("bloqueado", "1");
-            const redirectResponse = NextResponse.redirect(url);
-            redirectResponse.headers.set(CABECALHO_REQUEST_ID, requestId);
-            return redirectResponse;
-          }
+          bloqueado = (empresas?.length ?? 0) > 0 && empresas!.every((e) => e.status === "suspenso");
         }
+        gravarCacheBloqueio(user.id, bloqueado);
+      }
+
+      if (bloqueado) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/assinatura";
+        url.searchParams.set("bloqueado", "1");
+        const redirectResponse = NextResponse.redirect(url);
+        redirectResponse.headers.set(CABECALHO_REQUEST_ID, requestId);
+        return redirectResponse;
       }
     }
   }

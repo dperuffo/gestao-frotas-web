@@ -1,5 +1,6 @@
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import RelatoriosPersonalizadosPostoLazy from "./_components/RelatoriosPersonalizadosPostoLazy";
@@ -35,7 +36,7 @@ export default async function RelatoriosPostoPage({ searchParams }: { searchPara
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   const { data: perfilUsuarioApp } = await supabase
     .from("usuarios_app")
     .select("nome, perfil")
