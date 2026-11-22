@@ -1,9 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { perguntarAssistente, type MensagemChat, type ConsultaExecutada } from "@/lib/assistenteIA";
+import { perguntarAssistente, type MensagemChat, type ConsultaExecutada, type BlocoVisual } from "@/lib/assistenteIA";
 
-export type RespostaChatAssistente = { resposta: string; consultas: ConsultaExecutada[] } | { erro: string };
+export type RespostaChatAssistente = { resposta: string; consultas: ConsultaExecutada[]; blocos: BlocoVisual[] } | { erro: string };
 
 // Server action chamada pelo componente de chat a cada pergunta enviada.
 // Recebe o histórico (mantido em memória no cliente, sem persistência no
@@ -24,8 +24,8 @@ export async function perguntarAssistenteAcao(
   if (!user) return { erro: "Sessão expirada, faça login novamente." };
 
   try {
-    const { resposta, consultas } = await perguntarAssistente(perguntaLimpa, historico.slice(-12), supabase);
-    return { resposta, consultas };
+    const { resposta, consultas, blocos } = await perguntarAssistente(perguntaLimpa, historico.slice(-12), supabase);
+    return { resposta, consultas, blocos };
   } catch (e) {
     const mensagem = e instanceof Error ? e.message : "Erro inesperado ao consultar o assistente.";
     return { erro: mensagem };

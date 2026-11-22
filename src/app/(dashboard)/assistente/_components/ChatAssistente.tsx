@@ -3,12 +3,16 @@
 import { useState, useRef, useTransition, useEffect } from "react";
 import { perguntarAssistenteAcao } from "../actions";
 import type { MensagemChat } from "@/lib/assistenteIA";
-import type { ConsultaExecutada } from "@/lib/assistenteIA";
+import type { ConsultaExecutada, BlocoVisual } from "@/lib/assistenteIA";
+import { BlocoVisualAssistente } from "./BlocoVisualAssistente";
 import BotaoBaixarPdfAssistenteLazy from "./BotaoBaixarPdfAssistenteLazy";
 
-type MensagemExibida = MensagemChat & { consultas?: ConsultaExecutada[]; erro?: boolean };
+type MensagemExibida = MensagemChat & { consultas?: ConsultaExecutada[]; blocos?: BlocoVisual[]; erro?: boolean };
 
 const PERGUNTAS_SUGERIDAS = [
+  "Mostre em gráfico o custo de combustível por mês nos últimos 6 meses",
+  "Quais os 10 veículos que mais gastaram com combustível este ano? (gráfico)",
+  "Distribuição do gasto por tipo de combustível, em pizza",
   "Quanto gastamos com combustível nos últimos 30 dias?",
   "Quais os 5 veículos com maior custo de manutenção este ano?",
   "Quantos motoristas ativos temos por centro de custo?",
@@ -48,7 +52,7 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
       } else {
         setMensagens((prev) => [
           ...prev,
-          { role: "assistant", content: resultado.resposta, consultas: resultado.consultas },
+          { role: "assistant", content: resultado.resposta, consultas: resultado.consultas, blocos: resultado.blocos },
         ]);
       }
     });
@@ -90,7 +94,7 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
         {mensagens.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
+              className={`${m.blocos && m.blocos.length > 0 ? "w-full max-w-[92%]" : "max-w-[80%]"} rounded-2xl px-4 py-2.5 text-sm ${
                 m.role === "user"
                   ? "bg-frota-500 text-white"
                   : m.erro
@@ -98,7 +102,10 @@ export function ChatAssistente({ usuarioEmail }: { usuarioEmail?: string }) {
                     : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100"
               }`}
             >
-              <p className="whitespace-pre-wrap">{m.content}</p>
+              {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
+              {m.blocos?.map((b, k) => (
+                <BlocoVisualAssistente key={k} bloco={b} />
+              ))}
               {m.consultas && m.consultas.length > 0 && (
                 <details className="mt-2 text-xs opacity-70">
                   <summary className="cursor-pointer select-none">

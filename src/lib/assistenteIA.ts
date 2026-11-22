@@ -7,7 +7,48 @@ export type MensagemChat = { role: "user" | "assistant"; content: string };
 
 export type ConsultaExecutada = { sql: string; linhas: number; erro?: string };
 
-export type RespostaAssistente = { resposta: string; consultas: ConsultaExecutada[] };
+// Bloco visual que o assistente pede pra desenhar (gráfico ou tabela). Os
+// números vêm SEMPRE de consultas SQL já feitas — o modelo só escolhe o formato.
+export type FormatoValor = "numero" | "moeda" | "litros" | "km" | "percentual";
+export type BlocoVisual = {
+  tipo: "barras" | "linhas" | "pizza" | "tabela";
+  titulo: string;
+  formato: FormatoValor;
+  categorias: string[];
+  series: { nome: string; valores: number[] }[];
+};
+
+export type RespostaAssistente = { resposta: string; consultas: ConsultaExecutada[]; blocos: BlocoVisual[] };
+
+const FORMATOS_VALIDOS: FormatoValor[] = ["numero", "moeda", "litros", "km", "percentual"];
+const TIPOS_VALIDOS = ["barras", "linhas", "pizza", "tabela"] as const;
+
+// Valida o que o modelo mandou (nunca confie cegamente na entrada de uma
+// ferramenta): limita tamanho e garante números finitos e séries do mesmo
+// comprimento das categorias.
+export function validarBlocoVisual(entrada: unknown): BlocoVisual | string {
+  const e = (entrada ?? {}) as Record<string, unknown>;
+  const tipo = TIPOS_VALIDOS.find((t) => t === e.tipo);
+  if (!tipo) return "tipo inválido (use barras, linhas, pizza ou tabela).";
+  const titulo = typeof e.titulo === "string" ? e.titulo.trim().slice(0, 120) : "";
+  if (!titulo) return "informe um título.";
+  const formato = FORMATOS_VALIDOS.find((f) => f === e.formato) ?? "numero";
+  if (!Array.isArray(e.categorias) || e.categorias.length === 0) return "categorias vazias.";
+  const categorias = e.categorias.slice(0, 30).map((c) => String(c).slice(0, 60));
+  if (!Array.isArray(e.series) || e.series.length === 0) return "series vazias.";
+  const series: BlocoVisual["series"] = [];
+  for (const sr of e.series.slice(0, 6)) {
+    const o = (sr ?? {}) as Record<string, unknown>;
+    if (!Array.isArray(o.valores)) return "cada série precisa de 'valores' (lista de números).";
+    const valores = o.valores.slice(0, categorias.length).map((v) => Number(v));
+    if (valores.length !== categorias.length || valores.some((v) => !Number.isFinite(v))) {
+      return "cada série precisa ter um número finito por categoria (mesmo tamanho de 'categorias').";
+    }
+    series.push({ nome: String(o.nome ?? "Valor").slice(0, 40), valores });
+  }
+  if (tipo === "pizza" && series.length > 1) series.length = 1;
+  return { tipo, titulo, formato, categorias, series };
+}
 
 // claude-sonnet-5 é o modelo atual recomendado para uso via API (mesma
 // família usada no restante do produto Claude). Se a Anthropic lançar um
@@ -106,6 +147,22 @@ id, centro_custo_id, empresa_id (uuid), cnpj_frota, placa, data_inicio, data_fim
 ### empresas — clientes da plataforma (metadados, não dados operacionais)
 id (uuid), nome, cnpj, ativo.
 
+## Respostas visuais (gráficos e tabelas)
+
+Você tem a ferramenta "exibir_grafico", que desenha um gráfico ou tabela na tela do
+usuário. Use-a DEPOIS de consultar os dados, sempre que a resposta for:
+- ranking ou comparação entre itens (veículos, postos, motoristas, centros de custo) → "barras";
+- evolução no tempo (por dia, semana, mês) → "linhas";
+- participação no total (ex.: % por combustível, por centro de custo) → "pizza" (até 8 fatias);
+- lista detalhada com mais de uma coluna de números → "tabela" (1 série = 1 coluna).
+Regras: os números devem vir exatamente do resultado das consultas (nunca invente nem
+estime); no máximo 15 categorias (agrupe o resto em "Outros" ou use LIMIT); ordene
+rankings do maior para o menor; escolha "formato" (moeda, litros, km, percentual ou
+numero) conforme a unidade. Depois do gráfico, escreva só 1 a 3 frases com a conclusão
+principal (o que chama atenção) — não repita os números todos em texto nem faça
+tabela markdown quando já chamou exibir_grafico. Para respostas de 1 número só, não
+precisa de gráfico.
+
 ## Como responder
 
 - Responda em português do Brasil, de forma direta e objetiva — o usuário é
@@ -165,6 +222,33 @@ const FERRAMENTA_AJUDA: Anthropic.Tool = {
   },
 };
 
+const FERRAMENTA_GRAFICO: Anthropic.Tool = {
+  name: "exibir_grafico",
+  description:
+    "Desenha um gráfico (barras, linhas, pizza) ou uma tabela na tela do usuário com dados que você JÁ consultou. Cada série tem um valor numérico por categoria. Pode ser chamada mais de uma vez na mesma resposta.",
+  input_schema: {
+    type: "object",
+    properties: {
+      tipo: { type: "string", enum: ["barras", "linhas", "pizza", "tabela"] },
+      titulo: { type: "string", description: "Título curto, ex.: 'Custo de combustível por veículo — últimos 30 dias'." },
+      formato: { type: "string", enum: ["numero", "moeda", "litros", "km", "percentual"] },
+      categorias: { type: "array", items: { type: "string" }, description: "Rótulos do eixo X (ou linhas da tabela)." },
+      series: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            nome: { type: "string" },
+            valores: { type: "array", items: { type: "number" }, description: "Um número por categoria, na mesma ordem." },
+          },
+          required: ["nome", "valores"],
+        },
+      },
+    },
+    required: ["tipo", "titulo", "categorias", "series"],
+  },
+};
+
 function escaparTermoIlike(termo: string): string {
   return termo.replace(/[%_]/g, (c) => `\\${c}`);
 }
@@ -192,6 +276,7 @@ export async function perguntarAssistente(
 ): Promise<RespostaAssistente> {
   const anthropic = clienteAnthropic();
   const consultas: ConsultaExecutada[] = [];
+  const blocos: BlocoVisual[] = [];
 
   const mensagens: Anthropic.MessageParam[] = [
     ...historico.map((m) => ({ role: m.role, content: m.content })),
@@ -203,7 +288,7 @@ export async function perguntarAssistente(
       model: MODELO,
       max_tokens: 2000,
       system: SYSTEM_PROMPT,
-      tools: [FERRAMENTA_SQL, FERRAMENTA_AJUDA],
+      tools: [FERRAMENTA_SQL, FERRAMENTA_AJUDA, FERRAMENTA_GRAFICO],
       messages: mensagens,
     });
 
@@ -216,13 +301,32 @@ export async function perguntarAssistente(
 
     if (blocosFerramenta.length === 0) {
       const texto = blocosTexto.map((b) => b.text).join("\n").trim();
-      return { resposta: texto || "Não consegui gerar uma resposta para essa pergunta.", consultas };
+      return { resposta: texto || (blocos.length > 0 ? "" : "Não consegui gerar uma resposta para essa pergunta."), consultas, blocos };
     }
 
     mensagens.push({ role: "assistant", content: resposta.content });
 
     const resultadosFerramenta: Anthropic.ToolResultBlockParam[] = [];
     for (const bloco of blocosFerramenta) {
+      if (bloco.name === "exibir_grafico") {
+        const validado = validarBlocoVisual(bloco.input);
+        if (typeof validado === "string") {
+          resultadosFerramenta.push({
+            type: "tool_result",
+            tool_use_id: bloco.id,
+            content: `Não foi possível exibir: ${validado}`,
+            is_error: true,
+          });
+        } else {
+          blocos.push(validado);
+          resultadosFerramenta.push({
+            type: "tool_result",
+            tool_use_id: bloco.id,
+            content: "Exibido ao usuário. Agora escreva só a conclusão em 1 a 3 frases.",
+          });
+        }
+        continue;
+      }
       if (bloco.name === "buscar_ajuda_treinamento") {
         const entrada = bloco.input as { termo?: unknown };
         const termo = typeof entrada.termo === "string" ? entrada.termo.trim() : "";
@@ -308,5 +412,6 @@ export async function perguntarAssistente(
     resposta:
       "Não consegui concluir a análise dentro do limite de consultas para essa pergunta. Tente reformular de forma mais específica (ex.: informando o período ou o veículo).",
     consultas,
+    blocos,
   };
 }

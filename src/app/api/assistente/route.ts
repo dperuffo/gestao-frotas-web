@@ -84,8 +84,8 @@ export async function POST(request: Request) {
   const historico = Array.isArray(corpo.historico) ? corpo.historico.slice(-12) : [];
 
   try {
-    const { resposta, consultas } = await perguntarAssistente(pergunta, historico, supabase);
-    return NextResponse.json({ resposta, consultas }, { headers: CORS_HEADERS });
+    const { resposta, consultas, blocos } = await perguntarAssistente(pergunta, historico, supabase);
+    return NextResponse.json({ resposta, consultas, blocos }, { headers: CORS_HEADERS });
   } catch (e) {
     const mensagem = e instanceof Error ? e.message : "Erro inesperado ao consultar o assistente.";
     return NextResponse.json({ erro: mensagem }, { status: 500, headers: CORS_HEADERS });
