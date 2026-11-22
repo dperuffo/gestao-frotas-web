@@ -10,6 +10,7 @@ import BotaoBaixarPdfAssistenteLazy from "./BotaoBaixarPdfAssistenteLazy";
 type MensagemExibida = MensagemChat & { consultas?: ConsultaExecutada[]; blocos?: BlocoVisual[]; erro?: boolean };
 
 const PERGUNTAS_SUGERIDAS = [
+  "Qual a previsão de custo com combustível da minha frota até o fim do mês?",
   "Mostre em gráfico o custo de combustível por mês nos últimos 6 meses",
   "Quais os 10 veículos que mais gastaram com combustível este ano? (gráfico)",
   "Distribuição do gasto por tipo de combustível, em pizza",
