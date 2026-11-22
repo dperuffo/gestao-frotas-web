@@ -1,5 +1,6 @@
 "use server";
 
+import { ROTA_INICIAL_POS_LOGIN } from "@/lib/rotaInicial";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,5 +35,5 @@ export async function redefinirSenha(_prev: RedefinirSenhaState, formData: FormD
     return { erro: `Não foi possível atualizar a senha: ${error.message}` };
   }
 
-  redirect("/dashboard");
+  redirect(ROTA_INICIAL_POS_LOGIN);
 }

@@ -1,3 +1,4 @@
+import { ROTA_INICIAL_POS_LOGIN } from "@/lib/rotaInicial";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -81,7 +82,7 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/dashboard");
+    redirect(ROTA_INICIAL_POS_LOGIN);
   }
 
   // Best-effort: se a RPC falhar por qualquer motivo, a seção cai no texto

@@ -1,5 +1,6 @@
 "use server";
 
+import { ROTA_INICIAL_POS_LOGIN } from "@/lib/rotaInicial";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -128,5 +129,5 @@ export async function criarContaTrial(_prev: CadastroFormState, formData: FormDa
   if (!signUpData.session) {
     redirect("/cadastro/verifique-email");
   }
-  redirect("/dashboard");
+  redirect(ROTA_INICIAL_POS_LOGIN);
 }

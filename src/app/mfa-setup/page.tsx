@@ -1,5 +1,6 @@
 "use client";
 
+import { ROTA_INICIAL_POS_LOGIN } from "@/lib/rotaInicial";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -79,7 +80,7 @@ export default function MfaSetupPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push(ROTA_INICIAL_POS_LOGIN);
     router.refresh();
   }
 

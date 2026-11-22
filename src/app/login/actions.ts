@@ -1,5 +1,6 @@
 "use server";
 
+import { ROTA_INICIAL_POS_LOGIN } from "@/lib/rotaInicial";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { registrarAcessoCliente } from "@/lib/acessosClientes";
@@ -36,7 +37,7 @@ export async function entrarComSenha(_prev: LoginFormState, formData: FormData):
   }
 
   await registrarAcessoCliente(supabase, email);
-  redirect("/dashboard");
+  redirect(ROTA_INICIAL_POS_LOGIN);
 }
 
 // Fase 27.45 — login com Google via Google Identity Services (GIS), direto
@@ -69,5 +70,5 @@ export async function entrarComGoogle(idToken: string, nonceCru: string): Promis
   }
 
   await registrarAcessoCliente(supabase, data.user?.email);
-  redirect("/dashboard");
+  redirect(ROTA_INICIAL_POS_LOGIN);
 }

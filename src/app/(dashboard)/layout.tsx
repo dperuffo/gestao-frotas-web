@@ -1,3 +1,4 @@
+import { ROTA_INICIAL_POS_LOGIN, ROTA_ALTERNATIVA_SEM_ASSISTENTE } from "@/lib/rotaInicial";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -890,7 +891,9 @@ export default async function DashboardLayout({
   const pathnameAtual = headersRequisicao.get("x-pathname") ?? "";
   const acessoNegado = (headersRequisicao.get("x-search") ?? "").includes("acesso=negado");
   if (!podeAcessar(resolverFuncionalidadeDaRota(pathnameAtual))) {
-    redirect("/dashboard?acesso=negado");
+    // O Assistente é a tela inicial pós-login: quem não tem permissão a ele vai pro
+    // Dashboard sem o aviso de "acesso negado" (não pediu essa tela).
+    redirect(pathnameAtual === ROTA_INICIAL_POS_LOGIN ? ROTA_ALTERNATIVA_SEM_ASSISTENTE : "/dashboard?acesso=negado");
   }
 
   const ehAdmin = perfilUsuario?.perfil === "admin";
