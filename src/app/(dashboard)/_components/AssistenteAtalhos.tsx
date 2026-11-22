@@ -44,7 +44,17 @@ export function AssistenteAtalhos() {
     if (!limpa) return;
     setAberto(false);
     setTexto("");
-    router.push(caminhoAssistenteComPergunta(limpa));
+    // Leva o cliente junto: o da tela atual (?empresa=) ou, se não houver, o último da sessão
+    // (o mesmo exibido como "Último: ..." no menu). Sem isso o Assistente pedia o cliente de novo.
+    let empresaId: string | null = null;
+    try {
+      empresaId =
+        new URLSearchParams(window.location.search).get("empresa") ??
+        window.sessionStorage.getItem("fni:cliente-atual");
+    } catch {
+      empresaId = null;
+    }
+    router.push(caminhoAssistenteComPergunta(limpa, empresaId));
   }
 
   return (

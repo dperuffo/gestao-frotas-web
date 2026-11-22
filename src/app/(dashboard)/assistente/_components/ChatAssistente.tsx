@@ -85,6 +85,20 @@ export function ChatAssistente({
   // Pergunta vinda do botão flutuante / Ctrl+K / Dashboard: envia uma única vez e limpa a URL.
   useEffect(() => {
     if (!perguntaInicial || enviouInicial.current) return;
+    // Usuário com vários clientes e nenhum na URL: usa o último cliente da sessão (o mesmo
+    // do "Último: ..." do menu) ANTES de enviar. Recarrega com ?empresa= e a pergunta
+    // continua na URL; o envio acontece na próxima montagem, já com o cliente.
+    if (!empresaId && empresas.length > 1) {
+      try {
+        const guardada = window.sessionStorage.getItem("fni:cliente-atual");
+        if (guardada && empresas.some((e) => e.id === guardada)) {
+          router.replace(`/assistente?empresa=${guardada}&pergunta=${encodeURIComponent(perguntaInicial)}`);
+          return;
+        }
+      } catch {
+        // sessionStorage indisponível: segue sem cliente (o aviso pede a escolha).
+      }
+    }
     enviouInicial.current = true;
     enviar(perguntaInicial);
     router.replace(empresaId ? `/assistente?empresa=${empresaId}` : "/assistente");
