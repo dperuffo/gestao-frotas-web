@@ -101,7 +101,15 @@ body {
    colapsasse o menu no desktop e depois abrisse a gaveta mobile (ou
    redimensionasse a janela), essas regras esconderiam os labels ali também
    — a gaveta mobile deve continuar sempre completa, como já era antes. */
+/* Agrupadores retráteis do menu (GrupoRetratil.tsx): recolhidos por padrão. */
+.menu-grupo-fechado {
+  display: none;
+}
 @media (min-width: 1024px) {
+  /* Menu só com ícones: os títulos somem, então os itens ficam sempre visíveis. */
+  .menu-colapsado .menu-grupo-fechado {
+    display: block;
+  }
   .menu-colapsado .menu-item-label,
   .menu-colapsado .menu-grupo-titulo,
   .menu-colapsado .menu-logo-texto,

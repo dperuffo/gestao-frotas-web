@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { BotaoFavoritoMenu } from "./BotaoFavoritoMenu";
+import { GrupoRetratil } from "./GrupoRetratil";
 import { ItemMenuAtivo } from "./ItemMenuAtivo";
 import { BadgeMenu } from "./ProvedorBadgesMenu";
 
@@ -73,13 +74,12 @@ export function GrupoMenuLateral({
   if (itens.length === 0) return null;
 
   return (
-    <>
-      <p
-        data-tour={dataTourTitulo}
-        className={`menu-grupo-titulo glass-nav-texto-muted mb-2 px-2 pb-2 text-xs font-semibold uppercase tracking-wider ${primeiro ? "" : "mt-6"}`}
-      >
-        {titulo}
-      </p>
+    <GrupoRetratil
+      titulo={titulo}
+      hrefs={itens.filter((i) => !i.externo).map((i) => i.href)}
+      dataTourTitulo={dataTourTitulo}
+      primeiro={primeiro}
+    >
       <ul className="space-y-1">
         {itens.map((item) => {
           // Só itens que o grupo recebeu no mapa de badges têm bolinha; o
@@ -124,6 +124,6 @@ export function GrupoMenuLateral({
           );
         })}
       </ul>
-    </>
+    </GrupoRetratil>
   );
 }
