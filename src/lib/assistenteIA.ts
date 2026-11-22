@@ -524,6 +524,7 @@ export async function perguntarAssistente(
   const consultas: ConsultaExecutada[] = [];
   const blocos: BlocoVisual[] = [];
   const propostas: PropostaAcao[] = [];
+  let pediuRespostaFinal = false;
 
   const mensagens: Anthropic.MessageParam[] = [
     ...historico.map((m) => ({ role: m.role, content: m.content })),
@@ -533,7 +534,7 @@ export async function perguntarAssistente(
   for (let rodada = 0; rodada < MAX_RODADAS_FERRAMENTA; rodada++) {
     const resposta = await anthropic.messages.create({
       model: MODELO,
-      max_tokens: 2000,
+      max_tokens: 4096,
       system: contexto?.empresaId
         ? `${SYSTEM_PROMPT}\n\n## Cliente selecionado pelo usuário\nO usuário está trabalhando com a empresa "${contexto.empresaNome ?? ""}" (empresa_id = '${contexto.empresaId}'). Nas consultas de dados, FILTRE por esse empresa_id (nas tabelas que têm a coluna; em cadastro_veiculos use public.empresa_id_do_cnpj(cnpj_frota) = '${contexto.empresaId}') e diga na resposta que os números são dessa empresa.`
         : SYSTEM_PROMPT,
@@ -550,6 +551,19 @@ export async function perguntarAssistente(
 
     if (blocosFerramenta.length === 0) {
       const texto = blocosTexto.map((b) => b.text).join("\n").trim();
+      // Resposta vazia (ex.: o modelo parou logo depois de uma ferramenta, ou estourou o
+      // limite de tokens): pede UMA vez a resposta final em vez de desistir.
+      if (!texto && blocos.length === 0 && propostas.length === 0 && !pediuRespostaFinal) {
+        console.error("[assistente] resposta vazia", { stop_reason: resposta.stop_reason, rodada, tipos: resposta.content.map((b) => b.type) });
+        pediuRespostaFinal = true;
+        if (resposta.content.length > 0) mensagens.push({ role: "assistant", content: resposta.content });
+        mensagens.push({
+          role: "user",
+          content:
+            "Escreva agora a resposta final ao usuário, em português, com base no que já foi obtido. Se faltou alguma informação (ex.: origem ou destino mais específicos), diga o que precisa.",
+        });
+        continue;
+      }
       return { resposta: texto || (blocos.length > 0 || propostas.length > 0 ? "" : "Não consegui gerar uma resposta para essa pergunta."), consultas, blocos, propostas };
     }
 
