@@ -103,7 +103,7 @@ export function AssistenteAtalhos() {
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
                 aria-label="Pergunta para o Assistente FNI"
               />
-              <BotaoVoz textoAtual={texto} onTexto={setTexto} />
+              <BotaoVoz textoAtual={texto} onTexto={setTexto} onEnviar={perguntar} />
               <button type="submit" disabled={!texto.trim()} aria-label="Enviar" className="flex h-7 w-7 items-center justify-center rounded-full bg-accento text-white disabled:opacity-40">
                 <ArrowUp className="h-4 w-4" />
               </button>

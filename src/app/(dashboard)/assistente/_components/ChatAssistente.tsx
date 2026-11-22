@@ -200,7 +200,7 @@ export function ChatAssistente({
         disabled={pending}
         aria-label="Pergunta para o Assistente FNI"
       />
-      <BotaoVoz textoAtual={pergunta} onTexto={setPergunta} disabled={pending} />
+      <BotaoVoz textoAtual={pergunta} onTexto={setPergunta} onEnviar={enviar} disabled={pending} />
       <button
         type="submit"
         disabled={pending || !pergunta.trim()}

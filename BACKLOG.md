@@ -85,4 +85,5 @@ continua ruim depois do ajuste já aplicado.
 ## Assistente FNI: PDF com gráficos e entrada por voz — FEITO em 22/11/2026
 - "Baixar conversa em PDF" agora inclui os gráficos (barras, linhas, pizza) e tabelas exibidos na tela, além do texto (títulos, listas, tabelas) e das consultas.
 - Microfone ao lado do campo de pergunta (Assistente, card do Dashboard e botão flutuante/Ctrl+K): o usuário digita ou fala (pt-BR, reconhecimento do próprio navegador). O texto falado entra no campo para conferência; não envia sozinho.
-- Pendente: PDF individual por resposta; envio automático opcional após falar; resposta falada (síntese de voz).
+- Envio automático da pergunta falada após 3 s de silêncio (parar no botão cancela o envio).
+- Pendente: PDF individual por resposta; resposta falada (síntese de voz).
