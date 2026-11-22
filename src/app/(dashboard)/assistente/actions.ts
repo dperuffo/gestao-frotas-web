@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { perguntarAssistente, type MensagemChat, type ConsultaExecutada, type BlocoVisual } from "@/lib/assistenteIA";
 
 export type RespostaChatAssistente = { resposta: string; consultas: ConsultaExecutada[]; blocos: BlocoVisual[] } | { erro: string };
@@ -24,7 +25,10 @@ export async function perguntarAssistenteAcao(
   if (!user) return { erro: "Sessão expirada, faça login novamente." };
 
   try {
-    const { resposta, consultas, blocos } = await perguntarAssistente(perguntaLimpa, historico.slice(-12), supabase);
+    const { empresaSelecionada } = await resolverEmpresaAtual(supabase);
+    const { resposta, consultas, blocos } = await perguntarAssistente(perguntaLimpa, historico.slice(-12), supabase, {
+      empresaId: empresaSelecionada,
+    });
     return { resposta, consultas, blocos };
   } catch (e) {
     const mensagem = e instanceof Error ? e.message : "Erro inesperado ao consultar o assistente.";

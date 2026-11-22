@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { createClient } from "@/lib/supabase/server";
+import { geocodificar } from "@/lib/geo";
+import { PRODUTOS_POSTO } from "@/lib/constants";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -192,6 +194,21 @@ principal (o que chama atenção) — não repita os números todos em texto nem
 tabela markdown quando já chamou exibir_grafico. Para respostas de 1 número só, não
 precisa de gráfico.
 
+## Preços de combustível ao longo de uma rota
+
+Para "preciso da variação de preços na minha rota para decidir onde abastecer" use a
+ferramenta "precos_na_rota" (origem e destino em texto livre, ex.: "Curitiba, PR" e
+"São Paulo, SP"; combustível; raio opcional). Ela usa o mesmo motor da tela de
+Roteirização e devolve os postos do corredor da rota, em ordem de quilometragem, com
+preço, desvio da rota (km) e origem do preço ("proprio" = negociado/importado do cliente;
+"anp" = estimativa oficial da ANP). Se o usuário não disser o combustível, assuma o mais
+provável pelo contexto (ex.: caminhão → Diesel S-10 Comum) e informe a suposição; se não
+disser origem/destino, peça. Depois: (1) "linhas" com preço × posto na ordem da rota para
+mostrar a variação, ou "barras" com os 8 mais baratos; (2) escreva as recomendações: o
+posto mais barato, o quanto economiza vs. a média do trecho (R$/L e para um tanque de
+referência de 100 L) e se o desvio da rota compensa. Deixe claro quando o preço é estimativa
+ANP. Nunca recomende posto sem preço.
+
 ## Previsão de custo (projeção até o fim do mês)
 
 Quando perguntarem "qual a previsão de gasto/custo com combustível até o fim do mês" (ou
@@ -295,6 +312,94 @@ const FERRAMENTA_GRAFICO: Anthropic.Tool = {
   },
 };
 
+const FERRAMENTA_ROTA: Anthropic.Tool = {
+  name: "precos_na_rota",
+  description:
+    "Calcula a rota entre origem e destino e lista os postos no corredor da rota com o preço do combustível escolhido (em ordem de km). Usa o mesmo motor da Roteirização da FNI. Use para comparar preços e decidir onde abastecer numa viagem.",
+  input_schema: {
+    type: "object",
+    properties: {
+      origem: { type: "string", description: "Cidade/endereço de origem, ex.: 'Curitiba, PR'." },
+      destino: { type: "string", description: "Cidade/endereço de destino, ex.: 'São Paulo, SP'." },
+      combustivel: {
+        type: "string",
+        enum: [...PRODUTOS_POSTO],
+        description: "Combustível a comparar.",
+      },
+      raio_km: { type: "number", description: "Distância máxima do posto até a rota, em km (padrão 5, máximo 15)." },
+    },
+    required: ["origem", "destino", "combustivel"],
+  },
+};
+
+async function executarPrecosNaRota(entrada: unknown, empresaId: string | null | undefined): Promise<{ conteudo: string; erro?: boolean }> {
+  if (!empresaId) {
+    return {
+      erro: true,
+      conteudo:
+        "Não foi possível identificar a empresa do usuário (ele pode ter acesso a várias). Peça para selecionar um cliente no seletor da tela e perguntar de novo.",
+    };
+  }
+  const e = (entrada ?? {}) as Record<string, unknown>;
+  const origemTxt = typeof e.origem === "string" ? e.origem.trim() : "";
+  const destinoTxt = typeof e.destino === "string" ? e.destino.trim() : "";
+  const combustivel = PRODUTOS_POSTO.find((c) => c === e.combustivel);
+  if (!origemTxt || !destinoTxt || !combustivel) {
+    return { erro: true, conteudo: "Informe origem, destino e um combustível válido." };
+  }
+  const raio = Math.min(15, Math.max(1, Number(e.raio_km) || 5));
+
+  const [orig, dest] = await Promise.all([geocodificar(origemTxt), geocodificar(destinoTxt)]);
+  if (orig.length === 0) return { erro: true, conteudo: `Não encontrei a origem "${origemTxt}". Peça uma cidade/UF mais específica.` };
+  if (dest.length === 0) return { erro: true, conteudo: `Não encontrei o destino "${destinoTxt}". Peça uma cidade/UF mais específica.` };
+
+  const { calcularRotaEPostosAcao } = await import("@/app/(dashboard)/roteirizacao/actions");
+  const r = await calcularRotaEPostosAcao({
+    empresaId,
+    origem: { lat: orig[0].lat, lon: orig[0].lon },
+    destino: { lat: dest[0].lat, lon: dest[0].lon },
+    combustivel,
+    raioKm: raio,
+  });
+
+  const comPreco = r.candidatos.filter((c) => Number.isFinite(c.preco) && c.preco > 0);
+  if (comPreco.length === 0) {
+    return { conteudo: JSON.stringify({ origem: orig[0].label, destino: dest[0].label, distancia_km: r.distanciaKm, postos: [], aviso: "Nenhum posto com preço de " + combustivel + " no corredor da rota." }) };
+  }
+  const precos = comPreco.map((c) => c.preco);
+  const media = precos.reduce((a, b) => a + b, 0) / precos.length;
+  const postos = [...comPreco]
+    .sort((a, b) => a.km - b.km)
+    .slice(0, 40)
+    .map((c) => ({
+      posto: c.label,
+      cidade: c.municipio ?? null,
+      uf: c.uf ?? null,
+      bandeira: c.bandeira ?? null,
+      km_na_rota: Math.round(c.km),
+      desvio_km: Math.round(c.desvioKm * 10) / 10,
+      preco: Math.round(c.preco * 1000) / 1000,
+      origem_preco: c.origem === "anp" ? "anp" : "proprio",
+    }));
+  return {
+    conteudo: JSON.stringify({
+      origem: orig[0].label,
+      destino: dest[0].label,
+      combustivel,
+      distancia_km: r.distanciaKm,
+      duracao_min: r.duracaoMin,
+      rota_em_linha_reta: r.linhaReta,
+      resumo_precos: {
+        postos_com_preco: comPreco.length,
+        minimo: Math.min(...precos),
+        maximo: Math.max(...precos),
+        media: Math.round(media * 1000) / 1000,
+      },
+      postos,
+    }),
+  };
+}
+
 function escaparTermoIlike(termo: string): string {
   return termo.replace(/[%_]/g, (c) => `\\${c}`);
 }
@@ -318,7 +423,8 @@ function clienteAnthropic(): Anthropic {
 export async function perguntarAssistente(
   pergunta: string,
   historico: MensagemChat[],
-  supabase: Supabase
+  supabase: Supabase,
+  contexto?: { empresaId?: string | null }
 ): Promise<RespostaAssistente> {
   const anthropic = clienteAnthropic();
   const consultas: ConsultaExecutada[] = [];
@@ -334,7 +440,7 @@ export async function perguntarAssistente(
       model: MODELO,
       max_tokens: 2000,
       system: SYSTEM_PROMPT,
-      tools: [FERRAMENTA_SQL, FERRAMENTA_AJUDA, FERRAMENTA_GRAFICO],
+      tools: [FERRAMENTA_SQL, FERRAMENTA_AJUDA, FERRAMENTA_GRAFICO, FERRAMENTA_ROTA],
       messages: mensagens,
     });
 
@@ -369,6 +475,20 @@ export async function perguntarAssistente(
             type: "tool_result",
             tool_use_id: bloco.id,
             content: "Exibido ao usuário. Agora escreva só a conclusão em 1 a 3 frases.",
+          });
+        }
+        continue;
+      }
+      if (bloco.name === "precos_na_rota") {
+        try {
+          const r = await executarPrecosNaRota(bloco.input, contexto?.empresaId);
+          resultadosFerramenta.push({ type: "tool_result", tool_use_id: bloco.id, content: r.conteudo, is_error: r.erro });
+        } catch (err) {
+          resultadosFerramenta.push({
+            type: "tool_result",
+            tool_use_id: bloco.id,
+            content: `Erro ao calcular a rota: ${err instanceof Error ? err.message : "falha desconhecida"}`,
+            is_error: true,
           });
         }
         continue;
