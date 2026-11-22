@@ -108,3 +108,8 @@ continua ruim depois do ajuste já aplicado.
 
 - **Feito:** `fn_audit_log` ignora UPDATE sem mudança e grava só os campos alterados; trigger `aaa_suprime_update_sem_mudanca` descarta UPDATE sem mudança em `profrotas_abastecimentos` (a sync horária reescrevia a janela inteira); 111 mil linhas idênticas removidas de `audit_logs`.
 - **Pendente:** `VACUUM FULL audit_logs` fora do horário de uso (devolve cerca de 360 MB ao disco); política de retenção da auditoria (ex.: 90 dias quentes + arquivo); a sync ainda envia toda a janela de datas (poderia pedir só o que mudou desde `dataAtualizacao`).
+
+## Atualização automática da tela após ações (22/11/2026)
+
+- **Feito:** `AtualizarTelaAposAcao` (no layout do painel) recarrega os dados da tela atual depois de qualquer Server Action concluída com sucesso, sem F5. Preserva o estado local; junta ações seguidas; ignora `/assistente`, redirecionamentos e aba oculta.
+- **Pendente:** não reproduzi a causa original só pela leitura do código (as ações já chamam `revalidatePath` e os dados do servidor são atuais); validar no navegador com inativar veículo, inativar motorista e seletores de Parâmetros de uso. Se ainda falhar, olhar o cache do roteador do cliente. Ações como `alternarAtivoVeiculo` e `alternarAtivoMotorista` ignoram o erro do UPDATE (sem aviso ao usuário quando a RLS impede a alteração): mostrar mensagem de falha.

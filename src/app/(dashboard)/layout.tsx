@@ -98,6 +98,7 @@ import { PASSOS_TOUR_FROTA, PASSOS_TOUR_POSTO } from "@/lib/ajuda/tourPassos";
 import { CentralAjuda } from "@/components/ajuda/CentralAjuda";
 import { buscarLogoutInatividadeMinutos } from "@/lib/configuracoesSistema";
 import { MonitorInatividade } from "./_components/MonitorInatividade";
+import { AtualizarTelaAposAcao } from "./_components/AtualizarTelaAposAcao";
 import { LembretePwaBanner } from "@/components/pwa/LembretePwaBanner";
 import { AvisosSino } from "./_components/AvisosSino";
 import { AvisoBannerFixo } from "./_components/AvisoBannerFixo";
@@ -1011,6 +1012,7 @@ export default async function DashboardLayout({
     >
     <SincronizadorTema temaPreferidoBanco={temaPreferidoBanco ?? null} />
     <RastreadorAcessoMenu hrefsRastreaveis={HREFS_RASTREAVEIS} />
+    <AtualizarTelaAposAcao />
     <div className="flex min-h-screen flex-col lg:flex-row">
       {/* Pedido do Daniel: "desacoplar o menu da tela de informações" — em
           telas com muito conteúdo, o <aside> (menu lateral) rolava junto com
