@@ -68,10 +68,12 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // Geolocalização é usada de propósito (botão "Usar minha localização" em
   // Meu Posto) — liberada só pra própria origem. Câmera/microfone/pagamento/
-  // USB não são usados em nenhuma tela: negados.
+  // USB não são usados em nenhuma tela: negados. EXCEÇÃO: microfone liberado só pra própria
+  // origem, para o ditado por voz do Assistente FNI (antes negado, o que fazia o Chrome
+  // recusar o microfone mesmo com a permissão do site ligada).
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(self), payment=(), usb=(), interest-cohort=()",
+    value: "camera=(), microphone=(self), geolocation=(self), payment=(), usb=(), interest-cohort=()",
   },
 ];
 

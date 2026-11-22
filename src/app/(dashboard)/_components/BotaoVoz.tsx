@@ -9,7 +9,7 @@ import { Mic, Square } from "lucide-react";
 // Envio automático: se `onEnviar` for informado, a pergunta é enviada após 3 s sem fala
 // (clicar no botão para parar manualmente NÃO envia: aí o usuário confere e envia como quiser).
 // O reconhecimento é feito pelo próprio navegador (Chrome/Edge/Safari); onde não existe, o botão
-// nem aparece. Nada de áudio passa pelos servidores da FNI.
+// nem aparece. O áudio não passa pelos servidores da FNI; no Chrome/Edge o navegador o envia ao serviço de voz do próprio fabricante (Google/Microsoft).
 type ReconhecimentoVoz = {
   lang: string;
   continuous: boolean;
