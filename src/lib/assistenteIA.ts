@@ -76,7 +76,8 @@ export function validarBlocoVisual(entrada: unknown): BlocoVisual | string {
 // claude-sonnet-5 é o modelo atual recomendado para uso via API (mesma
 // família usada no restante do produto Claude). Se a Anthropic lançar um
 // modelo mais novo/recomendado, troque só esta constante.
-const MODELO = "claude-sonnet-5";
+export const MODELO_ASSISTENTE = "claude-sonnet-5";
+const MODELO = MODELO_ASSISTENTE;
 
 // Limite de idas-e-voltas com a ferramenta de SQL numa única pergunta —
 // evita loop infinito se o modelo insistir em consultas que sempre falham.
@@ -498,7 +499,9 @@ function escaparTermoIlike(termo: string): string {
   return termo.replace(/[%_]/g, (c) => `\\${c}`);
 }
 
-function clienteAnthropic(): Anthropic {
+// `chaveCliente`: chave Anthropic própria da empresa (Vault). Sem ela, usa a chave da FNI.
+function clienteAnthropic(chaveCliente?: string | null): Anthropic {
+  if (chaveCliente) return new Anthropic({ apiKey: chaveCliente });
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error(
@@ -518,9 +521,16 @@ export async function perguntarAssistente(
   pergunta: string,
   historico: MensagemChat[],
   supabase: Supabase,
-  contexto?: { empresaId?: string | null; empresaNome?: string | null }
+  contexto?: {
+    empresaId?: string | null;
+    empresaNome?: string | null;
+    chaveApi?: string | null;
+    // Acumula os tokens gastos (entrada/saída) — o chamador registra o consumo por cliente,
+    // mesmo se a execução falhar no meio (por isso é um objeto compartilhado, não o retorno).
+    medidor?: { entrada: number; saida: number };
+  }
 ): Promise<RespostaAssistente> {
-  const anthropic = clienteAnthropic();
+  const anthropic = clienteAnthropic(contexto?.chaveApi);
   const consultas: ConsultaExecutada[] = [];
   const blocos: BlocoVisual[] = [];
   const propostas: PropostaAcao[] = [];
@@ -541,6 +551,10 @@ export async function perguntarAssistente(
       tools: [FERRAMENTA_SQL, FERRAMENTA_AJUDA, FERRAMENTA_GRAFICO, FERRAMENTA_ROTA, FERRAMENTA_PROPOR_REGRA_CONSUMO],
       messages: mensagens,
     });
+    if (contexto?.medidor) {
+      contexto.medidor.entrada += resposta.usage?.input_tokens ?? 0;
+      contexto.medidor.saida += resposta.usage?.output_tokens ?? 0;
+    }
 
     const blocosTexto = resposta.content.filter(
       (b): b is Anthropic.TextBlock => b.type === "text"

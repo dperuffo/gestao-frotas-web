@@ -3,8 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/types/database.types";
 import { revalidatePath } from "next/cache";
+import Anthropic from "@anthropic-ai/sdk";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { validarRegraConsumo } from "@/lib/regraConsumo";
+import { prepararAssistente, registrarConsumoAssistente, mensagemErroChaveCliente, type OrigemChave } from "@/lib/assistenteConsumo";
 import { perguntarAssistente, type MensagemChat, type ConsultaExecutada, type BlocoVisual, type PropostaAcao } from "@/lib/assistenteIA";
 
 export type RespostaChatAssistente = { resposta: string; consultas: ConsultaExecutada[]; blocos: BlocoVisual[]; propostas: PropostaAcao[] } | { erro: string };
@@ -28,16 +30,34 @@ export async function perguntarAssistenteAcao(
   } = await supabase.auth.getUser();
   if (!user) return { erro: "Sessão expirada, faça login novamente." };
 
+  const medidor = { entrada: 0, saida: 0 };
+  let empresaConsumo: string | null = null;
+  let origem: OrigemChave = "interno";
   try {
-    const { empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaId);
+    const { empresaSelecionada, nomeEmpresaSelecionada, perfil } = await resolverEmpresaAtual(supabase, empresaId);
+    // O consumo de IA é atribuído a UM cliente. Quem tem várias empresas precisa escolher; só o
+    // admin da FNI (uso interno) pode perguntar sem cliente.
+    if (!empresaSelecionada && perfil !== "admin") {
+      return { erro: "Selecione um cliente na barra acima do chat para usar o Assistente." };
+    }
+    empresaConsumo = empresaSelecionada;
+    const preparo = await prepararAssistente(supabase, empresaSelecionada);
+    if (!preparo.ok) return { erro: preparo.mensagem };
+    origem = preparo.origem;
+
     const { resposta, consultas, blocos, propostas } = await perguntarAssistente(perguntaLimpa, historico.slice(-12), supabase, {
       empresaId: empresaSelecionada,
       empresaNome: nomeEmpresaSelecionada ?? null,
+      chaveApi: preparo.chaveApi,
+      medidor,
     });
     return { resposta, consultas, blocos, propostas };
   } catch (e) {
-    const mensagem = e instanceof Error ? e.message : "Erro inesperado ao consultar o assistente.";
+    const amigavel = origem === "cliente" ? mensagemErroChaveCliente(e) : null;
+    const mensagem = amigavel ?? (e instanceof Error ? e.message : "Erro inesperado ao consultar o assistente.");
     return { erro: mensagem };
+  } finally {
+    await registrarConsumoAssistente(supabase, empresaConsumo, medidor, origem);
   }
 }
 
@@ -151,4 +171,47 @@ export async function salvarConversaAcao(params: {
 export async function excluirConversaAcao(id: string): Promise<void> {
   const supabase = await createClient();
   await supabase.from("assistente_conversas").delete().eq("id", id);
+}
+
+// --- Chave própria do cliente ---------------------------------------------------
+// A chave é validada na Anthropic antes de salvar e fica no Vault (criptografada);
+// nunca volta ao navegador (só os 4 últimos caracteres). Quem pode: admin, gestor de frota, posto.
+export async function salvarChaveAssistenteAcao(
+  empresaId: string,
+  chave: string
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const limpa = chave.trim();
+  if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(limpa)) {
+    return { ok: false, erro: "Chave inválida. Ela começa com “sk-ant-” (copie inteira do console da Anthropic)." };
+  }
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, erro: "Sessão expirada, faça login novamente." };
+
+  // Testa a chave (listar modelos não consome tokens).
+  try {
+    await new Anthropic({ apiKey: limpa }).models.list({ limit: 1 });
+  } catch (e) {
+    const status = (e as { status?: number } | null)?.status;
+    return {
+      ok: false,
+      erro:
+        status === 401 || status === 403
+          ? "A Anthropic recusou essa chave. Confira se ela está ativa e copiada por completo."
+          : "Não foi possível validar a chave agora. Tente novamente em instantes.",
+    };
+  }
+
+  const { error } = await supabase.rpc("definir_chave_assistente", { p_empresa_id: empresaId, p_chave: limpa });
+  if (error) return { ok: false, erro: error.message.includes("permiss") ? "Seu perfil não pode cadastrar a chave da empresa." : "Não foi possível salvar a chave." };
+  revalidatePath("/assistente");
+  return { ok: true };
+}
+
+export async function removerChaveAssistenteAcao(empresaId: string): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("remover_chave_assistente", { p_empresa_id: empresaId });
+  if (error) return { ok: false, erro: "Não foi possível remover a chave." };
+  revalidatePath("/assistente");
+  return { ok: true };
 }

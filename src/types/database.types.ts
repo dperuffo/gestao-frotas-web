@@ -6490,6 +6490,38 @@ export interface Database {
           criado_em: string;
         }[];
       };
+      registrar_consumo_assistente: {
+        Args: { p_empresa_id: string; p_tokens_entrada: number; p_tokens_saida: number; p_modelo: string; p_origem: string };
+        Returns: void;
+      };
+      assistente_uso_mes: {
+        Args: { p_empresa_id: string };
+        Returns: Json;
+      };
+      assistente_consumo_por_empresa_mes: {
+        Args: Record<string, never>;
+        Returns: {
+          empresa_id: string;
+          empresa_nome: string;
+          plano: string;
+          tokens: number;
+          chamadas: number;
+          chave_propria: boolean;
+          franquia: number;
+        }[];
+      };
+      definir_chave_assistente: {
+        Args: { p_empresa_id: string; p_chave: string };
+        Returns: void;
+      };
+      remover_chave_assistente: {
+        Args: { p_empresa_id: string };
+        Returns: void;
+      };
+      obter_chave_assistente_servidor: {
+        Args: { p_empresa_id: string };
+        Returns: string;
+      };
       alternar_ativo_aviso_empresa: {
         Args: { p_id: string; p_ativo: boolean };
         Returns: void;

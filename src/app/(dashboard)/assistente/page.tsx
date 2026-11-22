@@ -3,6 +3,7 @@ import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { ChatAssistente } from "./_components/ChatAssistente";
+import { PainelUsoAssistente } from "./_components/PainelUsoAssistente";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
 
 export default async function AssistenteFniPage({
@@ -18,7 +19,7 @@ export default async function AssistenteFniPage({
   // Usuário com acesso a várias empresas (grupo econômico) escolhe o cliente na barra
   // do chat; as ferramentas que dependem da empresa (preços negociados na rota,
   // cadastro de regra) usam a escolhida. resolverEmpresaAtual só aceita empresas do usuário.
-  const { empresas, empresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+  const { empresas, empresaSelecionada, perfil } = await resolverEmpresaAtual(supabase, empresaParam);
   const { data: perfilApp } = user?.email
     ? await supabase.from("usuarios_app").select("nome").ilike("email", user.email).maybeSingle()
     : { data: null };
@@ -35,6 +36,7 @@ export default async function AssistenteFniPage({
         }
         descricao="Pergunte em linguagem natural: o assistente consulta os dados em tempo real (só das empresas às quais você tem acesso), desenha gráficos, compara preços na rota e ajuda a cadastrar regras."
       />
+      <PainelUsoAssistente empresaId={empresaSelecionada} perfil={perfil} />
       <ChatAssistente
         key={empresaSelecionada ?? "todas"}
         usuarioEmail={user?.email}
