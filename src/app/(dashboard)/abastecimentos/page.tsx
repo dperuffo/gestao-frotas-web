@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
+import { segmentoEmpresaCacheado } from "@/lib/dadosUsuarioCache";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { formatDate } from "@/lib/utils";
 import { Paginacao, calcularPaginacao, offsetDaPagina } from "@/components/Paginacao";
@@ -123,12 +124,8 @@ export default async function AbastecimentosPage({
   // /dashboard) e desvia pro painel do posto antes de rodar as consultas
   // de Frota.
   if (empresaSelecionada) {
-    const { data: empresaAtual } = await supabase
-      .from("empresas")
-      .select("segmento")
-      .eq("id", empresaSelecionada)
-      .maybeSingle();
-    if (empresaAtual?.segmento === "Revenda") {
+    const segmentoAtual = await segmentoEmpresaCacheado(supabase, empresaSelecionada);
+    if (segmentoAtual === "Revenda") {
       return (
         <AbastecimentosPosto
           empresaPostoId={empresaSelecionada}
@@ -153,17 +150,25 @@ export default async function AbastecimentosPage({
   // profrotas e um id externo podem coincidir por acaso.
   let idsComAjusteAbertoProfrotas = new Set<number>();
   let idsComAjusteAbertoExterno = new Set<number>();
-  if (empresaSelecionada) {
-    const { data: ajustesAbertosTodos } = await supabase
-      .from("ajustes_abastecimentos")
-      .select("abastecimento_id, abastecimento_externo_id")
-      .eq("empresa_cliente_id", empresaSelecionada)
-      .in("status", ["pendente_cliente", "pendente_posto"]);
-    for (const a of ajustesAbertosTodos ?? []) {
+  // Perf: a lista de ajustes abertos só é necessária ANTES das consultas principais quando o filtro
+  // "ajuste pendente" está ligado; nos demais casos ela só serve para marcar as linhas e roda em
+  // paralelo com a contagem/totais/página (uma ida a menos em fila).
+  const promessaAjustes = empresaSelecionada
+    ? Promise.resolve(
+        supabase
+          .from("ajustes_abastecimentos")
+          .select("abastecimento_id, abastecimento_externo_id")
+          .eq("empresa_cliente_id", empresaSelecionada)
+          .in("status", ["pendente_cliente", "pendente_posto"])
+      )
+    : Promise.resolve({ data: [] as { abastecimento_id: number | null; abastecimento_externo_id: number | null }[] | null });
+  function preencherAjustes(linhas: { abastecimento_id: number | null; abastecimento_externo_id: number | null }[] | null) {
+    for (const a of linhas ?? []) {
       if (a.abastecimento_id != null) idsComAjusteAbertoProfrotas.add(a.abastecimento_id);
       if (a.abastecimento_externo_id != null) idsComAjusteAbertoExterno.add(a.abastecimento_externo_id);
     }
   }
+  if (ajuste === "pendente") preencherAjustes((await promessaAjustes).data);
   const idsFiltroProfrotas =
     idsComAjusteAbertoProfrotas.size > 0 ? Array.from(idsComAjusteAbertoProfrotas).map((id) => String(id)) : ["-1"];
   const idsFiltroExterno =
@@ -309,6 +314,7 @@ export default async function AbastecimentosPage({
   const [{ count }, { data: totaisRaw }, { data: registros, error }] = semClienteEscolhido
     ? [{ count: 0 }, { data: null }, { data: [], error: null }]
     : await Promise.all([queryContagem, queryTotais, queryPagina]);
+  if (ajuste !== "pendente") preencherAjustes((await promessaAjustes).data);
 
   const totalRegistros = count ?? 0;
   const linhas = (registros ?? []) as RegistroUnificado[];

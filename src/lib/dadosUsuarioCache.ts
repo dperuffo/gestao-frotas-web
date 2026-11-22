@@ -54,3 +54,12 @@ export function contagemEmpresasCacheada(supabase: Supabase): Promise<number> {
     return count ?? 0;
   });
 }
+
+// Segmento da empresa (Frota/Revenda...): decide para qual versão da tela o usuário é desviado.
+// Dado da empresa, não do usuário: só é consultado para uma empresa que o usuário já pode acessar.
+export function segmentoEmpresaCacheado(supabase: Supabase, empresaId: string): Promise<string | null> {
+  return obterOuDefinir(`empresa:segmento:${empresaId}`, TTL_USUARIO_MS, async () => {
+    const { data } = await supabase.from("empresas").select("segmento").eq("id", empresaId).maybeSingle();
+    return (data?.segmento as string | null | undefined) ?? null;
+  });
+}

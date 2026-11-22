@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizarNomeParaStorage } from "@/lib/storageUtils";
 import { logger } from "@/lib/logger";
+import { obterOuDefinir } from "@/lib/cache";
+import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
+import { empresasDoUsuarioCacheado, invalidarCacheUsuarios } from "@/lib/dadosUsuarioCache";
 
 // Fase Central-Avisos (28/07/2026) — pedido do Daniel: canal oficial dentro
 // da aplicação pra comunicar novidades, correções, manutenções/
@@ -120,6 +123,7 @@ export async function criarAvisoAcao(_prev: AvisoFormState, formData: FormData):
     return { erro: error.message };
   }
 
+  invalidarCacheUsuarios();
   revalidatePath("/administracao/central-avisos");
   redirect("/administracao/central-avisos");
 }
@@ -164,6 +168,7 @@ export async function atualizarAvisoAcao(
     return { erro: error.message };
   }
 
+  invalidarCacheUsuarios();
   revalidatePath("/administracao/central-avisos");
   redirect("/administracao/central-avisos");
 }
@@ -172,6 +177,7 @@ export async function alternarAtivoAvisoAcao(id: string, ativo: boolean) {
   const supabase = await garantirAdmin();
   const { error } = await supabase.from("comunicados").update({ ativo }).eq("id", id);
   if (error) throw new Error(error.message);
+  invalidarCacheUsuarios();
   revalidatePath("/administracao/central-avisos");
 }
 
@@ -183,6 +189,7 @@ export async function excluirAvisoAcao(id: string) {
   }
   const { error } = await supabase.from("comunicados").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  invalidarCacheUsuarios();
   revalidatePath("/administracao/central-avisos");
 }
 
@@ -213,10 +220,25 @@ export type AvisoParaUsuario = {
 // drawer/banner/histórico — mantém a regra de segmentação em UM lugar só.
 export async function listarAvisosAcao(opts?: { incluirExpirados?: boolean }): Promise<AvisoParaUsuario[]> {
   const supabase = await createClient();
+  // Perf: usuário compartilhado com o layout (1 chamada por requisição) e resultado em cache por
+  // 30 s por e-mail — antes eram ~5 idas seguidas ao banco no layout de TODA tela. Limpo quando
+  // o aviso é marcado como lido ou quando o time FNI publica/edita/exclui um aviso.
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await obterUsuarioAtual();
   if (!user?.email) return [];
+  const email = user.email;
+  return obterOuDefinir(`usuario:avisos:${email}:${opts?.incluirExpirados ? "todos" : "ativos"}`, 30_000, () =>
+    calcularAvisosParaUsuario(supabase, email, opts)
+  );
+}
+
+async function calcularAvisosParaUsuario(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  email: string,
+  opts?: { incluirExpirados?: boolean }
+): Promise<AvisoParaUsuario[]> {
+  const user = { email };
 
   const agora = new Date().toISOString();
   let query = supabase
@@ -239,8 +261,7 @@ export async function listarAvisosAcao(opts?: { incluirExpirados?: boolean }): P
   // Resolve segmento/plano/empresa(s) do usuário — mesma RPC usada em
   // resolverEmpresaAtual (src/lib/empresaAtual.ts). Admin (sem empresa
   // própria) só enxerga avisos sem alvo definido (pra todos).
-  const { data: minhasEmpresasIds } = await supabase.rpc("empresas_do_usuario", { p_email: user.email });
-  const idsEmpresa = (minhasEmpresasIds ?? []) as string[];
+  const idsEmpresa = await empresasDoUsuarioCacheado(supabase, user.email);
 
   let segmentosUsuario: string[] = [];
   let planosUsuario: string[] = [];
@@ -299,4 +320,5 @@ export async function marcarAvisoLidoAcao(id: string) {
   await supabase
     .from("comunicados_leituras")
     .upsert({ comunicado_id: id, usuario_email: user.email }, { onConflict: "comunicado_id,usuario_email", ignoreDuplicates: true });
+  invalidarCacheUsuarios();
 }

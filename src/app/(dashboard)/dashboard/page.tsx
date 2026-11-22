@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
+import { segmentoEmpresaCacheado } from "@/lib/dadosUsuarioCache";
 import { formatDate } from "@/lib/utils";
 import { resolverEmpresaAtual } from "@/lib/empresaAtual";
 import { calcularPrevisaoConsumo } from "@/lib/previsaoConsumo";
@@ -128,12 +129,99 @@ export default async function DashboardPage({
   // consulta de Frota (evita até as queries desnecessárias abaixo).
   let segmentoSelecionado: string | null = null;
   if (empresaSelecionada) {
-    const { data } = await supabase.from("empresas").select("segmento").eq("id", empresaSelecionada).maybeSingle();
-    segmentoSelecionado = data?.segmento ?? null;
+    segmentoSelecionado = await segmentoEmpresaCacheado(supabase, empresaSelecionada);
   }
   if (segmentoSelecionado === "Revenda" && empresaSelecionada) {
     return <DashboardPosto empresaPostoId={empresaSelecionada} nomeEmpresaSelecionada={nomeEmpresaSelecionada} />;
   }
+
+  // Perf (22/11/2026): o 2º grupo de indicadores (centro de custo, manutenção, variação de preço,
+  // rankings...) só depende do cliente e do período — não do resultado do 1º grupo. Antes rodava
+  // DEPOIS dele (e depois da busca dos nomes do ranking): 3 etapas em fila, cada uma pagando a
+  // viagem Virginia–São Paulo. Agora dispara aqui, junto com o 1º, e é aguardado mais abaixo.
+  const anoAtual = agora.getFullYear();
+  const mesAtualNum = agora.getMonth() + 1;
+  const [mesAnoAnoStr, mesAnoMesStr] = (mesAnoParam ?? `${anoAtual}-${mesAtualNum}`).split("-");
+  const indAno = Number(mesAnoAnoStr) || anoAtual;
+  const indMes = Math.min(12, Math.max(1, Number(mesAnoMesStr) || mesAtualNum));
+  const primeiroDiaMes = new Date(indAno, indMes - 1, 1);
+  const diasNoMes = new Date(indAno, indMes, 0).getDate();
+  const isMesAtual = indAno === anoAtual && indMes === mesAtualNum;
+  const isMesFuturo = indAno > anoAtual || (indAno === anoAtual && indMes > mesAtualNum);
+  const diaAtual = isMesAtual ? agora.getDate() : isMesFuturo ? 0 : diasNoMes;
+  const dataInicioInd = paraDataISO(primeiroDiaMes);
+  const dataFimInd = paraDataISO(new Date(indAno, indMes - 1, Math.max(1, diaAtual || diasNoMes)));
+  const opcoesMes: { ano: number; mes: number; label: string }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const data = new Date(anoAtual, mesAtualNum - 1 - i, 1);
+    opcoesMes.push({ ano: data.getFullYear(), mes: data.getMonth() + 1, label: `${NOMES_MES[data.getMonth()]} ${data.getFullYear()}` });
+  }
+  const grupo2 = empresaSelecionada ? Promise.all([
+        supabase.rpc("indicadores_centro_custo", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+        }),
+        // Fase 05/08/2026 (achado real do Daniel: "a empresa selecionada...
+        // nao esta sendo respeitado... a indicacao de manutençao
+        // preventiva") -- manutencao_preditiva_kpis por padrão expande pro
+        // GRUPO ECONÔMICO inteiro (ver manutencao_preditiva_base), deliberado
+        // na tela dedicada /manutencao-preditiva (mostra `empresa_dona_nome`
+        // de propósito), mas o card do dashboard tem que respeitar só a
+        // empresa escolhida no seletor único do topo -- daí `p_somente_empresa: true`.
+        supabase.rpc("manutencao_preditiva_kpis", { p_empresa_id: empresaSelecionada, p_somente_empresa: true }),
+        supabase.rpc("indicador_variacao_precos", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+        }),
+        supabase.rpc("indicador_consumo_diario", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+          p_combustivel: combustivelSelecionado,
+        }),
+        supabase.rpc("indicador_padrao_dia_semana", {
+          p_empresa_id: empresaSelecionada,
+          p_dias_lookback: 90,
+          p_combustivel: combustivelSelecionado,
+        }),
+        supabase.rpc("indicador_volume_postos", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+          p_combustivel: combustivelSelecionado,
+        }),
+        supabase.rpc("indicador_ranking_veiculos", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+          p_limit: 10,
+          p_offset: 0,
+        }),
+        supabase.rpc("indicador_ranking_motoristas", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+          p_limit: 10,
+          p_offset: 0,
+        }),
+        supabase.rpc("indicador_eficiencia_veiculos", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+        }),
+        // Fase Desempenho-Por-Ativo (12/08/2026) — pedido do Daniel: comparar
+        // desempenho de veículos agrupado por marca/modelo/motor (não por
+        // placa individual), pra apoiar decisão de compra/customização de
+        // frota. Compõe 3 RPCs já existentes (ver comentário na migração
+        // desempenho_veiculos_grupo).
+        supabase.rpc("desempenho_veiculos_grupo", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+        }),
+      ]) : null;
 
   // Fase 27.70 — pedido do Daniel: mesma seção "Ajustes de abastecimento" do
   // lado do posto, agora do lado do cliente/frota (só o "lado" da consulta
@@ -362,23 +450,6 @@ export default async function DashboardPage({
   // com o cliente (já resolvido acima), os indicadores de centro de custo e
   // os 7 indicadores avançados. Manutenção preditiva não depende do período
   // (é o estado atual da frota), só do cliente.
-  const anoAtual = agora.getFullYear();
-  const mesAtualNum = agora.getMonth() + 1;
-  const [mesAnoAnoStr, mesAnoMesStr] = (mesAnoParam ?? `${anoAtual}-${mesAtualNum}`).split("-");
-  const indAno = Number(mesAnoAnoStr) || anoAtual;
-  const indMes = Math.min(12, Math.max(1, Number(mesAnoMesStr) || mesAtualNum));
-  const primeiroDiaMes = new Date(indAno, indMes - 1, 1);
-  const diasNoMes = new Date(indAno, indMes, 0).getDate();
-  const isMesAtual = indAno === anoAtual && indMes === mesAtualNum;
-  const isMesFuturo = indAno > anoAtual || (indAno === anoAtual && indMes > mesAtualNum);
-  const diaAtual = isMesAtual ? agora.getDate() : isMesFuturo ? 0 : diasNoMes;
-  const dataInicioInd = paraDataISO(primeiroDiaMes);
-  const dataFimInd = paraDataISO(new Date(indAno, indMes - 1, Math.max(1, diaAtual || diasNoMes)));
-  const opcoesMes: { ano: number; mes: number; label: string }[] = [];
-  for (let i = 0; i < 12; i++) {
-    const data = new Date(anoAtual, mesAtualNum - 1 - i, 1);
-    opcoesMes.push({ ano: data.getFullYear(), mes: data.getMonth() + 1, label: `${NOMES_MES[data.getMonth()]} ${data.getFullYear()}` });
-  }
 
   // Fase Perf-19-07 (achado do Daniel: "lentidão excessiva em muitos
   // pontos") — indicadores de centro de custo e manutenção preditiva não
@@ -399,72 +470,7 @@ export default async function DashboardPage({
     { data: eficienciaVeiculos },
     { data: desempenhoPorAtivo },
   ] = empresaSelecionada
-    ? await Promise.all([
-        supabase.rpc("indicadores_centro_custo", {
-          p_empresa_id: empresaSelecionada,
-          p_data_inicio: dataInicioInd,
-          p_data_fim: dataFimInd,
-        }),
-        // Fase 05/08/2026 (achado real do Daniel: "a empresa selecionada...
-        // nao esta sendo respeitado... a indicacao de manutençao
-        // preventiva") -- manutencao_preditiva_kpis por padrão expande pro
-        // GRUPO ECONÔMICO inteiro (ver manutencao_preditiva_base), deliberado
-        // na tela dedicada /manutencao-preditiva (mostra `empresa_dona_nome`
-        // de propósito), mas o card do dashboard tem que respeitar só a
-        // empresa escolhida no seletor único do topo -- daí `p_somente_empresa: true`.
-        supabase.rpc("manutencao_preditiva_kpis", { p_empresa_id: empresaSelecionada, p_somente_empresa: true }),
-        supabase.rpc("indicador_variacao_precos", {
-          p_empresa_id: empresaSelecionada,
-          p_data_inicio: dataInicioInd,
-          p_data_fim: dataFimInd,
-        }),
-        supabase.rpc("indicador_consumo_diario", {
-          p_empresa_id: empresaSelecionada,
-          p_data_inicio: dataInicioInd,
-          p_data_fim: dataFimInd,
-          p_combustivel: combustivelSelecionado,
-        }),
-        supabase.rpc("indicador_padrao_dia_semana", {
-          p_empresa_id: empresaSelecionada,
-          p_dias_lookback: 90,
-          p_combustivel: combustivelSelecionado,
-        }),
-        supabase.rpc("indicador_volume_postos", {
-          p_empresa_id: empresaSelecionada,
-          p_data_inicio: dataInicioInd,
-          p_data_fim: dataFimInd,
-          p_combustivel: combustivelSelecionado,
-        }),
-        supabase.rpc("indicador_ranking_veiculos", {
-          p_empresa_id: empresaSelecionada,
-          p_data_inicio: dataInicioInd,
-          p_data_fim: dataFimInd,
-          p_limit: 10,
-          p_offset: 0,
-        }),
-        supabase.rpc("indicador_ranking_motoristas", {
-          p_empresa_id: empresaSelecionada,
-          p_data_inicio: dataInicioInd,
-          p_data_fim: dataFimInd,
-          p_limit: 10,
-          p_offset: 0,
-        }),
-        supabase.rpc("indicador_eficiencia_veiculos", {
-          p_empresa_id: empresaSelecionada,
-          p_data_inicio: dataInicioInd,
-          p_data_fim: dataFimInd,
-        }),
-        // Fase Desempenho-Por-Ativo (12/08/2026) — pedido do Daniel: comparar
-        // desempenho de veículos agrupado por marca/modelo/motor (não por
-        // placa individual), pra apoiar decisão de compra/customização de
-        // frota. Compõe 3 RPCs já existentes (ver comentário na migração
-        // desempenho_veiculos_grupo).
-        supabase.rpc("desempenho_veiculos_grupo", {
-          p_empresa_id: empresaSelecionada,
-          p_data_inicio: dataInicioInd,
-          p_data_fim: dataFimInd,
-        }),
-      ])
+    ? await await grupo2!
     : [
         { data: null, error: null },
         { data: null },
