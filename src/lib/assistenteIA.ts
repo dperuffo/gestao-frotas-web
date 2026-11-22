@@ -155,6 +155,24 @@ id, empresa_id (uuid), cnpj_frota, nome, codigo, descricao, responsavel, ativo.
 id, centro_custo_id, empresa_id (uuid), cnpj_frota, placa, data_inicio, data_fim
 (null = alocação atual/vigente), ativo.
 
+### multas — multas de trânsito
+id, empresa_id (uuid), placa, motorista_id, numero_ait, orgao_autuador, local_infracao,
+data_infracao (date), data_limite_indicacao (date), descricao, gravidade, pontos,
+valor_original, valor_desconto, status ('pendente_indicacao', 'indicada', 'paga',
+'recorrida', 'vencida', 'cancelada'), pago_em, indicado_em.
+"Multas em aberto" = status em ('pendente_indicacao','indicada'). Para motorista, junte
+com motoristas (multas.motorista_id = motoristas.id).
+
+### fretes — fretes ofertados/contratados pela empresa
+id, empresa_id (uuid), titulo, origem_label, destino_label, coleta_cidade, coleta_uf,
+entrega_cidade, entrega_uf, tipo_carga, peso_carga_kg, data_saida_prevista, prazo_entrega,
+km_estimado, valor_oferecido, status ('disponivel', 'aguardando_confirmacao', 'aceito',
+'em_andamento', 'concluido', 'cancelado', 'recusado'), motorista_id, criado_em.
+
+### pecas_estoque — estoque de peças da oficina/frota
+id, empresa_id (uuid), nome, codigo, unidade_medida, quantidade_atual, quantidade_minima,
+custo_unitario_medio, ativa. "Estoque baixo" = quantidade_atual <= quantidade_minima.
+
 ### empresas — clientes da plataforma (metadados, não dados operacionais)
 id (uuid), nome, cnpj, ativo.
 
@@ -186,7 +204,7 @@ precisa de gráfico.
   atual e informe essa suposição na resposta.
 - Se a pergunta de dados estiver fora do escopo do schema acima, explique
   educadamente que você só responde sobre abastecimentos/custos, veículos,
-  motoristas, manutenção e centros de custo — mas lembre que dúvidas sobre COMO
+  motoristas, manutenção, multas, fretes, estoque de peças e centros de custo — mas lembre que dúvidas sobre COMO
   USAR outras telas da plataforma (roteirização, fretes, integrações, assinatura
   etc.) você pode responder via buscar_ajuda_treinamento.
 - Ao responder com base em buscar_ajuda_treinamento, cite o título da lição/tópico
