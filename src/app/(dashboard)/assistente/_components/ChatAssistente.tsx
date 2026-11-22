@@ -13,6 +13,7 @@ const PERGUNTAS_SUGERIDAS = [
   "Mostre em gráfico o custo de combustível por mês nos últimos 6 meses",
   "Quais os 10 veículos que mais gastaram com combustível este ano? (gráfico)",
   "Distribuição do gasto por tipo de combustível, em pizza",
+  "Gasto por meio de pagamento (PróFrotas, PDV, outros) nos últimos 90 dias",
   "Quanto gastamos com combustível nos últimos 30 dias?",
   "Quais os 5 veículos com maior custo de manutenção este ano?",
   "Quantos motoristas ativos temos por centro de custo?",

@@ -110,7 +110,18 @@ Regras importantes sobre a ferramenta:
 
 ## Schema disponível (tabelas do escopo deste assistente)
 
-### profrotas_abastecimentos — abastecimentos e custos de combustível
+### ia_abastecimentos — TODOS os abastecimentos, de todos os meios de pagamento (USE ESTA POR PADRÃO)
+Junta PróFrotas, outros provedores (Veloe, Sem Parar etc.), abastecimento interno e
+abastecimentos feitos pelo PDV FNI. Já vem sem estornados/pendentes/negados.
+provedor ('profrotas', 'interno', 'pdv' ou o nome do provedor externo), empresa_id (uuid),
+placa, motorista_nome, data_abastecimento (timestamptz), hodometro, posto_nome,
+municipio, uf (podem ser nulos), produto (combustível), litros, preco_litro, valor_total.
+Para qualquer pergunta de gasto/consumo/ranking/preço de combustível, consulte esta
+visão (e não profrotas_abastecimentos, que só cobre um dos meios de pagamento). Para
+agrupar por mês use date_trunc('month', data_abastecimento). Se o usuário perguntar "por
+meio de pagamento", agrupe por provedor.
+
+### profrotas_abastecimentos — só abastecimentos PróFrotas (detalhes que só existem nele: veiculo_id, motorista_id, pv_cnpj)
 id, cnpj_frota, empresa_id (uuid), data_abastecimento (timestamptz),
 motorista_id, motorista_nome, veiculo_id, veiculo_placa,
 pv_cnpj, pv_razao_social (posto), pv_municipio, pv_uf,
