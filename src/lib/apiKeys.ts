@@ -83,6 +83,7 @@ export const ESCOPO_PARAMETROS_DIAS_HORARIOS_READ = "parametros_dias_horarios:re
 export const ESCOPO_PARAMETROS_POSTOS_READ = "parametros_postos:read";
 export const ESCOPO_PARAMETROS_SERVICOS_READ = "parametros_servicos:read";
 export const ESCOPO_PARAMETROS_COTAS_READ = "parametros_cotas:read";
+export const ESCOPO_PARAMETROS_CONSUMO_READ = "parametros_consumo:read";
 
 // Fase 27.15x — Regras Antifraude: diferente de Parâmetros de Uso (o sistema
 // externo consulta e decide sozinho), aqui é a PLATAFORMA quem avalia as
@@ -237,6 +238,13 @@ export const CATALOGO_ESCOPOS: { escopo: string; categoria: string; label: strin
     categoria: "Parâmetros de Uso",
     label: "Variação de hodômetro (leitura)",
     descricao: "Consultar a variação máxima de hodômetro permitida entre abastecimentos, por classificação Leve/Pesado.",
+  },
+  {
+    escopo: ESCOPO_PARAMETROS_CONSUMO_READ,
+    categoria: "Parâmetros de Uso",
+    label: "Consumo km/l (leitura)",
+    descricao:
+      "Consultar a faixa de consumo (km/l) aceita por marca/modelo ou placa. Abastecimento fora da faixa deve ser negado na autorização.",
   },
   {
     escopo: ESCOPO_PARAMETROS_DIAS_HORARIOS_READ,

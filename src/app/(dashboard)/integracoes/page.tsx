@@ -564,6 +564,7 @@ function SecaoHub({
 # /api/integracoes/parametros/volume-diario     ?placa=                  (Volume Diário — Veículo)
 # /api/integracoes/parametros/produto           ?placa=                  (Produto Abastecido)
 # /api/integracoes/parametros/hodometro         ?placa= &classificacao=Leve|Pesado
+# /api/integracoes/parametros/consumo           ?placa=                  (faixa de consumo km/l por marca/modelo ou placa)
 # /api/integracoes/parametros/dias-horarios     ?placa= &motorista_cpf=
 # /api/integracoes/parametros/postos            ?placa= &posto_cnpj=
 # /api/integracoes/parametros/servicos          ?placa=
