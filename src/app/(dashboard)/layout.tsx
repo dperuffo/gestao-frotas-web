@@ -74,6 +74,7 @@ import {
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
+import { contagemEmpresasCacheada, empresasDoUsuarioCacheado, vinculosDiretosCacheado } from "@/lib/dadosUsuarioCache";
 import { logger } from "@/lib/logger";
 import { ProvedorBadgesMenu } from "./_components/ProvedorBadgesMenu";
 import { AvisoNovoAbastecimento } from "./_components/AvisoNovoAbastecimento";
@@ -814,12 +815,8 @@ export default async function DashboardLayout({
   const [temMultiplasEmpresas, mapaPermissoes, acessoInsightsIA] = await Promise.all([
     (async (): Promise<boolean> => {
       try {
-        if (perfilUsuario?.perfil === "admin") {
-          const { count } = await supabase.from("empresas").select("id", { count: "exact", head: true });
-          return (count ?? 0) > 1;
-        }
-        const { data: idsEmpresas } = await supabase.rpc("empresas_do_usuario", { p_email: user.email ?? "" });
-        return (idsEmpresas?.length ?? 0) > 1;
+        if (perfilUsuario?.perfil === "admin") return (await contagemEmpresasCacheada(supabase)) > 1;
+        return (await empresasDoUsuarioCacheado(supabase, user.email ?? "")).length > 1;
       } catch (e) {
         void logger.error("dashboard/layout", "Falha ao verificar múltiplas empresas (ignorado)", e);
         return false;
@@ -829,16 +826,8 @@ export default async function DashboardLayout({
       if (bypassPermissao || !perfilUsuario?.perfil) return new Map<string, boolean>();
       // Vínculos diretos do usuário: a personalização por empresa (feita pelo
       // gestor em /permissoes) vale para quem está abaixo dele.
-      const { data: vinculosPermissao } = await supabase
-        .from("usuarios_empresas")
-        .select("empresa_id")
-        .eq("user_email", user.email ?? "")
-        .eq("ativo", true);
-      return carregarMapaPermissoes(
-        supabase,
-        perfilUsuario.perfil,
-        (vinculosPermissao ?? []).map((v) => v.empresa_id as string)
-      );
+      const vinculosPermissao = await vinculosDiretosCacheado(supabase, user.email ?? "");
+      return carregarMapaPermissoes(supabase, perfilUsuario.perfil, vinculosPermissao);
     })(),
     // Insights de IA é a única tela gateada por PLANO da empresa (não por perfil):
     // ver src/lib/acessoInsightsIA.ts.

@@ -3,6 +3,7 @@ import type { Database } from "@/types/database.types";
 import { DIAS_TRIAL, LIMITES_PLANO } from "@/lib/constants";
 import { exigirDocumentacaoAprovada } from "@/lib/empresasDocumentos";
 import { logger } from "@/lib/logger";
+import { invalidarCacheUsuarios } from "@/lib/dadosUsuarioCache";
 
 // Fase 27.50 — Negociação com Postos Revendedores.
 //
@@ -218,6 +219,7 @@ export async function provisionarEmpresaPostoTrial(
     { email, nome: nomeProvisorio, perfil: "posto", segmento: "Revenda", ativo: true },
     { onConflict: "email" }
   );
+  invalidarCacheUsuarios();
   if (perfilError) {
     return { erro: `Posto convidado, mas houve erro ao salvar o perfil: ${perfilError.message}` };
   }
@@ -225,6 +227,7 @@ export async function provisionarEmpresaPostoTrial(
   const { error: vinculoError } = await admin
     .from("usuarios_empresas")
     .upsert({ user_email: email, empresa_id: empresa.id, role: "posto", ativo: true });
+  invalidarCacheUsuarios();
   if (vinculoError) {
     return { erro: `Perfil salvo, mas houve erro ao vincular à empresa: ${vinculoError.message}` };
   }

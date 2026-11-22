@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DIAS_TRIAL, LIMITES_PLANO } from "@/lib/constants";
+import { invalidarCacheUsuarios } from "@/lib/dadosUsuarioCache";
 
 export type CadastroFormState = { erro?: string } | undefined;
 
@@ -106,6 +107,7 @@ export async function criarContaTrial(_prev: CadastroFormState, formData: FormDa
     { email, nome: nomeContato, telefone, perfil: "gestor_frota", segmento: "Frota", ativo: true },
     { onConflict: "email" }
   );
+  invalidarCacheUsuarios();
   if (perfilError) {
     return {
       erro: `Empresa criada, mas houve erro ao salvar seu perfil (${perfilError.message}). Fale com o suporte.`,
@@ -115,6 +117,7 @@ export async function criarContaTrial(_prev: CadastroFormState, formData: FormDa
   const { error: vinculoError } = await admin
     .from("usuarios_empresas")
     .upsert({ user_email: email, empresa_id: empresa.id, role: "gestor_frota", ativo: true });
+  invalidarCacheUsuarios();
   if (vinculoError) {
     return {
       erro: `Perfil salvo, mas houve erro ao vincular à empresa (${vinculoError.message}). Fale com o suporte.`,

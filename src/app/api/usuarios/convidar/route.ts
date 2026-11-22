@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PERFIS } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
 import { resolverCorsHeaders } from "@/lib/corsOrigens";
+import { invalidarCacheUsuarios } from "@/lib/dadosUsuarioCache";
 
 // Fase FLT-2 — pedido do Daniel: expor "convidar novo usuário" (aba
 // Usuários) pro PWA Flutter. Mesma razão de existir de /api/assistente:
@@ -149,6 +150,7 @@ export async function POST(request: Request) {
   const { error: perfilError } = await admin
     .from("usuarios_app")
     .upsert({ email, nome, perfil, cpf, telefone, segmento, ativo: true }, { onConflict: "email" });
+  invalidarCacheUsuarios();
   if (perfilError) {
     return NextResponse.json(
       { erro: `Usuário convidado, mas houve erro ao salvar o perfil: ${perfilError.message}` },
@@ -159,6 +161,7 @@ export async function POST(request: Request) {
   const { error: vinculoError } = await admin
     .from("usuarios_empresas")
     .upsert({ user_email: email, empresa_id: empresaId, role: perfil, ativo: true });
+  invalidarCacheUsuarios();
   if (vinculoError) {
     return NextResponse.json(
       { erro: `Perfil salvo, mas houve erro ao vincular à empresa: ${vinculoError.message}` },

@@ -1,5 +1,7 @@
 import "server-only";
 import type { createClient } from "@/lib/supabase/server";
+import { obterOuDefinir } from "@/lib/cache";
+import { empresasDoUsuarioCacheado } from "@/lib/dadosUsuarioCache";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -24,14 +26,16 @@ export async function usuarioTemAcessoInsightsIA(supabase: Supabase, email: stri
   if (ehAdmin) return true;
   if (!email) return false;
 
-  const { data: idsEmpresas } = await supabase.rpc("empresas_do_usuario", { p_email: email });
-  const ids = idsEmpresas ?? [];
-  if (ids.length === 0) return false;
+  // Resultado em cache por 60 s (chave com o e-mail): é lido em TODA abertura de tela pelo layout.
+  return obterOuDefinir(`usuario:insights-ia:${email}`, 60_000, async () => {
+    const ids = await empresasDoUsuarioCacheado(supabase, email);
+    if (ids.length === 0) return false;
 
-  const { data: empresas } = await supabase
-    .from("empresas")
-    .select("plano, acesso_insights_ia_liberado")
-    .in("id", ids);
+    const { data: empresas } = await supabase
+      .from("empresas")
+      .select("plano, acesso_insights_ia_liberado")
+      .in("id", ids);
 
-  return (empresas ?? []).some(empresaTemAcessoInsightsIA);
+    return (empresas ?? []).some(empresaTemAcessoInsightsIA);
+  });
 }

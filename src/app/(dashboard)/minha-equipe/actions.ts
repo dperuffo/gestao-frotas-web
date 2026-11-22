@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { verificarLimiteUsuarios, mensagemLimiteUsuariosExcedido } from "@/lib/limitePlano";
 import { PERFIL_LABEL, type Perfil } from "@/lib/constants";
 import { cpfDuplicadoUsuarioApp } from "@/lib/duplicidade";
+import { invalidarCacheUsuarios } from "@/lib/dadosUsuarioCache";
 
 export type ConvidarColegaState = { erro?: string; sucesso?: string } | undefined;
 
@@ -143,6 +144,7 @@ export async function convidarColega(
       segmento: empresaInfo?.segmento ?? null,
       ativo: true,
     });
+    invalidarCacheUsuarios();
     if (perfilError) {
       return { erro: `Convite enviado, mas houve erro ao salvar o perfil: ${perfilError.message}` };
     }
@@ -151,6 +153,7 @@ export async function convidarColega(
   const { error: vinculoError } = await admin
     .from("usuarios_empresas")
     .upsert({ user_email: email, empresa_id: empresaId, role: usuarioExistente?.perfil ?? perfilDeEntrada(empresaSegmento, perfilEscolhido), ativo: true });
+  invalidarCacheUsuarios();
   if (vinculoError) {
     return { erro: `Perfil salvo, mas houve erro ao vincular à empresa: ${vinculoError.message}` };
   }
@@ -225,6 +228,7 @@ export async function editarColegaAcao(
   // a RLS de usuarios_app só libera admin/analista ou a própria linha, ver
   // comentário de buscarMembro acima).
   const { error } = await admin.from("usuarios_app").update({ nome, cpf, telefone }).eq("email", email);
+  invalidarCacheUsuarios();
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
 
   revalidatePath("/minha-equipe");
@@ -260,6 +264,7 @@ export async function removerColegaAcao(empresaId: string, email: string): Promi
     .delete()
     .eq("user_email", email)
     .eq("empresa_id", empresaId);
+  invalidarCacheUsuarios();
   if (error) return { erro: `Não foi possível excluir: ${error.message}` };
 
   revalidatePath("/minha-equipe");
@@ -326,6 +331,7 @@ export async function alternarAtivoColega(empresaId: string, email: string, ativ
   }
 
   await supabase.from("usuarios_empresas").update({ ativo }).eq("user_email", email).eq("empresa_id", empresaId);
+  invalidarCacheUsuarios();
   revalidatePath("/minha-equipe");
   return {};
 }
@@ -379,9 +385,11 @@ export async function promoverColega(empresaId: string, email: string): Promise<
   // TODAS. Aceitável pro caso comum (colaborador vinculado só a esta
   // empresa); não há hoje um modelo de perfil por empresa no sistema.
   const { error: erroPerfil } = await admin.from("usuarios_app").update({ perfil: novoPerfil }).eq("email", email);
+  invalidarCacheUsuarios();
   if (erroPerfil) return { erro: `Não foi possível promover: ${erroPerfil.message}` };
 
   await admin.from("usuarios_empresas").update({ role: novoPerfil }).eq("user_email", email).eq("empresa_id", empresaId);
+  invalidarCacheUsuarios();
 
   revalidatePath("/minha-equipe");
   return { sucesso: `${email} agora é ${PERFIL_LABEL[novoPerfil]}.` };
@@ -435,8 +443,10 @@ export async function autoRebaixarParaColaborador(empresaId: string): Promise<Pr
   const { data: empresaInfo } = await supabase.from("empresas").select("segmento").eq("id", empresaId).maybeSingle();
   const perfilRebaixado = perfilDeEntrada(empresaInfo?.segmento, "colaborador");
   const { error } = await admin.from("usuarios_app").update({ perfil: perfilRebaixado }).eq("email", meuEmail);
+  invalidarCacheUsuarios();
   if (error) return { erro: `Não foi possível concluir: ${error.message}` };
   await admin.from("usuarios_empresas").update({ role: perfilRebaixado }).eq("user_email", meuEmail).eq("empresa_id", empresaId);
+  invalidarCacheUsuarios();
 
   revalidatePath("/minha-equipe");
   return { sucesso: `Você agora é ${PERFIL_LABEL[perfilRebaixado]} nesta empresa.` };

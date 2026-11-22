@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cpfDuplicadoUsuarioApp } from "@/lib/duplicidade";
+import { invalidarCacheUsuarios } from "@/lib/dadosUsuarioCache";
 
 export type UsuarioFormState = { erro?: string } | undefined;
 
@@ -74,6 +75,7 @@ export async function criarUsuario(_prev: UsuarioFormState, formData: FormData):
     { email, nome, perfil, cpf, telefone, segmento, ativo: true },
     { onConflict: "email" }
   );
+  invalidarCacheUsuarios();
   if (perfilError) {
     return { erro: `Usuário convidado, mas houve erro ao salvar o perfil: ${perfilError.message}` };
   }
@@ -82,6 +84,7 @@ export async function criarUsuario(_prev: UsuarioFormState, formData: FormData):
   const { error: vinculoError } = await admin
     .from("usuarios_empresas")
     .upsert({ user_email: email, empresa_id: empresaId, role: perfil, ativo: true });
+  invalidarCacheUsuarios();
   if (vinculoError) {
     return { erro: `Perfil salvo, mas houve erro ao vincular ao cliente: ${vinculoError.message}` };
   }
@@ -114,6 +117,7 @@ export async function atualizarUsuario(
     .from("usuarios_app")
     .update({ nome, cpf, telefone, perfil, segmento, ativo })
     .eq("email", email);
+  invalidarCacheUsuarios();
 
   if (error) return { erro: `Não foi possível salvar: ${error.message}` };
 
@@ -128,7 +132,9 @@ export async function alternarAtivoUsuario(email: string, ativo: boolean) {
   if (erroPermissao) return { erro: erroPermissao };
 
   await supabase.from("usuarios_app").update({ ativo }).eq("email", email);
+  invalidarCacheUsuarios();
   await supabase.from("usuarios_empresas").update({ ativo }).eq("user_email", email);
+  invalidarCacheUsuarios();
   revalidatePath("/usuarios");
   return {};
 }

@@ -1,5 +1,6 @@
 import type { createClient } from "@/lib/supabase/server";
 import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
+import { empresasDoUsuarioCacheado, listaEmpresasCacheada, perfilAtualCacheado } from "@/lib/dadosUsuarioCache";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -15,9 +16,11 @@ export async function resolverEmpresaAtual(supabase: Supabase, empresaParam?: st
   const {
     data: { user },
   } = await obterUsuarioAtual();
-  const [{ data: perfil }, { data: minhasEmpresasIds }] = await Promise.all([
-    supabase.rpc("perfil_usuario_atual"),
-    supabase.rpc("empresas_do_usuario", { p_email: user?.email ?? "" }),
+  // Perfil e empresas do usuário vêm do cache de 30 s (ver dadosUsuarioCache.ts).
+  const email = user?.email ?? "";
+  const [perfil, minhasEmpresasIds] = await Promise.all([
+    perfilAtualCacheado(supabase, email),
+    empresasDoUsuarioCacheado(supabase, email),
   ]);
 
   // Fase 27.2 — achado real: um usuário vinculado a mais de uma empresa (ex.:
@@ -29,11 +32,15 @@ export async function resolverEmpresaAtual(supabase: Supabase, empresaParam?: st
   // as empresas "irmãs" do mesmo grupo econômico.
   let empresas: EmpresaOpcao[] = [];
   if (perfil === "admin") {
-    const { data } = await supabase.from("empresas").select("id, nome").order("nome");
-    empresas = data ?? [];
-  } else if (minhasEmpresasIds && minhasEmpresasIds.length > 0) {
-    const { data } = await supabase.from("empresas").select("id, nome").in("id", minhasEmpresasIds).order("nome");
-    empresas = data ?? [];
+    empresas = await listaEmpresasCacheada(supabase, "admin", async () => {
+      const { data } = await supabase.from("empresas").select("id, nome").order("nome");
+      return data ?? [];
+    });
+  } else if (minhasEmpresasIds.length > 0) {
+    empresas = await listaEmpresasCacheada(supabase, [...minhasEmpresasIds].sort().join(","), async () => {
+      const { data } = await supabase.from("empresas").select("id, nome").in("id", minhasEmpresasIds).order("nome");
+      return data ?? [];
+    });
   }
 
   const empresaSelecionada =

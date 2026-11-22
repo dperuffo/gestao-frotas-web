@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { lerPlanilhaComoTexto } from "@/lib/xlsx";
 import { normalizarCNPJ } from "@/lib/utils";
 import { PERFIS, type Perfil } from "@/lib/constants";
+import { invalidarCacheUsuarios } from "@/lib/dadosUsuarioCache";
 
 export type LinhaResultado = {
   linha: number;
@@ -120,6 +121,7 @@ export async function importarUsuarios(
       const { error: perfilError } = await admin
         .from("usuarios_app")
         .upsert({ email, nome, perfil, cpf, telefone, segmento, ativo: true }, { onConflict: "email" });
+    invalidarCacheUsuarios();
       if (perfilError) {
         throw new Error(`Erro ao salvar o perfil: ${perfilError.message}`);
       }
@@ -127,6 +129,7 @@ export async function importarUsuarios(
       const { error: vinculoError } = await admin
         .from("usuarios_empresas")
         .upsert({ user_email: email, empresa_id: empresaId, role: perfil, ativo: true });
+    invalidarCacheUsuarios();
       if (vinculoError) {
         throw new Error(`Erro ao vincular ao cliente: ${vinculoError.message}`);
       }
