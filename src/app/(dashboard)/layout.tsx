@@ -574,6 +574,8 @@ const menuAdministracao = [
   // Fase P0.5 — piso mínimo ANTT (Res. 5.867/2020), tabela nacional
   // importável via XLSX, só admin.
   { href: "/administracao/pisos-antt", label: "Piso Mínimo ANTT", icon: Scale },
+  // Limites de tokens do Assistente FNI por plano e por cliente (22/11/2026), só admin.
+  { href: "/administracao/limites-assistente", label: "Limites do Assistente", icon: Sparkles },
   // Fase Central-Avisos (28/07/2026) — pedido do Daniel: canal oficial pra
   // comunicar novidades/correções/manutenção-indisponibilidade/avisos gerais
   // a clientes, motoristas e postos, sem depender de e-mail/WhatsApp. CRUD

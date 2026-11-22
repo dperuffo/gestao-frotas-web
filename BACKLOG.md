@@ -74,7 +74,8 @@ continua ruim depois do ajuste já aplicado.
 ## Assistente FNI: consumo e chave por cliente — FEITO em 22/11/2026
 - Franquia mensal de tokens por plano (`limites_plano.assistente_tokens_mes`, -1 = ilimitada; valores iniciais são suposições a ajustar) e ajuste por cliente em `assistente_config_empresa.franquia_tokens_mes`.
 - Cliente pode cadastrar a própria chave Anthropic (Vault, validada antes de salvar); com chave própria não há limite da FNI. Franquia esgotada bloqueia com convite para a chave própria.
-- Pendente: tela de admin para editar franquia/limites por plano e por cliente (hoje via SQL); mostrar custo estimado em R$.
+- FEITO (22/11/2026): tela Administração > Limites do Assistente (`/administracao/limites-assistente`) para editar a franquia por plano e a exceção por cliente. Limites atuais (tokens/mês): Gratuito 10 mil, Básico 30 mil, Profissional 150 mil, Enterprise 500 mil, Posto Essencial 30 mil, Posto Profissional 100 mil, Posto Enterprise 500 mil.
+- Pendente: mostrar custo estimado em R$.
 - Requer `SUPABASE_SERVICE_ROLE_KEY` no Railway (já usada nos convites); `ANTHROPIC_API_KEY` continua sendo a chave da FNI.
 
 ## Desempenho (22/11/2026)
