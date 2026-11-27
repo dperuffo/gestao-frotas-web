@@ -163,7 +163,8 @@ export default async function InteligenciaRedePage({
     { data: precosPorUfRaw },
     { data: serieTendenciaRaw },
     { data: volatilidadeMensalRaw },
-    { data: historicoDetalhadoRaw },
+    { data: tendenciaAgregadaRaw },
+    { data: postosAgregadoRaw },
     { data: precoRealPeriodoRaw },
     { data: precosMapaOperacionalRaw },
     { data: desvioAnpRaw },
@@ -210,8 +211,12 @@ export default async function InteligenciaRedePage({
       "historico_precos_volatilidade_mensal"
     ),
     rpcComRetry(
-      () => supabase.rpc("historico_precos_detalhado", { p_empresa_id: empresaIdFiltro }),
-      "historico_precos_detalhado"
+      () => supabase.rpc("historico_precos_tendencia_agregada", { p_empresa_id: empresaIdFiltro }),
+      "historico_precos_tendencia_agregada"
+    ),
+    rpcComRetry(
+      () => supabase.rpc("historico_precos_postos_agregado", { p_empresa_id: empresaIdFiltro }),
+      "historico_precos_postos_agregado"
     ),
     rpcComRetry(() => supabase.rpc("abastecimentos_preco_periodo"), "abastecimentos_preco_periodo"),
     rpcComRetry(() => supabase.rpc("postos_gf_precos_mapa"), "postos_gf_precos_mapa"),
@@ -441,19 +446,30 @@ export default async function InteligenciaRedePage({
     qtd: r.qtd,
   }));
 
-  // Evolução Temporal: histórico bruto (14 mil+ registros) mandado inteiro
-  // pro cliente — sem corte de 1000 (RPC), pequeno o bastante pra filtrar e
-  // agregar (tendência por UF, volatilidade, ranking de estabilidade) 100%
-  // no navegador, sem round-trip por interação.
-  const historicoDetalhado = (historicoDetalhadoRaw ?? []).map((r) => ({
+  // Evolução Temporal: o histórico bruto passou de 77 mil linhas e o servidor
+  // truncava a resposta (a linha parava em agosto). Agora o banco entrega já
+  // agregado: (1) soma/qtd por UF+combustível+semana+mês (tendência e
+  // volatilidade) e (2) estatísticas por posto+combustível (ranking de
+  // estabilidade e clusters por município). Contas idênticas, ~20 mil linhas.
+  const tendenciaAgregada = (tendenciaAgregadaRaw ?? []).map((r) => ({
+    uf: r.uf,
+    combustivel: r.combustivel,
+    semana: r.semana,
+    mes: r.mes,
+    soma: Number(r.soma),
+    qtd: Number(r.qtd),
+  }));
+  const postosAgregado = (postosAgregadoRaw ?? []).map((r) => ({
     cnpj: r.cnpj,
     razaoSocial: r.razao_social,
     municipio: r.municipio,
     uf: r.uf,
     combustivel: r.combustivel,
-    semana: r.semana,
-    mes: r.mes,
-    preco: r.preco,
+    n: Number(r.n),
+    soma: Number(r.soma),
+    somaQuad: Number(r.soma_quad),
+    min: Number(r.preco_min),
+    max: Number(r.preco_max),
   }));
   const precoRealPeriodo = (precoRealPeriodoRaw ?? []).map((r) => ({
     uf: r.uf,
@@ -919,7 +935,7 @@ export default async function InteligenciaRedePage({
                 </p>
                 <CruzamentosAvancadosLazy
                   precosPorUf={precosPorUf}
-                  historico={historicoDetalhado}
+                  postos={postosAgregado}
                   desvios={desvioAnp}
                   postosVisitados={postosVisitados}
                   anpPorUfPorCombustivel={anpPorUfPorCombustivel}
@@ -959,7 +975,7 @@ export default async function InteligenciaRedePage({
                 <p className="mb-4 text-xs text-slate-400">
                   Tendência por região, volatilidade e ranking de estabilidade dos postos.
                 </p>
-                <EvolucaoTemporalLazy registros={historicoDetalhado} precoReal={precoRealPeriodo} />
+                <EvolucaoTemporalLazy tendencia={tendenciaAgregada} postos={postosAgregado} precoReal={precoRealPeriodo} />
               </div>
             ),
           },

@@ -8,7 +8,7 @@ import type { PontoFrotaReal } from "./MapaFrotaReal";
 import { PRODUTO_PARA_CATEGORIA_ANP } from "@/lib/constants";
 
 export type PrecoUf = { uf: string; combustivel: string; precoMedio: number; qtdPostos: number };
-export type RegistroPreco = { cnpj: string; razaoSocial: string | null; municipio: string | null; uf: string | null; combustivel: string; preco: number };
+export type PostoAgregado = { cnpj: string; razaoSocial: string | null; municipio: string | null; uf: string | null; combustivel: string; n: number; soma: number; somaQuad: number; min: number; max: number };
 export type DesvioAnp = { cnpj: string; razaoSocial: string | null; municipio: string | null; uf: string | null; combustivel: string; precoGf: number; precoAnp: number; nivelAnp: string; diffPct: number };
 export type PostoVisitado = {
   cnpj: string;
@@ -49,13 +49,13 @@ function useCombustivelSelect(opcoes: string[]) {
 
 export function CruzamentosAvancados({
   precosPorUf,
-  historico,
+  postos,
   desvios,
   postosVisitados,
   anpPorUfPorCombustivel,
 }: {
   precosPorUf: PrecoUf[];
-  historico: RegistroPreco[];
+  postos: PostoAgregado[];
   desvios: DesvioAnp[];
   postosVisitados: PostoVisitado[];
   anpPorUfPorCombustivel: Record<string, Record<string, number>>;
@@ -73,7 +73,7 @@ export function CruzamentosAvancados({
         {
           id: "clusters",
           label: "🎯 Clusters de oportunidade",
-          conteudo: <ClustersOportunidade historico={historico} combustiveis={combustiveis} />,
+          conteudo: <ClustersOportunidade postos={postos} combustiveis={combustiveis} />,
         },
         {
           id: "gf-vs-anp",
@@ -207,7 +207,7 @@ function classificarCluster(delta: number): string {
   return "🟢 Barato (<-2%)";
 }
 
-function ClustersOportunidade({ historico, combustiveis }: { historico: RegistroPreco[]; combustiveis: string[] }) {
+function ClustersOportunidade({ postos: historico, combustiveis }: { postos: PostoAgregado[]; combustiveis: string[] }) {
   const { atual, setSel } = useCombustivelSelect(combustiveis);
 
   const municipios = useMemo(() => {
@@ -217,8 +217,8 @@ function ClustersOportunidade({ historico, combustiveis }: { historico: Registro
       const chave = `${r.uf}__${r.municipio}`;
       const atual2 = mapa.get(chave) ?? { uf: r.uf, municipio: r.municipio, postos: new Set<string>(), soma: 0, qtd: 0 };
       atual2.postos.add(r.cnpj);
-      atual2.soma += r.preco;
-      atual2.qtd += 1;
+      atual2.soma += r.soma;
+      atual2.qtd += r.n;
       mapa.set(chave, atual2);
     }
     const linhas = Array.from(mapa.values()).map((v) => ({ uf: v.uf, municipio: v.municipio, precoMedio: v.soma / v.qtd, postos: v.postos.size }));

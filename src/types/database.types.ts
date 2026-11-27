@@ -6652,6 +6652,25 @@ export interface Database {
         Args: { p_empresa_id?: string | null };
         Returns: { mes: string; combustivel: string; volatilidade: number; qtd: number }[];
       };
+      historico_precos_tendencia_agregada: {
+        Args: { p_empresa_id?: string | null };
+        Returns: { uf: string; combustivel: string; semana: string; mes: string; soma: number; qtd: number }[];
+      };
+      historico_precos_postos_agregado: {
+        Args: { p_empresa_id?: string | null };
+        Returns: {
+          cnpj: string;
+          razao_social: string | null;
+          municipio: string | null;
+          uf: string | null;
+          combustivel: string;
+          n: number;
+          soma: number;
+          soma_quad: number;
+          preco_min: number;
+          preco_max: number;
+        }[];
+      };
       historico_precos_detalhado: {
         Args: { p_empresa_id?: string | null };
         Returns: {

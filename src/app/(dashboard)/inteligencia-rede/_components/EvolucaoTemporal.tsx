@@ -3,15 +3,20 @@
 import { useMemo, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-export type RegistroPreco = {
+// Histórico já agregado no banco (ver RPCs historico_precos_tendencia_agregada e
+// historico_precos_postos_agregado) — antes eram ~77 mil linhas brutas.
+export type TendenciaAgregada = { uf: string; combustivel: string; semana: string; mes: string; soma: number; qtd: number };
+export type PostoAgregado = {
   cnpj: string;
   razaoSocial: string | null;
   municipio: string | null;
   uf: string | null;
   combustivel: string;
-  semana: string;
-  mes: string;
-  preco: number;
+  n: number;
+  soma: number;
+  somaQuad: number;
+  min: number;
+  max: number;
 };
 
 export type PrecoRealPeriodo = { uf: string; semana: string; mes: string; precoMedio: number; qtd: number };
@@ -55,11 +60,19 @@ function truncar(texto: string, tamanho: number) {
   return texto.length > tamanho ? `${texto.slice(0, tamanho)}…` : texto;
 }
 
-export function EvolucaoTemporal({ registros, precoReal }: { registros: RegistroPreco[]; precoReal: PrecoRealPeriodo[] }) {
-  const combustiveis = useMemo(() => Array.from(new Set(registros.map((r) => r.combustivel))).sort(), [registros]);
+export function EvolucaoTemporal({
+  tendencia,
+  postos,
+  precoReal,
+}: {
+  tendencia: TendenciaAgregada[];
+  postos: PostoAgregado[];
+  precoReal: PrecoRealPeriodo[];
+}) {
+  const combustiveis = useMemo(() => Array.from(new Set(tendencia.map((r) => r.combustivel))).sort(), [tendencia]);
   const ufs = useMemo(
-    () => Array.from(new Set(registros.map((r) => r.uf).filter((v): v is string => !!v))).sort(),
-    [registros]
+    () => Array.from(new Set(tendencia.map((r) => r.uf).filter((v): v is string => !!v))).sort(),
+    [tendencia]
   );
 
   const [combustivelSel, setCombustivelSel] = useState("Todos");
@@ -68,12 +81,20 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
   const chavePeriodo: "semana" | "mes" = granularidade === "Semanal" ? "semana" : "mes";
 
   const filtrado = useMemo(() => {
-    return registros.filter((r) => {
+    return tendencia.filter((r) => {
       if (combustivelSel !== "Todos" && r.combustivel !== combustivelSel) return false;
       if (ufSel !== "Todos" && r.uf !== ufSel) return false;
       return !!r.uf;
     });
-  }, [registros, combustivelSel, ufSel]);
+  }, [tendencia, combustivelSel, ufSel]);
+
+  const postosFiltrados = useMemo(() => {
+    return postos.filter((r) => {
+      if (combustivelSel !== "Todos" && r.combustivel !== combustivelSel) return false;
+      if (ufSel !== "Todos" && r.uf !== ufSel) return false;
+      return !!r.uf;
+    });
+  }, [postos, combustivelSel, ufSel]);
 
   // ---- Seção 1: tendência por UF ----
   const tendenciaPorUf = useMemo(() => {
@@ -84,8 +105,8 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
       if (!mapa.has(uf)) mapa.set(uf, new Map());
       const porPeriodo = mapa.get(uf)!;
       const atual = porPeriodo.get(periodo) ?? { soma: 0, qtd: 0 };
-      atual.soma += r.preco;
-      atual.qtd += 1;
+      atual.soma += r.soma;
+      atual.qtd += r.qtd;
       porPeriodo.set(periodo, atual);
     }
     const totalPorUf = Array.from(mapa.entries()).map(([uf, porPeriodo]) => ({
@@ -155,8 +176,8 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
       if (!mapa.has(uf)) mapa.set(uf, new Map());
       const porPeriodo = mapa.get(uf)!;
       const atual = porPeriodo.get(periodo) ?? { soma: 0, qtd: 0 };
-      atual.soma += r.preco;
-      atual.qtd += 1;
+      atual.soma += r.soma;
+      atual.qtd += r.qtd;
       porPeriodo.set(periodo, atual);
     }
     const linhas = Array.from(mapa.entries())
@@ -183,28 +204,44 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
 
   // ---- Seção 3: ranking de estabilidade por posto ----
   const rankingPostos = useMemo(() => {
-    const mapa = new Map<string, { razaoSocial: string; municipio: string; uf: string; precos: number[] }>();
-    for (const r of filtrado) {
-      const chave = r.cnpj;
-      if (!mapa.has(chave)) {
-        mapa.set(chave, { razaoSocial: r.razaoSocial ?? r.cnpj, municipio: r.municipio ?? "—", uf: r.uf ?? "—", precos: [] });
-      }
-      mapa.get(chave)!.precos.push(r.preco);
+    const mapa = new Map<
+      string,
+      { razaoSocial: string; municipio: string; uf: string; n: number; soma: number; somaQuad: number; min: number; max: number }
+    >();
+    for (const r of postosFiltrados) {
+      const atual = mapa.get(r.cnpj) ?? {
+        razaoSocial: r.razaoSocial ?? r.cnpj,
+        municipio: r.municipio ?? "—",
+        uf: r.uf ?? "—",
+        n: 0,
+        soma: 0,
+        somaQuad: 0,
+        min: Infinity,
+        max: -Infinity,
+      };
+      atual.n += r.n;
+      atual.soma += r.soma;
+      atual.somaQuad += r.somaQuad;
+      atual.min = Math.min(atual.min, r.min);
+      atual.max = Math.max(atual.max, r.max);
+      mapa.set(r.cnpj, atual);
     }
     const linhas = Array.from(mapa.entries())
       .map(([cnpj, v]) => {
-        const m = media(v.precos);
-        const std = desvioPadraoAmostral(v.precos);
+        const m = v.n > 0 ? v.soma / v.n : 0;
+        // desvio padrão amostral a partir de n, soma e soma dos quadrados
+        const variancia = v.n > 1 ? Math.max(0, (v.somaQuad - (v.soma * v.soma) / v.n) / (v.n - 1)) : 0;
+        const std = Math.sqrt(variancia);
         return {
           cnpj,
           razaoSocial: v.razaoSocial,
           municipio: v.municipio,
           uf: v.uf,
-          n: v.precos.length,
+          n: v.n,
           media: m,
           std,
-          min: Math.min(...v.precos),
-          max: Math.max(...v.precos),
+          min: v.min,
+          max: v.max,
           cvPct: m !== 0 ? (std / m) * 100 : 0,
         };
       })
@@ -212,9 +249,9 @@ export function EvolucaoTemporal({ registros, precoReal }: { registros: Registro
       .map((l) => ({ ...l, amplitude: l.max - l.min }))
       .sort((a, b) => a.cvPct - b.cvPct);
     return linhas;
-  }, [filtrado]);
+  }, [postosFiltrados]);
 
-  if (registros.length === 0) {
+  if (tendencia.length === 0) {
     return <p className="p-4 text-sm text-slate-400">Histórico de preços vazio.</p>;
   }
 
