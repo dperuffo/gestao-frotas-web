@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { rpcCacheado } from "@/lib/rpcCacheado";
 import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
 import { segmentoEmpresaCacheado } from "@/lib/dadosUsuarioCache";
 import { formatDate } from "@/lib/utils";
@@ -119,6 +120,8 @@ export default async function DashboardPage({
   // nível de rede (comparam clientes entre si — não faz sentido escopar a
   // um só cliente).
   const { empresas, empresaSelecionada, nomeEmpresaSelecionada } = await resolverEmpresaAtual(supabase, empresaParam);
+  // Id do usuário entra na chave do cache das RPCs (RLS: nunca compartilhar entre usuários).
+  const usuarioId = (await obterUsuarioAtual()).data.user?.id ?? "anon";
 
   // Fase 27.56 — achado real: todo mundo cai aqui depois do login (ver
   // src/app/login/actions.ts), mas esta página inteira é voltada pra Frota
@@ -157,7 +160,7 @@ export default async function DashboardPage({
     opcoesMes.push({ ano: data.getFullYear(), mes: data.getMonth() + 1, label: `${NOMES_MES[data.getMonth()]} ${data.getFullYear()}` });
   }
   const grupo2 = empresaSelecionada ? Promise.all([
-        supabase.rpc("indicadores_centro_custo", {
+        rpcCacheado(supabase, usuarioId, "indicadores_centro_custo", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
@@ -169,44 +172,44 @@ export default async function DashboardPage({
         // na tela dedicada /manutencao-preditiva (mostra `empresa_dona_nome`
         // de propósito), mas o card do dashboard tem que respeitar só a
         // empresa escolhida no seletor único do topo -- daí `p_somente_empresa: true`.
-        supabase.rpc("manutencao_preditiva_kpis", { p_empresa_id: empresaSelecionada, p_somente_empresa: true }),
-        supabase.rpc("indicador_variacao_precos", {
+        rpcCacheado(supabase, usuarioId, "manutencao_preditiva_kpis", { p_empresa_id: empresaSelecionada, p_somente_empresa: true }),
+        rpcCacheado(supabase, usuarioId, "indicador_variacao_precos", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
         }),
-        supabase.rpc("indicador_consumo_diario", {
+        rpcCacheado(supabase, usuarioId, "indicador_consumo_diario", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
           p_combustivel: combustivelSelecionado,
         }),
-        supabase.rpc("indicador_padrao_dia_semana", {
+        rpcCacheado(supabase, usuarioId, "indicador_padrao_dia_semana", {
           p_empresa_id: empresaSelecionada,
           p_dias_lookback: 90,
           p_combustivel: combustivelSelecionado,
         }),
-        supabase.rpc("indicador_volume_postos", {
+        rpcCacheado(supabase, usuarioId, "indicador_volume_postos", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
           p_combustivel: combustivelSelecionado,
         }),
-        supabase.rpc("indicador_ranking_veiculos", {
+        rpcCacheado(supabase, usuarioId, "indicador_ranking_veiculos", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
           p_limit: 10,
           p_offset: 0,
         }),
-        supabase.rpc("indicador_ranking_motoristas", {
+        rpcCacheado(supabase, usuarioId, "indicador_ranking_motoristas", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
           p_limit: 10,
           p_offset: 0,
         }),
-        supabase.rpc("indicador_eficiencia_veiculos", {
+        rpcCacheado(supabase, usuarioId, "indicador_eficiencia_veiculos", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
@@ -216,7 +219,7 @@ export default async function DashboardPage({
         // placa individual), pra apoiar decisão de compra/customização de
         // frota. Compõe 3 RPCs já existentes (ver comentário na migração
         // desempenho_veiculos_grupo).
-        supabase.rpc("desempenho_veiculos_grupo", {
+        rpcCacheado(supabase, usuarioId, "desempenho_veiculos_grupo", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
@@ -324,26 +327,26 @@ export default async function DashboardPage({
     // agregam (GROUP BY) inteiramente no banco, sem trazer linha nenhuma pro
     // client — mesmo espírito das Fases 27.38/27.69/27.70 (mesma classe de
     // bug, em outras telas). Ver migration dashboard_agregacoes_sem_cap_de_linhas.
-    supabase.rpc("indicadores_financeiros_por_provedor", {
+    rpcCacheado(supabase, usuarioId, "indicadores_financeiros_por_provedor", {
       p_empresa_id: empresaSelecionada,
       p_data_inicio: paraDataISO(inicioMesAtual),
       p_data_fim: paraDataISO(agora),
     }),
     // Mesmo indicador do mês atual, só que do mês anterior inteiro — usado
     // só pra calcular a comparação percentual mostrada nos cards do topo.
-    supabase.rpc("indicadores_financeiros_por_provedor", {
+    rpcCacheado(supabase, usuarioId, "indicadores_financeiros_por_provedor", {
       p_empresa_id: empresaSelecionada,
       p_data_inicio: paraDataISO(inicioMesAnterior),
       p_data_fim: paraDataISO(fimMesAnterior),
     }),
-    supabase.rpc("dashboard_evolucao_mensal", {
+    rpcCacheado(supabase, usuarioId, "dashboard_evolucao_mensal", {
       p_empresa_id: empresaSelecionada,
       p_data_inicio: paraDataISO(seisMesesAtras),
     }),
     // Sempre em nível de rede (compara clientes entre si), independente do
     // cliente selecionado no seletor do topo — por isso não recebe
     // p_empresa_id.
-    supabase.rpc("dashboard_top_clientes_gasto", {
+    rpcCacheado(supabase, usuarioId, "dashboard_top_clientes_gasto", {
       p_data_inicio: paraDataISO(seisMesesAtras),
       p_limit: 5,
     }),
