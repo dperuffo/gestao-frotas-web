@@ -8218,6 +8218,10 @@ export interface Database {
       // marca+modelo+motor, pra decisão de compra/customização de frota.
       // Compõe indicador_eficiencia_veiculos + tco_frota_resumo +
       // manutencao_preditiva_resumo (ver comentário na migração).
+      cliente_nao_autorizadas_motivo: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: { motivo: string; tipo: string; qtd: number; qtd_veiculos: number; qtd_postos: number; total_periodo: number }[];
+      };
       cliente_mix_combustiveis: {
         Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
         Returns: { categoria: string; produto: string; litros: number; valor: number; qtd_abastecimentos: number; qtd_veiculos: number }[];

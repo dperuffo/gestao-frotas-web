@@ -27,6 +27,7 @@ export type PromessaAvancados = Promise<
     R<"desempenho_veiculos_grupo">,
     R<"cliente_saving_anp">,
     R<"cliente_mix_combustiveis">,
+    R<"cliente_nao_autorizadas_motivo">,
   ]
 >;
 
@@ -81,6 +82,7 @@ export async function SecaoIndicadoresAvancados({
     { data: desempenhoPorAtivo },
     { data: savingAnp },
     { data: mixCombustiveis },
+    { data: naoAutorizadas },
   ] = await promessa;
   const paineisOcultosSet = new Set(paineisOcultos);
 
@@ -263,6 +265,12 @@ export async function SecaoIndicadoresAvancados({
     return { grupo: g, itens, totalLitros, totalValor };
   }).filter((g) => g.itens.length > 0);
   const mixSegregados = mixLinhas.filter((l) => l.categoria === "GNV" || l.categoria === "Aditivo (Arla)");
+
+  // ---- Painel 12: não autorizadas por motivo ----
+  const naoAutLinhas = naoAutorizadas ?? [];
+  const naoAutTotal = naoAutLinhas.reduce((s, l) => s + l.qtd, 0);
+  const naoAutBase = naoAutLinhas[0]?.total_periodo ?? 0;
+  const naoAutMax = Math.max(1, ...naoAutLinhas.map((l) => l.qtd));
 
   return (
     <>
@@ -503,6 +511,46 @@ export async function SecaoIndicadoresAvancados({
                   ))}
                 </div>
               )}
+            </>
+          )}
+        </div>
+      )}
+
+      {!paineisOcultosSet.has("dashboard.nao_autorizadas") && (
+        <div className="card p-4">
+          <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+            12. Não autorizadas por motivo — {opcoesMes.find((o) => o.ano === indAno && o.mes === indMes)?.label ?? ""}
+          </h3>
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+            Tentativas de abastecimento recusadas ou canceladas. Mostra onde a operação trava (código expirado, limite de
+            crédito, veículo fora do raio do posto etc.).
+          </p>
+          {naoAutLinhas.length === 0 ? (
+            <p className="text-sm text-slate-400">Nenhuma tentativa recusada ou cancelada no período.</p>
+          ) : (
+            <>
+              <p className="mb-3 text-sm text-slate-700 dark:text-slate-300">
+                <strong>{naoAutTotal}</strong> de {naoAutBase} tentativas (
+                <strong>{naoAutBase > 0 ? ((naoAutTotal / naoAutBase) * 100).toFixed(1).replace(".", ",") : "0"}%</strong>) não foram autorizadas.
+              </p>
+              <div className="space-y-2">
+                {naoAutLinhas.map((l) => (
+                  <div key={l.motivo}>
+                    <div className="mb-0.5 flex items-baseline justify-between gap-2 text-sm">
+                      <span className="text-slate-700 dark:text-slate-300">{l.motivo}</span>
+                      <span className="shrink-0 tabular-nums text-slate-600 dark:text-slate-300">
+                        <strong>{l.qtd}</strong> · {l.qtd_veiculos} veíc. · {l.qtd_postos} posto(s)
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                      <div
+                        className={`h-full rounded-full ${l.tipo === "cancelada" ? "bg-slate-400" : "bg-amber-500"}`}
+                        style={{ width: `${Math.max((l.qtd / naoAutMax) * 100, 2)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </>
           )}
         </div>

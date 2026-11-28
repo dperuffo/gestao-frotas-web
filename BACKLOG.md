@@ -128,3 +128,7 @@ continua ruim depois do ajuste já aplicado.
 ## Mix de combustíveis (KMV-315, 28/11/2026)
 - Feito: RPC `cliente_mix_combustiveis` e painel 11 no Dashboard (mês selecionado). Participação (%) por produto dentro de Frota pesada (diesel) e Frota leve (gasolina/etanol), separadas. GNV e Arla ficam à parte, sem somar no volume das categorias.
 - Pendente: comparar com o mês anterior (variação em p.p.); aplicar no PWA do Cliente.
+
+## Não autorizadas por motivo (KMV-315, 28/11/2026)
+- Feito: RPC `cliente_nao_autorizadas_motivo` (agrupa o texto livre de `motivo_recusa`/`motivo_cancelamento` em categorias) e painel 12 no Dashboard. Mostra total e % sobre as tentativas, com veículos e postos afetados.
+- Observação: motivos novos caem em "Outros"; ajustar o CASE da RPC se surgirem padrões frequentes.
