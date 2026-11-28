@@ -132,3 +132,8 @@ continua ruim depois do ajuste já aplicado.
 ## Não autorizadas por motivo (KMV-315, 28/11/2026)
 - Feito: RPC `cliente_nao_autorizadas_motivo` (agrupa o texto livre de `motivo_recusa`/`motivo_cancelamento` em categorias) e painel 12 no Dashboard. Mostra total e % sobre as tentativas, com veículos e postos afetados.
 - Observação: motivos novos caem em "Outros"; ajustar o CASE da RPC se surgirem padrões frequentes.
+
+## Drill down do Preço vs. ANP (KMV-315, 28/11/2026)
+- Feito: página `/dashboard/preco-anp` (link no painel 10, cada combustível é clicável). RPC `cliente_preco_anp_detalhe` (jsonb, sem limite de linhas) + agregação no servidor em `lib/precoAnpDetalhe.ts` (testada). Mostra por posto, município, semana, 20 maiores desvios e "posto melhor na mesma cidade" (economia estimada, só postos já usados pela frota, mínimo 100 L).
+- Limite: só provedor com posto/município informado (Pró-Frotas) entra nas visões por posto/cidade; os demais caem em "não informado".
+- Ideia futura: exportar para Excel/PDF; alerta quando um posto passar X% da ANP por N semanas.

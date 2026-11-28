@@ -959,6 +959,7 @@ export default async function DashboardPage({
                 isMesAtual={isMesAtual}
                 isMesFuturo={isMesFuturo}
                 itensEficienciaVeiculos={itensEficienciaVeiculos}
+                empresaId={empresaSelecionada}
               />
             </Suspense>
           </div>

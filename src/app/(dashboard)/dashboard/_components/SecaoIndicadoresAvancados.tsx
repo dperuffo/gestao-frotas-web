@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { calcularPrevisaoConsumo } from "@/lib/previsaoConsumo";
 import type { Database } from "@/types/database.types";
 import { AjudaIcon } from "@/components/ajuda/AjudaIcon";
@@ -60,7 +61,9 @@ export async function SecaoIndicadoresAvancados({
   isMesAtual,
   isMesFuturo,
   itensEficienciaVeiculos,
+  empresaId,
 }: {
+  empresaId?: string | null;
   promessa: PromessaAvancados;
   paineisOcultos: string[];
   opcoesMes: { ano: number; mes: number; label: string }[];
@@ -407,7 +410,15 @@ export async function SecaoIndicadoresAvancados({
 
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="overflow-x-auto">
-                  <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Por combustível (mês selecionado)</p>
+                  <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    Por combustível (mês selecionado) —{" "}
+                    <Link
+                      href={`/dashboard/preco-anp?${new URLSearchParams({ ...(empresaId ? { empresa: empresaId } : {}), mesAno: `${indAno}-${indMes}` }).toString()}`}
+                      className="font-semibold text-frota-700 hover:underline"
+                    >
+                      ver detalhe por posto, cidade e abastecimento →
+                    </Link>
+                  </p>
                   <table className="w-full text-left text-sm">
                     <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
                       <tr>
@@ -420,7 +431,14 @@ export async function SecaoIndicadoresAvancados({
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                       {savingPorCategoria.map((c) => (
                         <tr key={c.cat}>
-                          <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{NOME_CATEGORIA[c.cat] ?? c.cat}</td>
+                          <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">
+                            <Link
+                              href={`/dashboard/preco-anp?${new URLSearchParams({ ...(empresaId ? { empresa: empresaId } : {}), mesAno: `${indAno}-${indMes}`, cat: c.cat }).toString()}`}
+                              className="underline decoration-dotted underline-offset-2 hover:text-frota-700"
+                            >
+                              {NOME_CATEGORIA[c.cat] ?? c.cat}
+                            </Link>
+                          </td>
                           <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(c.pago)}</td>
                           <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(c.ref)}</td>
                           <td className={`py-2 tabular-nums font-medium ${classeDif(c.diferenca)}`}>{formatarPct(c.pct)}</td>
