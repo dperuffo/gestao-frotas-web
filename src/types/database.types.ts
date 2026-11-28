@@ -8218,6 +8218,21 @@ export interface Database {
       // marca+modelo+motor, pra decisão de compra/customização de frota.
       // Compõe indicador_eficiencia_veiculos + tco_frota_resumo +
       // manutencao_preditiva_resumo (ver comentário na migração).
+      cliente_saving_anp: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          mes: string;
+          categoria: string;
+          litros: number;
+          litros_com_referencia: number | null;
+          valor_pago_com_referencia: number | null;
+          valor_referencia: number | null;
+          qtd_abastecimentos: number;
+          qtd_ref_municipio: number;
+          qtd_ref_estado: number;
+          qtd_ref_brasil: number;
+        }[];
+      };
       indicador_rendimento_corrigido: {
         Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
         Returns: {

@@ -225,6 +225,12 @@ export default async function DashboardPage({
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
         }),
+        // KPI "Preço pago vs. referência ANP" (KMV-315): 6 meses até o mês selecionado.
+        rpcCacheado(supabase, usuarioId, "cliente_saving_anp", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: paraDataISO(new Date(indAno, indMes - 6, 1)),
+          p_data_fim: dataFimInd,
+        }),
       ] as const : null;
 
   // Fase 27.70 — pedido do Daniel: mesma seção "Ajustes de abastecimento" do
@@ -473,7 +479,7 @@ export default async function DashboardPage({
   // Os outros 7 indicadores (painéis avançados) NÃO bloqueiam a página: viram
   // uma promessa lida dentro de <SecaoIndicadoresAvancados> sob Suspense.
   const promessaAvancados = grupo2
-    ? Promise.all([grupo2[2], grupo2[3], grupo2[4], grupo2[5], grupo2[6], grupo2[7], grupo2[9]])
+    ? Promise.all([grupo2[2], grupo2[3], grupo2[4], grupo2[5], grupo2[6], grupo2[7], grupo2[9], grupo2[11]])
     : null;
 
   const totaisCentroCusto = (indicadoresCentroCusto ?? []).reduce(
@@ -567,6 +573,7 @@ export default async function DashboardPage({
     { chave: "dashboard.ranking_motoristas", titulo: "7. Ranking de motoristas" },
     { chave: "dashboard.eficiencia_veiculos", titulo: "8. Eficiência real por veículo" },
     { chave: "dashboard.desempenho_por_ativo", titulo: "9. Desempenho por marca/modelo/motor" },
+    { chave: "dashboard.saving_anp", titulo: "10. Preço pago vs. referência ANP" },
   ];
 
   return (

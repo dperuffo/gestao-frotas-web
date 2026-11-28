@@ -25,6 +25,7 @@ export type PromessaAvancados = Promise<
     R<"indicador_ranking_veiculos">,
     R<"indicador_ranking_motoristas">,
     R<"desempenho_veiculos_grupo">,
+    R<"cliente_saving_anp">,
   ]
 >;
 
@@ -77,6 +78,7 @@ export async function SecaoIndicadoresAvancados({
     { data: rankingVeiculos },
     { data: rankingMotoristas },
     { data: desempenhoPorAtivo },
+    { data: savingAnp },
   ] = await promessa;
   const paineisOcultosSet = new Set(paineisOcultos);
 
@@ -205,6 +207,48 @@ export async function SecaoIndicadoresAvancados({
     qtdCriticos: d.qtd_criticos,
   }));
 
+  // ---- Painel 10: preço pago vs. referência ANP (mês selecionado + 6 meses) ----
+  const NOME_CATEGORIA: Record<string, string> = {
+    "GASOLINA COMUM": "Gasolina comum",
+    "GASOLINA ADITIVADA": "Gasolina aditivada / alta octanagem",
+    "ETANOL HIDRATADO": "Etanol",
+    "OLEO DIESEL": "Diesel S-500",
+    "OLEO DIESEL S10": "Diesel S-10",
+    GNV: "GNV",
+  };
+  const mesSelecionadoIso = `${indAno}-${String(indMes).padStart(2, "0")}-01`;
+  const linhasSaving = savingAnp ?? [];
+  const resumirSaving = (linhas: typeof linhasSaving) => {
+    const pago = linhas.reduce((s, l) => s + (l.valor_pago_com_referencia ?? 0), 0);
+    const ref = linhas.reduce((s, l) => s + (l.valor_referencia ?? 0), 0);
+    const litros = linhas.reduce((s, l) => s + l.litros, 0);
+    const litrosRef = linhas.reduce((s, l) => s + (l.litros_com_referencia ?? 0), 0);
+    return {
+      pago,
+      ref,
+      diferenca: ref - pago, // >0 = pagou abaixo da ANP (economia); <0 = acima
+      pct: ref > 0 ? ((ref - pago) / ref) * 100 : 0,
+      cobertura: litros > 0 ? (litrosRef / litros) * 100 : 0,
+      litrosRef,
+    };
+  };
+  const savingMes = resumirSaving(linhasSaving.filter((l) => l.mes === mesSelecionadoIso));
+  const savingPorCategoria = Array.from(
+    new Set(linhasSaving.filter((l) => l.mes === mesSelecionadoIso).map((l) => l.categoria))
+  )
+    .map((cat) => ({ cat, ...resumirSaving(linhasSaving.filter((l) => l.mes === mesSelecionadoIso && l.categoria === cat)) }))
+    .sort((a, b) => b.litrosRef - a.litrosRef);
+  const savingPorMes = Array.from(new Set(linhasSaving.map((l) => l.mes)))
+    .sort()
+    .map((mes) => ({ mes, ...resumirSaving(linhasSaving.filter((l) => l.mes === mes)) }));
+  const formatarPct = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1).replace(".", ",")}%`;
+  const rotuloMes = (iso: string) => {
+    const [a, m] = iso.split("-");
+    return new Date(Number(a), Number(m) - 1, 1).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+  };
+  const classeDif = (v: number) =>
+    v >= 0 ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400";
+
   return (
     <>
             {!paineisOcultosSet.has("dashboard.variacao_precos") && (
@@ -301,6 +345,96 @@ export async function SecaoIndicadoresAvancados({
                 <TabelaDesempenhoPorAtivo dados={itensDesempenhoPorAtivo} />
               </div>
             )}
+      {!paineisOcultosSet.has("dashboard.saving_anp") && (
+        <div className="card p-4">
+          <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+            10. Preço pago vs. referência ANP — {opcoesMes.find((o) => o.ano === indAno && o.mes === indMes)?.label ?? ""}
+          </h3>
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+            Compara o preço de bomba pago com a média ANP da semana do abastecimento (município; se não houver, estado;
+            depois Brasil). Valores positivos indicam preço abaixo da referência. Descontos negociados não estão
+            incluídos: o dado recebido traz só o preço de bomba.
+          </p>
+          {savingMes.litrosRef === 0 ? (
+            <p className="text-sm text-slate-400">Sem abastecimentos com referência ANP no período.</p>
+          ) : (
+            <>
+              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-lg border border-slate-100 p-3 dark:border-slate-700">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Pago (bomba)</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{formatarMoeda(savingMes.pago)}</p>
+                </div>
+                <div className="rounded-lg border border-slate-100 p-3 dark:border-slate-700">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Referência ANP</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{formatarMoeda(savingMes.ref)}</p>
+                </div>
+                <div className="rounded-lg border border-slate-100 p-3 dark:border-slate-700">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                    {savingMes.diferenca >= 0 ? "Economia vs. ANP" : "Acima da ANP"}
+                  </p>
+                  <p className={`mt-1 text-lg font-semibold ${classeDif(savingMes.diferenca)}`}>
+                    {formatarMoeda(Math.abs(savingMes.diferenca))} ({formatarPct(savingMes.pct)})
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-100 p-3 dark:border-slate-700">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Litros com referência</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{savingMes.cobertura.toFixed(0)}%</p>
+                </div>
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="overflow-x-auto">
+                  <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Por combustível (mês selecionado)</p>
+                  <table className="w-full text-left text-sm">
+                    <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
+                      <tr>
+                        <th className="py-2 pr-3">Combustível</th>
+                        <th className="py-2 pr-3">Pago</th>
+                        <th className="py-2 pr-3">Ref. ANP</th>
+                        <th className="py-2">Diferença</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                      {savingPorCategoria.map((c) => (
+                        <tr key={c.cat}>
+                          <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{NOME_CATEGORIA[c.cat] ?? c.cat}</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(c.pago)}</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(c.ref)}</td>
+                          <td className={`py-2 tabular-nums font-medium ${classeDif(c.diferenca)}`}>{formatarPct(c.pct)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="overflow-x-auto">
+                  <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Evolução mensal (6 meses)</p>
+                  <table className="w-full text-left text-sm">
+                    <thead className="text-xs uppercase text-slate-500 dark:text-slate-400">
+                      <tr>
+                        <th className="py-2 pr-3">Mês</th>
+                        <th className="py-2 pr-3">Pago</th>
+                        <th className="py-2 pr-3">Ref. ANP</th>
+                        <th className="py-2">Diferença</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                      {savingPorMes.map((m) => (
+                        <tr key={m.mes}>
+                          <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{rotuloMes(m.mes)}</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(m.pago)}</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarMoeda(m.ref)}</td>
+                          <td className={`py-2 tabular-nums font-medium ${classeDif(m.diferenca)}`}>{formatarPct(m.pct)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
     </>
   );
 }

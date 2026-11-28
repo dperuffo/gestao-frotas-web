@@ -119,3 +119,8 @@ continua ruim depois do ajuste já aplicado.
 - Feito: RPC `indicador_rendimento_corrigido` (odômetro válido → faixa plausível por categoria → mediana ± max(3×MAD, 35%)), tabela editável `rendimento_regras` (leve 3–25, pesada 1,2–7), selo de confiança por veículo no painel 8 do Dashboard. Calibração real: leve 13,30 → 10,58 km/L; pesada 4,24 → 2,98 km/L.
 - Achado: ~97% dos abastecimentos dos últimos 90 dias estão SEM odômetro → maioria dos veículos "dados insuficientes". Ação: incentivar odômetro (OCR do app do motorista) e integrações.
 - Pendente: validar faixas/tolerâncias com a Eni e Dados; regra por veículo (mediana própria) quando houver ≥5 intervalos; mesma correção nos relatórios e no Assistente; R$/km corrigido no painel; versão para os PWAs.
+
+## Preço pago vs. referência ANP (KMV-315, 28/11/2026)
+- Feito: RPC `cliente_saving_anp` (ref. ANP da semana do abastecimento: município → estado → Brasil) e painel 10 no Dashboard (mês selecionado, por combustível e 6 meses). Positivo = economia; negativo = acima da ANP.
+- Achado: dados atuais dão ~2-3% ACIMA da ANP (só temos preço de bomba; sem desconto/preço líquido). Por isso o painel NÃO se chama "Economia gerada".
+- Pendente: preço líquido/desconto (Ipiranga/Dynamics) para o "Saving na veia"; usar preço acordado das negociações ativas quando existir; Mix de combustíveis; Não autorizadas por motivo.
