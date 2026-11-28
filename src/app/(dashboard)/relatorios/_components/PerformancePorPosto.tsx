@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTheme } from "next-themes";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { RegistroHistorico } from "./Anomalias";
+import { descompactarHistorico, type HistoricoCompacto } from "@/lib/historicoCompacto";
 import { formatarDataBr, formatarDataCurta } from "@/lib/utils";
 
 function formatarMoeda(v: number, casas = 3) {
@@ -25,7 +25,8 @@ function scorePrecoSimplificado(preco: number, mediaHistoricaPosto: number) {
 // vs média da rede por combustível e consistência (CV) — complementa o Score
 // Operacional de Postos Revendedores, que é uma foto do momento, não um
 // histórico.
-export function PerformancePorPosto({ historico }: { historico: RegistroHistorico[] }) {
+export function PerformancePorPosto({ historico: historicoCompacto }: { historico: HistoricoCompacto }) {
+  const historico = useMemo(() => descompactarHistorico(historicoCompacto), [historicoCompacto]);
   // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
   const { resolvedTheme } = useTheme();
   const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";

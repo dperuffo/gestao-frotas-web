@@ -119,11 +119,18 @@ export async function atualizarMotorista(
   return { erro: undefined };
 }
 
-export async function alternarAtivoMotorista(id: string, ativo: boolean) {
+export async function alternarAtivoMotorista(id: string, ativo: boolean): Promise<{ erro?: string }> {
   const supabase = await createClient();
-  await supabase
+  const { data, error } = await supabase
     .from("motoristas")
     .update({ status: ativo ? "Ativo" : "Inativo" })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
+  // A RLS pode impedir a alteração sem dar erro (0 linhas): avisa em vez de fingir que deu certo.
+  if (error) return { erro: `Não foi possível ${ativo ? "ativar" : "inativar"} o motorista: ${error.message}` };
+  if (!data || data.length === 0) {
+    return { erro: `Não foi possível ${ativo ? "ativar" : "inativar"} o motorista (sem permissão ou o cadastro não existe mais).` };
+  }
   revalidatePath("/motoristas");
+  return {};
 }

@@ -1,3 +1,4 @@
+import { normalizarHistoricoCompacto } from "@/lib/historicoCompacto";
 import { CabecalhoPagina } from "@/components/CabecalhoPagina";
 import { createClient } from "@/lib/supabase/server";
 import { obterUsuarioAtual } from "@/lib/supabase/usuarioAtual";
@@ -107,7 +108,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     { data: solicitacoesAprovacaoRaw, error: solicitacoesAprovacaoErr },
     { data: patrimonioRaw, error: patrimonioErr },
   ] = await Promise.all([
-    rpcComRetry(() => supabase.rpc("historico_precos_detalhado", rpcArgs), "historico_precos_detalhado"),
+    rpcComRetry(() => supabase.rpc("historico_precos_compacto", rpcArgs), "historico_precos_compacto"),
     rpcComRetry(() => supabase.rpc("postos_gf_desvio_anp", rpcArgs), "postos_gf_desvio_anp"),
     rpcComRetry(() => supabase.rpc("postos_gf_servicos", rpcArgs), "postos_gf_servicos"),
     rpcComRetry(
@@ -200,7 +201,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
   // se acontecer de novo, dê pra confirmar/descartar isso pelos logs em vez
   // de reabrir a investigação do zero.
   for (const [rpcNome, erro] of [
-    ["historico_precos_detalhado", historicoErr],
+    ["historico_precos_compacto", historicoErr],
     ["postos_gf_desvio_anp", desvioAnpErr],
     ["postos_gf_servicos", servicosErr],
     ["relatorio_abastecimentos_bruto", abastecimentosErr],
@@ -226,15 +227,8 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     }
   }
 
-  const historico = (historicoRaw ?? []).map((r) => ({
-    cnpj: r.cnpj,
-    razaoSocial: r.razao_social,
-    municipio: r.municipio,
-    uf: r.uf,
-    combustivel: r.combustivel,
-    dataRef: r.data_ref,
-    preco: r.preco,
-  }));
+  // Compacto (dicionários + linhas numéricas): evita o corte de linhas do PostgREST e reduz o payload ~5x.
+  const historico = normalizarHistoricoCompacto(historicoRaw);
 
   const desvios = (desvioAnpRaw ?? []).map((r) => ({
     cnpj: r.cnpj,

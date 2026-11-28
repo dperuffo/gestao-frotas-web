@@ -8,7 +8,7 @@ import { calcularScorePosto, CORES_GRADE } from "@/lib/scorePosto";
 // nas demais telas densas do app.
 import { IndicadorColorido } from "@/components/IndicadorColorido";
 import { TrendingUp, CheckCircle2, AlertTriangle, HelpCircle } from "lucide-react";
-import type { RegistroHistorico } from "./Anomalias";
+import { descompactarHistorico, type HistoricoCompacto } from "@/lib/historicoCompacto";
 import type { DesvioAnpFrota, ServicoPostoFrota } from "../../postos/_components/ScoreFrota";
 
 const PRIORIDADE_COMBUSTIVEL = ["Diesel S-10 Comum", "Diesel S-10 Aditivado", "Diesel S-500 Comum", "Diesel S-500 Aditivado", "Gasolina Comum"];
@@ -20,14 +20,15 @@ const PRIORIDADE_COMBUSTIVEL = ["Diesel S-10 Comum", "Diesel S-10 Aditivado", "D
 // volume) e onde tem risco (score baixo + alta utilização = muito usado
 // mas caro/mal avaliado).
 export function ScorePerformance({
-  historico,
+  historico: historicoCompacto,
   desvios,
   servicos,
 }: {
-  historico: RegistroHistorico[];
+  historico: HistoricoCompacto;
   desvios: DesvioAnpFrota[];
   servicos: ServicoPostoFrota[];
 }) {
+  const historico = useMemo(() => descompactarHistorico(historicoCompacto), [historicoCompacto]);
   // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
   const { resolvedTheme } = useTheme();
   const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";

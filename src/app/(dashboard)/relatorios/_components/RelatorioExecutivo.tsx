@@ -5,7 +5,7 @@ import { useTheme } from "next-themes";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { UFS } from "@/lib/constants";
 import { anoMesDeIso, formatarDataBr, formatarDataCurta } from "@/lib/utils";
-import type { RegistroHistorico } from "./Anomalias";
+import { descompactarHistorico, type HistoricoCompacto } from "@/lib/historicoCompacto";
 import BotaoBaixarPdfExecutivoLazy from "./BotaoBaixarPdfExecutivoLazy";
 // Fase Redesign-Telas-Densas (12/08/2026) — mesmo toque visual já aplicado
 // nas demais telas densas do app.
@@ -36,9 +36,10 @@ function quantil(valoresOrdenados: number[], q: number) {
 // Relatório executivo mensal — KPIs, evolução de preço, savings estimados vs
 // mercado (p75 como proxy de "preço fora da rede", igual ao Streamlit de
 // referência) e alertas de risco, com exportação em PDF. Tudo calculado
-// client-side em cima do historico_precos_detalhado já filtrado por empresa
+// client-side em cima do historico_precos_compacto já filtrado por empresa
 // no server (mesmo dataset das outras abas).
-export function RelatorioExecutivo({ historico, nomeEmpresa }: { historico: RegistroHistorico[]; nomeEmpresa: string }) {
+export function RelatorioExecutivo({ historico: historicoCompacto, nomeEmpresa }: { historico: HistoricoCompacto; nomeEmpresa: string }) {
+  const historico = useMemo(() => descompactarHistorico(historicoCompacto), [historicoCompacto]);
   // Fase Dark-Mode — mesmo padrão de GraficoPrevisaoConsumo.tsx.
   const { resolvedTheme } = useTheme();
   const corEixo = resolvedTheme === "dark" ? "#94A3B8" : "#64748B";

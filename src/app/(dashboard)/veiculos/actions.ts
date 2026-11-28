@@ -228,9 +228,14 @@ export async function atualizarVeiculo(
   return { erro: undefined };
 }
 
-export async function alternarAtivoVeiculo(id: string, ativo: boolean) {
+export async function alternarAtivoVeiculo(id: string, ativo: boolean): Promise<{ erro?: string }> {
   const supabase = await createClient();
-  await supabase.from("cadastro_veiculos").update({ ativo }).eq("id", id);
+  const { data, error } = await supabase.from("cadastro_veiculos").update({ ativo }).eq("id", id).select("id");
+  // A RLS pode impedir a alteração sem dar erro (0 linhas): avisa em vez de fingir que deu certo.
+  if (error) return { erro: `Não foi possível ${ativo ? "ativar" : "inativar"} o veículo: ${error.message}` };
+  if (!data || data.length === 0) {
+    return { erro: `Não foi possível ${ativo ? "ativar" : "inativar"} o veículo (sem permissão ou o cadastro não existe mais).` };
+  }
 
   // Fase Gestao-Controles (27/08/2026) — "exclusão de cadastro" é um dos 3
   // exemplos citados pelo Daniel pro log de auditoria. Este app nunca faz
@@ -242,6 +247,7 @@ export async function alternarAtivoVeiculo(id: string, ativo: boolean) {
   }
 
   revalidatePath("/veiculos");
+  return {};
 }
 
 // Fase Pente-Fino-Performance (10/09/2026) — busca a frota inteira (já

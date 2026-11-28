@@ -2,16 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { formatarDataBr } from "@/lib/utils";
+import { descompactarHistorico, type HistoricoCompacto, type RegistroHistorico } from "@/lib/historicoCompacto";
 
-export type RegistroHistorico = {
-  cnpj: string;
-  razaoSocial: string | null;
-  municipio: string | null;
-  uf: string | null;
-  combustivel: string;
-  dataRef: string;
-  preco: number;
-};
+export type { RegistroHistorico } from "@/lib/historicoCompacto";
 
 function formatarMoeda(v: number, casas = 3) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: casas, maximumFractionDigits: casas });
@@ -32,7 +25,8 @@ function quantil(valoresOrdenados: number[], q: number) {
 // combustível, marca como outlier qualquer preço fora de
 // [Q1 - 1.5·IQR, Q3 + 1.5·IQR]. Precisa de pelo menos 5 registros do
 // combustível pra ter uma base estatística minimamente confiável.
-export function Anomalias({ historico }: { historico: RegistroHistorico[] }) {
+export function Anomalias({ historico: historicoCompacto }: { historico: HistoricoCompacto }) {
+  const historico = useMemo(() => descompactarHistorico(historicoCompacto), [historicoCompacto]);
   const [combustivelFiltro, setCombustivelFiltro] = useState("");
 
   const outliers = useMemo(() => {
