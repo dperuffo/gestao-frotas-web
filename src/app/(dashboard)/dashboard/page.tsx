@@ -219,7 +219,7 @@ export default async function DashboardPage({
           p_data_fim: dataFimInd,
         }),
         // KPI "Rendimento com Correção Estatística" (KMV-315): km/L sem outliers
-        // de odômetro/abastecimento externo + selo de confiança por veículo.
+        // de hodômetro/abastecimento externo + selo de confiança por veículo.
         rpcCacheado(supabase, usuarioId, "indicador_rendimento_corrigido", {
           p_empresa_id: empresaSelecionada,
           p_data_inicio: dataInicioInd,

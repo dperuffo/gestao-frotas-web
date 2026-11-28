@@ -89,10 +89,10 @@ export function GraficoEficienciaVeiculos({ dados }: { dados: ItemEficienciaVeic
         <MiniKpi label="🛢️ Total abastecido" valor={`${formatarInt(litrosTotalFrota)} L`} />
       </div>
       <p className="mb-5 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
-        O km/L é <strong>corrigido estatisticamente</strong>: intervalos entre abastecimentos com odômetro inválido ou
+        O km/L é <strong>corrigido estatisticamente</strong>: intervalos entre abastecimentos com hodômetro inválido ou
         fora do padrão (típico de abastecimento feito fora das integrações) são descartados, e o resultado é a soma dos
         km ÷ soma dos litros dos intervalos válidos. <strong>{formatarInt(confiaveis)}</strong> de {formatarInt(dados.length)}{" "}
-        veículos têm confiança alta ou média. Quanto mais modalidades de pagamento integradas e odômetro informado, mais
+        veículos têm confiança alta ou média. Quanto mais modalidades de pagamento integradas e hodômetro informado, mais
         preciso o indicador.
       </p>
 

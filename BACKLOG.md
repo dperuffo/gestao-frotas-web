@@ -116,8 +116,8 @@ continua ruim depois do ajuste já aplicado.
 
 
 ## Rendimento km/L com correção estatística (KMV-315, 28/11/2026)
-- Feito: RPC `indicador_rendimento_corrigido` (odômetro válido → faixa plausível por categoria → mediana ± max(3×MAD, 35%)), tabela editável `rendimento_regras` (leve 3–25, pesada 1,2–7), selo de confiança por veículo no painel 8 do Dashboard. Calibração real: leve 13,30 → 10,58 km/L; pesada 4,24 → 2,98 km/L.
-- Achado: ~97% dos abastecimentos dos últimos 90 dias estão SEM odômetro → maioria dos veículos "dados insuficientes". Ação: incentivar odômetro (OCR do app do motorista) e integrações.
+- Feito: RPC `indicador_rendimento_corrigido` (hodômetro válido → faixa plausível por categoria → mediana ± max(3×MAD, 35%)), tabela editável `rendimento_regras` (leve 3–25, pesada 1,2–7), selo de confiança por veículo no painel 8 do Dashboard. Calibração real: leve 13,30 → 10,58 km/L; pesada 4,24 → 2,98 km/L.
+- Achado: ~97% dos abastecimentos dos últimos 90 dias estão SEM hodômetro → maioria dos veículos "dados insuficientes". Ação: incentivar hodômetro (OCR do app do motorista) e integrações.
 - Pendente: validar faixas/tolerâncias com a Eni e Dados; regra por veículo (mediana própria) quando houver ≥5 intervalos; mesma correção nos relatórios e no Assistente; R$/km corrigido no painel; versão para os PWAs.
 
 ## Preço pago vs. referência ANP (KMV-315, 28/11/2026)
