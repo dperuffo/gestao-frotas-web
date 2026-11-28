@@ -26,6 +26,7 @@ export type PromessaAvancados = Promise<
     R<"indicador_ranking_motoristas">,
     R<"desempenho_veiculos_grupo">,
     R<"cliente_saving_anp">,
+    R<"cliente_mix_combustiveis">,
   ]
 >;
 
@@ -79,6 +80,7 @@ export async function SecaoIndicadoresAvancados({
     { data: rankingMotoristas },
     { data: desempenhoPorAtivo },
     { data: savingAnp },
+    { data: mixCombustiveis },
   ] = await promessa;
   const paineisOcultosSet = new Set(paineisOcultos);
 
@@ -248,6 +250,19 @@ export async function SecaoIndicadoresAvancados({
   };
   const classeDif = (v: number) =>
     v >= 0 ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400";
+
+  // ---- Painel 11: mix de combustíveis (mês selecionado) ----
+  // Participação (%) dentro da categoria. Frota pesada (diesel) e leve (gasolina/etanol) NÃO se misturam;
+  // GNV e Arla ficam segregados e não somam no volume das categorias.
+  const mixLinhas = mixCombustiveis ?? [];
+  const GRUPOS_MIX = ["Frota pesada", "Frota leve"] as const;
+  const mixPorGrupo = GRUPOS_MIX.map((g) => {
+    const itens = mixLinhas.filter((l) => l.categoria === g).sort((a, b) => b.litros - a.litros);
+    const totalLitros = itens.reduce((s, l) => s + l.litros, 0);
+    const totalValor = itens.reduce((s, l) => s + l.valor, 0);
+    return { grupo: g, itens, totalLitros, totalValor };
+  }).filter((g) => g.itens.length > 0);
+  const mixSegregados = mixLinhas.filter((l) => l.categoria === "GNV" || l.categoria === "Aditivo (Arla)");
 
   return (
     <>
@@ -430,6 +445,64 @@ export async function SecaoIndicadoresAvancados({
                   </table>
                 </div>
               </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {!paineisOcultosSet.has("dashboard.mix_combustiveis") && (
+        <div className="card p-4">
+          <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+            11. Mix de combustíveis — {opcoesMes.find((o) => o.ano === indAno && o.mes === indMes)?.label ?? ""}
+          </h3>
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+            Participação de cada produto no volume da sua categoria. Frota pesada (diesel) e frota leve (gasolina e etanol)
+            ficam separadas para não distorcer as médias. GNV e Arla aparecem à parte e não entram nesses totais.
+          </p>
+          {mixPorGrupo.length === 0 && mixSegregados.length === 0 ? (
+            <p className="text-sm text-slate-400">Sem abastecimentos no período.</p>
+          ) : (
+            <>
+              <div className="grid gap-6 lg:grid-cols-2">
+                {mixPorGrupo.map((g) => (
+                  <div key={g.grupo}>
+                    <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                      {g.grupo} — {g.totalLitros.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L · {formatarMoeda(g.totalValor)}
+                    </p>
+                    <div className="space-y-2">
+                      {g.itens.map((i) => {
+                        const pct = g.totalLitros > 0 ? (i.litros / g.totalLitros) * 100 : 0;
+                        return (
+                          <div key={i.produto}>
+                            <div className="mb-0.5 flex items-baseline justify-between text-sm">
+                              <span className="text-slate-700 dark:text-slate-300">{i.produto}</span>
+                              <span className="tabular-nums text-slate-600 dark:text-slate-300">
+                                {i.litros.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L ·{" "}
+                                <strong>{pct.toFixed(1).replace(".", ",")}%</strong>
+                              </span>
+                            </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                              <div className="h-full rounded-full bg-frota-500" style={{ width: `${Math.max(pct, 1)}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {mixSegregados.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {mixSegregados.map((i) => (
+                    <div key={i.produto} className="rounded-lg border border-slate-100 p-3 text-sm dark:border-slate-700">
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{i.produto} (à parte)</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
+                        {i.litros.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} {i.produto === "GNV" ? "m³" : "L"} · {formatarMoeda(i.valor)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>

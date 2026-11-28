@@ -124,3 +124,7 @@ continua ruim depois do ajuste já aplicado.
 - Feito: RPC `cliente_saving_anp` (ref. ANP da semana do abastecimento: município → estado → Brasil) e painel 10 no Dashboard (mês selecionado, por combustível e 6 meses). Positivo = economia; negativo = acima da ANP.
 - Achado: dados atuais dão ~2-3% ACIMA da ANP (só temos preço de bomba; sem desconto/preço líquido). Por isso o painel NÃO se chama "Economia gerada".
 - Pendente: preço líquido/desconto (Ipiranga/Dynamics) para o "Saving na veia"; usar preço acordado das negociações ativas quando existir; Mix de combustíveis; Não autorizadas por motivo.
+
+## Mix de combustíveis (KMV-315, 28/11/2026)
+- Feito: RPC `cliente_mix_combustiveis` e painel 11 no Dashboard (mês selecionado). Participação (%) por produto dentro de Frota pesada (diesel) e Frota leve (gasolina/etanol), separadas. GNV e Arla ficam à parte, sem somar no volume das categorias.
+- Pendente: comparar com o mês anterior (variação em p.p.); aplicar no PWA do Cliente.
