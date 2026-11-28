@@ -6652,6 +6652,10 @@ export interface Database {
         Args: { p_empresa_id?: string | null };
         Returns: { mes: string; combustivel: string; volatilidade: number; qtd: number }[];
       };
+      historico_precos_compacto: {
+        Args: { p_empresa_id?: string | null };
+        Returns: Json;
+      };
       historico_precos_tendencia_agregada: {
         Args: { p_empresa_id?: string | null };
         Returns: { uf: string; combustivel: string; semana: string; mes: string; soma: number; qtd: number }[];
@@ -6669,20 +6673,6 @@ export interface Database {
           soma_quad: number;
           preco_min: number;
           preco_max: number;
-        }[];
-      };
-      historico_precos_detalhado: {
-        Args: { p_empresa_id?: string | null };
-        Returns: {
-          cnpj: string;
-          razao_social: string | null;
-          municipio: string | null;
-          uf: string | null;
-          combustivel: string;
-          data_ref: string;
-          preco: number;
-          semana: string;
-          mes: string;
         }[];
       };
       // Fase Relatorios-Personalizados-Posto (09/09/2026) — vendas do posto
@@ -8228,6 +8218,26 @@ export interface Database {
       // marca+modelo+motor, pra decisão de compra/customização de frota.
       // Compõe indicador_eficiencia_veiculos + tco_frota_resumo +
       // manutencao_preditiva_resumo (ver comentário na migração).
+      indicador_rendimento_corrigido: {
+        Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
+        Returns: {
+          placa: string;
+          marca: string | null;
+          modelo: string | null;
+          categoria: string;
+          abastecimentos: number;
+          sem_hodometro: number;
+          intervalos: number;
+          intervalos_validos: number;
+          cobertura_pct: number | null;
+          km_total: number | null;
+          litros_validos: number | null;
+          km_l_bruto: number | null;
+          km_l_corrigido: number | null;
+          custo_por_km: number | null;
+          confianca: "alta" | "media" | "baixa" | "insuficiente";
+        }[];
+      };
       desempenho_veiculos_grupo: {
         Args: { p_empresa_id: string; p_data_inicio: string; p_data_fim: string };
         Returns: {

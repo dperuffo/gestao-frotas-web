@@ -10,10 +10,22 @@ export type ItemEficienciaVeiculo = {
   abastecimentos: number;
   kmTotal: number | null;
   kmMedio: number | null;
-  mediaKmL: number | null;
+  mediaKmL: number | null; // km/L CORRIGIDO (expurgo estatístico de outliers)
+  kmLBruto?: number | null; // km/L sem correção, só pra comparação
+  confianca?: "alta" | "media" | "baixa" | "insuficiente";
+  coberturaPct?: number | null; // % dos intervalos entre abastecimentos considerados válidos
+  intervalosValidos?: number;
+  intervalos?: number;
   litrosTotal: number;
   precoMedio: number | null;
   custoTotal: number | null;
+};
+
+const ROTULO_CONFIANCA: Record<string, { texto: string; classe: string }> = {
+  alta: { texto: "Alta", classe: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
+  media: { texto: "Média", classe: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
+  baixa: { texto: "Baixa", classe: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
+  insuficiente: { texto: "Dados insuficientes", classe: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400" },
 };
 
 function formatarInt(v: number) {
@@ -44,6 +56,7 @@ export function GraficoEficienciaVeiculos({ dados }: { dados: ItemEficienciaVeic
   const mediaKmLFrota = comKml.length ? comKml.reduce((s, d) => s + (d.mediaKmL ?? 0), 0) / comKml.length : null;
   const litrosTotalFrota = dados.reduce((s, d) => s + d.litrosTotal, 0);
 
+  const confiaveis = dados.filter((d) => d.confianca === "alta" || d.confianca === "media").length;
   const top15Km = comKm.slice(0, 15);
 
   const top15Kml = useMemo(() => {
@@ -72,9 +85,16 @@ export function GraficoEficienciaVeiculos({ dados }: { dados: ItemEficienciaVeic
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MiniKpi label="🚚 Veículos com dados" valor={formatarInt(dados.length)} />
         <MiniKpi label="🛣️ KM total percorrido" valor={`${formatarInt(kmTotalFrota)} km`} />
-        <MiniKpi label="⛽ Média km/L frota" valor={mediaKmLFrota != null ? `${mediaKmLFrota.toFixed(1)} km/L` : "—"} />
+        <MiniKpi label="⛽ Média km/L frota (corrigida)" valor={mediaKmLFrota != null ? `${mediaKmLFrota.toFixed(1)} km/L` : "—"} />
         <MiniKpi label="🛢️ Total abastecido" valor={`${formatarInt(litrosTotalFrota)} L`} />
       </div>
+      <p className="mb-5 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+        O km/L é <strong>corrigido estatisticamente</strong>: intervalos entre abastecimentos com odômetro inválido ou
+        fora do padrão (típico de abastecimento feito fora das integrações) são descartados, e o resultado é a soma dos
+        km ÷ soma dos litros dos intervalos válidos. <strong>{formatarInt(confiaveis)}</strong> de {formatarInt(dados.length)}{" "}
+        veículos têm confiança alta ou média. Quanto mais modalidades de pagamento integradas e odômetro informado, mais
+        preciso o indicador.
+      </p>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
         <div>
@@ -126,6 +146,7 @@ export function GraficoEficienciaVeiculos({ dados }: { dados: ItemEficienciaVeic
               <th className="py-2 pr-3">Abastecimentos</th>
               <th className="py-2 pr-3">KM total</th>
               <th className="py-2 pr-3">Média km/L</th>
+              <th className="py-2 pr-3">Confiança</th>
               <th className="py-2 pr-3">Total abast. (L)</th>
               <th className="py-2 pr-3">Preço médio</th>
               <th className="py-2">Custo total</th>
@@ -139,6 +160,16 @@ export function GraficoEficienciaVeiculos({ dados }: { dados: ItemEficienciaVeic
                 <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{d.abastecimentos}</td>
                 <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{d.kmTotal != null ? `${formatarInt(d.kmTotal)} km` : "—"}</td>
                 <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{d.mediaKmL != null ? `${d.mediaKmL.toFixed(1)} km/L` : "—"}</td>
+                <td className="py-2 pr-3">
+                  {d.confianca && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${ROTULO_CONFIANCA[d.confianca].classe}`}
+                      title={`${d.intervalosValidos ?? 0} de ${d.intervalos ?? 0} intervalos válidos${d.kmLBruto != null ? ` · sem correção: ${d.kmLBruto.toFixed(1)} km/L` : ""}`}
+                    >
+                      {ROTULO_CONFIANCA[d.confianca].texto}
+                    </span>
+                  )}
+                </td>
                 <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{formatarInt(d.litrosTotal)}</td>
                 <td className="py-2 pr-3 tabular-nums text-slate-600 dark:text-slate-300">{d.precoMedio != null ? formatarMoeda(d.precoMedio, 3) : "—"}</td>
                 <td className="py-2 tabular-nums text-slate-700 dark:text-slate-300">{d.custoTotal != null ? formatarMoeda(d.custoTotal, 0) : "—"}</td>

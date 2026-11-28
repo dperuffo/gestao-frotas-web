@@ -218,6 +218,13 @@ export default async function DashboardPage({
           p_data_inicio: dataInicioInd,
           p_data_fim: dataFimInd,
         }),
+        // KPI "Rendimento com Correção Estatística" (KMV-315): km/L sem outliers
+        // de odômetro/abastecimento externo + selo de confiança por veículo.
+        rpcCacheado(supabase, usuarioId, "indicador_rendimento_corrigido", {
+          p_empresa_id: empresaSelecionada,
+          p_data_inicio: dataInicioInd,
+          p_data_fim: dataFimInd,
+        }),
       ] as const : null;
 
   // Fase 27.70 — pedido do Daniel: mesma seção "Ajustes de abastecimento" do
@@ -459,9 +466,10 @@ export default async function DashboardPage({
     { data: indicadoresCentroCusto, error: erroCentroCusto },
     { data: manutencaoKpisRows },
     { data: eficienciaVeiculos },
+    { data: rendimentoCorrigido },
   ] = grupo2
-    ? await Promise.all([grupo2[0], grupo2[1], grupo2[8]])
-    : [{ data: null, error: null }, { data: null }, { data: null }];
+    ? await Promise.all([grupo2[0], grupo2[1], grupo2[8], grupo2[10]])
+    : [{ data: null, error: null }, { data: null }, { data: null }, { data: null }];
   // Os outros 7 indicadores (painéis avançados) NÃO bloqueiam a página: viram
   // uma promessa lida dentro de <SecaoIndicadoresAvancados> sob Suspense.
   const promessaAvancados = grupo2
@@ -483,18 +491,28 @@ export default async function DashboardPage({
   // partir de hodômetros consecutivos reais dos abastecimentos (não de rota
   // planejada/sugerida — essa parte do painel de referência foi
   // deliberadamente deixada de fora por não termos dado de GPS real).
-  const itensEficienciaVeiculos: ItemEficienciaVeiculo[] = (eficienciaVeiculos ?? []).map((v) => ({
-    placa: v.placa,
-    marca: v.marca,
-    modelo: v.modelo,
-    abastecimentos: v.abastecimentos,
-    kmTotal: v.km_total,
-    kmMedio: v.km_medio,
-    mediaKmL: v.media_km_l,
-    litrosTotal: v.litros_total,
-    precoMedio: v.preco_medio,
-    custoTotal: v.custo_total,
-  }));
+  const rendimentoPorPlaca = new Map((rendimentoCorrigido ?? []).map((r) => [r.placa, r]));
+  const itensEficienciaVeiculos: ItemEficienciaVeiculo[] = (eficienciaVeiculos ?? []).map((v) => {
+    const rc = rendimentoPorPlaca.get(v.placa);
+    return {
+      placa: v.placa,
+      marca: v.marca,
+      modelo: v.modelo,
+      abastecimentos: v.abastecimentos,
+      kmTotal: v.km_total,
+      kmMedio: v.km_medio,
+      // km/L CORRIGIDO (expurgo estatístico). Sem intervalo válido => null ("dados insuficientes").
+      mediaKmL: rc ? rc.km_l_corrigido : null,
+      kmLBruto: v.media_km_l,
+      confianca: rc?.confianca ?? "insuficiente",
+      coberturaPct: rc?.cobertura_pct ?? null,
+      intervalosValidos: rc?.intervalos_validos ?? 0,
+      intervalos: rc?.intervalos ?? 0,
+      litrosTotal: v.litros_total,
+      precoMedio: v.preco_medio,
+      custoTotal: v.custo_total,
+    };
+  });
 
   // Fase Dashboard-Redesign — "Destaque do mês": veículo com melhor km/L no
   // período, comparado à média da frota. Mesmo dado do indicador 8 abaixo,

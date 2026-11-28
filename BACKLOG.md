@@ -112,4 +112,10 @@ continua ruim depois do ajuste já aplicado.
 ## Atualização automática da tela após ações (22/11/2026)
 
 - **Feito:** `AtualizarTelaAposAcao` (no layout do painel) recarrega os dados da tela atual depois de qualquer Server Action concluída com sucesso, sem F5. Preserva o estado local; junta ações seguidas; ignora `/assistente`, redirecionamentos e aba oculta.
-- **Pendente:** não reproduzi a causa original só pela leitura do código (as ações já chamam `revalidatePath` e os dados do servidor são atuais); validar no navegador com inativar veículo, inativar motorista e seletores de Parâmetros de uso. Se ainda falhar, olhar o cache do roteador do cliente. Ações como `alternarAtivoVeiculo` e `alternarAtivoMotorista` ignoram o erro do UPDATE (sem aviso ao usuário quando a RLS impede a alteração): mostrar mensagem de falha.
+- **Pendente:** não reproduzi a causa original só pela leitura do código (as ações já chamam `revalidatePath` e os dados do servidor são atuais); validar no navegador com inativar veículo, inativar motorista e seletores de Parâmetros de uso. Se ainda falhar, olhar o cache do roteador do cliente. ~~`alternarAtivoVeiculo` e `alternarAtivoMotorista` ignoravam o erro do UPDATE~~ — FEITO em 22/11/2026: agora devolvem `{ erro }` (inclusive quando a RLS barra sem erro, 0 linhas) e os botões mostram a mensagem em vermelho; o log de auditoria só grava em caso de sucesso. **Pendente:** o mesmo aviso nos demais botões de ativar/inativar (vínculos e regras de Parâmetros de uso, colegas da equipe, avisos, conteúdos).
+
+
+## Rendimento km/L com correção estatística (KMV-315, 28/11/2026)
+- Feito: RPC `indicador_rendimento_corrigido` (odômetro válido → faixa plausível por categoria → mediana ± max(3×MAD, 35%)), tabela editável `rendimento_regras` (leve 3–25, pesada 1,2–7), selo de confiança por veículo no painel 8 do Dashboard. Calibração real: leve 13,30 → 10,58 km/L; pesada 4,24 → 2,98 km/L.
+- Achado: ~97% dos abastecimentos dos últimos 90 dias estão SEM odômetro → maioria dos veículos "dados insuficientes". Ação: incentivar odômetro (OCR do app do motorista) e integrações.
+- Pendente: validar faixas/tolerâncias com a Eni e Dados; regra por veículo (mediana própria) quando houver ≥5 intervalos; mesma correção nos relatórios e no Assistente; R$/km corrigido no painel; versão para os PWAs.
